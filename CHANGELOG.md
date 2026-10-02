@@ -15,6 +15,10 @@ release does: a minor bump may change the JSON output or the library API, a patc
   The TUI shows the two pictures with the changed regions outlined, and `t` cycles to a
   difference, blend and swipe view; it draws real pixels where the terminal speaks the kitty,
   sixel or iTerm2 graphics protocol and Unicode half blocks everywhere else.
+- Animated GIF, PNG and WebP pictures are compared frame by frame, the frames aligned the way
+  lines are: the report says which frames changed, which were added or removed, and whether the
+  same frames now show for different times. In the TUI, `,` and `.` step through the frames and
+  space plays the animation.
 
 ### Changed
 

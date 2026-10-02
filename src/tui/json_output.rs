@@ -499,6 +499,8 @@ mod tests {
             height: 10,
             color: "RGBA8".to_string(),
             bytes: 100,
+            frames: 1,
+            duration_ms: 0,
         };
         let picture = PictureDiff {
             before: Some(side.clone()),

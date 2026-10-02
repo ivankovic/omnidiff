@@ -20,10 +20,10 @@
 //! written by `human_solver` beside the pair's `before.<ext>.test` / `after.<ext>.test`.
 //!
 //! **A verdict, not regions.** The human answers the one question [`Verdict`] asks - content
-//! change, no visible change, resized or replaced - and the fixture checks the engine's
-//! [`PictureDiff::verdict`](crate::diff::picture::PictureDiff::verdict) against it. Which regions
-//! changed is postponed: drawing them by hand in a terminal is the expensive part, and the verdict
-//! already tests what the engine decides first (whether anything visible changed at all).
+//! change, no visible change, resized, replaced or frame rate change - and the fixture checks the
+//! engine's [`PictureDiff::verdict`](crate::diff::picture::PictureDiff::verdict) against it. Which
+//! regions changed is postponed: drawing them by hand in a terminal is the expensive part, and the
+//! verdict already tests what the engine decides first (whether anything visible changed at all).
 //!
 //! The picture fixtures live outside `src/test/data/diffs/`, the code corpus, because everything
 //! that sweeps that corpus parses its pairs as text.

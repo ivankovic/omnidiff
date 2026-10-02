@@ -30,12 +30,18 @@
 //! pixels a cell, coarse but enough to see the layout and where the outlines are. The color-depth
 //! pass fits half blocks to a 256-color terminal like any other cell.
 //!
-//! Composites are rebuilt only when the view, the divider, the pane size or the colors change:
-//! encoding a picture for a graphics protocol is the slow part, not drawing it.
+//! An animation is shown one **moment** at a time: a frame of each side, as the frame diff pairs
+//! them (`FrameStep`), `,`/`.` stepping and space playing at the after side's frame times. When
+//! annotating, the frames pair by position instead, since the engine's pairing is part of its
+//! answer.
+//!
+//! Composites are rebuilt only when the view, the divider, the moment, the pane size or the colors
+//! change: encoding a picture for a graphics protocol is the slow part, not drawing it.
 
 use std::path::Path;
+use std::time::{Duration, Instant};
 
-use crate::diff::picture::{self, Comparison, PictureDiff, Region};
+use crate::diff::picture::{self, Comparison, FrameCounts, FrameStep, Frames, PictureDiff, Region};
 use crossterm::event::KeyCode;
 use image::{DynamicImage, Rgba, RgbaImage};
 use ratatui::{
@@ -131,6 +137,7 @@ impl PictureColors {
 struct Built {
     mode: PictureMode,
     swipe_percent: u16,
+    moment: usize,
     outline: u32,
     colors: PictureColors,
 }
@@ -138,14 +145,86 @@ struct Built {
 /// Each pane's title and picture, encoded for the terminal; `None` for a side with no picture.
 type Panes = Vec<(String, Option<StatefulProtocol>)>;
 
+/// One position of the frame stepper: which frame of each side shows (`None` where that side has
+/// none here), and what the engine found between them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Moment {
+    before: Option<usize>,
+    after: Option<usize>,
+    regions: Vec<Region>,
+    /// "changed", "added", "removed", or "" for frames that look the same or are not compared.
+    change: &'static str,
+}
+
+/// The moments of a pair: one for two stills, one per aligned frame for animations.
+fn timeline(
+    diff: &PictureDiff,
+    before: Option<&Frames>,
+    after: Option<&Frames>,
+    by_position: bool,
+) -> Vec<Moment> {
+    let moment = |before, after, regions, change| Moment {
+        before,
+        after,
+        regions,
+        change,
+    };
+    match &diff.comparison {
+        Comparison::Pixels { regions, .. } if !by_position => {
+            vec![moment(Some(0), Some(0), regions.clone(), "")]
+        }
+        Comparison::Frames { steps, .. } if !by_position => steps
+            .iter()
+            .flat_map(|step| -> Vec<Moment> {
+                match step {
+                    FrameStep::Same {
+                        before,
+                        after,
+                        frames,
+                    } => (0..*frames)
+                        .map(|k| moment(Some(before + k), Some(after + k), Vec::new(), ""))
+                        .collect(),
+                    FrameStep::Changed {
+                        before,
+                        after,
+                        regions,
+                        ..
+                    } => vec![moment(
+                        Some(*before),
+                        Some(*after),
+                        regions.clone(),
+                        "changed",
+                    )],
+                    FrameStep::Inserted { after, frames } => (0..*frames)
+                        .map(|k| moment(None, Some(after + k), Vec::new(), "added"))
+                        .collect(),
+                    FrameStep::Deleted { before, frames } => (0..*frames)
+                        .map(|k| moment(Some(before + k), None, Vec::new(), "removed"))
+                        .collect(),
+                }
+            })
+            .collect(),
+        // Resized, one-sided, or annotating: frame k beside frame k.
+        _ => {
+            let count = |side: Option<&Frames>| side.map_or(0, Frames::count);
+            let (b, a) = (count(before), count(after));
+            (0..b.max(a))
+                .map(|k| moment((k < b).then_some(k), (k < a).then_some(k), Vec::new(), ""))
+                .collect()
+        }
+    }
+}
+
 pub struct PictureViewer {
     before_name: String,
     after_name: String,
-    before: Option<RgbaImage>,
-    after: Option<RgbaImage>,
+    before: Option<Frames>,
+    after: Option<Frames>,
     diff: PictureDiff,
-    /// Which pixels changed, for a same-size pair.
-    mask: Option<Vec<bool>>,
+    timeline: Vec<Moment>,
+    moment: usize,
+    /// While playing: when the current moment started showing.
+    playing: Option<Instant>,
     mode: PictureMode,
     swipe_percent: u16,
     picker: Picker,
@@ -174,24 +253,29 @@ impl PictureViewer {
         if !picture::is_picture_pair(&before_bytes, &after_bytes) {
             return None;
         }
-        let diff = picture::diff(&before_bytes, &after_bytes).ok()?;
-        let pixels = |bytes: &[u8]| {
-            (!bytes.is_empty())
-                .then(|| picture::decode(bytes).ok().map(|(_, pixels)| pixels))
-                .flatten()
-        };
-        let (before_pixels, after_pixels) = (pixels(&before_bytes), pixels(&after_bytes));
-        let mask = match (&before_pixels, &after_pixels, &diff.comparison) {
-            (Some(b), Some(a), Comparison::Pixels { .. }) => Some(picture::changed_mask(b, a)),
-            _ => None,
-        };
+        // Decoded once and kept: an animation's frames are the expensive part.
+        let (before_decoded, after_decoded) =
+            picture::decode_pair(&before_bytes, &after_bytes).ok()?;
+        let diff = picture::compare_decoded(before_decoded.as_ref(), after_decoded.as_ref());
+        let (before_frames, after_frames) = (
+            before_decoded.map(|(_, frames)| frames),
+            after_decoded.map(|(_, frames)| frames),
+        );
+        let timeline = timeline(
+            &diff,
+            before_frames.as_ref(),
+            after_frames.as_ref(),
+            annotating,
+        );
         Some(Self {
             before_name: before.display().to_string(),
             after_name: after.display().to_string(),
-            before: before_pixels,
-            after: after_pixels,
+            before: before_frames,
+            after: after_frames,
             diff,
-            mask,
+            timeline,
+            moment: 0,
+            playing: None,
             mode: PictureMode::SideBySide,
             swipe_percent: 50,
             picker: {
@@ -232,13 +316,82 @@ impl PictureViewer {
         if annotating && self.mode == PictureMode::Difference {
             self.mode = PictureMode::SideBySide;
         }
+        // The pairing changes with it; stay on the after frame being looked at.
+        let after = self.current().after;
+        self.timeline = timeline(
+            &self.diff,
+            self.before.as_ref(),
+            self.after.as_ref(),
+            annotating,
+        );
+        self.moment = self
+            .timeline
+            .iter()
+            .position(|moment| after.is_some() && moment.after == after)
+            .unwrap_or(0);
         self.shown = None;
     }
 
+    /// True while an animation plays: the caller should draw again soon, not only on a key.
+    pub fn is_playing(&self) -> bool {
+        self.playing.is_some()
+    }
+
+    fn current(&self) -> &Moment {
+        &self.timeline[self.moment.min(self.timeline.len() - 1)]
+    }
+
+    /// How long the current moment shows while playing: the after frame's time, or before's where
+    /// after has none. A delay under 20 ms plays at 100 ms, as browsers do.
+    fn current_delay(&self) -> Duration {
+        let moment = self.current();
+        let delay = match (&self.after, moment.after, &self.before, moment.before) {
+            (Some(frames), Some(index), _, _) | (_, _, Some(frames), Some(index)) => {
+                frames.delay_ms(index)
+            }
+            _ => 0,
+        };
+        Duration::from_millis(if delay < 20 { 100 } else { u64::from(delay) })
+    }
+
+    /// Moves playback on to the moment that should be showing now, wrapping at the end.
+    fn advance_playback(&mut self) {
+        let Some(mut started) = self.playing else {
+            return;
+        };
+        let mut steps = 0;
+        // Bounded: a slow draw skips frames rather than replaying all it missed.
+        while started.elapsed() >= self.current_delay() && steps < self.timeline.len() {
+            started += self.current_delay();
+            self.moment = (self.moment + 1) % self.timeline.len();
+            steps += 1;
+        }
+        if steps == self.timeline.len() {
+            started = Instant::now();
+        }
+        self.playing = Some(started);
+    }
+
     /// Handles a picture view key: `t` cycles the view, `h`/`l` or the arrows move the swipe
-    /// divider. False for any other key, which the viewer leaves to the rest of the app.
+    /// divider, and for an animation `,`/`.` step a frame back or on and space plays or pauses.
+    /// False for any other key, which the viewer leaves to the rest of the app.
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
+        let animated = self.timeline.len() > 1;
         match code {
+            KeyCode::Char('.') if animated => {
+                self.playing = None;
+                self.moment = (self.moment + 1).min(self.timeline.len() - 1);
+            }
+            KeyCode::Char(',') if animated => {
+                self.playing = None;
+                self.moment = self.moment.saturating_sub(1);
+            }
+            KeyCode::Char(' ') if animated => {
+                self.playing = match self.playing {
+                    Some(_) => None,
+                    None => Some(Instant::now()),
+                };
+            }
             KeyCode::Char('t') => {
                 self.mode = self.mode.next();
                 if self.annotating && self.mode == PictureMode::Difference {
@@ -268,9 +421,10 @@ impl PictureViewer {
                 None => "nothing".to_string(),
             };
             return format!(
-                "{} -> {} · view: {} (t)",
+                "{} -> {}{} · view: {} (t)",
                 side(&self.diff.before),
                 side(&self.diff.after),
+                self.frame_status(),
                 self.mode.label()
             );
         }
@@ -298,17 +452,55 @@ impl PictureViewer {
                 regions.len(),
                 if regions.len() == 1 { "" } else { "s" }
             ),
+            Comparison::Frames { steps, retimed, .. } => {
+                let counts = FrameCounts::of(steps).describe();
+                if *retimed {
+                    format!("{counts}, retimed")
+                } else {
+                    counts
+                }
+            }
         };
         format!(
-            "{} -> {} · {change} · view: {} (t)",
+            "{} -> {} · {change}{} · view: {} (t)",
             side(&self.diff.before),
             side(&self.diff.after),
+            self.frame_status(),
             self.mode.label()
+        )
+    }
+
+    /// " · frame 12/218 → 13/220, changed (,/. step, space play)" for an animation, "" otherwise.
+    /// Without what changed when annotating.
+    fn frame_status(&self) -> String {
+        if self.timeline.len() < 2 {
+            return String::new();
+        }
+        let moment = self.current();
+        let position = |index: Option<usize>, frames: &Option<Frames>| match index {
+            Some(index) => format!("{}/{}", index + 1, frames.as_ref().map_or(0, Frames::count)),
+            None => "-".to_string(),
+        };
+        let change = if self.annotating || moment.change.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", moment.change)
+        };
+        let keys = if self.playing.is_some() {
+            "space pauses"
+        } else {
+            ",/. step, space plays"
+        };
+        format!(
+            " · frame {} -> {}{change} ({keys})",
+            position(moment.before, &self.before),
+            position(moment.after, &self.after)
         )
     }
 
     /// Draws the current view into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
+        self.advance_playback();
         let panes: Vec<Rect> = if self.mode == PictureMode::SideBySide {
             Layout::default()
                 .direction(Direction::Horizontal)
@@ -321,6 +513,7 @@ impl PictureViewer {
         let built = Built {
             mode: self.mode,
             swipe_percent: self.swipe_percent,
+            moment: self.moment,
             outline: self.outline_width(Block::default().borders(Borders::ALL).inner(panes[0])),
             colors,
         };
@@ -372,7 +565,7 @@ impl PictureViewer {
         let pane_pixels = u32::from(pane.width.max(1)) * per_cell;
         let widest = [&self.before, &self.after]
             .iter()
-            .filter_map(|side| side.as_ref().map(|pixels| pixels.width()))
+            .filter_map(|side| side.as_ref().map(|frames| frames.dimensions().0))
             .max()
             .unwrap_or(1);
         (widest.div_ceil(pane_pixels) * screen_pixels).max(1)
@@ -380,10 +573,19 @@ impl PictureViewer {
 
     /// One `(title, picture)` per pane of `built.mode`; `None` for a side that has no picture.
     fn composites(&self, built: Built) -> Vec<(String, Option<RgbaImage>)> {
-        let regions: &[Region] = match &self.diff.comparison {
-            Comparison::Pixels { regions, .. } if !self.annotating => regions,
-            _ => &[],
+        let moment = &self.timeline[built.moment.min(self.timeline.len() - 1)];
+        let regions: &[Region] = if self.annotating {
+            &[]
+        } else {
+            &moment.regions
         };
+        let pixels = |frames: &Option<Frames>, index: Option<usize>| -> Option<RgbaImage> {
+            Some(frames.as_ref()?.pixels(index?).into_owned())
+        };
+        let (before_pixels, after_pixels) = (
+            pixels(&self.before, moment.before),
+            pixels(&self.after, moment.after),
+        );
         let outlined = |pixels: &Option<RgbaImage>, color: [u8; 3]| {
             pixels.as_ref().map(|pixels| {
                 let mut pixels = pixels.clone();
@@ -393,13 +595,18 @@ impl PictureViewer {
                 pixels
             })
         };
-        let before_title = format!("before: {}", self.before_name);
-        let after_title = format!("after: {}", self.after_name);
+        let titled = |side: &str, name: &str, index: Option<usize>| match index {
+            _ if self.timeline.len() < 2 => format!("{side}: {name}"),
+            Some(index) => format!("{side}: {name} · frame {}", index + 1),
+            None => format!("{side}: {name} · no frame here"),
+        };
+        let before_title = titled("before", &self.before_name, moment.before);
+        let after_title = titled("after", &self.after_name, moment.after);
         // The other three need both sides at one size: before is scaled to after's.
-        let (Some(before), Some(after)) = (&self.before, &self.after) else {
+        let (Some(before), Some(after)) = (&before_pixels, &after_pixels) else {
             return vec![
-                (before_title, outlined(&self.before, built.colors.delete)),
-                (after_title, outlined(&self.after, built.colors.insert)),
+                (before_title, outlined(&before_pixels, built.colors.delete)),
+                (after_title, outlined(&after_pixels, built.colors.insert)),
             ];
         };
         let before_at_after_size = || {
@@ -416,17 +623,19 @@ impl PictureViewer {
         };
         match built.mode {
             PictureMode::SideBySide => vec![
-                (before_title, outlined(&self.before, built.colors.delete)),
-                (after_title, outlined(&self.after, built.colors.insert)),
+                (before_title, outlined(&before_pixels, built.colors.delete)),
+                (after_title, outlined(&after_pixels, built.colors.insert)),
             ],
             PictureMode::Difference => {
-                let title = match &self.mask {
+                let mask = (before.dimensions() == after.dimensions())
+                    .then(|| picture::changed_mask(before, after));
+                let title = match &mask {
                     Some(_) => "difference: changed pixels on the faded after picture",
                     None => "difference: not comparable pixel by pixel (resized)",
                 };
                 vec![(
                     title.to_string(),
-                    Some(difference(after, self.mask.as_deref(), built.colors.update)),
+                    Some(difference(after, mask.as_deref(), built.colors.update)),
                 )]
             }
             PictureMode::Blend => {
@@ -568,10 +777,100 @@ mod tests {
         PictureViewer::open(before, after, Picker::halfblocks()).expect("a picture pair")
     }
 
+    /// Before: frames 0, 1, 2 of `picture::test_frame`; after: the same with a new frame 5 after
+    /// the first.
+    fn animated_pair(dir: &tempfile::TempDir) -> (std::path::PathBuf, std::path::PathBuf) {
+        let gif = |ks: &[u32]| {
+            picture::test_gif(
+                &ks.iter()
+                    .map(|&k| (picture::test_frame(k), 100))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let (before, after) = (dir.path().join("a.gif"), dir.path().join("b.gif"));
+        std::fs::write(&before, gif(&[0, 1, 2])).expect("writes");
+        std::fs::write(&after, gif(&[0, 5, 1, 2])).expect("writes");
+        (before, after)
+    }
+
+    fn sides(viewer: &PictureViewer) -> (Option<usize>, Option<usize>) {
+        (viewer.current().before, viewer.current().after)
+    }
+
+    #[test]
+    fn an_animation_steps_through_its_frames_as_the_diff_pairs_them() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = animated_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        assert_eq!(sides(&viewer), (Some(0), Some(0)));
+        assert!(viewer.handle_key(KeyCode::Char('.')));
+        assert_eq!(sides(&viewer), (None, Some(1)), "the added frame");
+        assert!(
+            viewer.status().contains("frame - -> 2/4, added"),
+            "{}",
+            viewer.status()
+        );
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (Some(1), Some(2)));
+        viewer.handle_key(KeyCode::Char(','));
+        viewer.handle_key(KeyCode::Char(','));
+        viewer.handle_key(KeyCode::Char(','));
+        assert_eq!(sides(&viewer), (Some(0), Some(0)), "clamped at the first");
+
+        assert!(viewer.handle_key(KeyCode::Char(' ')));
+        assert!(viewer.is_playing());
+        viewer.handle_key(KeyCode::Char('.'));
+        assert!(!viewer.is_playing(), "stepping pauses");
+
+        viewer.moment = 1;
+        let panes = viewer.composites(Built {
+            moment: 1,
+            ..built(PictureMode::SideBySide)
+        });
+        assert!(panes[0].0.ends_with("no frame here"), "{}", panes[0].0);
+        assert!(panes[0].1.is_none());
+        assert!(panes[1].0.ends_with("frame 2"), "{}", panes[1].0);
+    }
+
+    /// The engine's pairing is part of its answer, so a human judging the pair steps through the
+    /// frames by position.
+    #[test]
+    fn annotating_pairs_frames_by_position_and_says_nothing_about_them() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = animated_pair(&dir);
+        let mut viewer =
+            PictureViewer::open_for_annotation(&a, &b, Picker::halfblocks()).expect("a pair");
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (Some(1), Some(1)));
+        assert!(!viewer.status().contains("added"), "{}", viewer.status());
+        viewer.handle_key(KeyCode::Char('.'));
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (None, Some(3)));
+
+        viewer.set_annotating(false);
+        assert_eq!(
+            sides(&viewer),
+            (Some(2), Some(3)),
+            "showing the engine's pairing keeps the after frame in view"
+        );
+    }
+
+    #[test]
+    fn a_still_pair_leaves_the_frame_keys_to_the_app() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        for key in [',', '.', ' '] {
+            assert!(!viewer.handle_key(KeyCode::Char(key)), "{key:?}");
+        }
+        assert!(!viewer.status().contains("frame"), "{}", viewer.status());
+    }
+
     fn built(mode: PictureMode) -> Built {
         Built {
             mode,
             swipe_percent: 50,
+            moment: 0,
             outline: 1,
             colors: COLORS,
         }

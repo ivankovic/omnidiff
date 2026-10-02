@@ -1456,6 +1456,7 @@ dependencies = [
  "crossbeam-channel",
  "crossterm 0.29.0",
  "csv",
+ "flate2",
  "futures",
  "git2",
  "image",

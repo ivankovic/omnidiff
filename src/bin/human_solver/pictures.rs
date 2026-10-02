@@ -19,7 +19,7 @@
 //! The picture session: a sample whose pair is two pictures (`sample_test_diffs --pictures`) is
 //! judged here rather than in the tree session, which needs trees.
 //!
-//! What the human records is a verdict (`test::helper::human_picture`), keys `1`-`4`. The pictures
+//! What the human records is a verdict (`test::helper::human_picture`), keys `1`-`5`. The pictures
 //! are shown through `PictureViewer` in its annotation mode - side by side, blend and swipe, the
 //! files' own metadata, and nothing the engine decided - so the verdict stays the human's. `e`
 //! shows the engine's view on request (its verdict, outlined regions, the difference view) and
@@ -212,11 +212,13 @@ pub(crate) fn run_picture_session(
         saved,
         reject_input: None,
         quit_armed: false,
-        status: "1-4 records a verdict; s saves it".to_string(),
+        status: "1-5 records a verdict; s saves it".to_string(),
     };
     loop {
         terminal.draw(|frame| draw(frame, &mut session, app))?;
-        if !event::poll(Duration::from_millis(250))? {
+        // A playing animation needs drawing at its frame rate, not only on a key.
+        let wait = if session.viewer.is_playing() { 20 } else { 250 };
+        if !event::poll(Duration::from_millis(wait))? {
             continue;
         }
         let Event::Key(key) = event::read()? else {
@@ -296,7 +298,7 @@ fn handle_key(session: &mut PictureSession, app: &mut App, code: KeyCode) -> Opt
 
     let quitting = matches!(code, KeyCode::Char('q'));
     match code {
-        KeyCode::Char(digit @ '1'..='4') => {
+        KeyCode::Char(digit @ '1'..='5') => {
             let verdict = Verdict::ALL[digit as usize - '1' as usize];
             session.verdict = Some(verdict);
             session.status = format!("Verdict: {} (s to save)", verdict.label());
@@ -417,8 +419,8 @@ fn draw(frame: &mut ratatui::Frame, session: &mut PictureSession, app: &App) {
     };
     frame.render_widget(Paragraph::new(prompt), rows[4]);
     let keys = match session.origin {
-        Origin::Fixture(_) => "1-4 verdict  s save",
-        Origin::Sample { .. } => "1-4 verdict  s promote/save  x reject",
+        Origin::Fixture(_) => "1-5 verdict  s save",
+        Origin::Sample { .. } => "1-5 verdict  s promote/save  x reject",
     };
     frame.render_widget(
         Paragraph::new(
@@ -478,7 +480,7 @@ fn readme_file(dir: &Path) -> Option<String> {
 /// the engine says now.
 fn save(session: &mut PictureSession) -> Result<String> {
     let Some(verdict) = session.verdict else {
-        bail!("No verdict yet: 1-4 records one");
+        bail!("No verdict yet: 1-5 records one");
     };
     let picture = HumanPicture { verdict };
     let fixture = match &mut session.origin {
@@ -764,7 +766,7 @@ mod tests {
         let mut app = test_app();
         let text = screen(&mut session, &app, 160);
         assert!(text.contains("(fixture, Solarize.12x29.bmp)"), "{text}");
-        assert!(text.contains("1-4 verdict  s save  e"), "{text}");
+        assert!(text.contains("1-5 verdict  s save  e"), "{text}");
         assert!(!text.contains("reject"), "{text}");
 
         handle_key(&mut session, &mut app, KeyCode::Char('x'));
@@ -783,7 +785,7 @@ mod tests {
         );
         session.verdict = Some(Verdict::ContentChange);
         let app = test_app();
-        let screen_text = screen(&mut session, &app, 100);
+        let screen_text = screen(&mut session, &app, 120);
         assert!(
             screen_text.contains("png-x-repo-1234abcd-logo"),
             "{screen_text}"
@@ -791,6 +793,7 @@ mod tests {
         assert!(screen_text.contains("PNG 8x4 RGBA8"), "{screen_text}");
         assert!(screen_text.contains("1 content change"), "{screen_text}");
         assert!(screen_text.contains("4 replaced"), "{screen_text}");
+        assert!(screen_text.contains("5 frame rate change"), "{screen_text}");
         assert!(screen_text.contains("(unsaved)"), "{screen_text}");
         assert!(
             !screen_text.contains("changed"),
@@ -798,7 +801,7 @@ mod tests {
         );
 
         session.viewer.set_annotating(false);
-        let screen_text = screen(&mut session, &app, 100);
+        let screen_text = screen(&mut session, &app, 120);
         assert!(
             screen_text.contains("omnidiff: content change"),
             "{screen_text}"

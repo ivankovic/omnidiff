@@ -826,6 +826,8 @@ mod tests {
             height: 10,
             color: "RGBA8".to_string(),
             bytes: 100,
+            frames: 1,
+            duration_ms: 0,
         };
         omnidiff::diff::picture::PictureDiff {
             before: Some(side(20)),
@@ -863,6 +865,55 @@ mod tests {
             picture_notice(&paths, &before, &after, &diff),
             "Picture assets/logo.png: PNG 20x10 RGBA8, 100 bytes -> PNG 20x10 RGBA8, 100 bytes\n  \
              6.00% of pixels changed (12 of 200), in 1 region:\n    4x3 at (6, 2)\n"
+        );
+    }
+
+    #[test]
+    fn the_picture_notice_lists_an_animations_changed_added_and_removed_frames() {
+        use omnidiff::diff::picture::{Comparison, FrameStep, Region};
+        let paths = vec![PathBuf::from("a.gif"), PathBuf::from("b.gif")];
+        let (before, after) = resolve_before_after(&paths).unwrap().unwrap();
+        let mut diff = picture_diff(Comparison::Frames {
+            steps: vec![
+                FrameStep::Same {
+                    before: 0,
+                    after: 0,
+                    frames: 4,
+                },
+                FrameStep::Changed {
+                    before: 4,
+                    after: 4,
+                    changed_pixels: 3,
+                    regions: vec![Region {
+                        x: 1,
+                        y: 1,
+                        width: 3,
+                        height: 1,
+                        changed_pixels: 3,
+                    }],
+                },
+                FrameStep::Inserted {
+                    after: 5,
+                    frames: 2,
+                },
+                FrameStep::Deleted {
+                    before: 5,
+                    frames: 1,
+                },
+            ],
+            total_pixels: 200,
+            retimed: true,
+        });
+        for side in [&mut diff.before, &mut diff.after] {
+            let info = side.as_mut().unwrap();
+            (info.format, info.frames, info.duration_ms) = ("GIF".to_string(), 6, 1500);
+        }
+        assert_eq!(
+            picture_notice(&paths, &before, &after, &diff),
+            "Pictures a.gif and b.gif: GIF 20x10 RGBA8, 6 frames, 1.5s, 100 bytes -> GIF 20x10 \
+             RGBA8, 6 frames, 1.5s, 100 bytes\n  1 frame changed, 2 added, 1 removed; frames that \
+             look the same show for different times\n    frame 4 -> 4: changed, in 1 region\n    \
+             frames 5-6 added\n    frame 5 removed\n"
         );
     }
 

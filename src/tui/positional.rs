@@ -60,8 +60,9 @@ pub fn picture_notice(
     after: &Path,
     diff: &crate::diff::picture::PictureDiff,
 ) -> String {
-    use crate::diff::picture::{Comparison, PictureInfo};
+    use crate::diff::picture::{Comparison, FrameCounts, FrameStep, PictureInfo};
     const LISTED_REGIONS: usize = 10;
+    const LISTED_STEPS: usize = 10;
 
     let name = if invoked_as_git_external_diff(paths) {
         format!("Picture {}", paths[0].display())
@@ -69,6 +70,16 @@ pub fn picture_notice(
         format!("Pictures {} and {}", before.display(), after.display())
     };
     let side = |info: &Option<PictureInfo>| match info {
+        Some(info) if info.frames > 1 => format!(
+            "{} {}x{} {}, {} frames, {:.1}s, {} bytes",
+            info.format,
+            info.width,
+            info.height,
+            info.color,
+            info.frames,
+            info.duration_ms as f64 / 1000.0,
+            info.bytes
+        ),
         Some(info) => format!(
             "{} {}x{} {}, {} bytes",
             info.format, info.width, info.height, info.color, info.bytes
@@ -78,6 +89,46 @@ pub fn picture_notice(
     let mut out = format!("{name}: {} -> {}\n", side(&diff.before), side(&diff.after));
     match &diff.comparison {
         Comparison::OneSided => {}
+        Comparison::Frames { steps, retimed, .. } => {
+            out.push_str(&format!("  {}", FrameCounts::of(steps).describe()));
+            if *retimed {
+                out.push_str("; frames that look the same show for different times");
+            }
+            out.push('\n');
+            let range = |from: usize, frames: usize| match frames {
+                1 => format!("frame {from}"),
+                _ => format!("frames {from}-{}", from + frames - 1),
+            };
+            let listed: Vec<&FrameStep> = steps
+                .iter()
+                .filter(|step| !matches!(step, FrameStep::Same { .. }))
+                .collect();
+            for step in listed.iter().take(LISTED_STEPS) {
+                let line = match step {
+                    FrameStep::Changed {
+                        before,
+                        after,
+                        regions,
+                        ..
+                    } => format!(
+                        "frame {before} -> {after}: changed, in {} region{}",
+                        regions.len(),
+                        if regions.len() == 1 { "" } else { "s" }
+                    ),
+                    FrameStep::Inserted { after, frames } => {
+                        format!("{} added", range(*after, *frames))
+                    }
+                    FrameStep::Deleted { before, frames } => {
+                        format!("{} removed", range(*before, *frames))
+                    }
+                    FrameStep::Same { .. } => unreachable!("filtered out above"),
+                };
+                out.push_str(&format!("    {line}\n"));
+            }
+            if listed.len() > LISTED_STEPS {
+                out.push_str(&format!("    ... {} more\n", listed.len() - LISTED_STEPS));
+            }
+        }
         Comparison::Resized => out.push_str("  resized, so not compared pixel by pixel\n"),
         Comparison::Pixels { regions, .. } if regions.is_empty() => {
             out.push_str("  no pixel changed\n");
