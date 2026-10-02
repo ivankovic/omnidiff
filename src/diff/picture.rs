@@ -53,21 +53,30 @@ pub const THRESHOLD: f64 = 0.1;
 pub const REGION_GAP: u32 = 2;
 
 /// The share of pixels above which a change reads as a different picture rather than an edit of
-/// the same one ([`Verdict::Replaced`]). A first guess, which the picture fixtures measure.
+/// the same one ([`Verdict::Replaced`]): the human's rule too, who calls a picture more than half
+/// edited replaced. The human judges the area that looks changed and this counts changed pixels;
+/// the picture fixtures measure how far the two agree.
 pub const REPLACED_SHARE: f64 = 0.5;
 
 /// What happened to a picture, in one word: the question a picture fixture's human verdict
 /// answers, and the engine's answer to it ([`PictureDiff::verdict`]).
+///
+/// A pair can fit more than one, and a fixture records exactly one, so the first that fits wins:
+/// replaced, then content change, then resized, then no visible change. A different picture at
+/// a new size is replaced; a picture both rescaled and edited is a content change. The engine does
+/// not follow this order yet: it compares no pixels across a size change, so it calls every such
+/// pair resized, and the fixtures that disagree record it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Verdict {
-    /// The same picture, edited: something in it changed.
+    /// The same picture, edited: something in it changed, half of it or less.
     ContentChange,
     /// Nothing a reader would see changed: re-encoded, re-compressed, or only metadata.
     NoVisibleChange,
-    /// Scaled or re-cropped to a different size.
+    /// Scaled or re-cropped to a different size, and nothing else.
     Resized,
-    /// A different picture altogether.
+    /// A different picture altogether, or the same one with more than half of it edited
+    /// ([`REPLACED_SHARE`]).
     Replaced,
 }
 
