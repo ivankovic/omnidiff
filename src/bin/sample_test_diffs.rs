@@ -23,7 +23,7 @@
 //! `--stratified` samples per (language, [`omnidiff::stats::sampling::LOC_BUCKETS`] bucket), and
 //! `--count` then means per bucket - unlike `sample_code_pairs --count`, a per-language total.
 //!
-//! `--content <family>` samples pairs of one content family instead (see `sample_content` and
+//! `--content <family>[,<family>...]` samples pairs of content families instead (see `sample_content` and
 //! `diff::content::Family`), for the fixtures under `src/test/data/<family>/`: tagged with the
 //! family as their dataset, promoted by `human_solver`'s content session with verdicts.
 //! `--pictures` is `--content pictures`. The first picture draw, 2026-10-02:
@@ -97,8 +97,9 @@ struct Args {
     /// ... (`diff::content::Family`). Rows are tagged with the family as their dataset, the
     /// format in the `language` column and `<size>-<shape>` as the bucket. `--total` replaces
     /// `--count`, and `--max-commits-per-repo` should be the census window, 50.
-    #[arg(long, value_parser = parse_family)]
-    content: Option<Family>,
+    /// Several families at once (`--content fonts,archives`) share one walk of the corpus.
+    #[arg(long, value_parser = parse_family, value_delimiter = ',')]
+    content: Vec<Family>,
 
     /// Sample text in UTF-16 or UTF-32 (with a byte order mark, see `code::Encoding`) instead of
     /// UTF-8: rows tagged dataset "encodings", `--count` per language, grammar or not (a file
@@ -250,8 +251,12 @@ fn capacity_key(language: &str, bucket: Option<&str>, stratified: bool) -> Capac
 fn main() -> Result<()> {
     let args = Args::parse();
     let output = args.output.clone().unwrap_or_else(default_output_path);
-    if let Some(family) = args.content.or(args.pictures.then_some(Family::Pictures)) {
-        return sample_content(&args, &output, family);
+    let mut families = args.content.clone();
+    if args.pictures && !families.contains(&Family::Pictures) {
+        families.push(Family::Pictures);
+    }
+    if !families.is_empty() {
+        return sample_content(&args, &output, &families);
     }
     let dataset = resolve_dataset(&args)?;
 
@@ -526,30 +531,38 @@ fn may_be(family: Family, path: &Path) -> bool {
     }
 }
 
-/// A side the sample can hold: content of `family` by its bytes (which also drops Git LFS
-/// pointers, text files named `.png`), within the size limits, probed from its header.
-fn content_side(repo: &git2::Repository, oid: git2::Oid, family: Family) -> Option<Probe> {
+/// A side the sample can hold: content of one of `families` by its bytes (which also drops Git
+/// LFS pointers, text files named `.png`), within its family's size limit, probed from its header.
+fn content_side(repo: &git2::Repository, oid: git2::Oid, families: &[Family]) -> Option<Probe> {
     let blob = repo.find_blob(oid).ok()?;
     let bytes = blob.content();
-    if bytes.len() < MIN_BYTES || bytes.len() > max_bytes(family) {
+    let family = content::sniff(bytes)?.family();
+    if !families.contains(&family) || bytes.len() < MIN_BYTES || bytes.len() > max_bytes(family) {
         return None;
     }
-    content::probe(bytes).filter(|probe| probe.format.family() == family)
+    content::probe(bytes)
 }
 
-/// `--content`: tops `output`'s rows of `family` up to `--total` pairs. Every in-place
-/// modification of the family's files in the last `--max-commits-per-repo` commits is a
-/// candidate; each repository offers at most [`PAIRS_PER_REPOSITORY_PER_STRATUM`] per stratum
+/// `--content`: tops `output`'s rows of each of `families` up to `--total` pairs, in one walk.
+/// Every in-place modification of a family's files in the last `--max-commits-per-repo` commits
+/// is a candidate; each repository offers at most [`PAIRS_PER_REPOSITORY_PER_STRATUM`] per stratum
 /// (format x size bucket x shape), a pair already seen elsewhere (the same two blobs) is offered
-/// once, and the shortfall is split evenly over the strata that have candidates, a stratum with
-/// fewer giving its share to the rest.
-fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
+/// once, and each family's shortfall is split evenly over its strata that have candidates, a
+/// stratum with fewer giving its share to the rest.
+fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()> {
     let existing_rows = read_existing_rows(output)?;
-    let existing_family = existing_rows
+    let shortfalls: HashMap<Family, usize> = families
         .iter()
-        .filter(|row| row.dataset == family.name())
-        .count();
-    let shortfall = args.total.saturating_sub(existing_family);
+        .map(|family| {
+            let existing = existing_rows
+                .iter()
+                .filter(|row| row.dataset == family.name())
+                .count();
+            (*family, args.total.saturating_sub(existing))
+        })
+        .collect();
+    let shortfall = shortfalls.values().copied().max().unwrap_or(0);
+    let names: Vec<&str> = families.iter().map(|family| family.name()).collect();
     let existing_keys: HashSet<SampleKey> = existing_rows
         .iter()
         .map(|row| (row.repository.clone(), row.commit.clone(), row.path.clone()))
@@ -557,9 +570,9 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
 
     let repo_paths = find_git_repositories(&args.repos_dir)?;
     println!(
-        "Found {} repositories; {shortfall} {} pairs to sample",
+        "Found {} repositories; up to {shortfall} pairs to sample of each of {}",
         repo_paths.len(),
-        family.name()
+        names.join(", ")
     );
     let mut rng = match args.seed {
         Some(seed) => StdRng::seed_from_u64(seed),
@@ -568,6 +581,7 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
 
     let mut seen_pairs: HashSet<(git2::Oid, git2::Oid)> = HashSet::new();
     let mut strata: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
+    let mut stratum_family: HashMap<CapacityKey, Family> = HashMap::new();
     for_each_repository(&repo_paths, |repo_path, repository_name| {
         let mut local: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
         walk_single_parent_commit_diffs(
@@ -583,7 +597,9 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
                 let Some(path) = delta.new_file().path() else {
                     return Ok(());
                 };
-                if anomalous_paths::is_anomalous(path) || !may_be(family, path) {
+                if anomalous_paths::is_anomalous(path)
+                    || !families.iter().any(|family| may_be(*family, path))
+                {
                     return Ok(());
                 }
                 let path = path.to_string_lossy().into_owned();
@@ -595,11 +611,15 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
                     return Ok(());
                 }
                 let (Some(before), Some(after)) = (
-                    content_side(repo, delta.old_file().id(), family),
-                    content_side(repo, delta.new_file().id(), family),
+                    content_side(repo, delta.old_file().id(), families),
+                    content_side(repo, delta.new_file().id(), families),
                 ) else {
                     return Ok(());
                 };
+                let family = after.format.family();
+                if before.format.family() != family {
+                    return Ok(());
+                }
                 if !seen_pairs.insert((delta.old_file().id(), delta.new_file().id())) {
                     return Ok(());
                 }
@@ -620,7 +640,9 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
                     comment: String::new(),
                     size_bucket: Some(bucket.clone()),
                 };
-                local.entry((format, Some(bucket))).or_default().offer(
+                let key = (format, Some(bucket));
+                stratum_family.insert(key.clone(), family);
+                local.entry(key).or_default().offer(
                     row,
                     PAIRS_PER_REPOSITORY_PER_STRATUM,
                     &mut rng,
@@ -637,11 +659,16 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
         Ok(())
     });
 
-    let available: Vec<(CapacityKey, usize)> = strata
-        .iter()
-        .map(|(key, reservoir)| (key.clone(), reservoir.items.len()))
-        .collect();
-    let quotas = even_quotas(&available, shortfall);
+    // Each family's shortfall over its own strata.
+    let mut quotas = HashMap::new();
+    for family in families {
+        let available: Vec<(CapacityKey, usize)> = strata
+            .iter()
+            .filter(|(key, _)| stratum_family.get(*key) == Some(family))
+            .map(|(key, reservoir)| (key.clone(), reservoir.items.len()))
+            .collect();
+        quotas.extend(even_quotas(&available, shortfalls[family]));
+    }
     let mut picked = HashMap::new();
     for (key, mut reservoir) in strata {
         let quota = quotas.get(&key).copied().unwrap_or(0);
@@ -658,7 +685,7 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
     }
     let added: usize = picked.values().map(|r| r.items.len()).sum();
     write_csv(output, existing_rows, picked)?;
-    println!("Added {added} {} pairs to {output:?}", family.name());
+    println!("Added {added} pairs of {} to {output:?}", names.join(", "));
     Ok(())
 }
 
@@ -732,6 +759,73 @@ fn write_csv(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// One walk samples every family asked for, each into its own dataset, and nothing else.
+    #[test]
+    fn several_families_share_one_walk() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let dir = root.path().join("repo");
+        let repo = git2::Repository::init(&dir)?;
+        let png = |pixel: u8| {
+            let mut bytes = Vec::new();
+            image::RgbaImage::from_pixel(4, 4, image::Rgba([pixel, 0, 0, 255]))
+                .write_to(
+                    &mut std::io::Cursor::new(&mut bytes),
+                    image::ImageFormat::Png,
+                )
+                .unwrap();
+            bytes
+        };
+        let zip = |text: &str| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            writer
+                .start_file("a.txt", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            std::io::Write::write_all(&mut writer, text.as_bytes()).unwrap();
+            writer.finish().unwrap();
+            bytes
+        };
+        let mut parent: Option<git2::Oid> = None;
+        for (pixel, text) in [(0u8, "one"), (255, "two")] {
+            let mut builder = repo.treebuilder(None)?;
+            for (name, bytes) in [
+                ("logo.png", png(pixel)),
+                ("bundle.zip", zip(text)),
+                ("notes.txt", text.as_bytes().to_vec()),
+            ] {
+                builder.insert(name, repo.blob(&bytes)?, 0o100644)?;
+            }
+            let tree = repo.find_tree(builder.write()?)?;
+            let signature = git2::Signature::now("t", "t@example.com")?;
+            let parents: Vec<git2::Commit> = parent
+                .map(|oid| repo.find_commit(oid))
+                .transpose()?
+                .into_iter()
+                .collect();
+            let parents: Vec<&git2::Commit> = parents.iter().collect();
+            parent =
+                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+        }
+
+        let output = root.path().join("sample.csv");
+        let mut args = args(root.path().to_str().unwrap(), None, false);
+        args.total = 5;
+        args.max_commits_per_repo = 50;
+        args.seed = Some(1);
+        sample_content(&args, &output, &[Family::Archives, Family::Pictures])?;
+        let rows = read_existing_rows(&output)?;
+        let datasets: HashSet<(&str, &str)> = rows
+            .iter()
+            .map(|row| (row.dataset.as_str(), row.path.as_str()))
+            .collect();
+        assert_eq!(
+            datasets,
+            HashSet::from([("pictures", "logo.png"), ("archives", "bundle.zip")]),
+            "the text file is in neither"
+        );
+        Ok(())
+    }
 
     #[test]
     fn picture_quotas_are_even_and_a_short_stratum_gives_its_share_away() {
@@ -952,7 +1046,7 @@ mod tests {
             max_commits_per_repo: 1,
             dataset: dataset.map(str::to_string),
             stratified,
-            content: None,
+            content: Vec::new(),
             encodings: false,
             pictures: false,
             total: 0,
