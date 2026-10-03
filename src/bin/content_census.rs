@@ -32,12 +32,13 @@
 //!   within [`DIFF_SECONDS`].
 //! * `binary`: anything else, including a pair whose sides are content of different kinds.
 //!
-//! A side is the blob at `path` in the commit and in its first parent; a file added, deleted or
-//! renamed has one side, and is judged by it. `missing` marks a line whose commit or path is not
+//! A side is the blob at `path` in the commit and in its first parent, as their tree diff says;
+//! a file added, deleted or renamed has one side, and is judged by it. `missing` marks a line whose commit or path is not
 //! in the repository.
 
+use std::collections::HashMap;
 use std::io::{BufRead, BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
 
@@ -61,26 +62,41 @@ struct Args {
     diff: bool,
 }
 
-/// The blob at `path` in `commit`'s tree, if there is one.
-fn blob(repo: &Repository, commit: &git2::Commit, path: &Path) -> Option<Vec<u8>> {
-    let entry = commit.tree().ok()?.get_path(path).ok()?;
-    Some(repo.find_blob(entry.id()).ok()?.content().to_vec())
+/// The blob ids of every file a commit changed, by path: before (in its first parent) and after.
+type Changes = HashMap<String, (Option<Oid>, Option<Oid>)>;
+
+/// [`Changes`] of `commit`, from one tree diff. Looking each path up in the trees instead parses
+/// the whole of a directory's tree object per lookup: a directory of a hundred thousand keys
+/// (rpm-software-management-distribution-gpg-keys) made that 150 ms a file.
+fn changes(repo: &Repository, commit: &str) -> Option<Changes> {
+    let commit = repo.find_commit(Oid::from_str(commit).ok()?).ok()?;
+    let tree = commit.tree().ok()?;
+    let parent = commit.parent(0).ok().and_then(|parent| parent.tree().ok());
+    let diff = repo
+        .diff_tree_to_tree(parent.as_ref(), Some(&tree), None)
+        .ok()?;
+    let id = |file: git2::DiffFile| (!file.id().is_zero()).then(|| file.id());
+    Some(
+        diff.deltas()
+            .filter_map(|delta| {
+                let path = delta.new_file().path().or(delta.old_file().path())?;
+                Some((
+                    path.to_string_lossy().into_owned(),
+                    (id(delta.old_file()), id(delta.new_file())),
+                ))
+            })
+            .collect(),
+    )
 }
 
-/// The outcome of one change (see the module doc).
-fn outcome(repo: &Repository, commit: &str, path: &str, diff: bool) -> String {
-    let Some(commit) = Oid::from_str(commit)
-        .ok()
-        .and_then(|oid| repo.find_commit(oid).ok())
-    else {
+/// The outcome of one change (see the module doc), from its commit's [`Changes`].
+fn outcome(repo: &Repository, changes: Option<&Changes>, path: &str, diff: bool) -> String {
+    let Some(&(before, after)) = changes.and_then(|changes| changes.get(path)) else {
         return "missing".to_string();
     };
-    let path = Path::new(path);
-    let after = blob(repo, &commit, path);
-    let before = commit
-        .parent(0)
-        .ok()
-        .and_then(|parent| blob(repo, &parent, path));
+    let blob =
+        |id: Option<Oid>| -> Option<Vec<u8>> { Some(repo.find_blob(id?).ok()?.content().to_vec()) };
+    let (before, after) = (blob(before), blob(after));
     if before.is_none() && after.is_none() {
         return "missing".to_string();
     }
@@ -126,14 +142,20 @@ fn main() -> Result<()> {
     // A panicking diff is an outcome, not news on stderr for every one of them.
     std::panic::set_hook(Box::new(|_| {}));
     let mut out = BufWriter::new(std::io::stdout().lock());
+    // The lines come a commit at a time: its changes are read once.
+    let mut current: Option<(String, Option<Changes>)> = None;
     for line in std::io::stdin().lock().lines() {
         let line = line?;
         let Some((commit, path)) = line.split_once('\t') else {
             continue;
         };
-        writeln!(out, "{path}\t{}", outcome(&repo, commit, path, args.diff))?;
-        out.flush()?;
+        if current.as_ref().is_none_or(|(id, _)| id != commit) {
+            current = Some((commit.to_string(), changes(&repo, commit)));
+        }
+        let changed = current.as_ref().and_then(|(_, changes)| changes.as_ref());
+        writeln!(out, "{path}\t{}", outcome(&repo, changed, path, args.diff))?;
     }
+    out.flush()?;
     Ok(())
 }
 
@@ -186,11 +208,13 @@ mod tests {
     #[test]
     fn each_change_gets_omnidiffs_own_verdict() {
         let (_dir, repo, head) = repository();
-        assert_eq!(outcome(&repo, &head, "a.txt", true), "text");
-        assert_eq!(outcome(&repo, &head, "b.png", true), "pictures");
-        assert_eq!(outcome(&repo, &head, "b.png", false), "pictures");
-        assert_eq!(outcome(&repo, &head, "c.bin", true), "binary");
-        assert_eq!(outcome(&repo, &head, "nowhere", true), "missing");
-        assert_eq!(outcome(&repo, "0123", "a.txt", true), "missing");
+        let changed = changes(&repo, &head);
+        let outcome = |path, diff| outcome(&repo, changed.as_ref(), path, diff);
+        assert_eq!(outcome("a.txt", true), "text");
+        assert_eq!(outcome("b.png", true), "pictures");
+        assert_eq!(outcome("b.png", false), "pictures");
+        assert_eq!(outcome("c.bin", true), "binary");
+        assert_eq!(outcome("nowhere", true), "missing");
+        assert!(changes(&repo, "0123").is_none());
     }
 }

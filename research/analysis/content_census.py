@@ -28,10 +28,14 @@ each clone, through `edit_shape_stats.numstat_rows`), each change judged by Omni
 With `--diff` (the Makefile's default) every content pair is diffed, so a family counts only the
 pairs that diff.
 
-Two files, because a handful of repositories hold most binary changes (the change census): by
-key (extension, or name for a file without one) and outcome, with how many repositories; and by
-repository and outcome, for a repository-weighted share. The summary on stderr gives both: the
-share of changes diffed as text or content, and the mean of each repository's own share.
+Two files, because a handful of repositories hold most changes (the change census): by key
+(extension, or name for a file without one) and outcome, with how many repositories; and by
+repository and outcome. One repository's 50 commits can touch 159,244 files
+(rpm-software-management-distribution-gpg-keys, every one text), so the raw share of changes
+measures a few giants. The summary on stderr gives three shares of changes diffed as text or
+content: raw; capped, each repository's counts weighted by min(1, cap / its changes) - exactly
+what sampling `--cap` of its changes uniformly would give on average, without the randomness; and
+the mean of each repository's own share, every repository counting once.
 
 Usage (from research/):
     uv run ./analysis/content_census.py [--repositories DIR] [--max-commits N] [--jobs N]
@@ -91,6 +95,9 @@ def main():
     parser.add_argument("--jobs", type=int, default=os.cpu_count())
     parser.add_argument("--no-diff", action="store_true", help="recognise content, do not diff it")
     parser.add_argument(
+        "--cap", type=int, default=1000, help="changes per repository the capped share counts"
+    )
+    parser.add_argument(
         "--tool",
         default=os.path.join(
             os.path.dirname(__file__), "..", "..", "target", "release", "content_census"
@@ -130,25 +137,47 @@ def main():
             for outcome, count in sorted(by_repository[name].items()):
                 writer.writerow([name, outcome, count])
 
+    print(summary(by_repository, args.cap), file=sys.stderr)
+
+
+def summary(by_repository, cap):
+    """The outcomes' shares, and the three shares of changes diffed as text or content."""
+
+    def counted(tally):
+        return {outcome: count for outcome, count in tally.items() if outcome != "missing"}
+
     outcomes = collections.Counter()
-    for tally in by_repository.values():
-        outcomes.update(tally)
-    total = sum(count for outcome, count in outcomes.items() if outcome != "missing")
-    seen = sum(count for outcome, count in outcomes.items() if covered(outcome))
+    capped = collections.Counter()
     shares = []
     for tally in by_repository.values():
-        changes = sum(count for outcome, count in tally.items() if outcome != "missing")
-        if changes:
-            shares.append(sum(c for o, c in tally.items() if covered(o)) / changes)
-    print(f"{len(repos)} repositories, {total} changed files", file=sys.stderr)
+        tally = counted(tally)
+        changes = sum(tally.values())
+        if not changes:
+            continue
+        outcomes.update(tally)
+        weight = min(1.0, cap / changes)
+        for outcome, count in tally.items():
+            capped[outcome] += weight * count
+        shares.append(sum(c for o, c in tally.items() if covered(o)) / changes)
+
+    def share(counter):
+        total = sum(counter.values())
+        return 100 * sum(c for o, c in counter.items() if covered(o)) / max(total, 1)
+
+    total = sum(outcomes.values())
+    lines = [f"{len(shares)} repositories with changes, {total} changed files"]
     for outcome, count in outcomes.most_common():
-        print(f"  {outcome:24} {count:9} {100 * count / max(total, 1):7.3f}%", file=sys.stderr)
-    print(
-        f"diffed as text or content: {100 * seen / max(total, 1):.3f}% of changes; "
+        lines.append(
+            f"  {outcome:24} {count:9} {100 * count / max(total, 1):7.3f}%"
+            f"  capped {100 * capped[outcome] / max(sum(capped.values()), 1):7.3f}%"
+        )
+    lines.append(
+        f"diffed as text or content: {share(outcomes):.3f}% of changes; "
+        f"{share(capped):.3f}% at most {cap} per repository; "
         f"{100 * sum(shares) / max(len(shares), 1):.3f}% per repository on average; "
-        f"{sum(1 for share in shares if share == 1.0)} of {len(shares)} repositories entirely",
-        file=sys.stderr,
+        f"{sum(1 for s in shares if s == 1.0)} of {len(shares)} repositories entirely"
     )
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
