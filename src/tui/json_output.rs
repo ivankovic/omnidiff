@@ -59,6 +59,9 @@
 //! `content`: the same diff tagged with its `kind` (`"picture"`, for the picture above). `picture`
 //! stays for the consumers written before `content`.
 //!
+//! A side whose file is UTF-16 or UTF-32 (announced by a byte order mark) carries `encoding`
+//! (`"UTF-16LE"`, ...); its `hunks` are ranges in the UTF-8 text the file decodes to.
+//!
 //! Each side's `hunks` are ranges in that side's own file. Rows and columns are 0-indexed.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
@@ -172,7 +175,24 @@ struct JsonHunk {
 struct JsonSide {
     path: PathBuf,
     language: Option<String>,
+    /// The file's encoding when it is not UTF-8 (`"UTF-16LE"`, see `code::Encoding`); the hunks
+    /// are still in the UTF-8 text it decodes to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    encoding: Option<&'static str>,
     hunks: Vec<JsonHunk>,
+}
+
+/// [`JsonSide::encoding`] of the file at `path`, from its byte order mark.
+fn encoding_of(path: &Path) -> Option<&'static str> {
+    use std::io::Read;
+    let mut mark = Vec::with_capacity(4);
+    std::fs::File::open(path)
+        .and_then(|file| file.take(4).read_to_end(&mut mark))
+        .ok()?;
+    match crate::code::Encoding::of(&mark) {
+        crate::code::Encoding::Utf8 => None,
+        encoding => Some(encoding.name()),
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -229,6 +249,7 @@ fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     JsonSide {
         path: path.to_path_buf(),
         language: language.map(|lang| stable_name(lang).to_string()),
+        encoding: encoding_of(path),
         hunks,
     }
 }
@@ -269,6 +290,7 @@ pub fn binary_diff_json(
     let side = |path: &Path| JsonSide {
         path: path.to_path_buf(),
         language: language_for_path(path).map(|lang| stable_name(lang).to_string()),
+        encoding: None,
         hunks: Vec::new(),
     };
     let diff = JsonDiff {
@@ -540,6 +562,25 @@ mod tests {
         assert_eq!(json["picture"]["before"]["width"], 20);
         assert_eq!(json["picture"]["comparison"]["kind"], "pixels");
         assert_eq!(json["picture"]["comparison"]["regions"][0]["height"], 3);
+        Ok(())
+    }
+
+    #[test]
+    fn a_utf16_side_names_its_encoding_and_a_utf8_side_does_not() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let (utf16, utf8) = (dir.path().join("a.xml"), dir.path().join("b.xml"));
+        let text = "\u{feff}<a/>\n";
+        std::fs::write(
+            &utf16,
+            text.encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<u8>>(),
+        )?;
+        std::fs::write(&utf8, text)?;
+        let json = serde_json::to_value(build_side(text, &utf16, &[]))?;
+        assert_eq!(json["encoding"], "UTF-16LE");
+        let json = serde_json::to_value(build_side(text, &utf8, &[]))?;
+        assert!(json.get("encoding").is_none(), "{json}");
         Ok(())
     }
 

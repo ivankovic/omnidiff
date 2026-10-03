@@ -1414,9 +1414,9 @@ fn raw_before_after(dir: &Path) -> Option<(String, String)> {
             continue;
         };
         if name.starts_with("before.") && name.ends_with(".test") {
-            before = fs::read_to_string(&path).ok();
+            before = omnidiff::code::read_text(&path).ok();
         } else if name.starts_with("after.") && name.ends_with(".test") {
-            after = fs::read_to_string(&path).ok();
+            after = omnidiff::code::read_text(&path).ok();
         }
     }
 

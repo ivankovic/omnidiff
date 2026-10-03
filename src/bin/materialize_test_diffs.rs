@@ -334,10 +334,10 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
     let tree = commit.tree()?;
 
     let path = Path::new(&row.path);
-    // Content (a picture, a font, ...) is copied byte for byte; code must be text, since every
-    // tool reads it as such.
+    // Content (a picture, a font, ...) is copied byte for byte, and so is text in UTF-16 or UTF-32
+    // (`sample_test_diffs --encodings`); other code must be UTF-8, since every tool reads it so.
     let content = omnidiff::diff::content::Family::from_name(&row.dataset).is_some();
-    let (before, after) = if content {
+    let (before, after) = if content || row.dataset == "encodings" {
         (
             omnidiff::stats::git::blob_bytes(&repo, &parent_tree, path)?,
             omnidiff::stats::git::blob_bytes(&repo, &tree, path)?,

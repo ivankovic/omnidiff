@@ -40,8 +40,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use omnidiff::anomalous_paths;
-use omnidiff::code::Language;
 use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
+use omnidiff::code::{Encoding, Language, decode_text};
 use omnidiff::diff::content::{self, Family, Probe};
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
 use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
@@ -99,6 +99,12 @@ struct Args {
     /// `--count`, and `--max-commits-per-repo` should be the census window, 50.
     #[arg(long, value_parser = parse_family)]
     content: Option<Family>,
+
+    /// Sample text in UTF-16 or UTF-32 (with a byte order mark, see `code::Encoding`) instead of
+    /// UTF-8: rows tagged dataset "encodings", `--count` per language, grammar or not (a file
+    /// without one is a painting-only fixture).
+    #[arg(long, default_value_t = false)]
+    encodings: bool,
 
     /// `--content pictures`, as the first picture draw was run.
     #[arg(long, default_value_t = false)]
@@ -201,6 +207,16 @@ fn read_existing_rows(path: &Path) -> Result<Vec<Row>> {
 /// Resolves `--dataset` against `--stratified` (see `Args::dataset`). A conflict is an error, not
 /// an override: either way round, stratified rows would land in a non-stratified corpus silently.
 fn resolve_dataset(args: &Args) -> Result<String> {
+    if args.encodings {
+        return match (args.dataset.as_deref(), args.stratified) {
+            (_, true) => bail!("--encodings and --stratified are separate samples"),
+            (Some(dataset), _) if dataset != ENCODINGS_DATASET => bail!(
+                "--encodings samples are tagged \"{ENCODINGS_DATASET}\" - omit --dataset, not \
+                 --dataset {dataset}"
+            ),
+            _ => Ok(ENCODINGS_DATASET.to_string()),
+        };
+    }
     match (args.dataset.as_deref(), args.stratified) {
         (Some(dataset), true) if dataset != "stratified" => bail!(
             "--stratified samples are provenance-tagged \"stratified\" (the sampling method, not \
@@ -277,6 +293,7 @@ fn main() -> Result<()> {
             args.count,
             &dataset,
             args.stratified,
+            args.encodings,
             &existing_counts,
             &existing_keys,
             &mut reservoirs,
@@ -292,6 +309,20 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// The dataset `--encodings` rows are tagged with, and promoted into.
+const ENCODINGS_DATASET: &str = "encodings";
+
+/// The line count of a blob in the size limits that is text in UTF-16 or UTF-32, by its byte
+/// order mark; `None` for UTF-8 and for anything that does not decode.
+fn encoded_loc(repo: &git2::Repository, oid: git2::Oid) -> Option<usize> {
+    let blob = repo.find_blob(oid).ok()?;
+    let bytes = blob.content();
+    if bytes.len() < MIN_BYTES || bytes.len() > MAX_BYTES || Encoding::of(bytes) == Encoding::Utf8 {
+        return None;
+    }
+    Some(decode_text(bytes)?.lines().count())
+}
+
 /// Walks every non-merge commit in the repository and offers each purely-modified file's
 /// (commit, path) to the reservoir for its `capacity_key` (language, or (language, size bucket)
 /// under `stratified`), topping up towards `target_count` per key.
@@ -304,6 +335,7 @@ fn sample_repository(
     target_count: usize,
     dataset: &str,
     stratified: bool,
+    encodings: bool,
     existing_counts: &HashMap<CapacityKey, usize>,
     existing_keys: &HashSet<SampleKey>,
     reservoirs: &mut HashMap<CapacityKey, Reservoir<Row>>,
@@ -328,7 +360,43 @@ fn sample_repository(
             return Ok(());
         }
 
-        let Some(mut language) = language_for_path(path) else {
+        let language = language_for_path(path);
+        // Text in another encoding is sampled grammar or not: without one, it is painted.
+        if encodings {
+            let (Some(before_loc), Some(after_loc)) = (
+                encoded_loc(repo, delta.old_file().id()),
+                encoded_loc(repo, delta.new_file().id()),
+            ) else {
+                return Ok(());
+            };
+            let language = language.map_or("Text".to_string(), |language| language.to_string());
+            let path = path.to_string_lossy().into_owned();
+            if existing_keys.contains(&(repository_name.to_string(), id.to_string(), path.clone()))
+            {
+                return Ok(());
+            }
+            let cap_key = capacity_key(&language, None, false);
+            let capacity = *capacities.entry(cap_key.clone()).or_insert_with(|| {
+                target_count.saturating_sub(existing_counts.get(&cap_key).copied().unwrap_or(0))
+            });
+            let row = Row {
+                language,
+                repository: repository_name.to_string(),
+                commit: id.to_string(),
+                path,
+                promoted_to: String::new(),
+                dataset: dataset.to_string(),
+                status: "SAMPLED".to_string(),
+                comment: String::new(),
+                size_bucket: Some(loc_bucket(before_loc.max(after_loc)).to_string()),
+            };
+            reservoirs
+                .entry(cap_key)
+                .or_default()
+                .offer(row, capacity, rng);
+            return Ok(());
+        }
+        let Some(mut language) = language else {
             return Ok(());
         };
         // Only `.ts` needs content to disambiguate (Qt Linguist vs. TypeScript); gating on it
@@ -663,6 +731,29 @@ mod tests {
     }
 
     #[test]
+    fn encodings_take_utf16_and_utf32_text_and_nothing_else() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = git2::Repository::init(dir.path()).unwrap();
+        let utf16: Vec<u8> = "\u{feff}a\nb\n"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        let utf32: Vec<u8> = "\u{feff}a\n"
+            .chars()
+            .flat_map(|c| (c as u32).to_be_bytes())
+            .collect();
+        let blob = |bytes: &[u8]| repo.blob(bytes).unwrap();
+        assert_eq!(encoded_loc(&repo, blob(&utf16)), Some(2));
+        assert_eq!(encoded_loc(&repo, blob(&utf32)), Some(1));
+        assert_eq!(encoded_loc(&repo, blob(b"a\nb\n")), None, "UTF-8");
+        assert_eq!(
+            encoded_loc(&repo, blob(&[0xFF, 0xFE, 0x00, 0xD8])),
+            None,
+            "broken"
+        );
+    }
+
+    #[test]
     fn picture_sizes_bucket_by_pixel_count() {
         assert_eq!(size_bucket(Family::Pictures, 16 * 16), "icon");
         assert_eq!(size_bucket(Family::Pictures, 200 * 120), "small");
@@ -704,6 +795,7 @@ mod tests {
             target_count,
             "small",
             stratified,
+            false,
             &existing_counts,
             &existing_keys,
             &mut reservoirs,
@@ -834,6 +926,7 @@ mod tests {
             dataset: dataset.map(str::to_string),
             stratified,
             content: None,
+            encodings: false,
             pictures: false,
             total: 0,
         }
