@@ -69,52 +69,9 @@ pub const REGION_GAP: u32 = 2;
 /// the picture fixtures measure how far the two agree.
 pub const REPLACED_SHARE: f64 = 0.5;
 
-/// What happened to a picture, in one word: the question a picture fixture's human verdict
-/// answers, and the engine's answer to it ([`PictureDiff::verdict`]).
-///
-/// A pair can fit more than one, and a fixture records exactly one, so the first that fits wins:
-/// replaced, then content change, then resized, then frame rate change, then no visible change. A
-/// different picture at a new size is replaced; a picture both rescaled and edited is a content
-/// change; an animation whose frames changed as well as their timing is a content change. The engine does
-/// not follow this order yet: it compares no pixels across a size change, so it calls every such
-/// pair resized, and the fixtures that disagree record it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Verdict {
-    /// The same picture, edited: something in it changed, half of it or less.
-    ContentChange,
-    /// Nothing a reader would see changed: re-encoded, re-compressed, or only metadata.
-    NoVisibleChange,
-    /// Scaled or re-cropped to a different size, and nothing else.
-    Resized,
-    /// A different picture altogether, or the same one with more than half of it edited
-    /// ([`REPLACED_SHARE`]).
-    Replaced,
-    /// An animation showing the same frames for different times.
-    FrameRateChange,
-}
-
-impl Verdict {
-    /// In the order `human_solver`'s number keys pick them; new verdicts go at the end, so the
-    /// keys do not move under a hand that knows them.
-    pub const ALL: [Verdict; 5] = [
-        Verdict::ContentChange,
-        Verdict::NoVisibleChange,
-        Verdict::Resized,
-        Verdict::Replaced,
-        Verdict::FrameRateChange,
-    ];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Verdict::ContentChange => "content change",
-            Verdict::NoVisibleChange => "no visible change",
-            Verdict::Resized => "resized",
-            Verdict::Replaced => "replaced",
-            Verdict::FrameRateChange => "frame rate change",
-        }
-    }
-}
+/// What happened to a picture, in one word (see [`super::content::Verdict`], which every kind
+/// of content shares).
+pub use super::content::Verdict;
 
 /// True if `path` names a raster picture by its extension.
 pub fn is_picture_path(path: &std::path::Path) -> bool {

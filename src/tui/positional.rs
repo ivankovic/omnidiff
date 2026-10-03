@@ -51,6 +51,20 @@ pub fn invoked_as_git_external_diff(paths: &[PathBuf]) -> bool {
     matches!(paths.len(), 7 | 9)
 }
 
+/// The headless report of a pair diffed by content (see [`crate::diff::content`]).
+pub fn content_notice(
+    paths: &[PathBuf],
+    before: &Path,
+    after: &Path,
+    diff: &crate::diff::content::ContentDiff,
+) -> String {
+    match diff {
+        crate::diff::content::ContentDiff::Picture(picture) => {
+            picture_notice(paths, before, after, picture)
+        }
+    }
+}
+
 /// The headless report of a picture pair (see [`crate::diff::picture`]), named the way
 /// [`binary_notice`] names a pair: what each side is, then how much changed and where. Lists the
 /// ten largest regions.

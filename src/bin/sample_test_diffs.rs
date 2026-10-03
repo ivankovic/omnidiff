@@ -23,9 +23,10 @@
 //! `--stratified` samples per (language, [`omnidiff::stats::sampling::LOC_BUCKETS`] bucket), and
 //! `--count` then means per bucket - unlike `sample_code_pairs --count`, a per-language total.
 //!
-//! `--pictures` samples picture pairs instead (see `sample_pictures`), for the picture fixtures
-//! under `src/test/data/pictures/`: tagged dataset "pictures", promoted by `human_solver`'s picture
-//! session with a verdict. The first draw, 2026-10-02:
+//! `--content <family>` samples pairs of one content family instead (see `sample_content` and
+//! `diff::content::Family`), for the fixtures under `src/test/data/<family>/`: tagged with the
+//! family as their dataset, promoted by `human_solver`'s content session with verdicts.
+//! `--pictures` is `--content pictures`. The first picture draw, 2026-10-02:
 //! `sample_test_diffs --pictures --repos-dir /var/tmp/research/full/repositories
 //! --max-commits-per-repo 50 --total 250 --seed 20261002`, then `materialize_test_diffs`.
 use anyhow::{Result, bail};
@@ -41,6 +42,7 @@ use std::path::{Path, PathBuf};
 use omnidiff::anomalous_paths;
 use omnidiff::code::Language;
 use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
+use omnidiff::diff::content::{self, Family, Probe};
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
 use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
 use omnidiff::stats::sampling::{Reservoir, loc_bucket};
@@ -91,15 +93,20 @@ struct Args {
     #[arg(long, default_value_t = false)]
     stratified: bool,
 
-    /// Sample picture pairs instead of code (see `sample_pictures`): rows tagged dataset
-    /// "pictures", the format in the `language` column and `<size>-<same|resized>` as the bucket.
-    /// `--total` replaces `--count`, and `--max-commits-per-repo` should be the census window, 50.
+    /// Sample pairs of one content family instead of code (see `sample_content`): `pictures`,
+    /// ... (`diff::content::Family`). Rows are tagged with the family as their dataset, the
+    /// format in the `language` column and `<size>-<shape>` as the bucket. `--total` replaces
+    /// `--count`, and `--max-commits-per-repo` should be the census window, 50.
+    #[arg(long, value_parser = parse_family)]
+    content: Option<Family>,
+
+    /// `--content pictures`, as the first picture draw was run.
     #[arg(long, default_value_t = false)]
     pictures: bool,
 
-    /// Under `--pictures`: how many picture pairs the dataset should hold, spread evenly over the
-    /// strata that occur. Existing picture rows count towards it.
-    #[arg(long, default_value_t = 250)]
+    /// Under `--content`: how many pairs the family's dataset should hold, spread evenly over the
+    /// strata that occur. Existing rows of the family count towards it.
+    #[arg(long, default_value_t = 100)]
     total: usize,
 }
 
@@ -227,8 +234,8 @@ fn capacity_key(language: &str, bucket: Option<&str>, stratified: bool) -> Capac
 fn main() -> Result<()> {
     let args = Args::parse();
     let output = args.output.clone().unwrap_or_else(default_output_path);
-    if args.pictures {
-        return sample_pictures(&args, &output);
+    if let Some(family) = args.content.or(args.pictures.then_some(Family::Pictures)) {
+        return sample_content(&args, &output, family);
     }
     let dataset = resolve_dataset(&args)?;
 
@@ -387,56 +394,79 @@ fn sample_repository(
     })
 }
 
-/// The dataset picture rows are tagged with, and promoted into (`src/test/data/pictures/`).
-const PICTURE_DATASET: &str = "pictures";
+fn parse_family(name: &str) -> Result<Family, String> {
+    Family::from_name(name).ok_or_else(|| {
+        let names: Vec<&str> = Family::ALL.iter().map(|family| family.name()).collect();
+        format!("expected one of {}", names.join(", "))
+    })
+}
 
 /// How many pairs one repository may contribute to one stratum: a handful of repositories hold
-/// most picture changes (the change census), and without a cap they would be most of the sample.
-const PICTURES_PER_REPOSITORY_PER_STRATUM: usize = 2;
+/// most changes of a binary format (the change census), and without a cap they would be most of
+/// the sample.
+const PAIRS_PER_REPOSITORY_PER_STRATUM: usize = 2;
 
-/// The size half of a picture stratum, by the larger side's pixel count.
-fn picture_size_bucket(pixels: u64) -> &'static str {
-    match pixels {
-        0..=4_096 => "icon",
-        4_097..=65_536 => "small",
-        65_537..=1_048_576 => "medium",
-        _ => "large",
+/// The largest side a family's sample holds. Pictures keep the code sample's cap; a font, an
+/// archive or a PDF is often larger than any source file.
+fn max_bytes(family: Family) -> usize {
+    match family {
+        Family::Pictures => MAX_BYTES,
     }
 }
 
-/// A picture side the sample can hold: a picture by its bytes (which also drops Git LFS pointers,
-/// text files named `.png`), within the size limits, and its format and dimensions read from the
-/// header without decoding the pixels.
-fn picture_side(repo: &git2::Repository, oid: git2::Oid) -> Option<(String, u32, u32)> {
+/// The size half of a stratum, by the larger side's [`Probe::size`]: pixels for a picture.
+fn size_bucket(family: Family, size: u64) -> &'static str {
+    match family {
+        Family::Pictures => match size {
+            0..=4_096 => "icon",
+            4_097..=65_536 => "small",
+            65_537..=1_048_576 => "medium",
+            _ => "large",
+        },
+    }
+}
+
+/// The shape half of a stratum: whether the two sides have the same shape ([`Probe::shape`]),
+/// in the family's words.
+fn shape_label(family: Family, same: bool) -> &'static str {
+    match (family, same) {
+        (Family::Pictures, true) => "same",
+        (Family::Pictures, false) => "resized",
+    }
+}
+
+/// True if a changed file at `path` may be of `family`: its extension is one the family's files
+/// carry. Whether it is, is the content's say ([`content_side`]).
+fn may_be(family: Family, path: &Path) -> bool {
+    path.extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .is_some_and(|ext| family.extensions().contains(&ext.as_str()))
+}
+
+/// A side the sample can hold: content of `family` by its bytes (which also drops Git LFS
+/// pointers, text files named `.png`), within the size limits, probed from its header.
+fn content_side(repo: &git2::Repository, oid: git2::Oid, family: Family) -> Option<Probe> {
     let blob = repo.find_blob(oid).ok()?;
     let bytes = blob.content();
-    if bytes.len() < MIN_BYTES
-        || bytes.len() > MAX_BYTES
-        || !omnidiff::diff::picture::is_picture(bytes)
-    {
+    if bytes.len() < MIN_BYTES || bytes.len() > max_bytes(family) {
         return None;
     }
-    let reader = image::ImageReader::new(std::io::Cursor::new(bytes))
-        .with_guessed_format()
-        .ok()?;
-    let format = format!("{:?}", reader.format()?).to_uppercase();
-    let (width, height) = reader.into_dimensions().ok()?;
-    Some((format, width, height))
+    content::probe(bytes).filter(|probe| probe.format.family() == family)
 }
 
-/// `--pictures`: tops `output`'s picture rows up to `--total` pairs. Every in-place picture
-/// modification of the last `--max-commits-per-repo` commits is a candidate; each repository
-/// offers at most [`PICTURES_PER_REPOSITORY_PER_STRATUM`] per stratum (format x size bucket x
-/// same size or resized), a pair already seen elsewhere (the same two blobs) is offered once, and
-/// the shortfall is split evenly over the strata that have candidates, a stratum with fewer giving
-/// its share to the rest.
-fn sample_pictures(args: &Args, output: &Path) -> Result<()> {
+/// `--content`: tops `output`'s rows of `family` up to `--total` pairs. Every in-place
+/// modification of the family's files in the last `--max-commits-per-repo` commits is a
+/// candidate; each repository offers at most [`PAIRS_PER_REPOSITORY_PER_STRATUM`] per stratum
+/// (format x size bucket x shape), a pair already seen elsewhere (the same two blobs) is offered
+/// once, and the shortfall is split evenly over the strata that have candidates, a stratum with
+/// fewer giving its share to the rest.
+fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
     let existing_rows = read_existing_rows(output)?;
-    let existing_pictures = existing_rows
+    let existing_family = existing_rows
         .iter()
-        .filter(|row| row.dataset == PICTURE_DATASET)
+        .filter(|row| row.dataset == family.name())
         .count();
-    let shortfall = args.total.saturating_sub(existing_pictures);
+    let shortfall = args.total.saturating_sub(existing_family);
     let existing_keys: HashSet<SampleKey> = existing_rows
         .iter()
         .map(|row| (row.repository.clone(), row.commit.clone(), row.path.clone()))
@@ -444,8 +474,9 @@ fn sample_pictures(args: &Args, output: &Path) -> Result<()> {
 
     let repo_paths = find_git_repositories(&args.repos_dir)?;
     println!(
-        "Found {} repositories; {shortfall} picture pairs to sample",
-        repo_paths.len()
+        "Found {} repositories; {shortfall} {} pairs to sample",
+        repo_paths.len(),
+        family.name()
     );
     let mut rng = match args.seed {
         Some(seed) => StdRng::seed_from_u64(seed),
@@ -469,9 +500,7 @@ fn sample_pictures(args: &Args, output: &Path) -> Result<()> {
                 let Some(path) = delta.new_file().path() else {
                     return Ok(());
                 };
-                if anomalous_paths::is_anomalous(path)
-                    || !omnidiff::diff::picture::is_picture_path(path)
-                {
+                if anomalous_paths::is_anomalous(path) || !may_be(family, path) {
                     return Ok(());
                 }
                 let path = path.to_string_lossy().into_owned();
@@ -483,38 +512,34 @@ fn sample_pictures(args: &Args, output: &Path) -> Result<()> {
                     return Ok(());
                 }
                 let (Some(before), Some(after)) = (
-                    picture_side(repo, delta.old_file().id()),
-                    picture_side(repo, delta.new_file().id()),
+                    content_side(repo, delta.old_file().id(), family),
+                    content_side(repo, delta.new_file().id(), family),
                 ) else {
                     return Ok(());
                 };
                 if !seen_pairs.insert((delta.old_file().id(), delta.new_file().id())) {
                     return Ok(());
                 }
-                let pixels = |(_, w, h): &(String, u32, u32)| u64::from(*w) * u64::from(*h);
-                let shape = if (before.1, before.2) == (after.1, after.2) {
-                    "same"
-                } else {
-                    "resized"
-                };
                 let bucket = format!(
-                    "{}-{shape}",
-                    picture_size_bucket(pixels(&before).max(pixels(&after)))
+                    "{}-{}",
+                    size_bucket(family, before.size.max(after.size)),
+                    shape_label(family, before.shape == after.shape)
                 );
+                let format = after.format.name();
                 let row = Row {
-                    language: after.0.clone(),
+                    language: format.clone(),
                     repository: repository_name.to_string(),
                     commit: id.to_string(),
                     path,
                     promoted_to: String::new(),
-                    dataset: PICTURE_DATASET.to_string(),
+                    dataset: family.name().to_string(),
                     status: "SAMPLED".to_string(),
                     comment: String::new(),
                     size_bucket: Some(bucket.clone()),
                 };
-                local.entry((after.0, Some(bucket))).or_default().offer(
+                local.entry((format, Some(bucket))).or_default().offer(
                     row,
-                    PICTURES_PER_REPOSITORY_PER_STRATUM,
+                    PAIRS_PER_REPOSITORY_PER_STRATUM,
                     &mut rng,
                 );
                 Ok(())
@@ -550,7 +575,7 @@ fn sample_pictures(args: &Args, output: &Path) -> Result<()> {
     }
     let added: usize = picked.values().map(|r| r.items.len()).sum();
     write_csv(output, existing_rows, picked)?;
-    println!("Added {added} picture pairs to {output:?}");
+    println!("Added {added} {} pairs to {output:?}", family.name());
     Ok(())
 }
 
@@ -639,10 +664,10 @@ mod tests {
 
     #[test]
     fn picture_sizes_bucket_by_pixel_count() {
-        assert_eq!(picture_size_bucket(16 * 16), "icon");
-        assert_eq!(picture_size_bucket(200 * 120), "small");
-        assert_eq!(picture_size_bucket(800 * 600), "medium");
-        assert_eq!(picture_size_bucket(4000 * 3000), "large");
+        assert_eq!(size_bucket(Family::Pictures, 16 * 16), "icon");
+        assert_eq!(size_bucket(Family::Pictures, 200 * 120), "small");
+        assert_eq!(size_bucket(Family::Pictures, 800 * 600), "medium");
+        assert_eq!(size_bucket(Family::Pictures, 4000 * 3000), "large");
     }
     use omnidiff::stats::sampling::LOC_BUCKETS;
     use omnidiff::test::helper;
@@ -808,6 +833,7 @@ mod tests {
             max_commits_per_repo: 1,
             dataset: dataset.map(str::to_string),
             stratified,
+            content: None,
             pictures: false,
             total: 0,
         }

@@ -24,7 +24,7 @@ use clap::{Parser, Subcommand};
 
 use omnidiff::tui;
 use omnidiff::tui::positional::{
-    binary_notice, invoked_as_git_external_diff, picture_notice, resolve_before_after,
+    binary_notice, content_notice, invoked_as_git_external_diff, resolve_before_after,
 };
 
 mod configure_prompt;
@@ -314,12 +314,12 @@ fn exit_code_for(differed: bool, want_exit_code: bool, invoked_as_git_external_d
     }
 }
 
-/// True if `before` and `after` are a picture pair (see `diff::picture::is_picture_pair`).
-fn is_picture_pair(before: &std::path::Path, after: &std::path::Path) -> Result<bool> {
-    Ok(omnidiff::diff::picture::is_picture_pair(
-        &std::fs::read(before)?,
-        &std::fs::read(after)?,
-    ))
+/// True if `before` and `after` are a pair diffed by content (see `diff::content::pair_kind`).
+fn is_content_pair(before: &std::path::Path, after: &std::path::Path) -> Result<bool> {
+    Ok(
+        omnidiff::diff::content::pair_kind(&std::fs::read(before)?, &std::fs::read(after)?)
+            .is_some(),
+    )
 }
 
 /// Reports a pair with at least one binary side (the other may be git's empty `/dev/null`), in
@@ -328,19 +328,19 @@ fn is_picture_pair(before: &std::path::Path, after: &std::path::Path) -> Result<
 fn run_binary(args: &Args, before: &std::path::Path, after: &std::path::Path) -> Result<i32> {
     let (before_bytes, after_bytes) = (std::fs::read(before)?, std::fs::read(after)?);
     let differed = before_bytes != after_bytes;
-    // A picture that does not decode is reported as any other binary, never as an error.
-    let picture = omnidiff::diff::picture::is_picture_pair(&before_bytes, &after_bytes)
-        .then(|| omnidiff::diff::picture::diff(&before_bytes, &after_bytes).ok())
+    // Content that does not decode is reported as any other binary, never as an error.
+    let content = omnidiff::diff::content::diff(&before_bytes, &after_bytes)
+        .ok()
         .flatten();
     if should_run_json(args) {
         // Still a JSON object of the usual shape (flagged `binary`, no hunks): prose would break
         // every `--mode json` consumer.
-        let mut json = tui::json_output::binary_diff_json(before, after, picture.as_ref())?;
+        let mut json = tui::json_output::binary_diff_json(before, after, content.as_ref())?;
         json.push('\n');
         tui::headless::write_stdout(&json)?;
     } else {
-        let notice = match &picture {
-            Some(picture) => picture_notice(&args.paths, before, after, picture),
+        let notice = match &content {
+            Some(content) => content_notice(&args.paths, before, after, content),
             None => binary_notice(&args.paths, before, after, differed),
         };
         tui::headless::write_stdout(&notice)?;
@@ -424,11 +424,11 @@ async fn run() -> Result<i32> {
     if let Some((before, after)) = before_after.as_ref() {
         let either_is_binary =
             omnidiff::code::is_binary_file(before)? || omnidiff::code::is_binary_file(after)?;
-        // A picture pair the TUI would show goes on to the TUI's picture view; every other binary
-        // pair, and any picture pair headless or as JSON, is answered here.
+        // A pair diffed by content goes on to the TUI's content view; every other binary pair, and
+        // any content pair headless or as JSON, is answered here.
         let tui =
             !should_run_json(&args) && !should_run_headless(&args, std::io::stdout().is_terminal());
-        if either_is_binary && !(tui && is_picture_pair(before, after)?) {
+        if either_is_binary && !(tui && is_content_pair(before, after)?) {
             return run_binary(&args, before, after);
         }
     }
@@ -467,6 +467,7 @@ async fn run() -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use omnidiff::tui::positional::picture_notice;
 
     #[test]
     fn resolve_before_after_with_no_args_starts_an_empty_viewer() {

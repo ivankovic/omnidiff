@@ -49,6 +49,7 @@
 //! in a way a pass could detect (AGENT_LOG, N:M Phase 0), so today only a human mapping's
 //! all-to-all groups arrive here, through `test::helper::human_mapping`.
 pub mod apted;
+pub mod content;
 pub mod cost;
 pub(crate) mod grouped_greedy_matcher;
 pub(crate) mod hash_tree_matching;

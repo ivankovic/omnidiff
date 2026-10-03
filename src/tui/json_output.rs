@@ -55,6 +55,10 @@
 //! }
 //! ```
 //!
+//! Every binary pair diffed by content (`diff::content`), pictures included, also carries
+//! `content`: the same diff tagged with its `kind` (`"picture"`, for the picture above). `picture`
+//! stays for the consumers written before `content`.
+//!
 //! Each side's `hunks` are ranges in that side's own file. Rows and columns are 0-indexed.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
@@ -189,6 +193,10 @@ struct JsonDiff {
     /// `diff::picture`). Absent otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     picture: Option<crate::diff::picture::PictureDiff>,
+    /// For any binary pair diffed by content, pictures included: the same, tagged with its `kind`
+    /// (see `diff::content`). Absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content: Option<crate::diff::content::ContentDiff>,
 }
 
 /// Re-parses `contents` for `nearest_reference_line`; not on a hot path, so the redundant parse
@@ -246,6 +254,7 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
         summary,
         binary: false,
         picture: None,
+        content: None,
     }
 }
 
@@ -255,7 +264,7 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
 pub fn binary_diff_json(
     before: &Path,
     after: &Path,
-    picture: Option<&crate::diff::picture::PictureDiff>,
+    content: Option<&crate::diff::content::ContentDiff>,
 ) -> Result<String> {
     let side = |path: &Path| JsonSide {
         path: path.to_path_buf(),
@@ -268,7 +277,10 @@ pub fn binary_diff_json(
         large_residual: false,
         summary: None,
         binary: true,
-        picture: picture.cloned(),
+        picture: content
+            .and_then(crate::diff::content::ContentDiff::as_picture)
+            .cloned(),
+        content: content.cloned(),
     };
     Ok(serde_json::to_string_pretty(&diff)?)
 }
@@ -520,9 +532,11 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(&binary_diff_json(
             Path::new("a.png"),
             Path::new("b.png"),
-            Some(&picture),
+            Some(&crate::diff::content::ContentDiff::Picture(picture)),
         )?)?;
         assert_eq!(json["binary"], true);
+        assert_eq!(json["content"]["kind"], "picture");
+        assert_eq!(json["content"]["before"], json["picture"]["before"]);
         assert_eq!(json["picture"]["before"]["width"], 20);
         assert_eq!(json["picture"]["comparison"]["kind"], "pixels");
         assert_eq!(json["picture"]["comparison"]["regions"][0]["height"], 3);

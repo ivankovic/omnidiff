@@ -44,7 +44,8 @@ use std::time::Duration;
 use anyhow::{Context, Result, bail};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use omnidiff::test::helper::human_picture::{self, HumanPicture, Verdict};
-use omnidiff::tui::components::picture_viewer::{self, PictureColors, PictureViewer};
+use omnidiff::tui::components::content_viewer::ContentViewer;
+use omnidiff::tui::components::picture_viewer::{self, PictureColors};
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -161,7 +162,7 @@ struct PictureSession {
     origin: Origin,
     /// The picture's path in its repository, for the title line.
     path: String,
-    viewer: PictureViewer,
+    viewer: ContentViewer,
     verdict: Option<Verdict>,
     /// The verdict on disk, to warn before quitting with an unsaved one.
     saved: Option<Verdict>,
@@ -197,7 +198,7 @@ pub(crate) fn run_picture_session(
     };
     let (before, after) =
         pair_paths(&dir).with_context(|| format!("{dir:?} has no before/after pair"))?;
-    let viewer = PictureViewer::open_for_annotation(&before, &after, picker())
+    let viewer = ContentViewer::open_for_annotation(&before, &after, picker())
         .with_context(|| format!("{dir:?} is not a pair of pictures that decode"))?;
     let saved = origin
         .fixture()
@@ -602,7 +603,7 @@ mod tests {
             name: name.to_string(),
             origin,
             path: path.to_string(),
-            viewer: PictureViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
             verdict: None,
             saved: None,
             reject_input: None,

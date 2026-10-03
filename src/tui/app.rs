@@ -39,11 +39,12 @@ use crate::review::{self, ChangeSet, ChangedFile, ReviewTarget};
 use crate::tui::actions::{Action, DiffOutcome, DiffSessionData};
 use crate::tui::components::{
     Component,
+    content_viewer::ContentViewer,
     diff_viewer::{DiffViewer, Panel},
     file_dialog::FileDialog,
     help_modal::HelpModal,
     line_prompt::LinePrompt,
-    picture_viewer::{PictureColors, PictureViewer},
+    picture_viewer::PictureColors,
     render_options_dialog::RenderOptionsDialog,
     review_dialog::ReviewDialog,
     search_modal::SearchModal,
@@ -177,8 +178,9 @@ pub struct App {
     /// Render options from the command line (`--minimal`, `--full`, ...), used instead of the
     /// saved ones for this run and not saved. `None` without such a flag.
     render_options_override: Option<RenderOptions>,
-    /// The view of a picture pair, shown instead of the diff viewer while it is `Some`.
-    picture_viewer: Option<PictureViewer>,
+    /// The view of a pair diffed by content (a picture pair, ...), shown instead of the diff
+    /// viewer while it is `Some`.
+    content_viewer: Option<ContentViewer>,
     /// The terminal's graphics protocol, once asked (see `run`); half blocks until then.
     graphics: Option<ratatui_image::picker::Picker>,
 }
@@ -286,7 +288,7 @@ impl App {
             plain_text_fallback: false,
             should_exit: false,
             render_options_override: None,
-            picture_viewer: None,
+            content_viewer: None,
             graphics: None,
         })
     }
@@ -325,9 +327,9 @@ impl App {
         ui.mouse = true;
         ui.enter()?;
         // The terminal answers a graphics query on stdin, so it is asked now, before the event
-        // stream reads it, and only when the pair on the command line is a picture pair: no
-        // other startup waits for the answer. Pictures opened later are drawn in half blocks.
-        if let Some(viewer) = self.picture_viewer.as_mut()
+        // stream reads it, and only when the pair on the command line is diffed by content: no
+        // other startup waits for the answer. Pairs opened later are drawn in half blocks.
+        if let Some(viewer) = self.content_viewer.as_mut()
             && let Some(picker) = crate::tui::components::picture_viewer::query_graphics()
         {
             viewer.set_picker(picker.clone());
@@ -410,7 +412,7 @@ impl App {
                 }
                 code if self.screen == AppScreen::Viewer
                     && self
-                        .picture_viewer
+                        .content_viewer
                         .as_mut()
                         .is_some_and(|viewer| viewer.handle_key(code)) =>
                 {
@@ -617,8 +619,8 @@ impl App {
         self.review_position = Some(position);
         match workspace.materialize(&root, &target) {
             Ok((before, after)) => {
-                self.picture_viewer = None;
-                if self.open_picture_pair(&before, &after) {
+                self.content_viewer = None;
+                if self.open_content_pair(&before, &after) {
                     return Ok(());
                 }
                 // Named by its repository path; the temp path says nothing the reader can use.
@@ -918,16 +920,16 @@ impl App {
         }
     }
 
-    /// Shows `before` and `after` as a picture pair if they are one; false, and nothing changed,
-    /// if not.
-    fn open_picture_pair(&mut self, before: &Path, after: &Path) -> bool {
+    /// Shows `before` and `after` by their content if they are a pair diffed by content; false,
+    /// and nothing changed, if not.
+    fn open_content_pair(&mut self, before: &Path, after: &Path) -> bool {
         let picker = self
             .graphics
             .clone()
             .unwrap_or_else(ratatui_image::picker::Picker::halfblocks);
-        match PictureViewer::open(before, after, picker) {
+        match ContentViewer::open(before, after, picker) {
             Some(viewer) => {
-                self.picture_viewer = Some(viewer);
+                self.content_viewer = Some(viewer);
                 self.last_error = None;
                 self.before_path = Some(before.to_path_buf());
                 self.after_path = Some(after.to_path_buf());
@@ -939,15 +941,16 @@ impl App {
 
     fn select_file_for_panel(&mut self, panel: Panel, path: PathBuf) -> Result<()> {
         self.review_position = None;
-        self.picture_viewer = None;
-        // A picture is not shown as text; once both sides are pictures, the pair is shown as one.
-        if is_picture_file(&path) {
+        self.content_viewer = None;
+        // Content is not shown as text; once both sides are content of one kind, the pair is shown
+        // as one.
+        if is_content_file(&path) {
             match panel {
                 Panel::Before => self.before_path = Some(path),
                 Panel::After => self.after_path = Some(path),
             }
             if let (Some(before), Some(after)) = (self.before_path.clone(), self.after_path.clone())
-                && !self.open_picture_pair(&before, &after)
+                && !self.open_content_pair(&before, &after)
             {
                 self.last_error = Self::unshowable(&before).or_else(|| Self::unshowable(&after));
             }
@@ -1129,7 +1132,7 @@ impl App {
             self.syntax_theme = Some(name);
         }
         self.diff_viewer.init(area)?;
-        if self.open_picture_pair(before, after) {
+        if self.open_content_pair(before, after) {
             return Ok(());
         }
         // As every caller of `start_diff` does; without a current pair, the recent-pairs prompt
@@ -1148,7 +1151,7 @@ impl App {
     /// user who has not pressed `?` learns that keybindings exist.
     pub(crate) fn draw_viewer(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
         let mut constraints = Vec::with_capacity(4);
-        if self.diff_summary.is_some() || self.picture_viewer.is_some() {
+        if self.diff_summary.is_some() || self.content_viewer.is_some() {
             constraints.push(Constraint::Length(1));
         }
         constraints.push(Constraint::Min(1));
@@ -1162,7 +1165,7 @@ impl App {
             .split(area);
 
         let mut next = 0;
-        if let Some(viewer) = self.picture_viewer.as_mut() {
+        if let Some(viewer) = self.content_viewer.as_mut() {
             let palette = self.diff_viewer.overlay_theme().palette();
             // The title colors, not the tints the text panels use as backgrounds: an outline must
             // stand out on a picture.
@@ -1670,9 +1673,10 @@ fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {
     }
 }
 
-/// True if `path` holds a picture, by its bytes (see [`crate::diff::picture::is_picture`]).
-fn is_picture_file(path: &Path) -> bool {
-    std::fs::read(path).is_ok_and(|bytes| crate::diff::picture::is_picture(&bytes))
+/// True if `path` holds content diffed by content, by its bytes (see
+/// [`crate::diff::content::sniff`]).
+fn is_content_file(path: &Path) -> bool {
+    std::fs::read(path).is_ok_and(|bytes| crate::diff::content::sniff(&bytes).is_some())
 }
 
 #[cfg(test)]
@@ -2007,7 +2011,7 @@ mod tests {
         let mut app = App::new(4.0, 60.0)?;
         app.select_file_for_panel(Panel::Before, picture)?;
         app.select_file_for_panel(Panel::After, text)?;
-        assert!(app.picture_viewer.is_none());
+        assert!(app.content_viewer.is_none());
         Ok(())
     }
 
