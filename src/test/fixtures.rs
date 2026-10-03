@@ -48,6 +48,8 @@
 #[cfg(test)]
 mod archives;
 #[cfg(test)]
+mod catalogs;
+#[cfg(test)]
 mod cursors;
 #[cfg(test)]
 mod defects4j;

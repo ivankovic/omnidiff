@@ -39,6 +39,7 @@
 //! changed member diffed by what it holds.
 
 pub mod archive;
+pub mod catalog;
 pub mod container;
 pub mod cursor;
 pub mod font;
@@ -103,6 +104,7 @@ pub enum Family {
     Archives,
     Cursors,
     Fonts,
+    Catalogs,
 }
 
 impl Serialize for Family {
@@ -112,11 +114,12 @@ impl Serialize for Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 4] = [
+    pub const ALL: [Family; 5] = [
         Family::Pictures,
         Family::Archives,
         Family::Cursors,
         Family::Fonts,
+        Family::Catalogs,
     ];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
@@ -126,6 +129,7 @@ impl Family {
             Family::Archives => "archives",
             Family::Cursors => "cursors",
             Family::Fonts => "fonts",
+            Family::Catalogs => "catalogs",
         }
     }
 
@@ -140,6 +144,8 @@ impl Family {
             (Family::Cursors, true) => "Cursors",
             (Family::Fonts, false) => "Font",
             (Family::Fonts, true) => "Fonts",
+            (Family::Catalogs, false) => "Catalog",
+            (Family::Catalogs, true) => "Catalogs",
         }
     }
 
@@ -161,6 +167,7 @@ impl Family {
             // X cursors carry no extension at all: the sampler sniffs extensionless files too.
             Family::Cursors => &["cur", "ani", "hlc"],
             Family::Fonts => &["ttf", "otf", "ttc", "otc", "woff", "woff2", "eot"],
+            Family::Catalogs => &["mo", "gmo", "qm"],
         }
     }
 }
@@ -189,6 +196,10 @@ pub enum Format {
     Woff2,
     /// Embedded OpenType.
     Eot,
+    /// A gettext catalog.
+    Mo,
+    /// A Qt catalog.
+    Qm,
 }
 
 impl Format {
@@ -200,6 +211,7 @@ impl Format {
             }
             Format::Cur | Format::Ani | Format::Xcursor | Format::Hyprcursor => Family::Cursors,
             Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Family::Fonts,
+            Format::Mo | Format::Qm => Family::Catalogs,
         }
     }
 
@@ -229,6 +241,8 @@ impl Format {
             Format::Woff => "WOFF".to_string(),
             Format::Woff2 => "WOFF2".to_string(),
             Format::Eot => "EOT".to_string(),
+            Format::Mo => "MO".to_string(),
+            Format::Qm => "QM".to_string(),
         }
     }
 }
@@ -262,6 +276,12 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
     }
     if font::is_eot(bytes) {
         return Some(Format::Eot);
+    }
+    if catalog::is_mo(bytes) {
+        return Some(Format::Mo);
+    }
+    if catalog::is_qm(bytes) {
+        return Some(Format::Qm);
     }
     if cursor::is_ani(bytes) {
         return Some(Format::Ani);
@@ -300,6 +320,8 @@ pub fn decode_container(bytes: &[u8]) -> Result<Box<dyn Container>> {
         Some(format) if format.family() == Family::Fonts => {
             Ok(Box::new(font::Font::new(bytes, format)?))
         }
+        Some(Format::Mo) => Ok(Box::new(catalog::Catalog::mo(bytes)?)),
+        Some(Format::Qm) => Ok(Box::new(catalog::Catalog::qm(bytes)?)),
         Some(format) => bail!("{} is not a container", format.name()),
         None => bail!("not content OmniDiff knows"),
     }
