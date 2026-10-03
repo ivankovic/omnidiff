@@ -10,9 +10,11 @@ LICENSE), or under a commercial license (see LICENSE-COMMERCIAL).
 
 ## Overview
 
-- Apache License 2.0: 189 crates
-- MIT License: 118 crates
+- Apache License 2.0: 199 crates
+- MIT License: 123 crates
+- BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License: 2 crates
 - BSD Zero Clause License: 1 crate
+- BSD 2-Clause &quot;Simplified&quot; License: 1 crate
 - Unicode License v3: 1 crate
 - zlib License: 1 crate
 - bzip2 and libbzip2 License v1.0.6: 1 crate
@@ -1104,6 +1106,8 @@ Used by:
 
 Used by:
 
+- kurbo 0.13.1 (https://github.com/linebender/kurbo)
+- polycool 0.4.0 (https://github.com/linebender/kurbo)
 - static_assertions 1.1.0 (https://github.com/nvzqz/static-assertions-rs)
 
 ```
@@ -4767,12 +4771,14 @@ limitations under the License.
 
 Used by:
 
+- arrayvec 0.7.8 (https://github.com/bluss/arrayvec)
 - base64 0.23.1 (https://github.com/marshallpierce/rust-base64)
 - bitflags 2.13.2 (https://github.com/bitflags/bitflags)
 - by_address 1.2.1 (https://github.com/mbrubeck/by_address)
 - bzip2 0.6.1 (https://github.com/trifectatechfoundation/bzip2-rs)
 - cfg-if 1.0.5 (https://github.com/rust-lang/cfg-if)
 - critical-section 1.2.0 (https://github.com/rust-embedded/critical-section)
+- data-url 0.3.2 (https://github.com/servo/rust-url)
 - either 1.18.0 (https://github.com/rayon-rs/either)
 - equivalent 1.0.2 (https://github.com/indexmap-rs/equivalent)
 - errno 0.3.14 (https://github.com/lambda-fairy/rust-errno)
@@ -4800,14 +4806,17 @@ Used by:
 - regex-automata 0.4.18 (https://github.com/rust-lang/regex)
 - regex-syntax 0.8.11 (https://github.com/rust-lang/regex)
 - regex 1.13.1 (https://github.com/rust-lang/regex)
+- roxmltree 0.21.1 (https://github.com/RazrFalcon/roxmltree)
 - rustix 0.38.44 (https://github.com/bytecodealliance/rustix)
 - rustix 1.1.5 (https://github.com/bytecodealliance/rustix)
 - scopeguard 1.2.0 (https://github.com/bluss/scopeguard)
 - signal-hook-mio 0.2.5 (https://github.com/vorner/signal-hook)
 - signal-hook-registry 1.4.8 (https://github.com/vorner/signal-hook)
 - signal-hook 0.3.18 (https://github.com/vorner/signal-hook)
+- simplecss 0.2.2 (https://github.com/linebender/simplecss)
 - smallvec 1.16.1 (https://github.com/servo/rust-smallvec)
 - socket2 0.6.5 (https://github.com/rust-lang/socket2)
+- svgtypes 0.16.1 (https://github.com/linebender/svgtypes)
 - tar 0.4.46 (https://github.com/composefs/tar-rs)
 - thread_local 1.1.10 (https://github.com/Amanieu/thread_local-rs)
 - unicode-segmentation 1.13.3 (https://github.com/unicode-rs/unicode-segmentation)
@@ -6175,6 +6184,7 @@ Used by:
 - rand_xoshiro 0.8.1 (https://github.com/rust-random/rngs)
 - ref-cast-impl 1.0.27 (https://github.com/dtolnay/ref-cast)
 - ref-cast 1.0.27 (https://github.com/dtolnay/ref-cast)
+- resvg 0.48.1 (https://github.com/linebender/resvg)
 - rustc-hash 2.1.3 (https://github.com/rust-lang/rustc-hash)
 - rustversion 1.0.23 (https://github.com/dtolnay/rustversion)
 - ryu 1.0.23 (https://github.com/dtolnay/ryu)
@@ -6182,6 +6192,7 @@ Used by:
 - serde_core 1.0.229 (https://github.com/serde-rs/serde)
 - serde_derive 1.0.229 (https://github.com/serde-rs/serde)
 - serde_json 1.0.151 (https://github.com/serde-rs/json)
+- siphasher 1.0.3 (https://github.com/jedisct1/rust-siphash)
 - syn 2.0.119 (https://github.com/dtolnay/syn)
 - syn 3.0.6 (https://github.com/dtolnay/syn)
 - thiserror-impl 1.0.69 (https://github.com/dtolnay/thiserror)
@@ -6192,6 +6203,7 @@ Used by:
 - time 0.3.55 (https://github.com/time-rs/time)
 - typed-path 0.12.3 (https://github.com/chipsenkbeil/typed-path)
 - unicode-ident 1.0.26 (https://github.com/dtolnay/unicode-ident)
+- usvg 0.48.1 (https://github.com/linebender/resvg)
 - utf8parse 0.2.2 (https://github.com/alacritty/vte)
 - winapi-i686-pc-windows-gnu 0.4.0 (https://github.com/retep998/winapi-rs)
 - winapi-x86_64-pc-windows-gnu 0.4.0 (https://github.com/retep998/winapi-rs)
@@ -6270,6 +6282,83 @@ distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+```
+
+## BSD 2-Clause &quot;Simplified&quot; License
+
+Used by:
+
+- arrayref 0.3.9 (https://github.com/droundy/arrayref)
+
+```
+Copyright (c) 2015 David Roundy &lt;roundyd@physics.oregonstate.edu&gt;
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the
+   distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+&quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+```
+
+## BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License
+
+Used by:
+
+- tiny-skia-path 0.12.0 (https://github.com/linebender/tiny-skia/tree/master/path)
+- tiny-skia 0.12.0 (https://github.com/linebender/tiny-skia)
+
+```
+Copyright (c) 2011 Google Inc. All rights reserved.
+Copyright (c) 2020 Yevhenii Reizner All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+&quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ```
 
@@ -6444,6 +6533,35 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
+
+- float-cmp 0.9.0 (https://github.com/mikedilger/float-cmp)
+
+```
+Copyright (c) 2014-2020 Optimal Computing (NZ) Ltd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the &quot;Software&quot;), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
 
 ```
 
@@ -6714,6 +6832,65 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 
+- pico-args 0.5.0 (https://github.com/RazrFalcon/pico-args)
+
+```
+Copyright (c) 2019 Yevhenii Reizner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+```
+
+## MIT License
+
+Used by:
+
+- strict-num 0.1.1 (https://github.com/RazrFalcon/strict-num)
+
+```
+Copyright (c) 2022 Yevhenii Reizner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
+
 - ratatui-macros 0.7.2 (https://github.com/ratatui/ratatui)
 
 ```
@@ -6918,6 +7095,37 @@ SOFTWARE.
 
 Used by:
 
+- imagesize 0.15.0 (https://github.com/Roughsketch/imagesize)
+
+```
+MIT License
+
+Copyright (c) 2017 Maiddog
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
+
 - darling 0.24.1 (https://github.com/TedDriggs/darling)
 - darling_core 0.24.1 (https://github.com/TedDriggs/darling)
 - darling_macro 0.24.1 (https://github.com/TedDriggs/darling)
@@ -7052,6 +7260,37 @@ Used by:
 MIT License
 
 Copyright (c) 2018-2025 Microsoft Corporation, Daan Leijen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
+
+- rgb 0.8.53 (https://github.com/kornelski/rust-rgb)
+
+```
+MIT License
+
+Copyright (c) 2019 Kornel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the &quot;Software&quot;), to deal

@@ -40,6 +40,7 @@
 
 pub mod archive;
 pub mod container;
+pub mod cursor;
 
 use anyhow::{Result, bail};
 use serde::Serialize;
@@ -99,6 +100,7 @@ impl Verdict {
 pub enum Family {
     Pictures,
     Archives,
+    Cursors,
 }
 
 impl Serialize for Family {
@@ -108,13 +110,14 @@ impl Serialize for Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 2] = [Family::Pictures, Family::Archives];
+    pub const ALL: [Family; 3] = [Family::Pictures, Family::Archives, Family::Cursors];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
     pub fn name(self) -> &'static str {
         match self {
             Family::Pictures => "pictures",
             Family::Archives => "archives",
+            Family::Cursors => "cursors",
         }
     }
 
@@ -125,6 +128,8 @@ impl Family {
             (Family::Pictures, true) => "Pictures",
             (Family::Archives, false) => "Archive",
             (Family::Archives, true) => "Archives",
+            (Family::Cursors, false) => "Cursor",
+            (Family::Cursors, true) => "Cursors",
         }
     }
 
@@ -143,6 +148,8 @@ impl Family {
                 "docx", "xlsx", "pptx", "odt", "ods", "odp", "odg", "tar", "gz", "tgz", "xz",
                 "txz", "bz2", "tbz2",
             ],
+            // X cursors carry no extension at all: the sampler sniffs extensionless files too.
+            Family::Cursors => &["cur", "ani", "hlc"],
         }
     }
 }
@@ -157,6 +164,14 @@ pub enum Format {
     Gzip,
     Xz,
     Bzip2,
+    /// A Windows cursor.
+    Cur,
+    /// A Windows animated cursor.
+    Ani,
+    /// An X cursor.
+    Xcursor,
+    /// A Hyprland cursor: a zip with a `meta.hl`.
+    Hyprcursor,
 }
 
 impl Format {
@@ -166,13 +181,15 @@ impl Format {
             Format::Zip | Format::Tar | Format::Gzip | Format::Xz | Format::Bzip2 => {
                 Family::Archives
             }
+            Format::Cur | Format::Ani | Format::Xcursor | Format::Hyprcursor => Family::Cursors,
         }
     }
 
     /// The engine that diffs this format; two sides are one pair only if they share it.
     pub fn engine(self) -> Engine {
         match self {
-            Format::Picture(_) => Engine::Picture,
+            // A single cursor is a picture, still or animated.
+            Format::Picture(_) | Format::Cur | Format::Ani => Engine::Picture,
             other => Engine::Container(other.family()),
         }
     }
@@ -186,6 +203,10 @@ impl Format {
             Format::Gzip => "GZIP".to_string(),
             Format::Xz => "XZ".to_string(),
             Format::Bzip2 => "BZIP2".to_string(),
+            Format::Cur => "CUR".to_string(),
+            Format::Ani => "ANI".to_string(),
+            Format::Xcursor => "XCURSOR".to_string(),
+            Format::Hyprcursor => "HYPRCURSOR".to_string(),
         }
     }
 }
@@ -205,8 +226,20 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
     if let Ok(format @ (Png | Jpeg | Gif | WebP | Bmp | Ico | Tiff)) = image::guess_format(bytes) {
         return Some(Format::Picture(format));
     }
+    if cursor::is_cur(bytes) {
+        return Some(Format::Cur);
+    }
+    if cursor::is_ani(bytes) {
+        return Some(Format::Ani);
+    }
+    if cursor::is_xcursor(bytes) {
+        return Some(Format::Xcursor);
+    }
     // An empty zip is only its end-of-directory record.
     if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
+        if cursor::is_hyprcursor(bytes) {
+            return Some(Format::Hyprcursor);
+        }
         return Some(Format::Zip);
     }
     if bytes.starts_with(&[0x1F, 0x8B, 0x08]) {
@@ -228,6 +261,8 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
 pub fn decode_container(bytes: &[u8]) -> Result<Box<dyn Container>> {
     match sniff(bytes) {
         Some(format) if format.family() == Family::Archives => archive::decode(bytes, format),
+        Some(Format::Xcursor) => Ok(Box::new(cursor::Xcursor::new(bytes)?)),
+        Some(Format::Hyprcursor) => Ok(Box::new(cursor::Hyprcursor::new(bytes)?)),
         Some(format) => bail!("{} is not a container", format.name()),
         None => bail!("not content OmniDiff knows"),
     }
@@ -256,6 +291,14 @@ pub fn probe(bytes: &[u8]) -> Option<Probe> {
                 format,
                 size: u64::from(width) * u64::from(height),
                 shape: u64::from(width) << 32 | u64::from(height),
+            })
+        }
+        Format::Cur | Format::Ani => {
+            let (info, _) = picture::decode(bytes).ok()?;
+            Some(Probe {
+                format,
+                size: u64::from(info.width) * u64::from(info.height),
+                shape: u64::from(info.width) << 32 | u64::from(info.height),
             })
         }
         // A container's size is how many members it has, its shape which ones.

@@ -42,7 +42,7 @@ use std::path::{Path, PathBuf};
 use omnidiff::anomalous_paths;
 use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
 use omnidiff::code::{Encoding, Language, decode_text};
-use omnidiff::diff::content::{self, Family, Probe};
+use omnidiff::diff::content::{self, Engine, Family, Format, Probe};
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
 use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
 use omnidiff::stats::sampling::{Reservoir, loc_bucket};
@@ -479,21 +479,21 @@ const PAIRS_PER_REPOSITORY_PER_STRATUM: usize = 2;
 fn max_bytes(family: Family) -> usize {
     match family {
         Family::Pictures => MAX_BYTES,
-        Family::Archives => 16 * MAX_BYTES,
+        _ => 16 * MAX_BYTES,
     }
 }
 
-/// The size half of a stratum, by the larger side's [`Probe::size`]: pixels for a picture,
-/// members for a container.
-fn size_bucket(family: Family, size: u64) -> &'static str {
-    match family {
-        Family::Pictures => match size {
+/// The size half of a stratum, by the larger side's [`Probe::size`]: pixels for a picture (a
+/// still cursor too), members for a container.
+fn size_bucket(format: Format, size: u64) -> &'static str {
+    match format.engine() {
+        Engine::Picture => match size {
             0..=4_096 => "icon",
             4_097..=65_536 => "small",
             65_537..=1_048_576 => "medium",
             _ => "large",
         },
-        Family::Archives => match size {
+        Engine::Container(_) => match size {
             0..=1 => "single",
             2..=10 => "few",
             11..=100 => "some",
@@ -504,22 +504,26 @@ fn size_bucket(family: Family, size: u64) -> &'static str {
 }
 
 /// The shape half of a stratum: whether the two sides have the same shape ([`Probe::shape`]),
-/// in the family's words.
-fn shape_label(family: Family, same: bool) -> &'static str {
-    match (family, same) {
-        (Family::Pictures, true) => "same",
-        (Family::Pictures, false) => "resized",
-        (Family::Archives, true) => "same-members",
-        (Family::Archives, false) => "members-changed",
+/// in the engine's words.
+fn shape_label(format: Format, same: bool) -> &'static str {
+    match (format.engine(), same) {
+        (Engine::Picture, true) => "same",
+        (Engine::Picture, false) => "resized",
+        (Engine::Container(_), true) => "same-members",
+        (Engine::Container(_), false) => "members-changed",
     }
 }
 
 /// True if a changed file at `path` may be of `family`: its extension is one the family's files
-/// carry. Whether it is, is the content's say ([`content_side`]).
+/// carry, or, for cursors, it has none (X cursors are named after the cursor). Whether it is, is
+/// the content's say ([`content_side`]).
 fn may_be(family: Family, path: &Path) -> bool {
-    path.extension()
-        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
-        .is_some_and(|ext| family.extensions().contains(&ext.as_str()))
+    match path.extension() {
+        Some(ext) => family
+            .extensions()
+            .contains(&ext.to_string_lossy().to_ascii_lowercase().as_str()),
+        None => family == Family::Cursors,
+    }
 }
 
 /// A side the sample can hold: content of `family` by its bytes (which also drops Git LFS
@@ -601,8 +605,8 @@ fn sample_content(args: &Args, output: &Path, family: Family) -> Result<()> {
                 }
                 let bucket = format!(
                     "{}-{}",
-                    size_bucket(family, before.size.max(after.size)),
-                    shape_label(family, before.shape == after.shape)
+                    size_bucket(after.format, before.size.max(after.size)),
+                    shape_label(after.format, before.shape == after.shape)
                 );
                 let format = after.format.name();
                 let row = Row {
@@ -766,10 +770,22 @@ mod tests {
 
     #[test]
     fn picture_sizes_bucket_by_pixel_count() {
-        assert_eq!(size_bucket(Family::Pictures, 16 * 16), "icon");
-        assert_eq!(size_bucket(Family::Pictures, 200 * 120), "small");
-        assert_eq!(size_bucket(Family::Pictures, 800 * 600), "medium");
-        assert_eq!(size_bucket(Family::Pictures, 4000 * 3000), "large");
+        assert_eq!(
+            size_bucket(Format::Picture(image::ImageFormat::Png), 16 * 16),
+            "icon"
+        );
+        assert_eq!(
+            size_bucket(Format::Picture(image::ImageFormat::Png), 200 * 120),
+            "small"
+        );
+        assert_eq!(
+            size_bucket(Format::Picture(image::ImageFormat::Png), 800 * 600),
+            "medium"
+        );
+        assert_eq!(
+            size_bucket(Format::Picture(image::ImageFormat::Png), 4000 * 3000),
+            "large"
+        );
     }
     use omnidiff::stats::sampling::LOC_BUCKETS;
     use omnidiff::test::helper;

@@ -67,7 +67,8 @@ Files and diffing
   Esc              While a diff is computing: cancel it and keep the previous result
 
 Pictures
-  t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF): cycle the
+  t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF, and Windows
+                   .cur and .ani cursors): cycle the
                    view - side by side with the changed regions outlined, difference
                    (changed pixels over the faded after picture), blend, swipe. Drawn as
                    pixels where the terminal speaks kitty, sixel or iTerm2 graphics, in
@@ -75,10 +76,11 @@ Pictures
   h/l, Left/Right  In the swipe view: move the divider between before and after
   ,/. and Space    For an animation: step a frame back or on, play or pause
 
-Archives
-  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2): move through
-                   the members that changed, were added or were removed; the selected one
-                   shows beside the list - text as a line diff, pictures as above
+Archives and other containers
+  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2) or cursor themes
+                   (X cursors, Hyprland .hlc): move through the members that changed, were
+                   added or were removed; the selected one shows beside the list - text as
+                   a line diff, pictures as above
   a                Show every member, unchanged ones too, or only the changed again
   PgDn/PgUp, J/K   Scroll a text member
   Enter            Open a member that is itself an archive; Backspace comes back out

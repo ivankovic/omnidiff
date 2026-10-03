@@ -301,6 +301,36 @@ struct PackedFrame {
 }
 
 impl Frames {
+    /// A picture of `frames`, each with how long it shows in milliseconds: a still for one
+    /// frame, an animation for more. Every frame is the same size, the first one's.
+    pub fn from_frames(frames: Vec<(RgbaImage, u32)>) -> Result<Self> {
+        let Some((first, _)) = frames.first() else {
+            anyhow::bail!("a picture with no frame");
+        };
+        let (width, height) = first.dimensions();
+        if frames.len() == 1 {
+            let (pixels, _) = frames.into_iter().next().expect("one frame");
+            return Ok(Self::still(pixels));
+        }
+        let mut packed = Vec::with_capacity(frames.len());
+        for (pixels, delay_ms) in &frames {
+            if pixels.dimensions() != (width, height) {
+                anyhow::bail!("frames of different sizes");
+            }
+            packed.push(pack(pixels, *delay_ms)?);
+        }
+        Ok(Self {
+            width,
+            height,
+            store: FrameStore::Animation(packed),
+        })
+    }
+
+    /// An animation's running time, its frames' delays added up.
+    pub fn total_ms(&self) -> u64 {
+        self.duration_ms()
+    }
+
     fn still(pixels: RgbaImage) -> Self {
         let (width, height) = pixels.dimensions();
         Self {
@@ -382,6 +412,13 @@ fn pack(pixels: &RgbaImage, delay_ms: u32) -> Result<PackedFrame> {
 /// picture, all of them for an animated GIF, PNG or WebP.
 pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
     use image::ImageFormat;
+    // Cursors are pictures `image` does not know by their bytes (`content::cursor`).
+    if super::content::cursor::is_cur(bytes) {
+        return super::content::cursor::decode_cur(bytes);
+    }
+    if super::content::cursor::is_ani(bytes) {
+        return super::content::cursor::decode_ani(bytes);
+    }
     use image::codecs::{gif::GifDecoder, png::PngDecoder, webp::WebPDecoder};
     let cursor = || std::io::Cursor::new(bytes);
     let format = image::guess_format(bytes).context("reading the picture")?;
