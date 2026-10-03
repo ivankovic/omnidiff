@@ -128,6 +128,12 @@ tree-sitter = "0.25"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico", "tiff"] }
 # An animation's frames are kept deflated (`diff::picture::Frames`); already built for `png`.
 flate2 = "1.1"
+# Archives (diff::content::archive), every decoder pure Rust: zip's default features would pull in
+# C zstd, and bzip2's default backend is libbz2-rs-sys.
+zip = { version = "8", default-features = false, features = ["deflate-flate2"] }
+tar = { version = "0.4", default-features = false }
+lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
+bzip2 = "0.6"
 ratatui = { version = "0.30.2", features = ["serde", "macros"], optional = true }
 crossterm = { version = "0.29.0", features = ["serde", "event-stream"], optional = true }
 # Pictures drawn in the terminal: kitty, sixel or iTerm2 where the terminal speaks one, Unicode
@@ -180,6 +186,8 @@ mimalloc = "0.1"
 # compile src/test/ without that feature (see lib.rs's gate on `mod test`).
 regex = "1.12.2"
 tempfile = "3.10.1"
+# The archive tests write the xz they read.
+lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz", "encoder"] }
 
 [features]
 # A bare `cargo install omnidiff` builds the TUI binary; a library consumer opts out with

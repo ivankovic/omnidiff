@@ -72,10 +72,14 @@ pub fn save(name: &str, picture: &HumanPicture) -> Result<()> {
 
 /// The pair's two files, as stored: `before.<ext>.test` and `after.<ext>.test`.
 pub fn pair_bytes(name: &str) -> Result<(Vec<u8>, Vec<u8>)> {
-    let dir = pictures_root().join(name);
+    pair_bytes_in(&pictures_root().join(name))
+}
+
+/// The two files of the pair in fixture directory `dir`, of any content family.
+pub fn pair_bytes_in(dir: &std::path::Path) -> Result<(Vec<u8>, Vec<u8>)> {
     let mut before = None;
     let mut after = None;
-    for entry in std::fs::read_dir(&dir).with_context(|| format!("reading {dir:?}"))? {
+    for entry in std::fs::read_dir(dir).with_context(|| format!("reading {dir:?}"))? {
         let path = entry?.path();
         let file = path
             .file_name()

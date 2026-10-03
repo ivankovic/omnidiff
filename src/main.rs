@@ -919,6 +919,43 @@ mod tests {
     }
 
     #[test]
+    fn the_archive_notice_lists_what_changed_in_which_member() {
+        let zip = |files: &[(&str, &str)]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            for (name, text) in files {
+                writer
+                    .start_file(*name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                std::io::Write::write_all(&mut writer, text.as_bytes()).unwrap();
+            }
+            writer.finish().unwrap();
+            bytes
+        };
+        let before = zip(&[("a.txt", "1\n2\n"), ("gone.txt", "g\n"), ("same", "s\n")]);
+        let after = zip(&[("a.txt", "1\nTWO\n"), ("new.txt", "n\n"), ("same", "s\n")]);
+        let diff = omnidiff::diff::content::diff(&before, &after)
+            .unwrap()
+            .expect("an archive pair");
+        let paths = [PathBuf::from("a.zip"), PathBuf::from("b.zip")];
+        let notice = content_notice(&paths, &paths[0], &paths[1], &diff);
+        assert!(
+            notice.starts_with("Archives a.zip and b.zip: ZIP, 3 members, "),
+            "{notice}"
+        );
+        assert!(
+            notice.contains("  1 changed, 1 added, 1 removed, 1 unchanged\n"),
+            "{notice}"
+        );
+        assert!(
+            notice.contains("    changed  a.txt: 1 line removed, 1 added\n"),
+            "{notice}"
+        );
+        assert!(notice.contains("    removed  gone.txt\n"), "{notice}");
+        assert!(notice.contains("    added    new.txt\n"), "{notice}");
+    }
+
+    #[test]
     fn the_picture_notice_says_when_nothing_visible_changed_or_the_size_did() {
         use omnidiff::diff::picture::Comparison;
         let paths = vec![PathBuf::from("a.png"), PathBuf::from("b.png")];

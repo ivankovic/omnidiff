@@ -479,10 +479,12 @@ const PAIRS_PER_REPOSITORY_PER_STRATUM: usize = 2;
 fn max_bytes(family: Family) -> usize {
     match family {
         Family::Pictures => MAX_BYTES,
+        Family::Archives => 16 * MAX_BYTES,
     }
 }
 
-/// The size half of a stratum, by the larger side's [`Probe::size`]: pixels for a picture.
+/// The size half of a stratum, by the larger side's [`Probe::size`]: pixels for a picture,
+/// members for a container.
 fn size_bucket(family: Family, size: u64) -> &'static str {
     match family {
         Family::Pictures => match size {
@@ -490,6 +492,13 @@ fn size_bucket(family: Family, size: u64) -> &'static str {
             4_097..=65_536 => "small",
             65_537..=1_048_576 => "medium",
             _ => "large",
+        },
+        Family::Archives => match size {
+            0..=1 => "single",
+            2..=10 => "few",
+            11..=100 => "some",
+            101..=1_000 => "many",
+            _ => "lots",
         },
     }
 }
@@ -500,6 +509,8 @@ fn shape_label(family: Family, same: bool) -> &'static str {
     match (family, same) {
         (Family::Pictures, true) => "same",
         (Family::Pictures, false) => "resized",
+        (Family::Archives, true) => "same-members",
+        (Family::Archives, false) => "members-changed",
     }
 }
 

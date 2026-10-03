@@ -10,6 +10,9 @@ accepted = [
     "BSD-2-Clause",
     "BSD-3-Clause",
     "BSL-1.0",
+    # bzip2's own BSD-style license, carried by libbz2-rs-sys, the pure-Rust bzip2 that archive
+    # diffing decompresses with.
+    "bzip2-1.0.6",
     "ISC",
     "MIT",
     "MPL-2.0",

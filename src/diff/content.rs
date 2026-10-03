@@ -33,11 +33,19 @@
 //! content of the same engine. An empty side is git's `/dev/null` for an added or deleted file.
 //! A pair that does not decode is reported as any other binary pair, never as an error: under
 //! `GIT_EXTERNAL_DIFF` an error abandons every file after it.
+//!
+//! **Two engines.** A picture is pixels ([`picture`]). Everything else is a [`container`] of
+//! named members - an archive's files, a font's glyphs, a PDF's pages - matched by name, each
+//! changed member diffed by what it holds.
 
-use anyhow::Result;
+pub mod archive;
+pub mod container;
+
+use anyhow::{Result, bail};
 use serde::Serialize;
 
 use super::picture::{self, PictureDiff};
+use container::{Container, ContainerDiff};
 
 /// What happened to a picture, or to any other content: the question a content fixture's human
 /// verdict answers, and the engine's answer to it ([`PictureDiff::verdict`]).
@@ -90,15 +98,33 @@ impl Verdict {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Family {
     Pictures,
+    Archives,
+}
+
+impl Serialize for Family {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.name())
+    }
 }
 
 impl Family {
-    pub const ALL: [Family; 1] = [Family::Pictures];
+    pub const ALL: [Family; 2] = [Family::Pictures, Family::Archives];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
     pub fn name(self) -> &'static str {
         match self {
             Family::Pictures => "pictures",
+            Family::Archives => "archives",
+        }
+    }
+
+    /// What one file of the family is called in a report (`"Picture"`), or two (`"Pictures"`).
+    pub fn noun(self, plural: bool) -> &'static str {
+        match (self, plural) {
+            (Family::Pictures, false) => "Picture",
+            (Family::Pictures, true) => "Pictures",
+            (Family::Archives, false) => "Archive",
+            (Family::Archives, true) => "Archives",
         }
     }
 
@@ -111,6 +137,12 @@ impl Family {
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
             Family::Pictures => picture::PICTURE_EXTENSIONS,
+            // Office documents, EPUBs and Python wheels are zips too.
+            Family::Archives => &[
+                "zip", "jar", "war", "ear", "aar", "apk", "whl", "nupkg", "vsix", "xpi", "epub",
+                "docx", "xlsx", "pptx", "odt", "ods", "odp", "odg", "tar", "gz", "tgz", "xz",
+                "txz", "bz2", "tbz2",
+            ],
         }
     }
 }
@@ -120,12 +152,20 @@ impl Family {
 pub enum Format {
     /// A raster picture `image` decodes: PNG, JPEG, GIF, WebP, BMP, ICO or TIFF.
     Picture(image::ImageFormat),
+    Zip,
+    Tar,
+    Gzip,
+    Xz,
+    Bzip2,
 }
 
 impl Format {
     pub fn family(self) -> Family {
         match self {
             Format::Picture(_) => Family::Pictures,
+            Format::Zip | Format::Tar | Format::Gzip | Format::Xz | Format::Bzip2 => {
+                Family::Archives
+            }
         }
     }
 
@@ -133,6 +173,7 @@ impl Format {
     pub fn engine(self) -> Engine {
         match self {
             Format::Picture(_) => Engine::Picture,
+            other => Engine::Container(other.family()),
         }
     }
 
@@ -140,6 +181,11 @@ impl Format {
     pub fn name(self) -> String {
         match self {
             Format::Picture(format) => format!("{format:?}").to_uppercase(),
+            Format::Zip => "ZIP".to_string(),
+            Format::Tar => "TAR".to_string(),
+            Format::Gzip => "GZIP".to_string(),
+            Format::Xz => "XZ".to_string(),
+            Format::Bzip2 => "BZIP2".to_string(),
         }
     }
 }
@@ -149,14 +195,41 @@ impl Format {
 pub enum Engine {
     /// [`picture`]: pixels and frames.
     Picture,
+    /// [`container`]: members of a family, matched by key.
+    Container(Family),
 }
 
 /// The format `bytes` hold, if it is one OmniDiff diffs by content.
 pub fn sniff(bytes: &[u8]) -> Option<Format> {
     use image::ImageFormat::*;
-    match image::guess_format(bytes) {
-        Ok(format @ (Png | Jpeg | Gif | WebP | Bmp | Ico | Tiff)) => Some(Format::Picture(format)),
-        _ => None,
+    if let Ok(format @ (Png | Jpeg | Gif | WebP | Bmp | Ico | Tiff)) = image::guess_format(bytes) {
+        return Some(Format::Picture(format));
+    }
+    // An empty zip is only its end-of-directory record.
+    if bytes.starts_with(b"PK\x03\x04") || bytes.starts_with(b"PK\x05\x06") {
+        return Some(Format::Zip);
+    }
+    if bytes.starts_with(&[0x1F, 0x8B, 0x08]) {
+        return Some(Format::Gzip);
+    }
+    if bytes.starts_with(&[0xFD, b'7', b'z', b'X', b'Z', 0x00]) {
+        return Some(Format::Xz);
+    }
+    if let [b'B', b'Z', b'h', b'1'..=b'9', ..] = bytes {
+        return Some(Format::Bzip2);
+    }
+    if archive::is_tar(bytes) {
+        return Some(Format::Tar);
+    }
+    None
+}
+
+/// Decodes `bytes` as the container they are.
+pub fn decode_container(bytes: &[u8]) -> Result<Box<dyn Container>> {
+    match sniff(bytes) {
+        Some(format) if format.family() == Family::Archives => archive::decode(bytes, format),
+        Some(format) => bail!("{} is not a container", format.name()),
+        None => bail!("not content OmniDiff knows"),
     }
 }
 
@@ -185,6 +258,21 @@ pub fn probe(bytes: &[u8]) -> Option<Probe> {
                 shape: u64::from(width) << 32 | u64::from(height),
             })
         }
+        // A container's size is how many members it has, its shape which ones.
+        _ => {
+            let container = decode_container(bytes).ok()?;
+            let mut keys: Vec<&str> = container
+                .members()
+                .iter()
+                .map(|member| member.key.as_str())
+                .collect();
+            keys.sort_unstable();
+            Some(Probe {
+                format,
+                size: keys.len() as u64,
+                shape: container::hash_bytes(keys.join("\n").as_bytes()),
+            })
+        }
     }
 }
 
@@ -204,6 +292,7 @@ pub fn pair_kind(before: &[u8], after: &[u8]) -> Option<Engine> {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ContentDiff {
     Picture(PictureDiff),
+    Container(ContainerDiff),
 }
 
 impl ContentDiff {
@@ -211,6 +300,7 @@ impl ContentDiff {
     pub fn as_picture(&self) -> Option<&PictureDiff> {
         match self {
             ContentDiff::Picture(diff) => Some(diff),
+            ContentDiff::Container(_) => None,
         }
     }
 
@@ -218,16 +308,56 @@ impl ContentDiff {
     pub fn verdict(&self) -> Verdict {
         match self {
             ContentDiff::Picture(diff) => diff.verdict(),
+            ContentDiff::Container(diff) => diff.verdict(),
         }
     }
 }
 
 /// Diffs a pair by its content; `Ok(None)` when it is not a pair [`pair_kind`] recognises.
 pub fn diff(before: &[u8], after: &[u8]) -> Result<Option<ContentDiff>> {
+    diff_at_depth(before, after, 0)
+}
+
+/// [`diff`] of a pair found `depth` containers deep (see [`container::MAX_DEPTH`]).
+pub(crate) fn diff_at_depth(
+    before: &[u8],
+    after: &[u8],
+    depth: usize,
+) -> Result<Option<ContentDiff>> {
     Ok(match pair_kind(before, after) {
         Some(Engine::Picture) => Some(ContentDiff::Picture(picture::diff(before, after)?)),
+        Some(Engine::Container(family)) => {
+            let (before, after) = decode_container_pair(before, after)?;
+            Some(ContentDiff::Container(container::compare(
+                family,
+                before.as_deref(),
+                after.as_deref(),
+                depth,
+            )))
+        }
         None => None,
     })
+}
+
+/// A decoded side of a container pair: `None` for an empty one.
+pub type DecodedContainer = Option<Box<dyn Container>>;
+
+/// Both sides of a container pair decoded, on two threads; an empty side is `None`.
+pub fn decode_container_pair(
+    before: &[u8],
+    after: &[u8],
+) -> Result<(DecodedContainer, DecodedContainer)> {
+    let side = |bytes: &[u8]| {
+        (!bytes.is_empty())
+            .then(|| decode_container(bytes))
+            .transpose()
+    };
+    let (before, after) = std::thread::scope(|scope| {
+        let before = scope.spawn(|| side(before));
+        let after = side(after);
+        (before.join().expect("decoding a container panicked"), after)
+    });
+    Ok((before?, after?))
 }
 
 #[cfg(test)]

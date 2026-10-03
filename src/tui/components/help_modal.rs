@@ -73,6 +73,15 @@ Pictures
                    pixels where the terminal speaks kitty, sixel or iTerm2 graphics, in
                    half blocks elsewhere
   h/l, Left/Right  In the swipe view: move the divider between before and after
+  ,/. and Space    For an animation: step a frame back or on, play or pause
+
+Archives
+  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2): move through
+                   the members that changed, were added or were removed; the selected one
+                   shows beside the list - text as a line diff, pictures as above
+  a                Show every member, unchanged ones too, or only the changed again
+  PgDn/PgUp, J/K   Scroll a text member
+  Enter            Open a member that is itself an archive; Backspace comes back out
 
 Appearance
   c                Open the theme editor: a Theme dropdown, a syntax-highlighting

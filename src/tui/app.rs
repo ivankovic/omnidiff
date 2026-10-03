@@ -1913,7 +1913,8 @@ mod tests {
     #[test]
     fn a_binary_reviewed_file_is_a_banner_not_a_crash_and_stepping_moves_past_it() -> Result<()> {
         let dir = enter_sample_repository();
-        std::fs::write(dir.path().join("a.rs"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+        // Not UTF-8, and no byte order mark to read it as UTF-16 by.
+        std::fs::write(dir.path().join("a.rs"), [0xff, 0x00, 0x41]).unwrap();
         let mut app = App::new(4.0, 60.0)?;
         app.open_review();
         let review = app.review_dialog.as_ref().unwrap().review().clone();

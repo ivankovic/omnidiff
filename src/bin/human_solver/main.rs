@@ -49,11 +49,11 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 
 mod actions;
+mod content;
 mod events;
 mod flatten;
 mod keylog;
 mod navigate;
-mod pictures;
 mod render;
 mod state;
 mod stubs;
@@ -72,8 +72,10 @@ use tree_sitter::Node;
 
 use omnidiff::code::language::{language_for_path, to_treesitter};
 use omnidiff::code::{Code, Language};
+use omnidiff::diff::content::Family;
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
+use omnidiff::test::helper::human_content::{self, HumanContent};
 #[cfg(test)]
 use omnidiff::test::helper::human_mapping::rebuild_caches;
 use omnidiff::test::helper::human_mapping::{
@@ -417,30 +419,79 @@ fn list_available_cases() -> Result<Vec<(String, &'static str)>> {
     Ok(names)
 }
 
-/// What the `o` picker lists: every case of [`list_available_cases`], then every picture fixture
-/// (dataset `pictures`), sorted by name. Only the picker sees the pictures: the corpus scans,
-/// `load_case` and `{`/`}` read their names as code.
+/// What the `o` picker lists: every case of [`list_available_cases`], then every content fixture
+/// (one dataset per `Family`: `pictures`, `archives`, ...), sorted by name. Only the picker sees
+/// them: the corpus scans, `load_case` and `{`/`}` read their names as code.
 fn list_picker_cases() -> Result<Vec<(String, &'static str)>> {
     let mut names = list_available_cases()?;
-    for name in list_dir_names(&human_picture::pictures_root())? {
-        names.push((name, pictures::PICTURE_DATASET));
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family))? {
+            names.push((name, family.name()));
+        }
     }
     names.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(names)
 }
 
-/// Every picture fixture's recorded verdict, `None` where there is none yet (`App::picture_verdicts`).
-fn read_picture_verdicts() -> HashMap<String, Option<human_picture::Verdict>> {
-    list_dir_names(&human_picture::pictures_root())
-        .unwrap_or_default()
-        .into_iter()
-        .map(|name| {
-            let verdict = human_picture::load(&name)
-                .ok()
-                .map(|picture| picture.verdict);
-            (name, verdict)
-        })
-        .collect()
+/// What the `o` picker shows for a content fixture.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ContentRow {
+    /// The verdict on the whole pair, if one is recorded: what the `Verdict` column sorts by.
+    pub(crate) verdict: Option<human_picture::Verdict>,
+    /// The `Verdict` column: the pair verdict, or how many members have one.
+    pub(crate) label: String,
+    /// The `Cmpl` column: a picture without its verdict, or a container without a pair verdict
+    /// or one for every changed member.
+    pub(crate) incomplete: bool,
+}
+
+impl ContentRow {
+    /// A picture fixture's row, from its verdict.
+    pub(crate) fn picture(verdict: Option<human_picture::Verdict>) -> Self {
+        Self {
+            verdict,
+            label: verdict
+                .map(|verdict| verdict.label())
+                .unwrap_or_default()
+                .to_string(),
+            incomplete: verdict.is_none(),
+        }
+    }
+
+    /// A container fixture's row, from its ground truth (`None` before any is saved).
+    fn container(human: Option<HumanContent>) -> Self {
+        let human = human.unwrap_or_default();
+        let label = match (human.verdict, human.members.len()) {
+            (Some(verdict), _) => verdict.label().to_string(),
+            (None, 0) => String::new(),
+            (None, judged) => format!("{judged} judged"),
+        };
+        Self {
+            verdict: human.verdict,
+            label,
+            incomplete: !human.is_complete(),
+        }
+    }
+}
+
+/// Every content fixture's row (`App::content_rows`), re-read on each `o`: a few hundred small
+/// files.
+fn read_content_rows() -> HashMap<String, ContentRow> {
+    let mut rows = HashMap::new();
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family)).unwrap_or_default() {
+            let row = match family {
+                Family::Pictures => ContentRow::picture(
+                    human_picture::load(&name)
+                        .ok()
+                        .map(|picture| picture.verdict),
+                ),
+                family => ContentRow::container(human_content::load(family, &name).ok()),
+            };
+            rows.insert(name, row);
+        }
+    }
+    rows
 }
 
 /// The case names the `o` picker shows, in order: `options` narrowed by every filter in `view`
@@ -867,12 +918,12 @@ where
     result
 }
 
-/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the picture fixtures.
+/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the content fixtures' families.
 fn picker_datasets() -> impl Iterator<Item = &'static str> {
     DIFF_DATASETS
         .iter()
         .copied()
-        .chain([pictures::PICTURE_DATASET])
+        .chain(Family::ALL.map(Family::name))
 }
 
 /// The `o` picker's next dataset filter: `picker_datasets` in order, then back to "all" (`None`).
@@ -1745,8 +1796,8 @@ struct DiffPickerData<'a> {
     disagreement: Option<&'a HashMap<String, usize>>,
     invariants: Option<&'a HashMap<String, usize>>,
     sizes: Option<&'a HashMap<String, usize>>,
-    /// `App::picture_verdicts`: which rows are pictures, and their verdicts.
-    pictures: Option<&'a HashMap<String, Option<human_picture::Verdict>>>,
+    /// `App::content_rows`: which rows are content fixtures, and their verdicts.
+    content: Option<&'a HashMap<String, ContentRow>>,
 }
 
 impl<'a> DiffPickerData<'a> {
@@ -1757,19 +1808,20 @@ impl<'a> DiffPickerData<'a> {
             disagreement: app.diff_disagreement.as_ref(),
             invariants: app.diff_invariants.as_ref(),
             sizes: app.diff_sizes.as_ref(),
-            pictures: Some(&app.picture_verdicts),
+            content: Some(&app.content_rows),
         }
     }
 
-    fn is_picture(&self, name: &str) -> bool {
-        self.pictures.is_some_and(|map| map.contains_key(name))
+    fn is_content(&self, name: &str) -> bool {
+        self.content.is_some_and(|map| map.contains_key(name))
+    }
+
+    fn content_of(&self, name: &str) -> Option<&'a ContentRow> {
+        self.content.and_then(|map| map.get(name))
     }
 
     fn verdict_of(&self, name: &str) -> Option<human_picture::Verdict> {
-        self.pictures
-            .and_then(|map| map.get(name))
-            .copied()
-            .flatten()
+        self.content_of(name).and_then(|row| row.verdict)
     }
 
     /// `verdict_of` as its place in `Verdict::ALL`, the order the `Verdict` column sorts in.
@@ -1780,11 +1832,11 @@ impl<'a> DiffPickerData<'a> {
             .position(|candidate| *candidate == verdict)
     }
 
-    /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, no verdict
-    /// for a picture.
+    /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, verdicts
+    /// still to give for a content fixture.
     fn incomplete_of(&self, name: &str) -> Option<bool> {
-        if self.is_picture(name) {
-            return Some(self.verdict_of(name).is_none());
+        if let Some(row) = self.content_of(name) {
+            return Some(row.incomplete);
         }
         self.unmarked_of(name).map(|count| count > 0)
     }

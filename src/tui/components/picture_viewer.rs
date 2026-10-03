@@ -256,10 +256,30 @@ impl PictureViewer {
         // Decoded once and kept: an animation's frames are the expensive part.
         let (before_decoded, after_decoded) =
             picture::decode_pair(&before_bytes, &after_bytes).ok()?;
-        let diff = picture::compare_decoded(before_decoded.as_ref(), after_decoded.as_ref());
+        Some(Self::from_decoded(
+            before.display().to_string(),
+            after.display().to_string(),
+            before_decoded,
+            after_decoded,
+            picker,
+            annotating,
+        ))
+    }
+
+    /// The view of two pictures already decoded (a glyph, a page, a picture in an archive), each
+    /// pane titled with its name; a side that is `None` is absent.
+    pub fn from_decoded(
+        before_name: String,
+        after_name: String,
+        before: picture::Decoded,
+        after: picture::Decoded,
+        picker: Picker,
+        annotating: bool,
+    ) -> Self {
+        let diff = picture::compare_decoded(before.as_ref(), after.as_ref());
         let (before_frames, after_frames) = (
-            before_decoded.map(|(_, frames)| frames),
-            after_decoded.map(|(_, frames)| frames),
+            before.map(|(_, frames)| frames),
+            after.map(|(_, frames)| frames),
         );
         let timeline = timeline(
             &diff,
@@ -267,9 +287,9 @@ impl PictureViewer {
             after_frames.as_ref(),
             annotating,
         );
-        Some(Self {
-            before_name: before.display().to_string(),
-            after_name: after.display().to_string(),
+        Self {
+            before_name,
+            after_name,
             before: before_frames,
             after: after_frames,
             diff,
@@ -285,7 +305,7 @@ impl PictureViewer {
             },
             shown: None,
             annotating,
-        })
+        }
     }
 
     /// Switches to a different drawing protocol (the terminal answered the graphics query).

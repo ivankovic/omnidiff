@@ -21,6 +21,7 @@ pub mod diff_viewer;
 pub mod file_dialog;
 pub mod help_modal;
 pub mod line_prompt;
+pub mod member_viewer;
 pub mod picture_viewer;
 pub mod render_options_dialog;
 pub mod review_dialog;

@@ -62,6 +62,145 @@ pub fn content_notice(
         crate::diff::content::ContentDiff::Picture(picture) => {
             picture_notice(paths, before, after, picture)
         }
+        crate::diff::content::ContentDiff::Container(container) => {
+            container_notice(paths, before, after, container)
+        }
+    }
+}
+
+/// The headless report of a container pair (see [`crate::diff::content::container`]): what each
+/// side is, how many members changed, and the first [`LISTED_MEMBERS`] of them with what changed.
+pub fn container_notice(
+    paths: &[PathBuf],
+    before: &Path,
+    after: &Path,
+    diff: &crate::diff::content::container::ContainerDiff,
+) -> String {
+    use crate::diff::content::container::{ContainerInfo, MemberStatus};
+
+    let name = if invoked_as_git_external_diff(paths) {
+        format!("{} {}", diff.family.noun(false), paths[0].display())
+    } else {
+        format!(
+            "{} {} and {}",
+            diff.family.noun(true),
+            before.display(),
+            after.display()
+        )
+    };
+    let side = |info: &Option<ContainerInfo>| match info {
+        Some(info) => format!(
+            "{}, {} member{}, {} bytes",
+            info.format,
+            info.members,
+            if info.members == 1 { "" } else { "s" },
+            info.bytes
+        ),
+        None => "nothing".to_string(),
+    };
+    let mut out = format!("{name}: {} -> {}\n", side(&diff.before), side(&diff.after));
+    let count = |status| {
+        diff.members
+            .iter()
+            .filter(|member| member.status == status)
+            .count()
+    };
+    out.push_str(&format!(
+        "  {} changed, {} added, {} removed, {} unchanged\n",
+        count(MemberStatus::Changed),
+        count(MemberStatus::Added),
+        count(MemberStatus::Removed),
+        diff.unchanged
+    ));
+    for member in diff.members.iter().take(LISTED_MEMBERS) {
+        let line = match (member.status, &member.detail) {
+            (MemberStatus::Changed, Some(detail)) => {
+                format!("changed  {}: {}", member.key, member_summary(detail))
+            }
+            (MemberStatus::Changed, None) => format!("changed  {}: does not open", member.key),
+            (MemberStatus::Added, _) => format!("added    {}", member.key),
+            (MemberStatus::Removed, _) => format!("removed  {}", member.key),
+            (MemberStatus::Same, _) => continue,
+        };
+        out.push_str(&format!("    {line}\n"));
+    }
+    if diff.members.len() > LISTED_MEMBERS {
+        out.push_str(&format!(
+            "    ... {} more\n",
+            diff.members.len() - LISTED_MEMBERS
+        ));
+    }
+    out
+}
+
+/// How many members [`container_notice`] lists.
+pub const LISTED_MEMBERS: usize = 20;
+
+/// One changed member's change, in a few words.
+fn member_summary(detail: &crate::diff::content::container::MemberDetail) -> String {
+    use crate::diff::content::ContentDiff;
+    use crate::diff::content::container::{MemberDetail, MemberStatus};
+    match detail {
+        MemberDetail::Picture(picture) => picture_summary(picture),
+        MemberDetail::Content { content } => match content.as_ref() {
+            ContentDiff::Picture(picture) => picture_summary(picture),
+            ContentDiff::Container(container) => {
+                let count = |status| {
+                    container
+                        .members
+                        .iter()
+                        .filter(|member| member.status == status)
+                        .count()
+                };
+                format!(
+                    "{} with {} changed, {} added, {} removed",
+                    container.family.noun(false).to_lowercase(),
+                    count(MemberStatus::Changed),
+                    count(MemberStatus::Added),
+                    count(MemberStatus::Removed)
+                )
+            }
+        },
+        MemberDetail::Text {
+            removed: 0,
+            added: 0,
+            ..
+        } => "only line endings or the encoding changed".to_string(),
+        MemberDetail::Text { removed, added, .. } => {
+            let noun = if *removed == 1 { "line" } else { "lines" };
+            format!("{removed} {noun} removed, {added} added")
+        }
+        MemberDetail::Binary {
+            before_bytes,
+            after_bytes,
+        } => format!("{before_bytes} -> {after_bytes} bytes"),
+    }
+}
+
+/// A picture diff in one phrase, for a list of members.
+fn picture_summary(diff: &crate::diff::picture::PictureDiff) -> String {
+    use crate::diff::picture::{Comparison, FrameCounts};
+    match &diff.comparison {
+        Comparison::OneSided => "added or removed".to_string(),
+        Comparison::Resized => match (&diff.before, &diff.after) {
+            (Some(before), Some(after)) => format!(
+                "resized, {}x{} -> {}x{}",
+                before.width, before.height, after.width, after.height
+            ),
+            _ => "resized".to_string(),
+        },
+        Comparison::Frames { steps, .. } => FrameCounts::of(steps).describe(),
+        Comparison::Pixels { regions, .. } if regions.is_empty() => "no pixel changed".to_string(),
+        Comparison::Pixels {
+            changed_pixels,
+            total_pixels,
+            regions,
+        } => format!(
+            "{:.2}% of pixels changed, in {} region{}",
+            100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64,
+            regions.len(),
+            if regions.len() == 1 { "" } else { "s" }
+        ),
     }
 }
 
