@@ -54,6 +54,8 @@ mod defects4j;
 #[cfg(test)]
 mod encodings;
 #[cfg(test)]
+mod fonts;
+#[cfg(test)]
 mod full;
 #[cfg(test)]
 mod handmade;

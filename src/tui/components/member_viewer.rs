@@ -25,7 +25,8 @@
 //! six hundred glyphs are not drawn to show two.
 //!
 //! `Enter` on a member that is itself a container (a jar in a zip) opens it in place, and
-//! `Backspace` comes back out.
+//! `Backspace` comes back out. `g` shows every changed member that is a picture at once - a
+//! font's changed glyphs, a theme's changed cursors - as a grid on each side, in the picture view.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -46,7 +47,16 @@ use crate::diff::content::container::{
     self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberStatus,
 };
 use crate::diff::content::{self, Engine, Family, Verdict};
-use crate::diff::picture;
+use crate::diff::picture::{self, Frames, PictureInfo};
+use image::RgbaImage;
+
+/// One member's place in the grid: its picture on each side that has one.
+type Tile = (Option<RgbaImage>, Option<RgbaImage>);
+
+/// How many changed members the grid (`g`) shows at most.
+const GRID_MEMBERS: usize = 400;
+/// The largest a grid tile is drawn, in pixels: bigger pictures are scaled down to it.
+const GRID_TILE_PIXELS: u32 = 128;
 
 /// What the selected member looks like on screen.
 enum MemberView {
@@ -75,6 +85,8 @@ pub struct MemberViewer {
     rows: Vec<Aligned>,
     /// Show every member, not only the ones that changed, were added or were removed.
     show_all: bool,
+    /// Show every changed picture member at once, in a grid (`g`), instead of the selected one.
+    grid: bool,
     /// The selected row of the visible ones; 0 is the pair itself.
     selected: usize,
     view: Option<MemberView>,
@@ -107,6 +119,7 @@ impl MemberViewer {
             diff,
             rows,
             show_all: false,
+            grid: false,
             selected: 0,
             view: None,
             nested: None,
@@ -265,6 +278,10 @@ impl MemberViewer {
                 self.show_all = !self.show_all;
                 self.select(key.as_deref());
             }
+            KeyCode::Char('g') => {
+                self.grid = !self.grid;
+                self.view = None;
+            }
             KeyCode::Enter => {
                 self.ensure_view();
                 let Some(MemberView::Nested { before, after }) = &self.view else {
@@ -309,7 +326,10 @@ impl MemberViewer {
     fn move_to(&mut self, selected: usize) {
         if selected != self.selected {
             self.selected = selected;
-            self.view = None;
+            // The grid shows every changed member whichever is selected.
+            if !self.grid {
+                self.view = None;
+            }
         }
     }
 
@@ -324,6 +344,10 @@ impl MemberViewer {
     /// Builds the selected member's view, if it is not built yet.
     fn ensure_view(&mut self) {
         if self.view.is_some() {
+            return;
+        }
+        if self.grid {
+            self.view = Some(self.grid_view());
             return;
         }
         let visible = self.visible();
@@ -435,6 +459,89 @@ impl MemberViewer {
         }
     }
 
+    /// Every changed member that is a picture (a glyph, a cursor, a picture in an archive), as
+    /// two grids of tiles - before's and after's, each member in the same place on both - shown as
+    /// one picture pair. The first [`GRID_MEMBERS`] of them.
+    fn grid_view(&self) -> MemberView {
+        let first_frame = |content: Option<MemberContent>| -> Option<RgbaImage> {
+            match content? {
+                MemberContent::Picture(picture) => Some(picture.1.pixels(0).into_owned()),
+                MemberContent::Bytes(bytes) if picture::is_picture(&bytes) => {
+                    Some(picture::decode(&bytes).ok()?.1.pixels(0).into_owned())
+                }
+                _ => None,
+            }
+        };
+        let open = |side: Option<&dyn Container>, index: Option<usize>| {
+            side.zip(index)
+                .and_then(|(side, index)| side.open(index).ok())
+        };
+        let tiles: Vec<Tile> = self
+            .rows
+            .iter()
+            .filter(|row| row.status == MemberStatus::Changed)
+            .take(GRID_MEMBERS)
+            .map(|row| {
+                (
+                    first_frame(open(self.before.as_deref(), row.before)),
+                    first_frame(open(self.after.as_deref(), row.after)),
+                )
+            })
+            .filter(|(before, after)| before.is_some() || after.is_some())
+            .collect();
+        if tiles.is_empty() {
+            return MemberView::Message(
+                "No changed member is a picture: g shows the selected member again".to_string(),
+            );
+        }
+        let side = tiles
+            .iter()
+            .flat_map(|(before, after)| [before, after])
+            .flatten()
+            .map(|tile| tile.width().max(tile.height()))
+            .max()
+            .unwrap_or(1)
+            .min(GRID_TILE_PIXELS);
+        let columns = (tiles.len() as f64).sqrt().ceil() as u32;
+        let rows = (tiles.len() as u32).div_ceil(columns);
+        let grid = |pick: fn(&Tile) -> &Option<RgbaImage>| {
+            let mut canvas = RgbaImage::new(columns * side, rows * side);
+            for (index, tile) in tiles.iter().enumerate() {
+                let Some(tile) = pick(tile) else {
+                    continue;
+                };
+                let tile = if tile.width() > side || tile.height() > side {
+                    image::imageops::thumbnail(tile, side, side)
+                } else {
+                    tile.clone()
+                };
+                let (x, y) = (index as u32 % columns * side, index as u32 / columns * side);
+                image::imageops::overlay(&mut canvas, &tile, i64::from(x), i64::from(y));
+            }
+            let frames = Frames::from_frames(vec![(canvas, 0)]).ok()?;
+            let (width, height) = frames.dimensions();
+            let info = PictureInfo {
+                format: "GRID".to_string(),
+                width,
+                height,
+                color: "RGBA8".to_string(),
+                bytes: 0,
+                frames: 1,
+                duration_ms: 0,
+            };
+            Some((info, frames))
+        };
+        let count = tiles.len();
+        MemberView::Picture(Box::new(PictureViewer::from_decoded(
+            format!("before: {count} changed"),
+            format!("after: {count} changed"),
+            grid(|tile| &tile.0),
+            grid(|tile| &tile.1),
+            self.picker.clone(),
+            self.annotating,
+        )))
+    }
+
     /// What the pair row shows: each side, and how many members changed.
     fn pair_summary(&self) -> String {
         let side = |info: &Option<ContainerInfo>| match info {
@@ -467,6 +574,17 @@ impl MemberViewer {
     pub fn status(&self) -> String {
         if let Some(nested) = &self.nested {
             return format!("{} (Backspace: back)", nested.status());
+        }
+        if self.grid {
+            return format!(
+                "{}: {} · every changed picture member (g: one at a time) · {}",
+                self.family.noun(true),
+                self.counts(),
+                match &self.view {
+                    Some(MemberView::Picture(viewer)) => viewer.status(),
+                    _ => String::new(),
+                }
+            );
         }
         let shown = if self.show_all {
             "all (a: changed)"
@@ -772,5 +890,35 @@ mod tests {
         screen(&mut viewer);
         assert!(viewer.status().contains("PNG 4x4"), "{}", viewer.status());
         assert_eq!(viewer.member_verdict("icon.png"), Some(Verdict::Replaced));
+    }
+
+    #[test]
+    fn g_shows_every_changed_glyph_in_a_grid() {
+        let read = |name: &str| {
+            std::fs::read(
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("src/test/data/content")
+                    .join(name),
+            )
+            .unwrap()
+        };
+        let (before, after) =
+            content::decode_container_pair(&read("before.ttf"), &read("after.ttf")).unwrap();
+        let mut viewer = MemberViewer::new(
+            ("before.ttf".to_string(), "after.ttf".to_string()),
+            Family::Fonts,
+            before,
+            after,
+            Picker::halfblocks(),
+            true,
+        );
+        viewer.handle_key(KeyCode::Char('g'));
+        screen(&mut viewer);
+        let status = viewer.status();
+        assert!(status.contains("every changed picture member"), "{status}");
+        // B is the one changed glyph: a one-tile grid, a glyph's cell wide.
+        assert!(status.contains("GRID 96x96"), "{status}");
+        viewer.handle_key(KeyCode::Char('g'));
+        assert!(!viewer.status().contains("GRID"));
     }
 }

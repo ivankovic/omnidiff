@@ -41,6 +41,7 @@
 pub mod archive;
 pub mod container;
 pub mod cursor;
+pub mod font;
 
 use anyhow::{Result, bail};
 use serde::Serialize;
@@ -101,6 +102,7 @@ pub enum Family {
     Pictures,
     Archives,
     Cursors,
+    Fonts,
 }
 
 impl Serialize for Family {
@@ -110,7 +112,12 @@ impl Serialize for Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 3] = [Family::Pictures, Family::Archives, Family::Cursors];
+    pub const ALL: [Family; 4] = [
+        Family::Pictures,
+        Family::Archives,
+        Family::Cursors,
+        Family::Fonts,
+    ];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
     pub fn name(self) -> &'static str {
@@ -118,6 +125,7 @@ impl Family {
             Family::Pictures => "pictures",
             Family::Archives => "archives",
             Family::Cursors => "cursors",
+            Family::Fonts => "fonts",
         }
     }
 
@@ -130,6 +138,8 @@ impl Family {
             (Family::Archives, true) => "Archives",
             (Family::Cursors, false) => "Cursor",
             (Family::Cursors, true) => "Cursors",
+            (Family::Fonts, false) => "Font",
+            (Family::Fonts, true) => "Fonts",
         }
     }
 
@@ -150,6 +160,7 @@ impl Family {
             ],
             // X cursors carry no extension at all: the sampler sniffs extensionless files too.
             Family::Cursors => &["cur", "ani", "hlc"],
+            Family::Fonts => &["ttf", "otf", "ttc", "otc", "woff", "woff2", "eot"],
         }
     }
 }
@@ -172,6 +183,12 @@ pub enum Format {
     Xcursor,
     /// A Hyprland cursor: a zip with a `meta.hl`.
     Hyprcursor,
+    /// TrueType or OpenType, or a collection of them.
+    Sfnt,
+    Woff,
+    Woff2,
+    /// Embedded OpenType.
+    Eot,
 }
 
 impl Format {
@@ -182,6 +199,7 @@ impl Format {
                 Family::Archives
             }
             Format::Cur | Format::Ani | Format::Xcursor | Format::Hyprcursor => Family::Cursors,
+            Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Family::Fonts,
         }
     }
 
@@ -207,6 +225,10 @@ impl Format {
             Format::Ani => "ANI".to_string(),
             Format::Xcursor => "XCURSOR".to_string(),
             Format::Hyprcursor => "HYPRCURSOR".to_string(),
+            Format::Sfnt => "SFNT".to_string(),
+            Format::Woff => "WOFF".to_string(),
+            Format::Woff2 => "WOFF2".to_string(),
+            Format::Eot => "EOT".to_string(),
         }
     }
 }
@@ -228,6 +250,18 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
     }
     if cursor::is_cur(bytes) {
         return Some(Format::Cur);
+    }
+    if font::is_sfnt(bytes) {
+        return Some(Format::Sfnt);
+    }
+    if font::is_woff(bytes) {
+        return Some(Format::Woff);
+    }
+    if font::is_woff2(bytes) {
+        return Some(Format::Woff2);
+    }
+    if font::is_eot(bytes) {
+        return Some(Format::Eot);
     }
     if cursor::is_ani(bytes) {
         return Some(Format::Ani);
@@ -263,6 +297,9 @@ pub fn decode_container(bytes: &[u8]) -> Result<Box<dyn Container>> {
         Some(format) if format.family() == Family::Archives => archive::decode(bytes, format),
         Some(Format::Xcursor) => Ok(Box::new(cursor::Xcursor::new(bytes)?)),
         Some(Format::Hyprcursor) => Ok(Box::new(cursor::Hyprcursor::new(bytes)?)),
+        Some(format) if format.family() == Family::Fonts => {
+            Ok(Box::new(font::Font::new(bytes, format)?))
+        }
         Some(format) => bail!("{} is not a container", format.name()),
         None => bail!("not content OmniDiff knows"),
     }
@@ -301,6 +338,14 @@ pub fn probe(bytes: &[u8]) -> Option<Probe> {
                 shape: u64::from(info.width) << 32 | u64::from(info.height),
             })
         }
+        // A font's size is its glyphs, counted without drawing them.
+        Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Some(Probe {
+            format,
+            size: font::glyph_count(bytes, format).ok()?,
+            shape: container::hash_bytes(
+                font::member_keys(bytes, format).ok()?.join("\n").as_bytes(),
+            ),
+        }),
         // A container's size is how many members it has, its shape which ones.
         _ => {
             let container = decode_container(bytes).ok()?;

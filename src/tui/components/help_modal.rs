@@ -77,11 +77,14 @@ Pictures
   ,/. and Space    For an animation: step a frame back or on, play or pause
 
 Archives and other containers
-  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2) or cursor themes
-                   (X cursors, Hyprland .hlc): move through the members that changed, were
-                   added or were removed; the selected one shows beside the list - text as
-                   a line diff, pictures as above
+  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2), cursor themes
+                   (X cursors, Hyprland .hlc) or fonts (TTF, OTF, WOFF, WOFF2, EOT): move
+                   through the members that changed, were added or were removed; the
+                   selected one shows beside the list - text as a line diff, pictures and
+                   glyphs as above
   a                Show every member, unchanged ones too, or only the changed again
+  g                Show every changed member that is a picture at once, as a grid on each
+                   side - a font's changed glyphs, a theme's changed cursors
   PgDn/PgUp, J/K   Scroll a text member
   Enter            Open a member that is itself an archive; Backspace comes back out
 
