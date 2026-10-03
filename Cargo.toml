@@ -345,6 +345,11 @@ path = "src/bin/classify_paths.rs"
 required-features = ["stats"]
 
 [[bin]]
+name = "content_census"
+path = "src/bin/content_census.rs"
+required-features = ["stats"]
+
+[[bin]]
 name = "materialize_test_diffs"
 path = "src/bin/materialize_test_diffs.rs"
 required-features = ["stats"]

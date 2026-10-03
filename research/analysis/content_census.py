@@ -1,0 +1,155 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+#  This file is part of the OmniDiff code diffing tool.
+#
+#  Copyright (C) 2026 Marko Ivankovic
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+How much of what a diff tool is asked about OmniDiff diffs by content: the change census's window
+(`change_census.py`: every file changed by the most recent `--max-commits` non-merge commits of
+each clone, through `edit_shape_stats.numstat_rows`), each change judged by OmniDiff itself -
+`content_census` reads both blobs and says `text`, a content family (`pictures`, `fonts`, ...) or
+`binary` (see that binary's doc for the outcomes, and why they are OmniDiff's verdict, not git's).
+With `--diff` (the Makefile's default) every content pair is diffed, so a family counts only the
+pairs that diff.
+
+Two files, because a handful of repositories hold most binary changes (the change census): by
+key (extension, or name for a file without one) and outcome, with how many repositories; and by
+repository and outcome, for a repository-weighted share. The summary on stderr gives both: the
+share of changes diffed as text or content, and the mean of each repository's own share.
+
+Usage (from research/):
+    uv run ./analysis/content_census.py [--repositories DIR] [--max-commits N] [--jobs N]
+"""
+
+import argparse
+import collections
+import csv
+import os
+import subprocess
+import sys
+from concurrent.futures import ProcessPoolExecutor
+
+from change_census import key_of
+from edit_shape_stats import numstat_rows
+
+# The outcomes that are a diff a reader sees as content, not "Binary files differ".
+UNSEEN = ("binary", "missing")
+
+
+def covered(outcome):
+    """True if `outcome` is a change OmniDiff diffs as text or content."""
+    return outcome not in UNSEEN and ":" not in outcome
+
+
+def census_of(repo, max_commits, tool, diff):
+    """One repository's outcomes: a Counter of (key, outcome)."""
+    rows = [(commit, path) for commit, path, _, _ in numstat_rows(repo, max_commits, True)]
+    if not rows:
+        return os.path.basename(repo), collections.Counter()
+    command = [tool, "--repo", repo] + (["--diff"] if diff else [])
+    result = subprocess.run(
+        command,
+        input="".join(f"{commit}\t{path}\n" for commit, path in rows),
+        capture_output=True,
+        text=True,
+        errors="replace",
+        check=False,
+    )
+    if result.returncode != 0:
+        print(f"note: content_census failed in {os.path.basename(repo)}", file=sys.stderr)
+    tally = collections.Counter()
+    for line in result.stdout.splitlines():
+        path, _, outcome = line.rpartition("\t")
+        tally[(key_of(path), outcome)] += 1
+    return os.path.basename(repo), tally
+
+
+def _census_of(args):
+    return census_of(*args)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repositories", default="/var/tmp/research/small/repositories")
+    parser.add_argument("--max-commits", type=int, default=50)
+    parser.add_argument("--jobs", type=int, default=os.cpu_count())
+    parser.add_argument("--no-diff", action="store_true", help="recognise content, do not diff it")
+    parser.add_argument(
+        "--tool",
+        default=os.path.join(
+            os.path.dirname(__file__), "..", "..", "target", "release", "content_census"
+        ),
+    )
+    args = parser.parse_args()
+    research_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out_dir = os.path.join(research_dir, "data", "corpus_stats")
+
+    repos = sorted(
+        os.path.join(args.repositories, name)
+        for name in os.listdir(args.repositories)
+        if os.path.isdir(os.path.join(args.repositories, name, ".git"))
+    )
+    by_key = collections.Counter()
+    key_repositories = collections.Counter()
+    by_repository = {}
+    with ProcessPoolExecutor(args.jobs) as pool:
+        work = ((repo, args.max_commits, args.tool, not args.no_diff) for repo in repos)
+        for name, tally in pool.map(_census_of, work, chunksize=2):
+            by_key.update(tally)
+            key_repositories.update(tally.keys())
+            outcomes = collections.Counter()
+            for (_, outcome), count in tally.items():
+                outcomes[outcome] += count
+            by_repository[name] = outcomes
+
+    with open(os.path.join(out_dir, "content_census.csv"), "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["key", "outcome", "changes", "repositories"])
+        for (key, outcome), count in sorted(by_key.items(), key=lambda item: (-item[1], item[0])):
+            writer.writerow([key, outcome, count, key_repositories[(key, outcome)]])
+    with open(os.path.join(out_dir, "content_census_repositories.csv"), "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["repository", "outcome", "changes"])
+        for name in sorted(by_repository):
+            for outcome, count in sorted(by_repository[name].items()):
+                writer.writerow([name, outcome, count])
+
+    outcomes = collections.Counter()
+    for tally in by_repository.values():
+        outcomes.update(tally)
+    total = sum(count for outcome, count in outcomes.items() if outcome != "missing")
+    seen = sum(count for outcome, count in outcomes.items() if covered(outcome))
+    shares = []
+    for tally in by_repository.values():
+        changes = sum(count for outcome, count in tally.items() if outcome != "missing")
+        if changes:
+            shares.append(sum(c for o, c in tally.items() if covered(o)) / changes)
+    print(f"{len(repos)} repositories, {total} changed files", file=sys.stderr)
+    for outcome, count in outcomes.most_common():
+        print(f"  {outcome:24} {count:9} {100 * count / max(total, 1):7.3f}%", file=sys.stderr)
+    print(
+        f"diffed as text or content: {100 * seen / max(total, 1):.3f}% of changes; "
+        f"{100 * sum(shares) / max(len(shares), 1):.3f}% per repository on average; "
+        f"{sum(1 for share in shares if share == 1.0)} of {len(shares)} repositories entirely",
+        file=sys.stderr,
+    )
+
+
+if __name__ == "__main__":
+    main()
