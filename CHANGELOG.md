@@ -19,6 +19,18 @@ release does: a minor bump may change the JSON output or the library API, a patc
   lines are: the report says which frames changed, which were added or removed, and whether the
   same frames now show for different times. In the TUI, `,` and `.` step through the frames and
   space plays the animation.
+- Archives, fonts, cursor themes, message catalogs and PDFs are diffed by what they hold, member
+  by member: a zip's or tar's files (jars, Office documents and EPUBs are zips; gzip, xz and
+  bzip2 streams are opened too), a font's glyphs and names (TrueType, OpenType, WOFF, WOFF2,
+  EOT), a cursor's sizes and frames (Windows `.cur` and `.ani`, X cursors, Hyprland `.hlc`), a
+  gettext `.mo` or Qt `.qm` catalog's messages, a PDF's pages. Members match by name and only
+  the changed ones are opened: each is diffed by what it is - a picture as a picture, text by
+  lines, a nested archive as an archive. The report lists the members that changed, were added or
+  were removed; `--mode json` adds a `content` object, which a picture pair carries too. In the
+  TUI the members are listed beside the selected one, `a` shows the unchanged ones as well, `g`
+  shows every changed glyph or picture at once, and `Enter` opens an archive inside an archive.
+- Text in UTF-16 or UTF-32 (announced by a byte order mark) is read as text and diffed like any
+  other file instead of reported as binary; `--mode json` names its `encoding`.
 
 ### Changed
 
@@ -27,8 +39,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   `.storyboard`, `.xaml`, `.resx`, `.xsd`/`.xsl`, `.xlf`, `.kml`, `.gpx` and more (see the README's
   language list). A file under one of these names whose content is not markup is still diffed as
   plain text.
-- Building OmniDiff needs Rust 1.90 or later (was 1.88): the picture view's graphics library
-  depends on it.
+- Building OmniDiff needs Rust 1.92 or later (was 1.88): the picture view's graphics library
+  needs 1.90, and the PDF renderer 1.92.
 
 ## [0.2.0] - 2026-10-01
 

@@ -43,6 +43,7 @@ pub mod catalog;
 pub mod container;
 pub mod cursor;
 pub mod font;
+pub mod pdf;
 
 use anyhow::{Result, bail};
 use serde::Serialize;
@@ -105,6 +106,7 @@ pub enum Family {
     Cursors,
     Fonts,
     Catalogs,
+    Documents,
 }
 
 impl Serialize for Family {
@@ -114,12 +116,13 @@ impl Serialize for Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 5] = [
+    pub const ALL: [Family; 6] = [
         Family::Pictures,
         Family::Archives,
         Family::Cursors,
         Family::Fonts,
         Family::Catalogs,
+        Family::Documents,
     ];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
@@ -130,6 +133,7 @@ impl Family {
             Family::Cursors => "cursors",
             Family::Fonts => "fonts",
             Family::Catalogs => "catalogs",
+            Family::Documents => "documents",
         }
     }
 
@@ -146,6 +150,8 @@ impl Family {
             (Family::Fonts, true) => "Fonts",
             (Family::Catalogs, false) => "Catalog",
             (Family::Catalogs, true) => "Catalogs",
+            (Family::Documents, false) => "Document",
+            (Family::Documents, true) => "Documents",
         }
     }
 
@@ -168,6 +174,7 @@ impl Family {
             Family::Cursors => &["cur", "ani", "hlc"],
             Family::Fonts => &["ttf", "otf", "ttc", "otc", "woff", "woff2", "eot"],
             Family::Catalogs => &["mo", "gmo", "qm"],
+            Family::Documents => &["pdf"],
         }
     }
 }
@@ -200,6 +207,7 @@ pub enum Format {
     Mo,
     /// A Qt catalog.
     Qm,
+    Pdf,
 }
 
 impl Format {
@@ -212,6 +220,7 @@ impl Format {
             Format::Cur | Format::Ani | Format::Xcursor | Format::Hyprcursor => Family::Cursors,
             Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Family::Fonts,
             Format::Mo | Format::Qm => Family::Catalogs,
+            Format::Pdf => Family::Documents,
         }
     }
 
@@ -243,6 +252,7 @@ impl Format {
             Format::Eot => "EOT".to_string(),
             Format::Mo => "MO".to_string(),
             Format::Qm => "QM".to_string(),
+            Format::Pdf => "PDF".to_string(),
         }
     }
 }
@@ -283,6 +293,9 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
     if catalog::is_qm(bytes) {
         return Some(Format::Qm);
     }
+    if pdf::is_pdf(bytes) {
+        return Some(Format::Pdf);
+    }
     if cursor::is_ani(bytes) {
         return Some(Format::Ani);
     }
@@ -322,6 +335,7 @@ pub fn decode_container(bytes: &[u8]) -> Result<Box<dyn Container>> {
         }
         Some(Format::Mo) => Ok(Box::new(catalog::Catalog::mo(bytes)?)),
         Some(Format::Qm) => Ok(Box::new(catalog::Catalog::qm(bytes)?)),
+        Some(Format::Pdf) => Ok(Box::new(pdf::Document::new(bytes)?)),
         Some(format) => bail!("{} is not a container", format.name()),
         None => bail!("not content OmniDiff knows"),
     }

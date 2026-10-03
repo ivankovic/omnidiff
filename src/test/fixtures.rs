@@ -54,6 +54,8 @@ mod cursors;
 #[cfg(test)]
 mod defects4j;
 #[cfg(test)]
+mod documents;
+#[cfg(test)]
 mod encodings;
 #[cfg(test)]
 mod fonts;
