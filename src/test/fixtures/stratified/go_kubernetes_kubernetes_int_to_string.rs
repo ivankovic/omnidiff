@@ -24,10 +24,13 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // Tricky case. The text diff is obvious, but in the AST it violates a lot of assumptions.
+    // Each of the 15 `int32(N)` conversions in the expected table cells becomes the string `"N"`:
+    // the human maps the `int_literal` to the string's content, and omnidiff deletes it, a call
+    // and a string having nothing in common for APTED (`APTED("large_flat_subtree")`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-kubernetes-kubernetes-int-to-string",
-        1,
-        1,
+        15,
+        15,
     )
 }
 

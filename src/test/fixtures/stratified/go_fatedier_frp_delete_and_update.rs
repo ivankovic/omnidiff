@@ -19,7 +19,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -33,5 +33,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("go-fatedier-frp-delete-and-update")
+    // Invariant 16, twice: `rd` -> `r` on after rows 19 and 23 is not painted as its differing word
+    // (`d`, removed) under Minimal.
+    assert_ground_truth_invariants_with_known_violations("go-fatedier-frp-delete-and-update", 2)
 }

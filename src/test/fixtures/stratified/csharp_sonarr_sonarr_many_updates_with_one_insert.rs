@@ -19,7 +19,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -38,5 +38,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("csharp-sonarr-sonarr-many-updates-with-one-insert")
+    // Invariant 16, ten times: `IDecisionEngineSpecification` -> `IDownloadDecisionEngineSpecification`
+    // (row 7) and `Decision` -> `DownloadSpecDecision` (rows 19, 23, 31, 34) are not painted as
+    // their added words (`Download`, `DownloadSpec`) under Minimal.
+    assert_ground_truth_invariants_with_known_violations(
+        "csharp-sonarr-sonarr-many-updates-with-one-insert",
+        10,
+    )
 }

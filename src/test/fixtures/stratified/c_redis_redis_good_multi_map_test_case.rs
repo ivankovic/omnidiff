@@ -19,15 +19,19 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // Mostly listpackTest's new "Benchmark lpCompare with number and caching" block, a copy of the
+    // benchmark before it: the human calls the copy inserted and keeps the old block with its edited
+    // original, while omnidiff pairs some of the old block's statements with the copy's identical
+    // ones (`IdenticalHashOfAncestor`, `APTED("large_flat_subtree")`). The rest is lpCompare, whose
+    // old `lpStringToInt64` branch the human maps to both its cached and uncached copies.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-redis-redis-good-multi-map-test-case",
-        29,
-        18,
+        330,
+        219,
     )
 }
 
@@ -38,5 +42,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("c-redis-redis-good-multi-map-test-case")
+    // Invariant 12, both presets, and 16, four times: `lp` -> `eptr` (before row 3267, after row
+    // 3281) is painted on neither side, though the mapping says the leaf changed. Invariant 5:
+    // Full leaves columns 84..85 of after row 1738 unpainted between two painted regions.
+    assert_ground_truth_invariants_with_known_violations(
+        "c-redis-redis-good-multi-map-test-case",
+        7,
+    )
 }
