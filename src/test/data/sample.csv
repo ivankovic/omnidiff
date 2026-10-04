@@ -115,7 +115,7 @@ CPP,godotengine-godot.git,106bbaa2e89ff47a43edd86b950873db909870ac,scene/resourc
 CPP,godotengine-godot.git,6f86914f55a149d2b9578ba42f7f2a671f740557,scene/2d/animated_sprite_2d.cpp,cpp-godot-small-bugfix,small,PROMOTED,,
 CPP,godotengine-godot.git,727b06a79f6cbfab3c01dfb23da343cf1a0d17b5,platform/windows/export/export_plugin.cpp,cpp-godotengine-godot-insert-one-include,stratified,PROMOTED,,1000-3000
 CPP,godotengine-godot.git,765362b033011f44ccac7a68dd28147cf21fa135,servers/rendering/rendering_device.cpp,cpp-godotengine-godot-add-one-include,stratified,PROMOTED,,3000+
-CPP,godotengine-godot.git,8abb0fab9cb1dbe95db51f5d46304adbc2a5a61c,editor/scene/3d/camera_3d_editor_plugin.cpp,,stratified,SAMPLED,,100-300
+CPP,godotengine-godot.git,8abb0fab9cb1dbe95db51f5d46304adbc2a5a61c,editor/scene/3d/camera_3d_editor_plugin.cpp,cpp-godotengine-godot-small-but-complex-change,stratified,PROMOTED,,100-300
 CPP,godotengine-godot.git,abdde1b69d1a74c44043b4304950c857799b499c,modules/upnp/register_types.cpp,cpp-godotengine-godot-add-include,stratified,PROMOTED,,30-100
 CPP,godotengine-godot.git,e380a417526c11f15a9ddb3997292409b10da2af,editor/settings/editor_autoload_settings.cpp,cpp-godotengine-godot-add-one-include-2,stratified,PROMOTED,,1000-3000
 CPP,godotengine-godot.git,e380a417526c11f15a9ddb3997292409b10da2af,modules/gltf/structures/gltf_skin.cpp,cpp-godotengine-godot-add-one-include-3,stratified,PROMOTED,,100-300

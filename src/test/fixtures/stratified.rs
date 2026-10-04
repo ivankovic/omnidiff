@@ -173,6 +173,8 @@ mod cpp_godotengine_godot_add_qualified_name;
 #[cfg(test)]
 mod cpp_godotengine_godot_insert_one_include;
 #[cfg(test)]
+mod cpp_godotengine_godot_small_but_complex_change;
+#[cfg(test)]
 mod cpp_godotengine_godot_two_imports_added;
 #[cfg(test)]
 mod cpp_ladybirdbrowser_ladybird_add_real_logic;
