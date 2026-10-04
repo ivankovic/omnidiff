@@ -1,8 +1,8 @@
 language,repository,commit,path,promoted_to,dataset,status,comment,size_bucket
-ANI,pop-os-icon-theme,4c2c4af8aae4406f1603230ba77ab7dee09c6c92,Pop/cursors/00000000000000020006000e7e9ffc3f.ani,,cursors,SAMPLED,,small-same
-ANI,pop-os-icon-theme,4c2c4af8aae4406f1603230ba77ab7dee09c6c92,Pop/cursors/wait.ani,,cursors,SAMPLED,,small-same
-ANI,vinceliuice-Vimix-cursors,de8100f3bb7d023e190a3036eb926ed3e034f147,.windows/busy.ani,,cursors,SAMPLED,,icon-same
-ANI,vinceliuice-Vimix-cursors,de8100f3bb7d023e190a3036eb926ed3e034f147,.windows/working-in-background.ani,,cursors,SAMPLED,,icon-same
+ANI,pop-os-icon-theme,4c2c4af8aae4406f1603230ba77ab7dee09c6c92,Pop/cursors/00000000000000020006000e7e9ffc3f.ani,ani-x-pop-os-icon-theme-4c2c4af8-00000000000000020006000e7e9ffc3f,cursors,PROMOTED,,small-same
+ANI,pop-os-icon-theme,4c2c4af8aae4406f1603230ba77ab7dee09c6c92,Pop/cursors/wait.ani,ani-x-pop-os-icon-theme-4c2c4af8-wait,cursors,PROMOTED,,small-same
+ANI,vinceliuice-Vimix-cursors,de8100f3bb7d023e190a3036eb926ed3e034f147,.windows/busy.ani,ani-x-vinceliuice-vimix-cursors-de8100f3-busy,cursors,PROMOTED,,icon-same
+ANI,vinceliuice-Vimix-cursors,de8100f3bb7d023e190a3036eb926ed3e034f147,.windows/working-in-background.ani,ani-x-vinceliuice-vimix-cursors-de8100f3-working-in-background,cursors,PROMOTED,,icon-same
 BMP,matthewdeanmartin-terminaltables3,f904c3becc62d27fbf027b1dcb0d0cb4f54a7ede,tests/test_all_tables_e2e/sub_ascii_win10.bmp,bmp-x-matthewdeanmartin-terminaltables3-f904c3be-sub_ascii_win10,pictures,PROMOTED,,small-resized
 BMP,matthewdeanmartin-terminaltables3,f904c3becc62d27fbf027b1dcb0d0cb4f54a7ede,tests/test_all_tables_e2e/sub_ascii_winxp.bmp,bmp-x-matthewdeanmartin-terminaltables3-f904c3be-sub_ascii_winxp,pictures,PROMOTED,,small-resized
 BMP,talamus-solarize-12x29-psf,8a856fdb22bc633fdba490b339ea97ef16b700ac,Solarize.12x29.bmp,bmp-x-talamus-solarize-12x29-psf-8a856fdb-solarize-12x29,pictures,PROMOTED,,medium-same
@@ -366,7 +366,7 @@ CSharp,jellyfin-jellyfin.git,f680495ca377b20488cc8133a054317d6daf48fc,Jellyfin.S
 CSharp,protocolbuffers-protobuf.git,2aa094e0d3b15a97c89b43989b2715fc128fbb5c,csharp/src/Google.Protobuf.Test.TestProtos/UnittestFeatures.pb.cs,,stratified,SAMPLED,,1000-3000
 CSharp,protocolbuffers-protobuf.git,4b08f0363a095e03651e1b90a7b6d2e144fad0de,csharp/src/Google.Protobuf.Test.TestProtos/TestMessagesProto2.pb.cs,,stratified,SAMPLED,,3000+
 CSharp,waf-CSharpRepl,dbffe470e8c1186627b9ccbc9d94f3bd3722d2e0,CSharpRepl.Services/Configuration.cs,csharp-waf-csharprepl-update-string-URL,full,PROMOTED,,
-CUR,pop-os-icon-theme,c8b14907fb3f3b57b0f571969eaf7706adad97dc,Pop/cursors/right_tee.cur,,cursors,SAMPLED,,small-same
+CUR,pop-os-icon-theme,c8b14907fb3f3b57b0f571969eaf7706adad97dc,Pop/cursors/right_tee.cur,cur-x-pop-os-icon-theme-c8b14907-right_tee,cursors,PROMOTED,,small-same
 CUR,vinceliuice-Vimix-cursors,de8100f3bb7d023e190a3036eb926ed3e034f147,.windows/diagonal-resize-1.cur,,cursors,SAMPLED,,icon-same
 GIF,Exahilosys-survey,f4d880aedac68c513d18a6dc86bcec6d563beca5,docs/_static/images/graphics.lineprogress-1.gif,,pictures,SAMPLED,,small-resized
 GIF,Exahilosys-survey,f4d880aedac68c513d18a6dc86bcec6d563beca5,docs/_static/images/graphics.spinprogress-1.gif,,pictures,SAMPLED,,small-resized
