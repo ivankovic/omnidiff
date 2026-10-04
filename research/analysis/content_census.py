@@ -44,10 +44,11 @@ Usage (from research/):
 import argparse
 import collections
 import csv
+import json
 import os
 import subprocess
 import sys
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from change_census import key_of
 from edit_shape_stats import numstat_rows
@@ -84,10 +85,6 @@ def census_of(repo, max_commits, tool, diff):
     return os.path.basename(repo), tally
 
 
-def _census_of(args):
-    return census_of(*args)
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repositories", default="/var/tmp/research/small/repositories")
@@ -96,6 +93,12 @@ def main():
     parser.add_argument("--no-diff", action="store_true", help="recognise content, do not diff it")
     parser.add_argument(
         "--cap", type=int, default=1000, help="changes per repository the capped share counts"
+    )
+    parser.add_argument(
+        "--resume",
+        default=None,
+        help="the per-repository resume file (default: content_census.partial.jsonl beside the "
+        "repositories directory); delete it to start over",
     )
     parser.add_argument(
         "--tool",
@@ -112,18 +115,47 @@ def main():
         for name in os.listdir(args.repositories)
         if os.path.isdir(os.path.join(args.repositories, name, ".git"))
     )
+    # Each repository's tally is appended to a resume file as it lands, so a run that stops
+    # (a reboot, a stopped unit) picks up where it was rather than starting over.
+    resume = args.resume or os.path.join(
+        os.path.dirname(os.path.abspath(args.repositories)), "content_census.partial.jsonl"
+    )
+    by_repository = {}
+    if os.path.exists(resume):
+        with open(resume) as f:
+            for line in f:
+                record = json.loads(line)
+                by_repository[record["repository"]] = collections.Counter(
+                    {(key, outcome): count for key, outcome, count in record["tally"]}
+                )
+    todo = [repo for repo in repos if os.path.basename(repo) not in by_repository]
+    print(f"{len(by_repository)} repositories from {resume}, {len(todo)} to go", file=sys.stderr)
+    # Threads, not processes: each repository's work is two child processes (git log and
+    # content_census), and a process pool once hung for hours with every worker idle.
+    with ThreadPoolExecutor(args.jobs) as pool, open(resume, "a") as out:
+        futures = [
+            pool.submit(census_of, repo, args.max_commits, args.tool, not args.no_diff)
+            for repo in todo
+        ]
+        for done, future in enumerate(as_completed(futures), 1):
+            name, tally = future.result()
+            by_repository[name] = tally
+            record = {"repository": name, "tally": [[k, o, c] for (k, o), c in tally.items()]}
+            out.write(json.dumps(record) + "\n")
+            out.flush()
+            if done % 250 == 0:
+                print(f"  {done} of {len(todo)} repositories", file=sys.stderr, flush=True)
+
     by_key = collections.Counter()
     key_repositories = collections.Counter()
-    by_repository = {}
-    with ProcessPoolExecutor(args.jobs) as pool:
-        work = ((repo, args.max_commits, args.tool, not args.no_diff) for repo in repos)
-        for name, tally in pool.map(_census_of, work, chunksize=2):
-            by_key.update(tally)
-            key_repositories.update(tally.keys())
-            outcomes = collections.Counter()
-            for (_, outcome), count in tally.items():
-                outcomes[outcome] += count
-            by_repository[name] = outcomes
+    outcomes_by_repository = {}
+    for name, tally in by_repository.items():
+        by_key.update(tally)
+        key_repositories.update(tally.keys())
+        outcomes = collections.Counter()
+        for (_, outcome), count in tally.items():
+            outcomes[outcome] += count
+        outcomes_by_repository[name] = outcomes
 
     with open(os.path.join(out_dir, "content_census.csv"), "w", newline="") as f:
         writer = csv.writer(f)
@@ -133,11 +165,11 @@ def main():
     with open(os.path.join(out_dir, "content_census_repositories.csv"), "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["repository", "outcome", "changes"])
-        for name in sorted(by_repository):
-            for outcome, count in sorted(by_repository[name].items()):
+        for name in sorted(outcomes_by_repository):
+            for outcome, count in sorted(outcomes_by_repository[name].items()):
                 writer.writerow([name, outcome, count])
 
-    print(summary(by_repository, args.cap), file=sys.stderr)
+    print(summary(outcomes_by_repository, args.cap), file=sys.stderr)
 
 
 def summary(by_repository, cap):
