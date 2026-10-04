@@ -26,6 +26,7 @@ pub mod picture_viewer;
 pub mod render_options_dialog;
 pub mod review_dialog;
 pub mod search_modal;
+pub mod text_pair_view;
 pub mod theme_dialog;
 
 use anyhow::Result;

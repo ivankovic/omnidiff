@@ -97,6 +97,12 @@ impl ContentViewer {
         }
     }
 
+    /// The text member `Enter` asked to see in a full diff view (see
+    /// [`MemberViewer::take_open_request`]).
+    pub fn take_open_request(&mut self) -> Option<(String, String, String)> {
+        self.members_mut().and_then(MemberViewer::take_open_request)
+    }
+
     /// True while a container opened inside this one is showing (see [`MemberViewer`]).
     pub fn has_nested(&self) -> bool {
         self.members().is_some_and(MemberViewer::has_nested)

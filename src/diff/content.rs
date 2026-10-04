@@ -40,6 +40,7 @@
 
 pub mod archive;
 pub mod catalog;
+pub mod class;
 pub mod container;
 pub mod cursor;
 pub mod font;

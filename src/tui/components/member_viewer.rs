@@ -18,7 +18,10 @@
 
 //! A container pair on screen (see [`crate::diff::content::container`]): the members in a list,
 //! changed ones only until `a` shows all, and the selected member beside it - a picture in the
-//! picture view, text as a line diff, a nested container as a line saying `Enter` opens it.
+//! picture view, text (a Java class file as its listing) diffed by OmniDiff in a
+//! [`TextPairView`], a nested container as a line saying `Enter` opens it. `Enter` on a text
+//! member asks the caller to show it in a full diff view ([`MemberViewer::take_open_request`]),
+//! which the TUI does.
 //!
 //! The list's first row is the pair itself, so a reader (or `human_solver`) can stand on the
 //! whole file as well as on one member. A member is opened only when it is selected: a font's
@@ -43,6 +46,7 @@ use ratatui_image::picker::Picker;
 
 use super::content_viewer::ContentViewer;
 use super::picture_viewer::{PictureColors, PictureViewer};
+use super::text_pair_view::TextPairView;
 use crate::diff::content::container::{
     self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberStatus,
 };
@@ -61,11 +65,8 @@ const GRID_TILE_PIXELS: u32 = 128;
 /// What the selected member looks like on screen.
 enum MemberView {
     Picture(Box<PictureViewer>),
-    /// A line diff: each line with its mark, and how far it is scrolled.
-    Text {
-        lines: Vec<(char, String)>,
-        scroll: usize,
-    },
+    /// Text (or a class file's listing), diffed by OmniDiff.
+    Text(Box<TextPairView>),
     /// A member with nothing to draw: why, in a sentence.
     Message(String),
     /// A nested container, opened only on `Enter`.
@@ -96,6 +97,9 @@ pub struct MemberViewer {
     annotating: bool,
     /// A short label per member key, shown after it in the list (`human_solver`'s verdicts).
     marks: HashMap<String, String>,
+    /// A text member `Enter` asked to see in a full diff view: its key and both texts, for the
+    /// caller to take ([`Self::take_open_request`]).
+    open_request: Option<(String, String, String)>,
 }
 
 impl MemberViewer {
@@ -126,7 +130,17 @@ impl MemberViewer {
             picker,
             annotating,
             marks: HashMap::new(),
+            open_request: None,
         }
+    }
+
+    /// The text member `Enter` asked to open in a full diff view, if it did: (key, before,
+    /// after). A caller with no such view leaves it.
+    pub fn take_open_request(&mut self) -> Option<(String, String, String)> {
+        if let Some(nested) = self.nested.as_mut() {
+            return nested.take_open_request();
+        }
+        self.open_request.take()
     }
 
     /// The view of the container pair at `before` and `after`, if it decodes.
@@ -284,6 +298,13 @@ impl MemberViewer {
             }
             KeyCode::Enter => {
                 self.ensure_view();
+                if let (Some(MemberView::Text(view)), Some(key)) = (&self.view, self.selected_key())
+                {
+                    let (before, after) = view.texts();
+                    self.open_request =
+                        Some((key.to_string(), before.to_string(), after.to_string()));
+                    return true;
+                }
                 let Some(MemberView::Nested { before, after }) = &self.view else {
                     return false;
                 };
@@ -305,12 +326,11 @@ impl MemberViewer {
                 )
                 .map(Box::new);
             }
-            KeyCode::PageDown | KeyCode::Char('J') => self.scroll(10),
-            KeyCode::PageUp | KeyCode::Char('K') => self.scroll(-10),
             code => {
                 self.ensure_view();
                 return match self.view.as_mut() {
                     Some(MemberView::Picture(viewer)) => viewer.handle_key(code),
+                    Some(MemberView::Text(view)) => view.handle_key(code),
                     _ => false,
                 };
             }
@@ -330,14 +350,6 @@ impl MemberViewer {
             if !self.grid {
                 self.view = None;
             }
-        }
-    }
-
-    fn scroll(&mut self, by: isize) {
-        if let Some(MemberView::Text { lines, scroll }) = self.view.as_mut() {
-            *scroll = scroll
-                .saturating_add_signed(by)
-                .min(lines.len().saturating_sub(1));
         }
     }
 
@@ -437,17 +449,11 @@ impl MemberViewer {
                         before: b,
                         after: a,
                     },
-                    None => match (
-                        before.is_none() || crate::code::decode_text(&b).is_some(),
-                        after.is_none() || crate::code::decode_text(&a).is_some(),
-                    ) {
-                        (true, true) => MemberView::Text {
-                            lines: text_lines(
-                                &crate::code::decode_text(&b).unwrap_or_default(),
-                                &crate::code::decode_text(&a).unwrap_or_default(),
-                            ),
-                            scroll: 0,
-                        },
+                    // Text, or a class file as its listing (`container::as_text`).
+                    None => match (container::as_text(&b), container::as_text(&a)) {
+                        (Some(before_text), Some(after_text)) => MemberView::Text(Box::new(
+                            TextPairView::new(Path::new(key), &before_text, &after_text),
+                        )),
                         _ => MemberView::Message(format!(
                             "{key}: binary, {} -> {} bytes",
                             b.len(),
@@ -599,6 +605,18 @@ impl MemberViewer {
             (Some(key), Some(MemberView::Nested { .. })) => {
                 format!(" · {key}: Enter opens it")
             }
+            (Some(key), Some(MemberView::Text(view))) => {
+                match (self.annotating, self.member_verdict(key)) {
+                    (false, Some(verdict)) => {
+                        format!(
+                            " · {key}: omnidiff says {} · {}",
+                            verdict.label(),
+                            view.status()
+                        )
+                    }
+                    _ => format!(" · {key} · {}", view.status()),
+                }
+            }
             (Some(key), _) => match (self.annotating, self.member_verdict(key)) {
                 (false, Some(verdict)) => format!(" · {key}: omnidiff says {}", verdict.label()),
                 _ => format!(" · {key}"),
@@ -625,25 +643,7 @@ impl MemberViewer {
         let title = self.selected_key().unwrap_or_default().to_string();
         match self.view.as_mut() {
             Some(MemberView::Picture(viewer)) => viewer.draw(frame, columns[1], colors),
-            Some(MemberView::Text { lines, scroll }) => {
-                let block = Block::default().borders(Borders::ALL).title(title);
-                let inner = block.inner(columns[1]);
-                frame.render_widget(block, columns[1]);
-                let shown: Vec<Line> = lines
-                    .iter()
-                    .skip(*scroll)
-                    .take(inner.height as usize)
-                    .map(|(mark, text)| {
-                        let line = format!("{mark} {text}");
-                        match mark {
-                            '-' => Line::from(line.red()),
-                            '+' => Line::from(line.green()),
-                            _ => Line::from(line),
-                        }
-                    })
-                    .collect();
-                frame.render_widget(Paragraph::new(shown), inner);
-            }
+            Some(MemberView::Text(view)) => view.draw(frame, columns[1], &title),
             Some(MemberView::Message(message)) => {
                 let block = Block::default().borders(Borders::ALL);
                 let inner = block.inner(columns[1]);
@@ -728,26 +728,6 @@ fn short(name: &str) -> String {
         .map_or(name.to_string(), |file| file.to_string_lossy().into_owned())
 }
 
-/// Two texts as one line diff: each line marked ' ' (both), '-' (before only) or '+' (after
-/// only), in order.
-fn text_lines(before: &str, after: &str) -> Vec<(char, String)> {
-    let (b, a): (Vec<&str>, Vec<&str>) = (before.lines().collect(), after.lines().collect());
-    let pairs = crate::diff::text::line_diff_core(before, after, 10_000)
-        .map(|core| core.pairs)
-        .unwrap_or_default();
-    let mut lines = Vec::with_capacity(b.len().max(a.len()));
-    let (mut i, mut j) = (0, 0);
-    for (pb, pa) in pairs.into_iter().chain([(b.len(), a.len())]) {
-        lines.extend(b[i..pb].iter().map(|line| ('-', line.to_string())));
-        lines.extend(a[j..pa].iter().map(|line| ('+', line.to_string())));
-        if pb < b.len() {
-            lines.push((' ', b[pb].to_string()));
-        }
-        (i, j) = (pb + 1, pa + 1);
-    }
-    lines
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -787,20 +767,6 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n")
-    }
-
-    #[test]
-    fn text_lines_mark_what_each_side_has() {
-        assert_eq!(
-            text_lines("a\nb\nc\n", "a\nB\nc\nd\n"),
-            vec![
-                (' ', "a".to_string()),
-                ('-', "b".to_string()),
-                ('+', "B".to_string()),
-                (' ', "c".to_string()),
-                ('+', "d".to_string()),
-            ]
-        );
     }
 
     #[test]

@@ -181,6 +181,11 @@ pub struct App {
     /// The view of a pair diffed by content (a picture pair, ...), shown instead of the diff
     /// viewer while it is `Some`.
     content_viewer: Option<ContentViewer>,
+    /// The content view a text member was opened from (`Enter` in an archive), with its pair's
+    /// paths: `Backspace` in the member's diff goes back to it.
+    parked_content: Option<(ContentViewer, Option<PathBuf>, Option<PathBuf>)>,
+    /// Where opened members' texts are written for the diff viewer, removed when dropped.
+    member_workspace: Option<review::Workspace>,
     /// The terminal's graphics protocol, once asked (see `run`); half blocks until then.
     graphics: Option<ratatui_image::picker::Picker>,
 }
@@ -289,6 +294,8 @@ impl App {
             should_exit: false,
             render_options_override: None,
             content_viewer: None,
+            parked_content: None,
+            member_workspace: None,
             graphics: None,
         })
     }
@@ -416,6 +423,28 @@ impl App {
                         .as_mut()
                         .is_some_and(|viewer| viewer.handle_key(code)) =>
                 {
+                    if let Some(request) = self
+                        .content_viewer
+                        .as_mut()
+                        .and_then(ContentViewer::take_open_request)
+                        && let Err(err) = self.open_member(request)
+                    {
+                        self.last_error = Some(format!("{err:#}"));
+                    }
+                    action_tx.send(Action::Render)?;
+                    globally_handled = true;
+                }
+                KeyCode::Backspace
+                    if self.screen == AppScreen::Viewer
+                        && self.content_viewer.is_none()
+                        && self.parked_content.is_some() =>
+                {
+                    let (viewer, before, after) =
+                        self.parked_content.take().expect("checked just above");
+                    self.content_viewer = Some(viewer);
+                    self.before_path = before;
+                    self.after_path = after;
+                    self.last_error = None;
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
@@ -906,6 +935,37 @@ impl App {
         self.select_file_for_panel(Panel::After, after)
     }
 
+    /// Opens an archive's text member (`request`: key, before, after) in the diff viewer, parking
+    /// the content view it came from for `Backspace`. The texts are written to a temp workspace
+    /// under the member's own name, so its language is detected as a file's would be.
+    fn open_member(&mut self, (key, before, after): (String, String, String)) -> Result<()> {
+        if self.member_workspace.is_none() {
+            self.member_workspace = Some(review::Workspace::new()?);
+        }
+        let workspace = self.member_workspace.as_ref().expect("created just above");
+        // A member's path is the archive's say: no `..` or root may leave the workspace.
+        let safe: String = key
+            .split('/')
+            .filter(|part| !part.is_empty() && *part != "." && *part != "..")
+            .collect::<Vec<_>>()
+            .join("/");
+        let safe = if safe.is_empty() {
+            "member".to_string()
+        } else {
+            safe
+        };
+        let before_path = workspace.write("before", &safe, before.as_bytes())?;
+        let after_path = workspace.write("after", &safe, after.as_bytes())?;
+        let viewer = self
+            .content_viewer
+            .take()
+            .expect("a member comes from a content view");
+        let parked = (viewer, self.before_path.clone(), self.after_path.clone());
+        self.open_files(before_path, after_path)?;
+        self.parked_content = Some(parked);
+        Ok(())
+    }
+
     /// Why a file cannot be shown, in the words `omnidiff a.pdf b.pdf` uses, or `None` when it
     /// can. Checked before loading a panel, whose `read_to_string` UTF-8 error would otherwise
     /// take the whole TUI down.
@@ -941,6 +1001,8 @@ impl App {
 
     fn select_file_for_panel(&mut self, panel: Panel, path: PathBuf) -> Result<()> {
         self.review_position = None;
+        // Another file is not the archive member `Backspace` would go back from.
+        self.parked_content = None;
         self.content_viewer = None;
         // Content is not shown as text; once both sides are content of one kind, the pair is shown
         // as one.
@@ -1633,6 +1695,56 @@ fn compute_diff_with_options_inner(
     render_options: RenderOptions,
 ) -> Result<(DiffSessionData, bool)> {
     let (before_code, after_code) = parse_before_after(before, after)?;
+    diff_parsed(before, after, before_code, after_code, render_options)
+}
+
+/// [`compute_diff_with_options`] of two texts already in memory (a member of an archive, see
+/// `components::member_viewer`), each named by `before_path`/`after_path` for its language, as a
+/// file would be. Nothing is read from those paths.
+pub fn compute_diff_of_texts(
+    before_path: &Path,
+    before_text: &str,
+    after_path: &Path,
+    after_text: &str,
+    render_options: RenderOptions,
+) -> Result<(DiffSessionData, bool)> {
+    let code = |path: &Path, text: &str| {
+        let language = crate::code::language::language_for_path_and_content(path, text)
+            .unwrap_or(Language::Unknown);
+        let mut code = Code::from_string(text, &language);
+        code.metadata.path = Some(path.to_path_buf());
+        code
+    };
+    let (mut before_code, mut after_code) =
+        (code(before_path, before_text), code(after_path, after_text));
+    let (before, after) = (before_path.to_path_buf(), after_path.to_path_buf());
+    match std::thread::Builder::new()
+        .name(DIFF_THREAD_NAME.to_string())
+        .stack_size(DIFF_COMPUTE_STACK_SIZE)
+        .spawn(move || {
+            let (before_language, after_language) =
+                (before_code.metadata.language, after_code.metadata.language);
+            substitute_missing_language(&mut before_code, after_language, &before);
+            substitute_missing_language(&mut after_code, before_language, &after);
+            diff_parsed(&before, &after, before_code, after_code, render_options)
+        })
+        .expect("failed to spawn diff-computation thread")
+        .join()
+    {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
+/// The diff of two parsed sides: the AST diff, or the plain-text fallback when either side has no
+/// grammar.
+fn diff_parsed(
+    before: &Path,
+    after: &Path,
+    before_code: Code,
+    after_code: Code,
+    render_options: RenderOptions,
+) -> Result<(DiffSessionData, bool)> {
     if before_code.ast.is_none() || after_code.ast.is_none() {
         let data = assemble_plain_text_diff_session_data(before, after, &before_code, &after_code);
         return Ok((data, false));
@@ -2000,6 +2112,57 @@ mod tests {
             app.draw_viewer(f, area).unwrap();
         })?;
         assert!(rendered_text(&terminal).contains("view: difference"));
+        Ok(())
+    }
+
+    /// `Enter` on an archive's text member opens it in the diff viewer; `Backspace` goes back.
+    #[test]
+    fn enter_opens_an_archive_member_as_a_diff_and_backspace_returns() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let zip = |text: &str| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            writer.start_file("src/lib.rs", zip::write::SimpleFileOptions::default())?;
+            std::io::Write::write_all(&mut writer, text.as_bytes())?;
+            writer.finish()?;
+            anyhow::Ok(bytes)
+        };
+        let (before, after) = (dir.path().join("a.zip"), dir.path().join("b.zip"));
+        std::fs::write(&before, zip("fn a() {}\n")?)?;
+        std::fs::write(&after, zip("fn a() { b(); }\n")?)?;
+        let mut app = App::new(4.0, 60.0)?;
+        app.open_files(before.clone(), after.clone())?;
+        assert!(app.content_viewer.is_some());
+
+        let backend = ratatui::backend::TestBackend::new(100, 20);
+        let mut terminal = ratatui::Terminal::new(backend)?;
+        terminal.draw(|f| {
+            let area = f.area();
+            app.draw_viewer(f, area).unwrap();
+        })?;
+        let area = terminal.get_frame().area();
+        let press = |app: &mut App, code| {
+            app.handle_event(
+                Event::Key(crossterm::event::KeyEvent::new(
+                    code,
+                    crossterm::event::KeyModifiers::NONE,
+                )),
+                area,
+            )
+        };
+        press(&mut app, KeyCode::Char('j'))?;
+        press(&mut app, KeyCode::Enter)?;
+        assert!(app.content_viewer.is_none(), "{:?}", app.last_error);
+        assert!(
+            app.after_path
+                .as_ref()
+                .is_some_and(|path| path.ends_with("after/src/lib.rs")),
+            "{:?}",
+            app.after_path
+        );
+        press(&mut app, KeyCode::Backspace)?;
+        assert!(app.content_viewer.is_some());
+        assert_eq!(app.after_path, Some(after));
         Ok(())
     }
 

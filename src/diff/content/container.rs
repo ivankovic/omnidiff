@@ -395,16 +395,19 @@ fn bytes_detail(before: &[u8], after: &[u8], depth: usize) -> MemberDetail {
             },
         };
     }
-    match (
-        crate::code::decode_text(before),
-        crate::code::decode_text(after),
-    ) {
+    match (as_text(before), as_text(after)) {
         (Some(before), Some(after)) => text_detail(&before, &after),
         _ => MemberDetail::Binary {
             before_bytes: before.len(),
             after_bytes: after.len(),
         },
     }
+}
+
+/// A member's bytes as text: text itself, or a Java class file as its listing
+/// ([`super::class::listing`]); `None` for bytes that are neither.
+pub fn as_text(bytes: &[u8]) -> Option<String> {
+    super::class::listing(bytes).or_else(|| crate::code::decode_text(bytes))
 }
 
 /// The edit distance past which two texts count as entirely different, as a file without a

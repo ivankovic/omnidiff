@@ -434,7 +434,7 @@ impl Workspace {
 
     /// Writes `bytes` to `<workspace>/<label>/<path>`, creating the directories, and returns the
     /// file's path.
-    fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
+    pub(crate) fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
         let target = self.dir.join(label).join(path);
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)

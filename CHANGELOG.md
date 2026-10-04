@@ -29,6 +29,10 @@ release does: a minor bump may change the JSON output or the library API, a patc
   were removed; `--mode json` adds a `content` object, which a picture pair carries too. In the
   TUI the members are listed beside the selected one, `a` shows the unchanged ones as well, `g`
   shows every changed glyph or picture at once, and `Enter` opens an archive inside an archive.
+  A text member is diffed by OmniDiff in its own language, its long lines wrapped and cut to the
+  changes (`J`/`K` step through them), and `Enter` opens it in the full diff view; a Java class
+  file in a jar is diffed as a listing of its fields, its methods and what each method calls,
+  reads and loads.
 - Text in UTF-16 or UTF-32 (announced by a byte order mark) is read as text and diffed like any
   other file instead of reported as binary; `--mode json` names its `encoding`.
 
