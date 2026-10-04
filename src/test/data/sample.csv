@@ -278,7 +278,7 @@ CSharp,GLibSharp-GtkSharp,64b436dbde99fee8326a6ab0fc48a9c6eaba6988,Source/genera
 CSharp,GLibSharp-GtkSharp,64b436dbde99fee8326a6ab0fc48a9c6eaba6988,Source/gtk/RadioToolButton.cs,csharp-glibsharp-gtksharp-formatting-only-change,full,PROMOTED,,
 CSharp,GLibSharp-GtkSharp,64b436dbde99fee8326a6ab0fc48a9c6eaba6988,Source/gtk/TreeEnumerator.cs,csharp-glibsharp-gtksharp-whitespace-only-change-3,full,PROMOTED,,
 CSharp,Lidarr-Lidarr.git,1536e900533a20b525fcd5110a349faed04203db,src/NzbDrone.Core/Notifications/Webhook/WebhookAlbumDeletePayload.cs,csharp-lidarr-lidarr-add-function-signature-to-class,stratified,PROMOTED,,0-10
-CSharp,Lidarr-Lidarr.git,1da1020a834a3df5fe78112923b1b4ebf50b103f,src/NzbDrone.Core/MediaCover/MediaCoverService.cs,,stratified,SAMPLED,,300-1000
+CSharp,Lidarr-Lidarr.git,1da1020a834a3df5fe78112923b1b4ebf50b103f,src/NzbDrone.Core/MediaCover/MediaCoverService.cs,csharp-lidarr-lidarr-add-catch-clause-only,stratified,PROMOTED,,300-1000
 CSharp,Lidarr-Lidarr.git,1db0eb1029153207ab2ceefba23fc5e338c9ea0f,src/NzbDrone.Core/Blocklisting/Blocklist.cs,csharp-lidarr-lidarr-add-import-and-func,stratified,PROMOTED,,10-30
 CSharp,Lidarr-Lidarr.git,33b12a532c8483a61a5de9d9ec77c9269ab643d3,src/NzbDrone.Common/Http/Dispatchers/ManagedHttpDispatcher.cs,csharp-lidarr-add-function,small,PROMOTED,,
 CSharp,Lidarr-Lidarr.git,36e67fdc2e6c91c9cc28f2a87774a27b9eb0b6d1,src/NzbDrone.Core/ThingiProvider/Status/ProviderStatusServiceBase.cs,,stratified,SAMPLED,,100-300
@@ -340,7 +340,7 @@ CSharp,jellyfin-jellyfin.git,4d5ba8d7a5047d805ca2d7b3458ad7cf0501c3f6,Emby.Serve
 CSharp,jellyfin-jellyfin.git,5a6d9180fed81a30cb91ef3fed30176cd4402116,Emby.Server.Implementations/Dto/DtoService.cs,,stratified,SAMPLED,,1000-3000
 CSharp,jellyfin-jellyfin.git,6c507b77aeccbf83f39a9948bac98d3fed45b130,Jellyfin.Api/Controllers/LiveTvController.cs,,stratified,SAMPLED,,1000-3000
 CSharp,jellyfin-jellyfin.git,7ba77804c414d012df311f9a5d644078dfa4a94a,MediaBrowser.Controller/LibraryTaskScheduler/LimitedConcurrencyLibraryScheduler.cs,csharp-jellyfin-add-function,small,PROMOTED,,
-CSharp,jellyfin-jellyfin.git,91da1c035d7b8ee8c7456d62f52dd9e63b5fc59e,Jellyfin.Server.Implementations/FullSystemBackup/BackupService.cs,,stratified,SAMPLED,,300-1000
+CSharp,jellyfin-jellyfin.git,91da1c035d7b8ee8c7456d62f52dd9e63b5fc59e,Jellyfin.Server.Implementations/FullSystemBackup/BackupService.cs,csharp-jellyfin-jellyfin-add-only,stratified,PROMOTED,,300-1000
 CSharp,jellyfin-jellyfin.git,a0b3e2b071509f440db10768f6f8984c7ea382d6,Emby.Server.Implementations/Library/LibraryManager.cs,,stratified,SAMPLED,,3000+
 CSharp,jellyfin-jellyfin.git,a0b3e2b071509f440db10768f6f8984c7ea382d6,MediaBrowser.Controller/Playlists/Playlist.cs,,stratified,SAMPLED,,100-300
 CSharp,jellyfin-jellyfin.git,b429306f05820d8502939d305f147df37c25fba0,MediaBrowser.Controller/MediaEncoding/EncodingHelper.cs,,stratified,SAMPLED,,3000+

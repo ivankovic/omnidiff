@@ -277,6 +277,8 @@ mod java_defects4j_closure_138_closurereverseabstractinterpreter;
 #[cfg(test)]
 mod java_defects4j_closure_138_typeinference;
 #[cfg(test)]
+mod java_defects4j_closure_139_normalize;
+#[cfg(test)]
 mod java_defects4j_closure_13_peepholeoptimizationspass;
 #[cfg(test)]
 mod java_defects4j_closure_141_purefunctionidentifier;

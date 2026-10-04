@@ -273,7 +273,11 @@ mod csharp_jellyfin_jellyfin_add_const_string;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_line;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_only;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_update_version_string;
+#[cfg(test)]
+mod csharp_lidarr_lidarr_add_catch_clause_only;
 #[cfg(test)]
 mod csharp_lidarr_lidarr_add_enum_value;
 #[cfg(test)]
