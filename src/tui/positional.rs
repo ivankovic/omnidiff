@@ -182,7 +182,7 @@ fn picture_summary(diff: &crate::diff::picture::PictureDiff) -> String {
     use crate::diff::picture::{Comparison, FrameCounts};
     match &diff.comparison {
         Comparison::OneSided => "added or removed".to_string(),
-        Comparison::Resized => match (&diff.before, &diff.after) {
+        Comparison::Resized { .. } => match (&diff.before, &diff.after) {
             (Some(before), Some(after)) => format!(
                 "resized, {}x{} -> {}x{}",
                 before.width, before.height, after.width, after.height
@@ -195,6 +195,7 @@ fn picture_summary(diff: &crate::diff::picture::PictureDiff) -> String {
             changed_pixels,
             total_pixels,
             regions,
+            ..
         } => format!(
             "{:.2}% of pixels changed, in {} region{}",
             100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64,
@@ -282,7 +283,25 @@ pub fn picture_notice(
                 out.push_str(&format!("    ... {} more\n", listed.len() - LISTED_STEPS));
             }
         }
-        Comparison::Resized => out.push_str("  resized, so not compared pixel by pixel\n"),
+        Comparison::Resized {
+            scaled: Some(scaled),
+            ..
+        } => {
+            if let Comparison::Pixels {
+                changed_pixels,
+                total_pixels,
+                ..
+            } = scaled.as_ref()
+            {
+                let share = 100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64;
+                out.push_str(&format!(
+                    "  resized; scaled to one size, {share:.2}% of pixels changed\n"
+                ));
+            }
+        }
+        Comparison::Resized { .. } => {
+            out.push_str("  resized to another shape, so not compared pixel by pixel\n");
+        }
         Comparison::Pixels { regions, .. } if regions.is_empty() => {
             out.push_str("  no pixel changed\n");
         }
@@ -290,6 +309,7 @@ pub fn picture_notice(
             changed_pixels,
             total_pixels,
             regions,
+            ..
         } => {
             let share = 100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64;
             let noun = if regions.len() == 1 {

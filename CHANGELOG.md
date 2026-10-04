@@ -38,6 +38,13 @@ release does: a minor bump may change the JSON output or the library API, a patc
   changes (`J`/`K` step through them), and `Enter` opens it in the full diff view; a Java class
   file in a jar is diffed as a listing of its fields, its methods and what each method calls,
   reads and loads.
+- What happened to a picture or a member is said in one of six levels, by how hard it is to see
+  and what the after side is: invisible (only bytes differ), imperceptible (seen only once
+  highlighted), artifacts (what compression, resampling or a formatter leaves behind), edited,
+  redrawn (the same thing made anew) and replaced; with tags for a picture resized, cropped,
+  retimed or given frames, and for a container given members. Pictures of one aspect ratio and
+  different sizes are compared at the smaller size; `--mode json` reports, per comparison, the
+  pixels that differ at all and the clearly changed ones beside those that changed.
 - Text in UTF-16 or UTF-32 (announced by a byte order mark) is read as text and diffed like any
   other file instead of reported as binary; `--mode json` names its `encoding`.
 

@@ -17,9 +17,12 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    human_picture::assert_matches_human_verdict("ico-x-k4zmu2a-spacecadetpinball-62e20b1c-icon_1")
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(
+        Family::Pictures,
+        "ico-x-k4zmu2a-spacecadetpinball-62e20b1c-icon_1",
+    )
 }

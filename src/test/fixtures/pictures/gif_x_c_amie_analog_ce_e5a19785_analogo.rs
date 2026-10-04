@@ -17,9 +17,12 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    human_picture::assert_matches_human_verdict("gif-x-c-amie-analog-ce-e5a19785-analogo")
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(
+        Family::Pictures,
+        "gif-x-c-amie-analog-ce-e5a19785-analogo",
+    )
 }

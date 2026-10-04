@@ -17,13 +17,12 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    // Recorded as found, not examined.
-    human_picture::assert_known_verdict_mismatch(
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(
+        Family::Pictures,
         "ico-x-solarus-games-solarus-quest-editor-2f98d597-solarus-quest-editor",
-        human_picture::Verdict::Replaced,
     )
 }

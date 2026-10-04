@@ -876,6 +876,9 @@ mod tests {
             changed_pixels: 12,
             total_pixels: 200,
             regions: vec![region],
+            differing_pixels: 12,
+            strong_pixels: 12,
+            layout_kept: true,
         });
         assert_eq!(
             picture_notice(&paths, &before, &after, &diff),
@@ -907,6 +910,7 @@ mod tests {
                         height: 1,
                         changed_pixels: 3,
                     }],
+                    strong_pixels: 3,
                 },
                 FrameStep::Inserted {
                     after: 5,
@@ -919,6 +923,7 @@ mod tests {
             ],
             total_pixels: 200,
             retimed: true,
+            faint: false,
         });
         for side in [&mut diff.before, &mut diff.after] {
             let info = side.as_mut().unwrap();
@@ -979,17 +984,40 @@ mod tests {
             changed_pixels: 0,
             total_pixels: 200,
             regions: Vec::new(),
+            differing_pixels: 0,
+            strong_pixels: 0,
+            layout_kept: true,
         });
         assert!(
             picture_notice(&paths, &before, &after, &unchanged).ends_with("  no pixel changed\n")
         );
-        let resized = picture_notice(&paths, &before, &after, &picture_diff(Comparison::Resized));
+        let reshaped = Comparison::Resized {
+            aspect_kept: false,
+            scaled: None,
+        };
+        let resized = picture_notice(&paths, &before, &after, &picture_diff(reshaped));
         assert!(
             resized.starts_with("Pictures a.png and b.png: "),
             "{resized}"
         );
         assert!(
-            resized.ends_with("  resized, so not compared pixel by pixel\n"),
+            resized.ends_with("  resized to another shape, so not compared pixel by pixel\n"),
+            "{resized}"
+        );
+        let rescaled = Comparison::Resized {
+            aspect_kept: true,
+            scaled: Some(Box::new(Comparison::Pixels {
+                changed_pixels: 3,
+                total_pixels: 200,
+                regions: Vec::new(),
+                differing_pixels: 3,
+                strong_pixels: 0,
+                layout_kept: true,
+            })),
+        };
+        let resized = picture_notice(&paths, &before, &after, &picture_diff(rescaled));
+        assert!(
+            resized.ends_with("  resized; scaled to one size, 1.50% of pixels changed\n"),
             "{resized}"
         );
     }

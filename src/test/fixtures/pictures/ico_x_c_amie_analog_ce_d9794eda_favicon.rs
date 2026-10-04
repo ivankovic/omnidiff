@@ -17,13 +17,12 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    // Recorded as found, not examined.
-    human_picture::assert_known_verdict_mismatch(
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(
+        Family::Pictures,
         "ico-x-c-amie-analog-ce-d9794eda-favicon",
-        human_picture::Verdict::Resized,
     )
 }

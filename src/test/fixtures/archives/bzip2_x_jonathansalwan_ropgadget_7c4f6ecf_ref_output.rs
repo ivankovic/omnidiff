@@ -17,15 +17,12 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_content::{self, Family, Verdict};
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
 fn verdicts() -> Result<()> {
-    // Recorded as found, not examined.
-    human_content::assert_known_verdict_mismatches(
+    human_content::assert_matches_human_verdicts(
         Family::Archives,
         "bzip2-x-jonathansalwan-ropgadget-7c4f6ecf-ref_output",
-        Some(Verdict::Replaced),
-        &[],
     )
 }

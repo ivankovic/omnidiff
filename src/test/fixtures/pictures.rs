@@ -16,8 +16,8 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Picture fixtures (`src/test/data/pictures/`): one stub per fixture, `verdict()`, written by
-//! `human_solver` when a picture sample is promoted. See `test::helper::human_picture`.
+//! Picture fixtures (`src/test/data/pictures/`): one stub per fixture, `verdicts()`, written by
+//! `human_solver` when a picture sample is promoted. See `test::helper::human_content`.
 #[cfg(test)]
 mod bmp_x_matthewdeanmartin_terminaltables3_f904c3be_sub_ascii_win10;
 #[cfg(test)]
@@ -51,13 +51,13 @@ mod gif_x_gogglesmm_gogglesmm_5969b162_gotowork;
 #[cfg(test)]
 mod gif_x_gogglesmm_gogglesmm_5969b162_undo_gif;
 #[cfg(test)]
-mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_1@2x;
+mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_1_2x;
 #[cfg(test)]
-mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_2@2x;
+mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_2_2x;
 #[cfg(test)]
 mod gif_x_python_xmp_toolkit_python_xmp_toolkit_e0f42af4_bluesquare;
 #[cfg(test)]
-mod gif_x_rickhowe_diffchar.vim_c889cc13_demo;
+mod gif_x_rickhowe_diffchar_vim_c889cc13_demo;
 #[cfg(test)]
 mod ico_x_07th_mod_ponscripter_fork_97e597d6_default;
 #[cfg(test)]

@@ -4552,13 +4552,18 @@ fn mixed_picker_options() -> Vec<(String, &'static str)> {
     ]
 }
 
+/// A picture fixture's row with the verdict spelled `verdict`.
+fn picture_row(verdict: &str) -> ContentRow {
+    ContentRow::of(Some(human_content::HumanContent {
+        verdict: Some(human_content::Judgement::Verdict(verdict.parse().unwrap())),
+        ..Default::default()
+    }))
+}
+
 fn mixed_picture_verdicts() -> std::collections::HashMap<String, ContentRow> {
     std::collections::HashMap::from([
-        (
-            "png-a".to_string(),
-            ContentRow::picture(Some(human_picture::Verdict::Resized)),
-        ),
-        ("png-b".to_string(), ContentRow::picture(None)),
+        ("png-a".to_string(), picture_row("artifacts+resized")),
+        ("png-b".to_string(), ContentRow::of(None)),
     ])
 }
 
@@ -4605,10 +4610,7 @@ fn the_verdict_column_sorts_judged_pictures_first() {
     let mut options = mixed_picker_options();
     options.push(("png-c".to_string(), Family::Pictures.name()));
     let mut verdicts = mixed_picture_verdicts();
-    verdicts.insert(
-        "png-c".to_string(),
-        ContentRow::picture(Some(human_picture::Verdict::ContentChange)),
-    );
+    verdicts.insert("png-c".to_string(), picture_row("edited"));
     let data = DiffPickerData {
         content: Some(&verdicts),
         ..DiffPickerData::default()
@@ -4616,7 +4618,8 @@ fn the_verdict_column_sorts_judged_pictures_first() {
 
     assert_eq!(
         visible_diff_options(&options, &sort_view(DiffColumn::Verdict), data),
-        vec!["png-c", "png-a", "alpha", "png-b"]
+        vec!["png-a", "png-c", "alpha", "png-b"],
+        "artifacts, then edited"
     );
 }
 
@@ -11363,25 +11366,30 @@ fn t_opens_the_text_view_on_the_selected_nodes_with_the_focused_side_first() {
 
 #[test]
 fn a_picture_stub_asserts_the_verdict_or_pins_the_engines_mismatch() {
-    use omnidiff::test::helper::human_picture::Verdict;
-    let agreeing = content::stub_contents("png-x-a-b-c", None);
+    use omnidiff::diff::content::{Level, Tag, Verdict};
+    use omnidiff::test::helper::human_content::Mismatches;
+    let agreeing = content::stub_contents(Family::Pictures, "png-x-a-b-c", &Mismatches::default());
     assert!(
-        agreeing.contains("fn verdict() -> Result<()>"),
+        agreeing.contains("fn verdicts() -> Result<()>"),
         "{agreeing}"
     );
     assert!(
-        agreeing.contains("assert_matches_human_verdict(\"png-x-a-b-c\")"),
+        agreeing.contains("assert_matches_human_verdicts(Family::Pictures, \"png-x-a-b-c\")"),
         "{agreeing}"
     );
-    let pinned = content::stub_contents("png-x-a-b-c", Some(Verdict::Replaced));
+    let pinned = content::stub_contents(
+        Family::Pictures,
+        "png-x-a-b-c",
+        &Mismatches {
+            pair: Some(Verdict::new(Level::Artifacts).with(Tag::Resized)),
+            members: Vec::new(),
+        },
+    );
     assert!(
         pinned.contains("Recorded as found, not examined."),
         "{pinned}"
     );
-    assert!(
-        pinned.contains("human_picture::Verdict::Replaced"),
-        "{pinned}"
-    );
+    assert!(pinned.contains("Some(\"artifacts+resized\")"), "{pinned}");
 }
 
 #[test]

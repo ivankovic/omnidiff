@@ -46,56 +46,216 @@ pub mod cursor;
 pub mod font;
 pub mod pdf;
 
-use anyhow::{Result, bail};
-use serde::Serialize;
+use anyhow::{Context, Result, bail};
+use serde::{Deserialize, Serialize};
 
 use super::picture::{self, PictureDiff};
 use container::{Container, ContainerDiff};
 
-/// What happened to a picture, or to any other content: the question a content fixture's human
-/// verdict answers, and the engine's answer to it ([`PictureDiff::verdict`]).
+/// How much a change changed, smallest first: the level of a [`Verdict`], the one question a
+/// content fixture's human verdict answers, and the engine's answer to it
+/// ([`ContentDiff::verdict`]).
 ///
-/// A pair can fit more than one, and a fixture records exactly one, so the first that fits wins:
-/// replaced, then content change, then resized, then frame rate change, then no visible change. A
-/// different picture at a new size is replaced; a picture both rescaled and edited is a content
-/// change; an animation whose frames changed as well as their timing is a content change. The engine does
-/// not follow this order yet: it compares no pixels across a size change, so it calls every such
-/// pair resized, and the fixtures that disagree record it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, serde::Deserialize)]
+/// **The level judges the content once the [`Tag`]s are undone.** A picture scaled to twice its
+/// size and nothing else is `invisible` (or `artifacts`, if resampling left traces) and tagged
+/// `resized`; a new picture at a new size is `replaced` and tagged `resized`. Frames or members
+/// added or removed are content, not undone: they count towards the level as well as tagging it.
+///
+/// The first three are three strengths of "nothing", by how hard one has to look; the last three
+/// are kinds of "something", by what the after side is - not by how much of it changed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum Verdict {
-    /// The same content, edited: something in it changed, half of it or less.
-    ContentChange,
-    /// Nothing a reader would see changed: re-encoded, re-compressed, or only metadata.
-    NoVisibleChange,
-    /// Scaled or re-cropped to a different size, and nothing else.
-    Resized,
-    /// Different content altogether, or the same with more than half of it edited
-    /// ([`picture::REPLACED_SHARE`]).
+pub enum Level {
+    /// Nothing to see even where OmniDiff points: only bytes differ (metadata, a lossless
+    /// re-encoding, colours under fully transparent pixels; for text, line endings or the
+    /// encoding).
+    Invisible,
+    /// Nothing to see by flipping between the sides, but visible once OmniDiff highlights it (a
+    /// lossy re-encoding's noise, a colour one step off; trailing whitespace).
+    Imperceptible,
+    /// Visible, but nobody chose it: what an algorithm left behind - compression, resampling,
+    /// dithering, antialiasing, a different exporter or rasteriser; for text, a formatter's
+    /// reflowing or re-indenting.
+    Artifacts,
+    /// A part changed, deliberately, and the rest is the same.
+    Edited,
+    /// No one part changed but the whole did, and it is still a version of the same thing: a
+    /// restyled icon, a recoloured theme, a retaken screenshot; text rewritten throughout.
+    Redrawn,
+    /// The after side is not a version of the before side.
     Replaced,
-    /// An animation showing the same frames for different times.
-    FrameRateChange,
+}
+
+impl Level {
+    /// In the order of `human_solver`'s keys `0`-`5`.
+    pub const ALL: [Level; 6] = [
+        Level::Invisible,
+        Level::Imperceptible,
+        Level::Artifacts,
+        Level::Edited,
+        Level::Redrawn,
+        Level::Replaced,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Level::Invisible => "invisible",
+            Level::Imperceptible => "imperceptible",
+            Level::Artifacts => "artifacts",
+            Level::Edited => "edited",
+            Level::Redrawn => "redrawn",
+            Level::Replaced => "replaced",
+        }
+    }
+
+    pub fn from_name(name: &str) -> Option<Level> {
+        Level::ALL.into_iter().find(|level| level.name() == name)
+    }
+}
+
+/// How the shape of a change differs, beside its [`Level`]: any number of these, each mostly
+/// checkable from the files.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Tag {
+    /// Scaled to a different size.
+    Resized,
+    /// Cropped or padded: the canvas changed.
+    Canvas,
+    /// Rotated or flipped.
+    Rotated,
+    /// An animation's frames show for different times.
+    Timing,
+    /// An animation gained or lost frames.
+    Frames,
+    /// A container gained or lost members.
+    Members,
+}
+
+impl Tag {
+    pub const ALL: [Tag; 6] = [
+        Tag::Resized,
+        Tag::Canvas,
+        Tag::Rotated,
+        Tag::Timing,
+        Tag::Frames,
+        Tag::Members,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Tag::Resized => "resized",
+            Tag::Canvas => "canvas",
+            Tag::Rotated => "rotated",
+            Tag::Timing => "timing",
+            Tag::Frames => "frames",
+            Tag::Members => "members",
+        }
+    }
+
+    pub fn from_name(name: &str) -> Option<Tag> {
+        Tag::ALL.into_iter().find(|tag| tag.name() == name)
+    }
+
+    /// True if content of this kind can take the tag: a picture's shape and timing, a container's
+    /// members, nothing for text.
+    pub fn fits(self, picture: bool, container: bool) -> bool {
+        match self {
+            Tag::Members => container,
+            _ => picture,
+        }
+    }
+}
+
+/// A set of [`Tag`]s, in [`Tag::ALL`]'s order.
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
+pub struct Tags(u8);
+
+impl Tags {
+    pub fn contains(self, tag: Tag) -> bool {
+        self.0 & Self::bit(tag) != 0
+    }
+
+    pub fn with(self, tag: Tag) -> Self {
+        Self(self.0 | Self::bit(tag))
+    }
+
+    pub fn toggle(&mut self, tag: Tag) {
+        self.0 ^= Self::bit(tag);
+    }
+
+    pub fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
+    pub fn iter(self) -> impl Iterator<Item = Tag> {
+        Tag::ALL.into_iter().filter(move |tag| self.contains(*tag))
+    }
+
+    fn bit(tag: Tag) -> u8 {
+        1 << tag as u8
+    }
+}
+
+impl std::fmt::Debug for Tags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_set().entries(self.iter()).finish()
+    }
+}
+
+/// What happened to a picture, a member or a whole container: a [`Level`] and its [`Tag`]s.
+/// Written `level+tag+tag` (`artifacts+resized`), as stubs and ground truth files spell it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Verdict {
+    pub level: Level,
+    pub tags: Tags,
 }
 
 impl Verdict {
-    /// In the order `human_solver`'s number keys pick them; new verdicts go at the end, so the
-    /// keys do not move under a hand that knows them.
-    pub const ALL: [Verdict; 5] = [
-        Verdict::ContentChange,
-        Verdict::NoVisibleChange,
-        Verdict::Resized,
-        Verdict::Replaced,
-        Verdict::FrameRateChange,
-    ];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Verdict::ContentChange => "content change",
-            Verdict::NoVisibleChange => "no visible change",
-            Verdict::Resized => "resized",
-            Verdict::Replaced => "replaced",
-            Verdict::FrameRateChange => "frame rate change",
+    pub fn new(level: Level) -> Self {
+        Self {
+            level,
+            tags: Tags::default(),
         }
+    }
+
+    pub fn with(self, tag: Tag) -> Self {
+        Self {
+            tags: self.tags.with(tag),
+            ..self
+        }
+    }
+
+    /// `artifacts+resized`.
+    pub fn label(self) -> String {
+        self.to_string()
+    }
+}
+
+impl std::fmt::Display for Verdict {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.level.name())?;
+        for tag in self.tags.iter() {
+            write!(f, "+{}", tag.name())?;
+        }
+        Ok(())
+    }
+}
+
+impl std::str::FromStr for Verdict {
+    type Err = anyhow::Error;
+
+    fn from_str(text: &str) -> Result<Self> {
+        let mut parts = text.split('+');
+        let level = parts.next().unwrap_or_default();
+        let mut verdict = Verdict::new(
+            Level::from_name(level).with_context(|| format!("no level is called '{level}'"))?,
+        );
+        for tag in parts {
+            verdict = verdict
+                .with(Tag::from_name(tag).with_context(|| format!("no tag is called '{tag}'"))?);
+        }
+        Ok(verdict)
     }
 }
 

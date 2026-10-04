@@ -20,12 +20,15 @@
 //! (`sample_test_diffs --content pictures`), two archives, fonts, ... (`--content <family>`) - is
 //! judged here rather than in the tree session, which needs trees.
 //!
-//! What the human records is verdicts (`diff::content::Verdict`), keys `1`-`5`. A picture pair gets
-//! one (`test::helper::human_picture`). A container pair gets one per changed member and, if the
-//! human wants, one for the whole pair (`test::helper::human_content`): the member list's first row
-//! is the pair, `j`/`k` move, `n`/`N` jump to the next or previous member without a verdict, and
-//! `A` gives the last verdict to every member still without one - for a font with hundreds of
-//! changed glyphs, which a pair verdict can also stand in for.
+//! What the human records is verdicts (`diff::content::Verdict`, saved by
+//! `test::helper::human_content`): a level, keys `0`-`5`, and any of its tags, toggled by `r`
+//! resized, `c` canvas, `R` rotated, `d` timing, `f` frames and `m` members - those that fit what is
+//! judged: a picture's shape and timing, a container's members, nothing for text. `u` records that
+//! it cannot be judged, with a typed note on what OmniDiff draws wrong. A picture pair gets one
+//! verdict. A container pair gets one per changed member and, if the human wants, one for the
+//! whole pair: the member list's first row is the pair, `j`/`k` move, `n`/`N` jump to the next or
+//! previous member without a verdict, and `A` gives the last verdict to every member still without
+//! one - for a font with hundreds of changed glyphs, which a pair verdict can also stand in for.
 //!
 //! The pair is shown through `ContentViewer` in its annotation mode - the files' own metadata, and
 //! nothing the engine decided - so the verdicts stay the human's. `e` shows the engine's view on
@@ -51,9 +54,8 @@ use std::time::Duration;
 use anyhow::{Context, Result, bail};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use omnidiff::diff::content::container::{MemberDetail, MemberStatus};
-use omnidiff::diff::content::{Family, Verdict};
-use omnidiff::test::helper::human_content::{self, HumanContent, Mismatches};
-use omnidiff::test::helper::human_picture::{self, HumanPicture};
+use omnidiff::diff::content::{ContentDiff, Family, Level, Tag, Verdict};
+use omnidiff::test::helper::human_content::{self, HumanContent, Judgement, Mismatches};
 use omnidiff::tui::components::content_viewer::ContentViewer;
 use omnidiff::tui::components::picture_viewer::{self, PictureColors};
 use ratatui::Terminal;
@@ -186,12 +188,12 @@ impl Origin {
 
 /// The verdicts given so far: on the pair, and per changed member of a container.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-struct Judgement {
-    pair: Option<Verdict>,
-    members: BTreeMap<String, Verdict>,
+struct Judgements {
+    pair: Option<Judgement>,
+    members: BTreeMap<String, Judgement>,
 }
 
-impl Judgement {
+impl Judgements {
     fn is_empty(&self) -> bool {
         self.pair.is_none() && self.members.is_empty()
     }
@@ -204,34 +206,28 @@ struct ContentSession {
     /// The file's path in its repository, for the title line.
     path: String,
     viewer: ContentViewer,
-    judgement: Judgement,
+    judgement: Judgements,
     /// The verdicts on disk, to warn before quitting with unsaved ones.
-    saved: Judgement,
+    saved: Judgements,
     /// The verdict last given, which `A` gives to every member without one.
-    last: Option<Verdict>,
+    last: Option<Judgement>,
     /// A rejection reason being typed, after `x`.
     reject_input: Option<String>,
+    /// A can't-judge note being typed, after `u`.
+    note_input: Option<String>,
     /// `q` was pressed with unsaved verdicts, and was warned about it: another `q` quits.
     quit_armed: bool,
     status: String,
 }
 
 /// The verdicts saved for `family`'s fixture `fixture`, if any.
-fn load_judgement(family: Family, fixture: &str) -> Judgement {
-    match family {
-        Family::Pictures => Judgement {
-            pair: human_picture::load(fixture)
-                .ok()
-                .map(|picture| picture.verdict),
-            members: BTreeMap::new(),
-        },
-        _ => human_content::load(family, fixture)
-            .map(|content| Judgement {
-                pair: content.verdict,
-                members: content.members,
-            })
-            .unwrap_or_default(),
-    }
+fn load_judgement(family: Family, fixture: &str) -> Judgements {
+    human_content::load(family, fixture)
+        .map(|content| Judgements {
+            pair: content.verdict,
+            members: content.members,
+        })
+        .unwrap_or_default()
 }
 
 /// Runs the content session for `case` until the human quits or opens something else.
@@ -276,8 +272,9 @@ pub(crate) fn run_content_session(
         saved,
         last: None,
         reject_input: None,
+        note_input: None,
         quit_armed: false,
-        status: "1-5 records a verdict; s saves it".to_string(),
+        status: "0-5 records a verdict; s saves it".to_string(),
     };
     update_marks(&mut session);
     loop {
@@ -294,12 +291,9 @@ pub(crate) fn run_content_session(
             continue;
         }
         if let Some(log) = app.key_log.as_mut() {
-            let mode = if session.reject_input.is_some() {
-                "content-typing"
-            } else {
-                "content"
-            };
-            let text = if session.reject_input.is_some() {
+            let typing = session.reject_input.is_some() || session.note_input.is_some();
+            let mode = if typing { "content-typing" } else { "content" };
+            let text = if typing {
                 "typed".to_string()
             } else {
                 format!("{:?}", key.code)
@@ -313,7 +307,17 @@ pub(crate) fn run_content_session(
     }
 }
 
-/// What `1`-`5` give a verdict to: the selected member of a container, or the pair.
+/// The keys that toggle each tag.
+const TAG_KEYS: [(char, Tag); 6] = [
+    ('r', Tag::Resized),
+    ('c', Tag::Canvas),
+    ('R', Tag::Rotated),
+    ('d', Tag::Timing),
+    ('f', Tag::Frames),
+    ('m', Tag::Members),
+];
+
+/// What `0`-`5` give a verdict to: the selected member of a container, or the pair.
 enum Target {
     Pair,
     Member(String),
@@ -335,37 +339,108 @@ fn target(session: &ContentSession) -> Result<Target, String> {
     }
 }
 
-/// True if a member of the kind `key` holds can be `verdict`: text cannot be resized or retimed.
-fn fits(session: &ContentSession, key: &str, verdict: Verdict) -> bool {
-    let text = session
-        .viewer
-        .members()
-        .and_then(|members| members.diff().member(key))
+/// What is judged, for the tags it can take: is it a picture, is it a container.
+fn shape(session: &ContentSession, target: &Target) -> (bool, bool) {
+    let Some(members) = session.viewer.members() else {
+        return (true, false);
+    };
+    let Target::Member(key) = target else {
+        return (false, true);
+    };
+    match members
+        .diff()
+        .member(key)
         .and_then(|member| member.detail.as_ref())
-        .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }));
-    !(text && matches!(verdict, Verdict::Resized | Verdict::FrameRateChange))
+    {
+        Some(MemberDetail::Picture(_)) => (true, false),
+        Some(MemberDetail::Content { content }) => match content.as_ref() {
+            ContentDiff::Picture(_) => (true, false),
+            ContentDiff::Container(_) => (false, true),
+        },
+        _ => (false, false),
+    }
 }
 
-/// Gives `verdict` to whatever is selected.
-fn judge(session: &mut ContentSession, verdict: Verdict) {
+/// `judgement` with only the tags `target` can take.
+fn fitted(session: &ContentSession, target: &Target, judgement: &Judgement) -> Judgement {
+    let (picture, container) = shape(session, target);
+    match judgement {
+        Judgement::Verdict(verdict) => {
+            let mut fitted = Verdict::new(verdict.level);
+            for tag in verdict.tags.iter() {
+                if tag.fits(picture, container) {
+                    fitted = fitted.with(tag);
+                }
+            }
+            Judgement::Verdict(fitted)
+        }
+        cant => cant.clone(),
+    }
+}
+
+/// The judgement `target` has so far.
+fn judgement_of(session: &ContentSession, target: &Target) -> Option<Judgement> {
+    match target {
+        Target::Pair => session.judgement.pair.clone(),
+        Target::Member(key) => session.judgement.members.get(key).cloned(),
+    }
+}
+
+/// Records `judgement` for `target`.
+fn record(session: &mut ContentSession, target: Target, judgement: Judgement) {
+    session.status = match &target {
+        Target::Pair => format!("The whole file: {} (s to save)", judgement.label()),
+        Target::Member(key) => format!("{key}: {} (s to save)", judgement.label()),
+    };
+    session.last = Some(judgement.clone());
+    match target {
+        Target::Pair => session.judgement.pair = Some(judgement),
+        Target::Member(key) => {
+            session.judgement.members.insert(key, judgement);
+        }
+    }
+    update_marks(session);
+}
+
+/// Gives `level` to whatever is selected, keeping the tags it has.
+fn judge(session: &mut ContentSession, level: Level) {
     match target(session) {
-        Ok(Target::Pair) => {
-            session.judgement.pair = Some(verdict);
-            session.last = Some(verdict);
-            session.status = format!("The whole file: {} (s to save)", verdict.label());
-        }
-        Ok(Target::Member(key)) if !fits(session, &key, verdict) => {
-            session.status = format!("{key} is text: it cannot be {}", verdict.label());
-        }
-        Ok(Target::Member(key)) => {
-            session.status = format!("{key}: {} (s to save)", verdict.label());
-            session.judgement.members.insert(key, verdict);
-            session.last = Some(verdict);
-            update_marks(session);
+        Ok(target) => {
+            let tags = match judgement_of(session, &target) {
+                Some(Judgement::Verdict(verdict)) => verdict.tags,
+                _ => Default::default(),
+            };
+            record(session, target, Judgement::Verdict(Verdict { level, tags }));
         }
         Err(message) => session.status = message,
     }
-    update_marks(session);
+}
+
+/// Toggles `tag` on whatever is selected, which needs a level first.
+fn toggle_tag(session: &mut ContentSession, tag: Tag) {
+    let target = match target(session) {
+        Ok(target) => target,
+        Err(message) => {
+            session.status = message;
+            return;
+        }
+    };
+    let (picture, container) = shape(session, &target);
+    if !tag.fits(picture, container) {
+        let what = match (&target, picture, container) {
+            (_, false, false) => "text or bytes",
+            (Target::Pair, false, true) | (Target::Member(_), false, true) => "a container",
+            _ => "a picture",
+        };
+        session.status = format!("{what} is never {}", tag.name());
+        return;
+    }
+    let Some(Judgement::Verdict(mut verdict)) = judgement_of(session, &target) else {
+        session.status = format!("Give a level first (0-5), then {} tags it", tag.name());
+        return;
+    };
+    verdict.tags.toggle(tag);
+    record(session, target, Judgement::Verdict(verdict));
 }
 
 /// Moves to the next (or previous) changed member without a verdict, from the selection.
@@ -400,14 +475,15 @@ fn next_unjudged(session: &mut ContentSession, forward: bool) {
     }
 }
 
-/// `A`: gives the last verdict to every changed member still without one.
+/// `A`: gives the last verdict to every changed member still without one, with the tags each
+/// can take.
 fn judge_the_rest(session: &mut ContentSession) {
-    let Some(verdict) = session.last else {
+    let Some(judgement) = session.last.clone() else {
         session.status = "Give one verdict first: A repeats it for the rest".to_string();
         return;
     };
     let Some(members) = session.viewer.members() else {
-        session.status = "A picture has no members: 1-5 judges it".to_string();
+        session.status = "A picture has no members: 0-5 judges it".to_string();
         return;
     };
     let rest: Vec<String> = members
@@ -415,15 +491,14 @@ fn judge_the_rest(session: &mut ContentSession) {
         .into_iter()
         .filter(|key| !session.judgement.members.contains_key(key))
         .collect();
-    let mut given = 0;
+    let given = rest.len();
     for key in rest {
-        if fits(session, &key, verdict) {
-            session.judgement.members.insert(key, verdict);
-            given += 1;
-        }
+        let target = Target::Member(key.clone());
+        let fitted = fitted(session, &target, &judgement);
+        session.judgement.members.insert(key, fitted);
     }
     let noun = if given == 1 { "member" } else { "members" };
-    session.status = format!("{given} more {noun}: {} (s to save)", verdict.label());
+    session.status = format!("{given} more {noun}: {} (s to save)", judgement.label());
     update_marks(session);
 }
 
@@ -439,9 +514,9 @@ fn update_marks(session: &mut ContentSession) {
     keys.push(String::new());
     for key in keys {
         let human = if key.is_empty() {
-            judgement.pair
+            judgement.pair.as_ref()
         } else {
-            judgement.members.get(&key).copied()
+            judgement.members.get(&key)
         };
         let found = if !engine {
             None
@@ -451,7 +526,7 @@ fn update_marks(session: &mut ContentSession) {
             members.member_verdict(&key)
         };
         let mark = match (human, found) {
-            (Some(human), Some(found)) if human != found => {
+            (Some(human), Some(found)) if human.verdict().is_some_and(|human| human != found) => {
                 format!("{} (omnidiff: {})", human.label(), found.label())
             }
             (Some(human), _) => human.label().to_string(),
@@ -490,6 +565,32 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
         return target.map(SessionEnd::Open);
     }
 
+    if let Some(mut note) = session.note_input.take() {
+        match code {
+            KeyCode::Enter => match target(session) {
+                Ok(target) => {
+                    record(
+                        session,
+                        target,
+                        Judgement::CantJudge(note.trim().to_string()),
+                    );
+                }
+                Err(message) => session.status = message,
+            },
+            KeyCode::Esc => session.status = "Can't judge cancelled".to_string(),
+            KeyCode::Backspace => {
+                note.pop();
+                session.note_input = Some(note);
+            }
+            KeyCode::Char(c) => {
+                note.push(c);
+                session.note_input = Some(note);
+            }
+            _ => session.note_input = Some(note),
+        }
+        return None;
+    }
+
     if let Some(mut reason) = session.reject_input.take() {
         match code {
             KeyCode::Enter => {
@@ -514,9 +615,16 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
 
     let quitting = matches!(code, KeyCode::Char('q'));
     match code {
-        KeyCode::Char(digit @ '1'..='5') => {
-            judge(session, Verdict::ALL[digit as usize - '1' as usize]);
+        KeyCode::Char(digit @ '0'..='5') => {
+            judge(session, Level::ALL[digit as usize - '0' as usize]);
         }
+        KeyCode::Char(key) if let Some((_, tag)) = TAG_KEYS.iter().find(|(k, _)| *k == key) => {
+            toggle_tag(session, *tag);
+        }
+        KeyCode::Char('u') => match target(session) {
+            Ok(_) => session.note_input = Some(String::new()),
+            Err(message) => session.status = message,
+        },
         KeyCode::Char('n') => next_unjudged(session, true),
         KeyCode::Char('N') => next_unjudged(session, false),
         KeyCode::Char('A') => judge_the_rest(session),
@@ -610,24 +718,51 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
     };
     frame.render_widget(Paragraph::new(status), rows[1]);
 
-    let (current, what) = match target(session) {
-        Ok(Target::Member(key)) => (session.judgement.members.get(&key).copied(), key),
-        Ok(Target::Pair) => (session.judgement.pair, "the whole file".to_string()),
+    let target = target(session);
+    let (current, what) = match &target {
+        Ok(target @ Target::Member(key)) => (judgement_of(session, target), key.clone()),
+        Ok(target @ Target::Pair) => (judgement_of(session, target), "the whole file".to_string()),
         Err(_) => (None, "this member (it takes none)".to_string()),
     };
     let mut choices: Vec<Span> = match session.viewer.members() {
         Some(_) => vec![format!("Verdict for {what}: ").into()],
         None => vec!["Verdict: ".into()],
     };
-    for (index, verdict) in Verdict::ALL.iter().enumerate() {
-        let text = format!(" {} {} ", index + 1, verdict.label());
-        choices.push(if current == Some(*verdict) {
-            Span::styled(text, Style::new().add_modifier(Modifier::REVERSED))
+    let reversed = Style::new().add_modifier(Modifier::REVERSED);
+    let verdict = current.as_ref().and_then(Judgement::verdict);
+    for (index, level) in Level::ALL.iter().enumerate() {
+        let text = format!("{index} {}", level.name());
+        choices.push(if verdict.is_some_and(|verdict| verdict.level == *level) {
+            Span::styled(text, reversed)
         } else {
             text.into()
         });
         choices.push(" ".into());
     }
+    let (picture, container) = match &target {
+        Ok(target) => shape(session, target),
+        Err(_) => (false, false),
+    };
+    for (key, tag) in TAG_KEYS {
+        if !tag.fits(picture, container) {
+            continue;
+        }
+        let text = format!("{key} {}", tag.name());
+        choices.push(
+            if verdict.is_some_and(|verdict| verdict.tags.contains(tag)) {
+                Span::styled(text, reversed)
+            } else {
+                text.dim()
+            },
+        );
+        choices.push(" ".into());
+    }
+    let cant = "u can't judge";
+    choices.push(match &current {
+        Some(Judgement::CantJudge(_)) => Span::styled(cant, reversed),
+        _ => cant.dim(),
+    });
+    choices.push(" ".into());
     if let Some(members) = session.viewer.members() {
         let changed = members.changed_keys();
         let judged = changed
@@ -647,14 +782,17 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
     let colors = PictureColors::from_theme(Color::Red, Color::Green, Color::Yellow);
     session.viewer.draw(frame, rows[3], colors);
 
-    let prompt = match &session.reject_input {
-        Some(reason) => format!("Reject because: {reason}_ (Enter rejects, Esc cancels)"),
-        None => session.status.clone(),
+    let prompt = match (&session.reject_input, &session.note_input) {
+        (Some(reason), _) => format!("Reject because: {reason}_ (Enter rejects, Esc cancels)"),
+        (None, Some(note)) => {
+            format!("Can't judge, because OmniDiff: {note}_ (Enter records it, Esc cancels)")
+        }
+        (None, None) => session.status.clone(),
     };
     frame.render_widget(Paragraph::new(prompt), rows[4]);
     let keys = match session.origin {
-        Origin::Fixture(_) => "1-5 verdict  s save",
-        Origin::Sample { .. } => "1-5 verdict  s promote/save  x reject",
+        Origin::Fixture(_) => "0-5 level  tags  u can't judge  s save",
+        Origin::Sample { .. } => "0-5 level  tags  u can't judge  s promote/save  x reject",
     };
     let more = match session.viewer.members() {
         Some(_) => {
@@ -719,10 +857,10 @@ fn readme_file(dir: &Path) -> Option<String> {
 /// to match what the engine says now.
 fn save(session: &mut ContentSession) -> Result<String> {
     if session.judgement.is_empty() {
-        bail!("No verdict yet: 1-5 records one");
+        bail!("No verdict yet: 0-5 records one");
     }
-    if session.family == Family::Pictures && session.judgement.pair.is_none() {
-        bail!("No verdict yet: 1-5 records one");
+    if session.viewer.members().is_none() && session.judgement.pair.is_none() {
+        bail!("No verdict yet: 0-5 records one");
     }
     let family = session.family;
     let human = human_content_of(session);
@@ -732,7 +870,7 @@ fn save(session: &mut ContentSession) -> Result<String> {
             promoted: Some(fixture),
             ..
         } => {
-            write_ground_truth(family, fixture, &session.judgement, &human)?;
+            human_content::save(family, fixture, &human)?;
             fixture.clone()
         }
         Origin::Sample {
@@ -741,7 +879,7 @@ fn save(session: &mut ContentSession) -> Result<String> {
         } => {
             let fixture = session.name.clone();
             promote(family, &session.name, &fixture)?;
-            write_ground_truth(family, &fixture, &session.judgement, &human)?;
+            human_content::save(family, &fixture, &human)?;
             if !update_sample_csv(source, &fixture)? {
                 bail!("promoted to '{fixture}', but its sample.csv row was not found");
             }
@@ -750,39 +888,28 @@ fn save(session: &mut ContentSession) -> Result<String> {
         }
     };
     session.saved = session.judgement.clone();
-    if family == Family::Pictures {
-        let verdict = session.judgement.pair.expect("checked above");
-        let engine = human_picture::engine_verdict(&fixture)?;
-        write_stub(
-            family,
-            &fixture,
-            &stub_contents(&fixture, (engine != verdict).then_some(engine)),
-        )?;
-        return Ok(if engine == verdict {
-            format!("Saved '{fixture}': {} (omnidiff agrees)", verdict.label())
-        } else {
-            format!(
-                "Saved '{fixture}': {} (omnidiff says {}; recorded in the stub)",
-                verdict.label(),
-                engine.label()
-            )
-        });
-    }
     let engine = human_content::engine_diff(family, &fixture)?;
     let mismatches = human_content::mismatches(&human, &engine);
     write_stub(
         family,
         &fixture,
-        &container_stub_contents(family, &fixture, &mismatches),
+        &stub_contents(family, &fixture, &mismatches),
     )?;
     let disagreements = usize::from(mismatches.pair.is_some()) + mismatches.members.len();
-    Ok(match disagreements {
-        0 => format!("Saved '{fixture}' (omnidiff agrees)"),
-        n => format!("Saved '{fixture}' (omnidiff disagrees on {n}; recorded in the stub)"),
-    })
+    Ok(
+        match (disagreements, mismatches.pair, session.viewer.members()) {
+            (0, _, _) => format!("Saved '{fixture}' (omnidiff agrees)"),
+            (_, Some(found), None) => {
+                format!("Saved '{fixture}' (omnidiff says {found}; recorded in the stub)")
+            }
+            (n, _, _) => {
+                format!("Saved '{fixture}' (omnidiff disagrees on {n}; recorded in the stub)")
+            }
+        },
+    )
 }
 
-/// The container ground truth the session's verdicts make.
+/// The ground truth the session's verdicts make.
 fn human_content_of(session: &ContentSession) -> HumanContent {
     let changed = session
         .viewer
@@ -790,29 +917,12 @@ fn human_content_of(session: &ContentSession) -> HumanContent {
         .map(|members| members.changed_keys())
         .unwrap_or_default();
     HumanContent {
-        verdict: session.judgement.pair,
+        verdict: session.judgement.pair.clone(),
         members: session.judgement.members.clone(),
         unjudged: changed
             .iter()
             .filter(|key| !session.judgement.members.contains_key(*key))
             .count(),
-    }
-}
-
-fn write_ground_truth(
-    family: Family,
-    fixture: &str,
-    judgement: &Judgement,
-    human: &HumanContent,
-) -> Result<()> {
-    match family {
-        Family::Pictures => human_picture::save(
-            fixture,
-            &HumanPicture {
-                verdict: judgement.pair.expect("a picture is saved with its verdict"),
-            },
-        ),
-        _ => human_content::save(family, fixture, human),
     }
 }
 
@@ -849,37 +959,16 @@ fn write_stub(family: Family, fixture: &str, contents: &str) -> Result<()> {
     insert_mod_declaration(family.name(), &module)
 }
 
-/// A picture fixture's stub: `assert_matches_human_verdict`, or, when the engine disagrees,
-/// `assert_known_verdict_mismatch` pinned to what it says now.
-pub(crate) fn stub_contents(fixture: &str, mismatch: Option<Verdict>) -> String {
-    let body = match mismatch {
-        None => format!("    human_picture::assert_matches_human_verdict(\"{fixture}\")"),
-        Some(found) => format!(
-            "    // Recorded as found, not examined.\n    human_picture::assert_known_verdict_mismatch(\n        \"{fixture}\",\n        human_picture::Verdict::{found:?},\n    )"
-        ),
-    };
-    format!(
-        "{LICENSE_HEADER}use anyhow::Result;\n\nuse crate::test::helper::human_picture;\n\n#[test]\nfn verdict() -> Result<()> {{\n{body}\n}}\n"
-    )
-}
-
-/// A container fixture's stub: `assert_matches_human_verdicts`, or, when the engine disagrees,
+/// A content fixture's stub: `assert_matches_human_verdicts`, or, when the engine disagrees,
 /// `assert_known_verdict_mismatches` pinned to what it says now.
-pub(crate) fn container_stub_contents(
-    family: Family,
-    fixture: &str,
-    mismatches: &Mismatches,
-) -> String {
+pub(crate) fn stub_contents(family: Family, fixture: &str, mismatches: &Mismatches) -> String {
     let verdict = |verdict: Option<Verdict>| match verdict {
-        Some(verdict) => format!("Some(Verdict::{verdict:?})"),
+        Some(verdict) => format!("Some(\"{verdict}\")"),
         None => "None".to_string(),
     };
-    let (imports, body) = if mismatches.is_empty() {
-        (
-            "{self, Family}",
-            format!(
-                "    human_content::assert_matches_human_verdicts(Family::{family:?}, \"{fixture}\")"
-            ),
+    let body = if mismatches.is_empty() {
+        format!(
+            "    human_content::assert_matches_human_verdicts(Family::{family:?}, \"{fixture}\")"
         )
     } else {
         let members: Vec<String> = mismatches
@@ -887,17 +976,14 @@ pub(crate) fn container_stub_contents(
             .iter()
             .map(|(key, found)| format!("({key:?}, {})", verdict(*found)))
             .collect();
-        (
-            "{self, Family, Verdict}",
-            format!(
-                "    // Recorded as found, not examined.\n    human_content::assert_known_verdict_mismatches(\n        Family::{family:?},\n        \"{fixture}\",\n        {},\n        &[{}],\n    )",
-                verdict(mismatches.pair),
-                members.join(", ")
-            ),
+        format!(
+            "    // Recorded as found, not examined.\n    human_content::assert_known_verdict_mismatches(\n        Family::{family:?},\n        \"{fixture}\",\n        {},\n        &[{}],\n    )",
+            verdict(mismatches.pair),
+            members.join(", ")
         )
     };
     format!(
-        "{LICENSE_HEADER}use anyhow::Result;\n\nuse crate::test::helper::human_content::{imports};\n\n#[test]\nfn verdicts() -> Result<()> {{\n{body}\n}}\n"
+        "{LICENSE_HEADER}use anyhow::Result;\n\nuse crate::test::helper::human_content::{{self, Family}};\n\n#[test]\nfn verdicts() -> Result<()> {{\n{body}\n}}\n"
     )
 }
 
@@ -937,10 +1023,11 @@ mod tests {
             origin,
             path: path.to_string(),
             viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
-            judgement: Judgement::default(),
-            saved: Judgement::default(),
+            judgement: Judgements::default(),
+            saved: Judgements::default(),
             last: None,
             reject_input: None,
+            note_input: None,
             quit_armed: false,
             status: String::new(),
         }
@@ -986,7 +1073,7 @@ mod tests {
     #[test]
     fn o_opens_the_case_picker_and_esc_hands_the_keys_back() {
         // A real fixture, so the picker has its row to put the cursor on.
-        let fixture = crate::list_dir_names(&human_picture::pictures_root())
+        let fixture = crate::list_dir_names(&human_content::root(Family::Pictures))
             .unwrap()
             .pop()
             .expect("at least one picture fixture");
@@ -1034,7 +1121,7 @@ mod tests {
         handle_key(&mut session, &mut app, KeyCode::Char('3'));
         assert_eq!(
             session.judgement.pair,
-            Some(Verdict::ALL[2]),
+            Some(Judgement::Verdict(Verdict::new(Level::Edited))),
             "with the picker closed, keys reach the session again"
         );
     }
@@ -1069,7 +1156,7 @@ mod tests {
 
     #[test]
     fn opened_by_sends_picture_fixtures_to_the_content_session_and_code_cases_back() {
-        let fixture = crate::list_dir_names(&human_picture::pictures_root())
+        let fixture = crate::list_dir_names(&human_content::root(Family::Pictures))
             .unwrap()
             .into_iter()
             .next()
@@ -1088,7 +1175,7 @@ mod tests {
     #[test]
     fn a_fixture_shows_its_repository_path_and_has_nothing_to_promote_or_reject() {
         let fixture = "bmp-x-talamus-solarize-12x29-psf-8a856fdb-solarize-12x29";
-        let path = readme_file(&human_picture::pictures_root().join(fixture));
+        let path = readme_file(&human_content::root(Family::Pictures).join(fixture));
         assert_eq!(path.as_deref(), Some("Solarize.12x29.bmp"));
 
         let dir = tempfile::tempdir().unwrap();
@@ -1101,7 +1188,10 @@ mod tests {
         let mut app = test_app();
         let text = screen(&mut session, &app, 160);
         assert!(text.contains("(fixture, Solarize.12x29.bmp)"), "{text}");
-        assert!(text.contains("1-5 verdict  s save  t view"), "{text}");
+        assert!(
+            text.contains("0-5 level  tags  u can't judge  s save  t view"),
+            "{text}"
+        );
         assert!(!text.contains("reject"), "{text}");
 
         handle_key(&mut session, &mut app, KeyCode::Char('x'));
@@ -1118,17 +1208,24 @@ mod tests {
             sample_origin(),
             "assets/logo.png",
         );
-        session.judgement.pair = Some(Verdict::ContentChange);
+        session.judgement.pair = Some(Judgement::Verdict(Verdict::new(Level::Edited)));
         let app = test_app();
-        let screen_text = screen(&mut session, &app, 120);
+        let screen_text = screen(&mut session, &app, 160);
         assert!(
             screen_text.contains("png-x-repo-1234abcd-logo"),
             "{screen_text}"
         );
         assert!(screen_text.contains("PNG 8x4 RGBA8"), "{screen_text}");
-        assert!(screen_text.contains("1 content change"), "{screen_text}");
-        assert!(screen_text.contains("4 replaced"), "{screen_text}");
-        assert!(screen_text.contains("5 frame rate change"), "{screen_text}");
+        assert!(screen_text.contains("0 invisible"), "{screen_text}");
+        assert!(screen_text.contains("2 artifacts"), "{screen_text}");
+        assert!(screen_text.contains("5 replaced"), "{screen_text}");
+        assert!(screen_text.contains("r resized"), "{screen_text}");
+        assert!(screen_text.contains("d timing"), "{screen_text}");
+        assert!(
+            !screen_text.contains("m members"),
+            "a picture has no members: {screen_text}"
+        );
+        assert!(screen_text.contains("u can't judge"), "{screen_text}");
         assert!(screen_text.contains("(unsaved)"), "{screen_text}");
         assert!(
             !screen_text.contains("changed"),
@@ -1136,11 +1233,8 @@ mod tests {
         );
 
         session.viewer.set_annotating(false);
-        let screen_text = screen(&mut session, &app, 120);
-        assert!(
-            screen_text.contains("omnidiff: content change"),
-            "{screen_text}"
-        );
+        let screen_text = screen(&mut session, &app, 160);
+        assert!(screen_text.contains("omnidiff: edited"), "{screen_text}");
         assert!(screen_text.contains("of pixels changed"), "{screen_text}");
     }
 
@@ -1185,10 +1279,11 @@ mod tests {
             origin: sample_origin(),
             path: "bundle.zip".to_string(),
             viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
-            judgement: Judgement::default(),
-            saved: Judgement::default(),
+            judgement: Judgements::default(),
+            saved: Judgements::default(),
             last: None,
             reject_input: None,
+            note_input: None,
             quit_armed: false,
             status: String::new(),
         }
@@ -1200,27 +1295,46 @@ mod tests {
         let mut session = archive_session(dir.path());
         let mut app = test_app();
 
+        let verdict = |text: &str| Some(Judgement::Verdict(text.parse().unwrap()));
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        assert_eq!(
+            session.judgement.pair,
+            verdict("imperceptible"),
+            "the pair row"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('m'));
+        assert_eq!(
+            session.judgement.pair,
+            verdict("imperceptible+members"),
+            "a container takes the members tag"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('r'));
+        assert!(
+            session.status.contains("a container is never resized"),
+            "{}",
+            session.status
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('2'));
         assert_eq!(
             session.judgement.pair,
-            Some(Verdict::NoVisibleChange),
-            "the pair row"
+            verdict("artifacts+members"),
+            "a new level keeps the tags"
         );
 
         handle_key(&mut session, &mut app, KeyCode::Char('n'));
-        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        handle_key(&mut session, &mut app, KeyCode::Char('3'));
         assert_eq!(
-            session.judgement.members.get("a.txt"),
-            Some(&Verdict::ContentChange)
+            session.judgement.members.get("a.txt").cloned(),
+            verdict("edited")
         );
         handle_key(&mut session, &mut app, KeyCode::Char('n'));
-        handle_key(&mut session, &mut app, KeyCode::Char('3'));
+        handle_key(&mut session, &mut app, KeyCode::Char('r'));
         assert!(
             !session.judgement.members.contains_key("b.txt"),
             "text cannot be resized"
         );
         assert!(
-            session.status.contains("cannot be resized"),
+            session.status.contains("text or bytes is never resized"),
             "{}",
             session.status
         );
@@ -1236,8 +1350,8 @@ mod tests {
 
         handle_key(&mut session, &mut app, KeyCode::Char('A'));
         assert_eq!(
-            session.judgement.members.get("b.txt"),
-            Some(&Verdict::ContentChange),
+            session.judgement.members.get("b.txt").cloned(),
+            verdict("edited"),
             "A repeats the last verdict given"
         );
         let human = human_content_of(&session);
@@ -1246,7 +1360,7 @@ mod tests {
 
         let text = screen(&mut session, &app, 160);
         assert!(text.contains("2/2 members judged"), "{text}");
-        assert!(text.contains("a.txt  content change"), "{text}");
+        assert!(text.contains("a.txt  edited"), "{text}");
         assert!(text.contains("this member (it takes none)"), "{text}");
         assert!(
             !text.contains("(omnidiff:"),
@@ -1256,35 +1370,56 @@ mod tests {
         update_marks(&mut session);
         let text = screen(&mut session, &app, 160);
         assert!(
-            text.contains("b.txt  content change (omnidiff: replaced)"),
+            text.contains("b.txt  edited (omnidiff: replaced)"),
             "{text}"
+        );
+
+        // b.txt again, and can't judge it, with a note.
+        handle_key(&mut session, &mut app, KeyCode::Char('k'));
+        handle_key(&mut session, &mut app, KeyCode::Char('u'));
+        for key in "blank".chars() {
+            handle_key(&mut session, &mut app, KeyCode::Char(key));
+        }
+        assert!(
+            screen(&mut session, &app, 160).contains("Can't judge, because OmniDiff: blank_"),
+            "the note is typed on the prompt line"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Enter);
+        assert_eq!(
+            session.judgement.members.get("b.txt"),
+            Some(&Judgement::CantJudge("blank".to_string()))
+        );
+        assert!(
+            screen(&mut session, &app, 160).contains("b.txt  can't judge: blank"),
+            "and is no disagreement with the engine"
         );
     }
 
     #[test]
     fn a_container_stub_pins_each_disagreement() {
-        let agreeing =
-            container_stub_contents(Family::Archives, "zip-x-a-b-c", &Mismatches::default());
+        let agreeing = stub_contents(Family::Archives, "zip-x-a-b-c", &Mismatches::default());
         assert!(agreeing.contains(
             "human_content::assert_matches_human_verdicts(Family::Archives, \"zip-x-a-b-c\")"
         ));
         assert!(agreeing.contains("human_content::{self, Family};"));
 
-        let pinned = container_stub_contents(
+        let pinned = stub_contents(
             Family::Archives,
             "zip-x-a-b-c",
             &Mismatches {
-                pair: Some(Verdict::Replaced),
+                pair: Some(Verdict::new(Level::Replaced).with(Tag::Members)),
                 members: vec![
-                    ("dir/\"q\".txt".to_string(), Some(Verdict::ContentChange)),
+                    (
+                        "dir/\"q\".txt".to_string(),
+                        Some(Verdict::new(Level::Edited)),
+                    ),
                     ("gone".to_string(), None),
                 ],
             },
         );
-        assert!(pinned.contains("Some(Verdict::Replaced)"), "{pinned}");
+        assert!(pinned.contains("Some(\"replaced+members\")"), "{pinned}");
         assert!(
-            pinned
-                .contains(r#"&[("dir/\"q\".txt", Some(Verdict::ContentChange)), ("gone", None)]"#),
+            pinned.contains(r#"&[("dir/\"q\".txt", Some("edited")), ("gone", None)]"#),
             "{pinned}"
         );
         assert!(pinned.contains("Recorded as found"), "{pinned}");

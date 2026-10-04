@@ -810,7 +810,7 @@ mod tests {
         assert!(text.contains("- one"), "{text}");
         assert!(text.contains("+ two"), "{text}");
         assert!(
-            viewer.status().contains("omnidiff says content change"),
+            viewer.status().contains("omnidiff says edited"),
             "{}",
             viewer.status()
         );
@@ -855,7 +855,14 @@ mod tests {
         viewer.select(Some("icon.png"));
         screen(&mut viewer);
         assert!(viewer.status().contains("PNG 4x4"), "{}", viewer.status());
-        assert_eq!(viewer.member_verdict("icon.png"), Some(Verdict::Replaced));
+        assert_eq!(
+            viewer
+                .member_verdict("icon.png")
+                .map(|verdict| verdict.to_string())
+                .as_deref(),
+            Some("redrawn"),
+            "a flat black square turned flat red"
+        );
     }
 
     #[test]

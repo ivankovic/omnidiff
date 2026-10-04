@@ -16,6 +16,18 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Cursor fixtures (`src/test/data/cursors/`): one stub per fixture, written by `human_solver` when
-//! a cursor sample is promoted - a still or animated Windows cursor gets a picture's `verdict()`,
-//! an X or Hyprland cursor a container's `verdicts()`. See `test::helper::human_content`.
+//! Cursor fixtures (`src/test/data/cursors/`): one stub per fixture, `verdicts()`, written by
+//! `human_solver` when a cursor sample is promoted - one verdict for a still or animated Windows
+//! cursor, one per changed member for an X or Hyprland cursor. See `test::helper::human_content`.
+#[cfg(test)]
+mod ani_x_pop_os_icon_theme_4c2c4af8_00000000000000020006000e7e9ffc3f;
+#[cfg(test)]
+mod ani_x_pop_os_icon_theme_4c2c4af8_wait;
+#[cfg(test)]
+mod ani_x_vinceliuice_vimix_cursors_de8100f3_busy;
+#[cfg(test)]
+mod ani_x_vinceliuice_vimix_cursors_de8100f3_working_in_background;
+#[cfg(test)]
+mod cur_x_pop_os_icon_theme_c8b14907_right_tee;
+#[cfg(test)]
+mod cur_x_vinceliuice_vimix_cursors_de8100f3_diagonal_resize_1;

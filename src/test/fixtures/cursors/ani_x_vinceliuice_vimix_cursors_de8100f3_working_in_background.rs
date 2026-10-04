@@ -22,7 +22,7 @@ use crate::test::helper::human_content::{self, Family};
 #[test]
 fn verdicts() -> Result<()> {
     human_content::assert_matches_human_verdicts(
-        Family::Pictures,
-        "ico-x-woeusb-woeusb-ng-ceea6719-icon",
+        Family::Cursors,
+        "ani-x-vinceliuice-vimix-cursors-de8100f3-working-in-background",
     )
 }

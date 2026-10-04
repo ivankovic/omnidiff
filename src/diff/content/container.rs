@@ -35,7 +35,7 @@ use std::collections::HashMap;
 use anyhow::Result;
 use serde::Serialize;
 
-use super::{ContentDiff, Family, Verdict};
+use super::{ContentDiff, Family, Level, Tag, Verdict};
 use crate::diff::picture::{self, Frames, PictureDiff, PictureInfo, REPLACED_SHARE};
 
 /// How deep containers nest before the rest is compared as bytes: a zip in a zip in a zip is
@@ -106,6 +106,12 @@ pub enum MemberDetail {
         after_lines: usize,
         removed: usize,
         added: usize,
+        /// When lines changed but only in their whitespace, which.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        whitespace: Option<Whitespace>,
+        /// True if the two sides share at least half their words, counted with repeats: text
+        /// rewritten rather than replaced.
+        words_kept: bool,
     },
     /// Bytes nothing more is known about.
     Binary {
@@ -114,31 +120,52 @@ pub enum MemberDetail {
     },
 }
 
+/// Which whitespace alone differs between two texts whose lines do.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Whitespace {
+    /// At the ends of lines, or blank lines at the end.
+    Trailing,
+    /// Anywhere: reflowed or re-indented.
+    Anywhere,
+}
+
 impl MemberDetail {
-    /// The engine's verdict on the member: the picture's or nested content's own, text replaced
-    /// past [`REPLACED_SHARE`] of its lines and unchanged when no line changed (only line endings
-    /// or the encoding did), and bytes a content change.
+    /// The engine's verdict on the member: the picture's or nested content's own; and for text,
+    /// invisible when no line changed (only line endings or the encoding did), imperceptible for
+    /// trailing whitespace, artifacts for other whitespace, edited up to [`REPLACED_SHARE`] of its
+    /// lines, and past it redrawn if the words stayed and replaced if not. Bytes are edited.
     pub fn verdict(&self) -> Verdict {
-        match self {
-            MemberDetail::Picture(diff) => diff.verdict(),
-            MemberDetail::Content { content } => content.verdict(),
+        let level = match self {
+            MemberDetail::Picture(diff) => return diff.verdict(),
+            MemberDetail::Content { content } => return content.verdict(),
             MemberDetail::Text {
                 before_lines,
                 after_lines,
                 removed,
                 added,
+                whitespace,
+                words_kept,
             } => {
                 let changed = removed + added;
                 if changed == 0 {
-                    Verdict::NoVisibleChange
-                } else if changed as f64 > REPLACED_SHARE * (before_lines + after_lines) as f64 {
-                    Verdict::Replaced
+                    Level::Invisible
+                } else if let Some(whitespace) = whitespace {
+                    match whitespace {
+                        Whitespace::Trailing => Level::Imperceptible,
+                        Whitespace::Anywhere => Level::Artifacts,
+                    }
+                } else if changed as f64 <= REPLACED_SHARE * (before_lines + after_lines) as f64 {
+                    Level::Edited
+                } else if *words_kept {
+                    Level::Redrawn
                 } else {
-                    Verdict::ContentChange
+                    Level::Replaced
                 }
             }
-            MemberDetail::Binary { .. } => Verdict::ContentChange,
-        }
+            MemberDetail::Binary { .. } => Level::Edited,
+        };
+        Verdict::new(level)
     }
 }
 
@@ -158,7 +185,7 @@ impl MemberDiff {
     pub fn verdict(&self) -> Option<Verdict> {
         match (self.status, &self.detail) {
             (MemberStatus::Changed, Some(detail)) => Some(detail.verdict()),
-            (MemberStatus::Changed, None) => Some(Verdict::ContentChange),
+            (MemberStatus::Changed, None) => Some(Verdict::new(Level::Edited)),
             _ => None,
         }
     }
@@ -177,26 +204,44 @@ pub struct ContainerDiff {
 }
 
 impl ContainerDiff {
-    /// The engine's verdict on the pair: no visible change when no member changed visibly and
-    /// none was added or removed (a recompressed archive, a re-hinted font); replaced when more
-    /// than [`REPLACED_SHARE`] of the members changed visibly, were added or were removed; and a
-    /// content change otherwise, also for an added or deleted file.
+    /// The engine's verdict on the pair, from its members': tagged members when any were added or
+    /// removed. Members added, removed or replaced - and redrawn, which then make it redrawn
+    /// unless the others alone pass it - past [`REPLACED_SHARE`] of all members make it replaced;
+    /// failing that, a member added, removed or edited or more makes it edited; failing that, it is
+    /// its most changed member's level, and invisible when no member changed (a recompressed
+    /// archive, a re-hinted font). An added or deleted file is edited.
     pub fn verdict(&self) -> Verdict {
         if self.before.is_none() || self.after.is_none() {
-            return Verdict::ContentChange;
+            return Verdict::new(Level::Edited);
         }
-        let visible = self
+        let added_or_removed = self
             .members
             .iter()
-            .filter(|member| member.verdict() != Some(Verdict::NoVisibleChange))
+            .filter(|member| matches!(member.status, MemberStatus::Added | MemberStatus::Removed))
             .count();
-        let total = self.unchanged + self.members.len();
-        if visible == 0 {
-            Verdict::NoVisibleChange
-        } else if visible as f64 > REPLACED_SHARE * total as f64 {
-            Verdict::Replaced
+        let levels: Vec<Level> = self
+            .members
+            .iter()
+            .filter_map(|member| member.verdict().map(|verdict| verdict.level))
+            .collect();
+        let count = |level: Level| levels.iter().filter(|found| **found == level).count();
+        let replaced = added_or_removed + count(Level::Replaced);
+        let past_half =
+            |n: usize| n as f64 > REPLACED_SHARE * (self.unchanged + self.members.len()) as f64;
+        let level = if past_half(replaced) {
+            Level::Replaced
+        } else if past_half(replaced + count(Level::Redrawn)) {
+            Level::Redrawn
+        } else if added_or_removed > 0 || levels.iter().any(|level| *level >= Level::Edited) {
+            Level::Edited
         } else {
-            Verdict::ContentChange
+            levels.into_iter().max().unwrap_or(Level::Invisible)
+        };
+        let verdict = Verdict::new(level);
+        if added_or_removed > 0 {
+            verdict.with(Tag::Members)
+        } else {
+            verdict
         }
     }
 
@@ -419,12 +464,55 @@ pub fn text_detail(before: &str, after: &str) -> MemberDetail {
     let (before_lines, after_lines) = (before.lines().count(), after.lines().count());
     let matched = crate::diff::text::line_diff_core(before, after, TEXT_MAX_EDIT)
         .map_or(0, |core| core.pairs.len());
+    let (removed, added) = (before_lines - matched, after_lines - matched);
+    let changed = removed + added > 0;
     MemberDetail::Text {
         before_lines,
         after_lines,
-        removed: before_lines - matched,
-        added: after_lines - matched,
+        removed,
+        added,
+        whitespace: changed.then(|| whitespace_only(before, after)).flatten(),
+        words_kept: changed && words_kept(before, after),
     }
+}
+
+/// Which whitespace alone two texts differ in, if only whitespace.
+fn whitespace_only(before: &str, after: &str) -> Option<Whitespace> {
+    let trimmed = |text: &str| {
+        let lines: Vec<&str> = text.lines().map(str::trim_end).collect();
+        let end = lines
+            .iter()
+            .rposition(|line| !line.is_empty())
+            .map_or(0, |at| at + 1);
+        lines[..end].join("\n")
+    };
+    let visible = |text: &str| {
+        text.chars()
+            .filter(|c| !c.is_whitespace())
+            .collect::<String>()
+    };
+    if trimmed(before) == trimmed(after) {
+        Some(Whitespace::Trailing)
+    } else if visible(before) == visible(after) {
+        Some(Whitespace::Anywhere)
+    } else {
+        None
+    }
+}
+
+/// True if two texts share at least half their words, counted with repeats.
+fn words_kept(before: &str, after: &str) -> bool {
+    let mut counts: HashMap<&str, (usize, usize)> = HashMap::new();
+    for word in before.split_whitespace() {
+        counts.entry(word).or_default().0 += 1;
+    }
+    for word in after.split_whitespace() {
+        counts.entry(word).or_default().1 += 1;
+    }
+    let (shared, all) = counts.values().fold((0, 0), |(shared, all), (b, a)| {
+        (shared + b.min(a), all + b.max(a))
+    });
+    2 * shared >= all
 }
 
 /// A hash of `bytes`, for a member's [`Member::hash`].
@@ -532,9 +620,11 @@ mod tests {
                 after_lines: 4,
                 removed: 1,
                 added: 2,
+                whitespace: None,
+                words_kept: false,
             })
         );
-        assert_eq!(diff.members[0].verdict(), Some(Verdict::ContentChange));
+        assert_eq!(diff.members[0].verdict(), Some(Verdict::new(Level::Edited)));
     }
 
     #[test]
@@ -544,23 +634,39 @@ mod tests {
         let one = loaded(&[("a", "1"), ("b", "2"), ("c", "x")]);
         let most = loaded(&[("a", "1"), ("y", "2"), ("c", "x")]);
         let crlf = loaded(&[("a", "1\r\n"), ("b", "2"), ("c", "3")]);
-        let verdict =
-            |after: &Loaded| compare(Family::Archives, Some(&before), Some(after), 0).verdict();
-        assert_eq!(verdict(&same), Verdict::NoVisibleChange);
-        assert_eq!(
-            verdict(&crlf),
-            Verdict::NoVisibleChange,
-            "only a line ending"
-        );
-        assert_eq!(verdict(&one), Verdict::ContentChange);
+        let verdict = |after: &Loaded| {
+            compare(Family::Archives, Some(&before), Some(after), 0)
+                .verdict()
+                .to_string()
+        };
+        assert_eq!(verdict(&same), "invisible");
+        assert_eq!(verdict(&crlf), "invisible", "only a line ending");
+        assert_eq!(verdict(&one), "edited", "one member of three replaced");
         assert_eq!(
             verdict(&most),
-            Verdict::Replaced,
+            "replaced+members",
             "b removed, y added, c changed"
         );
         assert_eq!(
-            compare(Family::Archives, None, Some(&same), 0).verdict(),
-            Verdict::ContentChange
+            compare(Family::Archives, None, Some(&same), 0)
+                .verdict()
+                .to_string(),
+            "edited"
         );
+    }
+
+    #[test]
+    fn a_text_member_is_judged_by_what_changed_in_it() {
+        let level = |before: &str, after: &str| text_detail(before, after).verdict().to_string();
+        assert_eq!(level("a b\n", "a b\r\n"), "invisible");
+        assert_eq!(level("a b\n", "a b  \n\n"), "imperceptible");
+        assert_eq!(level("a b\nc\n", "a\n  b c\n"), "artifacts");
+        assert_eq!(level("a\nb\nc\nd\n", "a\nb\nc\nD\n"), "edited");
+        assert_eq!(
+            level("one two\nthree four\n", "three four one\ntwo\n"),
+            "redrawn",
+            "every line changed, every word kept"
+        );
+        assert_eq!(level("one two\nthree four\n", "five\nsix\n"), "replaced");
     }
 }

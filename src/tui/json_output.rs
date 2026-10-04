@@ -549,6 +549,9 @@ mod tests {
                     height: 3,
                     changed_pixels: 12,
                 }],
+                differing_pixels: 12,
+                strong_pixels: 12,
+                layout_kept: true,
             },
         };
         let json: serde_json::Value = serde_json::from_str(&binary_diff_json(

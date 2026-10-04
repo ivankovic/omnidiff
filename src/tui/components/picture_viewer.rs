@@ -626,7 +626,7 @@ impl PictureViewer {
         let change = match &self.diff.comparison {
             Comparison::OneSided if self.diff.before.is_none() => "added".to_string(),
             Comparison::OneSided => "deleted".to_string(),
-            Comparison::Resized => "resized".to_string(),
+            Comparison::Resized { .. } => "resized".to_string(),
             Comparison::Pixels { regions, .. } if regions.is_empty() => {
                 "no pixel changed".to_string()
             }
@@ -634,6 +634,7 @@ impl PictureViewer {
                 changed_pixels,
                 total_pixels,
                 regions,
+                ..
             } => format!(
                 "{:.2}% of pixels changed, in {} region{}",
                 100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64,

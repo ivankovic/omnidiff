@@ -17,13 +17,9 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    // Recorded as found, not examined.
-    human_picture::assert_known_verdict_mismatch(
-        "gif-x-abs-lang-abs-63b53d7f-ip",
-        human_picture::Verdict::ContentChange,
-    )
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(Family::Pictures, "gif-x-abs-lang-abs-63b53d7f-ip")
 }

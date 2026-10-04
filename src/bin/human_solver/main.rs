@@ -72,7 +72,7 @@ use tree_sitter::Node;
 
 use omnidiff::code::language::{language_for_path, to_treesitter};
 use omnidiff::code::{Code, Language};
-use omnidiff::diff::content::Family;
+use omnidiff::diff::content::{Family, Level};
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
 use omnidiff::test::helper::human_content::{self, HumanContent};
@@ -84,7 +84,6 @@ use omnidiff::test::helper::human_mapping::{
     NamedTextMapping, NodeStatus, disagreement_is_move_only, is_inherited_removed, path_refs,
     rebuild_caches_for_mapping, status_after, status_before, text_mapping_disagreements,
 };
-use omnidiff::test::helper::human_picture;
 use omnidiff::test::helper::{
     DIFF_DATASETS, code_pair_from_dir, code_pair_from_dir_without_metadata, diffs_case_dir,
     node_for_path, path_for_node, precompute_paths, read_note, write_note,
@@ -440,8 +439,9 @@ fn list_picker_cases() -> Result<Vec<(String, &'static str)>> {
 /// What the `o` picker shows for a content fixture.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ContentRow {
-    /// The verdict on the whole pair, if one is recorded: what the `Verdict` column sorts by.
-    pub(crate) verdict: Option<human_picture::Verdict>,
+    /// The pair verdict's place in `Level::ALL`, can't judge after them, if one is recorded:
+    /// what the `Verdict` column sorts by.
+    pub(crate) rank: Option<usize>,
     /// The `Verdict` column: the pair verdict, or how many members have one.
     pub(crate) label: String,
     /// The `Cmpl` column: a picture without its verdict, or a container without a pair verdict
@@ -450,28 +450,26 @@ pub(crate) struct ContentRow {
 }
 
 impl ContentRow {
-    /// A picture fixture's row, from its verdict.
-    pub(crate) fn picture(verdict: Option<human_picture::Verdict>) -> Self {
-        Self {
-            verdict,
-            label: verdict
-                .map(|verdict| verdict.label())
-                .unwrap_or_default()
-                .to_string(),
-            incomplete: verdict.is_none(),
-        }
-    }
-
-    /// A container fixture's row, from its ground truth (`None` before any is saved).
-    fn container(human: Option<HumanContent>) -> Self {
+    /// A content fixture's row, from its ground truth (`None` before any is saved).
+    pub(crate) fn of(human: Option<HumanContent>) -> Self {
         let human = human.unwrap_or_default();
-        let label = match (human.verdict, human.members.len()) {
-            (Some(verdict), _) => verdict.label().to_string(),
+        let label = match (&human.verdict, human.members.len()) {
+            (Some(judgement), _) => judgement.label(),
             (None, 0) => String::new(),
             (None, judged) => format!("{judged} judged"),
         };
+        let rank = human
+            .verdict
+            .as_ref()
+            .map(|judgement| match judgement.verdict() {
+                Some(verdict) => Level::ALL
+                    .iter()
+                    .position(|level| *level == verdict.level)
+                    .expect("every level is in ALL"),
+                None => Level::ALL.len(),
+            });
         Self {
-            verdict: human.verdict,
+            rank,
             label,
             incomplete: !human.is_complete(),
         }
@@ -484,15 +482,10 @@ fn read_content_rows() -> HashMap<String, ContentRow> {
     let mut rows = HashMap::new();
     for family in Family::ALL {
         for name in list_dir_names(&human_content::root(family)).unwrap_or_default() {
-            let row = match family {
-                Family::Pictures => ContentRow::picture(
-                    human_picture::load(&name)
-                        .ok()
-                        .map(|picture| picture.verdict),
-                ),
-                family => ContentRow::container(human_content::load(family, &name).ok()),
-            };
-            rows.insert(name, row);
+            rows.insert(
+                name.clone(),
+                ContentRow::of(human_content::load(family, &name).ok()),
+            );
         }
     }
     rows
@@ -1809,16 +1802,9 @@ impl<'a> DiffPickerData<'a> {
         self.content.and_then(|map| map.get(name))
     }
 
-    fn verdict_of(&self, name: &str) -> Option<human_picture::Verdict> {
-        self.content_of(name).and_then(|row| row.verdict)
-    }
-
-    /// `verdict_of` as its place in `Verdict::ALL`, the order the `Verdict` column sorts in.
+    /// The pair verdict's place in `Level::ALL`, the order the `Verdict` column sorts in.
     fn verdict_rank(&self, name: &str) -> Option<usize> {
-        let verdict = self.verdict_of(name)?;
-        human_picture::Verdict::ALL
-            .iter()
-            .position(|candidate| *candidate == verdict)
+        self.content_of(name).and_then(|row| row.rank)
     }
 
     /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, verdicts

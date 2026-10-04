@@ -37,8 +37,8 @@
 //!
 //! A glyph's verdict is the picture rule over its whole cell, most of which is empty, so even a
 //! redesigned glyph rarely changes more than [`crate::diff::picture::REPLACED_SHARE`] of it and
-//! reads as a content change. The font fixtures will say whether the share should be of the
-//! glyph's own area instead.
+//! reads as edited, never redrawn or replaced. The font fixtures will say whether the share should
+//! be of the glyph's own area instead.
 
 use anyhow::{Context, Result, bail};
 use image::RgbaImage;
@@ -467,8 +467,8 @@ pub fn member_keys(bytes: &[u8], format: Format) -> Result<Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::diff::content::ContentDiff;
     use crate::diff::content::container::{MemberDetail, MemberStatus};
-    use crate::diff::content::{ContentDiff, Verdict};
 
     /// A font of `make_fonts.py`'s.
     fn read(name: &str) -> Vec<u8> {
@@ -545,7 +545,10 @@ mod tests {
         assert_eq!(status("U+0043 C"), Some(MemberStatus::Added));
         let b = diff.member("U+0042 B").unwrap();
         assert!(matches!(b.detail, Some(MemberDetail::Picture(_))), "{b:?}");
-        assert_eq!(b.verdict(), Some(Verdict::ContentChange));
+        assert_eq!(
+            b.verdict().map(|verdict| verdict.to_string()).as_deref(),
+            Some("edited")
+        );
         Ok(())
     }
 

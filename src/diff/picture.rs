@@ -39,8 +39,18 @@
 //! megabytes of raw pixels, so the frames are kept deflated ([`Frames`]) and unpacked one at a
 //! time.
 //!
+//! **The verdict** ([`PictureDiff::verdict`], levels and tags in `content::Level`): pixels equal
+//! once fully transparent ones count as alike are invisible; pixels that differ but pass
+//! pixelmatch's test are imperceptible; changes no pixel of which passes `STRONG_THRESHOLD` are
+//! artifacts - faint everywhere, as compression or resampling leaves them; more than
+//! [`REPLACED_SHARE`] of the pixels changed is redrawn if the layout stayed (`layout_kept`) and
+//! replaced if not; anything else is edited. The thresholds are guesses for the picture fixtures to
+//! calibrate.
+//!
 //! Pictures of different sizes are not compared pixel by pixel - nothing says which pixel became
-//! which - and are reported as resized. SVG is not a picture here: it is XML, and the XML grammar
+//! which. When they keep their aspect ratio they are compared at the smaller one's size, the
+//! larger scaled down to it by averaging, and tagged resized; otherwise they are tagged canvas (a crop or a
+//! padding, not found) and called edited, as nothing was compared. SVG is not a picture here: it is XML, and the XML grammar
 //! diffs it structurally (`code::language::XML_FORMAT_EXTENSIONS`).
 
 use std::borrow::Cow;
@@ -60,6 +70,17 @@ pub const PICTURE_EXTENSIONS: &[&str] = &[
 /// default.
 pub const THRESHOLD: f64 = 0.1;
 
+/// The share of the largest YIQ distance above which a changed pixel is changed clearly, not
+/// faintly: a picture none of whose changed pixels passes it shows only artifacts.
+pub const STRONG_THRESHOLD: f64 = 0.3;
+
+/// The cells a side of a picture is averaged into for [`layout_kept`].
+const LAYOUT_CELLS: u32 = 16;
+
+/// The correlation of two pictures' cell brightnesses, either way round (a dark theme inverts
+/// it), from which they keep one layout.
+const LAYOUT_CORRELATION: f64 = 0.6;
+
 /// Changed pixels this close (in both directions) belong to one region.
 pub const REGION_GAP: u32 = 2;
 
@@ -72,6 +93,7 @@ pub const REPLACED_SHARE: f64 = 0.5;
 /// What happened to a picture, in one word (see [`super::content::Verdict`], which every kind
 /// of content shares).
 pub use super::content::Verdict;
+use super::content::{Level, Tag};
 
 /// True if `path` names a raster picture by its extension.
 pub fn is_picture_path(path: &std::path::Path) -> bool {
@@ -153,12 +175,26 @@ pub enum Comparison {
     /// The same size, compared pixel by pixel. No region means no visible change, even if the
     /// bytes differ (a re-encoding, a metadata change).
     Pixels {
+        /// Pixels that pass pixelmatch's test.
         changed_pixels: u64,
         total_pixels: u64,
         regions: Vec<Region>,
+        /// Pixels that differ at all, fully transparent ones alike whatever their colour.
+        differing_pixels: u64,
+        /// Changed pixels past [`STRONG_THRESHOLD`].
+        strong_pixels: u64,
+        /// True if the two keep one layout ([`layout_kept`]).
+        layout_kept: bool,
     },
     /// Different sizes: not compared pixel by pixel.
-    Resized,
+    Resized {
+        /// True if both sides have one aspect ratio, to a pixel.
+        aspect_kept: bool,
+        /// Two still pictures of one aspect ratio compared at the smaller one's size, the larger
+        /// scaled down to it: always [`Comparison::Pixels`], in the smaller one's pixels.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        scaled: Option<Box<Comparison>>,
+    },
     /// Animations of the same size (or an animation and a still), compared frame by frame.
     Frames {
         /// The aligned frames, in order: runs of frames that look the same, single changed
@@ -168,6 +204,8 @@ pub enum Comparison {
         total_pixels: u64,
         /// True if frames that look the same show for different times.
         retimed: bool,
+        /// True if frames that look the same differ in their pixels nonetheless.
+        faint: bool,
     },
 }
 
@@ -187,6 +225,8 @@ pub enum FrameStep {
         after: usize,
         changed_pixels: u64,
         regions: Vec<Region>,
+        /// Changed pixels past [`STRONG_THRESHOLD`].
+        strong_pixels: u64,
     },
     /// `frames` frames only after has, from its frame `after` on.
     Inserted { after: usize, frames: usize },
@@ -203,53 +243,77 @@ pub struct PictureDiff {
 }
 
 impl PictureDiff {
-    /// The engine's verdict: resized for a size change, no visible change when no region
-    /// changed, replaced when more than [`REPLACED_SHARE`] of the pixels did, and content change
-    /// otherwise - also for an added or deleted picture, which the fixtures do not hold. An
-    /// animation measures its frames the same way, and is a frame rate change when only the
-    /// timing of its frames changed.
+    /// The engine's verdict (see the module doc). An animation counts its frames: inserted or
+    /// deleted ones whole and changed ones by their changed share, and is replaced past
+    /// [`REPLACED_SHARE`] of its frames; then edited if a frame was added, removed or clearly
+    /// changed, artifacts if frames changed only faintly, and imperceptible or invisible as its
+    /// frames that look the same differ or not. It is never redrawn. An added or deleted picture,
+    /// which the fixtures do not hold, is edited.
     pub fn verdict(&self) -> Verdict {
         match &self.comparison {
+            Comparison::OneSided => Verdict::new(Level::Edited),
+            Comparison::Pixels { .. } => Verdict::new(pixel_level(&self.comparison)),
+            Comparison::Resized {
+                aspect_kept,
+                scaled,
+            } => {
+                let level = scaled.as_deref().map_or(Level::Edited, pixel_level);
+                let tag = if *aspect_kept {
+                    Tag::Resized
+                } else {
+                    Tag::Canvas
+                };
+                Verdict::new(level).with(tag)
+            }
             Comparison::Frames {
                 steps,
                 total_pixels,
                 retimed,
+                faint,
             } => {
                 // An inserted or deleted frame counts whole, a changed one by its changed share.
                 let (mut positions, mut edited) = (0usize, 0f64);
+                let (mut added_or_removed, mut clear, mut changed) = (false, false, false);
                 for step in steps {
                     match step {
                         FrameStep::Same { frames, .. } => positions += frames,
-                        FrameStep::Changed { changed_pixels, .. } => {
+                        FrameStep::Changed {
+                            changed_pixels,
+                            strong_pixels,
+                            ..
+                        } => {
                             positions += 1;
                             edited += *changed_pixels as f64 / (*total_pixels).max(1) as f64;
+                            changed = true;
+                            clear |= *strong_pixels > 0;
                         }
                         FrameStep::Inserted { frames, .. } | FrameStep::Deleted { frames, .. } => {
                             positions += frames;
                             edited += *frames as f64;
+                            added_or_removed = true;
                         }
                     }
                 }
-                if edited > REPLACED_SHARE * positions as f64 {
-                    Verdict::Replaced
-                } else if edited > 0.0 {
-                    Verdict::ContentChange
-                } else if *retimed {
-                    Verdict::FrameRateChange
+                let level = if edited > REPLACED_SHARE * positions as f64 {
+                    Level::Replaced
+                } else if added_or_removed || clear {
+                    Level::Edited
+                } else if changed {
+                    Level::Artifacts
+                } else if *faint {
+                    Level::Imperceptible
                 } else {
-                    Verdict::NoVisibleChange
+                    Level::Invisible
+                };
+                let mut verdict = Verdict::new(level);
+                if *retimed {
+                    verdict = verdict.with(Tag::Timing);
                 }
+                if added_or_removed {
+                    verdict = verdict.with(Tag::Frames);
+                }
+                verdict
             }
-            Comparison::Resized => Verdict::Resized,
-            Comparison::Pixels { regions, .. } if regions.is_empty() => Verdict::NoVisibleChange,
-            Comparison::Pixels {
-                changed_pixels,
-                total_pixels,
-                ..
-            } if *changed_pixels as f64 > REPLACED_SHARE * *total_pixels as f64 => {
-                Verdict::Replaced
-            }
-            Comparison::Pixels { .. } | Comparison::OneSided => Verdict::ContentChange,
         }
     }
 
@@ -263,7 +327,7 @@ impl PictureDiff {
             before.format != after.format || before.color != after.color
         };
         match &self.comparison {
-            Comparison::OneSided | Comparison::Resized => true,
+            Comparison::OneSided | Comparison::Resized { .. } => true,
             Comparison::Frames { steps, retimed, .. } => {
                 *retimed
                     || steps
@@ -514,7 +578,7 @@ pub fn compare_decoded(
     after: Option<&(PictureInfo, Frames)>,
 ) -> PictureDiff {
     let comparison = match (before, after) {
-        (Some((_, b)), Some((_, a))) if b.dimensions() != a.dimensions() => Comparison::Resized,
+        (Some((_, b)), Some((_, a))) if b.dimensions() != a.dimensions() => resized(b, a),
         (Some((_, b)), Some((_, a))) if b.count() == 1 && a.count() == 1 => {
             compare(&b.pixels(0), &a.pixels(0))
         }
@@ -571,7 +635,7 @@ fn compare_frames(before: &Frames, after: &Frames) -> Comparison {
     let mut compared = compare_pairs(before, after, &pairs).into_iter();
 
     let mut steps = Vec::new();
-    let mut retimed = false;
+    let (mut retimed, mut faint) = (false, false);
     for planned in plan {
         match planned {
             Planned::Same(b, a) => {
@@ -579,16 +643,18 @@ fn compare_frames(before: &Frames, after: &Frames) -> Comparison {
                 push_same(&mut steps, b, a);
             }
             Planned::Compare(b, a) => {
-                let (changed_pixels, regions) = compared.next().expect("one result per pair");
-                if regions.is_empty() {
+                let changes = compared.next().expect("one result per pair");
+                if changes.regions.is_empty() {
                     retimed |= before.delay_ms(b) != after.delay_ms(a);
+                    faint |= changes.differing > 0;
                     push_same(&mut steps, b, a);
                 } else {
                     steps.push(FrameStep::Changed {
                         before: b,
                         after: a,
-                        changed_pixels,
-                        regions,
+                        changed_pixels: changes.changed,
+                        regions: changes.regions,
+                        strong_pixels: changes.strong,
                     });
                 }
             }
@@ -600,6 +666,7 @@ fn compare_frames(before: &Frames, after: &Frames) -> Comparison {
         steps,
         total_pixels: u64::from(width) * u64::from(height),
         retimed,
+        faint,
     }
 }
 
@@ -664,11 +731,7 @@ enum Planned {
 
 /// [`changes`] of each (before, after) frame pair, in order, on every core: unpacking and
 /// comparing frames is most of an animation diff's time.
-fn compare_pairs(
-    before: &Frames,
-    after: &Frames,
-    pairs: &[(usize, usize)],
-) -> Vec<(u64, Vec<Region>)> {
+fn compare_pairs(before: &Frames, after: &Frames, pairs: &[(usize, usize)]) -> Vec<Changes> {
     let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
     let chunk = pairs.len().div_ceil(threads).max(1);
     std::thread::scope(|scope| {
@@ -771,20 +834,189 @@ pub fn changed_mask(before: &RgbaImage, after: &RgbaImage) -> Vec<bool> {
 
 fn compare(before: &RgbaImage, after: &RgbaImage) -> Comparison {
     let (width, height) = before.dimensions();
-    let (changed_pixels, regions) = changes(before, after);
+    let changes = changes(before, after);
     Comparison::Pixels {
-        changed_pixels,
+        changed_pixels: changes.changed,
         total_pixels: u64::from(width) * u64::from(height),
-        regions,
+        regions: changes.regions,
+        differing_pixels: changes.differing,
+        strong_pixels: changes.strong,
+        layout_kept: layout_kept(before, after),
     }
 }
 
-/// How many pixels of two same-size pictures changed, and the regions they make.
-fn changes(before: &RgbaImage, after: &RgbaImage) -> (u64, Vec<Region>) {
+/// Two pictures of different sizes: compared at the smaller one's size if they are stills of one
+/// aspect ratio.
+fn resized(before: &Frames, after: &Frames) -> Comparison {
+    let ((bw, bh), (aw, ah)) = (before.dimensions(), after.dimensions());
+    // One aspect ratio to a pixel: the cross products differ by less than the longest side.
+    let cross = |w: u32, h: u32| u64::from(w) * u64::from(h);
+    let aspect_kept = cross(bw, ah).abs_diff(cross(aw, bh)) < u64::from(bw.max(bh).max(aw).max(ah));
+    let scaled = (aspect_kept && before.count() == 1 && after.count() == 1).then(|| {
+        let (b, a) = (before.pixels(0), after.pixels(0));
+        let (width, height) = if cross(bw, bh) <= cross(aw, ah) {
+            (bw, bh)
+        } else {
+            (aw, ah)
+        };
+        let fit = |pixels: &RgbaImage| {
+            if pixels.dimensions() == (width, height) {
+                pixels.clone()
+            } else {
+                shrink(pixels, width, height)
+            }
+        };
+        Box::new(compare(&fit(&b), &fit(&a)))
+    });
+    Comparison::Resized {
+        aspect_kept,
+        scaled,
+    }
+}
+
+/// `pixels` scaled down to `width` x `height` by averaging the pixels each new one covers: a
+/// picture scaled up by a whole factor and back comes out as it was, which a filter reaching past
+/// the covered pixels (`imageops`' triangle and the rest) would smear.
+fn shrink(pixels: &RgbaImage, width: u32, height: u32) -> RgbaImage {
+    let (from_width, from_height) = pixels.dimensions();
+    let span = |at: u32, to: u32, from: u32| {
+        let start = u64::from(at) * u64::from(from) / u64::from(to);
+        let end = (u64::from(at + 1) * u64::from(from)).div_ceil(u64::from(to));
+        start as u32..(end as u32).max(start as u32 + 1)
+    };
+    RgbaImage::from_fn(width, height, |x, y| {
+        let (mut sum, mut count) = ([0u64; 4], 0u64);
+        for sy in span(y, height, from_height) {
+            for sx in span(x, width, from_width) {
+                for (total, channel) in sum.iter_mut().zip(pixels.get_pixel(sx, sy).0) {
+                    *total += u64::from(channel);
+                }
+                count += 1;
+            }
+        }
+        image::Rgba(sum.map(|total| ((total + count / 2) / count) as u8))
+    })
+}
+
+/// The level of a [`Comparison::Pixels`] (see the module doc).
+fn pixel_level(comparison: &Comparison) -> Level {
+    let Comparison::Pixels {
+        changed_pixels,
+        total_pixels,
+        differing_pixels,
+        strong_pixels,
+        layout_kept,
+        ..
+    } = comparison
+    else {
+        return Level::Edited;
+    };
+    if *differing_pixels == 0 {
+        Level::Invisible
+    } else if *changed_pixels == 0 {
+        Level::Imperceptible
+    } else if *strong_pixels == 0 {
+        Level::Artifacts
+    } else if *changed_pixels as f64 <= REPLACED_SHARE * *total_pixels as f64 {
+        Level::Edited
+    } else if *layout_kept {
+        Level::Redrawn
+    } else {
+        Level::Replaced
+    }
+}
+
+/// How two same-size pictures differ.
+struct Changes {
+    /// Pixels that differ at all, fully transparent ones alike whatever their colour.
+    differing: u64,
+    /// Pixels that pass pixelmatch's test.
+    changed: u64,
+    /// Changed pixels past [`STRONG_THRESHOLD`].
+    strong: u64,
+    /// The changed pixels' regions.
+    regions: Vec<Region>,
+}
+
+/// How many pixels of two same-size pictures differ, changed and changed clearly, and the regions
+/// the changed ones make.
+fn changes(before: &RgbaImage, after: &RgbaImage) -> Changes {
     let (width, height) = before.dimensions();
-    let mask = changed_mask(before, after);
-    let changed_pixels = mask.iter().filter(|&&changed| changed).count() as u64;
-    (changed_pixels, regions(&mask, width, height))
+    let limit = 35215.0 * THRESHOLD * THRESHOLD;
+    let strong_limit = 35215.0 * STRONG_THRESHOLD * STRONG_THRESHOLD;
+    let (mut differing, mut strong) = (0, 0);
+    let mask: Vec<bool> = before
+        .pixels()
+        .zip(after.pixels())
+        .map(|(b, a)| {
+            if !looks_alike(b.0, a.0) {
+                differing += 1;
+            }
+            if b == a {
+                return false;
+            }
+            let distance = yiq_distance(b.0, a.0);
+            if distance > strong_limit {
+                strong += 1;
+            }
+            distance > limit
+        })
+        .collect();
+    let changed = mask.iter().filter(|&&changed| changed).count() as u64;
+    Changes {
+        differing,
+        changed,
+        strong,
+        regions: regions(&mask, width, height),
+    }
+}
+
+/// True if two pixels are the same once fully transparent ones count as alike.
+fn looks_alike(before: [u8; 4], after: [u8; 4]) -> bool {
+    before == after || (before[3] == 0 && after[3] == 0)
+}
+
+/// True if two same-size pictures keep one layout: their brightness averaged into
+/// [`LAYOUT_CELLS`] cells a side correlates, either way round, by [`LAYOUT_CORRELATION`] or more.
+/// Two flat pictures keep one; a flat one and a drawn one do not.
+fn layout_kept(before: &RgbaImage, after: &RgbaImage) -> bool {
+    let (b, a) = (layout(before), layout(after));
+    let n = b.len() as f64;
+    let mean = |cells: &[f64]| cells.iter().sum::<f64>() / n;
+    let (mb, ma) = (mean(&b), mean(&a));
+    let (mut covariance, mut vb, mut va) = (0.0, 0.0, 0.0);
+    for (x, y) in b.iter().zip(&a) {
+        covariance += (x - mb) * (y - ma);
+        vb += (x - mb) * (x - mb);
+        va += (y - ma) * (y - ma);
+    }
+    // A cell a tenth of a level off flat is flat.
+    let flat = 0.01 * n;
+    match (vb < flat, va < flat) {
+        (true, true) => true,
+        (true, false) | (false, true) => false,
+        (false, false) => (covariance / (vb * va).sqrt()).abs() >= LAYOUT_CORRELATION,
+    }
+}
+
+/// A picture's brightness over white, averaged into at most [`LAYOUT_CELLS`] cells a side.
+fn layout(pixels: &RgbaImage) -> Vec<f64> {
+    let (width, height) = pixels.dimensions();
+    let (columns, rows) = (width.clamp(1, LAYOUT_CELLS), height.clamp(1, LAYOUT_CELLS));
+    let mut sums = vec![(0.0, 0u64); (columns * rows) as usize];
+    for (x, y, pixel) in pixels.enumerate_pixels() {
+        let [r, g, b, a] = pixel.0;
+        let alpha = f64::from(a) / 255.0;
+        let over_white = |channel: u8| 255.0 + (f64::from(channel) - 255.0) * alpha;
+        let luma = over_white(r) * 0.299 + over_white(g) * 0.587 + over_white(b) * 0.114;
+        let cell = (y * rows / height.max(1)) * columns + x * columns / width.max(1);
+        let sum = &mut sums[cell as usize];
+        sum.0 += luma;
+        sum.1 += 1;
+    }
+    sums.into_iter()
+        .map(|(sum, count)| sum / count.max(1) as f64)
+        .collect()
 }
 
 /// pixelmatch's `colorDelta`: both pixels blended over white, then the weighted distance in YIQ.
@@ -885,6 +1117,14 @@ pub(crate) fn test_frame(k: u32) -> RgbaImage {
 mod tests {
     use super::*;
 
+    fn v(text: &str) -> Verdict {
+        text.parse().expect("a verdict")
+    }
+
+    fn diff_of(before: &RgbaImage, after: &RgbaImage) -> PictureDiff {
+        diff(&png(before), &png(after)).expect("diffs")
+    }
+
     fn png(picture: &RgbaImage) -> Vec<u8> {
         let mut bytes = Vec::new();
         picture
@@ -909,7 +1149,10 @@ mod tests {
             Comparison::Pixels {
                 changed_pixels: 0,
                 total_pixels: 64,
-                regions: Vec::new()
+                regions: Vec::new(),
+                differing_pixels: 0,
+                strong_pixels: 0,
+                layout_kept: true,
             }
         );
         assert!(!diff.differs());
@@ -988,13 +1231,46 @@ mod tests {
     }
 
     #[test]
-    fn a_resized_picture_is_not_compared_pixel_by_pixel() {
+    fn a_reshaped_picture_is_not_compared_pixel_by_pixel() {
         let diff = diff(&png(&filled(4, 4, [0; 4])), &png(&filled(8, 4, [0; 4]))).expect("diffs");
-        assert_eq!(diff.comparison, Comparison::Resized);
+        assert_eq!(
+            diff.comparison,
+            Comparison::Resized {
+                aspect_kept: false,
+                scaled: None
+            }
+        );
         assert_eq!(
             diff.after.map(|info| (info.width, info.height)),
             Some((8, 4))
         );
+    }
+
+    #[test]
+    fn a_rescaled_picture_is_compared_at_the_smaller_size() {
+        let mut small = filled(4, 4, [255; 4]);
+        small.put_pixel(1, 1, image::Rgba([0, 0, 0, 255]));
+        // Twice the size, each pixel a 2x2 block: scaled back down, the same picture.
+        let large = image::imageops::resize(&small, 8, 8, image::imageops::FilterType::Nearest);
+        let diff = diff(&png(&small), &png(&large)).expect("diffs");
+        let Comparison::Resized {
+            aspect_kept: true,
+            scaled: Some(scaled),
+        } = &diff.comparison
+        else {
+            panic!("compared at one size: {:?}", diff.comparison);
+        };
+        assert!(matches!(
+            **scaled,
+            Comparison::Pixels {
+                total_pixels: 16,
+                ..
+            }
+        ));
+        assert_eq!(diff.verdict(), v("invisible+resized"));
+        // Off by a pixel of rounding is still one aspect ratio.
+        let other = diff_of(&filled(100, 75, [255; 4]), &filled(33, 25, [255; 4]));
+        assert_eq!(other.verdict(), v("invisible+resized"));
     }
 
     #[test]
@@ -1061,17 +1337,17 @@ mod tests {
             }]
         );
         assert!(!retimed);
-        assert_eq!(diff.verdict(), Verdict::NoVisibleChange);
+        assert_eq!(diff.verdict(), v("invisible"));
         assert!(!diff.differs());
     }
 
     #[test]
-    fn the_same_frames_at_a_new_pace_are_a_frame_rate_change() {
+    fn the_same_frames_at_a_new_pace_are_only_retimed() {
         let diff = diff(&animation(&[0, 1, 2], 100), &animation(&[0, 1, 2], 50)).expect("diffs");
         let (steps, retimed) = steps_of(&diff);
         assert_eq!(steps.len(), 1, "{steps:?}");
         assert!(retimed);
-        assert_eq!(diff.verdict(), Verdict::FrameRateChange);
+        assert_eq!(diff.verdict(), v("invisible+timing"));
         assert!(diff.differs());
     }
 
@@ -1099,7 +1375,7 @@ mod tests {
                 },
             ]
         );
-        assert_eq!(diff.verdict(), Verdict::ContentChange);
+        assert_eq!(diff.verdict(), v("edited+frames"));
     }
 
     #[test]
@@ -1117,6 +1393,7 @@ mod tests {
                 after: 1,
                 changed_pixels: 1,
                 regions,
+                strong_pixels: 1,
             },
             _,
         ] = steps
@@ -1124,7 +1401,7 @@ mod tests {
             panic!("frame 1 changed, the others match: {steps:?}")
         };
         assert_eq!((regions[0].x, regions[0].y), (6, 2));
-        assert_eq!(diff.verdict(), Verdict::ContentChange);
+        assert_eq!(diff.verdict(), v("edited"));
     }
 
     #[test]
@@ -1132,12 +1409,12 @@ mod tests {
         let diff =
             diff(&animation(&[0, 1, 2], 100), &animation(&[3, 4, 5, 6], 100)).expect("diffs");
         // Paired frames differ in two pixels; the fourth is new: a quarter of the positions
-        // edited whole, so content change - not replaced on frame count alone.
-        assert_eq!(diff.verdict(), Verdict::ContentChange);
+        // edited whole, so edited - not replaced on frame count alone.
+        assert_eq!(diff.verdict(), v("edited+frames"));
         let black = RgbaImage::from_pixel(8, 8, image::Rgba([0, 0, 0, 255]));
         let blacked = test_gif(&[(black.clone(), 100), (black, 200)]);
         let diff = super::diff(&animation(&[0, 1], 100), &blacked).expect("diffs");
-        assert_eq!(diff.verdict(), Verdict::Replaced);
+        assert_eq!(diff.verdict(), v("replaced"));
     }
 
     #[test]
@@ -1178,6 +1455,7 @@ mod tests {
             after: 0,
             changed_pixels: 1,
             regions: Vec::new(),
+            strong_pixels: 1,
         };
         assert_eq!(FrameCounts::of(&[]).describe(), "no frame changed");
         assert_eq!(
@@ -1211,19 +1489,62 @@ mod tests {
 
     #[test]
     fn the_engine_verdict_follows_the_comparison() {
-        let small = png(&filled(10, 10, [255; 4]));
-        let mut dotted = filled(10, 10, [255; 4]);
-        dotted.put_pixel(3, 3, image::Rgba([0, 0, 0, 255]));
-        let verdict = |a: &[u8], b: &[u8]| diff(a, b).expect("diffs").verdict();
-        assert_eq!(verdict(&small, &small), Verdict::NoVisibleChange);
-        assert_eq!(verdict(&small, &png(&dotted)), Verdict::ContentChange);
+        let white = filled(10, 10, [255; 4]);
+        let verdict = |after: &RgbaImage| diff_of(&white, after).verdict();
+        assert_eq!(verdict(&white), v("invisible"));
+
+        let mut transparent = filled(10, 10, [255; 4]);
+        transparent.put_pixel(0, 0, image::Rgba([0, 0, 0, 0]));
+        let mut recoloured = transparent.clone();
+        recoloured.put_pixel(0, 0, image::Rgba([255, 0, 0, 0]));
         assert_eq!(
-            verdict(&small, &png(&filled(10, 10, [0, 0, 0, 255]))),
-            Verdict::Replaced
+            diff_of(&transparent, &recoloured).verdict(),
+            v("invisible"),
+            "a colour under full transparency is not seen"
         );
+
+        let mut faint = white.clone();
+        faint.put_pixel(3, 3, image::Rgba([254, 254, 254, 255]));
+        assert_eq!(verdict(&faint), v("imperceptible"));
+
+        // Every pixel a shade darker: past pixelmatch's threshold, nowhere past the strong one.
+        let gray = filled(10, 10, [128, 128, 128, 255]);
+        let darker = filled(10, 10, [88, 88, 88, 255]);
+        assert_eq!(diff_of(&gray, &darker).verdict(), v("artifacts"));
+
+        let mut dotted = white.clone();
+        dotted.put_pixel(3, 3, image::Rgba([0, 0, 0, 255]));
+        assert_eq!(verdict(&dotted), v("edited"));
+
+        // Most pixels changed: the left half black against the top half black has another
+        // layout; its inverse keeps the layout, darker where it was lighter.
+        let half = |left: bool, ink: [u8; 4], paper: [u8; 4]| {
+            RgbaImage::from_fn(10, 10, |x, y| {
+                image::Rgba(if (left && x < 5) || (!left && y < 5) {
+                    ink
+                } else {
+                    paper
+                })
+            })
+        };
+        let black = [0, 0, 0, 255];
+        let left = half(true, black, [255; 4]);
         assert_eq!(
-            verdict(&small, &png(&filled(5, 10, [255; 4]))),
-            Verdict::Resized
+            diff_of(&left, &half(false, black, [255; 4])).verdict(),
+            v("edited"),
+            "half the pixels is not more than half"
+        );
+        let mut top = half(false, black, [255; 4]);
+        top.put_pixel(9, 9, image::Rgba(black));
+        top.put_pixel(8, 9, image::Rgba(black));
+        assert_eq!(diff_of(&left, &top).verdict(), v("replaced"));
+        let inverted = half(true, [255; 4], black);
+        assert_eq!(diff_of(&left, &inverted).verdict(), v("redrawn"));
+
+        assert_eq!(
+            verdict(&filled(5, 10, [255; 4])),
+            v("edited+canvas"),
+            "another shape is not compared, and called edited"
         );
     }
 
