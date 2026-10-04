@@ -19,6 +19,11 @@ release does: a minor bump may change the JSON output or the library API, a patc
   lines are: the report says which frames changed, which were added or removed, and whether the
   same frames now show for different times. In the TUI, `,` and `.` step through the frames and
   space plays the animation.
+- Inside tmux, the TUI draws pictures with the graphics protocol of the terminal in front of the
+  pane, as tmux knows it, rather than whichever attached client answered the query: a kitty on a
+  desk no longer makes a phone's terminal attached to the same session show crossed-out boxes.
+  `b` switches every picture to half blocks and back, and `OMNIDIFF_GRAPHICS=halfblocks` (or
+  `kitty`, `sixel`, `iterm2`) overrides the detection.
 - Archives, fonts, cursor themes, message catalogs and PDFs are diffed by what they hold, member
   by member: a zip's or tar's files (jars, Office documents and EPUBs are zips; gzip, xz and
   bzip2 streams are opened too), a font's glyphs and names (TrueType, OpenType, WOFF, WOFF2,

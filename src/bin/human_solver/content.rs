@@ -657,8 +657,10 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         Origin::Sample { .. } => "1-5 verdict  s promote/save  x reject",
     };
     let more = match session.viewer.members() {
-        Some(_) => "  j/k member  n/N unjudged  A rest  a all  g grid  J/K change  Enter open",
-        None => "  t view  h/l swipe",
+        Some(_) => {
+            "  j/k member  n/N unjudged  A rest  a all  g grid  J/K change  Enter open  b blocks"
+        }
+        None => "  t view  h/l swipe  b blocks",
     };
     frame.render_widget(
         Paragraph::new(

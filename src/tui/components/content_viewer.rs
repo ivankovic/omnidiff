@@ -26,7 +26,7 @@ use ratatui::{Frame, layout::Rect};
 use ratatui_image::picker::Picker;
 
 use super::member_viewer::MemberViewer;
-use super::picture_viewer::{PictureColors, PictureViewer};
+use super::picture_viewer::{self, PictureColors, PictureViewer};
 use crate::diff::content::{self, Engine, Verdict};
 use crate::diff::picture;
 
@@ -147,8 +147,14 @@ impl ContentViewer {
         }
     }
 
-    /// Handles a key of the view; false for any other key, which it leaves to the caller.
+    /// Handles a key of the view; false for any other key, which it leaves to the caller. `b`
+    /// draws every picture in half blocks, or with the terminal's protocol again (see
+    /// [`picture_viewer::half_blocks_only`]).
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
+        if code == KeyCode::Char('b') {
+            picture_viewer::set_half_blocks_only(!picture_viewer::half_blocks_only());
+            return true;
+        }
         match self {
             ContentViewer::Picture(viewer) => viewer.handle_key(code),
             ContentViewer::Members(viewer) => viewer.handle_key(code),
@@ -168,5 +174,40 @@ impl ContentViewer {
             ContentViewer::Picture(viewer) => viewer.draw(frame, area, colors),
             ContentViewer::Members(viewer) => viewer.draw(frame, area, colors),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn b_draws_every_picture_in_half_blocks_and_back() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (dir.path().join("a.png"), dir.path().join("b.png"));
+        for (path, pixel) in [(&a, 0u8), (&b, 255)] {
+            image::RgbaImage::from_pixel(4, 4, image::Rgba([pixel, 0, 0, 255]))
+                .save_with_format(path, image::ImageFormat::Png)
+                .unwrap();
+        }
+        let mut picker = Picker::halfblocks();
+        picker.set_protocol_type(ratatui_image::picker::ProtocolType::Kitty);
+        let mut viewer = ContentViewer::open(&a, &b, picker).unwrap();
+        let was = picture_viewer::half_blocks_only();
+        picture_viewer::set_half_blocks_only(false);
+        assert!(
+            viewer.status().ends_with(" · kitty (b: half blocks)"),
+            "{}",
+            viewer.status()
+        );
+        assert!(viewer.handle_key(KeyCode::Char('b')));
+        assert!(
+            viewer.status().ends_with(" · half blocks (b: pixels)"),
+            "{}",
+            viewer.status()
+        );
+        assert!(viewer.handle_key(KeyCode::Char('b')));
+        assert!(!picture_viewer::half_blocks_only());
+        picture_viewer::set_half_blocks_only(was);
     }
 }

@@ -67,12 +67,115 @@ const BACKDROP: Rgba<u8> = Rgba([255, 255, 255, 255]);
 /// picture is sent scaled to its pane, so an icon arrives as megabytes of repeated pixels: through
 /// tmux or ssh that transfer was most of the wait for every frame, and deflated it is a few
 /// percent of the size.
+///
+/// **`OMNIDIFF_GRAPHICS`** overrides the detection: `halfblocks` (no query sent at all), `kitty`,
+/// `sixel` or `iterm2`; `auto` or unset detects.
+///
+/// **Inside tmux the answers cannot be trusted**: tmux passes the query to every client attached
+/// to the session, so a kitty on a desk answers for a phone's terminal attached to the same
+/// session, which then shows kitty's placeholders as rows of crossed-out boxes. tmux knows each
+/// client's terminal, though, so only the protocols the client in front of the pane supports are
+/// allowed ([`protocols_for_client`]), and with none of them the query is not sent.
 pub fn query_graphics() -> Option<Picker> {
-    Picker::from_query_stdio_with_options(QueryStdioOptions {
-        kitty_compression: true,
-        ..QueryStdioOptions::default()
-    })
-    .ok()
+    let query = |blacklist: Vec<ProtocolType>| {
+        Picker::from_query_stdio_with_options(QueryStdioOptions {
+            kitty_compression: true,
+            blacklist_protocols: blacklist,
+            ..QueryStdioOptions::default()
+        })
+        .ok()
+    };
+    let forced = std::env::var("OMNIDIFF_GRAPHICS")
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let forced = match forced.as_str() {
+        "halfblocks" | "blocks" | "none" | "off" => {
+            set_half_blocks_only(true);
+            return Some(Picker::halfblocks());
+        }
+        "kitty" => Some(ProtocolType::Kitty),
+        "sixel" => Some(ProtocolType::Sixel),
+        "iterm2" => Some(ProtocolType::Iterm2),
+        _ => None,
+    };
+    if let Some(protocol) = forced {
+        let mut picker = query(Vec::new()).unwrap_or_else(Picker::halfblocks);
+        picker.set_protocol_type(protocol);
+        return Some(picker);
+    }
+    let Some(allowed) = tmux_client_protocols() else {
+        return query(Vec::new());
+    };
+    if allowed.is_empty() {
+        return Some(Picker::halfblocks());
+    }
+    let blacklist = [
+        ProtocolType::Kitty,
+        ProtocolType::Sixel,
+        ProtocolType::Iterm2,
+    ]
+    .into_iter()
+    .filter(|protocol| !allowed.contains(protocol))
+    .collect();
+    let mut picker = query(blacklist)?;
+    if !allowed.contains(&picker.protocol_type()) {
+        picker.set_protocol_type(allowed[0]);
+    }
+    Some(picker)
+}
+
+/// The graphics protocols the tmux client in front of this pane supports, best first; `None`
+/// outside tmux, or when tmux does not say.
+fn tmux_client_protocols() -> Option<Vec<ProtocolType>> {
+    std::env::var_os("TMUX")?;
+    let output = std::process::Command::new("tmux")
+        .args([
+            "display-message",
+            "-p",
+            "#{client_termname}\t#{client_termtype}\t#{client_termfeatures}",
+        ])
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()?;
+    let line = String::from_utf8_lossy(&output.stdout);
+    let mut fields = line.trim_end().split('\t');
+    let (name, kind, features) = (fields.next()?, fields.next()?, fields.next().unwrap_or(""));
+    if !output.status.success() || name.is_empty() {
+        return None;
+    }
+    Some(protocols_for_client(name, kind, features))
+}
+
+/// The graphics protocols a terminal supports by what tmux knows of it - its `TERM`, the name and
+/// version it answered (`kitty(0.44.0)`) and tmux's feature list - best first: kitty's for kitty
+/// and Ghostty, iTerm2's for iTerm2 and WezTerm, sixel where tmux lists it.
+pub fn protocols_for_client(term: &str, term_type: &str, features: &str) -> Vec<ProtocolType> {
+    let names = format!("{term} {term_type}").to_ascii_lowercase();
+    let mut protocols = Vec::new();
+    if names.contains("kitty") || names.contains("ghostty") {
+        protocols.push(ProtocolType::Kitty);
+    }
+    if names.contains("iterm") || names.contains("wezterm") {
+        protocols.push(ProtocolType::Iterm2);
+    }
+    if features.split(',').any(|feature| feature == "sixel") {
+        protocols.push(ProtocolType::Sixel);
+    }
+    protocols
+}
+
+/// Whether every picture is drawn in half blocks, whatever the terminal answered: `b` toggles it,
+/// for a terminal that claimed a protocol it cannot draw. For the whole process, so the next
+/// picture or sample opens the same way.
+static HALF_BLOCKS_ONLY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn half_blocks_only() -> bool {
+    HALF_BLOCKS_ONLY.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+pub fn set_half_blocks_only(on: bool) {
+    HALF_BLOCKS_ONLY.store(on, std::sync::atomic::Ordering::Relaxed);
 }
 
 /// The four ways a picture pair is shown, in the order `t` steps through them.
@@ -135,6 +238,7 @@ impl PictureColors {
 /// What the composites were built for; anything else means rebuilding them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Built {
+    half_blocks: bool,
     mode: PictureMode,
     swipe_percent: u16,
     moment: usize,
@@ -441,11 +545,12 @@ impl PictureViewer {
                 None => "nothing".to_string(),
             };
             return format!(
-                "{} -> {}{} · view: {} (t)",
+                "{} -> {}{} · view: {} (t){}",
                 side(&self.diff.before),
                 side(&self.diff.after),
                 self.frame_status(),
-                self.mode.label()
+                self.mode.label(),
+                self.drawing_status()
             );
         }
         let side = |info: &Option<picture::PictureInfo>| match info {
@@ -482,11 +587,12 @@ impl PictureViewer {
             }
         };
         format!(
-            "{} -> {} · {change}{} · view: {} (t)",
+            "{} -> {} · {change}{} · view: {} (t){}",
             side(&self.diff.before),
             side(&self.diff.after),
             self.frame_status(),
-            self.mode.label()
+            self.mode.label(),
+            self.drawing_status()
         )
     }
 
@@ -518,6 +624,33 @@ impl PictureViewer {
         )
     }
 
+    /// How pictures are drawn, and that `b` changes it: " · half blocks (b: pixels)", or
+    /// " · kitty (b: half blocks)"; nothing when the terminal speaks no protocol.
+    fn drawing_status(&self) -> String {
+        if half_blocks_only() {
+            return " · half blocks (b: pixels)".to_string();
+        }
+        match self.picker.protocol_type() {
+            ProtocolType::Halfblocks => String::new(),
+            protocol => format!(
+                " · {} (b: half blocks)",
+                format!("{protocol:?}").to_lowercase()
+            ),
+        }
+    }
+
+    /// The picker pictures are drawn with: half blocks while [`half_blocks_only`], the terminal's
+    /// otherwise.
+    fn effective_picker(&self) -> Picker {
+        if half_blocks_only() {
+            let mut picker = Picker::halfblocks();
+            picker.set_background_color(Some(BACKDROP));
+            picker
+        } else {
+            self.picker.clone()
+        }
+    }
+
     /// Draws the current view into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
         self.advance_playback();
@@ -531,6 +664,7 @@ impl PictureViewer {
             vec![area]
         };
         let built = Built {
+            half_blocks: half_blocks_only(),
             mode: self.mode,
             swipe_percent: self.swipe_percent,
             moment: self.moment,
@@ -543,7 +677,7 @@ impl PictureViewer {
                 .into_iter()
                 .map(|(title, pixels)| {
                     let protocol = pixels.map(|pixels| {
-                        self.picker
+                        self.effective_picker()
                             .new_resize_protocol(DynamicImage::ImageRgba8(over_backdrop(pixels)))
                     });
                     (title, protocol)
@@ -576,7 +710,7 @@ impl PictureViewer {
     /// `pane`: a whole cell in half blocks, whose cell is one picture pixel wide, and two screen
     /// pixels under a graphics protocol.
     fn outline_width(&self, pane: Rect) -> u32 {
-        let half_blocks = self.picker.protocol_type() == ProtocolType::Halfblocks;
+        let half_blocks = self.effective_picker().protocol_type() == ProtocolType::Halfblocks;
         let (per_cell, screen_pixels) = if half_blocks {
             (1, 1)
         } else {
@@ -818,6 +952,23 @@ mod tests {
     }
 
     #[test]
+    fn tmux_clients_are_trusted_for_what_their_terminal_draws() {
+        assert_eq!(
+            protocols_for_client("xterm-kitty", "kitty(0.44.0)", "RGB,title"),
+            vec![ProtocolType::Kitty]
+        );
+        assert_eq!(
+            protocols_for_client("xterm-256color", "", "bpaste,clipboard"),
+            Vec::<ProtocolType>::new(),
+            "Termius, say: half blocks, and no query"
+        );
+        assert_eq!(
+            protocols_for_client("xterm-256color", "WezTerm 20240203", "sixel,RGB"),
+            vec![ProtocolType::Iterm2, ProtocolType::Sixel]
+        );
+    }
+
+    #[test]
     fn an_animation_steps_through_its_frames_as_the_diff_pairs_them() {
         let dir = tempfile::tempdir().expect("dir");
         let (a, b) = animated_pair(&dir);
@@ -888,6 +1039,7 @@ mod tests {
 
     fn built(mode: PictureMode) -> Built {
         Built {
+            half_blocks: false,
             mode,
             swipe_percent: 50,
             moment: 0,

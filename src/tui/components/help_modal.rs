@@ -75,6 +75,9 @@ Pictures
                    half blocks elsewhere
   h/l, Left/Right  In the swipe view: move the divider between before and after
   ,/. and Space    For an animation: step a frame back or on, play or pause
+  b                Draw every picture in half blocks, or with the terminal's graphics again:
+                   for a terminal that claimed pictures it cannot show (crossed-out boxes).
+                   OMNIDIFF_GRAPHICS=halfblocks starts that way and sends no graphics query
 
 Archives and other containers
   j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2), cursor themes
