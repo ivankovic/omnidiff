@@ -25,6 +25,40 @@ mod bmp_x_matthewdeanmartin_terminaltables3_f904c3be_sub_ascii_winxp;
 #[cfg(test)]
 mod bmp_x_talamus_solarize_12x29_psf_8a856fdb_solarize_12x29;
 #[cfg(test)]
+mod gif_x_abs_lang_abs_63b53d7f_ip;
+#[cfg(test)]
+mod gif_x_abs_lang_abs_63b53d7f_suggestions;
+#[cfg(test)]
+mod gif_x_ascii_boxes_boxes_eea1dfea_readme_0;
+#[cfg(test)]
+mod gif_x_awth13_org_appear_53212256_demo;
+#[cfg(test)]
+mod gif_x_bergmeister_posh_dotnet_c1fe5d9a_demo;
+#[cfg(test)]
+mod gif_x_c_amie_analog_ce_82e449b1_analogo;
+#[cfg(test)]
+mod gif_x_c_amie_analog_ce_e5a19785_analogo;
+#[cfg(test)]
+mod gif_x_exahilosys_survey_f4d880ae_graphics_lineprogress_1;
+#[cfg(test)]
+mod gif_x_exahilosys_survey_f4d880ae_graphics_spinprogress_1;
+#[cfg(test)]
+mod gif_x_gogglesmm_gogglesmm_5969b162_bigfolder;
+#[cfg(test)]
+mod gif_x_gogglesmm_gogglesmm_5969b162_bigfolderopen;
+#[cfg(test)]
+mod gif_x_gogglesmm_gogglesmm_5969b162_gotowork;
+#[cfg(test)]
+mod gif_x_gogglesmm_gogglesmm_5969b162_undo_gif;
+#[cfg(test)]
+mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_1@2x;
+#[cfg(test)]
+mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_2@2x;
+#[cfg(test)]
+mod gif_x_python_xmp_toolkit_python_xmp_toolkit_e0f42af4_bluesquare;
+#[cfg(test)]
+mod gif_x_rickhowe_diffchar.vim_c889cc13_demo;
+#[cfg(test)]
 mod ico_x_07th_mod_ponscripter_fork_97e597d6_default;
 #[cfg(test)]
 mod ico_x_alemart_surgescript_dc35e1aa_surgescript;

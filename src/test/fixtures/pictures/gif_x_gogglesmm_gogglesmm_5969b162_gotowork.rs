@@ -15,14 +15,11 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use anyhow::Result;
 
-//! Archive fixtures (`src/test/data/archives/`): one stub per fixture, `verdicts()`, written by
-//! `human_solver` when an archive sample is promoted. See `test::helper::human_content`.
-#[cfg(test)]
-mod bzip2_x_jonathansalwan_ropgadget_7c4f6ecf_ref_output;
-#[cfg(test)]
-mod bzip2_x_jonathansalwan_ropgadget_9f20a4be_ref_output;
-#[cfg(test)]
-mod bzip2_x_rocm_miopen_801eab7f_gfx942130_db_txt;
-#[cfg(test)]
-mod bzip2_x_rocm_miopen_801eab7f_gfx942130_hip_fdb_txt;
+use crate::test::helper::human_picture;
+
+#[test]
+fn verdict() -> Result<()> {
+    human_picture::assert_matches_human_verdict("gif-x-gogglesmm-gogglesmm-5969b162-gotowork")
+}
