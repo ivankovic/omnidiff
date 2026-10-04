@@ -277,6 +277,8 @@ mod csharp_jellyfin_jellyfin_add_line;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_only;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_nice_move_example;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_small_add;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_update_version_string;
@@ -299,6 +301,8 @@ mod csharp_lidarr_lidarr_add_two_function_calls;
 #[cfg(test)]
 mod csharp_lidarr_lidarr_add_two_params;
 #[cfg(test)]
+mod csharp_lidarr_lidarr_small_but_complex_mapping;
+#[cfg(test)]
 mod csharp_lidarr_lidarr_small_change;
 #[cfg(test)]
 mod csharp_radarr_radarr_add_base_class;
@@ -313,9 +317,15 @@ mod csharp_radarr_radarr_add_property;
 #[cfg(test)]
 mod csharp_radarr_radarr_add_to_end_of_regex;
 #[cfg(test)]
+mod csharp_radarr_radarr_adding_logging;
+#[cfg(test)]
 mod csharp_radarr_radarr_massive_multiline_regex_has_an_insert;
 #[cfg(test)]
+mod csharp_radarr_radarr_nice_move_into_added_block;
+#[cfg(test)]
 mod csharp_radarr_radarr_remove_import_and_func;
+#[cfg(test)]
+mod csharp_radarr_radarr_small_change;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_add_attribute;
 #[cfg(test)]
@@ -329,6 +339,8 @@ mod csharp_sonarr_sonarr_add_import_and_annotation;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_add_list_item;
 #[cfg(test)]
+mod csharp_sonarr_sonarr_add_only;
+#[cfg(test)]
 mod csharp_sonarr_sonarr_add_two_attributes;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_add_two_items_to_list;
@@ -336,6 +348,8 @@ mod csharp_sonarr_sonarr_add_two_items_to_list;
 mod csharp_sonarr_sonarr_delete_func;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_fix_comment_typo;
+#[cfg(test)]
+mod csharp_sonarr_sonarr_many_updates_with_one_insert;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_ok_small_edit;
 #[cfg(test)]
