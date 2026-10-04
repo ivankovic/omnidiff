@@ -277,9 +277,25 @@ mod java_defects4j_closure_138_closurereverseabstractinterpreter;
 #[cfg(test)]
 mod java_defects4j_closure_138_typeinference;
 #[cfg(test)]
+mod java_defects4j_closure_139_normalize;
+#[cfg(test)]
 mod java_defects4j_closure_13_peepholeoptimizationspass;
 #[cfg(test)]
+mod java_defects4j_closure_140_compiler;
+#[cfg(test)]
+mod java_defects4j_closure_141_nodeutil;
+#[cfg(test)]
 mod java_defects4j_closure_141_purefunctionidentifier;
+#[cfg(test)]
+mod java_defects4j_closure_142_coalescevariablenames;
+#[cfg(test)]
+mod java_defects4j_closure_142_jsdocinfoparser;
+#[cfg(test)]
+mod java_defects4j_closure_143_abstractcommandlinerunner;
+#[cfg(test)]
+mod java_defects4j_closure_143_removeconstantexpressions;
+#[cfg(test)]
+mod java_defects4j_closure_144_functionbuilder;
 #[cfg(test)]
 mod java_defects4j_closure_144_functiontype;
 #[cfg(test)]
