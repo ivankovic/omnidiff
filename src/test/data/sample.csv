@@ -2118,6 +2118,15 @@ TSX,shadcn-ui-ui.git,f31ed81983653919dd4fe77aee4b4859f610f1dc,apps/v4/examples/b
 TSX,shadcn-ui-ui.git,f31ed81983653919dd4fe77aee4b4859f610f1dc,apps/v4/registry/bases/radix/blocks/signup-03/page.tsx,,stratified,SAMPLED,,10-30
 TSX,troyeguo-koodo-reader,9f58ad9e755786f50a797c458befd4695ba9ed11,src/containers/header/component.tsx,tsx-troyeguo-koodo-reader-pure-insert,full,PROMOTED,,
 TSX,vercel-next.js.git,5dd48e3598b1d70188e7af5828ea724aa3eb8203,packages/next/src/server/app-render/app-render.tsx,,stratified,SAMPLED,,3000+
+Text,KikoPlayProject-KikoPlay,d6d9423b845114a2047a6de952e2166fa5e19adb,kikoplay.rc,,encodings,SAMPLED,,100-300
+Text,Terraspace-UASM,c612f83d97a0cb192dfd983676743dabf662ed51,UASM.rc,,encodings,SAMPLED,,30-100
+Text,Terraspace-UASM,ca6642baa724c2439b74b118b776a8bfba602bde,UASM.rc,,encodings,SAMPLED,,30-100
+Text,catppuccin-whiskers,7e3fa17e311130f713aa1dc694794414c778242f,tests/fixtures/encodings/utf16be.tera,,encodings,SAMPLED,,0-10
+Text,catppuccin-whiskers,7e3fa17e311130f713aa1dc694794414c778242f,tests/fixtures/encodings/utf16le.tera,,encodings,SAMPLED,,0-10
+Text,clangen-musikcube,009e9620bd9d7f47db15294a93e7524ae7b83138,src/musikcube/musikcube.rc,,encodings,SAMPLED,,100-300
+Text,clangen-musikcube,cf06795caeb3910cb06c011fa7c642e929cca177,src/musikcube/musikcube.rc,,encodings,SAMPLED,,100-300
+Text,scottdraves-electricsheep,328f20d8b29252f2fca942b56f2bc1eac0ba46ec,client_generic/MacBuild/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/Resources/nl.lproj/Sparkle.strings,,encodings,SAMPLED,,30-100
+Text,scottdraves-electricsheep,328f20d8b29252f2fca942b56f2bc1eac0ba46ec,client_generic/MacBuild/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app/Contents/Resources/zh_TW.lproj/Sparkle.strings,,encodings,SAMPLED,,30-100
 TypeScript,OpenHands-OpenHands.git,38099934b6927aed7202cf257b7506954859061b,frontend/src/components/v1/chat/hooks/use-plan-preview-events.ts,,stratified,SAMPLED,,100-300
 TypeScript,Radarr-Radarr.git,7b9562bb38b7f642d4a5252e2a8bba1a2543c624,frontend/src/index.ts,,stratified,SAMPLED,,30-100
 TypeScript,andrew-bibb-cmst,e414af7f98a64ba50a871f15290886718bf324aa,translations/cmst_el.ts,,full,REJECTED,This is an XML file that uses TypeScript file extension and causes the human solver to explode.,
