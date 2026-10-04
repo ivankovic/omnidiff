@@ -279,3 +279,41 @@ Markdown (65.3% of repositories), `.txt` (36.3%), TOML (13.7%), reStructuredText
 
 `code::tip` counts JSON, XML and YAML as Code, because OmniDiff has grammars for them; the paper's
 "two thirds of all files are code" (files at rest, above) is the same convention.
+
+## The content census, 2026-10-04
+
+`content_census.csv` and `content_census_repositories.csv` say how much of the change census's
+window OmniDiff diffs as text or by content, every change judged by OmniDiff itself from its
+blobs (`content_census`, branch `content-families`): `text`, a content family that diffed
+(`pictures`, `fonts`, `cursors`, `archives`, `documents`, `catalogs`), `failed:<family>` (it
+sniffs as the family and does not diff), or `binary`. By key and outcome with the repositories,
+and by repository and outcome.
+
+| | |
+|---|---|
+| Date | 2026-10-04 |
+| Command | `make measure-content-census MODE=full` (3 h 12 min, 8 threads, a busy disk) |
+| Corpus | `/var/tmp/research/full/repositories`, the 2026-09-07 clones |
+| Repositories | **7,352** with a change in the window |
+| Changed files | **2,018,010** (the change census's 2,021,166 less submodule entries and files `git log` names but the trees do not hold) |
+
+| Share diffed as text or content | |
+|---|---|
+| of changes | **98.818%** |
+| of changes, at most 1,000 per repository | **98.208%** |
+| per repository, mean | **99.049%**; 6,481 of 7,352 repositories entirely |
+
+The raw share counts a few giant repositories many times: one repository's 50 commits touch
+159,244 files (rpm-software-management-distribution-gpg-keys), 8% of the window. The capped share
+weights each repository's counts by min(1, 1000 / its changes), the expected outcome of sampling
+1,000 of them; it is the lowest of the three because fonts (3.9% raw) and cursors (1.7%) come from
+a few repositories each and shrink with them (0.9% and 0.1% capped).
+
+What is left, capped (1.79%): text in a legacy encoding git reads and OmniDiff does not (`.po`,
+`.c`, `.cpp`, `.h`, `.html`, `.txt`, man pages, ChangeLogs; 6,168 changes raw, 0.31%), compiled
+objects (`.class`, `.dll`, `.so`, `.o`, `.exe`), audio (`.wav`, 22 repositories), EOT fonts
+compressed with MicroType Express (all 1,303 `failed:fonts`, 22 repositories), and one-repository
+formats (`.traineddata`, `.rrd`, `.tplg`, `.icc`, `.pcap`, Sphinx `.doctree`).
+
+The per-repository tallies are in `/var/tmp/research/full/content_census.partial.jsonl` (not
+committed); a rerun resumes from it, so delete it to measure again.
