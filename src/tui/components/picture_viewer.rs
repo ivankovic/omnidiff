@@ -77,6 +77,12 @@ const BACKDROP: Rgba<u8> = Rgba([255, 255, 255, 255]);
 /// client's terminal, though, so only the protocols the client in front of the pane supports are
 /// allowed ([`protocols_for_client`]), and with none of them the query is not sent.
 pub fn query_graphics() -> Option<Picker> {
+    detect_graphics().0
+}
+
+/// [`query_graphics`], with why it chose what it did, in a few words (`omnidiff util graphics`
+/// prints both).
+pub fn detect_graphics() -> (Option<Picker>, String) {
     let query = |blacklist: Vec<ProtocolType>| {
         Picker::from_query_stdio_with_options(QueryStdioOptions {
             kitty_compression: true,
@@ -85,13 +91,16 @@ pub fn query_graphics() -> Option<Picker> {
         })
         .ok()
     };
-    let forced = std::env::var("OMNIDIFF_GRAPHICS")
+    let setting = std::env::var("OMNIDIFF_GRAPHICS")
         .unwrap_or_default()
         .to_ascii_lowercase();
-    let forced = match forced.as_str() {
+    let forced = match setting.as_str() {
         "halfblocks" | "blocks" | "none" | "off" => {
             set_half_blocks_only(true);
-            return Some(Picker::halfblocks());
+            return (
+                Some(Picker::halfblocks()),
+                format!("OMNIDIFF_GRAPHICS={setting}"),
+            );
         }
         "kitty" => Some(ProtocolType::Kitty),
         "sixel" => Some(ProtocolType::Sixel),
@@ -101,13 +110,16 @@ pub fn query_graphics() -> Option<Picker> {
     if let Some(protocol) = forced {
         let mut picker = query(Vec::new()).unwrap_or_else(Picker::halfblocks);
         picker.set_protocol_type(protocol);
-        return Some(picker);
+        return (Some(picker), format!("OMNIDIFF_GRAPHICS={setting}"));
     }
-    let Some(allowed) = tmux_client_protocols() else {
-        return query(Vec::new());
+    let Some((client, allowed)) = tmux_client_protocols() else {
+        return (query(Vec::new()), "the terminal's answer".to_string());
     };
     if allowed.is_empty() {
-        return Some(Picker::halfblocks());
+        return (
+            Some(Picker::halfblocks()),
+            format!("tmux client {client} draws no pictures; not asked"),
+        );
     }
     let blacklist = [
         ProtocolType::Kitty,
@@ -117,16 +129,62 @@ pub fn query_graphics() -> Option<Picker> {
     .into_iter()
     .filter(|protocol| !allowed.contains(protocol))
     .collect();
-    let mut picker = query(blacklist)?;
+    let picked = query(blacklist);
+    // Every attached client answered the query, and the reading stopped at the first answer:
+    // the rest would arrive as keys.
+    drain_late_answers();
+    let Some(mut picker) = picked else {
+        return (None, format!("tmux client {client}; the query failed"));
+    };
     if !allowed.contains(&picker.protocol_type()) {
         picker.set_protocol_type(allowed[0]);
     }
-    Some(picker)
+    (Some(picker), format!("tmux client {client}"))
 }
 
-/// The graphics protocols the tmux client in front of this pane supports, best first; `None`
-/// outside tmux, or when tmux does not say.
-fn tmux_client_protocols() -> Option<Vec<ProtocolType>> {
+/// Reads and drops whatever the terminal sends until it has been quiet for 150 ms, half a second
+/// at most: the answers of the other clients of a tmux session to a graphics query, which come
+/// after the one the query read and would otherwise reach the program as typed keys.
+///
+/// On the file descriptor, never blocking: the query's own reader thread may still be waiting on
+/// the terminal too, and a blocking read that loses the bytes to it would wait for the next key
+/// (crossterm's `read` after its `poll` did exactly that).
+#[cfg(unix)]
+fn drain_late_answers() {
+    use std::os::fd::AsRawFd;
+    let stdin = std::io::stdin();
+    let fd = stdin.as_raw_fd();
+    // SAFETY: `fcntl`, `poll` and `read` on our own stdin, into a buffer we own; the flags are
+    // restored before returning.
+    unsafe {
+        let flags = libc::fcntl(fd, libc::F_GETFL);
+        if flags < 0 {
+            return;
+        }
+        libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
+        let deadline = Instant::now() + Duration::from_millis(500);
+        let mut buffer = [0u8; 4096];
+        while Instant::now() < deadline {
+            let mut ready = libc::pollfd {
+                fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            if libc::poll(&mut ready, 1, 150) <= 0 {
+                break;
+            }
+            while libc::read(fd, buffer.as_mut_ptr().cast(), buffer.len()) > 0 {}
+        }
+        libc::fcntl(fd, libc::F_SETFL, flags);
+    }
+}
+
+#[cfg(not(unix))]
+fn drain_late_answers() {}
+
+/// The tmux client in front of this pane (its `TERM` and the name its terminal answered), and the
+/// graphics protocols it supports, best first; `None` outside tmux, or when tmux does not say.
+fn tmux_client_protocols() -> Option<(String, Vec<ProtocolType>)> {
     std::env::var_os("TMUX")?;
     let output = std::process::Command::new("tmux")
         .args([
@@ -144,7 +202,12 @@ fn tmux_client_protocols() -> Option<Vec<ProtocolType>> {
     if !output.status.success() || name.is_empty() {
         return None;
     }
-    Some(protocols_for_client(name, kind, features))
+    let client = if kind.is_empty() {
+        name.to_string()
+    } else {
+        format!("{name} {kind}")
+    };
+    Some((client, protocols_for_client(name, kind, features)))
 }
 
 /// The graphics protocols a terminal supports by what tmux knows of it - its `TERM`, the name and

@@ -38,7 +38,7 @@ OUT_DIR ?= research/data/ablation
 	benchmark-quality diff-inventory lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
-	deploy-github deploy third-party-notices check-third-party-notices
+	deploy-github deploy third-party-notices check-third-party-notices test-graphics
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
 # scripts/coverage_report.py). On demand, not a gate: a threshold teaches touching lines. Rebuilds
@@ -59,7 +59,20 @@ coverage: test
 # Every test, JS, Python and Rust. `--all-features` because several features gate their own tests.
 # Not a substitute for `make ci`, which also proves each feature compiles alone and runs the
 # clippy matrix and baseline gates. Release, because the fixture tests run real diffs.
-test: test-mapping-site-js test-viewer-js test-showcase-js test-python test-rust
+test: test-mapping-site-js test-viewer-js test-showcase-js test-python test-rust test-graphics
+
+# The picture view's graphics detection end to end (scripts/graphics_e2e.py): a real tmux with
+# two clients attached, a kitty that answers the graphics query and a terminal that does not, and
+# `omnidiff util graphics` typed through each. On the host when tmux is installed, otherwise in
+# podman, in the Ubuntu the release binaries are built on.
+test-graphics:
+	cargo build --bin omnidiff
+	@if command -v tmux >/dev/null 2>&1; then \
+		python3 scripts/graphics_e2e.py target/debug/omnidiff; \
+	else \
+		podman run --rm -v "$(CURDIR)":/src:Z -w /src docker.io/library/ubuntu:24.04 sh -c \
+			'apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmux python3 >/dev/null 2>&1 && python3 scripts/graphics_e2e.py target/debug/omnidiff'; \
+	fi
 
 # The Rust suite alone, every feature on.
 test-rust:

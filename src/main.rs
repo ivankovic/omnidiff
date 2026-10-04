@@ -70,6 +70,10 @@ enum UtilAction {
     },
     /// Print a roff-formatted man page (section 1) on stdout.
     Man,
+    /// Print how the picture view would draw in this terminal - `kitty`, `sixel`, `iterm2` or
+    /// `halfblocks` - and why. Asks the terminal as the TUI does, so run it where the TUI would
+    /// run. `OMNIDIFF_GRAPHICS` overrides the detection.
+    Graphics,
 }
 
 #[derive(Subcommand)]
@@ -365,6 +369,17 @@ fn run_util(action: &UtilAction) -> Result<()> {
         }
         UtilAction::Man => {
             clap_mangen::Man::new(command).render(&mut std::io::stdout())?;
+        }
+        UtilAction::Graphics => {
+            // The terminal answers on stdin: raw, so the answer is neither echoed nor held for a
+            // newline.
+            crossterm::terminal::enable_raw_mode()?;
+            let (picker, why) = omnidiff::tui::components::picture_viewer::detect_graphics();
+            crossterm::terminal::disable_raw_mode()?;
+            let protocol = picker.map_or("halfblocks".to_string(), |picker| {
+                format!("{:?}", picker.protocol_type()).to_lowercase()
+            });
+            println!("{protocol}\t{why}");
         }
     }
     Ok(())
