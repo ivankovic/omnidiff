@@ -347,6 +347,10 @@ fn sample_repository(
     capacities: &mut HashMap<CapacityKey, usize>,
     rng: &mut StdRng,
 ) -> Result<()> {
+    // `--encodings` rows go through a reservoir of this repository's own first, at most
+    // `PAIRS_PER_REPOSITORY_PER_STRATUM` per language: UTF-16 text is rare, and a handful of
+    // repositories (Apple `.strings`) would otherwise be the whole sample.
+    let mut local: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
     walk_single_parent_commit_diffs(repo_path, max_commits, false, |repo, id, delta| {
         // The schema locates both blobs by one `path`, so only in-place edits qualify (rename
         // detection is off).
@@ -381,7 +385,7 @@ fn sample_repository(
                 return Ok(());
             }
             let cap_key = capacity_key(&language, None, false);
-            let capacity = *capacities.entry(cap_key.clone()).or_insert_with(|| {
+            capacities.entry(cap_key.clone()).or_insert_with(|| {
                 target_count.saturating_sub(existing_counts.get(&cap_key).copied().unwrap_or(0))
             });
             let row = Row {
@@ -395,10 +399,10 @@ fn sample_repository(
                 comment: String::new(),
                 size_bucket: Some(loc_bucket(before_loc.max(after_loc)).to_string()),
             };
-            reservoirs
+            local
                 .entry(cap_key)
                 .or_default()
-                .offer(row, capacity, rng);
+                .offer(row, PAIRS_PER_REPOSITORY_PER_STRATUM, rng);
             return Ok(());
         }
         let Some(mut language) = language else {
@@ -464,7 +468,15 @@ fn sample_repository(
             .offer(row, capacity, rng);
 
         Ok(())
-    })
+    })?;
+    for (key, reservoir) in local {
+        let capacity = capacities.get(&key).copied().unwrap_or(0);
+        let global = reservoirs.entry(key).or_default();
+        for row in reservoir.items {
+            global.offer(row, capacity, rng);
+        }
+    }
+    Ok(())
 }
 
 fn parse_family(name: &str) -> Result<Family, String> {
@@ -860,6 +872,52 @@ mod tests {
             None,
             "broken"
         );
+    }
+
+    /// Five UTF-16 edits in one repository give two rows: a repository's own reservoir first.
+    #[test]
+    fn encodings_take_at_most_two_a_repository() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let repo = git2::Repository::init(dir.path())?;
+        let mut parent: Option<git2::Oid> = None;
+        for round in 0..6 {
+            let text: Vec<u8> = format!("\u{feff}\"key\" = \"{round}\";\n")
+                .encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect();
+            let mut builder = repo.treebuilder(None)?;
+            builder.insert("Localizable.strings", repo.blob(&text)?, 0o100644)?;
+            let tree = repo.find_tree(builder.write()?)?;
+            let signature = git2::Signature::now("t", "t@example.com")?;
+            let parents: Vec<git2::Commit> = parent
+                .map(|oid| repo.find_commit(oid))
+                .transpose()?
+                .into_iter()
+                .collect();
+            let parents: Vec<&git2::Commit> = parents.iter().collect();
+            parent =
+                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+        }
+        let mut reservoirs: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
+        let mut capacities: HashMap<CapacityKey, usize> = HashMap::new();
+        sample_repository(
+            dir.path(),
+            "r",
+            None,
+            50,
+            100,
+            ENCODINGS_DATASET,
+            false,
+            true,
+            &HashMap::new(),
+            &HashSet::new(),
+            &mut reservoirs,
+            &mut capacities,
+            &mut StdRng::seed_from_u64(1),
+        )?;
+        let rows: usize = reservoirs.values().map(|r| r.items.len()).sum();
+        assert_eq!(rows, PAIRS_PER_REPOSITORY_PER_STRATUM);
+        Ok(())
     }
 
     #[test]
