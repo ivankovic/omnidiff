@@ -57,7 +57,15 @@ mod gif_x_jetbrains_jetbrainsmono_8c3ccf76_ligatures_2_2x;
 #[cfg(test)]
 mod gif_x_python_xmp_toolkit_python_xmp_toolkit_e0f42af4_bluesquare;
 #[cfg(test)]
+mod gif_x_rickhowe_diffchar_vim_23d110e6_demo;
+#[cfg(test)]
+mod gif_x_rickhowe_diffchar_vim_3f1547af_demo;
+#[cfg(test)]
+mod gif_x_rickhowe_diffchar_vim_8044458d_demo;
+#[cfg(test)]
 mod gif_x_rickhowe_diffchar_vim_c889cc13_demo;
+#[cfg(test)]
+mod gif_x_terryma_vim_multiple_cursors_539ee639_example3;
 #[cfg(test)]
 mod ico_x_07th_mod_ponscripter_fork_97e597d6_default;
 #[cfg(test)]

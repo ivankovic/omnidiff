@@ -24,7 +24,7 @@ fn verdicts() -> Result<()> {
     // Recorded as found, not examined.
     human_content::assert_known_verdict_mismatches(
         Family::Pictures,
-        "gif-x-exahilosys-survey-f4d880ae-graphics-spinprogress-1",
+        "gif-x-rickhowe-diffchar.vim-3f1547af-demo",
         Some("edited+canvas"),
         &[],
     )

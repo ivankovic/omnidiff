@@ -384,11 +384,11 @@ GIF,gogglesmm-gogglesmm,5969b162993a17b2c3b0552b06ca9d906ff6afd2,cfox/lib/bigfol
 GIF,gogglesmm-gogglesmm,5969b162993a17b2c3b0552b06ca9d906ff6afd2,cfox/lib/gotowork.gif,gif-x-gogglesmm-gogglesmm-5969b162-gotowork,pictures,PROMOTED,,icon-same
 GIF,gogglesmm-gogglesmm,5969b162993a17b2c3b0552b06ca9d906ff6afd2,cfox/lib/undo_gif.gif,gif-x-gogglesmm-gogglesmm-5969b162-undo_gif,pictures,PROMOTED,,icon-same
 GIF,python-xmp-toolkit-python-xmp-toolkit,e0f42af4a731ac1eea2977895f2c8dd0264304c3,test/samples/BlueSquare.gif,gif-x-python-xmp-toolkit-python-xmp-toolkit-e0f42af4-bluesquare,pictures,PROMOTED,,medium-same
-GIF,rickhowe-diffchar.vim,23d110e603cd5fdc438199ea4cbe481d423e4811,demo.gif,,pictures,SAMPLED,,medium-resized
-GIF,rickhowe-diffchar.vim,3f1547af2f091ee6399db3ff394ed89fadc5c143,demo.gif,,pictures,SAMPLED,,medium-resized
-GIF,rickhowe-diffchar.vim,8044458dfde55b65479f88b44c4f4c448f15a0c5,demo.gif,,pictures,SAMPLED,,medium-same
+GIF,rickhowe-diffchar.vim,23d110e603cd5fdc438199ea4cbe481d423e4811,demo.gif,gif-x-rickhowe-diffchar.vim-23d110e6-demo,pictures,PROMOTED,,medium-resized
+GIF,rickhowe-diffchar.vim,3f1547af2f091ee6399db3ff394ed89fadc5c143,demo.gif,gif-x-rickhowe-diffchar.vim-3f1547af-demo,pictures,PROMOTED,,medium-resized
+GIF,rickhowe-diffchar.vim,8044458dfde55b65479f88b44c4f4c448f15a0c5,demo.gif,gif-x-rickhowe-diffchar.vim-8044458d-demo,pictures,PROMOTED,,medium-same
 GIF,rickhowe-diffchar.vim,c889cc133e8c6a1ba9ff089a6b9a6b94bd345cb4,demo.gif,gif-x-rickhowe-diffchar.vim-c889cc13-demo,pictures,PROMOTED,,medium-same
-GIF,terryma-vim-multiple-cursors,539ee6393489a32f41dccd8309937eae896ca8c6,assets/example3.gif,,pictures,SAMPLED,,medium-resized
+GIF,terryma-vim-multiple-cursors,539ee6393489a32f41dccd8309937eae896ca8c6,assets/example3.gif,gif-x-terryma-vim-multiple-cursors-539ee639-example3,pictures,PROMOTED,,medium-resized
 GZIP,DanRohde-webdavcgi,0ffad62e24c5167c0d36319a3b1d0509718b091d,htdocs/views/simple/complete.min.css.gz,,archives,SAMPLED,,single-same-members
 GZIP,atsb-dav-text,1396c098e342cab9ea95a0484a461639d8508b10,dav.1.gz,,archives,SAMPLED,,single-same-members
 GZIP,atsb-dav-text,1a7fef015e358dda3188e14f49863e9a0f4409c9,dav.1.gz,,archives,SAMPLED,,single-same-members

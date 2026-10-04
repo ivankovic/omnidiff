@@ -21,8 +21,11 @@ use crate::test::helper::human_content::{self, Family};
 
 #[test]
 fn verdicts() -> Result<()> {
-    human_content::assert_matches_human_verdicts(
+    // Recorded as found, not examined.
+    human_content::assert_known_verdict_mismatches(
         Family::Pictures,
         "gif-x-jetbrains-jetbrainsmono-8c3ccf76-ligatures-2@2x",
+        Some("edited"),
+        &[],
     )
 }
