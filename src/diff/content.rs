@@ -63,6 +63,10 @@ use container::{Container, ContainerDiff};
 ///
 /// The first three are three strengths of "nothing", by how hard one has to look; the last three
 /// are kinds of "something", by what the after side is - not by how much of it changed.
+///
+/// **Text calls three of them by plainer names** ([`Level::text_name`]): whitespace for
+/// imperceptible, formatting for artifacts, rewritten for redrawn. Only the names differ: files
+/// and stubs spell every level one way ([`Level::name`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Level {
@@ -110,6 +114,21 @@ impl Level {
 
     pub fn from_name(name: &str) -> Option<Level> {
         Level::ALL.into_iter().find(|level| level.name() == name)
+    }
+
+    /// What text calls the level, where its own name fits pictures better.
+    pub fn text_name(self) -> &'static str {
+        match self {
+            Level::Imperceptible => "whitespace",
+            Level::Artifacts => "formatting",
+            Level::Redrawn => "rewritten",
+            level => level.name(),
+        }
+    }
+
+    /// [`Level::name`], or [`Level::text_name`] for text.
+    pub fn name_for(self, text: bool) -> &'static str {
+        if text { self.text_name() } else { self.name() }
     }
 }
 
@@ -229,6 +248,16 @@ impl Verdict {
     /// `artifacts+resized`.
     pub fn label(self) -> String {
         self.to_string()
+    }
+
+    /// [`Verdict::label`] with the level named for text if `text` (`formatting`).
+    pub fn label_for(self, text: bool) -> String {
+        let mut label = self.level.name_for(text).to_string();
+        for tag in self.tags.iter() {
+            label.push('+');
+            label.push_str(tag.name());
+        }
+        label
     }
 }
 

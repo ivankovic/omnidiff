@@ -610,7 +610,7 @@ impl MemberViewer {
                     (false, Some(verdict)) => {
                         format!(
                             " · {key}: omnidiff says {} · {}",
-                            verdict.label(),
+                            verdict.label_for(true),
                             view.status()
                         )
                     }

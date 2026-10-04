@@ -361,6 +361,21 @@ fn shape(session: &ContentSession, target: &Target) -> (bool, bool) {
     }
 }
 
+/// True if the member `key` is text, whose levels have names of their own (`Level::text_name`).
+fn is_text(session: &ContentSession, key: &str) -> bool {
+    session
+        .viewer
+        .members()
+        .and_then(|members| members.diff().member(key))
+        .and_then(|member| member.detail.as_ref())
+        .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
+}
+
+/// [`is_text`] for `target`: a pair never is.
+fn target_is_text(session: &ContentSession, target: &Target) -> bool {
+    matches!(target, Target::Member(key) if is_text(session, key))
+}
+
 /// `judgement` with only the tags `target` can take.
 fn fitted(session: &ContentSession, target: &Target, judgement: &Judgement) -> Judgement {
     let (picture, container) = shape(session, target);
@@ -388,9 +403,10 @@ fn judgement_of(session: &ContentSession, target: &Target) -> Option<Judgement> 
 
 /// Records `judgement` for `target`.
 fn record(session: &mut ContentSession, target: Target, judgement: Judgement) {
+    let label = judgement.label_for(target_is_text(session, &target));
     session.status = match &target {
-        Target::Pair => format!("The whole file: {} (s to save)", judgement.label()),
-        Target::Member(key) => format!("{key}: {} (s to save)", judgement.label()),
+        Target::Pair => format!("The whole file: {label} (s to save)"),
+        Target::Member(key) => format!("{key}: {label} (s to save)"),
     };
     session.last = Some(judgement.clone());
     match target {
@@ -505,6 +521,14 @@ fn judge_the_rest(session: &mut ContentSession) {
 /// Shows each judged member's verdict in the list, and the engine's where it is shown and differs.
 fn update_marks(session: &mut ContentSession) {
     let judgement = session.judgement.clone();
+    let texts: std::collections::HashSet<String> = session
+        .viewer
+        .members()
+        .map(|members| members.changed_keys())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|key| is_text(session, key))
+        .collect();
     let Some(members) = session.viewer.members_mut() else {
         return;
     };
@@ -525,12 +549,17 @@ fn update_marks(session: &mut ContentSession) {
         } else {
             members.member_verdict(&key)
         };
+        let text = texts.contains(&key);
         let mark = match (human, found) {
             (Some(human), Some(found)) if human.verdict().is_some_and(|human| human != found) => {
-                format!("{} (omnidiff: {})", human.label(), found.label())
+                format!(
+                    "{} (omnidiff: {})",
+                    human.label_for(text),
+                    found.label_for(text)
+                )
             }
-            (Some(human), _) => human.label().to_string(),
-            (None, Some(found)) => format!("(omnidiff: {})", found.label()),
+            (Some(human), _) => human.label_for(text),
+            (None, Some(found)) => format!("(omnidiff: {})", found.label_for(text)),
             (None, None) => continue,
         };
         marks.insert(key, mark);
@@ -730,8 +759,11 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
     };
     let reversed = Style::new().add_modifier(Modifier::REVERSED);
     let verdict = current.as_ref().and_then(Judgement::verdict);
+    let text = target
+        .as_ref()
+        .is_ok_and(|target| target_is_text(session, target));
     for (index, level) in Level::ALL.iter().enumerate() {
-        let text = format!("{index} {}", level.name());
+        let text = format!("{index} {}", level.name_for(text));
         choices.push(if verdict.is_some_and(|verdict| verdict.level == *level) {
             Span::styled(text, reversed)
         } else {
@@ -1376,6 +1408,13 @@ mod tests {
 
         // b.txt again, and can't judge it, with a note.
         handle_key(&mut session, &mut app, KeyCode::Char('k'));
+        let text = screen(&mut session, &app, 160);
+        assert!(
+            text.contains("1 whitespace")
+                && text.contains("2 formatting")
+                && text.contains("4 rewritten"),
+            "a text member's levels go by their text names: {text}"
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('u'));
         for key in "blank".chars() {
             handle_key(&mut session, &mut app, KeyCode::Char(key));

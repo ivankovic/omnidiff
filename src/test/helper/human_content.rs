@@ -91,8 +91,13 @@ impl Judgement {
 
     /// `artifacts+resized`, or `can't judge: <note>`.
     pub fn label(&self) -> String {
+        self.label_for(false)
+    }
+
+    /// [`Judgement::label`] with the level named for text if `text` (`formatting`).
+    pub fn label_for(&self, text: bool) -> String {
         match self {
-            Judgement::Verdict(verdict) => verdict.label(),
+            Judgement::Verdict(verdict) => verdict.label_for(text),
             Judgement::CantJudge(note) if note.is_empty() => "can't judge".to_string(),
             Judgement::CantJudge(note) => format!("can't judge: {note}"),
         }
