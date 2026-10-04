@@ -338,10 +338,15 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             )
         })?;
 
-    // A language with no tree-sitter grammar opens in text-only mode (see
-    // `FrameState::before_root`): the painting is what such a fixture records. `ensure_parsed`
-    // errors on such a language, so it runs only when there is a tree. It fills
-    // node_to_full_hash, which `m`/`M` classify inner nodes by.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
+    Ok((before, after))
+}
+
+/// A language with no tree-sitter grammar opens in text-only mode (see
+/// `FrameState::before_root`): the painting is what such a pair records. `ensure_parsed` errors on
+/// such a language, so it runs only when there is a tree. It fills node_to_full_hash, which
+/// `m`/`M` classify inner nodes by.
+fn ensure_parsed_if_tree(before: &mut Code, after: &mut Code) -> Result<()> {
     if before.ast.is_some() {
         before
             .ensure_parsed()
@@ -352,8 +357,7 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             .ensure_parsed()
             .context("Failed to compute AST metadata for after code")?;
     }
-
-    Ok((before, after))
+    Ok(())
 }
 
 fn diffs_root() -> PathBuf {
@@ -1390,24 +1394,9 @@ fn load_sample(name: &str) -> Result<(Code, Code, SampleSource)> {
         .with_context(|| format!("Failed to load sample from {:?}", dir))?
         .ok_or_else(|| anyhow!("No before/after fixture found in samples/{}", name))?;
 
-    if before.ast.is_none() {
-        bail!(
-            "Before code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    if after.ast.is_none() {
-        bail!(
-            "After code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    before
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for before code")?;
-    after
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for after code")?;
+    // A sample with no grammar (a UTF-16 `.rc` or `.strings`, `sample_test_diffs --encodings`)
+    // opens text-only, as such a case does.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
 
     let source_path = dir.join("source.json");
     let contents =

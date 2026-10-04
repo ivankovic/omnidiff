@@ -491,6 +491,11 @@ fn parse_family(name: &str) -> Result<Family, String> {
 /// the sample.
 const PAIRS_PER_REPOSITORY_PER_STRATUM: usize = 2;
 
+/// How many pairs one repository may contribute to one family, over all its strata: a repository
+/// with many formats and sizes (a font family shipped as TTF, OTF, WOFF and WOFF2 in every
+/// weight) otherwise fills a tenth of the sample on its own.
+const PAIRS_PER_REPOSITORY_PER_FAMILY: usize = 4;
+
 /// The largest side a family's sample holds. Pictures keep the code sample's cap; a font, an
 /// archive or a PDF is often larger than any source file.
 fn max_bytes(family: Family) -> usize {
@@ -558,9 +563,9 @@ fn content_side(repo: &git2::Repository, oid: git2::Oid, families: &[Family]) ->
 /// `--content`: tops `output`'s rows of each of `families` up to `--total` pairs, in one walk.
 /// Every in-place modification of a family's files in the last `--max-commits-per-repo` commits
 /// is a candidate; each repository offers at most [`PAIRS_PER_REPOSITORY_PER_STRATUM`] per stratum
-/// (format x size bucket x shape), a pair already seen elsewhere (the same two blobs) is offered
-/// once, and each family's shortfall is split evenly over its strata that have candidates, a
-/// stratum with fewer giving its share to the rest.
+/// (format x size bucket x shape) and [`PAIRS_PER_REPOSITORY_PER_FAMILY`] in all, a pair already
+/// seen elsewhere (the same two blobs) is offered once, and each family's shortfall is split
+/// evenly over its strata that have candidates, a stratum with fewer giving its share to the rest.
 fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()> {
     let existing_rows = read_existing_rows(output)?;
     let shortfalls: HashMap<Family, usize> = families
@@ -662,10 +667,25 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                 Ok(())
             },
         )?;
+        // At most `PAIRS_PER_REPOSITORY_PER_FAMILY` of this repository's pairs per family, chosen
+        // at random among the ones its strata kept.
+        let mut by_family: HashMap<String, Vec<(CapacityKey, Row)>> = HashMap::new();
         for (key, reservoir) in local {
-            let stratum = strata.entry(key).or_default();
             for row in reservoir.items {
-                stratum.offer(row, shortfall, &mut rng);
+                by_family
+                    .entry(row.dataset.clone())
+                    .or_default()
+                    .push((key.clone(), row));
+            }
+        }
+        for (_, mut rows) in by_family {
+            rows.shuffle(&mut rng);
+            rows.truncate(PAIRS_PER_REPOSITORY_PER_FAMILY);
+            for (key, row) in rows {
+                strata
+                    .entry(key)
+                    .or_default()
+                    .offer(row, shortfall, &mut rng);
             }
         }
         Ok(())
@@ -872,6 +892,55 @@ mod tests {
             None,
             "broken"
         );
+    }
+
+    /// Six pictures in six formats - six strata - from one repository give four rows.
+    #[test]
+    fn a_repository_gives_at_most_four_pairs_a_family() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let dir = root.path().join("repo");
+        let repo = git2::Repository::init(&dir)?;
+        use image::ImageFormat::*;
+        let formats = [
+            (Png, "png"),
+            (Bmp, "bmp"),
+            (Gif, "gif"),
+            (Tiff, "tif"),
+            (Ico, "ico"),
+            (Jpeg, "jpg"),
+        ];
+        let mut parent: Option<git2::Oid> = None;
+        for pixel in [0u8, 255] {
+            let mut builder = repo.treebuilder(None)?;
+            for (format, ext) in formats {
+                let mut bytes = Vec::new();
+                image::RgbImage::from_pixel(8, 8, image::Rgb([pixel, 0, 0]))
+                    .write_to(&mut std::io::Cursor::new(&mut bytes), format)
+                    .unwrap();
+                builder.insert(format!("picture.{ext}"), repo.blob(&bytes)?, 0o100644)?;
+            }
+            let tree = repo.find_tree(builder.write()?)?;
+            let signature = git2::Signature::now("t", "t@example.com")?;
+            let parents: Vec<git2::Commit> = parent
+                .map(|oid| repo.find_commit(oid))
+                .transpose()?
+                .into_iter()
+                .collect();
+            let parents: Vec<&git2::Commit> = parents.iter().collect();
+            parent =
+                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+        }
+        let output = root.path().join("sample.csv");
+        let mut args = args(root.path().to_str().unwrap(), None, false);
+        args.total = 100;
+        args.max_commits_per_repo = 50;
+        args.seed = Some(1);
+        sample_content(&args, &output, &[Family::Pictures])?;
+        assert_eq!(
+            read_existing_rows(&output)?.len(),
+            PAIRS_PER_REPOSITORY_PER_FAMILY
+        );
+        Ok(())
     }
 
     /// Five UTF-16 edits in one repository give two rows: a repository's own reservoir first.
