@@ -256,6 +256,13 @@ path = "src/main.rs"
 required-features = ["tui"]
 
 [[bin]]
+name = "render_content_stills"
+path = "src/bin/render_content_stills.rs"
+# The README's content GIF (`make content-gif`): the content viewer drawn by the TUI's own widgets,
+# step by step. A checkout-only dev tool, gated like render_tui_screenshot.
+required-features = ["test-fixtures"]
+
+[[bin]]
 name = "render_tui_screenshot"
 path = "src/bin/render_tui_screenshot.rs"
 # The README's screenshot (`make readme-screenshot`), drawn by the TUI's own widgets. A

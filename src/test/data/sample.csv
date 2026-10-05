@@ -1114,13 +1114,13 @@ MO,trigg-Discover,2c0652882f385fc58a1640d6a1c86070db658a41,discover_overlay/loca
 MO,trigg-Discover,bd704f3d0870fea651de7101f754d78376cf7536,discover_overlay/locales/fr/LC_MESSAGES/default.mo,,catalogs,SAMPLED,,many-members-changed
 MO,ubernostrum-django-registration,2fd922dbdeb882288733e5360f100dd78a4dbd07,src/django_registration/locale/pl/LC_MESSAGES/django.mo,,catalogs,SAMPLED,,some-members-changed
 MO,ubernostrum-django-registration,620276cd915f41e247aa630b8e1480ec2408c234,src/django_registration/locale/fr/LC_MESSAGES/django.mo,,catalogs,SAMPLED,,some-members-changed
-MO,ubernostrum-django-registration,906912aa6004c13cf1cd486f6885a4e40dc95ce3,src/django_registration/locale/pl/LC_MESSAGES/django.mo,,catalogs,SAMPLED,,some-same-members
+MO,ubernostrum-django-registration,906912aa6004c13cf1cd486f6885a4e40dc95ce3,src/django_registration/locale/pl/LC_MESSAGES/django.mo,mo-x-ubernostrum-django-registration-906912aa-django,catalogs,PROMOTED,,some-same-members
 PDF,GPUOpen-LibrariesAndSDKs-AMF,16f7d73e0b45c473e903e46981ed0b91efc4c091,amf/doc/AMF_API_Reference.pdf,,documents,SAMPLED,,some-same-members
 PDF,GPUOpen-LibrariesAndSDKs-AMF,6d7bec0469961e2891c6e1aaa5122b76ed82e1db,amf/doc/AMF_FRC_API.pdf,,documents,SAMPLED,,few-members-changed
 PDF,GPUOpen-LibrariesAndSDKs-AMF,8787d3ef5d938425d094170c1b2fec87762683b6,amf/doc/AMF_Video_Encode_AV1_API.pdf,,documents,SAMPLED,,some-members-changed
 PDF,GPUOpen-LibrariesAndSDKs-AMF,afed28d37aca1938da2eedc50599bb3535a987ec,amf/doc/AMF_FRC_API.pdf,,documents,SAMPLED,,few-same-members
 PDF,Governikus-AusweisApp,522d8b0b1069709d1000c6061b31056d8b433dd3,docs/installation/CommunicationModel_de.pdf,,documents,SAMPLED,,few-same-members
-PDF,Governikus-AusweisApp,522d8b0b1069709d1000c6061b31056d8b433dd3,docs/installation/CommunicationModel_en.pdf,,documents,SAMPLED,,few-same-members
+PDF,Governikus-AusweisApp,522d8b0b1069709d1000c6061b31056d8b433dd3,docs/installation/CommunicationModel_en.pdf,pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en,documents,PROMOTED,,few-same-members
 PDF,HewlettPackard-netperf,0dbda2d6d72d130740569c5bdb49f21c00ab5e91,doc/netperf.pdf,,documents,SAMPLED,,some-same-members
 PDF,KhronosGroup-Vulkan-Utility-Libraries,3fd3828778d302b45777b1840c60d7ae7a203b36,docs/Configuring-Vulkan-Layers-Whitepaper.pdf,,documents,SAMPLED,,some-members-changed
 PDF,KhronosGroup-Vulkan-Utility-Libraries,c3e5c14dfa167b50813ad7649a71287d4d4ec9db,docs/Configuring-Vulkan-Layers-Whitepaper.pdf,,documents,SAMPLED,,some-members-changed
@@ -2333,7 +2333,7 @@ WOFF,source-foundry-Hack,32afc7c23dc2dd4f4172333364fee4dcb7f586da,build/web/font
 WOFF,source-foundry-Hack,e03afdd66df7faf5a162ecf3e455f47e2834d44e,build/web/fonts/hack-regular-subset.woff,,fonts,SAMPLED,,many-same-members
 WOFF2,FortAwesome-Font-Awesome,41cfe644047fc3a4c49c22acc721cacc3e1021fe,js-packages/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2,,fonts,SAMPLED,,lots-same-members
 WOFF2,FortAwesome-Font-Awesome,41cfe644047fc3a4c49c22acc721cacc3e1021fe,js-packages/@fortawesome/fontawesome-free/webfonts/fa-v4compatibility.woff2,,fonts,SAMPLED,,some-same-members
-WOFF2,FortAwesome-Font-Awesome,b476ed9aeef6ff16accd275eca515d4e08c3e724,js-packages/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2,,fonts,SAMPLED,,lots-same-members
+WOFF2,FortAwesome-Font-Awesome,b476ed9aeef6ff16accd275eca515d4e08c3e724,js-packages/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2,woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900,fonts,PROMOTED,,lots-same-members
 WOFF2,IBM-plex,b03b0b7e9434feb27b22d25db22cc1cd3a0ac20b,packages/plex-sans-jp/fonts/split/woff2/hinted/IBMPlexSansJP-Light-119.woff2,,fonts,SAMPLED,,lots-same-members
 WOFF2,IBM-plex,b5b546f086609fe8482b9a3a5950f1597397d2db,IBM-Plex-Sans-Arabic/fonts/complete/woff2/IBMPlexSansArabic-Bold.woff2,,fonts,SAMPLED,,lots-same-members
 WOFF2,JetBrains-JetBrainsMono,cd5227bd1f61dff3bbd6c814ceaf7ffd95e947d9,fonts/webfonts/JetBrainsMono-Italic.woff2,,fonts,SAMPLED,,lots-same-members
@@ -2615,7 +2615,7 @@ ZIP,rubjo-victor-mono,ec1b3a23b9bd7692d9664bffe2fd7d9058c0a680,public/VictorMono
 ZIP,ryanoasis-nerd-fonts,0def781849d304532eead7445103cdc6b56f11df,FontPatcher.zip,,archives,SAMPLED,,many-same-members
 ZIP,ryanoasis-nerd-fonts,abc3c03a777ccbd4d5d6f06f9549c8bd191e1cf9,FontPatcher.zip,,archives,SAMPLED,,many-same-members
 ZIP,silnrsi-teckit,2991037fafe1533a42ddfe04212b26873f41ff1b,docs/TECkit_Tools.odt,,archives,SAMPLED,,few-same-members
-ZIP,silnrsi-teckit,3d06b4f4933ec1dbc781d5fc7dded1a59f8afb2e,docs/TECkit_Tools.odt,,archives,SAMPLED,,few-same-members
+ZIP,silnrsi-teckit,3d06b4f4933ec1dbc781d5fc7dded1a59f8afb2e,docs/TECkit_Tools.odt,zip-x-silnrsi-teckit-3d06b4f4-teckit_tools,archives,PROMOTED,,few-same-members
 ZIP,simdjson-simdjson,b1c31b428d03f3c10df9142fe709b876bef455c2,singleheader/singleheader.zip,,archives,SAMPLED,,few-same-members
 ZIP,stamatak-standard-RAxML,d0b72062cac65872a70b0966ac55115942c71c65,manual/NewManual.odt,,archives,SAMPLED,,some-same-members
 ZIP,stathissideris-ditaa,02ca8a3e9bad279e3663650b31e4ba1a82057454,service/web/lib/ditaa0_10.jar,,archives,SAMPLED,,many-same-members

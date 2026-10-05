@@ -15,8 +15,14 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use anyhow::Result;
 
-//! Catalog fixtures (`src/test/data/catalogs/`): one stub per fixture, `verdicts()`, written by
-//! `human_solver` when a `.mo` or `.qm` sample is promoted. See `test::helper::human_content`.
-#[cfg(test)]
-mod mo_x_ubernostrum_django_registration_906912aa_django;
+use crate::test::helper::human_content::{self, Family};
+
+#[test]
+fn verdicts() -> Result<()> {
+    human_content::assert_matches_human_verdicts(
+        Family::Documents,
+        "pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en",
+    )
+}

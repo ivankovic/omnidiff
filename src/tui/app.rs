@@ -1176,6 +1176,20 @@ impl App {
         Ok(())
     }
 
+    /// The graphics protocol pictures are drawn with, for an offscreen render
+    /// (`tui::screenshot`), which has no terminal to ask.
+    pub(crate) fn set_graphics(&mut self, picker: ratatui_image::picker::Picker) {
+        self.graphics = Some(picker);
+    }
+
+    /// A key for the content viewer, as the live viewer would hand it one; false if there is no
+    /// content viewer or it does not take the key. For an offscreen render (`tui::screenshot`).
+    pub(crate) fn content_key(&mut self, code: KeyCode) -> bool {
+        self.content_viewer
+            .as_mut()
+            .is_some_and(|viewer| viewer.handle_key(code))
+    }
+
     /// Everything an offscreen render needs before `draw_viewer` (`tui::screenshot`): the themes
     /// applied without being saved, the viewer sized to `area`, and the pair diffed on this
     /// thread rather than through the action channel nobody is polling.

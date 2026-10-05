@@ -22,6 +22,11 @@
 //! cases in [`CASES`] and serves the viewer with a `fetch` shim (`assets/showcase/showcase.js`)
 //! answering `/api/*` from files. Each case is baked twice: as omnidiff maps it and as GNU `diff`
 //! marks it. Published by `.github/workflows/pages.yml` under `showcase/`; nothing is committed.
+//!
+//! Content that is not code - a PDF, a font, an archive, pictures - has a page of its own,
+//! `content.html`: the GIFs `make content-gif` records into `assets/content/` (committed, as they
+//! take a Python rasterizer CI does not have), each with OmniDiff's report on the pair and its
+//! verdict beside the human's.
 
 use std::collections::HashMap;
 use std::fs;
@@ -251,9 +256,113 @@ fn main() -> Result<()> {
         index.push(baked.index);
     }
     fs::write(args.out.join("cases.json"), serde_json::to_vec(&index)?)?;
+    let content = write_content_page(&args.out, &provenance, &repository_urls)?;
 
-    println!("Showcase written to {:?}: {} cases", args.out, index.len());
+    println!(
+        "Showcase written to {:?}: {} cases, {content} content examples",
+        args.out,
+        index.len()
+    );
     Ok(())
+}
+
+/// One content example, as `scripts/record_content_gif.py` lists it in `assets/content/cases.json`.
+#[derive(Debug, serde::Deserialize)]
+struct ContentCase {
+    family: String,
+    fixture: String,
+    title: String,
+    /// The file's path in its repository.
+    path: String,
+    /// The GIF's file name in `assets/content/`.
+    gif: String,
+    /// `omnidiff --headless`'s report on the pair.
+    report: String,
+}
+
+/// `assets/content/`, where `make content-gif` records the examples.
+fn content_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("assets")
+        .join("content")
+}
+
+fn content_cases() -> Result<Vec<ContentCase>> {
+    let path = content_dir().join("cases.json");
+    let json = fs::read_to_string(&path).with_context(|| format!("reading {path:?}"))?;
+    serde_json::from_str(&json).with_context(|| format!("parsing {path:?}"))
+}
+
+/// What OmniDiff and the human call content fixture `case`: `(omnidiff, human)`, the human's
+/// `None` while it is unjudged.
+fn content_verdicts(case: &ContentCase) -> Result<(String, Option<String>)> {
+    use omnidiff::test::helper::human_content;
+    let family = omnidiff::diff::content::Family::from_name(&case.family)
+        .ok_or_else(|| anyhow!("{} is not a content family", case.family))?;
+    let engine = human_content::engine_diff(family, &case.fixture)?.verdict();
+    let human = human_content::load(family, &case.fixture)?
+        .verdict
+        .map(|judgement| judgement.label());
+    Ok((engine.label(), human))
+}
+
+/// Writes `content.html` and copies the examples' GIFs beside it; returns how many there are.
+fn write_content_page(
+    out: &Path,
+    provenance: &HashMap<String, helper::SampleProvenance>,
+    repository_urls: &HashMap<String, String>,
+) -> Result<usize> {
+    let cases = content_cases()?;
+    let gifs = out.join("content");
+    fs::create_dir_all(&gifs)?;
+    fs::write(
+        out.join("content.css"),
+        include_str!("../../assets/showcase/content.css"),
+    )?;
+    let mut sections = String::new();
+    for case in &cases {
+        fs::copy(content_dir().join(&case.gif), gifs.join(&case.gif))
+            .with_context(|| format!("copying {}", case.gif))?;
+        let (engine, human) = content_verdicts(case)?;
+        let human = human.unwrap_or_else(|| "not judged yet".to_string());
+        let upstream = provenance
+            .get(&case.fixture)
+            .and_then(|sample| helper::upstream_commit_url(sample, repository_urls))
+            .map(|url| format!(r#" · <a href="{}">upstream commit</a>"#, escape(&url)))
+            .unwrap_or_default();
+        sections.push_str(&format!(
+            r#"<section class="example" id="{id}">
+  <h2>{title}</h2>
+  <p class="source"><code>{path}</code>{upstream} · OmniDiff calls it <b>{engine}</b>; a human, <b>{human}</b></p>
+  <img src="content/{gif}" width="1104" height="664" loading="lazy" alt="{alt}">
+  <details><summary>What <code>git diff</code> prints with OmniDiff</summary><pre>{report}</pre></details>
+</section>
+"#,
+            id = escape(&case.fixture),
+            title = escape(&case.title),
+            path = escape(&case.path),
+            engine = escape(&engine),
+            human = escape(&human),
+            gif = escape(&case.gif),
+            alt = escape(&format!(
+                "{}: git's \"Binary files differ\", OmniDiff's report, then OmniDiff's viewer",
+                case.title
+            )),
+            report = escape(&case.report),
+        ));
+    }
+    let page =
+        include_str!("../../assets/showcase/content.html").replace("{{examples}}", &sections);
+    fs::write(out.join("content.html"), page)?;
+    Ok(cases.len())
+}
+
+/// `text` safe inside HTML text and double-quoted attributes.
+fn escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 struct Baked {
@@ -465,6 +574,28 @@ mod tests {
             }
         }
         assert_eq!((diff_wrong, both_right), (10, 10));
+    }
+
+    #[test]
+    fn every_content_example_has_its_fixture_and_its_gif() {
+        let cases = content_cases().unwrap();
+        assert!(!cases.is_empty());
+        for case in &cases {
+            assert!(
+                content_dir().join(&case.gif).is_file(),
+                "{}: no GIF; run make content-gif",
+                case.fixture
+            );
+            content_verdicts(case).unwrap();
+        }
+    }
+
+    #[test]
+    fn escape_makes_text_safe_in_html() {
+        assert_eq!(
+            escape(r#"<a href="x">&</a>"#),
+            "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;"
+        );
     }
 
     #[test]

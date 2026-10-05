@@ -18,3 +18,5 @@
 
 //! Document fixtures (`src/test/data/documents/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a PDF sample is promoted. See `test::helper::human_content`.
+#[cfg(test)]
+mod pdf_x_governikus_ausweisapp_522d8b0b_communicationmodel_en;

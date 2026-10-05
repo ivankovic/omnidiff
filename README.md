@@ -30,6 +30,23 @@ The terminal UI, in its light theme:
 refactoring, with the changed right-hand sides highlighted rather than whole
 lines](/assets/readme-screenshot.png)
 
+Files that are not code are diffed by what they hold, where `git diff` only says `Binary files
+differ`. A PDF diagram with one box renamed, and a web font with twenty icons redrawn:
+
+![An animation in three parts. First, git diff on a PDF prints only "Binary files
+a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf differ". Then OmniDiff, as git's
+external diff, reports that the metadata and page 1 changed and where. Then OmniDiff's viewer lists
+the changed members and shows page 1 before and after side by side, the renamed box outlined on
+both, and then the difference alone.](/assets/content/pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en.gif)
+
+![An animation of a Font Awesome web font. git diff prints only "Binary files differ"; OmniDiff
+reports 21 changed members and lists each changed glyph; its viewer shows the font's name table
+with the version and style changed, one glyph before and after, and then all twenty changed icons
+in a grid, each change outlined.](/assets/content/woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif)
+
+**[More content examples](https://ivankovic.github.io/omnidiff/showcase/content.html)**: an
+OpenDocument file, a compiled translation catalog, and pictures, still and animated.
+
 # Installation
 
 ## From source

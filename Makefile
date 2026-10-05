@@ -37,7 +37,7 @@ OUT_DIR ?= research/data/ablation
 .PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
 	benchmark-quality diff-inventory lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
-	readme-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
+	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
@@ -150,6 +150,16 @@ readme-screenshot:
 		"$$dir"/before.* "$$dir"/after.* --out "$$tmp/still.json" && \
 	cd research && uv run python ../scripts/render_tui_screenshot.py \
 		--still "$$tmp/still.json" --out ../$(README_SCREENSHOT_OUT)
+
+# Records assets/content/: one GIF per content example (a PDF, a font, an archive, pictures, ...)
+# in scripts/record_content_gif.py, and cases.json, which the showcase reads. Each is git's
+# "Binary files differ", omnidiff's headless report, then the viewer drawn by the TUI's own widgets
+# (render_content_stills) with its pictures pasted in as a kitty terminal shows them. Committed;
+# re-run after viewer changes. Needs research/'s uv environment.
+content-gif:
+	cargo build --release --features test-fixtures --bin render_content_stills --bin omnidiff
+	cd research && uv run python ../scripts/record_content_gif.py \
+		--omnidiff ../target/release/omnidiff --stills ../target/release/render_content_stills
 
 # Regenerates THIRD-PARTY-NOTICES.md, the licenses of every crate the product binary links, from
 # Cargo.lock (cargo-about, `cargo install cargo-about --features cli`). Ships beside the binary in
