@@ -20,7 +20,7 @@
 # from the committed Cargo.lock. See that file for the derivation itself and for what a nixpkgs
 # submission would change.
 {
-  description = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs";
+  description = "Fast, robust, accurate content-aware diffing";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

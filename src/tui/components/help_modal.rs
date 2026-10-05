@@ -122,7 +122,7 @@ Other
   Ctrl-Z           Suspend to the shell (Unix); `fg` comes back to the same view
 
 About
-  omnidiff - fast, syntax-aware code diffing using tree-sitter ASTs
+  omnidiff - fast, robust, accurate content-aware diffing
   Copyright (C) 2026 Marko Ivankovic
   License: GNU Affero General Public License v3 or later
            https://www.gnu.org/licenses/

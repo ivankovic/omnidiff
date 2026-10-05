@@ -456,7 +456,7 @@ RUST_MIN_VER="1.88.0"
 # and the install phase dies.
 inherit bash-completion-r1 cargo
 
-DESCRIPTION="Fast, robust, syntax-aware code diffing using tree-sitter ASTs"
+DESCRIPTION="Fast, robust, accurate content-aware diffing"
 HOMEPAGE="https://github.com/ivankovic/omnidiff"
 SRC_URI="
 	https://github.com/ivankovic/omnidiff/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz

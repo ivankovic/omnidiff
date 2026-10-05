@@ -6,12 +6,14 @@
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ivankovic/omnidiff/main/research/data/coverage/badge.json)](CONTRIBUTING.md#coverage)
 [![License: AGPL v3+](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 
-Fast, robust, accurate, syntax-aware code diffing.
+Fast, robust, accurate content-aware diffing.
 
-- **Fast:** under 100ms for 93% of changes
-- **Robust:** can diff 99.95% of changes
-- **Accurate:** 70% of changes perfect, 90% near-perfect
-- **Syntax-aware:** 24 supported languages, text and binary fallback as needed
+- **Fast:** under 100ms for 93% of code changes
+- **Robust:** can diff 99.95% of code changes
+- **Accurate:** 70% of code changes perfect, 90% near-perfect
+- **Content-aware:** 98.8% of all changed files diffed by what they hold - code in 24 languages by
+  its syntax, other text by lines, and pictures, archives, fonts, cursors, message catalogs and
+  PDFs by their content
 
 ![An animation of one Python refactoring painted two ways. A vertical bar sweeps left to right and
 back across a two-pane diff. On one side of the bar, GNU diff marks whole lines as deleted and
@@ -170,7 +172,9 @@ Rows and columns are 0-indexed, and columns are byte offsets within their row, a
 reports them. `reference_line` is the row of the nearest enclosing named declaration, and a
 `move` also carries a `move_target` range in the other file. `summary` is present only when the diff is one of the special shapes the TUI's
 status bar names, such as `comment_only` or `whitespace_only`. A binary file on either side
-answers with `"binary": true` and empty hunks. Unlike headless mode, JSON output is never chosen
+answers with `"binary": true` and empty hunks; when it is [supported content](#supported-content),
+a `content` object says what changed in it (a picture also keeps the older `picture` object). A
+side read from UTF-16 or UTF-32 carries its `encoding`, and its ranges are in the decoded text. Unlike headless mode, JSON output is never chosen
 automatically: only `--mode json` selects it, so a pipe never receives it by surprise. The
 [VS Code extension](https://github.com/ivankovic/omnidiff-vscode) is built on this output; the
 authoritative field list is `src/tui/json_output.rs`.
@@ -209,11 +213,11 @@ path needs no `difftool` config:
 GIT_EXTERNAL_DIFF=omnidiff git diff
 ```
 
-Binary files - anything OmniDiff cannot read as text, a PDF or an image - get a one-line
-`Binary file <path> differs` notice instead of a diff, the same stand-in git and `diff(1)` print
-for them. They likewise never block the rest of a `git diff`: an external diff that exits non-zero
-makes git abandon the *entire* run, so OmniDiff reports an unshowable file as a successful diff of
-nothing rather than as a failure.
+Pictures, archives, fonts and the rest of the [supported content](#supported-content) get a short
+report of what changed in them. Any other binary file gets a one-line `Binary file <path> differs`
+notice instead of a diff, the same stand-in git and `diff(1)` print for them. Neither ever blocks
+the rest of a `git diff`: an external diff that exits non-zero makes git abandon the *entire* run,
+so OmniDiff reports an unshowable file as a successful diff of nothing rather than as a failure.
 
 ## Jujutsu (jj) integration
 
@@ -289,6 +293,36 @@ plain text, line by line, so nothing is refused.
 Recognised by extension but diffed as plain text, since no grammar is compiled in: Bazel (`.bazel`), Dart (`.dart`), Emacs Lisp (`.el`), Markdown (`.md`, `.markdown`), Protocol Buffers (`.proto`), SQL (`.sql`).
 <!-- languages:end -->
 
+# Supported content
+
+Files that are not text are recognised by their bytes, never by their names, and diffed by what
+they hold:
+
+| Content | Formats | Diffed |
+|---|---|---|
+| Pictures | PNG, JPEG, GIF, WebP, BMP, ICO, TIFF | pixel by pixel, as the eye compares them: how much changed and where; animations frame by frame |
+| Archives | zip (and so jar, Office documents, EPUB), tar, gzip, xz, bzip2 | file by file, each by what it is, archives inside archives included; Java class files as a listing of their fields and methods |
+| Fonts | TrueType, OpenType, WOFF, WOFF2, EOT | glyph by glyph, each drawn, and the font's names and metrics |
+| Cursors | Windows `.cur` and `.ani`, X cursors, Hyprland `.hlc` | size by size and frame by frame |
+| Message catalogs | gettext `.mo`, Qt `.qm` | message by message |
+| Documents | PDF | page by page, each page drawn |
+| Text in other encodings | UTF-16 and UTF-32 with a byte order mark | as text, like any other file |
+
+Only the members that changed are opened, so a font with two edited glyphs shows two glyphs. Each
+change is also named by how much of it a reader would see: invisible (only the bytes differ),
+imperceptible, artifacts (what compression or resampling leaves behind), edited, redrawn or
+replaced - for text, whitespace, formatting and rewritten stand in for the second, third and
+fifth.
+
+The TUI shows pictures as pictures: in the terminal's own graphics where it speaks the kitty,
+sixel or iTerm2 protocol, and in Unicode half blocks everywhere else. `b` switches to half blocks
+and back, and `OMNIDIFF_GRAPHICS=halfblocks` (or `kitty`, `sixel`, `iterm2`) overrides the
+detection; inside tmux, the terminal in front of the pane decides. An archive, a font or any other
+container lists its changed members beside the one selected, `g` shows every changed glyph or
+picture at once, and `Enter` opens a text member in the full diff view.
+
+Anything else binary gets the one-line `Binary file <path> differs` notice.
+
 # License
 
 Copyright (C) 2026 Marko Ivankovic
@@ -342,6 +376,13 @@ files, nineteen of them generated or embedded - tree-sitter parser tables, codeg
 bundles, a PNG as a C array - and one commit of a 40,000-line single-header C++ library. Given
 24 GB and 300 s, 11 of the 28 files that first hit the cap complete. The run, its harness and every pair that did not complete are documented in
 `research/data/performance/PROVENANCE.md`.
+
+Beyond code, over every file changed in the same window - 2,018,010 changes in 7,352
+repositories, pictures, fonts and archives included - **98.8% are diffed as text or by their
+content** (98.2% counting each repository at most 1,000 times, so that a few giant ones do not
+decide it; 6,481 repositories entirely). What is left is mostly text in legacy encodings, compiled
+objects, audio, and EOT fonts compressed with MicroType Express. The census is documented in
+`research/data/corpus_stats/PROVENANCE.md`.
 
 ## Accurate
 

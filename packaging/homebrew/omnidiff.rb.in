@@ -21,7 +21,7 @@
 # attested release asset every other route ships, so `brew install` takes seconds instead of the
 # ten-minute grammar-and-LTO compile a build-from-source formula would run on every machine.
 class Omnidiff < Formula
-  desc "Fast, robust, syntax-aware code diffing"
+  desc "Fast, robust, accurate content-aware diffing"
   homepage "https://github.com/ivankovic/omnidiff"
   version "{{VERSION}}"
   license "AGPL-3.0-or-later"
