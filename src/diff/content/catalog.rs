@@ -246,8 +246,10 @@ fn qm_messages(bytes: &[u8]) -> Result<Vec<(String, String)>> {
             tag::TRANSLATION => {
                 let raw = bytes_field(&mut at)?;
                 let units: Vec<u16> = raw
-                    .chunks_exact(2)
-                    .map(|pair| u16::from_be_bytes([pair[0], pair[1]]))
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|pair| u16::from_be_bytes(*pair))
                     .collect();
                 translations.push(String::from_utf16_lossy(&units));
             }

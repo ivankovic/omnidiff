@@ -200,8 +200,10 @@ fn pdf_text(bytes: &[u8]) -> String {
     match bytes {
         [0xFE, 0xFF, rest @ ..] => {
             let units: Vec<u16> = rest
-                .chunks_exact(2)
-                .map(|pair| u16::from_be_bytes([pair[0], pair[1]]))
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u16::from_be_bytes(*pair))
                 .collect();
             String::from_utf16_lossy(&units)
         }

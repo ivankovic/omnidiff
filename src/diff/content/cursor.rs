@@ -215,9 +215,10 @@ fn xcursor_sizes(bytes: &[u8]) -> Result<BTreeMap<u32, Vec<(RgbaImage, u32)>>> {
             .context("an X cursor image's pixels past the end")?;
         // Premultiplied ARGB, little-endian, to straight RGBA.
         let rgba = argb
-            .chunks_exact(4)
-            .flat_map(|pixel| {
-                let [b, g, r, a] = [pixel[0], pixel[1], pixel[2], pixel[3]];
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|&[b, g, r, a]| {
                 let straight = |c: u8| match a {
                     0 => 0,
                     a => ((u32::from(c) * 255 + u32::from(a) / 2) / u32::from(a)).min(255) as u8,
