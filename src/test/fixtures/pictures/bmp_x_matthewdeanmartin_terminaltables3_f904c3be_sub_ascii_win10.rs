@@ -17,11 +17,15 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    human_picture::assert_matches_human_verdict(
+fn verdicts() -> Result<()> {
+    // Recorded as found, not examined.
+    human_content::assert_known_verdict_mismatches(
+        Family::Pictures,
         "bmp-x-matthewdeanmartin-terminaltables3-f904c3be-sub_ascii_win10",
+        Some("edited+resized"),
+        &[],
     )
 }

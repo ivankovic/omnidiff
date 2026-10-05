@@ -24,7 +24,7 @@ use clap::{Parser, Subcommand};
 
 use omnidiff::tui;
 use omnidiff::tui::positional::{
-    binary_notice, invoked_as_git_external_diff, picture_notice, resolve_before_after,
+    binary_notice, content_notice, invoked_as_git_external_diff, resolve_before_after,
 };
 
 mod configure_prompt;
@@ -70,6 +70,10 @@ enum UtilAction {
     },
     /// Print a roff-formatted man page (section 1) on stdout.
     Man,
+    /// Print how the picture view would draw in this terminal - `kitty`, `sixel`, `iterm2` or
+    /// `halfblocks` - and why. Asks the terminal as the TUI does, so run it where the TUI would
+    /// run. `OMNIDIFF_GRAPHICS` overrides the detection.
+    Graphics,
 }
 
 #[derive(Subcommand)]
@@ -314,12 +318,12 @@ fn exit_code_for(differed: bool, want_exit_code: bool, invoked_as_git_external_d
     }
 }
 
-/// True if `before` and `after` are a picture pair (see `diff::picture::is_picture_pair`).
-fn is_picture_pair(before: &std::path::Path, after: &std::path::Path) -> Result<bool> {
-    Ok(omnidiff::diff::picture::is_picture_pair(
-        &std::fs::read(before)?,
-        &std::fs::read(after)?,
-    ))
+/// True if `before` and `after` are a pair diffed by content (see `diff::content::pair_kind`).
+fn is_content_pair(before: &std::path::Path, after: &std::path::Path) -> Result<bool> {
+    Ok(
+        omnidiff::diff::content::pair_kind(&std::fs::read(before)?, &std::fs::read(after)?)
+            .is_some(),
+    )
 }
 
 /// Reports a pair with at least one binary side (the other may be git's empty `/dev/null`), in
@@ -328,19 +332,19 @@ fn is_picture_pair(before: &std::path::Path, after: &std::path::Path) -> Result<
 fn run_binary(args: &Args, before: &std::path::Path, after: &std::path::Path) -> Result<i32> {
     let (before_bytes, after_bytes) = (std::fs::read(before)?, std::fs::read(after)?);
     let differed = before_bytes != after_bytes;
-    // A picture that does not decode is reported as any other binary, never as an error.
-    let picture = omnidiff::diff::picture::is_picture_pair(&before_bytes, &after_bytes)
-        .then(|| omnidiff::diff::picture::diff(&before_bytes, &after_bytes).ok())
+    // Content that does not decode is reported as any other binary, never as an error.
+    let content = omnidiff::diff::content::diff(&before_bytes, &after_bytes)
+        .ok()
         .flatten();
     if should_run_json(args) {
         // Still a JSON object of the usual shape (flagged `binary`, no hunks): prose would break
         // every `--mode json` consumer.
-        let mut json = tui::json_output::binary_diff_json(before, after, picture.as_ref())?;
+        let mut json = tui::json_output::binary_diff_json(before, after, content.as_ref())?;
         json.push('\n');
         tui::headless::write_stdout(&json)?;
     } else {
-        let notice = match &picture {
-            Some(picture) => picture_notice(&args.paths, before, after, picture),
+        let notice = match &content {
+            Some(content) => content_notice(&args.paths, before, after, content),
             None => binary_notice(&args.paths, before, after, differed),
         };
         tui::headless::write_stdout(&notice)?;
@@ -365,6 +369,17 @@ fn run_util(action: &UtilAction) -> Result<()> {
         }
         UtilAction::Man => {
             clap_mangen::Man::new(command).render(&mut std::io::stdout())?;
+        }
+        UtilAction::Graphics => {
+            // The terminal answers on stdin: raw, so the answer is neither echoed nor held for a
+            // newline.
+            crossterm::terminal::enable_raw_mode()?;
+            let (picker, why) = omnidiff::tui::components::picture_viewer::detect_graphics();
+            crossterm::terminal::disable_raw_mode()?;
+            let protocol = picker.map_or("halfblocks".to_string(), |picker| {
+                format!("{:?}", picker.protocol_type()).to_lowercase()
+            });
+            println!("{protocol}\t{why}");
         }
     }
     Ok(())
@@ -424,11 +439,11 @@ async fn run() -> Result<i32> {
     if let Some((before, after)) = before_after.as_ref() {
         let either_is_binary =
             omnidiff::code::is_binary_file(before)? || omnidiff::code::is_binary_file(after)?;
-        // A picture pair the TUI would show goes on to the TUI's picture view; every other binary
-        // pair, and any picture pair headless or as JSON, is answered here.
+        // A pair diffed by content goes on to the TUI's content view; every other binary pair, and
+        // any content pair headless or as JSON, is answered here.
         let tui =
             !should_run_json(&args) && !should_run_headless(&args, std::io::stdout().is_terminal());
-        if either_is_binary && !(tui && is_picture_pair(before, after)?) {
+        if either_is_binary && !(tui && is_content_pair(before, after)?) {
             return run_binary(&args, before, after);
         }
     }
@@ -467,6 +482,7 @@ async fn run() -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use omnidiff::tui::positional::picture_notice;
 
     #[test]
     fn resolve_before_after_with_no_args_starts_an_empty_viewer() {
@@ -826,6 +842,8 @@ mod tests {
             height: 10,
             color: "RGBA8".to_string(),
             bytes: 100,
+            frames: 1,
+            duration_ms: 0,
         };
         omnidiff::diff::picture::PictureDiff {
             before: Some(side(20)),
@@ -858,12 +876,103 @@ mod tests {
             changed_pixels: 12,
             total_pixels: 200,
             regions: vec![region],
+            differing_pixels: 12,
+            strong_pixels: 12,
+            layout_kept: true,
         });
         assert_eq!(
             picture_notice(&paths, &before, &after, &diff),
             "Picture assets/logo.png: PNG 20x10 RGBA8, 100 bytes -> PNG 20x10 RGBA8, 100 bytes\n  \
              6.00% of pixels changed (12 of 200), in 1 region:\n    4x3 at (6, 2)\n"
         );
+    }
+
+    #[test]
+    fn the_picture_notice_lists_an_animations_changed_added_and_removed_frames() {
+        use omnidiff::diff::picture::{Comparison, FrameStep, Region};
+        let paths = vec![PathBuf::from("a.gif"), PathBuf::from("b.gif")];
+        let (before, after) = resolve_before_after(&paths).unwrap().unwrap();
+        let mut diff = picture_diff(Comparison::Frames {
+            steps: vec![
+                FrameStep::Same {
+                    before: 0,
+                    after: 0,
+                    frames: 4,
+                },
+                FrameStep::Changed {
+                    before: 4,
+                    after: 4,
+                    changed_pixels: 3,
+                    regions: vec![Region {
+                        x: 1,
+                        y: 1,
+                        width: 3,
+                        height: 1,
+                        changed_pixels: 3,
+                    }],
+                    strong_pixels: 3,
+                },
+                FrameStep::Inserted {
+                    after: 5,
+                    frames: 2,
+                },
+                FrameStep::Deleted {
+                    before: 5,
+                    frames: 1,
+                },
+            ],
+            total_pixels: 200,
+            retimed: true,
+            faint: false,
+        });
+        for side in [&mut diff.before, &mut diff.after] {
+            let info = side.as_mut().unwrap();
+            (info.format, info.frames, info.duration_ms) = ("GIF".to_string(), 6, 1500);
+        }
+        assert_eq!(
+            picture_notice(&paths, &before, &after, &diff),
+            "Pictures a.gif and b.gif: GIF 20x10 RGBA8, 6 frames, 1.5s, 100 bytes -> GIF 20x10 \
+             RGBA8, 6 frames, 1.5s, 100 bytes\n  1 frame changed, 2 added, 1 removed; frames that \
+             look the same show for different times\n    frame 4 -> 4: changed, in 1 region\n    \
+             frames 5-6 added\n    frame 5 removed\n"
+        );
+    }
+
+    #[test]
+    fn the_archive_notice_lists_what_changed_in_which_member() {
+        let zip = |files: &[(&str, &str)]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            for (name, text) in files {
+                writer
+                    .start_file(*name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                std::io::Write::write_all(&mut writer, text.as_bytes()).unwrap();
+            }
+            writer.finish().unwrap();
+            bytes
+        };
+        let before = zip(&[("a.txt", "1\n2\n"), ("gone.txt", "g\n"), ("same", "s\n")]);
+        let after = zip(&[("a.txt", "1\nTWO\n"), ("new.txt", "n\n"), ("same", "s\n")]);
+        let diff = omnidiff::diff::content::diff(&before, &after)
+            .unwrap()
+            .expect("an archive pair");
+        let paths = [PathBuf::from("a.zip"), PathBuf::from("b.zip")];
+        let notice = content_notice(&paths, &paths[0], &paths[1], &diff);
+        assert!(
+            notice.starts_with("Archives a.zip and b.zip: ZIP, 3 members, "),
+            "{notice}"
+        );
+        assert!(
+            notice.contains("  1 changed, 1 added, 1 removed, 1 unchanged\n"),
+            "{notice}"
+        );
+        assert!(
+            notice.contains("    changed  a.txt: 1 line removed, 1 added\n"),
+            "{notice}"
+        );
+        assert!(notice.contains("    removed  gone.txt\n"), "{notice}");
+        assert!(notice.contains("    added    new.txt\n"), "{notice}");
     }
 
     #[test]
@@ -875,17 +984,40 @@ mod tests {
             changed_pixels: 0,
             total_pixels: 200,
             regions: Vec::new(),
+            differing_pixels: 0,
+            strong_pixels: 0,
+            layout_kept: true,
         });
         assert!(
             picture_notice(&paths, &before, &after, &unchanged).ends_with("  no pixel changed\n")
         );
-        let resized = picture_notice(&paths, &before, &after, &picture_diff(Comparison::Resized));
+        let reshaped = Comparison::Resized {
+            aspect_kept: false,
+            scaled: None,
+        };
+        let resized = picture_notice(&paths, &before, &after, &picture_diff(reshaped));
         assert!(
             resized.starts_with("Pictures a.png and b.png: "),
             "{resized}"
         );
         assert!(
-            resized.ends_with("  resized, so not compared pixel by pixel\n"),
+            resized.ends_with("  resized to another shape, so not compared pixel by pixel\n"),
+            "{resized}"
+        );
+        let rescaled = Comparison::Resized {
+            aspect_kept: true,
+            scaled: Some(Box::new(Comparison::Pixels {
+                changed_pixels: 3,
+                total_pixels: 200,
+                regions: Vec::new(),
+                differing_pixels: 3,
+                strong_pixels: 0,
+                layout_kept: true,
+            })),
+        };
+        let resized = picture_notice(&paths, &before, &after, &picture_diff(rescaled));
+        assert!(
+            resized.ends_with("  resized; scaled to one size, 1.50% of pixels changed\n"),
             "{resized}"
         );
     }

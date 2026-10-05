@@ -49,11 +49,11 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 
 mod actions;
+mod content;
 mod events;
 mod flatten;
 mod keylog;
 mod navigate;
-mod pictures;
 mod render;
 mod state;
 mod stubs;
@@ -72,8 +72,10 @@ use tree_sitter::Node;
 
 use omnidiff::code::language::{language_for_path, to_treesitter};
 use omnidiff::code::{Code, Language};
+use omnidiff::diff::content::{Family, Level};
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
+use omnidiff::test::helper::human_content::{self, HumanContent};
 #[cfg(test)]
 use omnidiff::test::helper::human_mapping::rebuild_caches;
 use omnidiff::test::helper::human_mapping::{
@@ -82,7 +84,6 @@ use omnidiff::test::helper::human_mapping::{
     NamedTextMapping, NodeStatus, disagreement_is_move_only, is_inherited_removed, path_refs,
     rebuild_caches_for_mapping, status_after, status_before, text_mapping_disagreements,
 };
-use omnidiff::test::helper::human_picture;
 use omnidiff::test::helper::{
     DIFF_DATASETS, code_pair_from_dir, code_pair_from_dir_without_metadata, diffs_case_dir,
     node_for_path, path_for_node, precompute_paths, read_note, write_note,
@@ -336,10 +337,15 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             )
         })?;
 
-    // A language with no tree-sitter grammar opens in text-only mode (see
-    // `FrameState::before_root`): the painting is what such a fixture records. `ensure_parsed`
-    // errors on such a language, so it runs only when there is a tree. It fills
-    // node_to_full_hash, which `m`/`M` classify inner nodes by.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
+    Ok((before, after))
+}
+
+/// A language with no tree-sitter grammar opens in text-only mode (see
+/// `FrameState::before_root`): the painting is what such a pair records. `ensure_parsed` errors on
+/// such a language, so it runs only when there is a tree. It fills node_to_full_hash, which
+/// `m`/`M` classify inner nodes by.
+fn ensure_parsed_if_tree(before: &mut Code, after: &mut Code) -> Result<()> {
     if before.ast.is_some() {
         before
             .ensure_parsed()
@@ -350,8 +356,7 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             .ensure_parsed()
             .context("Failed to compute AST metadata for after code")?;
     }
-
-    Ok((before, after))
+    Ok(())
 }
 
 fn diffs_root() -> PathBuf {
@@ -417,30 +422,73 @@ fn list_available_cases() -> Result<Vec<(String, &'static str)>> {
     Ok(names)
 }
 
-/// What the `o` picker lists: every case of [`list_available_cases`], then every picture fixture
-/// (dataset `pictures`), sorted by name. Only the picker sees the pictures: the corpus scans,
-/// `load_case` and `{`/`}` read their names as code.
+/// What the `o` picker lists: every case of [`list_available_cases`], then every content fixture
+/// (one dataset per `Family`: `pictures`, `archives`, ...), sorted by name. Only the picker sees
+/// them: the corpus scans, `load_case` and `{`/`}` read their names as code.
 fn list_picker_cases() -> Result<Vec<(String, &'static str)>> {
     let mut names = list_available_cases()?;
-    for name in list_dir_names(&human_picture::pictures_root())? {
-        names.push((name, pictures::PICTURE_DATASET));
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family))? {
+            names.push((name, family.name()));
+        }
     }
     names.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(names)
 }
 
-/// Every picture fixture's recorded verdict, `None` where there is none yet (`App::picture_verdicts`).
-fn read_picture_verdicts() -> HashMap<String, Option<human_picture::Verdict>> {
-    list_dir_names(&human_picture::pictures_root())
-        .unwrap_or_default()
-        .into_iter()
-        .map(|name| {
-            let verdict = human_picture::load(&name)
-                .ok()
-                .map(|picture| picture.verdict);
-            (name, verdict)
-        })
-        .collect()
+/// What the `o` picker shows for a content fixture.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ContentRow {
+    /// The pair verdict's place in `Level::ALL`, can't judge after them, if one is recorded:
+    /// what the `Verdict` column sorts by.
+    pub(crate) rank: Option<usize>,
+    /// The `Verdict` column: the pair verdict, or how many members have one.
+    pub(crate) label: String,
+    /// The `Cmpl` column: a picture without its verdict, or a container without a pair verdict
+    /// or one for every changed member.
+    pub(crate) incomplete: bool,
+}
+
+impl ContentRow {
+    /// A content fixture's row, from its ground truth (`None` before any is saved).
+    pub(crate) fn of(human: Option<HumanContent>) -> Self {
+        let human = human.unwrap_or_default();
+        let label = match (&human.verdict, human.members.len()) {
+            (Some(judgement), _) => judgement.label(),
+            (None, 0) => String::new(),
+            (None, judged) => format!("{judged} judged"),
+        };
+        let rank = human
+            .verdict
+            .as_ref()
+            .map(|judgement| match judgement.verdict() {
+                Some(verdict) => Level::ALL
+                    .iter()
+                    .position(|level| *level == verdict.level)
+                    .expect("every level is in ALL"),
+                None => Level::ALL.len(),
+            });
+        Self {
+            rank,
+            label,
+            incomplete: !human.is_complete(),
+        }
+    }
+}
+
+/// Every content fixture's row (`App::content_rows`), re-read on each `o`: a few hundred small
+/// files.
+fn read_content_rows() -> HashMap<String, ContentRow> {
+    let mut rows = HashMap::new();
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family)).unwrap_or_default() {
+            rows.insert(
+                name.clone(),
+                ContentRow::of(human_content::load(family, &name).ok()),
+            );
+        }
+    }
+    rows
 }
 
 /// The case names the `o` picker shows, in order: `options` narrowed by every filter in `view`
@@ -867,12 +915,12 @@ where
     result
 }
 
-/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the picture fixtures.
+/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the content fixtures' families.
 fn picker_datasets() -> impl Iterator<Item = &'static str> {
     DIFF_DATASETS
         .iter()
         .copied()
-        .chain([pictures::PICTURE_DATASET])
+        .chain(Family::ALL.map(Family::name))
 }
 
 /// The `o` picker's next dataset filter: `picker_datasets` in order, then back to "all" (`None`).
@@ -1339,24 +1387,9 @@ fn load_sample(name: &str) -> Result<(Code, Code, SampleSource)> {
         .with_context(|| format!("Failed to load sample from {:?}", dir))?
         .ok_or_else(|| anyhow!("No before/after fixture found in samples/{}", name))?;
 
-    if before.ast.is_none() {
-        bail!(
-            "Before code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    if after.ast.is_none() {
-        bail!(
-            "After code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    before
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for before code")?;
-    after
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for after code")?;
+    // A sample with no grammar (a UTF-16 `.rc` or `.strings`, `sample_test_diffs --encodings`)
+    // opens text-only, as such a case does.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
 
     let source_path = dir.join("source.json");
     let contents =
@@ -1414,9 +1447,9 @@ fn raw_before_after(dir: &Path) -> Option<(String, String)> {
             continue;
         };
         if name.starts_with("before.") && name.ends_with(".test") {
-            before = fs::read_to_string(&path).ok();
+            before = omnidiff::code::read_text(&path).ok();
         } else if name.starts_with("after.") && name.ends_with(".test") {
-            after = fs::read_to_string(&path).ok();
+            after = omnidiff::code::read_text(&path).ok();
         }
     }
 
@@ -1745,8 +1778,8 @@ struct DiffPickerData<'a> {
     disagreement: Option<&'a HashMap<String, usize>>,
     invariants: Option<&'a HashMap<String, usize>>,
     sizes: Option<&'a HashMap<String, usize>>,
-    /// `App::picture_verdicts`: which rows are pictures, and their verdicts.
-    pictures: Option<&'a HashMap<String, Option<human_picture::Verdict>>>,
+    /// `App::content_rows`: which rows are content fixtures, and their verdicts.
+    content: Option<&'a HashMap<String, ContentRow>>,
 }
 
 impl<'a> DiffPickerData<'a> {
@@ -1757,34 +1790,28 @@ impl<'a> DiffPickerData<'a> {
             disagreement: app.diff_disagreement.as_ref(),
             invariants: app.diff_invariants.as_ref(),
             sizes: app.diff_sizes.as_ref(),
-            pictures: Some(&app.picture_verdicts),
+            content: Some(&app.content_rows),
         }
     }
 
-    fn is_picture(&self, name: &str) -> bool {
-        self.pictures.is_some_and(|map| map.contains_key(name))
+    fn is_content(&self, name: &str) -> bool {
+        self.content.is_some_and(|map| map.contains_key(name))
     }
 
-    fn verdict_of(&self, name: &str) -> Option<human_picture::Verdict> {
-        self.pictures
-            .and_then(|map| map.get(name))
-            .copied()
-            .flatten()
+    fn content_of(&self, name: &str) -> Option<&'a ContentRow> {
+        self.content.and_then(|map| map.get(name))
     }
 
-    /// `verdict_of` as its place in `Verdict::ALL`, the order the `Verdict` column sorts in.
+    /// The pair verdict's place in `Level::ALL`, the order the `Verdict` column sorts in.
     fn verdict_rank(&self, name: &str) -> Option<usize> {
-        let verdict = self.verdict_of(name)?;
-        human_picture::Verdict::ALL
-            .iter()
-            .position(|candidate| *candidate == verdict)
+        self.content_of(name).and_then(|row| row.rank)
     }
 
-    /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, no verdict
-    /// for a picture.
+    /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, verdicts
+    /// still to give for a content fixture.
     fn incomplete_of(&self, name: &str) -> Option<bool> {
-        if self.is_picture(name) {
-            return Some(self.verdict_of(name).is_none());
+        if let Some(row) = self.content_of(name) {
+            return Some(row.incomplete);
         }
         self.unmarked_of(name).map(|count| count > 0)
     }

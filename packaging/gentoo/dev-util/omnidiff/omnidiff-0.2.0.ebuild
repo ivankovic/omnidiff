@@ -6,6 +6,8 @@ EAPI=8
 CRATES="
 	adler2@2.0.1
 	aho-corasick@1.1.5
+	alloc-no-stdlib@2.0.4
+	alloc-stdlib@0.2.4
 	allocator-api2@0.2.21
 	anstream@1.0.0
 	anstyle-parse@1.0.0
@@ -14,6 +16,8 @@ CRATES="
 	anstyle@1.0.14
 	anyhow@1.0.104
 	approx@0.5.1
+	arrayref@0.3.9
+	arrayvec@0.7.8
 	atomic@0.6.1
 	autocfg@1.5.1
 	base64-simd@0.8.0
@@ -28,12 +32,16 @@ CRATES="
 	bitflags@2.13.2
 	bitvec@1.1.1
 	block-buffer@0.10.4
+	block-buffer@0.12.1
+	brotli-decompressor@5.0.3
+	brotli@8.0.4
 	bumpalo@3.20.3
 	by_address@1.2.1
 	bytemuck@1.25.2
 	bytemuck_derive@1.12.1
 	byteorder-lite@0.1.0
 	bytes@1.12.1
+	bzip2@0.6.1
 	castaway@0.2.4
 	cc@1.4.7
 	cfg-if@1.0.5
@@ -45,10 +53,12 @@ CRATES="
 	clap_derive@4.6.7
 	clap_lex@1.1.1
 	clap_mangen@0.3.3
+	color@0.3.3
 	color_quant@1.1.0
 	colorchoice@1.0.5
 	compact_str@0.9.1
 	confy@2.0.0
+	const-oid@0.10.2
 	convert_case@0.10.0
 	cpufeatures@0.2.17
 	cpufeatures@0.3.1
@@ -61,17 +71,20 @@ CRATES="
 	crossterm_winapi@0.9.1
 	crunchy@0.2.4
 	crypto-common@0.1.7
+	crypto-common@0.2.2
 	csscolorparser@0.6.2
 	csv-core@0.1.13
 	csv@1.4.0
 	darling@0.24.1
 	darling_core@0.24.1
 	darling_macro@0.24.1
+	data-url@0.3.2
 	deltae@0.3.2
 	deranged@0.5.8
 	derive_more-impl@2.1.1
 	derive_more@2.1.1
 	digest@0.10.7
+	digest@0.11.3
 	document-features@0.2.12
 	either@1.18.0
 	equivalent@1.0.2
@@ -85,13 +98,18 @@ CRATES="
 	fastrand@2.5.0
 	fax@0.2.7
 	fdeflate@0.3.7
+	fearless_simd@0.4.1
 	filedescriptor@0.8.3
+	filetime@0.2.29
 	find-msvc-tools@0.1.13
 	finl_unicode@1.5.0
 	fixedbitset@0.4.2
 	flate2@1.1.10
+	float-cmp@0.9.0
 	fnv@1.0.7
 	foldhash@0.2.0
+	font-types@0.11.3
+	font-types@0.12.6
 	funty@2.0.0
 	futures-channel@0.3.34
 	futures-core@0.3.34
@@ -108,18 +126,30 @@ CRATES="
 	getrandom@0.4.3
 	gif@0.14.2
 	git2@0.21.0
+	glifo@0.1.1
+	guillotiere@0.7.0
 	half@2.7.1
 	hashbrown@0.16.1
 	hashbrown@0.17.1
 	hashlink@0.12.2
+	hayro-ccitt@0.3.0
+	hayro-cmap@0.1.0
+	hayro-interpret@0.7.0
+	hayro-jbig2@0.3.0
+	hayro-jpeg2000@0.3.5
+	hayro-postscript@0.1.0
+	hayro-syntax@0.7.2
+	hayro@0.7.1
 	heck@0.5.0
 	hermit-abi@0.5.3
 	hex@0.4.3
 	home@0.5.12
+	hybrid-array@0.4.15
 	icy_sixel@0.5.1
 	ident_case@1.0.1
 	image-webp@0.2.4
 	image@0.25.10
+	imagesize@0.15.0
 	indexmap@2.14.2
 	indoc@2.0.7
 	instability@0.3.14
@@ -129,8 +159,10 @@ CRATES="
 	jobserver@0.1.35
 	js-sys@0.3.105
 	kasuari@0.4.12
+	kurbo@0.13.1
 	lab@0.11.0
 	lazy_static@1.5.0
+	libbz2-rs-sys@0.2.5
 	libc@0.2.189
 	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
@@ -138,6 +170,7 @@ CRATES="
 	libsqlite3-sys@0.38.2
 	libz-sys@1.1.29
 	line-clipping@0.3.8
+	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6
 	linux-raw-sys@0.12.1
 	linux-raw-sys@0.4.15
@@ -145,6 +178,7 @@ CRATES="
 	lock_api@0.4.14
 	log@0.4.34
 	lru@0.18.5
+	lzma-rust2@0.21.0
 	mac_address@1.1.8
 	matchers@0.2.0
 	memchr@2.8.3
@@ -178,19 +212,27 @@ CRATES="
 	palette_math@0.7.7
 	parking_lot@0.12.5
 	parking_lot_core@0.9.12
+	peniko@0.6.1
 	pest@2.9.2
 	pest_derive@2.9.2
 	pest_generator@2.9.2
 	pest_meta@2.9.2
 	phf@0.11.3
+	phf@0.13.1
 	phf_codegen@0.11.3
 	phf_generator@0.11.3
+	phf_generator@0.13.1
 	phf_macros@0.11.3
+	phf_macros@0.13.1
 	phf_shared@0.11.3
+	phf_shared@0.13.1
+	pic-scale@0.7.12
+	pico-args@0.5.0
 	pin-project-lite@0.2.17
 	pkg-config@0.3.34
 	plist@1.10.1
 	png@0.18.1
+	polycool@0.4.0
 	portable-atomic@1.15.0
 	powerfmt@0.2.0
 	ppv-lite86@0.2.21
@@ -218,13 +260,18 @@ CRATES="
 	ratatui-termwiz@0.1.2
 	ratatui-widgets@0.3.2
 	ratatui@0.30.2
+	read-fonts@0.39.2
+	read-fonts@0.45.0
 	redox_syscall@0.5.18
 	ref-cast-impl@1.0.27
 	ref-cast@1.0.27
 	regex-automata@0.4.18
 	regex-syntax@0.8.11
 	regex@1.13.1
+	resvg@0.48.1
+	rgb@0.8.53
 	roff@1.1.1
+	roxmltree@0.21.1
 	rsqlite-vfs@0.1.1
 	rusqlite@0.40.2
 	rustc-hash@2.1.3
@@ -244,27 +291,36 @@ CRATES="
 	serde_json@1.0.151
 	serde_spanned@1.1.1
 	sha2@0.10.9
+	sha2@0.11.0
 	sharded-slab@0.1.7
 	shlex@2.0.1
 	signal-hook-mio@0.2.5
 	signal-hook-registry@1.4.8
 	signal-hook@0.3.18
 	simd-adler32@0.3.10
+	simplecss@0.2.2
 	siphasher@1.0.3
+	skrifa@0.42.1
+	skrifa@0.48.0
 	slab@0.4.12
 	smallvec@1.16.1
 	socket2@0.6.5
 	sqlite-wasm-rs@0.5.5
+	stable_deref_trait@1.2.1
 	static_assertions@1.1.0
 	streaming-iterator@0.1.9
+	strict-num@0.1.1
 	strsim@0.11.1
 	strum@0.28.0
 	strum_macros@0.28.0
+	svgtypes@0.16.1
 	syn@1.0.109
 	syn@2.0.119
 	syn@3.0.6
+	synstructure@0.14.0
 	syntect@5.3.0
 	tap@1.0.1
+	tar@0.4.46
 	tempfile@3.27.0
 	termina@0.3.3
 	terminfo@0.9.0
@@ -280,6 +336,8 @@ CRATES="
 	time-core@0.1.9
 	time-macros@0.2.32
 	time@0.3.55
+	tiny-skia-path@0.12.0
+	tiny-skia@0.12.0
 	tokio-macros@2.7.2
 	tokio@1.53.1
 	toml@0.9.12+spec-1.1.0
@@ -318,16 +376,21 @@ CRATES="
 	tree-sitter-yaml@0.7.2
 	tree-sitter@0.25.10
 	two-face@0.5.2+bat-0.26.1
+	typed-path@0.12.3
 	typenum@1.20.1
 	ucd-trie@0.1.7
 	unicode-ident@1.0.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
 	unicode-width@0.2.2
+	usvg@0.48.1
 	utf8parse@0.2.2
 	uuid@1.26.1
 	valuable@0.1.1
 	vcpkg@0.2.15
+	vello_common@0.0.8
+	vello_common@0.0.9
+	vello_cpu@0.0.8
 	version_check@0.9.5
 	vsimd@0.8.0
 	vtparse@0.6.2
@@ -371,10 +434,16 @@ CRATES="
 	winnow@0.7.15
 	winnow@1.0.4
 	wit-bindgen@0.57.1
+	wuff@0.2.9
 	wyz@0.5.1
 	yaml-rust@0.4.5
+	yoke-derive@0.8.4
+	yoke@0.8.3
 	zerocopy-derive@0.8.59
 	zerocopy@0.8.59
+	zerofrom-derive@0.1.8
+	zerofrom@0.1.8
+	zip@8.6.0
 	zlib-rs@0.6.8
 	zmij@1.0.23
 	zune-core@0.5.3
@@ -399,7 +468,7 @@ SRC_URI="
 # dependency set changes - the list below was read off the crates in Cargo.lock and is the usual
 # Rust-ecosystem spread.
 LICENSE="AGPL-3+"
-LICENSE+=" Apache-2.0 BSD BSD-2 ISC MIT MPL-2.0 Unicode-DFS-2016 Unlicense ZLIB"
+LICENSE+=" Apache-2.0 BSD BSD-2 BZIP2 ISC MIT MPL-2.0 Unicode-DFS-2016 Unlicense ZLIB"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64"
 

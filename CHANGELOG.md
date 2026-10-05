@@ -15,6 +15,38 @@ release does: a minor bump may change the JSON output or the library API, a patc
   The TUI shows the two pictures with the changed regions outlined, and `t` cycles to a
   difference, blend and swipe view; it draws real pixels where the terminal speaks the kitty,
   sixel or iTerm2 graphics protocol and Unicode half blocks everywhere else.
+- Animated GIF, PNG and WebP pictures are compared frame by frame, the frames aligned the way
+  lines are: the report says which frames changed, which were added or removed, and whether the
+  same frames now show for different times. In the TUI, `,` and `.` step through the frames and
+  space plays the animation.
+- Inside tmux, the TUI draws pictures with the graphics protocol of the terminal in front of the
+  pane, as tmux knows it, rather than whichever attached client answered the query: a kitty on a
+  desk no longer makes a phone's terminal attached to the same session show crossed-out boxes.
+  `b` switches every picture to half blocks and back, and `OMNIDIFF_GRAPHICS=halfblocks` (or
+  `kitty`, `sixel`, `iterm2`) overrides the detection.
+- Archives, fonts, cursor themes, message catalogs and PDFs are diffed by what they hold, member
+  by member: a zip's or tar's files (jars, Office documents and EPUBs are zips; gzip, xz and
+  bzip2 streams are opened too), a font's glyphs and names (TrueType, OpenType, WOFF, WOFF2,
+  EOT), a cursor's sizes and frames (Windows `.cur` and `.ani`, X cursors, Hyprland `.hlc`), a
+  gettext `.mo` or Qt `.qm` catalog's messages, a PDF's pages. Members match by name and only
+  the changed ones are opened: each is diffed by what it is - a picture as a picture, text by
+  lines, a nested archive as an archive. The report lists the members that changed, were added or
+  were removed; `--mode json` adds a `content` object, which a picture pair carries too. In the
+  TUI the members are listed beside the selected one, `a` shows the unchanged ones as well, `g`
+  shows every changed glyph or picture at once, and `Enter` opens an archive inside an archive.
+  A text member is diffed by OmniDiff in its own language, its long lines wrapped and cut to the
+  changes (`J`/`K` step through them), and `Enter` opens it in the full diff view; a Java class
+  file in a jar is diffed as a listing of its fields, its methods and what each method calls,
+  reads and loads.
+- What happened to a picture or a member is said in one of six levels, by how hard it is to see
+  and what the after side is: invisible (only bytes differ), imperceptible (seen only once
+  highlighted), artifacts (what compression, resampling or a formatter leaves behind), edited,
+  redrawn (the same thing made anew) and replaced; with tags for a picture resized, cropped,
+  retimed or given frames, and for a container given members. Pictures of one aspect ratio and
+  different sizes are compared at the smaller size; `--mode json` reports, per comparison, the
+  pixels that differ at all and the clearly changed ones beside those that changed.
+- Text in UTF-16 or UTF-32 (announced by a byte order mark) is read as text and diffed like any
+  other file instead of reported as binary; `--mode json` names its `encoding`.
 
 ### Changed
 
@@ -23,8 +55,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   `.storyboard`, `.xaml`, `.resx`, `.xsd`/`.xsl`, `.xlf`, `.kml`, `.gpx` and more (see the README's
   language list). A file under one of these names whose content is not markup is still diffed as
   plain text.
-- Building OmniDiff needs Rust 1.90 or later (was 1.88): the picture view's graphics library
-  depends on it.
+- Building OmniDiff needs Rust 1.92 or later (was 1.88): the picture view's graphics library
+  needs 1.90, and the PDF renderer 1.92.
 
 ## [0.2.0] - 2026-10-01
 

@@ -55,6 +55,13 @@
 //! }
 //! ```
 //!
+//! Every binary pair diffed by content (`diff::content`), pictures included, also carries
+//! `content`: the same diff tagged with its `kind` (`"picture"`, for the picture above). `picture`
+//! stays for the consumers written before `content`.
+//!
+//! A side whose file is UTF-16 or UTF-32 (announced by a byte order mark) carries `encoding`
+//! (`"UTF-16LE"`, ...); its `hunks` are ranges in the UTF-8 text the file decodes to.
+//!
 //! Each side's `hunks` are ranges in that side's own file. Rows and columns are 0-indexed.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
@@ -168,7 +175,24 @@ struct JsonHunk {
 struct JsonSide {
     path: PathBuf,
     language: Option<String>,
+    /// The file's encoding when it is not UTF-8 (`"UTF-16LE"`, see `code::Encoding`); the hunks
+    /// are still in the UTF-8 text it decodes to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    encoding: Option<&'static str>,
     hunks: Vec<JsonHunk>,
+}
+
+/// [`JsonSide::encoding`] of the file at `path`, from its byte order mark.
+fn encoding_of(path: &Path) -> Option<&'static str> {
+    use std::io::Read;
+    let mut mark = Vec::with_capacity(4);
+    std::fs::File::open(path)
+        .and_then(|file| file.take(4).read_to_end(&mut mark))
+        .ok()?;
+    match crate::code::Encoding::of(&mark) {
+        crate::code::Encoding::Utf8 => None,
+        encoding => Some(encoding.name()),
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -189,6 +213,10 @@ struct JsonDiff {
     /// `diff::picture`). Absent otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     picture: Option<crate::diff::picture::PictureDiff>,
+    /// For any binary pair diffed by content, pictures included: the same, tagged with its `kind`
+    /// (see `diff::content`). Absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content: Option<crate::diff::content::ContentDiff>,
 }
 
 /// Re-parses `contents` for `nearest_reference_line`; not on a hot path, so the redundant parse
@@ -221,6 +249,7 @@ fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     JsonSide {
         path: path.to_path_buf(),
         language: language.map(|lang| stable_name(lang).to_string()),
+        encoding: encoding_of(path),
         hunks,
     }
 }
@@ -246,6 +275,7 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
         summary,
         binary: false,
         picture: None,
+        content: None,
     }
 }
 
@@ -255,11 +285,12 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
 pub fn binary_diff_json(
     before: &Path,
     after: &Path,
-    picture: Option<&crate::diff::picture::PictureDiff>,
+    content: Option<&crate::diff::content::ContentDiff>,
 ) -> Result<String> {
     let side = |path: &Path| JsonSide {
         path: path.to_path_buf(),
         language: language_for_path(path).map(|lang| stable_name(lang).to_string()),
+        encoding: None,
         hunks: Vec::new(),
     };
     let diff = JsonDiff {
@@ -268,7 +299,10 @@ pub fn binary_diff_json(
         large_residual: false,
         summary: None,
         binary: true,
-        picture: picture.cloned(),
+        picture: content
+            .and_then(crate::diff::content::ContentDiff::as_picture)
+            .cloned(),
+        content: content.cloned(),
     };
     Ok(serde_json::to_string_pretty(&diff)?)
 }
@@ -499,6 +533,8 @@ mod tests {
             height: 10,
             color: "RGBA8".to_string(),
             bytes: 100,
+            frames: 1,
+            duration_ms: 0,
         };
         let picture = PictureDiff {
             before: Some(side.clone()),
@@ -513,17 +549,41 @@ mod tests {
                     height: 3,
                     changed_pixels: 12,
                 }],
+                differing_pixels: 12,
+                strong_pixels: 12,
+                layout_kept: true,
             },
         };
         let json: serde_json::Value = serde_json::from_str(&binary_diff_json(
             Path::new("a.png"),
             Path::new("b.png"),
-            Some(&picture),
+            Some(&crate::diff::content::ContentDiff::Picture(picture)),
         )?)?;
         assert_eq!(json["binary"], true);
+        assert_eq!(json["content"]["kind"], "picture");
+        assert_eq!(json["content"]["before"], json["picture"]["before"]);
         assert_eq!(json["picture"]["before"]["width"], 20);
         assert_eq!(json["picture"]["comparison"]["kind"], "pixels");
         assert_eq!(json["picture"]["comparison"]["regions"][0]["height"], 3);
+        Ok(())
+    }
+
+    #[test]
+    fn a_utf16_side_names_its_encoding_and_a_utf8_side_does_not() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let (utf16, utf8) = (dir.path().join("a.xml"), dir.path().join("b.xml"));
+        let text = "\u{feff}<a/>\n";
+        std::fs::write(
+            &utf16,
+            text.encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<u8>>(),
+        )?;
+        std::fs::write(&utf8, text)?;
+        let json = serde_json::to_value(build_side(text, &utf16, &[]))?;
+        assert_eq!(json["encoding"], "UTF-16LE");
+        let json = serde_json::to_value(build_side(text, &utf8, &[]))?;
+        assert!(json.get("encoding").is_none(), "{json}");
         Ok(())
     }
 

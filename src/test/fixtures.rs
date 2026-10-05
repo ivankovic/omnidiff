@@ -42,10 +42,22 @@
 //! `the_clamped_stubs_explain_their_limits` enforces that every clamped `mapping()` has one.
 
 // One `#[cfg(test)] mod <name>;` per fixture, per dataset (see `test::helper::DIFF_DATASETS`), and
-// `pictures` for the picture fixtures (see `test::helper::human_picture`), whose stubs assert a
-// verdict rather than the four tests above.
+// one per content family (`diff::content::Family`, see `test::helper::human_content`), whose stubs
+// assert verdicts rather than the four tests above.
+#[cfg(test)]
+mod archives;
+#[cfg(test)]
+mod catalogs;
+#[cfg(test)]
+mod cursors;
 #[cfg(test)]
 mod defects4j;
+#[cfg(test)]
+mod documents;
+#[cfg(test)]
+mod encodings;
+#[cfg(test)]
+mod fonts;
 #[cfg(test)]
 mod full;
 #[cfg(test)]

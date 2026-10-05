@@ -15,7 +15,6 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-use std::fs;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
@@ -383,7 +382,7 @@ impl Default for CodeViewerWidget {
 
 impl CodeViewerWidget {
     pub fn load_file(&mut self, path: PathBuf) -> Result<()> {
-        let contents = fs::read_to_string(&path)
+        let contents = crate::code::read_text(&path)
             .with_context(|| format!("Failed to read file: {:?}", path))?;
         self.language = language_for_path_and_content(&path, &contents);
         self.file_path = Some(path);

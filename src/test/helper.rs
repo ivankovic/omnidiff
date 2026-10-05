@@ -15,8 +15,8 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+pub mod human_content;
 pub mod human_mapping;
-pub mod human_picture;
 
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "stats")]
@@ -519,9 +519,17 @@ fn handmade_test_code_pairs_uncached() -> Result<HashMap<String, (Code, Code)>> 
 /// `small` and `full` (sampled from the two research datasets), `stratified` (sampled per language
 /// *per size bucket*, so large files are represented), and `defects4j` (a third party's list taken
 /// whole, so a rate over its solved fixtures is not a rate over the dataset; see
-/// `research/external/README.md`). Names are unique across all five, so readers resolve a name to
+/// `research/external/README.md`), and `encodings` (text in UTF-16 or UTF-32, sampled with
+/// `sample_test_diffs --encodings`). Names are unique across all six, so readers resolve a name to
 /// whichever dataset holds it.
-pub const DIFF_DATASETS: &[&str] = &["handmade", "small", "full", "stratified", "defects4j"];
+pub const DIFF_DATASETS: &[&str] = &[
+    "handmade",
+    "small",
+    "full",
+    "stratified",
+    "defects4j",
+    "encodings",
+];
 
 fn diffs_root() -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -853,7 +861,8 @@ pub const UNIT_TEST_FIXTURES: &[&str] = &[
 /// Reads one `before.<ext>.test`/`after.<ext>.test` file into an unparsed `Code`, with its
 /// `metadata.path` set.
 fn load_side(file_path: &Path) -> Result<Code> {
-    let contents = fs::read_to_string(file_path)?;
+    // Not `read_to_string`: an `encodings` fixture is UTF-16 or UTF-32 on disk.
+    let contents = crate::code::read_text(file_path)?;
     let mut code = Code {
         contents,
         ..Default::default()

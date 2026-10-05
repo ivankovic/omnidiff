@@ -171,8 +171,8 @@ pub(crate) fn run_event_loop(
         let mut end = run_case_session(terminal, app, &before, &after)?;
         // A picture sample or fixture has no trees: it gets its own session, which hands back
         // whatever is opened from it. The tree session's case stays loaded underneath.
-        while let Some(case) = crate::pictures::PictureCase::opened_by(&end) {
-            end = match crate::pictures::run_picture_session(terminal, app, &case) {
+        while let Some(case) = crate::content::ContentCase::opened_by(&end) {
+            end = match crate::content::run_content_session(terminal, app, &case) {
                 Ok(end) => end,
                 // A picture the decoder cannot read (some multi-size ICOs): said, and the tree
                 // session resumes as it was.
@@ -2927,14 +2927,14 @@ fn handle_text_view(
 }
 
 /// Opens the `o` picker over every case and picture fixture, on `current`'s row if it is listed.
-/// Shared by the tree session and `pictures::run_picture_session`.
+/// Shared by the tree session and `content::run_content_session`.
 pub(crate) fn open_diff_picker(app: &mut App, current: &str) {
     // Eager, unlike the other per-case maps: notes are displayed, not just sorted by.
     if app.diff_comments.is_none() {
         app.diff_comments = Some(compute_diff_comments());
     }
-    // Re-read every time: the picture session saves verdicts behind the picker's back.
-    app.picture_verdicts = read_picture_verdicts();
+    // Re-read every time: the content session saves verdicts behind the picker's back.
+    app.content_rows = read_content_rows();
     match list_picker_cases() {
         Ok(options) if !options.is_empty() => {
             let modal = open_diff_picker_modal(
@@ -2956,7 +2956,7 @@ pub(crate) fn open_diff_picker(app: &mut App, current: &str) {
 
 /// Opens the `O` picker over every sample (picture samples included), on `current`'s row if it is
 /// listed, measuring the samples not yet measured. Shared by the tree session and
-/// `pictures::run_picture_session`.
+/// `content::run_content_session`.
 pub(crate) fn open_sample_picker(app: &mut App, current: &str) {
     match list_sample_rows() {
         Ok(rows) if !rows.is_empty() => {

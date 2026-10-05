@@ -16,14 +16,17 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 pub mod code_viewer;
+pub mod content_viewer;
 pub mod diff_viewer;
 pub mod file_dialog;
 pub mod help_modal;
 pub mod line_prompt;
+pub mod member_viewer;
 pub mod picture_viewer;
 pub mod render_options_dialog;
 pub mod review_dialog;
 pub mod search_modal;
+pub mod text_pair_view;
 pub mod theme_dialog;
 
 use anyhow::Result;

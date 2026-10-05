@@ -17,9 +17,15 @@
  */
 use anyhow::Result;
 
-use crate::test::helper::human_picture;
+use crate::test::helper::human_content::{self, Family};
 
 #[test]
-fn verdict() -> Result<()> {
-    human_picture::assert_matches_human_verdict("ico-x-kikoplayproject-kikoplay-9f13361b-kikoplay")
+fn verdicts() -> Result<()> {
+    // Recorded as found, not examined.
+    human_content::assert_known_verdict_mismatches(
+        Family::Pictures,
+        "ico-x-kikoplayproject-kikoplay-9f13361b-kikoplay",
+        Some("edited+canvas"),
+        &[],
+    )
 }

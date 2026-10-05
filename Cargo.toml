@@ -19,7 +19,7 @@
 name = "omnidiff"
 version = "0.2.0"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.92"
 description = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/ivankovic/omnidiff"
@@ -126,6 +126,23 @@ tree-sitter = "0.25"
 # Raster pictures (`diff::picture`): the formats binary diffs most often meet. No default
 # features: those add AVIF/EXR/HDR codecs and rayon, none of which a diff needs.
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "ico", "tiff"] }
+# An animation's frames are kept deflated (`diff::picture::Frames`); already built for `png`.
+flate2 = "1.1"
+# Archives (diff::content::archive), every decoder pure Rust: zip's default features would pull in
+# C zstd, and bzip2's default backend is libbz2-rs-sys.
+zip = { version = "8", default-features = false, features = ["deflate-flate2"] }
+tar = { version = "0.4", default-features = false }
+lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
+bzip2 = "0.6"
+# SVG cursors (diff::content::cursor), drawn to pictures; without text, which would pull in a
+# second font stack.
+resvg = { version = "0.48", default-features = false }
+# Fonts (diff::content::font): glyphs read and drawn by skrifa, WOFF and WOFF2 unwrapped by wuff.
+skrifa = "0.48"
+wuff = "0.2"
+# PDFs (diff::content::pdf): pages drawn by hayro, pure Rust; it is why the MSRV is 1.92. Its
+# default features embed the standard 14 fonts and the CJK CMaps, for PDFs that do not embed theirs.
+hayro = "0.7"
 ratatui = { version = "0.30.2", features = ["serde", "macros"], optional = true }
 crossterm = { version = "0.29.0", features = ["serde", "event-stream"], optional = true }
 # Pictures drawn in the terminal: kitty, sixel or iTerm2 where the terminal speaks one, Unicode
@@ -178,6 +195,8 @@ mimalloc = "0.1"
 # compile src/test/ without that feature (see lib.rs's gate on `mod test`).
 regex = "1.12.2"
 tempfile = "3.10.1"
+# The archive tests write the xz they read.
+lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz", "encoder"] }
 
 [features]
 # A bare `cargo install omnidiff` builds the TUI binary; a library consumer opts out with
@@ -323,6 +342,11 @@ required-features = ["stats"]
 [[bin]]
 name = "classify_paths"
 path = "src/bin/classify_paths.rs"
+required-features = ["stats"]
+
+[[bin]]
+name = "content_census"
+path = "src/bin/content_census.rs"
 required-features = ["stats"]
 
 [[bin]]

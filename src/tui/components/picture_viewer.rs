@@ -30,12 +30,18 @@
 //! pixels a cell, coarse but enough to see the layout and where the outlines are. The color-depth
 //! pass fits half blocks to a 256-color terminal like any other cell.
 //!
-//! Composites are rebuilt only when the view, the divider, the pane size or the colors change:
-//! encoding a picture for a graphics protocol is the slow part, not drawing it.
+//! An animation is shown one **moment** at a time: a frame of each side, as the frame diff pairs
+//! them (`FrameStep`), `,`/`.` stepping and space playing at the after side's frame times. When
+//! annotating, the frames pair by position instead, since the engine's pairing is part of its
+//! answer.
+//!
+//! Composites are rebuilt only when the view, the divider, the moment, the pane size or the colors
+//! change: encoding a picture for a graphics protocol is the slow part, not drawing it.
 
 use std::path::Path;
+use std::time::{Duration, Instant};
 
-use crate::diff::picture::{self, Comparison, PictureDiff, Region};
+use crate::diff::picture::{self, Comparison, FrameCounts, FrameStep, Frames, PictureDiff, Region};
 use crossterm::event::KeyCode;
 use image::{DynamicImage, Rgba, RgbaImage};
 use ratatui::{
@@ -61,12 +67,178 @@ const BACKDROP: Rgba<u8> = Rgba([255, 255, 255, 255]);
 /// picture is sent scaled to its pane, so an icon arrives as megabytes of repeated pixels: through
 /// tmux or ssh that transfer was most of the wait for every frame, and deflated it is a few
 /// percent of the size.
+///
+/// **`OMNIDIFF_GRAPHICS`** overrides the detection: `halfblocks` (no query sent at all), `kitty`,
+/// `sixel` or `iterm2`; `auto` or unset detects.
+///
+/// **Inside tmux the answers cannot be trusted**: tmux passes the query to every client attached
+/// to the session, so a kitty on a desk answers for a phone's terminal attached to the same
+/// session, which then shows kitty's placeholders as rows of crossed-out boxes. tmux knows each
+/// client's terminal, though, so only the protocols the client in front of the pane supports are
+/// allowed ([`protocols_for_client`]), and with none of them the query is not sent.
 pub fn query_graphics() -> Option<Picker> {
-    Picker::from_query_stdio_with_options(QueryStdioOptions {
-        kitty_compression: true,
-        ..QueryStdioOptions::default()
-    })
-    .ok()
+    detect_graphics().0
+}
+
+/// [`query_graphics`], with why it chose what it did, in a few words (`omnidiff util graphics`
+/// prints both).
+pub fn detect_graphics() -> (Option<Picker>, String) {
+    let query = |blacklist: Vec<ProtocolType>| {
+        Picker::from_query_stdio_with_options(QueryStdioOptions {
+            kitty_compression: true,
+            blacklist_protocols: blacklist,
+            ..QueryStdioOptions::default()
+        })
+        .ok()
+    };
+    let setting = std::env::var("OMNIDIFF_GRAPHICS")
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let forced = match setting.as_str() {
+        "halfblocks" | "blocks" | "none" | "off" => {
+            set_half_blocks_only(true);
+            return (
+                Some(Picker::halfblocks()),
+                format!("OMNIDIFF_GRAPHICS={setting}"),
+            );
+        }
+        "kitty" => Some(ProtocolType::Kitty),
+        "sixel" => Some(ProtocolType::Sixel),
+        "iterm2" => Some(ProtocolType::Iterm2),
+        _ => None,
+    };
+    if let Some(protocol) = forced {
+        let mut picker = query(Vec::new()).unwrap_or_else(Picker::halfblocks);
+        picker.set_protocol_type(protocol);
+        return (Some(picker), format!("OMNIDIFF_GRAPHICS={setting}"));
+    }
+    let Some((client, allowed)) = tmux_client_protocols() else {
+        return (query(Vec::new()), "the terminal's answer".to_string());
+    };
+    if allowed.is_empty() {
+        return (
+            Some(Picker::halfblocks()),
+            format!("tmux client {client} draws no pictures; not asked"),
+        );
+    }
+    let blacklist = [
+        ProtocolType::Kitty,
+        ProtocolType::Sixel,
+        ProtocolType::Iterm2,
+    ]
+    .into_iter()
+    .filter(|protocol| !allowed.contains(protocol))
+    .collect();
+    let picked = query(blacklist);
+    // Every attached client answered the query, and the reading stopped at the first answer:
+    // the rest would arrive as keys.
+    drain_late_answers();
+    let Some(mut picker) = picked else {
+        return (None, format!("tmux client {client}; the query failed"));
+    };
+    if !allowed.contains(&picker.protocol_type()) {
+        picker.set_protocol_type(allowed[0]);
+    }
+    (Some(picker), format!("tmux client {client}"))
+}
+
+/// Reads and drops whatever the terminal sends until it has been quiet for 150 ms, half a second
+/// at most: the answers of the other clients of a tmux session to a graphics query, which come
+/// after the one the query read and would otherwise reach the program as typed keys.
+///
+/// On the file descriptor, never blocking: the query's own reader thread may still be waiting on
+/// the terminal too, and a blocking read that loses the bytes to it would wait for the next key
+/// (crossterm's `read` after its `poll` did exactly that).
+#[cfg(unix)]
+fn drain_late_answers() {
+    use std::os::fd::AsRawFd;
+    let stdin = std::io::stdin();
+    let fd = stdin.as_raw_fd();
+    // SAFETY: `fcntl`, `poll` and `read` on our own stdin, into a buffer we own; the flags are
+    // restored before returning.
+    unsafe {
+        let flags = libc::fcntl(fd, libc::F_GETFL);
+        if flags < 0 {
+            return;
+        }
+        libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
+        let deadline = Instant::now() + Duration::from_millis(500);
+        let mut buffer = [0u8; 4096];
+        while Instant::now() < deadline {
+            let mut ready = libc::pollfd {
+                fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            if libc::poll(&mut ready, 1, 150) <= 0 {
+                break;
+            }
+            while libc::read(fd, buffer.as_mut_ptr().cast(), buffer.len()) > 0 {}
+        }
+        libc::fcntl(fd, libc::F_SETFL, flags);
+    }
+}
+
+#[cfg(not(unix))]
+fn drain_late_answers() {}
+
+/// The tmux client in front of this pane (its `TERM` and the name its terminal answered), and the
+/// graphics protocols it supports, best first; `None` outside tmux, or when tmux does not say.
+fn tmux_client_protocols() -> Option<(String, Vec<ProtocolType>)> {
+    std::env::var_os("TMUX")?;
+    let output = std::process::Command::new("tmux")
+        .args([
+            "display-message",
+            "-p",
+            "#{client_termname}\t#{client_termtype}\t#{client_termfeatures}",
+        ])
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()?;
+    let line = String::from_utf8_lossy(&output.stdout);
+    let mut fields = line.trim_end().split('\t');
+    let (name, kind, features) = (fields.next()?, fields.next()?, fields.next().unwrap_or(""));
+    if !output.status.success() || name.is_empty() {
+        return None;
+    }
+    let client = if kind.is_empty() {
+        name.to_string()
+    } else {
+        format!("{name} {kind}")
+    };
+    Some((client, protocols_for_client(name, kind, features)))
+}
+
+/// The graphics protocols a terminal supports by what tmux knows of it - its `TERM`, the name and
+/// version it answered (`kitty(0.44.0)`) and tmux's feature list - best first: kitty's for kitty
+/// and Ghostty, iTerm2's for iTerm2 and WezTerm, sixel where tmux lists it.
+pub fn protocols_for_client(term: &str, term_type: &str, features: &str) -> Vec<ProtocolType> {
+    let names = format!("{term} {term_type}").to_ascii_lowercase();
+    let mut protocols = Vec::new();
+    if names.contains("kitty") || names.contains("ghostty") {
+        protocols.push(ProtocolType::Kitty);
+    }
+    if names.contains("iterm") || names.contains("wezterm") {
+        protocols.push(ProtocolType::Iterm2);
+    }
+    if features.split(',').any(|feature| feature == "sixel") {
+        protocols.push(ProtocolType::Sixel);
+    }
+    protocols
+}
+
+/// Whether every picture is drawn in half blocks, whatever the terminal answered: `b` toggles it,
+/// for a terminal that claimed a protocol it cannot draw. For the whole process, so the next
+/// picture or sample opens the same way.
+static HALF_BLOCKS_ONLY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn half_blocks_only() -> bool {
+    HALF_BLOCKS_ONLY.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+pub fn set_half_blocks_only(on: bool) {
+    HALF_BLOCKS_ONLY.store(on, std::sync::atomic::Ordering::Relaxed);
 }
 
 /// The four ways a picture pair is shown, in the order `t` steps through them.
@@ -129,8 +301,10 @@ impl PictureColors {
 /// What the composites were built for; anything else means rebuilding them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Built {
+    half_blocks: bool,
     mode: PictureMode,
     swipe_percent: u16,
+    moment: usize,
     outline: u32,
     colors: PictureColors,
 }
@@ -138,14 +312,86 @@ struct Built {
 /// Each pane's title and picture, encoded for the terminal; `None` for a side with no picture.
 type Panes = Vec<(String, Option<StatefulProtocol>)>;
 
+/// One position of the frame stepper: which frame of each side shows (`None` where that side has
+/// none here), and what the engine found between them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Moment {
+    before: Option<usize>,
+    after: Option<usize>,
+    regions: Vec<Region>,
+    /// "changed", "added", "removed", or "" for frames that look the same or are not compared.
+    change: &'static str,
+}
+
+/// The moments of a pair: one for two stills, one per aligned frame for animations.
+fn timeline(
+    diff: &PictureDiff,
+    before: Option<&Frames>,
+    after: Option<&Frames>,
+    by_position: bool,
+) -> Vec<Moment> {
+    let moment = |before, after, regions, change| Moment {
+        before,
+        after,
+        regions,
+        change,
+    };
+    match &diff.comparison {
+        Comparison::Pixels { regions, .. } if !by_position => {
+            vec![moment(Some(0), Some(0), regions.clone(), "")]
+        }
+        Comparison::Frames { steps, .. } if !by_position => steps
+            .iter()
+            .flat_map(|step| -> Vec<Moment> {
+                match step {
+                    FrameStep::Same {
+                        before,
+                        after,
+                        frames,
+                    } => (0..*frames)
+                        .map(|k| moment(Some(before + k), Some(after + k), Vec::new(), ""))
+                        .collect(),
+                    FrameStep::Changed {
+                        before,
+                        after,
+                        regions,
+                        ..
+                    } => vec![moment(
+                        Some(*before),
+                        Some(*after),
+                        regions.clone(),
+                        "changed",
+                    )],
+                    FrameStep::Inserted { after, frames } => (0..*frames)
+                        .map(|k| moment(None, Some(after + k), Vec::new(), "added"))
+                        .collect(),
+                    FrameStep::Deleted { before, frames } => (0..*frames)
+                        .map(|k| moment(Some(before + k), None, Vec::new(), "removed"))
+                        .collect(),
+                }
+            })
+            .collect(),
+        // Resized, one-sided, or annotating: frame k beside frame k.
+        _ => {
+            let count = |side: Option<&Frames>| side.map_or(0, Frames::count);
+            let (b, a) = (count(before), count(after));
+            (0..b.max(a))
+                .map(|k| moment((k < b).then_some(k), (k < a).then_some(k), Vec::new(), ""))
+                .collect()
+        }
+    }
+}
+
 pub struct PictureViewer {
     before_name: String,
     after_name: String,
-    before: Option<RgbaImage>,
-    after: Option<RgbaImage>,
+    before: Option<Frames>,
+    after: Option<Frames>,
     diff: PictureDiff,
-    /// Which pixels changed, for a same-size pair.
-    mask: Option<Vec<bool>>,
+    timeline: Vec<Moment>,
+    moment: usize,
+    /// While playing: when the current moment started showing.
+    playing: Option<Instant>,
     mode: PictureMode,
     swipe_percent: u16,
     picker: Picker,
@@ -174,24 +420,49 @@ impl PictureViewer {
         if !picture::is_picture_pair(&before_bytes, &after_bytes) {
             return None;
         }
-        let diff = picture::diff(&before_bytes, &after_bytes).ok()?;
-        let pixels = |bytes: &[u8]| {
-            (!bytes.is_empty())
-                .then(|| picture::decode(bytes).ok().map(|(_, pixels)| pixels))
-                .flatten()
-        };
-        let (before_pixels, after_pixels) = (pixels(&before_bytes), pixels(&after_bytes));
-        let mask = match (&before_pixels, &after_pixels, &diff.comparison) {
-            (Some(b), Some(a), Comparison::Pixels { .. }) => Some(picture::changed_mask(b, a)),
-            _ => None,
-        };
-        Some(Self {
-            before_name: before.display().to_string(),
-            after_name: after.display().to_string(),
-            before: before_pixels,
-            after: after_pixels,
+        // Decoded once and kept: an animation's frames are the expensive part.
+        let (before_decoded, after_decoded) =
+            picture::decode_pair(&before_bytes, &after_bytes).ok()?;
+        Some(Self::from_decoded(
+            before.display().to_string(),
+            after.display().to_string(),
+            before_decoded,
+            after_decoded,
+            picker,
+            annotating,
+        ))
+    }
+
+    /// The view of two pictures already decoded (a glyph, a page, a picture in an archive), each
+    /// pane titled with its name; a side that is `None` is absent.
+    pub fn from_decoded(
+        before_name: String,
+        after_name: String,
+        before: picture::Decoded,
+        after: picture::Decoded,
+        picker: Picker,
+        annotating: bool,
+    ) -> Self {
+        let diff = picture::compare_decoded(before.as_ref(), after.as_ref());
+        let (before_frames, after_frames) = (
+            before.map(|(_, frames)| frames),
+            after.map(|(_, frames)| frames),
+        );
+        let timeline = timeline(
+            &diff,
+            before_frames.as_ref(),
+            after_frames.as_ref(),
+            annotating,
+        );
+        Self {
+            before_name,
+            after_name,
+            before: before_frames,
+            after: after_frames,
             diff,
-            mask,
+            timeline,
+            moment: 0,
+            playing: None,
             mode: PictureMode::SideBySide,
             swipe_percent: 50,
             picker: {
@@ -201,7 +472,7 @@ impl PictureViewer {
             },
             shown: None,
             annotating,
-        })
+        }
     }
 
     /// Switches to a different drawing protocol (the terminal answered the graphics query).
@@ -232,13 +503,82 @@ impl PictureViewer {
         if annotating && self.mode == PictureMode::Difference {
             self.mode = PictureMode::SideBySide;
         }
+        // The pairing changes with it; stay on the after frame being looked at.
+        let after = self.current().after;
+        self.timeline = timeline(
+            &self.diff,
+            self.before.as_ref(),
+            self.after.as_ref(),
+            annotating,
+        );
+        self.moment = self
+            .timeline
+            .iter()
+            .position(|moment| after.is_some() && moment.after == after)
+            .unwrap_or(0);
         self.shown = None;
     }
 
+    /// True while an animation plays: the caller should draw again soon, not only on a key.
+    pub fn is_playing(&self) -> bool {
+        self.playing.is_some()
+    }
+
+    fn current(&self) -> &Moment {
+        &self.timeline[self.moment.min(self.timeline.len() - 1)]
+    }
+
+    /// How long the current moment shows while playing: the after frame's time, or before's where
+    /// after has none. A delay under 20 ms plays at 100 ms, as browsers do.
+    fn current_delay(&self) -> Duration {
+        let moment = self.current();
+        let delay = match (&self.after, moment.after, &self.before, moment.before) {
+            (Some(frames), Some(index), _, _) | (_, _, Some(frames), Some(index)) => {
+                frames.delay_ms(index)
+            }
+            _ => 0,
+        };
+        Duration::from_millis(if delay < 20 { 100 } else { u64::from(delay) })
+    }
+
+    /// Moves playback on to the moment that should be showing now, wrapping at the end.
+    fn advance_playback(&mut self) {
+        let Some(mut started) = self.playing else {
+            return;
+        };
+        let mut steps = 0;
+        // Bounded: a slow draw skips frames rather than replaying all it missed.
+        while started.elapsed() >= self.current_delay() && steps < self.timeline.len() {
+            started += self.current_delay();
+            self.moment = (self.moment + 1) % self.timeline.len();
+            steps += 1;
+        }
+        if steps == self.timeline.len() {
+            started = Instant::now();
+        }
+        self.playing = Some(started);
+    }
+
     /// Handles a picture view key: `t` cycles the view, `h`/`l` or the arrows move the swipe
-    /// divider. False for any other key, which the viewer leaves to the rest of the app.
+    /// divider, and for an animation `,`/`.` step a frame back or on and space plays or pauses.
+    /// False for any other key, which the viewer leaves to the rest of the app.
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
+        let animated = self.timeline.len() > 1;
         match code {
+            KeyCode::Char('.') if animated => {
+                self.playing = None;
+                self.moment = (self.moment + 1).min(self.timeline.len() - 1);
+            }
+            KeyCode::Char(',') if animated => {
+                self.playing = None;
+                self.moment = self.moment.saturating_sub(1);
+            }
+            KeyCode::Char(' ') if animated => {
+                self.playing = match self.playing {
+                    Some(_) => None,
+                    None => Some(Instant::now()),
+                };
+            }
             KeyCode::Char('t') => {
                 self.mode = self.mode.next();
                 if self.annotating && self.mode == PictureMode::Difference {
@@ -268,10 +608,12 @@ impl PictureViewer {
                 None => "nothing".to_string(),
             };
             return format!(
-                "{} -> {} · view: {} (t)",
+                "{} -> {}{} · view: {} (t){}",
                 side(&self.diff.before),
                 side(&self.diff.after),
-                self.mode.label()
+                self.frame_status(),
+                self.mode.label(),
+                self.drawing_status()
             );
         }
         let side = |info: &Option<picture::PictureInfo>| match info {
@@ -284,7 +626,7 @@ impl PictureViewer {
         let change = match &self.diff.comparison {
             Comparison::OneSided if self.diff.before.is_none() => "added".to_string(),
             Comparison::OneSided => "deleted".to_string(),
-            Comparison::Resized => "resized".to_string(),
+            Comparison::Resized { .. } => "resized".to_string(),
             Comparison::Pixels { regions, .. } if regions.is_empty() => {
                 "no pixel changed".to_string()
             }
@@ -292,23 +634,90 @@ impl PictureViewer {
                 changed_pixels,
                 total_pixels,
                 regions,
+                ..
             } => format!(
                 "{:.2}% of pixels changed, in {} region{}",
                 100.0 * *changed_pixels as f64 / (*total_pixels).max(1) as f64,
                 regions.len(),
                 if regions.len() == 1 { "" } else { "s" }
             ),
+            Comparison::Frames { steps, retimed, .. } => {
+                let counts = FrameCounts::of(steps).describe();
+                if *retimed {
+                    format!("{counts}, retimed")
+                } else {
+                    counts
+                }
+            }
         };
         format!(
-            "{} -> {} · {change} · view: {} (t)",
+            "{} -> {} · {change}{} · view: {} (t){}",
             side(&self.diff.before),
             side(&self.diff.after),
-            self.mode.label()
+            self.frame_status(),
+            self.mode.label(),
+            self.drawing_status()
         )
+    }
+
+    /// " · frame 12/218 → 13/220, changed (,/. step, space play)" for an animation, "" otherwise.
+    /// Without what changed when annotating.
+    fn frame_status(&self) -> String {
+        if self.timeline.len() < 2 {
+            return String::new();
+        }
+        let moment = self.current();
+        let position = |index: Option<usize>, frames: &Option<Frames>| match index {
+            Some(index) => format!("{}/{}", index + 1, frames.as_ref().map_or(0, Frames::count)),
+            None => "-".to_string(),
+        };
+        let change = if self.annotating || moment.change.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", moment.change)
+        };
+        let keys = if self.playing.is_some() {
+            "space pauses"
+        } else {
+            ",/. step, space plays"
+        };
+        format!(
+            " · frame {} -> {}{change} ({keys})",
+            position(moment.before, &self.before),
+            position(moment.after, &self.after)
+        )
+    }
+
+    /// How pictures are drawn, and that `b` changes it: " · half blocks (b: pixels)", or
+    /// " · kitty (b: half blocks)"; nothing when the terminal speaks no protocol.
+    fn drawing_status(&self) -> String {
+        if half_blocks_only() {
+            return " · half blocks (b: pixels)".to_string();
+        }
+        match self.picker.protocol_type() {
+            ProtocolType::Halfblocks => String::new(),
+            protocol => format!(
+                " · {} (b: half blocks)",
+                format!("{protocol:?}").to_lowercase()
+            ),
+        }
+    }
+
+    /// The picker pictures are drawn with: half blocks while [`half_blocks_only`], the terminal's
+    /// otherwise.
+    fn effective_picker(&self) -> Picker {
+        if half_blocks_only() {
+            let mut picker = Picker::halfblocks();
+            picker.set_background_color(Some(BACKDROP));
+            picker
+        } else {
+            self.picker.clone()
+        }
     }
 
     /// Draws the current view into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
+        self.advance_playback();
         let panes: Vec<Rect> = if self.mode == PictureMode::SideBySide {
             Layout::default()
                 .direction(Direction::Horizontal)
@@ -319,8 +728,10 @@ impl PictureViewer {
             vec![area]
         };
         let built = Built {
+            half_blocks: half_blocks_only(),
             mode: self.mode,
             swipe_percent: self.swipe_percent,
+            moment: self.moment,
             outline: self.outline_width(Block::default().borders(Borders::ALL).inner(panes[0])),
             colors,
         };
@@ -330,7 +741,7 @@ impl PictureViewer {
                 .into_iter()
                 .map(|(title, pixels)| {
                     let protocol = pixels.map(|pixels| {
-                        self.picker
+                        self.effective_picker()
                             .new_resize_protocol(DynamicImage::ImageRgba8(over_backdrop(pixels)))
                     });
                     (title, protocol)
@@ -363,7 +774,7 @@ impl PictureViewer {
     /// `pane`: a whole cell in half blocks, whose cell is one picture pixel wide, and two screen
     /// pixels under a graphics protocol.
     fn outline_width(&self, pane: Rect) -> u32 {
-        let half_blocks = self.picker.protocol_type() == ProtocolType::Halfblocks;
+        let half_blocks = self.effective_picker().protocol_type() == ProtocolType::Halfblocks;
         let (per_cell, screen_pixels) = if half_blocks {
             (1, 1)
         } else {
@@ -372,7 +783,7 @@ impl PictureViewer {
         let pane_pixels = u32::from(pane.width.max(1)) * per_cell;
         let widest = [&self.before, &self.after]
             .iter()
-            .filter_map(|side| side.as_ref().map(|pixels| pixels.width()))
+            .filter_map(|side| side.as_ref().map(|frames| frames.dimensions().0))
             .max()
             .unwrap_or(1);
         (widest.div_ceil(pane_pixels) * screen_pixels).max(1)
@@ -380,10 +791,19 @@ impl PictureViewer {
 
     /// One `(title, picture)` per pane of `built.mode`; `None` for a side that has no picture.
     fn composites(&self, built: Built) -> Vec<(String, Option<RgbaImage>)> {
-        let regions: &[Region] = match &self.diff.comparison {
-            Comparison::Pixels { regions, .. } if !self.annotating => regions,
-            _ => &[],
+        let moment = &self.timeline[built.moment.min(self.timeline.len() - 1)];
+        let regions: &[Region] = if self.annotating {
+            &[]
+        } else {
+            &moment.regions
         };
+        let pixels = |frames: &Option<Frames>, index: Option<usize>| -> Option<RgbaImage> {
+            Some(frames.as_ref()?.pixels(index?).into_owned())
+        };
+        let (before_pixels, after_pixels) = (
+            pixels(&self.before, moment.before),
+            pixels(&self.after, moment.after),
+        );
         let outlined = |pixels: &Option<RgbaImage>, color: [u8; 3]| {
             pixels.as_ref().map(|pixels| {
                 let mut pixels = pixels.clone();
@@ -393,13 +813,18 @@ impl PictureViewer {
                 pixels
             })
         };
-        let before_title = format!("before: {}", self.before_name);
-        let after_title = format!("after: {}", self.after_name);
+        let titled = |side: &str, name: &str, index: Option<usize>| match index {
+            _ if self.timeline.len() < 2 => format!("{side}: {name}"),
+            Some(index) => format!("{side}: {name} · frame {}", index + 1),
+            None => format!("{side}: {name} · no frame here"),
+        };
+        let before_title = titled("before", &self.before_name, moment.before);
+        let after_title = titled("after", &self.after_name, moment.after);
         // The other three need both sides at one size: before is scaled to after's.
-        let (Some(before), Some(after)) = (&self.before, &self.after) else {
+        let (Some(before), Some(after)) = (&before_pixels, &after_pixels) else {
             return vec![
-                (before_title, outlined(&self.before, built.colors.delete)),
-                (after_title, outlined(&self.after, built.colors.insert)),
+                (before_title, outlined(&before_pixels, built.colors.delete)),
+                (after_title, outlined(&after_pixels, built.colors.insert)),
             ];
         };
         let before_at_after_size = || {
@@ -416,17 +841,19 @@ impl PictureViewer {
         };
         match built.mode {
             PictureMode::SideBySide => vec![
-                (before_title, outlined(&self.before, built.colors.delete)),
-                (after_title, outlined(&self.after, built.colors.insert)),
+                (before_title, outlined(&before_pixels, built.colors.delete)),
+                (after_title, outlined(&after_pixels, built.colors.insert)),
             ],
             PictureMode::Difference => {
-                let title = match &self.mask {
+                let mask = (before.dimensions() == after.dimensions())
+                    .then(|| picture::changed_mask(before, after));
+                let title = match &mask {
                     Some(_) => "difference: changed pixels on the faded after picture",
                     None => "difference: not comparable pixel by pixel (resized)",
                 };
                 vec![(
                     title.to_string(),
-                    Some(difference(after, self.mask.as_deref(), built.colors.update)),
+                    Some(difference(after, mask.as_deref(), built.colors.update)),
                 )]
             }
             PictureMode::Blend => {
@@ -568,10 +995,118 @@ mod tests {
         PictureViewer::open(before, after, Picker::halfblocks()).expect("a picture pair")
     }
 
+    /// Before: frames 0, 1, 2 of `picture::test_frame`; after: the same with a new frame 5 after
+    /// the first.
+    fn animated_pair(dir: &tempfile::TempDir) -> (std::path::PathBuf, std::path::PathBuf) {
+        let gif = |ks: &[u32]| {
+            picture::test_gif(
+                &ks.iter()
+                    .map(|&k| (picture::test_frame(k), 100))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let (before, after) = (dir.path().join("a.gif"), dir.path().join("b.gif"));
+        std::fs::write(&before, gif(&[0, 1, 2])).expect("writes");
+        std::fs::write(&after, gif(&[0, 5, 1, 2])).expect("writes");
+        (before, after)
+    }
+
+    fn sides(viewer: &PictureViewer) -> (Option<usize>, Option<usize>) {
+        (viewer.current().before, viewer.current().after)
+    }
+
+    #[test]
+    fn tmux_clients_are_trusted_for_what_their_terminal_draws() {
+        assert_eq!(
+            protocols_for_client("xterm-kitty", "kitty(0.44.0)", "RGB,title"),
+            vec![ProtocolType::Kitty]
+        );
+        assert_eq!(
+            protocols_for_client("xterm-256color", "", "bpaste,clipboard"),
+            Vec::<ProtocolType>::new(),
+            "Termius, say: half blocks, and no query"
+        );
+        assert_eq!(
+            protocols_for_client("xterm-256color", "WezTerm 20240203", "sixel,RGB"),
+            vec![ProtocolType::Iterm2, ProtocolType::Sixel]
+        );
+    }
+
+    #[test]
+    fn an_animation_steps_through_its_frames_as_the_diff_pairs_them() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = animated_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        assert_eq!(sides(&viewer), (Some(0), Some(0)));
+        assert!(viewer.handle_key(KeyCode::Char('.')));
+        assert_eq!(sides(&viewer), (None, Some(1)), "the added frame");
+        assert!(
+            viewer.status().contains("frame - -> 2/4, added"),
+            "{}",
+            viewer.status()
+        );
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (Some(1), Some(2)));
+        viewer.handle_key(KeyCode::Char(','));
+        viewer.handle_key(KeyCode::Char(','));
+        viewer.handle_key(KeyCode::Char(','));
+        assert_eq!(sides(&viewer), (Some(0), Some(0)), "clamped at the first");
+
+        assert!(viewer.handle_key(KeyCode::Char(' ')));
+        assert!(viewer.is_playing());
+        viewer.handle_key(KeyCode::Char('.'));
+        assert!(!viewer.is_playing(), "stepping pauses");
+
+        viewer.moment = 1;
+        let panes = viewer.composites(Built {
+            moment: 1,
+            ..built(PictureMode::SideBySide)
+        });
+        assert!(panes[0].0.ends_with("no frame here"), "{}", panes[0].0);
+        assert!(panes[0].1.is_none());
+        assert!(panes[1].0.ends_with("frame 2"), "{}", panes[1].0);
+    }
+
+    /// The engine's pairing is part of its answer, so a human judging the pair steps through the
+    /// frames by position.
+    #[test]
+    fn annotating_pairs_frames_by_position_and_says_nothing_about_them() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = animated_pair(&dir);
+        let mut viewer =
+            PictureViewer::open_for_annotation(&a, &b, Picker::halfblocks()).expect("a pair");
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (Some(1), Some(1)));
+        assert!(!viewer.status().contains("added"), "{}", viewer.status());
+        viewer.handle_key(KeyCode::Char('.'));
+        viewer.handle_key(KeyCode::Char('.'));
+        assert_eq!(sides(&viewer), (None, Some(3)));
+
+        viewer.set_annotating(false);
+        assert_eq!(
+            sides(&viewer),
+            (Some(2), Some(3)),
+            "showing the engine's pairing keeps the after frame in view"
+        );
+    }
+
+    #[test]
+    fn a_still_pair_leaves_the_frame_keys_to_the_app() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        for key in [',', '.', ' '] {
+            assert!(!viewer.handle_key(KeyCode::Char(key)), "{key:?}");
+        }
+        assert!(!viewer.status().contains("frame"), "{}", viewer.status());
+    }
+
     fn built(mode: PictureMode) -> Built {
         Built {
+            half_blocks: false,
             mode,
             swipe_percent: 50,
+            moment: 0,
             outline: 1,
             colors: COLORS,
         }

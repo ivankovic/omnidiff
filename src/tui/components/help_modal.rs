@@ -67,12 +67,32 @@ Files and diffing
   Esc              While a diff is computing: cancel it and keep the previous result
 
 Pictures
-  t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF): cycle the
+  t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF, and Windows
+                   .cur and .ani cursors): cycle the
                    view - side by side with the changed regions outlined, difference
                    (changed pixels over the faded after picture), blend, swipe. Drawn as
                    pixels where the terminal speaks kitty, sixel or iTerm2 graphics, in
                    half blocks elsewhere
   h/l, Left/Right  In the swipe view: move the divider between before and after
+  ,/. and Space    For an animation: step a frame back or on, play or pause
+  b                Draw every picture in half blocks, or with the terminal's graphics again:
+                   for a terminal that claimed pictures it cannot show (crossed-out boxes).
+                   OMNIDIFF_GRAPHICS=halfblocks starts that way and sends no graphics query
+
+Archives and other containers
+  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2), cursor themes
+                   (X cursors, Hyprland .hlc), fonts (TTF, OTF, WOFF, WOFF2, EOT), message
+                   catalogs (.mo, .qm) or PDFs: move through the members that changed, were
+                   added or were removed; the selected one shows beside the list - text as
+                   a line diff, pictures, glyphs and pages as above
+  a                Show every member, unchanged ones too, or only the changed again
+  g                Show every changed member that is a picture at once, as a grid on each
+                   side - a font's changed glyphs, a theme's changed cursors
+  J/K, PgDn/PgUp   In a text member - diffed by OmniDiff as its language, a Java class file
+                   as a listing of its methods and what they call - jump to the next or
+                   previous change, or page; long lines are wrapped, long unchanged runs cut
+  Enter            Open a text member in the full diff view, or a member that is itself an
+                   archive in place; Backspace comes back out
 
 Appearance
   c                Open the theme editor: a Theme dropdown, a syntax-highlighting
@@ -247,7 +267,8 @@ mod tests {
     /// Sized past `HELP_TEXT`'s extent so the result does not depend on scrolling or wrapping.
     #[test]
     fn help_modal_renders_keybindings() {
-        let backend = TestBackend::new(120, 100);
+        // Tall enough for the whole text, About at its foot included.
+        let backend = TestBackend::new(120, 140);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut modal = HelpModal::new(OverlayTheme::default());
 

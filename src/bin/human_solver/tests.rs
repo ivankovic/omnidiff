@@ -928,7 +928,10 @@ fn sample_diff_line_count_is_nonzero_for_a_real_sample_on_disk() {
         return;
     };
     // A picture sample's pair is binary, and has no lines to count.
-    let Some(name) = names.iter().find(|name| !pictures::is_picture_sample(name)) else {
+    let Some(name) = names
+        .iter()
+        .find(|name| content::sample_family(name).is_none())
+    else {
         return;
     };
     assert!(
@@ -4526,15 +4529,17 @@ fn the_cmpl_and_unmarked_filters_select_the_same_rows() {
 }
 
 #[test]
-fn next_dataset_filter_cycles_through_diff_datasets_then_pictures_and_back_to_all() {
-    // Walks every entry, so a new dataset needs no edit here.
+fn next_dataset_filter_cycles_through_diff_datasets_then_content_families_and_back_to_all() {
+    // Walks every entry, so a new dataset or family needs no edit here.
     let mut current = None;
-    for &dataset in DIFF_DATASETS {
+    for dataset in DIFF_DATASETS
+        .iter()
+        .copied()
+        .chain(Family::ALL.map(Family::name))
+    {
         current = next_dataset_filter(current);
         assert_eq!(current, Some(dataset));
     }
-    current = next_dataset_filter(current);
-    assert_eq!(current, Some(pictures::PICTURE_DATASET));
     assert_eq!(next_dataset_filter(current), None);
 }
 
@@ -4542,15 +4547,23 @@ fn next_dataset_filter_cycles_through_diff_datasets_then_pictures_and_back_to_al
 fn mixed_picker_options() -> Vec<(String, &'static str)> {
     vec![
         ("alpha".to_string(), "handmade"),
-        ("png-a".to_string(), pictures::PICTURE_DATASET),
-        ("png-b".to_string(), pictures::PICTURE_DATASET),
+        ("png-a".to_string(), Family::Pictures.name()),
+        ("png-b".to_string(), Family::Pictures.name()),
     ]
 }
 
-fn mixed_picture_verdicts() -> std::collections::HashMap<String, Option<human_picture::Verdict>> {
+/// A picture fixture's row with the verdict spelled `verdict`.
+fn picture_row(verdict: &str) -> ContentRow {
+    ContentRow::of(Some(human_content::HumanContent {
+        verdict: Some(human_content::Judgement::Verdict(verdict.parse().unwrap())),
+        ..Default::default()
+    }))
+}
+
+fn mixed_picture_verdicts() -> std::collections::HashMap<String, ContentRow> {
     std::collections::HashMap::from([
-        ("png-a".to_string(), Some(human_picture::Verdict::Resized)),
-        ("png-b".to_string(), None),
+        ("png-a".to_string(), picture_row("artifacts+resized")),
+        ("png-b".to_string(), ContentRow::of(None)),
     ])
 }
 
@@ -4563,7 +4576,7 @@ fn the_cmpl_filter_reads_a_pictures_verdict() {
     let verdicts = mixed_picture_verdicts();
     let data = DiffPickerData {
         unmarked: Some(&unmarked),
-        pictures: Some(&verdicts),
+        content: Some(&verdicts),
         ..DiffPickerData::default()
     };
 
@@ -4595,20 +4608,18 @@ fn the_cmpl_filter_reads_a_pictures_verdict() {
 #[test]
 fn the_verdict_column_sorts_judged_pictures_first() {
     let mut options = mixed_picker_options();
-    options.push(("png-c".to_string(), pictures::PICTURE_DATASET));
+    options.push(("png-c".to_string(), Family::Pictures.name()));
     let mut verdicts = mixed_picture_verdicts();
-    verdicts.insert(
-        "png-c".to_string(),
-        Some(human_picture::Verdict::ContentChange),
-    );
+    verdicts.insert("png-c".to_string(), picture_row("edited"));
     let data = DiffPickerData {
-        pictures: Some(&verdicts),
+        content: Some(&verdicts),
         ..DiffPickerData::default()
     };
 
     assert_eq!(
         visible_diff_options(&options, &sort_view(DiffColumn::Verdict), data),
-        vec!["png-c", "png-a", "alpha", "png-b"]
+        vec!["png-a", "png-c", "alpha", "png-b"],
+        "artifacts, then edited"
     );
 }
 
@@ -4655,7 +4666,7 @@ fn render_open_diff_picker_shows_a_pictures_verdict_and_dashes_for_what_only_cod
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
-                    pictures: Some(&verdicts),
+                    content: Some(&verdicts),
                     ..DiffPickerData::default()
                 },
                 None,
@@ -11355,34 +11366,39 @@ fn t_opens_the_text_view_on_the_selected_nodes_with_the_focused_side_first() {
 
 #[test]
 fn a_picture_stub_asserts_the_verdict_or_pins_the_engines_mismatch() {
-    use omnidiff::test::helper::human_picture::Verdict;
-    let agreeing = pictures::stub_contents("png-x-a-b-c", None);
+    use omnidiff::diff::content::{Level, Tag, Verdict};
+    use omnidiff::test::helper::human_content::Mismatches;
+    let agreeing = content::stub_contents(Family::Pictures, "png-x-a-b-c", &Mismatches::default());
     assert!(
-        agreeing.contains("fn verdict() -> Result<()>"),
+        agreeing.contains("fn verdicts() -> Result<()>"),
         "{agreeing}"
     );
     assert!(
-        agreeing.contains("assert_matches_human_verdict(\"png-x-a-b-c\")"),
+        agreeing.contains("assert_matches_human_verdicts(Family::Pictures, \"png-x-a-b-c\")"),
         "{agreeing}"
     );
-    let pinned = pictures::stub_contents("png-x-a-b-c", Some(Verdict::Replaced));
+    let pinned = content::stub_contents(
+        Family::Pictures,
+        "png-x-a-b-c",
+        &Mismatches {
+            pair: Some(Verdict::new(Level::Artifacts).with(Tag::Resized)),
+            members: Vec::new(),
+        },
+    );
     assert!(
         pinned.contains("Recorded as found, not examined."),
         "{pinned}"
     );
-    assert!(
-        pinned.contains("human_picture::Verdict::Replaced"),
-        "{pinned}"
-    );
+    assert!(pinned.contains("Some(\"artifacts+resized\")"), "{pinned}");
 }
 
 #[test]
 fn a_picture_pair_is_found_by_its_before_and_after_files() {
     let dir = tempfile::tempdir().unwrap();
-    assert!(pictures::pair_paths(dir.path()).is_none());
+    assert!(content::pair_paths(dir.path()).is_none());
     fs::write(dir.path().join("before.png.test"), b"x").unwrap();
     fs::write(dir.path().join("after.png.test"), b"y").unwrap();
     fs::write(dir.path().join("README.md"), b"z").unwrap();
-    let (before, after) = pictures::pair_paths(dir.path()).unwrap();
+    let (before, after) = content::pair_paths(dir.path()).unwrap();
     assert!(before.ends_with("before.png.test") && after.ends_with("after.png.test"));
 }

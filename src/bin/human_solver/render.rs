@@ -1472,9 +1472,9 @@ pub(crate) fn render_open_diff_picker(
                 Some(true) => "•",
                 None => "?",
             };
-            // A picture has no mapping, painting or text diff to measure: `–`, not `?`, which
+            // Content has no mapping, painting or text diff to measure: `–`, not `?`, which
             // would read as "not scanned yet".
-            let picture = data.is_picture(name);
+            let picture = data.is_content(name);
             let measured = |value: Option<String>| match value {
                 _ if picture => "–".to_string(),
                 Some(value) => value,
@@ -1489,8 +1489,8 @@ pub(crate) fn render_open_diff_picker(
             let invariant_cell = measured(data.invariants_of(name).map(|count| count.to_string()));
             let size_cell = measured(data.size_of(name).map(|lines| lines.to_string()));
             let verdict_cell = data
-                .verdict_of(name)
-                .map(|verdict| verdict.label())
+                .content_of(name)
+                .map(|row| row.label.as_str())
                 .unwrap_or_default();
             Row::new(vec![
                 Cell::from(if noted {

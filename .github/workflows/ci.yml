@@ -228,15 +228,33 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: The toolchain below is Cargo.toml's rust-version
-        run: grep -q '^rust-version = "1.90"$' Cargo.toml
+        run: grep -q '^rust-version = "1.92"$' Cargo.toml
 
-      - uses: dtolnay/rust-toolchain@1.90
+      - uses: dtolnay/rust-toolchain@1.92
 
       - uses: Swatinem/rust-cache@v2
         with:
           key: msrv
 
       - run: cargo check --locked
+
+  # The picture view's graphics detection, end to end in a real tmux with two clients (one a fake
+  # kitty that answers the graphics query): unit tests cannot reach tmux's passthrough, which is
+  # where the protocol detection went wrong. `make test-graphics` falls back to podman, which the
+  # runner has, when tmux is not installed.
+  graphics:
+    name: graphics detection (tmux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: graphics
+
+      - run: make test-graphics
 
   # `cargo publish --dry-run` without the upload: packages the crate from `include` and builds it
   # from its own tarball, so a file the allow-list dropped (an `include_str!` target, a module)
