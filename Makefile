@@ -35,9 +35,9 @@ FEATURES ?= stats
 OUT_DIR ?= research/data/ablation
 
 .PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
-	benchmark-quality diff-inventory lint-python ci benchmark-ablation check-quality \
+	benchmark-quality benchmark-content diff-inventory lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
-	readme-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
+	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
@@ -121,6 +121,13 @@ install-hooks:
 benchmark-quality:
 	$(BENCH_QUALITY) --csv
 
+# Speed and accuracy of content diffs per family, the README's figures for content other than code.
+# Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
+# materialize_test_diffs) and writes research/data/performance/content_speed.csv.
+benchmark-content:
+	cargo run --release --features $(FEATURES) --bin benchmark_content -- \
+		--csv research/data/performance/content_speed.csv
+
 # Regenerates the checked-in src/test/data/diffs.csv fixture inventory; re-run after changing
 # fixtures or their ground truths.
 diff-inventory:
@@ -150,6 +157,16 @@ readme-screenshot:
 		"$$dir"/before.* "$$dir"/after.* --out "$$tmp/still.json" && \
 	cd research && uv run python ../scripts/render_tui_screenshot.py \
 		--still "$$tmp/still.json" --out ../$(README_SCREENSHOT_OUT)
+
+# Records assets/content/: one GIF per content example (a PDF, a font, an archive, pictures, ...)
+# in scripts/record_content_gif.py, and cases.json, which the showcase reads. Each is git's
+# "Binary files differ", omnidiff's headless report, then the viewer drawn by the TUI's own widgets
+# (render_content_stills) with its pictures pasted in as a kitty terminal shows them. Committed;
+# re-run after viewer changes. Needs research/'s uv environment.
+content-gif:
+	cargo build --release --features test-fixtures --bin render_content_stills --bin omnidiff
+	cd research && uv run python ../scripts/record_content_gif.py \
+		--omnidiff ../target/release/omnidiff --stills ../target/release/render_content_stills
 
 # Regenerates THIRD-PARTY-NOTICES.md, the licenses of every crate the product binary links, from
 # Cargo.lock (cargo-about, `cargo install cargo-about --features cli`). Ships beside the binary in

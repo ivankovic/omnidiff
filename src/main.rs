@@ -127,8 +127,9 @@ fn parse_positive_rate(value: &str) -> Result<f64, String> {
 #[command(
     // Explicit: without it clap's derive takes the nearest preceding doc comment (`Command`'s)
     // as the description in `--help` and the man page.
-    about = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs",
-    long_about = "Fast, robust, syntax-aware code diffing.\n\n\
+    about = "Fast, robust, accurate content-aware diffing",
+    long_about = "Fast, robust, accurate content-aware diffing: code by its syntax, and \
+        pictures, archives, fonts, cursors, message catalogs and PDFs by what they hold.\n\n\
         With no arguments, opens an interactive two-panel terminal UI. With BEFORE and AFTER \
         file paths, diffs them directly - as the TUI, as plain text (--headless), or as a single \
         JSON object (--mode json) for editor integrations. Also serves as a `git difftool` \
@@ -1082,7 +1083,7 @@ mod tests {
 
         let about = Args::command().get_about().unwrap().to_string();
         assert!(
-            about.starts_with("Fast, robust, syntax-aware code diffing"),
+            about.starts_with("Fast, robust, accurate content-aware diffing"),
             "{about}"
         );
         assert_eq!(

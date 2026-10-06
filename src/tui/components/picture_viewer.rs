@@ -241,6 +241,30 @@ pub fn set_half_blocks_only(on: bool) {
     HALF_BLOCKS_ONLY.store(on, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// A picture an offscreen render (`tui::screenshot`) leaves for its caller to draw: the cells it
+/// covers and its pixels, over the backdrop. A terminal that speaks a graphics protocol scales them
+/// to fit those cells, keeping their shape, from the top left (`Resize::Scale`).
+#[derive(Debug, Clone)]
+pub struct Placement {
+    pub area: Rect,
+    pub pixels: RgbaImage,
+}
+
+thread_local! {
+    /// While `Some`, [`PictureViewer::draw`] records its pictures here instead of drawing them.
+    static PLACEMENTS: std::cell::RefCell<Option<Vec<Placement>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Runs `draw` with every picture recorded rather than drawn, and returns them with its result:
+/// an offscreen terminal has no pixels, so a still of the viewer draws its pictures itself.
+pub fn record_placements<T>(draw: impl FnOnce() -> T) -> (T, Vec<Placement>) {
+    PLACEMENTS.with(|placements| *placements.borrow_mut() = Some(Vec::new()));
+    let result = draw();
+    let placements = PLACEMENTS.with(|placements| placements.borrow_mut().take());
+    (result, placements.unwrap_or_default())
+}
+
 /// The four ways a picture pair is shown, in the order `t` steps through them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PictureMode {
@@ -735,6 +759,28 @@ impl PictureViewer {
             outline: self.outline_width(Block::default().borders(Borders::ALL).inner(panes[0])),
             colors,
         };
+        if PLACEMENTS.with(|placements| placements.borrow().is_some()) {
+            for (pane, (title, pixels)) in panes.iter().zip(self.composites(built)) {
+                let block = Block::default().borders(Borders::ALL).title(title.as_str());
+                let inner = block.inner(*pane);
+                frame.render_widget(block, *pane);
+                match pixels {
+                    Some(pixels) => PLACEMENTS.with(|placements| {
+                        if let Some(placements) = placements.borrow_mut().as_mut() {
+                            placements.push(Placement {
+                                area: inner,
+                                pixels: over_backdrop(pixels),
+                            });
+                        }
+                    }),
+                    None => frame.render_widget(
+                        Paragraph::new("nothing").style(Style::new().fg(Color::DarkGray)),
+                        inner,
+                    ),
+                }
+            }
+            return;
+        }
         if self.shown.as_ref().map(|(was, _)| *was) != Some(built) {
             let shown = self
                 .composites(built)
@@ -772,7 +818,7 @@ impl PictureViewer {
 
     /// How many picture pixels wide an outline must be to show once the picture is scaled to fit
     /// `pane`: a whole cell in half blocks, whose cell is one picture pixel wide, and two screen
-    /// pixels under a graphics protocol.
+    /// pixels under a graphics protocol - or one picture pixel, for a picture scaled up.
     fn outline_width(&self, pane: Rect) -> u32 {
         let half_blocks = self.effective_picker().protocol_type() == ProtocolType::Halfblocks;
         let (per_cell, screen_pixels) = if half_blocks {
@@ -786,7 +832,10 @@ impl PictureViewer {
             .filter_map(|side| side.as_ref().map(|frames| frames.dimensions().0))
             .max()
             .unwrap_or(1);
-        (widest.div_ceil(pane_pixels) * screen_pixels).max(1)
+        // A picture scaled up to fill the pane gets one picture pixel, which shows as more than
+        // `screen_pixels`; rounding up to whole picture pixels after scaling, not before, keeps
+        // it from doubling that.
+        (widest * screen_pixels).div_ceil(pane_pixels).max(1)
     }
 
     /// One `(title, picture)` per pane of `built.mode`; `None` for a side that has no picture.
@@ -993,6 +1042,26 @@ mod tests {
 
     fn viewer(before: &Path, after: &Path) -> PictureViewer {
         PictureViewer::open(before, after, Picker::halfblocks()).expect("a picture pair")
+    }
+
+    /// The bug this guards: a 96-pixel cursor scaled up to a 500-pixel pane had outlines two
+    /// picture pixels, eleven screen pixels, wide, which covered most of the cursor.
+    #[test]
+    fn an_outline_is_two_screen_pixels_and_at_least_one_picture_pixel() {
+        let dir = tempfile::tempdir().unwrap();
+        let width = |side: u32| {
+            let picture = RgbaImage::from_pixel(side, side, Rgba([255, 255, 255, 255]));
+            let (a, b) = (png(&picture, &dir, "a.png"), png(&picture, &dir, "b.png"));
+            #[allow(deprecated)]
+            let mut picker = Picker::from_fontsize(ratatui_image::FontSize::new(10, 20));
+            picker.set_protocol_type(ProtocolType::Kitty);
+            let viewer = PictureViewer::open(&a, &b, picker).expect("a picture pair");
+            // A 50-cell pane: 500 screen pixels.
+            viewer.outline_width(Rect::new(0, 0, 50, 25))
+        };
+        assert_eq!(width(96), 1, "scaled up: one picture pixel");
+        assert_eq!(width(500), 2, "at its own size: two");
+        assert_eq!(width(2000), 8, "scaled down by four: eight");
     }
 
     /// Before: frames 0, 1, 2 of `picture::test_frame`; after: the same with a new frame 5 after

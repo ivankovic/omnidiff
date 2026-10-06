@@ -6,12 +6,25 @@
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ivankovic/omnidiff/main/research/data/coverage/badge.json)](CONTRIBUTING.md#coverage)
 [![License: AGPL v3+](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 
-Fast, robust, accurate, syntax-aware code diffing.
+Fast, robust, accurate content-aware diffing.
 
-- **Fast:** under 100ms for 93% of changes
-- **Robust:** can diff 99.95% of changes
-- **Accurate:** 70% of changes perfect, 90% near-perfect
-- **Syntax-aware:** 24 supported languages, text and binary fallback as needed
+- **Robust:** can diff 99.95% of code changes
+- **Content-aware:** 98.8% of changes diffed using content-specific algorithms
+
+| Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
+|---|---|---|---|
+| Code | 93% | 70% | 90% |
+| Pictures | 93% | 54% | 85% |
+| Cursors | 100% | 100% | 100% |
+| Fonts | 89% | not judged yet | not judged yet |
+| Archives | 86% | not judged yet | not judged yet |
+| Message catalogs | 100% | not judged yet | not judged yet |
+| PDFs | 37% | not judged yet | not judged yet |
+
+**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
+changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
+OmniDiff, and [content examples](https://ivankovic.github.io/omnidiff/showcase/content.html): an
+OpenDocument file, a compiled translation catalog, and pictures, still and animated.
 
 ![An animation of one Python refactoring painted two ways. A vertical bar sweeps left to right and
 back across a two-pane diff. On one side of the bar, GNU diff marks whole lines as deleted and
@@ -19,14 +32,25 @@ inserted; on the other, OmniDiff paints only the parts that changed - `sum(numbe
 `len(numbers)` rather than the whole assignment, and `numbers` shown as moved rather than
 rewritten.](/assets/diff-vs-omnidiff.gif)
 
-**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real changes,
-recorded from the command-line tool and compared side by side in Unix `diff` and in OmniDiff.
-
-The terminal UI, in its light theme:
+Various light and dark themes are available:
 
 ![A screenshot of OmniDiff's two-panel terminal UI in a light theme, showing the same Python
 refactoring, with the changed right-hand sides highlighted rather than whole
 lines](/assets/readme-screenshot.png)
+
+Files are diffed based on type. A PDF diagram with one box renamed, and a web font with twenty
+icons redrawn:
+
+![An animation in three parts. First, git diff on a PDF prints only "Binary files
+a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf differ". Then OmniDiff, as git's
+external diff, reports that the metadata and page 1 changed and where. Then OmniDiff's viewer lists
+the changed members and shows page 1 before and after side by side, the renamed box outlined on
+both, and then the difference alone.](/assets/content/pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en.gif)
+
+![An animation of a Font Awesome web font. git diff prints only "Binary files differ"; OmniDiff
+reports 21 changed members and lists each changed glyph; its viewer shows the font's name table
+with the version and style changed, one glyph before and after, and then all twenty changed icons
+in a grid, each change outlined.](/assets/content/woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif)
 
 # Installation
 
@@ -56,8 +80,7 @@ brew install ivankovic/omnidiff/omnidiff
 
 ## Debian and Ubuntu
 
-`.deb` packages are available in a signed apt repository, so `apt upgrade` picks up new
-versions like any other package. amd64 and arm64:
+`.deb` packages for amd64 and arm64 are available in a signed apt repository:
 
 ```sh
 sudo install -d -m 0755 /etc/apt/keyrings
@@ -71,7 +94,7 @@ sudo apt update && sudo apt install omnidiff
 
 ## Nix and NixOS
 
-On NixOS, or anywhere with Nix installed, no installation step is needed at all:
+On NixOS, or anywhere with Nix installed:
 
 ```
 nix run github:ivankovic/omnidiff
@@ -83,7 +106,8 @@ If flakes are not enabled in your Nix configuration, add
 ## Arch and Gentoo
 
 Recipes for Arch and Gentoo live in [`packaging/`](packaging/): the PKGBUILD builds locally with
-`makepkg -si`, and the Gentoo ebuild is ready for an overlay.
+`makepkg -si`, and the Gentoo ebuild is ready for an overlay. The two distros are overwhelmed and
+their repositories open and close to new packages sporadically.
 
 ## Editor integration
 
@@ -108,72 +132,42 @@ Press `?` in the viewer for the full list of keybindings.
 
 The TUI uses 24-bit color when the terminal advertises it with `COLORTERM=truecolor`, and the
 nearest 256 colors otherwise (macOS Terminal.app, or most terminals over ssh, which does not
-forward `COLORTERM`). If your terminal supports 24-bit color but does not set it, run
+forward `COLORTERM`). If your terminal supports 24-bit color but does not advertise it, run
 `export COLORTERM=truecolor`.
 
 ## In a browser
 
 For reviewing changes in a browser, see [codereview](https://github.com/ivankovic/codereview).
-Note: codereview is at v0.0.0; use it at your own risk.
+
+**Note: codereview is at v0.0.0; use it at your own risk.**
 
 ## Headless / batch mode
 
 `omnidiff --headless BEFORE AFTER`, or its synonym `--batch`, prints the diff as plain text, with
-optional color, instead of opening the TUI. Use this for scripts, CI, or any case where stdout is
-not a real terminal. Headless mode also starts automatically whenever stdout is not a terminal, for
-example when piped into `less` or redirected to a file. Because of this, `omnidiff BEFORE AFTER |
-less` works without the flag.
+optional color, instead of opening the TUI. Use this for scripts or CI. Headless mode also starts
+automatically whenever stdout is not a terminal, for example when piped into `less` or redirected to
+a file. Because of this, `omnidiff BEFORE AFTER | less` works without the flag.
 
-Every printed line is prefixed with its line number, so the moved-chunk headers' "Moved to lines
-40-60" cross-references can actually be followed. OmniDiff collapses long runs of unchanged
-lines. It keeps 3 lines of context on each side of a change (override with `--context N`), the
-same convention as `diff -u`. OmniDiff also prefixes each hunk with the nearest enclosing
-function, class, or struct line, when that line is not otherwise visible. This shows the location
-of a change deep inside a large file.
+OmniDiff collapses long runs of unchanged lines. It keeps 3 lines of context on each side of a
+change (override with `--context N`), the same convention as `diff -u`. OmniDiff also prefixes each
+hunk with the nearest enclosing function, class, or struct line, when that line is not otherwise
+visible. This shows the location of a change deep inside a large file.
 
-Colors are on by default (git's pager renders them); pass `--color never`, or set `NO_COLOR=1`, to
-disable ANSI colors, for example when you redirect output to a file - `--color always` forces them
-even under `NO_COLOR`.
+Colors are on by default; pass `--color never`, or set `NO_COLOR=1`, to disable ANSI colors, for
+example when you redirect output to a file - `--color always` forces them even under `NO_COLOR`.
 
 OmniDiff exits `0` on success and `2` on error. For scripting, pass `--exit-code` to additionally
-get `1` when the files differ, the `diff(1)` convention. That is opt-in rather than the default
-for the same reason `git diff` exits `0` even when files differ: OmniDiff's usual non-interactive
-callers are version control systems driving it as a display tool, and they read a non-zero exit as
-"the tool failed" - `jj` warns on every file, and `git difftool` with `difftool.trustExitCode=true`
-aborts the whole diff. (The 7-argument `GIT_EXTERNAL_DIFF` form stays at `0` even with
-`--exit-code`, since git treats a non-zero exit there as fatal.)
+get `1` when the files differ. This follows the `diff(1)` convention. `--exit-code` is opt-in rather
+than the default for the same reason `git diff` exits `0` even when files differ: OmniDiff's usual
+non-interactive callers are version control systems driving it as a display tool, and they read a
+non-zero exit as "the tool failed" - `jj` warns on every file, and `git difftool` with
+`difftool.trustExitCode=true` aborts the whole diff. (The 7-argument `GIT_EXTERNAL_DIFF` form stays
+at `0` even with `--exit-code`, since git treats a non-zero exit there as fatal.)
 
 ## JSON output
 
-`omnidiff --mode json BEFORE AFTER` prints the diff as one JSON object, for editors and tools that
-place highlights on their own buffers. Each side carries its path, its detected language and its
-hunks, and each hunk is an operation (`delete`, `insert`, `update`, `move`) with a range in that
-side's own file:
-
-```json
-{
-  "before": {
-    "path": "old.rs",
-    "language": "Rust",
-    "hunks": [
-      { "operation": "delete", "range": { "start_row": 12, "start_column": 4, "end_row": 12, "end_column": 20 },
-        "reference_line": 10 }
-    ]
-  },
-  "after": { "path": "new.rs", "language": "Rust", "hunks": [] },
-  "large_residual": false,
-  "summary": "comment_only"
-}
-```
-
-Rows and columns are 0-indexed, and columns are byte offsets within their row, as tree-sitter
-reports them. `reference_line` is the row of the nearest enclosing named declaration, and a
-`move` also carries a `move_target` range in the other file. `summary` is present only when the diff is one of the special shapes the TUI's
-status bar names, such as `comment_only` or `whitespace_only`. A binary file on either side
-answers with `"binary": true` and empty hunks. Unlike headless mode, JSON output is never chosen
-automatically: only `--mode json` selects it, so a pipe never receives it by surprise. The
-[VS Code extension](https://github.com/ivankovic/omnidiff-vscode) is built on this output; the
-authoritative field list is `src/tui/json_output.rs`.
+`omnidiff --mode json BEFORE AFTER` prints the diff as one JSON object. Its fields are described
+in [`src/tui/json_output.schema.json`](src/tui/json_output.schema.json), a JSON Schema.
 
 ## Git integration
 
@@ -184,7 +178,7 @@ whether to configure it globally or for the current repository only:
 omnidiff git configure
 ```
 
-Or configure it by hand:
+### Configure by hand
 
 ```
 git config difftool.omnidiff.cmd 'omnidiff "$LOCAL" "$REMOTE"'
@@ -194,6 +188,8 @@ git difftool --tool=omnidiff
 Run `git config diff.tool omnidiff` to make plain `git difftool` use OmniDiff by default, without
 needing `--tool`. If you do not want git to ask "view diff ... [Y/n]?" before every file, run `git
 config difftool.prompt false`.
+
+### Usage
 
 **`git difftool` opens the interactive TUI. `git diff` and `git log -p` never do.** `git diff`
 pipes its output through git's pager, and a full-screen TUI cannot draw onto a pipe, so OmniDiff
@@ -209,11 +205,11 @@ path needs no `difftool` config:
 GIT_EXTERNAL_DIFF=omnidiff git diff
 ```
 
-Binary files - anything OmniDiff cannot read as text, a PDF or an image - get a one-line
-`Binary file <path> differs` notice instead of a diff, the same stand-in git and `diff(1)` print
-for them. They likewise never block the rest of a `git diff`: an external diff that exits non-zero
-makes git abandon the *entire* run, so OmniDiff reports an unshowable file as a successful diff of
-nothing rather than as a failure.
+Pictures, archives, fonts and the rest of the [supported content](#supported-content) get a short
+report of what changed in them. Any other binary file gets a one-line `Binary file <path> differs`
+notice instead of a diff, the same stand-in git and `diff(1)` print for them. Neither ever blocks
+the rest of a `git diff`: an external diff that exits non-zero makes git abandon the *entire* run,
+so OmniDiff reports an unshowable file as a successful diff of nothing rather than as a failure.
 
 ## Jujutsu (jj) integration
 
@@ -224,7 +220,7 @@ its own configuration. Run the setup wizard:
 omnidiff jj configure
 ```
 
-Or configure it by hand:
+### Configure by hand
 
 ```
 jj config set --user merge-tools.omnidiff.program omnidiff
@@ -245,13 +241,15 @@ Use `--repo` in place of `--user` to configure the current repository only.
 it, jj passes one changed file pair at a time, keeping each file's real path and extension, so
 language detection works exactly as it does under git.
 
+### Usage
+
 `jj diff` runs its formatter under a pager, so OmniDiff renders in its non-interactive text mode
 there - the same output `git diff` gets. jj has no equivalent of `git difftool`'s interactive
 per-file viewer (its terminal-attached hook, `ui.diff-editor`, is for `jj diffedit`/`jj split`,
 which edit the right-hand side and read it back - not something a read-only viewer should claim to
 do), so for the full-screen TUI on a jj repo, run `omnidiff BEFORE AFTER` directly.
 
-# Supported languages
+# Supported content
 
 The language is detected from the file extension. A file with an unknown extension is diffed as
 plain text, line by line, so nothing is refused.
@@ -288,6 +286,34 @@ plain text, line by line, so nothing is refused.
 
 Recognised by extension but diffed as plain text, since no grammar is compiled in: Bazel (`.bazel`), Dart (`.dart`), Emacs Lisp (`.el`), Markdown (`.md`, `.markdown`), Protocol Buffers (`.proto`), SQL (`.sql`).
 <!-- languages:end -->
+
+Files that are not text are recognised by their bytes, never by their names, and diffed by what
+they hold:
+
+| Content | Formats | Diffed |
+|---|---|---|
+| Pictures | PNG, JPEG, GIF, WebP, BMP, ICO, TIFF | pixel by pixel, as the eye compares them: how much changed and where; animations frame by frame |
+| Archives | zip (and so jar, Office documents, EPUB), tar, gzip, xz, bzip2 | file by file, each by what it is, archives inside archives included; Java class files as a listing of their fields and methods |
+| Fonts | TrueType, OpenType, WOFF, WOFF2, EOT | glyph by glyph, each drawn, and the font's names and metrics |
+| Cursors | Windows `.cur` and `.ani`, X cursors, Hyprland `.hlc` | size by size and frame by frame |
+| Message catalogs | gettext `.mo`, Qt `.qm` | message by message |
+| Documents | PDF | page by page, each page drawn |
+| Text in other encodings | UTF-16 and UTF-32 with a byte order mark | as text, like any other file |
+
+Only the members that changed are opened, so a font with two edited glyphs shows two glyphs. Each
+change is also named by how much of it a reader would see: invisible (only the bytes differ),
+imperceptible, artifacts (what compression or resampling leaves behind), edited, redrawn or
+replaced - for text, whitespace, formatting and rewritten stand in for the second, third and
+fifth.
+
+The TUI shows pictures as pictures: in the terminal's own graphics where it speaks the kitty,
+sixel or iTerm2 protocol, and in Unicode half blocks everywhere else. `b` switches to half blocks
+and back, and `OMNIDIFF_GRAPHICS=halfblocks` (or `kitty`, `sixel`, `iterm2`) overrides the
+detection; inside tmux, the terminal in front of the pane decides. An archive, a font or any other
+container lists its changed members beside the one selected, `g` shows every changed glyph or
+picture at once, and `Enter` opens a text member in the full diff view.
+
+Anything else binary gets the one-line `Binary file <path> differs` notice.
 
 # License
 
@@ -326,6 +352,22 @@ take longer than a second.
 Runtime is reported, never gated: `make check-quality` prints this distribution against the
 committed baseline on every push, and warns when the runtime is more than twice the baseline's.
 
+Other content is timed over pairs sampled from the same corpus, decoding included - unpacking an
+archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-06 on the same machine:
+
+| Content | Pairs | p50 | p90 | p99 | Under 100ms |
+|---|---|---|---|---|---|
+| Pictures | 230 | 2.6ms | 83ms | 887ms | 92.6% |
+| Cursors | 22 | 0.6ms | 1.4ms | 24ms | 100% |
+| Fonts | 100 | 8.6ms | 119ms | 2,042ms | 89% |
+| Archives | 100 | 3.5ms | 406ms | 3,857ms | 86% |
+| Message catalogs | 81 | 0.5ms | 1.5ms | 7.4ms | 100% |
+| PDFs | 100 | 158ms | 874ms | 2,241ms | 37% |
+
+PDFs miss the median goal and fonts, archives and PDFs the 99th-percentile one: a PDF draws every
+changed page, and the slowest archives hold thousands of changed members. `make benchmark-content`
+measures this and writes `research/data/performance/content_speed.csv`.
+
 ## Robust
 
 OmniDiff's goal is to process 100% of all commits.
@@ -342,6 +384,13 @@ files, nineteen of them generated or embedded - tree-sitter parser tables, codeg
 bundles, a PNG as a C array - and one commit of a 40,000-line single-header C++ library. Given
 24 GB and 300 s, 11 of the 28 files that first hit the cap complete. The run, its harness and every pair that did not complete are documented in
 `research/data/performance/PROVENANCE.md`.
+
+Beyond code, over every file changed in the same window - 2,018,010 changes in 7,352
+repositories, pictures, fonts and archives included - **98.8% are diffed as text or by their
+content** (98.2% counting each repository at most 1,000 times, so that a few giant ones do not
+decide it; 6,481 repositories entirely). What is left is mostly text in legacy encodings, compiled
+objects, audio, and EOT fonts compressed with MicroType Express. The census is documented in
+`research/data/corpus_stats/PROVENANCE.md`.
 
 ## Accurate
 
@@ -370,6 +419,13 @@ ones, so the highlighting rules own the gap more than the matcher does.
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
 `research/data/quality/painting_attribution.csv`, which the table is counted from;
 `make check-painting-attribution` fails if any fixture gets worse.
+
+Other content is judged rather than painted: a human names how much each change is (invisible,
+imperceptible, artifacts, edited, redrawn or replaced, see [supported content](#supported-content))
+and OmniDiff's verdict is compared with theirs. A test case is perfect when every verdict matches,
+and near-perfect when every one is at most one level off. Of the 39 judged picture pairs, **21
+(54%) are perfect and 33 (85%) near-perfect**; all 6 judged cursors are perfect. Fonts, archives,
+message catalogs and PDFs have no judgements yet. `make benchmark-content` counts these too.
 
 # AI policy
 

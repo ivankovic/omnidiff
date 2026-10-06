@@ -45,7 +45,7 @@
 //! sweeps that corpus parses its pairs as text.
 
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
@@ -274,6 +274,12 @@ pub fn assert_known_verdict_mismatches(
 ) -> Result<()> {
     let human = load(family, name)?;
     let engine = engine_diff(family, name)?;
+    // The diff is at hand, so its `--mode json` answer is checked against the schema here.
+    super::json_schema::check_json_output(&crate::tui::json_output::binary_diff_json(
+        Path::new("before"),
+        Path::new("after"),
+        Some(&engine),
+    )?)?;
     let found = mismatches(&human, &engine);
     let parse = |verdict: Option<&str>| verdict.map(str::parse::<Verdict>).transpose();
     let expected = Mismatches {

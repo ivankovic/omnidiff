@@ -399,7 +399,8 @@ impl MemberViewer {
         before: Option<MemberContent>,
         after: Option<MemberContent>,
     ) -> MemberView {
-        let names = (format!("before: {key}"), format!("after: {key}"));
+        // The picture viewer titles each pane "before: <name>" itself.
+        let names = (key.to_string(), key.to_string());
         match (before, after) {
             (before, after)
                 if [&before, &after]
@@ -539,8 +540,8 @@ impl MemberViewer {
         };
         let count = tiles.len();
         MemberView::Picture(Box::new(PictureViewer::from_decoded(
-            format!("before: {count} changed"),
-            format!("after: {count} changed"),
+            format!("{count} changed"),
+            format!("{count} changed"),
             grid(|tile| &tile.0),
             grid(|tile| &tile.1),
             self.picker.clone(),
@@ -886,7 +887,12 @@ mod tests {
             true,
         );
         viewer.handle_key(KeyCode::Char('g'));
-        screen(&mut viewer);
+        let text = screen(&mut viewer);
+        assert!(text.contains("before: 1 changed"), "{text}");
+        assert!(
+            !text.contains("before: before"),
+            "one side label, not two: {text}"
+        );
         let status = viewer.status();
         assert!(status.contains("every changed picture member"), "{status}");
         // B is the one changed glyph: a one-tile grid, a glyph's cell wide.

@@ -27,15 +27,20 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use crossterm::event::KeyCode;
 use ratatui::Terminal;
 use ratatui::backend::TestBackend;
+use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Modifier};
+use ratatui_image::FontSize;
+use ratatui_image::picker::{Picker, ProtocolType};
 use serde::Serialize;
 use strum::IntoEnumIterator;
 
 use crate::tui::app::App;
 use crate::tui::color_depth::{ColorDepth, xterm_256};
+use crate::tui::components::picture_viewer::{Placement, record_placements};
 use crate::tui::theme::{OverlayTheme, format_hex_color};
 
 /// Consecutive cells of one row that share a style.
@@ -92,7 +97,11 @@ pub fn render(
     })?;
     drawn?;
 
-    let buffer = terminal.backend().buffer();
+    shot_of(terminal.backend().buffer(), cols, rows)
+}
+
+/// A drawn buffer as styled runs.
+fn shot_of(buffer: &Buffer, cols: u16, rows: u16) -> Result<Screenshot> {
     let mut lines = Vec::with_capacity(rows as usize);
     for y in 0..rows {
         let mut runs: Vec<Run> = Vec::new();
@@ -117,6 +126,60 @@ pub fn render(
         lines.push(runs);
     }
     Ok(Screenshot { cols, rows, lines })
+}
+
+/// One frame of a content pair's viewer, and the pictures it shows, which an offscreen terminal
+/// cannot draw: each with the cells it covers, for the rasterizer to paste in.
+pub struct Still {
+    pub shot: Screenshot,
+    pub pictures: Vec<Placement>,
+}
+
+/// The viewer showing the content pair `before` against `after` (a picture, an archive, a font,
+/// ...), drawn once per entry of `steps` after that entry's keys: `[[], ['t']]` is the opening
+/// view, then the next picture mode. Pictures are drawn as a terminal speaking the kitty protocol
+/// with `font` pixel cells would draw them, and recorded rather than drawn ([`Still::pictures`]).
+pub fn render_content(
+    before: &Path,
+    after: &Path,
+    size: (u16, u16),
+    overlay: OverlayTheme,
+    font: (u16, u16),
+    steps: &[Vec<KeyCode>],
+) -> Result<Vec<Still>> {
+    let (cols, rows) = size;
+    let area = Rect::new(0, 0, cols, rows);
+    let mut app = App::new(4.0, 60.0)?;
+    // Deprecated for apps, which should ask the terminal; a still has none to ask.
+    #[allow(deprecated)]
+    let mut picker = Picker::from_fontsize(FontSize::new(font.0, font.1));
+    picker.set_protocol_type(ProtocolType::Kitty);
+    app.set_graphics(picker);
+    app.load_still(before, after, area, overlay, None)?;
+
+    let mut stills = Vec::with_capacity(steps.len());
+    for keys in steps {
+        for key in keys {
+            if !app.content_key(*key) {
+                anyhow::bail!("the content viewer does not take {key:?} here");
+            }
+        }
+        let mut terminal = Terminal::new(TestBackend::new(cols, rows))?;
+        let mut drawn = Ok(());
+        let (result, pictures) = record_placements(|| {
+            terminal.draw(|frame| {
+                let area = frame.area();
+                drawn = app.draw_viewer(frame, area);
+            })
+        });
+        result?;
+        drawn?;
+        stills.push(Still {
+            shot: shot_of(terminal.backend().buffer(), cols, rows)?,
+            pictures,
+        });
+    }
+    Ok(stills)
 }
 
 /// An [`OverlayTheme`] by its picker label (`Solarized Light`) or variant name

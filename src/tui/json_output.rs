@@ -19,58 +19,21 @@
 //! Machine-readable counterpart to `tui::headless`: prints a diff as one JSON object on stdout,
 //! for editor/tool integrations that place highlights on their own buffers.
 //!
-//! Schema (see `JsonDiff`/`JsonSide`/`JsonHunk`/`JsonRange` below for the authoritative field
-//! list):
-//!
-//! ```json
-//! {
-//!   "before": {
-//!     "path": "old.rs",
-//!     "language": "Rust",
-//!     "hunks": [
-//!       { "operation": "delete", "range": { "start_row": 12, "start_column": 4, "end_row": 12, "end_column": 20 } }
-//!     ]
-//!   },
-//!   "after": { "path": "new.rs", "language": "Rust", "hunks": [ ... ] },
-//!   "large_residual": false,
-//!   "summary": "comment_only"
-//! }
-//! ```
+//! The format is specified by `json_output.schema.json` beside this file, a JSON Schema whose
+//! descriptions are the field documentation: the README links to it rather than repeating it.
+//! `every_output_matches_the_schema` checks what this module prints against it, and every content
+//! fixture's test checks its pair's `content` (`test::helper::json_schema`), so a field added,
+//! renamed or dropped here fails until the schema says so too.
 //!
 //! If either side is binary, `main.rs` answers with `binary_diff_json` instead: the same object
-//! with `"binary": true`, empty `hunks` and no `summary`. `binary` is omitted for text diffs.
-//!
-//! A binary pair that is a picture pair (`diff::picture`) also carries `picture`: each side's
-//! `format`, `width`, `height`, `color` and `bytes` (`null` for an added or deleted picture), and a
-//! `comparison` whose `kind` is `pixels` (with `changed_pixels`, `total_pixels` and `regions`, each
-//! `{x, y, width, height, changed_pixels}` in pixel coordinates, largest first), `resized` or
-//! `one_sided`:
-//!
-//! ```json
-//! "picture": {
-//!   "before": { "format": "PNG", "width": 200, "height": 120, "color": "RGBA8", "bytes": 671 },
-//!   "after":  { "format": "PNG", "width": 200, "height": 120, "color": "RGBA8", "bytes": 981 },
-//!   "comparison": { "kind": "pixels", "changed_pixels": 1723, "total_pixels": 24000,
-//!                   "regions": [ { "x": 20, "y": 20, "width": 41, "height": 41, "changed_pixels": 1681 } ] }
-//! }
-//! ```
-//!
-//! Every binary pair diffed by content (`diff::content`), pictures included, also carries
-//! `content`: the same diff tagged with its `kind` (`"picture"`, for the picture above). `picture`
-//! stays for the consumers written before `content`.
-//!
-//! A side whose file is UTF-16 or UTF-32 (announced by a byte order mark) carries `encoding`
-//! (`"UTF-16LE"`, ...); its `hunks` are ranges in the UTF-8 text the file decodes to.
-//!
-//! Each side's `hunks` are ranges in that side's own file. Rows and columns are 0-indexed.
+//! with `"binary": true`, empty `hunks` and no `summary`, plus `content` when `diff::content`
+//! diffs the pair. A picture pair also carries `picture`, the same diff without its `kind`, for the
+//! consumers written before `content`.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
 //! directly; VS Code / LSP need UTF-16 code units and character-offset consumers must decode the
 //! row, both per line. No second coordinate space is offered: it could disagree with the first,
 //! and every consumer already has the line's text.
-//!
-//! `summary` is the diff's overall shape (`no_changes`, `new_file`, `deleted_file`,
-//! `whitespace_only`, `comment_only`, `refactor_moved_only`), omitted for an ordinary mix of edits.
 //!
 //! File contents are not embedded: both paths are always real files the caller can open, and a
 //! second copy would be one more thing to keep in sync.
@@ -584,6 +547,44 @@ mod tests {
         assert_eq!(json["encoding"], "UTF-16LE");
         let json = serde_json::to_value(build_side(text, &utf8, &[]))?;
         assert!(json.get("encoding").is_none(), "{json}");
+        Ok(())
+    }
+
+    fn assert_matches_the_schema(json: &str) {
+        crate::test::helper::json_schema::check_json_output(json).unwrap();
+    }
+
+    #[test]
+    fn every_output_matches_the_schema() -> Result<()> {
+        let mut moved = sample_data();
+        moved.before_ranges[1].operation = TextOperation::Move;
+        moved.before_ranges[1].destination = TextRange::new(5, 0, 6, 0);
+        let mut same = sample_data();
+        same.after_contents = same.before_contents.clone();
+        same.before_ranges = vec![same.before_ranges[0].clone()];
+        same.after_ranges = same.before_ranges.clone();
+        for data in [sample_data(), moved, same] {
+            assert_matches_the_schema(&serde_json::to_string(&build_diff(&data, true))?);
+        }
+        assert_matches_the_schema(&binary_diff_json(
+            Path::new("a.rs"),
+            Path::new("b.png"),
+            None,
+        )?);
+
+        let dir = tempfile::tempdir()?;
+        let utf16 = dir.path().join("a.xml");
+        std::fs::write(
+            &utf16,
+            "\u{feff}<a/>\n"
+                .encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<u8>>(),
+        )?;
+        let side = serde_json::to_value(build_side("<a/>\n", &utf16, &[]))?;
+        let mut diff = serde_json::to_value(build_diff(&sample_data(), false))?;
+        diff["before"] = side;
+        assert_matches_the_schema(&diff.to_string());
         Ok(())
     }
 

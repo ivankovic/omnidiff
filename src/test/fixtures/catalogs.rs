@@ -18,3 +18,5 @@
 
 //! Catalog fixtures (`src/test/data/catalogs/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a `.mo` or `.qm` sample is promoted. See `test::helper::human_content`.
+#[cfg(test)]
+mod mo_x_ubernostrum_django_registration_906912aa_django;

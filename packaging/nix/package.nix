@@ -83,7 +83,7 @@ rustPlatform.buildRustPackage {
   '';
 
   meta = {
-    description = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs";
+    description = "Fast, robust, accurate content-aware diffing";
     longDescription = ''
       OmniDiff parses both sides of a diff with tree-sitter and matches their syntax trees, so a
       change is reported as what it structurally is - an insertion, deletion, update, or move -

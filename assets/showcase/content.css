@@ -1,0 +1,100 @@
+/*  This file is part of the OmniDiff code diffing tool.
+ *
+ *  Copyright (C) 2026 Marko Ivankovic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/* The content examples page (content.html): a column of recordings, each with its report. The
+   recordings are Solarized Light, so the page is too. */
+:root {
+  --page-bg: #fdf6e3;
+  --page-fg: #586e75;
+  --chrome: #d8d0b8;
+  --accent: #268bd2;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--chrome);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 17px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tagline {
+  flex: 1 1 360px;
+}
+
+a {
+  color: var(--accent);
+}
+
+main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+code,
+pre {
+  font: 13px/1.4 ui-monospace, "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+}
+
+.example {
+  margin-top: 36px;
+}
+
+.example h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.source {
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+}
+
+.example img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--chrome);
+}
+
+pre {
+  overflow-x: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--chrome);
+}
+
+summary {
+  margin-top: 8px;
+  cursor: pointer;
+}

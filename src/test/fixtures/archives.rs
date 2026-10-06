@@ -26,3 +26,5 @@ mod bzip2_x_jonathansalwan_ropgadget_9f20a4be_ref_output;
 mod bzip2_x_rocm_miopen_801eab7f_gfx942130_db_txt;
 #[cfg(test)]
 mod bzip2_x_rocm_miopen_801eab7f_gfx942130_hip_fdb_txt;
+#[cfg(test)]
+mod zip_x_silnrsi_teckit_3d06b4f4_teckit_tools;

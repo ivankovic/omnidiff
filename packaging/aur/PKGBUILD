@@ -3,7 +3,7 @@
 pkgname=omnidiff
 pkgver=0.2.0
 pkgrel=1
-pkgdesc="Fast, robust, syntax-aware code diffing using tree-sitter ASTs"
+pkgdesc="Fast, robust, accurate content-aware diffing"
 arch=('x86_64' 'aarch64')
 url="https://github.com/ivankovic/omnidiff"
 license=('AGPL-3.0-or-later')
