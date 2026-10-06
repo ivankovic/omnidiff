@@ -36,6 +36,8 @@ include = [
     "/THIRD-PARTY-NOTICES.md",
     "/README.md",
     "/src/**/*.rs",
+    # The JSON output's format, which the README links to.
+    "/src/tui/json_output.schema.json",
     "!/src/bin/**",
     "!/src/test/data/**",
     # One stub per fixture, compiled only under `cfg(test)` and useless without src/test/data.

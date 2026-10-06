@@ -11,9 +11,12 @@ Fast, robust, accurate content-aware diffing.
 - **Fast:** under 100ms for 93% of code changes
 - **Robust:** can diff 99.95% of code changes
 - **Accurate:** 70% of code changes perfect, 90% near-perfect
-- **Content-aware:** 98.8% of all changed files diffed by what they hold - code in 24 languages by
-  its syntax, other text by lines, and pictures, archives, fonts, cursors, message catalogs and
-  PDFs by their content
+- **Content-aware:** 98.8% of changes diffed using content-specific algorithms
+
+**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
+changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
+OmniDiff, and [content examples](https://ivankovic.github.io/omnidiff/showcase/content.html): an
+OpenDocument file, a compiled translation catalog, and pictures, still and animated.
 
 ![An animation of one Python refactoring painted two ways. A vertical bar sweeps left to right and
 back across a two-pane diff. On one side of the bar, GNU diff marks whole lines as deleted and
@@ -21,17 +24,14 @@ inserted; on the other, OmniDiff paints only the parts that changed - `sum(numbe
 `len(numbers)` rather than the whole assignment, and `numbers` shown as moved rather than
 rewritten.](/assets/diff-vs-omnidiff.gif)
 
-**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real changes,
-recorded from the command-line tool and compared side by side in Unix `diff` and in OmniDiff.
-
-The terminal UI, in its light theme:
+Various light and dark themes are available:
 
 ![A screenshot of OmniDiff's two-panel terminal UI in a light theme, showing the same Python
 refactoring, with the changed right-hand sides highlighted rather than whole
 lines](/assets/readme-screenshot.png)
 
-Files that are not code are diffed by what they hold, where `git diff` only says `Binary files
-differ`. A PDF diagram with one box renamed, and a web font with twenty icons redrawn:
+Files are diffed based on type. A PDF diagram with one box renamed, and a web font with twenty
+icons redrawn:
 
 ![An animation in three parts. First, git diff on a PDF prints only "Binary files
 a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf differ". Then OmniDiff, as git's
@@ -43,9 +43,6 @@ both, and then the difference alone.](/assets/content/pdf-x-governikus-ausweisap
 reports 21 changed members and lists each changed glyph; its viewer shows the font's name table
 with the version and style changed, one glyph before and after, and then all twenty changed icons
 in a grid, each change outlined.](/assets/content/woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif)
-
-**[More content examples](https://ivankovic.github.io/omnidiff/showcase/content.html)**: an
-OpenDocument file, a compiled translation catalog, and pictures, still and animated.
 
 # Installation
 
@@ -75,8 +72,7 @@ brew install ivankovic/omnidiff/omnidiff
 
 ## Debian and Ubuntu
 
-`.deb` packages are available in a signed apt repository, so `apt upgrade` picks up new
-versions like any other package. amd64 and arm64:
+`.deb` packages for amd64 and arm64 are available in a signed apt repository:
 
 ```sh
 sudo install -d -m 0755 /etc/apt/keyrings
@@ -90,7 +86,7 @@ sudo apt update && sudo apt install omnidiff
 
 ## Nix and NixOS
 
-On NixOS, or anywhere with Nix installed, no installation step is needed at all:
+On NixOS, or anywhere with Nix installed:
 
 ```
 nix run github:ivankovic/omnidiff
@@ -102,7 +98,8 @@ If flakes are not enabled in your Nix configuration, add
 ## Arch and Gentoo
 
 Recipes for Arch and Gentoo live in [`packaging/`](packaging/): the PKGBUILD builds locally with
-`makepkg -si`, and the Gentoo ebuild is ready for an overlay.
+`makepkg -si`, and the Gentoo ebuild is ready for an overlay. The two distros are overwhelmed and
+their repositories open and close to new packages sporadically.
 
 ## Editor integration
 
@@ -127,74 +124,42 @@ Press `?` in the viewer for the full list of keybindings.
 
 The TUI uses 24-bit color when the terminal advertises it with `COLORTERM=truecolor`, and the
 nearest 256 colors otherwise (macOS Terminal.app, or most terminals over ssh, which does not
-forward `COLORTERM`). If your terminal supports 24-bit color but does not set it, run
+forward `COLORTERM`). If your terminal supports 24-bit color but does not advertise it, run
 `export COLORTERM=truecolor`.
 
 ## In a browser
 
 For reviewing changes in a browser, see [codereview](https://github.com/ivankovic/codereview).
-Note: codereview is at v0.0.0; use it at your own risk.
+
+**Note: codereview is at v0.0.0; use it at your own risk.**
 
 ## Headless / batch mode
 
 `omnidiff --headless BEFORE AFTER`, or its synonym `--batch`, prints the diff as plain text, with
-optional color, instead of opening the TUI. Use this for scripts, CI, or any case where stdout is
-not a real terminal. Headless mode also starts automatically whenever stdout is not a terminal, for
-example when piped into `less` or redirected to a file. Because of this, `omnidiff BEFORE AFTER |
-less` works without the flag.
+optional color, instead of opening the TUI. Use this for scripts or CI. Headless mode also starts
+automatically whenever stdout is not a terminal, for example when piped into `less` or redirected to
+a file. Because of this, `omnidiff BEFORE AFTER | less` works without the flag.
 
-Every printed line is prefixed with its line number, so the moved-chunk headers' "Moved to lines
-40-60" cross-references can actually be followed. OmniDiff collapses long runs of unchanged
-lines. It keeps 3 lines of context on each side of a change (override with `--context N`), the
-same convention as `diff -u`. OmniDiff also prefixes each hunk with the nearest enclosing
-function, class, or struct line, when that line is not otherwise visible. This shows the location
-of a change deep inside a large file.
+OmniDiff collapses long runs of unchanged lines. It keeps 3 lines of context on each side of a
+change (override with `--context N`), the same convention as `diff -u`. OmniDiff also prefixes each
+hunk with the nearest enclosing function, class, or struct line, when that line is not otherwise
+visible. This shows the location of a change deep inside a large file.
 
-Colors are on by default (git's pager renders them); pass `--color never`, or set `NO_COLOR=1`, to
-disable ANSI colors, for example when you redirect output to a file - `--color always` forces them
-even under `NO_COLOR`.
+Colors are on by default; pass `--color never`, or set `NO_COLOR=1`, to disable ANSI colors, for
+example when you redirect output to a file - `--color always` forces them even under `NO_COLOR`.
 
 OmniDiff exits `0` on success and `2` on error. For scripting, pass `--exit-code` to additionally
-get `1` when the files differ, the `diff(1)` convention. That is opt-in rather than the default
-for the same reason `git diff` exits `0` even when files differ: OmniDiff's usual non-interactive
-callers are version control systems driving it as a display tool, and they read a non-zero exit as
-"the tool failed" - `jj` warns on every file, and `git difftool` with `difftool.trustExitCode=true`
-aborts the whole diff. (The 7-argument `GIT_EXTERNAL_DIFF` form stays at `0` even with
-`--exit-code`, since git treats a non-zero exit there as fatal.)
+get `1` when the files differ. This follows the `diff(1)` convention. `--exit-code` is opt-in rather
+than the default for the same reason `git diff` exits `0` even when files differ: OmniDiff's usual
+non-interactive callers are version control systems driving it as a display tool, and they read a
+non-zero exit as "the tool failed" - `jj` warns on every file, and `git difftool` with
+`difftool.trustExitCode=true` aborts the whole diff. (The 7-argument `GIT_EXTERNAL_DIFF` form stays
+at `0` even with `--exit-code`, since git treats a non-zero exit there as fatal.)
 
 ## JSON output
 
-`omnidiff --mode json BEFORE AFTER` prints the diff as one JSON object, for editors and tools that
-place highlights on their own buffers. Each side carries its path, its detected language and its
-hunks, and each hunk is an operation (`delete`, `insert`, `update`, `move`) with a range in that
-side's own file:
-
-```json
-{
-  "before": {
-    "path": "old.rs",
-    "language": "Rust",
-    "hunks": [
-      { "operation": "delete", "range": { "start_row": 12, "start_column": 4, "end_row": 12, "end_column": 20 },
-        "reference_line": 10 }
-    ]
-  },
-  "after": { "path": "new.rs", "language": "Rust", "hunks": [] },
-  "large_residual": false,
-  "summary": "comment_only"
-}
-```
-
-Rows and columns are 0-indexed, and columns are byte offsets within their row, as tree-sitter
-reports them. `reference_line` is the row of the nearest enclosing named declaration, and a
-`move` also carries a `move_target` range in the other file. `summary` is present only when the diff is one of the special shapes the TUI's
-status bar names, such as `comment_only` or `whitespace_only`. A binary file on either side
-answers with `"binary": true` and empty hunks; when it is [supported content](#supported-content),
-a `content` object says what changed in it (a picture also keeps the older `picture` object). A
-side read from UTF-16 or UTF-32 carries its `encoding`, and its ranges are in the decoded text. Unlike headless mode, JSON output is never chosen
-automatically: only `--mode json` selects it, so a pipe never receives it by surprise. The
-[VS Code extension](https://github.com/ivankovic/omnidiff-vscode) is built on this output; the
-authoritative field list is `src/tui/json_output.rs`.
+`omnidiff --mode json BEFORE AFTER` prints the diff as one JSON object. Its fields are described
+in [`src/tui/json_output.schema.json`](src/tui/json_output.schema.json), a JSON Schema.
 
 ## Git integration
 
@@ -205,7 +170,7 @@ whether to configure it globally or for the current repository only:
 omnidiff git configure
 ```
 
-Or configure it by hand:
+### Configure by hand
 
 ```
 git config difftool.omnidiff.cmd 'omnidiff "$LOCAL" "$REMOTE"'
@@ -215,6 +180,8 @@ git difftool --tool=omnidiff
 Run `git config diff.tool omnidiff` to make plain `git difftool` use OmniDiff by default, without
 needing `--tool`. If you do not want git to ask "view diff ... [Y/n]?" before every file, run `git
 config difftool.prompt false`.
+
+### Usage
 
 **`git difftool` opens the interactive TUI. `git diff` and `git log -p` never do.** `git diff`
 pipes its output through git's pager, and a full-screen TUI cannot draw onto a pipe, so OmniDiff
@@ -245,7 +212,7 @@ its own configuration. Run the setup wizard:
 omnidiff jj configure
 ```
 
-Or configure it by hand:
+### Configure by hand
 
 ```
 jj config set --user merge-tools.omnidiff.program omnidiff
@@ -266,13 +233,15 @@ Use `--repo` in place of `--user` to configure the current repository only.
 it, jj passes one changed file pair at a time, keeping each file's real path and extension, so
 language detection works exactly as it does under git.
 
+### Usage
+
 `jj diff` runs its formatter under a pager, so OmniDiff renders in its non-interactive text mode
 there - the same output `git diff` gets. jj has no equivalent of `git difftool`'s interactive
 per-file viewer (its terminal-attached hook, `ui.diff-editor`, is for `jj diffedit`/`jj split`,
 which edit the right-hand side and read it back - not something a read-only viewer should claim to
 do), so for the full-screen TUI on a jj repo, run `omnidiff BEFORE AFTER` directly.
 
-# Supported languages
+# Supported content
 
 The language is detected from the file extension. A file with an unknown extension is diffed as
 plain text, line by line, so nothing is refused.
@@ -309,8 +278,6 @@ plain text, line by line, so nothing is refused.
 
 Recognised by extension but diffed as plain text, since no grammar is compiled in: Bazel (`.bazel`), Dart (`.dart`), Emacs Lisp (`.el`), Markdown (`.md`, `.markdown`), Protocol Buffers (`.proto`), SQL (`.sql`).
 <!-- languages:end -->
-
-# Supported content
 
 Files that are not text are recognised by their bytes, never by their names, and diffed by what
 they hold:

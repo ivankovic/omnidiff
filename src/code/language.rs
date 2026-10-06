@@ -236,9 +236,9 @@ pub fn human_name(language: Language) -> String {
     }
 }
 
-/// The README's "Supported languages" section, generated so it cannot drift from this file: one
-/// table of the languages with a grammar, and the extensions that are recognised but diffed as
-/// plain text because no grammar is compiled in.
+/// The languages in the README's "Supported content" section, generated so they cannot drift from
+/// this file: one table of the languages with a grammar, and the extensions that are recognised
+/// but diffed as plain text because no grammar is compiled in.
 pub fn supported_languages_markdown() -> String {
     use strum::IntoEnumIterator;
 

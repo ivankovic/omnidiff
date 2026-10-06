@@ -17,6 +17,7 @@
  */
 pub mod human_content;
 pub mod human_mapping;
+pub mod json_schema;
 
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "stats")]
