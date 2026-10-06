@@ -35,7 +35,7 @@ FEATURES ?= stats
 OUT_DIR ?= research/data/ablation
 
 .PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
-	benchmark-quality diff-inventory lint-python ci benchmark-ablation check-quality \
+	benchmark-quality benchmark-content diff-inventory lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics
@@ -120,6 +120,13 @@ install-hooks:
 # Scores diff accuracy and speed against the hand-authored ground truth in src/test/data/.
 benchmark-quality:
 	$(BENCH_QUALITY) --csv
+
+# Speed and accuracy of content diffs per family, the README's figures for content other than code.
+# Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
+# materialize_test_diffs) and writes research/data/performance/content_speed.csv.
+benchmark-content:
+	cargo run --release --features $(FEATURES) --bin benchmark_content -- \
+		--csv research/data/performance/content_speed.csv
 
 # Regenerates the checked-in src/test/data/diffs.csv fixture inventory; re-run after changing
 # fixtures or their ground truths.

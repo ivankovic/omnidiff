@@ -80,6 +80,9 @@ produced each, written by `measure/benchmark_all_extended.sh`. The logs are kept
 they are the only record of why a given language sampled fewer pairs than expected (see that
 script's own comment about Lua sampling zero pairs).
 
+`content_speed.csv`, written by `make benchmark-content`: how long each sampled content pair
+(pictures, fonts, archives, ...) takes to diff. See `PROVENANCE.md`.
+
 `baselines/` holds dated or labelled snapshots (`benchmark_2026-08-17_after_runtime_pass.csv`,
 `benchmark_<language>_baseline_pre_<change>.csv`) kept for before/after comparison across a
 specific algorithm change. These are never regenerated - that is the point of them.

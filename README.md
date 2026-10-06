@@ -8,10 +8,18 @@
 
 Fast, robust, accurate content-aware diffing.
 
-- **Fast:** under 100ms for 93% of code changes
 - **Robust:** can diff 99.95% of code changes
-- **Accurate:** 70% of code changes perfect, 90% near-perfect
 - **Content-aware:** 98.8% of changes diffed using content-specific algorithms
+
+| Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
+|---|---|---|---|
+| Code | 93% | 70% | 90% |
+| Pictures | 93% | 54% | 85% |
+| Cursors | 100% | 100% | 100% |
+| Fonts | 89% | not judged yet | not judged yet |
+| Archives | 86% | not judged yet | not judged yet |
+| Message catalogs | 100% | not judged yet | not judged yet |
+| PDFs | 37% | not judged yet | not judged yet |
 
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
 changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
@@ -344,6 +352,22 @@ take longer than a second.
 Runtime is reported, never gated: `make check-quality` prints this distribution against the
 committed baseline on every push, and warns when the runtime is more than twice the baseline's.
 
+Other content is timed over pairs sampled from the same corpus, decoding included - unpacking an
+archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-06 on the same machine:
+
+| Content | Pairs | p50 | p90 | p99 | Under 100ms |
+|---|---|---|---|---|---|
+| Pictures | 230 | 2.6ms | 83ms | 887ms | 92.6% |
+| Cursors | 22 | 0.6ms | 1.4ms | 24ms | 100% |
+| Fonts | 100 | 8.6ms | 119ms | 2,042ms | 89% |
+| Archives | 100 | 3.5ms | 406ms | 3,857ms | 86% |
+| Message catalogs | 81 | 0.5ms | 1.5ms | 7.4ms | 100% |
+| PDFs | 100 | 158ms | 874ms | 2,241ms | 37% |
+
+PDFs miss the median goal and fonts, archives and PDFs the 99th-percentile one: a PDF draws every
+changed page, and the slowest archives hold thousands of changed members. `make benchmark-content`
+measures this and writes `research/data/performance/content_speed.csv`.
+
 ## Robust
 
 OmniDiff's goal is to process 100% of all commits.
@@ -395,6 +419,13 @@ ones, so the highlighting rules own the gap more than the matcher does.
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
 `research/data/quality/painting_attribution.csv`, which the table is counted from;
 `make check-painting-attribution` fails if any fixture gets worse.
+
+Other content is judged rather than painted: a human names how much each change is (invisible,
+imperceptible, artifacts, edited, redrawn or replaced, see [supported content](#supported-content))
+and OmniDiff's verdict is compared with theirs. A test case is perfect when every verdict matches,
+and near-perfect when every one is at most one level off. Of the 39 judged picture pairs, **21
+(54%) are perfect and 33 (85%) near-perfect**; all 6 judged cursors are perfect. Fonts, archives,
+message catalogs and PDFs have no judgements yet. `make benchmark-content` counts these too.
 
 # AI policy
 

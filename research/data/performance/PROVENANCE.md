@@ -6,6 +6,22 @@ the `size_bucket` column). `../samples/` has since been re-drawn under the LOC b
 DIFFERENT pair set than these files - do not mix rows across that boundary. `baselines/` snapshots
 are pinned to whatever corpus was current at their date; that is their point.
 
+## `content_speed.csv` (2026-10-06)
+
+The README's speed figures for content other than code. Written by `make benchmark-content`
+(`benchmark_content --csv`) on the Intel Xeon E3-1275 v5 the code figures were measured on, with
+nothing else running. One row per sampled content pair under `src/test/data/samples/` (git-ignored;
+the draw is `src/test/data/sample.csv`, seed 20261004, at most 4 pairs per repository and family,
+pictures from the earlier 250-pair draw), grouped by the `dataset` in each pair's `source.json`.
+`elapsed_ms` is one single-shot `content::diff` from the bytes in memory, decoding included.
+`outcome` is `diffed`, `not_content` or `failed`; only `diffed` rows are timed into the figures.
+Two pictures fail (`ico-x-exeldro-obs-3d-effect-6aca6c46-icon`,
+`ico-x-krtirtho-spotube-0e48b7a3-favicon`: the ICO decoder refuses them).
+
+The same run prints the accuracy figures (verdicts against `human_content.json` in
+`src/test/data/<family>/`), which are not written to a file: 39 judged pictures, 6 judged cursors,
+nothing judged in the other families yet.
+
 ## `robustness_fixtures.csv` (2026-09-26)
 
 The paper's robustness run, over the fixture corpus rather than a sampled pair set. Written by

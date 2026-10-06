@@ -288,6 +288,11 @@ path = "src/bin/benchmark_optimal_solutions.rs"
 required-features = ["test-fixtures"]
 
 [[bin]]
+name = "benchmark_content"
+path = "src/bin/benchmark_content.rs"
+required-features = ["test-fixtures"]
+
+[[bin]]
 name = "benchmark_other"
 path = "src/bin/benchmark_other.rs"
 required-features = ["test-fixtures"]
