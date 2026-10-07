@@ -417,6 +417,7 @@ pub enum Language {
     Lisp,
     MarkDown,
     PHP,
+    Perl,
     ProtoBuf,
     Python,
     R,

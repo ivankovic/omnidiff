@@ -50,6 +50,7 @@ pub(crate) fn difftastic_extension(language: Language) -> Option<&'static str> {
         Language::Swift => Some("swift"),
         Language::Scala => Some("scala"),
         Language::LUA => Some("lua"),
+        Language::Perl => Some("pl"),
         Language::CSS => Some("css"),
         Language::HTML => Some("html"),
         Language::JSON => Some("json"),
