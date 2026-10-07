@@ -20,6 +20,9 @@
 //! `diffs/` unfiltered and real files are expensive to diff, so a fixture enters `diffs/` only when
 //! a human promotes it from `human_solver`.
 //!
+//! A row whose `before_path` column is set (the `crosslang` dataset: a file moved to another
+//! language) takes its before side from that path, and names `before.<ext>.test` after it.
+//!
 //! Each fixture also gets a `source.json` (its `sample.csv` row, which `human_solver` reads back
 //! on promotion) and a `README.md` (see `omnidiff::stats::license`) recording provenance and the
 //! license the content is actually under: it is someone else's code, not covered by omnidiff's
@@ -74,6 +77,10 @@ struct Row {
     repository: String,
     commit: String,
     path: String,
+    /// The before side's path when it is not `path`: a file moved to another language (the
+    /// `crosslang` dataset). Empty otherwise, and then left out of `source.json`.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    before_path: String,
     /// Which research dataset this row was sampled from (`sample_test_diffs`'s `--dataset`).
     /// Provenance only: it does not pick which `repos_dir` root is searched.
     dataset: String,
@@ -82,6 +89,13 @@ struct Row {
     /// The `diffs/<dataset>/` case name this row was promoted to; empty unless `PROMOTED`.
     #[serde(skip)]
     promoted_to: String,
+}
+
+impl Row {
+    /// The `before_path` column, `None` when the before side is at `path` too.
+    fn moved_from(&self) -> Option<&str> {
+        (!self.before_path.is_empty()).then_some(self.before_path.as_str())
+    }
 }
 
 enum Resolution {
@@ -123,6 +137,7 @@ fn read_rows(path: &Path) -> Result<Vec<Row>> {
             repository: record[1].to_string(),
             commit: record[2].to_string(),
             path: record[3].to_string(),
+            before_path: record.get(9).unwrap_or("").to_string(),
             promoted_to: record[4].to_string(),
             // Rows without the column were all sampled from the small checkout.
             dataset: record.get(5).unwrap_or("small").to_string(),
@@ -236,7 +251,7 @@ fn base_name(row: &Row) -> String {
 fn resolve_target(
     output_dir: &Path,
     base_name: &str,
-    ext: &str,
+    (before_ext, after_ext): (&str, &str),
     before: &[u8],
     after: &[u8],
 ) -> Result<Resolution> {
@@ -251,8 +266,8 @@ fn resolve_target(
             return Ok(Resolution::Create(dir));
         }
 
-        let before_path = dir.join(format!("before.{ext}.test"));
-        let after_path = dir.join(format!("after.{ext}.test"));
+        let before_path = dir.join(format!("before.{before_ext}.test"));
+        let after_path = dir.join(format!("after.{after_ext}.test"));
         if let (Ok(existing_before), Ok(existing_after)) =
             (fs::read(&before_path), fs::read(&after_path))
             && existing_before == before
@@ -311,6 +326,7 @@ fn backfill_promoted_readme(row: &Row, repo_roots: &[PathBuf]) -> Result<Resolut
         repo_url.as_deref(),
         &row.repository,
         &row.commit,
+        row.moved_from(),
         &row.path,
         &row.dataset,
         &license_files,
@@ -334,36 +350,44 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
     let tree = commit.tree()?;
 
     let path = Path::new(&row.path);
+    let before_path = Path::new(row.moved_from().unwrap_or(&row.path));
     // Content (a picture, a font, ...) is copied byte for byte, and so is text in UTF-16 or UTF-32
     // (`sample_test_diffs --encodings`); other code must be UTF-8, since every tool reads it so.
     let content = omnidiff::diff::content::Family::from_name(&row.dataset).is_some();
     let (before, after) = if content || row.dataset == "encodings" {
         (
-            omnidiff::stats::git::blob_bytes(&repo, &parent_tree, path)?,
+            omnidiff::stats::git::blob_bytes(&repo, &parent_tree, before_path)?,
             omnidiff::stats::git::blob_bytes(&repo, &tree, path)?,
         )
     } else {
         (
-            blob_text(&repo, &parent_tree, path)?.into_bytes(),
+            blob_text(&repo, &parent_tree, before_path)?.into_bytes(),
             blob_text(&repo, &tree, path)?.into_bytes(),
         )
     };
 
     // Content can be extensionless (an X cursor named `wait`); its kind is in its bytes.
-    let ext = match path.extension() {
-        Some(ext) => ext.to_string_lossy().into_owned(),
-        None if content => "bin".to_string(),
-        None => bail!("path {} has no extension", row.path),
+    let ext_of = |path: &Path| match path.extension() {
+        Some(ext) => Ok(ext.to_string_lossy().into_owned()),
+        None if content => Ok("bin".to_string()),
+        None => Err(anyhow::anyhow!("path {} has no extension", path.display())),
     };
+    let (before_ext, after_ext) = (ext_of(before_path)?, ext_of(path)?);
 
     let base = base_name(row);
-    let resolution = resolve_target(output_dir, &base, &ext, &before, &after)?;
+    let resolution = resolve_target(
+        output_dir,
+        &base,
+        (&before_ext, &after_ext),
+        &before,
+        &after,
+    )?;
 
     let dir = match &resolution {
         Resolution::Create(dir) => {
             fs::create_dir_all(dir)?;
-            fs::write(dir.join(format!("before.{ext}.test")), &before)?;
-            fs::write(dir.join(format!("after.{ext}.test")), &after)?;
+            fs::write(dir.join(format!("before.{before_ext}.test")), &before)?;
+            fs::write(dir.join(format!("after.{after_ext}.test")), &after)?;
             fs::write(dir.join("source.json"), serde_json::to_string_pretty(row)?)?;
             dir
         }
@@ -379,6 +403,7 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
             repo_url.as_deref(),
             &row.repository,
             &row.commit,
+            row.moved_from(),
             &row.path,
             &row.dataset,
             &license_files,
@@ -436,6 +461,7 @@ mod tests {
                 .into_owned(),
             commit,
             path,
+            before_path: String::new(),
             dataset: "small".to_string(),
             status: "SAMPLED".to_string(),
             promoted_to: String::new(),
@@ -449,6 +475,7 @@ mod tests {
             repository: "GyulyVGC-sniffnet.git".to_string(),
             commit: "1a70be36eb3d50a2b7248a76056fe9b3c2f71c82".to_string(),
             path: "src/gui/pages/overview_page.rs".to_string(),
+            before_path: String::new(),
             dataset: "small".to_string(),
             status: "SAMPLED".to_string(),
             promoted_to: String::new(),
@@ -487,6 +514,67 @@ mod tests {
         assert_eq!(source["commit"], row.commit);
         assert_eq!(source["path"], row.path);
         assert_eq!(source["dataset"], row.dataset);
+
+        Ok(())
+    }
+
+    #[test]
+    fn a_move_to_another_language_takes_each_side_from_its_own_path() -> Result<()> {
+        let root = tempdir()?;
+        let repo_path = root.path().join("example-repo");
+        let repo = Repository::init(&repo_path)?;
+        let signature = git2::Signature::now("test", "test@example.com")?;
+        // A one-file tree: a commit that deletes the parent's file and adds `file` in its place.
+        let commit_tree = |file: &str, content: &str| -> Result<Oid> {
+            let mut builder = repo.treebuilder(None)?;
+            builder.insert(file, repo.blob(content.as_bytes())?, 0o100644)?;
+            Ok(builder.write()?)
+        };
+        let java = commit_tree("Greeter.java", "class Greeter {}\n")?;
+        let parent = repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            "Java",
+            &repo.find_tree(java)?,
+            &[],
+        )?;
+        let kotlin = commit_tree("Greeter.kt", "class Greeter\n")?;
+        let commit = repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            "Kotlin",
+            &repo.find_tree(kotlin)?,
+            &[&repo.find_commit(parent)?],
+        )?;
+
+        let mut row = row_for(&repo_path, commit.to_string(), "Greeter.kt".to_string());
+        row.language = "Java-Kotlin".to_string();
+        row.dataset = "crosslang".to_string();
+        row.before_path = "Greeter.java".to_string();
+        let output_dir = tempdir()?;
+        let dir = match materialize_row(&row, &[root.path().to_path_buf()], output_dir.path())? {
+            Resolution::Create(dir) => dir,
+            Resolution::AlreadyPresent(_) => panic!("expected a fresh directory"),
+        };
+
+        assert_eq!(
+            fs::read_to_string(dir.join("before.java.test"))?,
+            "class Greeter {}\n"
+        );
+        assert_eq!(
+            fs::read_to_string(dir.join("after.kt.test"))?,
+            "class Greeter\n"
+        );
+        let source: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(dir.join("source.json"))?)?;
+        assert_eq!(source["before_path"], "Greeter.java");
+        assert_eq!(source["path"], "Greeter.kt");
+        assert!(fs::read_to_string(dir.join("README.md"))?.contains("**Before file:**"));
+        // A same-path row's source.json has no `before_path` (see `Row::before_path`).
+        row.before_path.clear();
+        assert!(serde_json::to_value(&row)?.get("before_path").is_none());
 
         Ok(())
     }
