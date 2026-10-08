@@ -100,6 +100,107 @@ fn own_content_span(node: Node) -> Option<(Point, usize, usize)> {
     gap
 }
 
+/// One stretch of a node's own text, `from..to` in its file, starting at `start`.
+#[derive(Debug, Clone, Copy)]
+struct Gap {
+    from: usize,
+    to: usize,
+    start: Point,
+}
+
+/// `node`'s gaps in byte order, empty ones included, each with the ids of the children either
+/// side of it (`None` at the node's edges): `gap₀ child₀ gap₁ … childₙ gapₙ₊₁`. The ids are what
+/// [`pair_gaps`] lines the two sides up by.
+fn gaps_between_children(node: Node) -> Vec<(Option<usize>, Gap, Option<usize>)> {
+    let mut gaps = Vec::new();
+    let mut pos = node.start_byte();
+    let mut start = node.start_position();
+    let mut left = None;
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        let to = child.start_byte().max(pos);
+        gaps.push((
+            left,
+            Gap {
+                from: pos,
+                to,
+                start,
+            },
+            Some(child.id()),
+        ));
+        pos = pos.max(child.end_byte());
+        start = child.end_position();
+        left = Some(child.id());
+    }
+    let to = node.end_byte().max(pos);
+    gaps.push((
+        left,
+        Gap {
+            from: pos,
+            to,
+            start,
+        },
+        None,
+    ));
+    gaps
+}
+
+/// `gap` without its leading and trailing whitespace, or `None` if that is all it holds.
+fn trimmed_gap(gap: Gap, source: &str) -> Option<Gap> {
+    let text = &source[gap.from..gap.to];
+    let leading = text.len() - text.trim_start().len();
+    let core = text.trim();
+    if core.is_empty() {
+        return None;
+    }
+    Some(Gap {
+        from: gap.from + leading,
+        to: gap.from + leading + core.len(),
+        start: point_at_byte_offset(text, gap.start, leading),
+    })
+}
+
+/// Each gap of `node` whose text differs beyond whitespace from the counterpart's gap between the
+/// same matched children, in byte order: the pairs [`NodeChange::GapsChanged`] narrows. A gap is
+/// bounded by its two neighbouring children, or the node's edges; it pairs with the counterpart's
+/// gap bounded by those children's partners, so only where both neighbours are matched to
+/// neighbouring children of `other` (or are the same edge). A gap beside an inserted or deleted
+/// child has no counterpart and is left to that child, as
+/// `vimscript-neovim-neovim-add-one-dict-entry`'s `\` continuations are.
+fn pair_gaps(
+    node: Node,
+    other: Node,
+    diff: &ASTDiff,
+    own_text: &str,
+    other_text: &str,
+) -> Vec<(Gap, Gap)> {
+    let partner = |id: Option<usize>| -> Option<Option<usize>> {
+        match id {
+            None => Some(None),
+            Some(id) => diff
+                .mapping_for_node(&id)
+                .map(|(mapped, _)| mapped)
+                .filter(|&mapped| mapped != 0)
+                .map(Some),
+        }
+    };
+    let other_gaps = gaps_between_children(other);
+    gaps_between_children(node)
+        .into_iter()
+        .filter_map(|(left, gap, right)| {
+            let (left, right) = (partner(left)?, partner(right)?);
+            let (_, other_gap, _) = other_gaps
+                .iter()
+                .find(|(l, _, r)| *l == left && *r == right)?;
+            let changed = !whitespace_stripped_equal(
+                &own_text[gap.from..gap.to],
+                &other_text[other_gap.from..other_gap.to],
+            );
+            changed.then_some((gap, *other_gap))
+        })
+        .collect()
+}
+
 /// Byte length of the longest common prefix of `a` and `b`, compared by character, so the result
 /// is a char boundary in *both* strings.
 fn common_prefix_byte_len(a: &str, b: &str) -> usize {
@@ -350,6 +451,15 @@ pub(crate) enum NodeChange<'c> {
     /// [`own_content`]): the counterpart. A container whose children changed but whose own gaps
     /// did not is [`NodeChange::Descend`] instead, so the walk finds the smaller real change.
     OwnContentChanged(Node<'c>),
+    /// Like [`NodeChange::OwnContentChanged`], but some side's own text is split across several
+    /// gaps (an escape inside a string, an entity in an XML attribute value): the counterpart.
+    /// Each gap is narrowed against the counterpart's gap between the same matched children (see
+    /// [`pair_gaps`]), and the children still decide for themselves.
+    GapsChanged(Node<'c>),
+    /// Deleted or inserted on its own, its children not included, with own text beyond whitespace
+    /// (`InDualCone` between an XML attribute value's quotes, the `100` of a CSS `100%`): each such
+    /// gap is painted with the operation, and the children decide for themselves.
+    GapsPlaced(TextOperation),
     /// Nothing to paint at this node; its children decide.
     Descend,
 }
@@ -363,9 +473,13 @@ pub(crate) enum NodeChange<'c> {
 /// (still `Identical` in the AST) and paints the whole block `Update`.
 ///
 /// `OwnContentChanged` also requires each side's own content to be one contiguous gap, the only
-/// shape it can paint narrowly. A `\`-continued vim `dictionnary` or shell `command` has a marker
-/// in every gap, so gaining a child changes its own content; it must descend to that child rather
-/// than paint the whole container (`vimscript-neovim-neovim-add-one-dict-entry`).
+/// shape it can paint as one span. Own content split across several gaps is `GapsChanged`, painted
+/// gap by gap and still descended into: a `\`-continued vim `dictionnary` or shell `command` has a
+/// marker in every gap, so gaining a child changes its own content, and painting it whole would
+/// bury the new child (`vimscript-neovim-neovim-add-one-dict-entry`).
+///
+/// A deleted or inserted node with children is `GapsPlaced` when it has own content beyond
+/// whitespace, so text its children do not cover is painted too; `Descend` otherwise.
 pub(crate) fn classify_node<'c>(
     node: Node,
     mapped_id: usize,
@@ -388,18 +502,91 @@ pub(crate) fn classify_node<'c>(
         ASTMappingOperation::Update => NodeChange::Update(counterpart()),
         ASTMappingOperation::MatchButNotIdentical => match counterpart() {
             Some(other)
-                if own_content_span(node).is_some()
-                    && own_content_span(other).is_some()
-                    && !whitespace_stripped_equal(
-                        &own_content(node, own_bytes),
-                        &own_content(other, other_bytes),
-                    ) =>
+                if !whitespace_stripped_equal(
+                    &own_content(node, own_bytes),
+                    &own_content(other, other_bytes),
+                ) =>
             {
-                NodeChange::OwnContentChanged(other)
+                if own_content_span(node).is_some() && own_content_span(other).is_some() {
+                    NodeChange::OwnContentChanged(other)
+                } else {
+                    NodeChange::GapsChanged(other)
+                }
             }
             _ => NodeChange::Descend,
         },
+        ASTMappingOperation::Delete if !own_content(node, own_bytes).trim().is_empty() => {
+            NodeChange::GapsPlaced(TextOperation::Delete)
+        }
+        ASTMappingOperation::Insert if !own_content(node, own_bytes).trim().is_empty() => {
+            NodeChange::GapsPlaced(TextOperation::Insert)
+        }
         _ => NodeChange::Descend,
+    }
+}
+
+/// One item of [`RangeWalk::visit_tree`]'s stack: a node to visit, or a gap of an already visited
+/// node, painted when the walk reaches it in byte order.
+enum Step<'t> {
+    Visit(Node<'t>),
+    /// A changed gap of a [`NodeChange::GapsChanged`] node and its counterpart's gap.
+    NarrowGap {
+        kind: &'static str,
+        source: Gap,
+        destination: Gap,
+    },
+    /// A gap of a [`NodeChange::GapsPlaced`] node.
+    PlaceGap {
+        gap: Gap,
+        operation: TextOperation,
+    },
+}
+
+/// What [`RangeWalk::visit`] has the traversal do after painting a node.
+enum Descent<'t> {
+    No,
+    Children,
+    /// The children, interleaved with the node's gap steps in byte order.
+    ChildrenAndGaps(Vec<Step<'t>>),
+}
+
+/// `node`'s children as [`Step::Visit`]s with `gaps` slotted in by where they start: a gap goes
+/// before the first child starting at or after it.
+fn interleave_gaps<'t, T>(
+    node: Node<'t>,
+    gaps: Vec<T>,
+    to_step: impl Fn(T) -> Step<'t>,
+) -> Vec<Step<'t>>
+where
+    T: GapStart,
+{
+    let mut gaps = gaps.into_iter().peekable();
+    let mut steps = Vec::new();
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        while let Some(gap) = gaps.next_if(|gap| gap.gap_start() <= child.start_byte()) {
+            steps.push(to_step(gap));
+        }
+        steps.push(Step::Visit(child));
+    }
+    steps.extend(gaps.map(to_step));
+    steps
+}
+
+/// Where a gap item starts, for [`interleave_gaps`].
+trait GapStart {
+    fn gap_start(&self) -> usize;
+}
+
+impl GapStart for Gap {
+    fn gap_start(&self) -> usize {
+        self.from
+    }
+}
+
+impl GapStart for (Gap, Gap) {
+    fn gap_start(&self) -> usize {
+        self.0.from
     }
 }
 
@@ -486,15 +673,36 @@ impl RangeWalk<'_> {
     /// Pre-order traversal of the source tree, painting every node with a known mapping and
     /// descending only where [`Self::visit`] says the children still have to decide.
     fn visit_tree(&mut self, root: Node) {
-        let mut stack = vec![root];
-        while let Some(node) = stack.pop() {
-            if !self.visit(node) {
-                continue;
-            }
-            let mut child_cursor = node.walk();
-            let children: Vec<_> = node.children(&mut child_cursor).collect();
-            for child in children.into_iter().rev() {
-                stack.push(child);
+        let mut stack = vec![Step::Visit(root)];
+        while let Some(step) = stack.pop() {
+            let node = match step {
+                Step::Visit(node) => node,
+                Step::NarrowGap {
+                    kind,
+                    source,
+                    destination,
+                } => {
+                    let new_ranges = self.narrowed_gap_ranges(kind, source, destination);
+                    self.push(new_ranges);
+                    continue;
+                }
+                Step::PlaceGap { gap, operation } => {
+                    let new_ranges = self.placed_gap(gap, operation).into_iter().collect();
+                    self.push(new_ranges);
+                    continue;
+                }
+            };
+            match self.visit(node) {
+                Descent::No => {}
+                Descent::Children => {
+                    let mut child_cursor = node.walk();
+                    let children: Vec<_> = node.children(&mut child_cursor).collect();
+                    stack.extend(children.into_iter().rev().map(Step::Visit));
+                }
+                // In byte order, so each gap's range is built when the walk reaches it: a range
+                // pushed ahead of the children before it would corrupt every later
+                // `last_non_move_range` anchor (see `own_gap_ranges`).
+                Descent::ChildrenAndGaps(steps) => stack.extend(steps.into_iter().rev()),
             }
         }
         if !self.current_range.is_zero() {
@@ -503,10 +711,10 @@ impl RangeWalk<'_> {
         }
     }
 
-    /// Paints one node. Returns whether the traversal should descend into its children.
-    fn visit(&mut self, node: Node) -> bool {
+    /// Paints one node, and says what the traversal visits next.
+    fn visit<'t>(&mut self, node: Node<'t>) -> Descent<'t> {
         let Some((mapped_id, mapping)) = self.diff.mapping_for_node(&node.id()) else {
-            return true;
+            return Descent::Children;
         };
         let change = classify_node(
             node,
@@ -535,13 +743,93 @@ impl RangeWalk<'_> {
                 self.own_content_update_ranges(node, destination_node),
                 false,
             ),
-            NodeChange::Descend => match self.whole_content_prune(node, &mapping.operation) {
-                Some(operation) => (self.own_gap_ranges(node, operation), false),
-                None => (Vec::new(), true),
-            },
+            NodeChange::GapsChanged(destination_node) => {
+                return Descent::ChildrenAndGaps(self.narrowed_gap_steps(node, destination_node));
+            }
+            NodeChange::GapsPlaced(operation) => {
+                match self.whole_content_prune(node, &mapping.operation) {
+                    Some(operation) => (self.own_gap_ranges(node, operation), false),
+                    None => {
+                        return Descent::ChildrenAndGaps(self.placed_gap_steps(node, operation));
+                    }
+                }
+            }
+            NodeChange::Descend => (Vec::new(), true),
         };
         self.push(new_ranges);
-        descend
+        if descend {
+            Descent::Children
+        } else {
+            Descent::No
+        }
+    }
+
+    /// `node`'s children interleaved with a [`Step::NarrowGap`] for each gap [`pair_gaps`] pairs
+    /// with `destination_node`'s, in byte order.
+    fn narrowed_gap_steps<'t>(&self, node: Node<'t>, destination_node: Node) -> Vec<Step<'t>> {
+        let pairs = pair_gaps(
+            node,
+            destination_node,
+            self.diff,
+            &self.source.contents,
+            &self.destination.contents,
+        );
+        interleave_gaps(node, pairs, |(source, destination)| Step::NarrowGap {
+            kind: node.kind(),
+            source,
+            destination,
+        })
+    }
+
+    /// `node`'s children interleaved with a [`Step::PlaceGap`] for each gap holding more than
+    /// whitespace, in byte order.
+    fn placed_gap_steps<'t>(&self, node: Node<'t>, operation: TextOperation) -> Vec<Step<'t>> {
+        let gaps = gaps_between_children(node)
+            .into_iter()
+            .filter_map(|(_, gap, _)| trimmed_gap(gap, &self.source.contents))
+            .collect();
+        interleave_gaps(node, gaps, |gap| Step::PlaceGap {
+            gap,
+            operation: operation.clone(),
+        })
+    }
+
+    /// One changed gap of a [`NodeChange::GapsChanged`] node, split like an update into an
+    /// identical prefix, a changed middle and an identical suffix.
+    fn narrowed_gap_ranges(
+        &mut self,
+        kind: &str,
+        source: Gap,
+        destination: Gap,
+    ) -> Vec<RangeMatch> {
+        let source_text = &self.source.contents[source.from..source.to];
+        let destination_text = &self.destination.contents[destination.from..destination.to];
+        let source_end = point_at_byte_offset(source_text, source.start, source_text.len());
+        intra_node_update_ranges(
+            &mut self.last_non_move_range,
+            text_range_from_points(source.start, source_end, &self.source_columns),
+            TextSpan {
+                text: source_text,
+                start: source.start,
+                columns: &self.source_columns,
+            },
+            TextSpan {
+                text: destination_text,
+                start: destination.start,
+                columns: &self.destination_columns,
+            },
+            self.source_is_before,
+            is_content_node(kind),
+            self.options.whole_pair_updates
+                || splits_a_whole_token(source_text, destination_text)
+                || (self.options.whole_identifier_updates
+                    && is_renamed_identifier(kind, source_text, destination_text)),
+        )
+    }
+
+    /// One gap of a [`NodeChange::GapsPlaced`] node, painted with the node's operation.
+    fn placed_gap(&mut self, gap: Gap, operation: TextOperation) -> Option<RangeMatch> {
+        self.gap_range(gap.from, gap.to, gap.start, &operation)
     }
 
     /// Whether `node` is a member of an N:M group ([`ASTDiff::add_group`]) on its own side.
