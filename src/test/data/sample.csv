@@ -524,7 +524,7 @@ HTML,apache-superset.git,dca41f9a7b8aa6274f048344a23bdc94b4e00e56,superset/templ
 HTML,axios-axios.git,097948698a057235140cc275504c12d5d20281b8,test/manual/basic.html,html-axios-axios-add-script-element,stratified,PROMOTED,,10-30
 HTML,berndporr-iir1,4c139f20d1caf0c1f511f6de282bc795b17f4a2f,docs/classIir_1_1CascadeStages.html,html-berndporr-iir1-a-lot-of-new-functionality,full,PROMOTED,,
 HTML,caddyserver-caddy.git,130f6d1f838900c12e1649e580aae817e8c2909e,modules/caddyhttp/fileserver/browse.html,html-caddyserver-caddy-add-one-element,stratified,PROMOTED,,1000-3000
-HTML,caddyserver-caddy.git,f98f449f05c251da2b25fe96ffb73319b4a7af76,modules/caddyhttp/fileserver/browse.html,,stratified,SAMPLED,,1000-3000
+HTML,caddyserver-caddy.git,f98f449f05c251da2b25fe96ffb73319b4a7af76,modules/caddyhttp/fileserver/browse.html,html-caddyserver-caddy-parse-errors-due-to-template,stratified,PROMOTED,,1000-3000
 HTML,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a00989_source.html,html-chennes-med-extreme-test,full,PROMOTED,,
 HTML,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01700_source.html,,full,REJECTED,I couldn't solve this.,
 HTML,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a02105_a3c04138a5bfe5d72780bb7e82a18e627.html,html-chennes-med-only-text-value-change,full,PROMOTED,,
@@ -689,7 +689,7 @@ JSON,langflow-ai-langflow.git,65a3a193ae2a0707a37d16a4f3bb47dfe7b03218,src/backe
 JSON,langflow-ai-langflow.git,86078b23aeed42fae92688d49c13568521eb319c,src/backend/base/langflow/initial_setup/starter_projects/Image Sentiment Analysis.json,,stratified,SAMPLED,,1000-3000
 JSON,langflow-ai-langflow.git,ae00c031542fa7a4183b3a82813ddecb7b15096e,src/backend/base/langflow/initial_setup/starter_projects/Blog Writer.json,,stratified,SAMPLED,,1000-3000
 JSON,langflow-ai-langflow.git,db280e420d2ed575819854bf1ad6236d57f1444b,src/backend/base/langflow/initial_setup/starter_projects/News Aggregator.json,,stratified,SAMPLED,,1000-3000
-JSON,louislam-uptime-kuma.git,65b21d2c4b0727e4eff63c622abc141b2e69896c,package-lock.json,,stratified,SAMPLED,,3000+
+JSON,louislam-uptime-kuma.git,65b21d2c4b0727e4eff63c622abc141b2e69896c,package-lock.json,json-louislam-uptime-kuma-big-add-only,stratified,PROMOTED,,3000+
 JSON,main-branch-track_open_instances,2460ddeabd975b42925daf0572220ef6cbe208fd,release-please-config.json,json-main-branch-track_open_instances-remove-item-from-list,full,PROMOTED,,
 JSON,mastodon-mastodon.git,85bf5be604f076de18f2f888b6da1aa82df68baa,app/javascript/mastodon/locales/fo.json,json-mastodon-add-translation,small,PROMOTED,,
 JSON,mathjax-MathJax,5c2a3d130b2eaeac666f99790df11f41b8c11648,sre/mathmaps/it.json,,full,REJECTED,"This is a ridiculously large json file with 135k nodes. For now, this is out of scope.",
@@ -741,7 +741,7 @@ Java,Genymobile-scrcpy.git,3acffaae57238ee47e05f97f8e762a04550fdad8,server/src/m
 Java,Genymobile-scrcpy.git,3acffaae57238ee47e05f97f8e762a04550fdad8,server/src/main/java/com/genymobile/scrcpy/video/ScreenCapture.java,java-genymobile-scrcpy-change-some-android-version-constant,small,PROMOTED,,
 Java,Genymobile-scrcpy.git,408a388fc5115483248c3444062d52565fd1f906,server/src/main/java/com/genymobile/scrcpy/Server.java,,stratified,SAMPLED,,300-1000
 Java,Genymobile-scrcpy.git,4cd61b5a9001043f1054502f0c29465707260cb1,server/src/main/java/com/genymobile/scrcpy/wrappers/ClipboardManager.java,,stratified,SAMPLED,,100-300
-Java,Genymobile-scrcpy.git,54dede36307edc69553d7de620f6b4318e48c678,server/src/main/java/com/genymobile/scrcpy/AudioCapture.java,,stratified,SAMPLED,,100-300
+Java,Genymobile-scrcpy.git,54dede36307edc69553d7de620f6b4318e48c678,server/src/main/java/com/genymobile/scrcpy/AudioCapture.java,java-genymobile-scrcpy-call-slightly-different-function,stratified,PROMOTED,,100-300
 Java,Genymobile-scrcpy.git,5d0e012a4c198633df8c578e626e2160d148d3d6,server/src/main/java/com/genymobile/scrcpy/device/DisplayInfo.java,,stratified,SAMPLED,,30-100
 Java,Genymobile-scrcpy.git,66b6c06443130a8a11984ca2cd6d80f5cd3db6ec,server/src/main/java/com/genymobile/scrcpy/AudioCodec.java,,stratified,SAMPLED,,30-100
 Java,Genymobile-scrcpy.git,66b6c06443130a8a11984ca2cd6d80f5cd3db6ec,server/src/main/java/com/genymobile/scrcpy/Server.java,,stratified,SAMPLED,,300-1000
@@ -1703,7 +1703,7 @@ Rust,GyulyVGC-sniffnet.git,2885421bcbd6162fdb8b208c9b914873d1ce35f5,src/networki
 Rust,GyulyVGC-sniffnet.git,77ae35f0cff29a72986282a23e2fb0b228143bdf,src/chart/types/mod.rs,rust-gyulyvgc-sniffnet-add-mod-2,stratified,PROMOTED,,0-10
 Rust,GyulyVGC-sniffnet.git,8eafae44d9de359737d2a35c7002c3daeb6cffba,src/gui/pages/overview_page.rs,,stratified,SAMPLED,,1000-3000
 Rust,GyulyVGC-sniffnet.git,a0f2b01176b35a3d9640fde1ca0d820ce00d369a,src/networking/traffic_preview.rs,,stratified,SAMPLED,,100-300
-Rust,GyulyVGC-sniffnet.git,a4df0b280bb8ccc786189c5e8af2c9fd214bca6a,src/gui/styles/donut.rs,,stratified,SAMPLED,,30-100
+Rust,GyulyVGC-sniffnet.git,a4df0b280bb8ccc786189c5e8af2c9fd214bca6a,src/gui/styles/donut.rs,rust-gyulyvgc-sniffnet-nice-small-move,stratified,PROMOTED,,30-100
 Rust,GyulyVGC-sniffnet.git,f59964ac99350c47722369dfc0d281071c5ad52d,src/chart/types/mod.rs,rust-gyulyvgc-sniffnet-add-mod-3,stratified,PROMOTED,,0-10
 Rust,GyulyVGC-sniffnet.git,fcc5d5c6d2ef61aee753e7093b32055a42df7023,src/gui/styles/toggler.rs,,stratified,SAMPLED,,30-100
 Rust,ReFirmLabs-binwalk,e460bddb37d668907ca894181062f4209327d3c5,src/binwalk.rs,rust-refirmlabs-binwalk-whitespace-only,full,PROMOTED,,
@@ -1757,7 +1757,7 @@ Rust,tiffany352-rink-rs,72d856109bd7f4b73082d8f785f0dfdc1d644b1e,cli/src/config.
 Rust,tursodatabase-turso,4416f0d9e92e80d89b2ce2af86b3b3fef593f346,core/io/clock.rs,rust-tursodatabase-turso-unwrap-to-expect,full,PROMOTED,,
 Rust,vercel-next.js.git,04898d8d0d99f0a5cca35b610a7de3fec9ffc92b,turbopack/crates/turbopack-core/src/module_graph/async_module_info.rs,,stratified,SAMPLED,,100-300
 Rust,vercel-next.js.git,1637d61731065b5ad5705c159967f213c3cf624d,turbopack/crates/turbo-tasks-backend/src/kv_backing_storage.rs,,stratified,SAMPLED,,300-1000
-Rust,vercel-next.js.git,1ab534927b5e617454d34690861661411f27d6a5,turbopack/crates/turbo-tasks-backend/src/database/key_value_database.rs,,stratified,SAMPLED,,30-100
+Rust,vercel-next.js.git,1ab534927b5e617454d34690861661411f27d6a5,turbopack/crates/turbo-tasks-backend/src/database/key_value_database.rs,rust-vercel-nextjs-add-a-function,stratified,PROMOTED,,30-100
 Rust,vercel-next.js.git,5719439f24c81e62b90b7b53b332b6e615d9565b,turbopack/crates/turbo-tasks-macros/src/func.rs,rust-vercel-nextjs-refactoring-would-require-mulitmap-mapping,small,PROMOTED,,
 Rust,vercel-next.js.git,5c70b4beaa80ec7031284153ba012b243788ef1e,turbopack/crates/turbopack-ecmascript-runtime/src/browser_runtime.rs,rust-vercel-nextjs-move-from-one-struct-to-another-and-add-some-code,small,PROMOTED,,
 Rust,vercel-next.js.git,9e97759ab8fc876dca1fbfc3e9746d34d113b0d8,turbopack/crates/turbo-tasks-backend/src/database/by_key_space.rs,,stratified,SAMPLED,,30-100
@@ -1773,10 +1773,10 @@ Rust,zed-industries-zed.git,14f37ed5024bbccff2200797d1d9bf69aee01d66,crates/gpui
 Rust,zed-industries-zed.git,14f37ed5024bbccff2200797d1d9bf69aee01d66,crates/gpui_wgpu/src/gpui_wgpu.rs,rust-zed-industries-zed-change-mods,stratified,PROMOTED,,0-10
 Rust,zed-industries-zed.git,14f37ed5024bbccff2200797d1d9bf69aee01d66,tooling/xtask/src/tasks.rs,rust-zed-industries-zed-add-mod,stratified,PROMOTED,,0-10
 Rust,zed-industries-zed.git,4be8544777deea7e5ab7a3cf19fb90a13dc80d67,crates/gpui_wgpu/src/wgpu_renderer.rs,,stratified,SAMPLED,,1000-3000
-Rust,zed-industries-zed.git,5c91ebf1fe9f8716a945a669b2e9ebeb83cb6fbe,crates/proto/src/proto.rs,,stratified,SAMPLED,,300-1000
-Rust,zed-industries-zed.git,6a14388d385ae59f528bb54db0c10d2551cc1348,crates/project/src/lsp_store.rs,,stratified,SAMPLED,,3000+
+Rust,zed-industries-zed.git,5c91ebf1fe9f8716a945a669b2e9ebeb83cb6fbe,crates/proto/src/proto.rs,rust-zed-industries-zed-delete-only,stratified,PROMOTED,,300-1000
+Rust,zed-industries-zed.git,6a14388d385ae59f528bb54db0c10d2551cc1348,crates/project/src/lsp_store.rs,rust-zed-industries-zed-add-only-2,stratified,PROMOTED,,3000+
 Rust,zed-industries-zed.git,6c914add260b9b4305189ec455cdd370fd0a1db6,crates/edit_prediction/src/edit_prediction.rs,,stratified,SAMPLED,,1000-3000
-Rust,zed-industries-zed.git,832782f6b333a89074d55f04ecbecd75467fc48a,crates/agent_ui/src/connection_view.rs,,stratified,SAMPLED,,3000+
+Rust,zed-industries-zed.git,832782f6b333a89074d55f04ecbecd75467fc48a,crates/agent_ui/src/connection_view.rs,rust-zed-industries-zed-add-only,stratified,PROMOTED,,3000+
 Rust,zed-industries-zed.git,8e78b9fa97fe494198a94501ce93f8edb7a72851,crates/rules_library/src/rules_library.rs,,stratified,SAMPLED,,1000-3000
 Rust,zed-industries-zed.git,b32067d24868600b3b64f9bdc4656053fd5be0ba,crates/gpui/src/app/test_context.rs,,stratified,SAMPLED,,1000-3000
 Rust,zed-industries-zed.git,b5666319b4409ca882ace3ad8baaab513e5f3a8c,crates/zed/src/visual_test_runner.rs,,stratified,SAMPLED,,3000+
@@ -1784,7 +1784,7 @@ Rust,zed-industries-zed.git,bc9a3e53af44040fa4c44255527be53aa693645e,crates/ui/s
 Rust,zed-industries-zed.git,d788673f1ef161ad616e19331e2d24e8f6604eb4,crates/multi_buffer/src/multi_buffer.rs,,stratified,SAMPLED,,3000+
 Rust,zed-industries-zed.git,e9e71431bb26ce554d4ed2024569745df6dd9047,crates/worktree/src/worktree.rs,rust-zed-industries-zed-add-argument,small,PROMOTED,,
 Rust,zed-industries-zed.git,ea5c58c19a2bcb0a2fc88ebe3258352ed2c586e4,crates/ui/src/components/ai.rs,rust-zed-industries-zed-change-mod-and-use,stratified,PROMOTED,,0-10
-Rust,zed-industries-zed.git,f3e4c152a366123e3abe3fb992998874f27a8ea6,crates/terminal_view/src/terminal_scrollbar.rs,,stratified,SAMPLED,,30-100
+Rust,zed-industries-zed.git,f3e4c152a366123e3abe3fb992998874f27a8ea6,crates/terminal_view/src/terminal_scrollbar.rs,rust-zed-industries-zed-small-change,stratified,PROMOTED,,30-100
 Rust,zed-industries-zed.git,f69ab1d04e53577b4fc5e873ebb0ec0bbd3283e2,crates/agent/src/tests/mod.rs,,stratified,SAMPLED,,3000+
 Rust,zed-industries-zed.git,f6fd673dbcf3c51b2b54ec0520061c85faca1b93,crates/language_models/src/provider/cloud.rs,,stratified,SAMPLED,,1000-3000
 SFNT,ArtifexSoftware-urw-base35-fonts,b6bc4fe7c17dcd8cf32636a73a2f27337fcb2e63,P052-BoldItalic.ttf,,fonts,SAMPLED,,many-same-members

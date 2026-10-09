@@ -169,7 +169,7 @@ t              text view: read the source, and paint the human text-range ground
                  panel is on, the focused panel's side first. Tab side, hjkl/g/G move, w/b/e by word and W/B/E by
                  blank-separated word as in vim, 0/^/$ to a line's start/first
                  code character/end, v select. On a terminal narrower than
-                 220 columns only the focused side is drawn; Tab shows the other. By default a selection spanning
+                 200 columns only the focused side is drawn; Tab shows the other. By default a selection spanning
                  several rows sweeps full lines from the anchor to the cursor, one
                  contiguous multi-line block; V toggles that to vertical -- the same
                  columns on each row, like a stack of squares, not every full line

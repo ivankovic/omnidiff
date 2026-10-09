@@ -35,7 +35,7 @@ FEATURES ?= stats
 OUT_DIR ?= research/data/ablation
 
 .PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
-	benchmark-quality benchmark-content diff-inventory lint-python ci benchmark-ablation check-quality \
+	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics
@@ -132,6 +132,11 @@ benchmark-content:
 # fixtures or their ground truths.
 diff-inventory:
 	cargo run --profile ci --features $(FEATURES) --bin diff_inventory
+
+# Opens human_solver, the TUI that builds the ground truth under src/test/data/diffs/; `O` lists
+# the sampled candidates in src/test/data/samples/. CASE=<fixture> opens that fixture directly.
+human-solver:
+	cargo run --release --features $(FEATURES) --bin human_solver -- $(CASE)
 
 # Records the README's assets/diff-vs-omnidiff.gif from the showcase bake, painted by the viewer's
 # own model.js, so it cannot drift from the product. Committed, so it resolves on crates.io; re-run
