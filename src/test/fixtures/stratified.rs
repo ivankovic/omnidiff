@@ -189,6 +189,8 @@ mod cpp_libreoffice_add_imports_and_function_param;
 #[cfg(test)]
 mod cpp_libreoffice_delete_function;
 #[cfg(test)]
+mod cpp_libreoffice_delete_only;
+#[cfg(test)]
 mod cpp_libreoffice_fraction_type_to_double;
 #[cfg(test)]
 mod cpp_libreoffice_remove_two_wrapping_functions;
@@ -196,6 +198,8 @@ mod cpp_libreoffice_remove_two_wrapping_functions;
 mod cpp_libreoffice_warn_to_info;
 #[cfg(test)]
 mod cpp_microsoft_terminal_add_only;
+#[cfg(test)]
+mod cpp_microsoft_terminal_add_tests_cases;
 #[cfg(test)]
 mod cpp_microsoft_terminal_delete_only;
 #[cfg(test)]
@@ -230,6 +234,8 @@ mod cpp_nextcloud_desktop_small_change;
 mod cpp_nzbgetcom_nzbget_add_if;
 #[cfg(test)]
 mod cpp_nzbgetcom_nzbget_add_include;
+#[cfg(test)]
+mod cpp_nzbgetcom_nzbget_interesting_case_of_qualified_identifiers;
 #[cfg(test)]
 mod cpp_nzbgetcom_nzbget_update_string_const;
 #[cfg(test)]
@@ -493,6 +499,8 @@ mod html_axios_axios_add_script_element;
 #[cfg(test)]
 mod html_caddyserver_caddy_add_one_element;
 #[cfg(test)]
+mod html_caddyserver_caddy_parse_errors_due_to_template;
+#[cfg(test)]
 mod html_fatedier_frp_update_hashes;
 #[cfg(test)]
 mod html_fatedier_frp_update_hashes_2;
@@ -546,6 +554,8 @@ mod java_genymobile_scrcpy_add_func;
 mod java_genymobile_scrcpy_add_func_2;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_parameter;
+#[cfg(test)]
+mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
 mod java_genymobile_scrcpy_char_to_string_bugfix;
 #[cfg(test)]
@@ -624,6 +634,8 @@ mod json_gorhill_ublock_version;
 mod json_grafana_grafana_add_pair;
 #[cfg(test)]
 mod json_lidarr_lidarr_remove_one_line;
+#[cfg(test)]
+mod json_louislam_uptime_kuma_big_add_only;
 #[cfg(test)]
 mod json_microsoft_playwright_version_update;
 #[cfg(test)]
@@ -845,9 +857,13 @@ mod rust_gyulyvgc_sniffnet_add_mod_2;
 #[cfg(test)]
 mod rust_gyulyvgc_sniffnet_add_mod_3;
 #[cfg(test)]
+mod rust_gyulyvgc_sniffnet_nice_small_move;
+#[cfg(test)]
 mod rust_gyulyvgc_sniffnet_remoev_attribute;
 #[cfg(test)]
 mod rust_gyulyvgc_sniffnet_rename_one_identifier;
+#[cfg(test)]
+mod rust_gyulyvgc_sniffnet_small_change;
 #[cfg(test)]
 mod rust_protocolbuffers_protobuf_add_enum_variant;
 #[cfg(test)]
@@ -899,15 +915,29 @@ mod rust_tauri_apps_tauri_rename_mod;
 #[cfg(test)]
 mod rust_vercel_next_add_mode;
 #[cfg(test)]
+mod rust_vercel_next_refactoring_multi_merge_with_update;
+#[cfg(test)]
 mod rust_vercel_next_remove_mod;
 #[cfg(test)]
 mod rust_vercel_next_simple_identifier_change;
 #[cfg(test)]
+mod rust_vercel_nextjs_add_a_function;
+#[cfg(test)]
 mod rust_zed_industries_zed_add_mod;
+#[cfg(test)]
+mod rust_zed_industries_zed_add_only;
+#[cfg(test)]
+mod rust_zed_industries_zed_add_only_2;
 #[cfg(test)]
 mod rust_zed_industries_zed_change_mod_and_use;
 #[cfg(test)]
 mod rust_zed_industries_zed_change_mods;
+#[cfg(test)]
+mod rust_zed_industries_zed_delete_only;
+#[cfg(test)]
+mod rust_zed_industries_zed_small_change;
+#[cfg(test)]
+mod rust_zed_industries_zed_small_refactor_out_of_main;
 #[cfg(test)]
 mod shellscript_ansible_ansible_a_small_add;
 #[cfg(test)]

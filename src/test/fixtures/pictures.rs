@@ -95,4 +95,76 @@ mod ico_x_syncplay_syncplay_8d60c8b4_icon;
 #[cfg(test)]
 mod ico_x_woeusb_woeusb_ng_ceea6719_icon;
 #[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a00426;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01344;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01374;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01401;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01419;
+#[cfg(test)]
+mod jpeg_x_deltj_tempestsdr_82f86af6_demo_adversary;
+#[cfg(test)]
+mod jpeg_x_karlb_bumprace_59f81895_back2;
+#[cfg(test)]
+mod jpeg_x_madmaxms_theme_obsidian_2_93ba8ec1_screenshot;
+#[cfg(test)]
+mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_07f3b276ec8f3d39;
+#[cfg(test)]
+mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_36281f239756cf;
+#[cfg(test)]
+mod jpeg_x_rubrikinc_wachy_7f73f5d6_overview_screenshot_skitch;
+#[cfg(test)]
+mod jpeg_x_tnthieding_exif_e904ad17_windows_xp_tags;
+#[cfg(test)]
+mod jpeg_x_yoshimi_yoshimi_255d9952_gui_big;
+#[cfg(test)]
+mod jpeg_x_yoshimi_yoshimi_255d9952_gui_normal;
+#[cfg(test)]
 mod png_x_07th_mod_ponscripter_fork_97e597d6_default;
+#[cfg(test)]
+mod png_x_alemart_surgescript_dc35e1aa_icon;
+#[cfg(test)]
+mod png_x_artemsen_pipewalker_d8856e85_network;
+#[cfg(test)]
+mod png_x_autodesk_automaticcomponenttoolkit_ba20316d_element_global;
+#[cfg(test)]
+mod png_x_azelpg_azpainter_2785bd7a_icon_toolsub_24;
+#[cfg(test)]
+mod png_x_fgmacedo_python_statemachine_ef351d5f_test_state_machine_internal;
+#[cfg(test)]
+mod png_x_gnucash_gnucash_docs_2d831f10_accts_defaultexpenseaccounts;
+#[cfg(test)]
+mod png_x_googlefonts_noto_emoji_c853280d_emoji_u1fa76;
+#[cfg(test)]
+mod png_x_googlefonts_noto_emoji_c853280d_emoji_u1fa76_2;
+#[cfg(test)]
+mod png_x_googlefonts_noto_emoji_c853280d_emoji_u1fa77;
+#[cfg(test)]
+mod png_x_googlefonts_noto_emoji_c853280d_emoji_u1fa77_2;
+#[cfg(test)]
+mod png_x_googlefonts_noto_emoji_f3ae03f5_emoji_u1f93e_1f3fb_200d_2642;
+#[cfg(test)]
+mod png_x_governikus_ausweisapp_522d8b0b_icon20;
+#[cfg(test)]
+mod png_x_hugolabe_wike_f3be8cbe_wike_05;
+#[cfg(test)]
+mod tiff_x_gnustep_apps_systempreferences_9b2be112_gnustep_preview_128;
+#[cfg(test)]
+mod tiff_x_gnustep_apps_systempreferences_9b2be112_no_preview;
+#[cfg(test)]
+mod tiff_x_gnustep_apps_systempreferences_9b2be112_themes;
+#[cfg(test)]
+mod tiff_x_schik_cdplayer_8c988ea9_eject;
+#[cfg(test)]
+mod tiff_x_schik_cdplayer_8c988ea9_stop;
+#[cfg(test)]
+mod tiff_x_scottdraves_electricsheep_4949c31c_thumbnail;
+#[cfg(test)]
+mod tiff_x_voretaq7_radmind_21490e2f_background;
+#[cfg(test)]
+mod webp_x_catppuccin_kvantum_48246af7_kvantum;
+#[cfg(test)]
+mod webp_x_catppuccin_kvantum_48246af7_macchiato;

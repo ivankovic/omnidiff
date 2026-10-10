@@ -4554,16 +4554,19 @@ fn mixed_picker_options() -> Vec<(String, &'static str)> {
 
 /// A picture fixture's row with the verdict spelled `verdict`.
 fn picture_row(verdict: &str) -> ContentRow {
-    ContentRow::of(Some(human_content::HumanContent {
-        verdict: Some(human_content::Judgement::Verdict(verdict.parse().unwrap())),
-        ..Default::default()
-    }))
+    ContentRow::of(
+        Family::Pictures,
+        Some(human_content::HumanContent {
+            verdict: Some(human_content::Judgement::Verdict(verdict.parse().unwrap())),
+            ..Default::default()
+        }),
+    )
 }
 
 fn mixed_picture_verdicts() -> std::collections::HashMap<String, ContentRow> {
     std::collections::HashMap::from([
         ("png-a".to_string(), picture_row("artifacts+resized")),
-        ("png-b".to_string(), ContentRow::of(None)),
+        ("png-b".to_string(), ContentRow::of(Family::Pictures, None)),
     ])
 }
 

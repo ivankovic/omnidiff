@@ -299,6 +299,12 @@ mod java_defects4j_closure_144_functionbuilder;
 #[cfg(test)]
 mod java_defects4j_closure_144_functiontype;
 #[cfg(test)]
+mod java_defects4j_closure_144_functiontypebuilder;
+#[cfg(test)]
+mod java_defects4j_closure_144_typedscopecreator;
+#[cfg(test)]
+mod java_defects4j_closure_145_codegenerator;
+#[cfg(test)]
 mod java_defects4j_closure_147_checkglobalthis;
 #[cfg(test)]
 mod java_defects4j_closure_149_commandlinerunner;
@@ -626,6 +632,8 @@ mod java_defects4j_math_35_elitisticlistpopulation;
 mod java_defects4j_math_6_baseoptimizer;
 #[cfg(test)]
 mod java_defects4j_math_6_cmaesoptimizer;
+#[cfg(test)]
+mod java_defects4j_math_6_powelloptimizer;
 #[cfg(test)]
 mod java_defects4j_math_70_bisectionsolver;
 #[cfg(test)]

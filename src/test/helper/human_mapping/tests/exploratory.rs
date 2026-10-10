@@ -2693,3 +2693,176 @@ fn nm_copy_census() -> Result<()> {
     println!("\n{copies} copies (all-to-all groups not nested in another)");
     Ok(())
 }
+
+/// EXPLORATORY: a boolean against an identifier (`false` -> `enabled`, `enabled` -> `true`), and
+/// how the ground truth treats it - the question behind making it an update by rule.
+///
+/// A case is a `true`/`false` token on one side and an identifier on the other, found two ways:
+/// the tree mapping *pairs* the two (the token or the node wrapping it), or it deletes and inserts
+/// them as children of a matched pair: in a position the pair pins ([`pinned_removed_lexemes`],
+/// invariant 18's test) or anywhere among its children (one argument of several). A boolean
+/// inside a larger deleted or inserted subtree is not a case: nothing stands in for it. Each case is then read in every painting: the label each side's token
+/// carries whole - `update`/`move` (a `Match` entry), `delete`/`insert`, `unpainted`, or `mixed`.
+///
+/// `cargo test --release --lib --features test-fixtures boolean_identifier_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn boolean_identifier_census() -> Result<()> {
+    fn token_of(node: Node) -> Node {
+        crate::test::helper::human_mapping::invariants::lexeme_token(node).unwrap_or(node)
+    }
+    /// A removed token's occupant: the node wrapping only it, or the token itself.
+    fn occupant<'tree>(
+        context: &crate::test::helper::human_mapping::invariants::TreeContext<'tree>,
+        side: usize,
+        token: Node<'tree>,
+    ) -> Option<Node<'tree>> {
+        use crate::test::helper::human_mapping::invariants::{LeafStatus, lexeme_token};
+        if context.status(token, side) != LeafStatus::Removed {
+            return None;
+        }
+        let wrapper = token
+            .parent()
+            .filter(|parent| lexeme_token(*parent).is_some_and(|t| t.id() == token.id()));
+        Some(wrapper.unwrap_or(token))
+    }
+    use crate::test::helper::human_mapping::invariants::{
+        LeafStatus, TreeContext, lexeme_token, painted_labels, pinned_removed_lexemes,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let is_boolean = |text: &str| matches!(text.to_ascii_lowercase().as_str(), "true" | "false");
+    let is_identifier = |node: Node, text: &str| {
+        let kind = node.kind();
+        (kind.contains("identifier") || matches!(kind, "name" | "constant" | "word"))
+            && !is_boolean(text)
+    };
+    let label_name = |label: Option<Option<TextLabel>>| match label {
+        None => "mixed",
+        Some(None) => "unpainted",
+        Some(Some(TextLabel::Update)) => "update",
+        Some(Some(TextLabel::Move)) => "move",
+        Some(Some(TextLabel::Delete)) => "delete",
+        Some(Some(TextLabel::Insert)) => "insert",
+    };
+
+    let mut trees: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut paintings: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut lines = Vec::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        let text =
+            |side: usize, node: Node<'_>| codes[side].contents[node.byte_range()].to_string();
+
+        // (before token, after token, how the tree mapping holds them).
+        let mut cases: Vec<(Node, Node, &str)> = Vec::new();
+        for &leaf in &context.leaves[0] {
+            let partner = match context.status(leaf, 0) {
+                LeafStatus::Paired(partner) => Some(partner),
+                _ => leaf
+                    .parent()
+                    .filter(|wrapper| lexeme_token(*wrapper).is_some_and(|t| t.id() == leaf.id()))
+                    .and_then(|wrapper| context.partner(wrapper, 0))
+                    .map(token_of),
+            };
+            if let Some(partner) = partner {
+                cases.push((leaf, partner, "paired"));
+            }
+        }
+        for (b, a) in pinned_removed_lexemes(&context, &before, &after) {
+            cases.push((token_of(b), token_of(a), "deleted+inserted pinned"));
+        }
+        // Unpinned: a removed token whose occupant's parent is matched, against a removed token
+        // among the partner parent's children, in any position (one argument of several).
+        for &leaf in &context.leaves[0] {
+            let Some(before_occupant) = occupant(&context, 0, leaf) else {
+                continue;
+            };
+            let Some(after_parent) = before_occupant
+                .parent()
+                .and_then(|parent| context.partner(parent, 0))
+            else {
+                continue;
+            };
+            let mut cursor = after_parent.walk();
+            for child in after_parent.children(&mut cursor) {
+                let token = token_of(child);
+                if occupant(&context, 1, token).is_some_and(|o| o.id() == child.id())
+                    && !cases
+                        .iter()
+                        .any(|(b, a, _)| b.id() == leaf.id() && a.id() == token.id())
+                {
+                    cases.push((leaf, token, "deleted+inserted unpinned"));
+                }
+            }
+        }
+        cases.retain(|(b, a, _)| {
+            let (bt, at) = (text(0, *b), text(1, *a));
+            (is_boolean(&bt) && is_identifier(*a, &at))
+                || (is_identifier(*b, &bt) && is_boolean(&at))
+        });
+        if cases.is_empty() {
+            continue;
+        }
+        let labels: Vec<(String, _)> = mapping
+            .text_mappings
+            .iter()
+            .map(|named| Ok((named.name.clone(), painted_labels(named, &before, &after)?)))
+            .collect::<Result<_>>()?;
+        for (b, a, held) in cases {
+            let direction = if is_boolean(&text(0, b)) {
+                "boolean -> identifier"
+            } else {
+                "identifier -> boolean"
+            };
+            let tree = format!("{direction:<22} {held}");
+            let entry = trees.entry(tree.clone()).or_default();
+            entry.0 += 1;
+            entry.1.insert(name.clone());
+            let mut painted = Vec::new();
+            for (painting, labels) in &labels {
+                let whole = |side: usize, node: Node| -> Option<Option<TextLabel>> {
+                    let slice = labels[side].get(node.byte_range())?;
+                    let first = *slice.first()?;
+                    slice.iter().all(|l| *l == first).then_some(first)
+                };
+                let shape = format!("{}/{}", label_name(whole(0, b)), label_name(whole(1, a)));
+                let key = format!("{tree:<40} {painting:<8} {shape}");
+                let entry = paintings.entry(key).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+                painted.push(format!("{painting} {shape}"));
+            }
+            lines.push(format!(
+                "{name}\t{tree}\tbefore {} {:?} -> after {} {:?} ({})\t{}",
+                b.start_position().row + 1,
+                text(0, b),
+                a.start_position().row + 1,
+                text(1, a),
+                a.kind(),
+                painted.join(", ")
+            ));
+        }
+    }
+    for line in &lines {
+        println!("{line}");
+    }
+    println!("\nTree mapping ({} cases):", lines.len());
+    for (class, (count, names)) in &trees {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    println!("\nPaintings (before token / after token):");
+    for (class, (count, names)) in &paintings {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    Ok(())
+}

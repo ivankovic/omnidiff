@@ -19,6 +19,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   lines are: the report says which frames changed, which were added or removed, and whether the
   same frames now show for different times. In the TUI, `,` and `.` step through the frames and
   space plays the animation.
+- `+` and `-` zoom into the same part of both pictures, up to 32x, and Shift+`h`/`j`/`k`/`l` pans:
+  for a large screenshot whose change is a few pixels.
 - Inside tmux, the TUI draws pictures with the graphics protocol of the terminal in front of the
   pane, as tmux knows it, rather than whichever attached client answered the query: a kitty on a
   desk no longer makes a phone's terminal attached to the same session show crossed-out boxes.
@@ -57,6 +59,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   plain text.
 - Building OmniDiff needs Rust 1.92 or later (was 1.88): the picture view's graphics library
   needs 1.90, and the PDF renderer 1.92.
+- The TUI shows the two files side by side from 200 terminal columns (was 220); narrower
+  terminals still show one panel at a time.
 
 ## [0.2.0] - 2026-10-01
 

@@ -22,8 +22,11 @@
 //!
 //! What the human records is verdicts (`diff::content::Verdict`, saved by
 //! `test::helper::human_content`): a level, keys `0`-`5`, and any of its tags, toggled by `r`
-//! resized, `c` canvas, `R` rotated, `d` timing, `f` frames and `m` members - those that fit what is
-//! judged: a picture's shape and timing, a container's members, nothing for text. `u` records that
+//! resized, `c` canvas, `R` rotated, `d` timing, `f` frames, `m` members, and `I` added, `D`
+//! removed and `C` changed files - those that fit what is judged (`diff::content::Shape`): a
+//! picture's shape and timing, an archive's files, another container's members, nothing for text.
+//! An archive takes only `0` identical and `1` changed; text and catalogs name the levels for text
+//! (`diff::content::Vocabulary`). `u` records that
 //! it cannot be judged, with a typed note on what OmniDiff draws wrong. A picture pair gets one
 //! verdict. A container pair gets one per changed member and, if the human wants, one for the
 //! whole pair: the member list's first row is the pair, `j`/`k` move, `n`/`N` jump to the next or
@@ -54,7 +57,7 @@ use std::time::Duration;
 use anyhow::{Context, Result, bail};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use omnidiff::diff::content::container::{MemberDetail, MemberStatus};
-use omnidiff::diff::content::{ContentDiff, Family, Level, Tag, Verdict};
+use omnidiff::diff::content::{ContentDiff, Family, Level, Shape, Tag, Verdict, Vocabulary};
 use omnidiff::test::helper::human_content::{self, HumanContent, Judgement, Mismatches};
 use omnidiff::tui::components::content_viewer::ContentViewer;
 use omnidiff::tui::components::picture_viewer::{self, PictureColors};
@@ -278,7 +281,7 @@ pub(crate) fn run_content_session(
     };
     update_marks(&mut session);
     loop {
-        terminal.draw(|frame| draw(frame, &mut session, app))?;
+        omnidiff::tui::ui::draw_synchronized(terminal, |frame| draw(frame, &mut session, app))?;
         // A playing animation needs drawing at its frame rate, not only on a key.
         let wait = if session.viewer.is_playing() { 20 } else { 250 };
         if !event::poll(Duration::from_millis(wait))? {
@@ -308,16 +311,21 @@ pub(crate) fn run_content_session(
 }
 
 /// The keys that toggle each tag.
-const TAG_KEYS: [(char, Tag); 6] = [
+const TAG_KEYS: [(char, Tag); 9] = [
     ('r', Tag::Resized),
     ('c', Tag::Canvas),
     ('R', Tag::Rotated),
     ('d', Tag::Timing),
     ('f', Tag::Frames),
     ('m', Tag::Members),
+    ('I', Tag::AddedFiles),
+    ('D', Tag::RemovedFiles),
+    ('C', Tag::ChangedFiles),
 ];
 
-/// What `0`-`5` give a verdict to: the selected member of a container, or the pair.
+/// What `0`-`5` give a verdict to: the selected member of a container, or the pair. Inside a
+/// member container opened with `Enter`, that member as a whole: verdicts are recorded at the top
+/// level.
 enum Target {
     Pair,
     Member(String),
@@ -327,9 +335,6 @@ fn target(session: &ContentSession) -> Result<Target, String> {
     let Some(members) = session.viewer.members() else {
         return Ok(Target::Pair);
     };
-    if members.has_nested() {
-        return Err("Verdicts are given at the top level: Backspace goes back".to_string());
-    }
     match (members.selected_key(), members.selected_status()) {
         (None, _) => Ok(Target::Pair),
         (Some(key), Some(MemberStatus::Changed)) => Ok(Target::Member(key.to_string())),
@@ -339,51 +344,75 @@ fn target(session: &ContentSession) -> Result<Target, String> {
     }
 }
 
-/// What is judged, for the tags it can take: is it a picture, is it a container.
-fn shape(session: &ContentSession, target: &Target) -> (bool, bool) {
+/// What is judged, for the tags it can take.
+fn shape(session: &ContentSession, target: &Target) -> Shape {
     let Some(members) = session.viewer.members() else {
-        return (true, false);
+        return Shape::Picture;
+    };
+    let container = |family: Family| {
+        if family == Family::Archives {
+            Shape::Archive
+        } else {
+            Shape::Container
+        }
     };
     let Target::Member(key) = target else {
-        return (false, true);
+        return container(session.family);
     };
     match members
         .diff()
         .member(key)
         .and_then(|member| member.detail.as_ref())
     {
-        Some(MemberDetail::Picture(_)) => (true, false),
+        Some(MemberDetail::Picture(_)) => Shape::Picture,
         Some(MemberDetail::Content { content }) => match content.as_ref() {
-            ContentDiff::Picture(_) => (true, false),
-            ContentDiff::Container(_) => (false, true),
+            ContentDiff::Picture(_) => Shape::Picture,
+            ContentDiff::Container(diff) => container(diff.family),
         },
-        _ => (false, false),
+        _ => Shape::Text,
     }
 }
 
-/// True if the member `key` is text, whose levels have names of their own (`Level::text_name`).
+/// True if the member `key` is text: every message of a catalog, and any member diffed as text.
 fn is_text(session: &ContentSession, key: &str) -> bool {
-    session
-        .viewer
-        .members()
-        .and_then(|members| members.diff().member(key))
-        .and_then(|member| member.detail.as_ref())
-        .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
+    is_catalog(session)
+        || session
+            .viewer
+            .members()
+            .and_then(|members| members.diff().member(key))
+            .and_then(|member| member.detail.as_ref())
+            .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
 }
 
-/// [`is_text`] for `target`: a pair never is.
-fn target_is_text(session: &ContentSession, target: &Target) -> bool {
-    matches!(target, Target::Member(key) if is_text(session, key))
+/// A message catalog is text through and through: its messages, and so the whole file.
+fn is_catalog(session: &ContentSession) -> bool {
+    session.family == Family::Catalogs
+}
+
+/// The names `target`'s levels go by: an archive's two, text's, or the pictures' own. The pair is
+/// text only for a catalog.
+fn vocabulary(session: &ContentSession, target: &Target) -> Vocabulary {
+    let text = match target {
+        Target::Pair => is_catalog(session),
+        Target::Member(key) => is_text(session, key),
+    };
+    if shape(session, target) == Shape::Archive {
+        Vocabulary::Archive
+    } else if text {
+        Vocabulary::Text
+    } else {
+        Vocabulary::Pictures
+    }
 }
 
 /// `judgement` with only the tags `target` can take.
 fn fitted(session: &ContentSession, target: &Target, judgement: &Judgement) -> Judgement {
-    let (picture, container) = shape(session, target);
+    let shape = shape(session, target);
     match judgement {
         Judgement::Verdict(verdict) => {
             let mut fitted = Verdict::new(verdict.level);
             for tag in verdict.tags.iter() {
-                if tag.fits(picture, container) {
+                if tag.fits(shape) {
                     fitted = fitted.with(tag);
                 }
             }
@@ -403,7 +432,7 @@ fn judgement_of(session: &ContentSession, target: &Target) -> Option<Judgement> 
 
 /// Records `judgement` for `target`.
 fn record(session: &mut ContentSession, target: Target, judgement: Judgement) {
-    let label = judgement.label_for(target_is_text(session, &target));
+    let label = judgement.label_in(vocabulary(session, &target));
     session.status = match &target {
         Target::Pair => format!("The whole file: {label} (s to save)"),
         Target::Member(key) => format!("{key}: {label} (s to save)"),
@@ -441,12 +470,13 @@ fn toggle_tag(session: &mut ContentSession, tag: Tag) {
             return;
         }
     };
-    let (picture, container) = shape(session, &target);
-    if !tag.fits(picture, container) {
-        let what = match (&target, picture, container) {
-            (_, false, false) => "text or bytes",
-            (Target::Pair, false, true) | (Target::Member(_), false, true) => "a container",
-            _ => "a picture",
+    let shape = shape(session, &target);
+    if !tag.fits(shape) {
+        let what = match shape {
+            Shape::Picture => "a picture",
+            Shape::Archive => "an archive",
+            Shape::Container => "a container",
+            Shape::Text => "text or bytes",
         };
         session.status = format!("{what} is never {}", tag.name());
         return;
@@ -514,20 +544,25 @@ fn judge_the_rest(session: &mut ContentSession) {
         session.judgement.members.insert(key, fitted);
     }
     let noun = if given == 1 { "member" } else { "members" };
-    session.status = format!("{given} more {noun}: {} (s to save)", judgement.label());
+    let label = judgement.label_in(vocabulary(session, &Target::Pair));
+    session.status = format!("{given} more {noun}: {label} (s to save)");
     update_marks(session);
 }
 
 /// Shows each judged member's verdict in the list, and the engine's where it is shown and differs.
 fn update_marks(session: &mut ContentSession) {
     let judgement = session.judgement.clone();
-    let texts: std::collections::HashSet<String> = session
+    let pair_vocabulary = vocabulary(session, &Target::Pair);
+    let vocabularies: HashMap<String, Vocabulary> = session
         .viewer
         .members()
         .map(|members| members.changed_keys())
         .unwrap_or_default()
         .into_iter()
-        .filter(|key| is_text(session, key))
+        .map(|key| {
+            let vocabulary = vocabulary(session, &Target::Member(key.clone()));
+            (key, vocabulary)
+        })
         .collect();
     let Some(members) = session.viewer.members_mut() else {
         return;
@@ -549,17 +584,24 @@ fn update_marks(session: &mut ContentSession) {
         } else {
             members.member_verdict(&key)
         };
-        let text = texts.contains(&key);
+        let names = if key.is_empty() {
+            pair_vocabulary
+        } else {
+            vocabularies
+                .get(&key)
+                .copied()
+                .unwrap_or(Vocabulary::Pictures)
+        };
         let mark = match (human, found) {
             (Some(human), Some(found)) if human.verdict().is_some_and(|human| human != found) => {
                 format!(
                     "{} (omnidiff: {})",
-                    human.label_for(text),
-                    found.label_for(text)
+                    human.label_in(names),
+                    found.label_in(names)
                 )
             }
-            (Some(human), _) => human.label_for(text),
-            (None, Some(found)) => format!("(omnidiff: {})", found.label_for(text)),
+            (Some(human), _) => human.label_in(names),
+            (None, Some(found)) => format!("(omnidiff: {})", found.label_in(names)),
             (None, None) => continue,
         };
         marks.insert(key, mark);
@@ -644,9 +686,23 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
 
     let quitting = matches!(code, KeyCode::Char('q'));
     match code {
-        KeyCode::Char(digit @ '0'..='5') => {
-            judge(session, Level::ALL[digit as usize - '0' as usize]);
-        }
+        KeyCode::Char(digit @ '0'..='5') => match target(session) {
+            Ok(target) => {
+                let names = vocabulary(session, &target);
+                match Level::offered(names).get(digit as usize - '0' as usize) {
+                    Some(level) => judge(session, *level),
+                    None => {
+                        let keys: Vec<String> = Level::offered(names)
+                            .iter()
+                            .enumerate()
+                            .map(|(index, level)| format!("{index} {}", level.name_in(names)))
+                            .collect();
+                        session.status = format!("Its levels are {}", keys.join(", "));
+                    }
+                }
+            }
+            Err(message) => session.status = message,
+        },
         KeyCode::Char(key) if let Some((_, tag)) = TAG_KEYS.iter().find(|(k, _)| *k == key) => {
             toggle_tag(session, *tag);
         }
@@ -680,7 +736,10 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
             session.status = if show {
                 format!(
                     "omnidiff says: {} (e hides it)",
-                    session.viewer.verdict().label()
+                    session
+                        .viewer
+                        .verdict()
+                        .label_in(vocabulary(session, &Target::Pair))
                 )
             } else {
                 "omnidiff's view hidden".to_string()
@@ -741,7 +800,14 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         Line::from(session.viewer.status())
     } else {
         Line::from(vec![
-            format!("omnidiff: {}", session.viewer.verdict().label()).cyan(),
+            format!(
+                "omnidiff: {}",
+                session
+                    .viewer
+                    .verdict()
+                    .label_in(vocabulary(session, &Target::Pair))
+            )
+            .cyan(),
             format!(" · {}", session.viewer.status()).into(),
         ])
     };
@@ -759,11 +825,12 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
     };
     let reversed = Style::new().add_modifier(Modifier::REVERSED);
     let verdict = current.as_ref().and_then(Judgement::verdict);
-    let text = target
-        .as_ref()
-        .is_ok_and(|target| target_is_text(session, target));
-    for (index, level) in Level::ALL.iter().enumerate() {
-        let text = format!("{index} {}", level.name_for(text));
+    let names = match &target {
+        Ok(target) => vocabulary(session, target),
+        Err(_) => Vocabulary::Pictures,
+    };
+    for (index, level) in Level::offered(names).iter().enumerate() {
+        let text = format!("{index} {}", level.name_in(names));
         choices.push(if verdict.is_some_and(|verdict| verdict.level == *level) {
             Span::styled(text, reversed)
         } else {
@@ -771,12 +838,12 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         });
         choices.push(" ".into());
     }
-    let (picture, container) = match &target {
+    let shape = match &target {
         Ok(target) => shape(session, target),
-        Err(_) => (false, false),
+        Err(_) => Shape::Text,
     };
     for (key, tag) in TAG_KEYS {
-        if !tag.fits(picture, container) {
+        if !tag.fits(shape) {
             continue;
         }
         let text = format!("{key} {}", tag.name());
@@ -830,7 +897,7 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         Some(_) => {
             "  j/k member  n/N unjudged  A rest  a all  g grid  J/K change  Enter open  b blocks"
         }
-        None => "  t view  h/l swipe  b blocks",
+        None => "  t view  h/l swipe  +/- zoom  HJKL pan  b blocks",
     };
     frame.render_widget(
         Paragraph::new(
@@ -1321,6 +1388,134 @@ mod tests {
         }
     }
 
+    /// A gettext `.mo` of `messages`, (original, translation) pairs - the layout
+    /// `diff::content::catalog` reads.
+    fn mo(messages: &[(&str, &str)]) -> Vec<u8> {
+        let count = messages.len();
+        let data_start = 28 + count * 16;
+        let (mut strings, mut tables) = (Vec::new(), [Vec::new(), Vec::new()]);
+        for (original, translation) in messages {
+            for (table, text) in [(0, original), (1, translation)] {
+                let offset = data_start + strings.len();
+                tables[table].extend_from_slice(&(text.len() as u32).to_le_bytes());
+                tables[table].extend_from_slice(&(offset as u32).to_le_bytes());
+                strings.extend_from_slice(text.as_bytes());
+                strings.push(0);
+            }
+        }
+        let header = [
+            0x9504_12de_u32,
+            0,
+            count as u32,
+            28,
+            28 + count as u32 * 8,
+            0,
+            0,
+        ];
+        let mut bytes: Vec<u8> = header.iter().flat_map(|word| word.to_le_bytes()).collect();
+        bytes.extend(tables.concat());
+        bytes.extend(strings);
+        bytes
+    }
+
+    #[test]
+    fn a_catalog_names_its_levels_for_text_on_the_pair_and_every_message() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.mo.test"),
+            dir.path().join("after.mo.test"),
+        );
+        fs::write(&a, mo(&[("Open", "Ouvrir"), ("Save", "Enregistrer")])).unwrap();
+        fs::write(&b, mo(&[("Open", "Ouvrir..."), ("Save", "Sauver")])).unwrap();
+        let mut session = ContentSession {
+            name: "mo-x-repo-1234abcd-fr".to_string(),
+            family: Family::Catalogs,
+            path: "fr.mo".to_string(),
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        let names_text = |text: &str| {
+            text.contains("0 identical")
+                && text.contains("2 formatting")
+                && text.contains("4 rewritten")
+        };
+
+        let text = screen(&mut session, &app, 200);
+        assert!(names_text(&text), "the whole catalog is text: {text}");
+        handle_key(&mut session, &mut app, KeyCode::Char('4'));
+        assert!(session.status.contains("rewritten"), "{}", session.status);
+
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        assert!(
+            names_text(&screen(&mut session, &app, 200)),
+            "and so is a message"
+        );
+        session.viewer.set_annotating(false);
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            !text.contains("redrawn"),
+            "nor does omnidiff's verdict say redrawn: {text}"
+        );
+    }
+
+    #[test]
+    fn an_archive_inside_an_archive_is_judged_as_an_archive() {
+        let zip = |files: &[(&str, &[u8])]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            for (name, contents) in files {
+                writer
+                    .start_file(*name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                std::io::Write::write_all(&mut writer, contents).unwrap();
+            }
+            writer.finish().unwrap();
+            bytes
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.zip.test"),
+            dir.path().join("after.zip.test"),
+        );
+        let inner_before = zip(&[("x.txt", b"1\n")]);
+        let inner_after = zip(&[("x.txt", b"2\n"), ("y.txt", b"new\n")]);
+        fs::write(&a, zip(&[("inner.jar", &inner_before)])).unwrap();
+        fs::write(&b, zip(&[("inner.jar", &inner_after)])).unwrap();
+        let mut session = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for inner.jar: 0 identical 1 changed I added_files"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        handle_key(&mut session, &mut app, KeyCode::Char('I'));
+        assert_eq!(
+            session.judgement.members.get("inner.jar").cloned(),
+            Some(Judgement::Verdict("edited+added_files".parse().unwrap()))
+        );
+
+        // Opened with Enter, the inner archive is still what a verdict is for.
+        handle_key(&mut session, &mut app, KeyCode::Enter);
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for inner.jar: 0 identical 1 changed I added_files"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('C'));
+        assert_eq!(
+            session.judgement.members.get("inner.jar").cloned(),
+            Some(Judgement::Verdict(
+                "edited+added_files+changed_files".parse().unwrap()
+            ))
+        );
+    }
+
     #[test]
     fn a_container_takes_a_verdict_per_changed_member_and_one_for_the_pair() {
         let dir = tempfile::tempdir().unwrap();
@@ -1328,30 +1523,43 @@ mod tests {
         let mut app = test_app();
 
         let verdict = |text: &str| Some(Judgement::Verdict(text.parse().unwrap()));
-        handle_key(&mut session, &mut app, KeyCode::Char('1'));
-        assert_eq!(
-            session.judgement.pair,
-            verdict("imperceptible"),
-            "the pair row"
-        );
-        handle_key(&mut session, &mut app, KeyCode::Char('m'));
-        assert_eq!(
-            session.judgement.pair,
-            verdict("imperceptible+members"),
-            "a container takes the members tag"
-        );
-        handle_key(&mut session, &mut app, KeyCode::Char('r'));
+        let text = screen(&mut session, &app, 200);
         assert!(
-            session.status.contains("a container is never resized"),
+            text.contains("0 identical 1 changed I added_files D removed_files C changed_files u"),
+            "an archive is identical or changed: {text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('2'));
+        assert_eq!(session.judgement.pair, None, "{}", session.status);
+        assert!(
+            session.status.contains("0 identical, 1 changed"),
             "{}",
             session.status
         );
-        handle_key(&mut session, &mut app, KeyCode::Char('2'));
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        assert_eq!(session.judgement.pair, verdict("edited"), "the pair row");
+        assert!(session.status.contains("changed"), "{}", session.status);
+        for key in ['I', 'C'] {
+            handle_key(&mut session, &mut app, KeyCode::Char(key));
+        }
         assert_eq!(
             session.judgement.pair,
-            verdict("artifacts+members"),
+            verdict("edited+added_files+changed_files"),
+            "an archive takes the file tags"
+        );
+        for (key, message) in [
+            ('r', "an archive is never resized"),
+            ('m', "an archive is never members"),
+        ] {
+            handle_key(&mut session, &mut app, KeyCode::Char(key));
+            assert!(session.status.contains(message), "{}", session.status);
+        }
+        handle_key(&mut session, &mut app, KeyCode::Char('0'));
+        assert_eq!(
+            session.judgement.pair,
+            verdict("invisible+added_files+changed_files"),
             "a new level keeps the tags"
         );
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
 
         handle_key(&mut session, &mut app, KeyCode::Char('n'));
         handle_key(&mut session, &mut app, KeyCode::Char('3'));

@@ -27,4 +27,30 @@ mod bzip2_x_rocm_miopen_801eab7f_gfx942130_db_txt;
 #[cfg(test)]
 mod bzip2_x_rocm_miopen_801eab7f_gfx942130_hip_fdb_txt;
 #[cfg(test)]
+mod gzip_x_atsb_dav_text_1396c098_dav_1;
+#[cfg(test)]
+mod gzip_x_atsb_dav_text_1a7fef01_dav_1;
+#[cfg(test)]
+mod gzip_x_cesanta_docker_auth_c67fa202_docker_auth_1_5_0;
+#[cfg(test)]
+mod gzip_x_danrohde_webdavcgi_0ffad62e_complete_min_css;
+#[cfg(test)]
+mod gzip_x_dave_theunsub_clamtk_93cb145a_clamtk_1;
+#[cfg(test)]
+mod gzip_x_dell_biosdisk_7c3ad6f3_biosdisk_8;
+#[cfg(test)]
+mod gzip_x_fbb_git_icmake_650f438d_bobcat;
+#[cfg(test)]
+mod gzip_x_fbb_git_icmake_89b6a1b4_bobcat;
+#[cfg(test)]
+mod gzip_x_fbb_git_icmake_973bca8d_bobcat;
+#[cfg(test)]
+mod gzip_x_guillaumeboehm_nordzy_cursors_5827428b_nordzy_catppuccin_mocha_light_tar;
+#[cfg(test)]
+mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
+#[cfg(test)]
+mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;
+#[cfg(test)]
+mod zip_x_asamk_signal_cli_62811d92_gradle_wrapper;
+#[cfg(test)]
 mod zip_x_silnrsi_teckit_3d06b4f4_teckit_tools;

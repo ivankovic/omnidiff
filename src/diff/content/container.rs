@@ -210,9 +210,15 @@ impl ContainerDiff {
     /// failing that, a member added, removed or edited or more makes it edited; failing that, it is
     /// its most changed member's level, and invisible when no member changed (a recompressed
     /// archive, a re-hinted font). An added or deleted file is edited.
+    ///
+    /// An archive is only identical (invisible) or changed (edited), tagged with which of its
+    /// files were added, removed or changed: what happened inside a file is that file's verdict.
     pub fn verdict(&self) -> Verdict {
         if self.before.is_none() || self.after.is_none() {
             return Verdict::new(Level::Edited);
+        }
+        if self.family == Family::Archives {
+            return self.archive_verdict();
         }
         let added_or_removed = self
             .members
@@ -243,6 +249,25 @@ impl ContainerDiff {
         } else {
             verdict
         }
+    }
+
+    /// [`ContainerDiff::verdict`] for an archive.
+    fn archive_verdict(&self) -> Verdict {
+        let mut verdict = Verdict::new(if self.members.is_empty() {
+            Level::Invisible
+        } else {
+            Level::Edited
+        });
+        for (status, tag) in [
+            (MemberStatus::Added, Tag::AddedFiles),
+            (MemberStatus::Removed, Tag::RemovedFiles),
+            (MemberStatus::Changed, Tag::ChangedFiles),
+        ] {
+            if self.members.iter().any(|member| member.status == status) {
+                verdict = verdict.with(tag);
+            }
+        }
+        verdict
     }
 
     /// The member called `key`, if it changed, was added or was removed.
@@ -634,18 +659,33 @@ mod tests {
         let one = loaded(&[("a", "1"), ("b", "2"), ("c", "x")]);
         let most = loaded(&[("a", "1"), ("y", "2"), ("c", "x")]);
         let crlf = loaded(&[("a", "1\r\n"), ("b", "2"), ("c", "3")]);
-        let verdict = |after: &Loaded| {
-            compare(Family::Archives, Some(&before), Some(after), 0)
+        let verdict = |family: Family, after: &Loaded| {
+            compare(family, Some(&before), Some(after), 0)
                 .verdict()
                 .to_string()
         };
-        assert_eq!(verdict(&same), "invisible");
-        assert_eq!(verdict(&crlf), "invisible", "only a line ending");
-        assert_eq!(verdict(&one), "edited", "one member of three replaced");
+        let font = |after: &Loaded| verdict(Family::Fonts, after);
+        assert_eq!(font(&same), "invisible");
+        assert_eq!(font(&crlf), "invisible", "only a line ending");
+        assert_eq!(font(&one), "edited", "one member of three replaced");
         assert_eq!(
-            verdict(&most),
+            font(&most),
             "replaced+members",
             "b removed, y added, c changed"
+        );
+
+        // An archive says only whether and which files changed: the files' verdicts say how.
+        let archive = |after: &Loaded| verdict(Family::Archives, after);
+        assert_eq!(archive(&same), "invisible");
+        assert_eq!(
+            archive(&crlf),
+            "edited+changed_files",
+            "a file's bytes changed, though it reads the same"
+        );
+        assert_eq!(archive(&one), "edited+changed_files");
+        assert_eq!(
+            archive(&most),
+            "edited+added_files+removed_files+changed_files"
         );
         assert_eq!(
             compare(Family::Archives, None, Some(&same), 0)

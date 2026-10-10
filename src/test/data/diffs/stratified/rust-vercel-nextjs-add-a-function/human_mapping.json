@@ -1,0 +1,609 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:16"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:17"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:18"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:19"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:5"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:1"
+      ],
+      "after_path": [
+        "use_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:2"
+      ],
+      "after_path": [
+        "use_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:3"
+      ],
+      "after_path": [
+        "use_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:4"
+      ],
+      "after_path": [
+        "use_declaration:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_item:1"
+      ],
+      "after_path": [
+        "enum_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:1"
+      ],
+      "after_path": [
+        "impl_item:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "trait_item:1"
+      ],
+      "after_path": [
+        "trait_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "visibility_modifier:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "visibility_modifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "trait_item:1",
+        "trait:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "trait:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "trait_item:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "associated_type:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "associated_type:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_signature_item:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_signature_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:2"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:3"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:4"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:5"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:2"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:3"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "associated_type:2"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "associated_type:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_signature_item:2"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_signature_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:6"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:7"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:8"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:9"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:10"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:11"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:12"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:13"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:14"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:15"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "line_comment:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:4"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:5"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "function_item:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "trait_item:1",
+        "declaration_list:1",
+        "}:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 84,
+              "start_column": 4,
+              "end_row": 84,
+              "end_column": 44
+            },
+            {
+              "start_row": 85,
+              "start_column": 4,
+              "end_row": 85,
+              "end_column": 7
+            },
+            {
+              "start_row": 86,
+              "start_column": 4,
+              "end_row": 86,
+              "end_column": 96
+            },
+            {
+              "start_row": 87,
+              "start_column": 4,
+              "end_row": 87,
+              "end_column": 58
+            },
+            {
+              "start_row": 88,
+              "start_column": 4,
+              "end_row": 88,
+              "end_column": 39
+            },
+            {
+              "start_row": 89,
+              "start_column": 8,
+              "end_row": 89,
+              "end_column": 17
+            },
+            {
+              "start_row": 90,
+              "start_column": 4,
+              "end_row": 90,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 84,
+              "start_column": 0,
+              "end_row": 84,
+              "end_column": 44
+            },
+            {
+              "start_row": 85,
+              "start_column": 0,
+              "end_row": 85,
+              "end_column": 7
+            },
+            {
+              "start_row": 86,
+              "start_column": 0,
+              "end_row": 86,
+              "end_column": 96
+            },
+            {
+              "start_row": 87,
+              "start_column": 0,
+              "end_row": 87,
+              "end_column": 58
+            },
+            {
+              "start_row": 88,
+              "start_column": 0,
+              "end_row": 88,
+              "end_column": 39
+            },
+            {
+              "start_row": 89,
+              "start_column": 0,
+              "end_row": 89,
+              "end_column": 17
+            },
+            {
+              "start_row": 90,
+              "start_column": 0,
+              "end_row": 90,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

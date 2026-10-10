@@ -1,0 +1,4183 @@
+{
+  "entries": [
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3",
+        "#include:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3",
+        "string_literal:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3",
+        "string_literal:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3",
+        "string_literal:1",
+        "string_content:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:3",
+        "string_literal:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "preproc_include:3"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "preproc_include:3",
+        "#include:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "preproc_include:3",
+        "system_lib_string:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5",
+        "#include:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5",
+        "string_literal:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5",
+        "string_literal:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5",
+        "string_literal:1",
+        "string_content:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "preproc_include:5",
+        "string_literal:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "namespace_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "namespace_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "namespace_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "+:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "+:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "string_literal:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "string_literal:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        ";:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:1"
+      ],
+      "after_path": [
+        "preproc_include:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:2"
+      ],
+      "after_path": [
+        "preproc_include:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:4"
+      ],
+      "after_path": [
+        "preproc_include:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1"
+      ],
+      "after_path": [
+        "function_definition:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "function_declarator:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "function_declarator:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "{:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "type_qualifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "type_qualifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "qualified_identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "=:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:1",
+        "init_declarator:1",
+        "binary_expression:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:2"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        ";:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:3"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:4"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:2"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "binary_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        ";:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:3",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:5"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:4"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "binary_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        ";:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:5",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:6"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:6"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:7"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:8"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:7"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:7"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "qualified_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "binary_expression:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "call_expression:2",
+        "field_expression:1",
+        "parenthesized_expression:1",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        "call_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        ";:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:8",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:9"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "comment:2"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:9"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:10"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:10"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:11"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:12"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:13"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:14"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:15"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:11"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:16"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:17"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:18"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:19"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:20"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:12"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:21"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:22"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:23"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:24"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:25"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:13"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:26"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:27"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:28"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:29"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:29"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:30"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:30"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:14"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "declaration:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:31"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:31"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:32"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:32"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:33"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:33"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:34"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:34"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:35"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "expression_statement:35"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_definition:1",
+        "compound_statement:1",
+        "}:1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:1",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:1",
+          "call_expression:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:1",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:1",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:1",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false
+    },
+    {
+      "before_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:3",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:3",
+          "call_expression:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:3",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:3",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:3",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false
+    },
+    {
+      "before_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:5",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:5",
+          "call_expression:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:5",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:5",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:5",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false
+    },
+    {
+      "before_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:8",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:8",
+          "call_expression:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:8",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:8",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "function_definition:1",
+          "compound_statement:1",
+          "expression_statement:8",
+          "call_expression:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 1,
+              "end_row": 4,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 47,
+              "end_row": 17,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 26,
+              "start_column": 0,
+              "end_row": 26,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 23,
+              "start_column": 0,
+              "end_row": 23,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 30,
+              "start_column": 33,
+              "end_row": 30,
+              "end_column": 55
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 29,
+              "start_column": 33,
+              "end_row": 29,
+              "end_column": 73
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 1,
+              "end_row": 31,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 1,
+              "end_row": 32,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 39,
+              "end_row": 32,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 18,
+              "end_row": 31,
+              "end_column": 34
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 13,
+              "end_row": 32,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 1,
+              "end_row": 39,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 1,
+              "end_row": 40,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 18,
+              "end_row": 39,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 13,
+              "end_row": 40,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 27,
+              "end_row": 40,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 37,
+              "end_row": 40,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 65,
+              "end_row": 40,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 37,
+              "end_row": 44,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 65,
+              "end_row": 44,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 27,
+              "end_row": 44,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 18,
+              "end_row": 43,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 13,
+              "end_row": 44,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 1,
+              "end_row": 43,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 1,
+              "end_row": 44,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 1,
+              "end_row": 51,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 1,
+              "end_row": 52,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 18,
+              "end_row": 51,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 13,
+              "end_row": 52,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 29,
+              "end_row": 52,
+              "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 39,
+              "end_row": 52,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 67,
+              "end_row": 52,
+              "end_column": 76
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 0,
+              "end_row": 4,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 47,
+              "end_row": 17,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 26,
+              "start_column": 0,
+              "end_row": 26,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 23,
+              "start_column": 0,
+              "end_row": 23,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 30,
+              "start_column": 33,
+              "end_row": 30,
+              "end_column": 55
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 29,
+              "start_column": 33,
+              "end_row": 29,
+              "end_column": 73
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 1,
+              "end_row": 31,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 1,
+              "end_row": 32,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 39,
+              "end_row": 32,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 18,
+              "end_row": 31,
+              "end_column": 34
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 13,
+              "end_row": 32,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 1,
+              "end_row": 39,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 1,
+              "end_row": 40,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 18,
+              "end_row": 39,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 13,
+              "end_row": 40,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 27,
+              "end_row": 40,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 37,
+              "end_row": 40,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 65,
+              "end_row": 40,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 37,
+              "end_row": 44,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 65,
+              "end_row": 44,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 27,
+              "end_row": 44,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 18,
+              "end_row": 43,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 13,
+              "end_row": 44,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 1,
+              "end_row": 43,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 1,
+              "end_row": 44,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 1,
+              "end_row": 51,
+              "end_column": 16
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 1,
+              "end_row": 52,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 18,
+              "end_row": 51,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 13,
+              "end_row": 52,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 29,
+              "end_row": 52,
+              "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 39,
+              "end_row": 52,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 67,
+              "end_row": 52,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 16,
+              "end_row": 31,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 11,
+              "end_row": 32,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 34,
+              "end_row": 31,
+              "end_column": 45
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 28,
+              "end_row": 32,
+              "end_column": 39
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 45,
+              "end_row": 31,
+              "end_column": 46
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 47,
+              "end_row": 32,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 16,
+              "end_row": 39,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 11,
+              "end_row": 40,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 22,
+              "end_row": 39,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 21,
+              "end_row": 40,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 28,
+              "end_row": 39,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 35,
+              "end_row": 40,
+              "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 30,
+              "end_row": 39,
+              "end_column": 57
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 38,
+              "end_row": 40,
+              "end_column": 65
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 57,
+              "end_row": 39,
+              "end_column": 58
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 74,
+              "end_row": 40,
+              "end_column": 75
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 16,
+              "end_row": 43,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 11,
+              "end_row": 44,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 22,
+              "end_row": 43,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 21,
+              "end_row": 44,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 28,
+              "end_row": 43,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 35,
+              "end_row": 44,
+              "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 30,
+              "end_row": 43,
+              "end_column": 57
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 38,
+              "end_row": 44,
+              "end_column": 65
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 57,
+              "end_row": 43,
+              "end_column": 58
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 74,
+              "end_row": 44,
+              "end_column": 75
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 32,
+              "end_row": 51,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 40,
+              "end_row": 52,
+              "end_column": 67
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 59,
+              "end_row": 51,
+              "end_column": 60
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 76,
+              "end_row": 52,
+              "end_column": 77
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 30,
+              "end_row": 51,
+              "end_column": 32
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 37,
+              "end_row": 52,
+              "end_column": 39
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 22,
+              "end_row": 51,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 21,
+              "end_row": 52,
+              "end_column": 29
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 16,
+              "end_row": 51,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 11,
+              "end_row": 52,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 51,
+              "start_column": 60,
+              "end_row": 51,
+              "end_column": 61
+            }
+          ],
+          "after": [
+            {
+              "start_row": 52,
+              "start_column": 77,
+              "end_row": 52,
+              "end_column": 78
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 58,
+              "end_row": 43,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 75,
+              "end_row": 44,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 58,
+              "end_row": 39,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 75,
+              "end_row": 40,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 46,
+              "end_row": 31,
+              "end_column": 47
+            }
+          ],
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 48,
+              "end_row": 32,
+              "end_column": 49
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

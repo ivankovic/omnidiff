@@ -31,3 +31,11 @@ mod ani_x_vinceliuice_vimix_cursors_de8100f3_working_in_background;
 mod cur_x_pop_os_icon_theme_c8b14907_right_tee;
 #[cfg(test)]
 mod cur_x_vinceliuice_vimix_cursors_de8100f3_diagonal_resize_1;
+#[cfg(test)]
+mod hyprcursor_x_guillaumeboehm_nordzy_cursors_39478f04_color_picker;
+#[cfg(test)]
+mod hyprcursor_x_guillaumeboehm_nordzy_cursors_39478f04_progress;
+#[cfg(test)]
+mod hyprcursor_x_guillaumeboehm_nordzy_cursors_5bd0b1ba_wait;
+#[cfg(test)]
+mod xcursor_x_alvatip_neonly_8085a361_left_tee;

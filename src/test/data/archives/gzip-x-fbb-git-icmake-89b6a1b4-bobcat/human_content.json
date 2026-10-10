@@ -1,0 +1,15 @@
+{
+  "verdict": "edited+added_files+changed_files",
+  "members": {
+    "arg/arg": "edited",
+    "arg/arg.ih": "edited",
+    "arg/data.cc": "edited",
+    "arg/initialize1.cc": "edited",
+    "arg/initialize2.cc": "edited",
+    "arg/initialize3.cc": "edited",
+    "arg/initialize4.cc": "edited",
+    "signal/instance.cc": "edited",
+    "signal/signal": "edited",
+    "signal/signal.ih": "edited"
+  }
+}

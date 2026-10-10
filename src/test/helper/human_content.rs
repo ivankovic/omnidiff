@@ -91,13 +91,13 @@ impl Judgement {
 
     /// `artifacts+resized`, or `can't judge: <note>`.
     pub fn label(&self) -> String {
-        self.label_for(false)
+        self.label_in(content::Vocabulary::Pictures)
     }
 
-    /// [`Judgement::label`] with the level named for text if `text` (`formatting`).
-    pub fn label_for(&self, text: bool) -> String {
+    /// [`Judgement::label`] with the level named in `vocabulary` (`formatting`, `changed`).
+    pub fn label_in(&self, vocabulary: content::Vocabulary) -> String {
         match self {
-            Judgement::Verdict(verdict) => verdict.label_for(text),
+            Judgement::Verdict(verdict) => verdict.label_in(vocabulary),
             Judgement::CantJudge(note) if note.is_empty() => "can't judge".to_string(),
             Judgement::CantJudge(note) => format!("can't judge: {note}"),
         }
