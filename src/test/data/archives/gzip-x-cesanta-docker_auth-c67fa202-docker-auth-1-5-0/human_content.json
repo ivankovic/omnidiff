@@ -1,5 +1,5 @@
 {
-  "verdict": "edited",
+  "verdict": "edited+changed_files",
   "members": {
     "docker-auth/Chart.yaml": "edited",
     "docker-auth/values.yaml": "edited"

@@ -72,7 +72,7 @@ use tree_sitter::Node;
 
 use omnidiff::code::language::{language_for_path, to_treesitter};
 use omnidiff::code::{Code, Language};
-use omnidiff::diff::content::{Family, Level};
+use omnidiff::diff::content::{Family, Level, Vocabulary};
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
 use omnidiff::test::helper::human_content::{self, HumanContent};
@@ -450,11 +450,17 @@ pub(crate) struct ContentRow {
 }
 
 impl ContentRow {
-    /// A content fixture's row, from its ground truth (`None` before any is saved).
-    pub(crate) fn of(human: Option<HumanContent>) -> Self {
+    /// A content fixture's row, from its ground truth (`None` before any is saved): an archive's
+    /// verdict in its own names (`changed+added_files`).
+    pub(crate) fn of(family: Family, human: Option<HumanContent>) -> Self {
         let human = human.unwrap_or_default();
+        let names = match family {
+            Family::Archives => Vocabulary::Archive,
+            Family::Catalogs => Vocabulary::Text,
+            _ => Vocabulary::Pictures,
+        };
         let label = match (&human.verdict, human.members.len()) {
-            (Some(judgement), _) => judgement.label(),
+            (Some(judgement), _) => judgement.label_in(names),
             (None, 0) => String::new(),
             (None, judged) => format!("{judged} judged"),
         };
@@ -484,7 +490,7 @@ fn read_content_rows() -> HashMap<String, ContentRow> {
         for name in list_dir_names(&human_content::root(family)).unwrap_or_default() {
             rows.insert(
                 name.clone(),
-                ContentRow::of(human_content::load(family, &name).ok()),
+                ContentRow::of(family, human_content::load(family, &name).ok()),
             );
         }
     }

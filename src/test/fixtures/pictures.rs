@@ -117,7 +117,11 @@ mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_36281f239756cf;
 #[cfg(test)]
 mod jpeg_x_rubrikinc_wachy_7f73f5d6_overview_screenshot_skitch;
 #[cfg(test)]
+mod jpeg_x_tnthieding_exif_e904ad17_windows_xp_tags;
+#[cfg(test)]
 mod jpeg_x_yoshimi_yoshimi_255d9952_gui_big;
+#[cfg(test)]
+mod jpeg_x_yoshimi_yoshimi_255d9952_gui_normal;
 #[cfg(test)]
 mod png_x_07th_mod_ponscripter_fork_97e597d6_default;
 #[cfg(test)]

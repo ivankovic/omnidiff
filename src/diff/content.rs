@@ -64,9 +64,13 @@ use container::{Container, ContainerDiff};
 /// The first three are three strengths of "nothing", by how hard one has to look; the last three
 /// are kinds of "something", by what the after side is - not by how much of it changed.
 ///
-/// **Text calls three of them by plainer names** ([`Level::text_name`]): whitespace for
-/// imperceptible, formatting for artifacts, rewritten for redrawn. Only the names differ: files
-/// and stubs spell every level one way ([`Level::name`]).
+/// **Text calls four of them by plainer names** ([`Vocabulary::Text`]): identical for invisible,
+/// whitespace for imperceptible, formatting for artifacts, rewritten for redrawn. **An archive
+/// takes two levels** ([`Vocabulary::Archive`]): identical (invisible - no file added, removed or
+/// changed, whatever its timestamps or compression) and changed (edited), and says what changed
+/// with the [`Tag::AddedFiles`], [`Tag::RemovedFiles`] and [`Tag::ChangedFiles`] tags; how much a
+/// file changed is that file's own verdict. Only the names differ: files and stubs spell every
+/// level one way ([`Level::name`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Level {
@@ -116,20 +120,44 @@ impl Level {
         Level::ALL.into_iter().find(|level| level.name() == name)
     }
 
-    /// What text calls the level, where its own name fits pictures better.
-    pub fn text_name(self) -> &'static str {
-        match self {
-            Level::Imperceptible => "whitespace",
-            Level::Artifacts => "formatting",
-            Level::Redrawn => "rewritten",
-            level => level.name(),
+    /// What `vocabulary` calls the level: [`Level::name`] for pictures, plainer names for text
+    /// and archives.
+    pub fn name_in(self, vocabulary: Vocabulary) -> &'static str {
+        match (vocabulary, self) {
+            (Vocabulary::Text | Vocabulary::Archive, Level::Invisible) => "identical",
+            (Vocabulary::Text, Level::Imperceptible) => "whitespace",
+            (Vocabulary::Text, Level::Artifacts) => "formatting",
+            (Vocabulary::Text, Level::Redrawn) => "rewritten",
+            (Vocabulary::Archive, Level::Edited) => "changed",
+            (_, level) => level.name(),
         }
     }
 
-    /// [`Level::name`], or [`Level::text_name`] for text.
-    pub fn name_for(self, text: bool) -> &'static str {
-        if text { self.text_name() } else { self.name() }
+    /// The levels `vocabulary` judges with, in key order: all six, or an archive's two.
+    pub fn offered(vocabulary: Vocabulary) -> &'static [Level] {
+        match vocabulary {
+            Vocabulary::Archive => &[Level::Invisible, Level::Edited],
+            _ => &Level::ALL,
+        }
     }
+}
+
+/// Which names a [`Level`] goes by on screen (see the note on [`Level`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Vocabulary {
+    Pictures,
+    Text,
+    Archive,
+}
+
+/// What a verdict is about, for which [`Tag`]s it can take: a picture's shape and timing, an
+/// archive's files, another container's members, nothing for text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Shape {
+    Picture,
+    Archive,
+    Container,
+    Text,
 }
 
 /// How the shape of a change differs, beside its [`Level`]: any number of these, each mostly
@@ -149,16 +177,25 @@ pub enum Tag {
     Frames,
     /// A container gained or lost members.
     Members,
+    /// An archive gained files.
+    AddedFiles,
+    /// An archive lost files.
+    RemovedFiles,
+    /// Files both sides of an archive hold differ.
+    ChangedFiles,
 }
 
 impl Tag {
-    pub const ALL: [Tag; 6] = [
+    pub const ALL: [Tag; 9] = [
         Tag::Resized,
         Tag::Canvas,
         Tag::Rotated,
         Tag::Timing,
         Tag::Frames,
         Tag::Members,
+        Tag::AddedFiles,
+        Tag::RemovedFiles,
+        Tag::ChangedFiles,
     ];
 
     pub fn name(self) -> &'static str {
@@ -169,6 +206,9 @@ impl Tag {
             Tag::Timing => "timing",
             Tag::Frames => "frames",
             Tag::Members => "members",
+            Tag::AddedFiles => "added_files",
+            Tag::RemovedFiles => "removed_files",
+            Tag::ChangedFiles => "changed_files",
         }
     }
 
@@ -176,19 +216,19 @@ impl Tag {
         Tag::ALL.into_iter().find(|tag| tag.name() == name)
     }
 
-    /// True if content of this kind can take the tag: a picture's shape and timing, a container's
-    /// members, nothing for text.
-    pub fn fits(self, picture: bool, container: bool) -> bool {
+    /// True if a verdict about `shape` can take the tag.
+    pub fn fits(self, shape: Shape) -> bool {
         match self {
-            Tag::Members => container,
-            _ => picture,
+            Tag::Members => shape == Shape::Container,
+            Tag::AddedFiles | Tag::RemovedFiles | Tag::ChangedFiles => shape == Shape::Archive,
+            _ => shape == Shape::Picture,
         }
     }
 }
 
 /// A set of [`Tag`]s, in [`Tag::ALL`]'s order.
 #[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
-pub struct Tags(u8);
+pub struct Tags(u16);
 
 impl Tags {
     pub fn contains(self, tag: Tag) -> bool {
@@ -211,8 +251,8 @@ impl Tags {
         Tag::ALL.into_iter().filter(move |tag| self.contains(*tag))
     }
 
-    fn bit(tag: Tag) -> u8 {
-        1 << tag as u8
+    fn bit(tag: Tag) -> u16 {
+        1 << tag as u16
     }
 }
 
@@ -250,9 +290,9 @@ impl Verdict {
         self.to_string()
     }
 
-    /// [`Verdict::label`] with the level named for text if `text` (`formatting`).
-    pub fn label_for(self, text: bool) -> String {
-        let mut label = self.level.name_for(text).to_string();
+    /// [`Verdict::label`] with the level named in `vocabulary` (`formatting`, `changed`).
+    pub fn label_in(self, vocabulary: Vocabulary) -> String {
+        let mut label = self.level.name_in(vocabulary).to_string();
         for tag in self.tags.iter() {
             label.push('+');
             label.push_str(tag.name());

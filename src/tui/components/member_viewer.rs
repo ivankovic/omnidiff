@@ -611,7 +611,7 @@ impl MemberViewer {
                     (false, Some(verdict)) => {
                         format!(
                             " · {key}: omnidiff says {} · {}",
-                            verdict.label_for(true),
+                            verdict.label_in(content::Vocabulary::Text),
                             view.status()
                         )
                     }
