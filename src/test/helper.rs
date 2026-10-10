@@ -520,9 +520,10 @@ fn handmade_test_code_pairs_uncached() -> Result<HashMap<String, (Code, Code)>> 
 /// `small` and `full` (sampled from the two research datasets), `stratified` (sampled per language
 /// *per size bucket*, so large files are represented), and `defects4j` (a third party's list taken
 /// whole, so a rate over its solved fixtures is not a rate over the dataset; see
-/// `research/external/README.md`), and `encodings` (text in UTF-16 or UTF-32, sampled with
-/// `sample_test_diffs --encodings`). Names are unique across all six, so readers resolve a name to
-/// whichever dataset holds it.
+/// `research/external/README.md`), `encodings` (text in UTF-16 or UTF-32, sampled with
+/// `sample_test_diffs --encodings`), and `crosslang` (a file moved to another language, its before
+/// side at the sample.csv row's `before_path`). Names are unique across all seven, so readers
+/// resolve a name to whichever dataset holds it.
 pub const DIFF_DATASETS: &[&str] = &[
     "handmade",
     "small",
@@ -530,6 +531,7 @@ pub const DIFF_DATASETS: &[&str] = &[
     "stratified",
     "defects4j",
     "encodings",
+    "crosslang",
 ];
 
 fn diffs_root() -> std::path::PathBuf {
