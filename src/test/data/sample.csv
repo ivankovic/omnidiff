@@ -588,8 +588,8 @@ HTML,twbs-bootstrap.git,e468daac252b9935baaa35cf22d83a3cd89bba88,site/content/do
 HTML,twbs-bootstrap.git,ed253683f30bc82ca11009bed959c954df1ee90f,site/content/docs/5.3/examples/cheatsheet-rtl/index.html,,stratified,SAMPLED,,1000-3000
 HTML,twbs-bootstrap.git,fee9dc2438736a02405412e10ea8445dd9aeac1e,site/content/docs/5.3/examples/cheatsheet/index.html,,stratified,SAMPLED,,1000-3000
 HTML,xiaoyeli-superlu,83a3c82b9e44c966ca2bc26991ffdb2bf63e1e2b,DOC/html/dgssv_8c.html,html-xiaoyeli-superlu-change-a-bunch-of-values-and-add-one-element,full,PROMOTED,,
-HYPRCURSOR,guillaumeboehm-Nordzy-cursors,39478f042f6a7954dc36e981b98361747dc4ff5a,hyprcursors/themes/Nordzy-hyprcursors-catppuccin-macchiato-blue/hyprcursors/color-picker.hlc,,cursors,SAMPLED,,few-same-members
-HYPRCURSOR,guillaumeboehm-Nordzy-cursors,39478f042f6a7954dc36e981b98361747dc4ff5a,hyprcursors/themes/Nordzy-hyprcursors-catppuccin-mocha-sapphire/hyprcursors/progress.hlc,,cursors,SAMPLED,,some-same-members
+HYPRCURSOR,guillaumeboehm-Nordzy-cursors,39478f042f6a7954dc36e981b98361747dc4ff5a,hyprcursors/themes/Nordzy-hyprcursors-catppuccin-macchiato-blue/hyprcursors/color-picker.hlc,hyprcursor-x-guillaumeboehm-nordzy-cursors-39478f04-color-picker,cursors,PROMOTED,,few-same-members
+HYPRCURSOR,guillaumeboehm-Nordzy-cursors,39478f042f6a7954dc36e981b98361747dc4ff5a,hyprcursors/themes/Nordzy-hyprcursors-catppuccin-mocha-sapphire/hyprcursors/progress.hlc,hyprcursor-x-guillaumeboehm-nordzy-cursors-39478f04-progress,cursors,PROMOTED,,some-same-members
 HYPRCURSOR,guillaumeboehm-Nordzy-cursors,5bd0b1bad2ed2e7962279138e761b49451a43a2c,hyprcursors/themes/Nordzy-hyprcursors-catppuccin-mocha-sky/hyprcursors/wait.hlc,,cursors,SAMPLED,,some-same-members
 ICO,07th-mod-ponscripter-fork,97e597d699d5a89b426d2f170ff9efcb8896f4a8,src/resources/default.ico,ico-x-07th-mod-ponscripter-fork-97e597d6-default,pictures,PROMOTED,,icon-same
 ICO,CorsixTH-CorsixTH,8e9aa9eb46f1649cd71de2ec830bf7553cced0fe,CorsixTH/CorsixTH.ico,ico-x-corsixth-corsixth-8e9aa9eb-corsixth,pictures,PROMOTED,,small-same
@@ -616,10 +616,10 @@ JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a00426.jp
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01324.jpg,,pictures,SAMPLED,,large-resized
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01344.jpg,,pictures,SAMPLED,,medium-resized
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01374.jpg,,pictures,SAMPLED,,small-resized
-JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01401.jpg,,pictures,SAMPLED,,small-same
+JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01401.jpg,jpeg-x-chennes-med-f17a4859-a01401,pictures,PROMOTED,,small-same
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01402.jpg,,pictures,SAMPLED,,large-same
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01405.jpg,,pictures,SAMPLED,,large-same
-JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01419.jpg,,pictures,SAMPLED,,small-resized
+JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01419.jpg,jpeg-x-chennes-med-f17a4859-a01419,pictures,PROMOTED,,small-resized
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01497.jpg,,pictures,SAMPLED,,medium-resized
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01578.jpg,,pictures,SAMPLED,,large-resized
 JPEG,chennes-med,f17a48594d7c668eb68850284c50aeb9c5fe7159,doc/html.dox/a01953.jpg,,pictures,SAMPLED,,medium-same

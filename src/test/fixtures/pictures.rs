@@ -95,4 +95,8 @@ mod ico_x_syncplay_syncplay_8d60c8b4_icon;
 #[cfg(test)]
 mod ico_x_woeusb_woeusb_ng_ceea6719_icon;
 #[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01401;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01419;
+#[cfg(test)]
 mod png_x_07th_mod_ponscripter_fork_97e597d6_default;
