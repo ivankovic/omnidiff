@@ -23,11 +23,12 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // Recorded as found, not examined. omnidiff deletes the `::` of the match arm's path and the
+    // `false` argument that the human pairs with `is_toggled` (both APTED "qualified_name").
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-gyulyvgc-sniffnet-small-change",
-        1,
-        1,
+        2,
+        2,
     )
 }
 
