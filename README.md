@@ -255,7 +255,7 @@ The language is detected from the file extension. A file with an unknown extensi
 plain text, line by line, so nothing is refused.
 
 <!-- languages:start -->
-24 languages are parsed with a tree-sitter grammar and diffed structurally:
+25 languages are parsed with a tree-sitter grammar and diffed structurally:
 
 | Language | File extensions |
 |---|---|
@@ -270,6 +270,7 @@ plain text, line by line, so nothing is refused.
 | JSON | `.json` |
 | Kotlin | `.kt` |
 | Lua | `.lua` |
+| Perl | `.pl`, `.pm` |
 | PHP | `.php` |
 | Python | `.py`, `.pyi`, `.pyw` |
 | R | `.r` |

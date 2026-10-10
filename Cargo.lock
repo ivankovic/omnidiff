@@ -1822,6 +1822,7 @@ dependencies = [
  "tree-sitter-vim",
  "tree-sitter-xml",
  "tree-sitter-yaml",
+ "ts-parser-perl",
  "two-face",
  "unicode-width",
  "walkdir",
@@ -3621,6 +3622,16 @@ name = "tree-sitter-yaml"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53c223db85f05e34794f065454843b0668ebc15d240ada63e2b5939f43ce7c97"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "ts-parser-perl"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db3cd8574afc19af4d3db44fe0cf94a5e8fc3f4056c0326baf5ba01a29666129"
 dependencies = [
  "cc",
  "tree-sitter-language",
