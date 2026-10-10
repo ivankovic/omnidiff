@@ -27,4 +27,14 @@ mod bzip2_x_rocm_miopen_801eab7f_gfx942130_db_txt;
 #[cfg(test)]
 mod bzip2_x_rocm_miopen_801eab7f_gfx942130_hip_fdb_txt;
 #[cfg(test)]
+mod gzip_x_atsb_dav_text_1396c098_dav_1;
+#[cfg(test)]
+mod gzip_x_atsb_dav_text_1a7fef01_dav_1;
+#[cfg(test)]
+mod gzip_x_cesanta_docker_auth_c67fa202_docker_auth_1_5_0;
+#[cfg(test)]
+mod gzip_x_fbb_git_icmake_650f438d_bobcat;
+#[cfg(test)]
+mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
+#[cfg(test)]
 mod zip_x_silnrsi_teckit_3d06b4f4_teckit_tools;

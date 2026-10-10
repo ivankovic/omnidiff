@@ -361,19 +361,29 @@ fn shape(session: &ContentSession, target: &Target) -> (bool, bool) {
     }
 }
 
-/// True if the member `key` is text, whose levels have names of their own (`Level::text_name`).
+/// True if the member `key` is text, whose levels have names of their own (`Level::text_name`):
+/// every message of a catalog, and any member diffed as text.
 fn is_text(session: &ContentSession, key: &str) -> bool {
-    session
-        .viewer
-        .members()
-        .and_then(|members| members.diff().member(key))
-        .and_then(|member| member.detail.as_ref())
-        .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
+    is_catalog(session)
+        || session
+            .viewer
+            .members()
+            .and_then(|members| members.diff().member(key))
+            .and_then(|member| member.detail.as_ref())
+            .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
 }
 
-/// [`is_text`] for `target`: a pair never is.
+/// A message catalog is text through and through: its messages, and so the whole file.
+fn is_catalog(session: &ContentSession) -> bool {
+    session.family == Family::Catalogs
+}
+
+/// [`is_text`] for `target`; the pair is text only for a catalog.
 fn target_is_text(session: &ContentSession, target: &Target) -> bool {
-    matches!(target, Target::Member(key) if is_text(session, key))
+    match target {
+        Target::Pair => is_catalog(session),
+        Target::Member(key) => is_text(session, key),
+    }
 }
 
 /// `judgement` with only the tags `target` can take.
@@ -514,13 +524,15 @@ fn judge_the_rest(session: &mut ContentSession) {
         session.judgement.members.insert(key, fitted);
     }
     let noun = if given == 1 { "member" } else { "members" };
-    session.status = format!("{given} more {noun}: {} (s to save)", judgement.label());
+    let label = judgement.label_for(is_catalog(session));
+    session.status = format!("{given} more {noun}: {label} (s to save)");
     update_marks(session);
 }
 
 /// Shows each judged member's verdict in the list, and the engine's where it is shown and differs.
 fn update_marks(session: &mut ContentSession) {
     let judgement = session.judgement.clone();
+    let pair_is_text = is_catalog(session);
     let texts: std::collections::HashSet<String> = session
         .viewer
         .members()
@@ -549,7 +561,11 @@ fn update_marks(session: &mut ContentSession) {
         } else {
             members.member_verdict(&key)
         };
-        let text = texts.contains(&key);
+        let text = if key.is_empty() {
+            pair_is_text
+        } else {
+            texts.contains(&key)
+        };
         let mark = match (human, found) {
             (Some(human), Some(found)) if human.verdict().is_some_and(|human| human != found) => {
                 format!(
@@ -680,7 +696,7 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
             session.status = if show {
                 format!(
                     "omnidiff says: {} (e hides it)",
-                    session.viewer.verdict().label()
+                    session.viewer.verdict().label_for(is_catalog(session))
                 )
             } else {
                 "omnidiff's view hidden".to_string()
@@ -741,7 +757,11 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         Line::from(session.viewer.status())
     } else {
         Line::from(vec![
-            format!("omnidiff: {}", session.viewer.verdict().label()).cyan(),
+            format!(
+                "omnidiff: {}",
+                session.viewer.verdict().label_for(is_catalog(session))
+            )
+            .cyan(),
             format!(" · {}", session.viewer.status()).into(),
         ])
     };
@@ -1319,6 +1339,73 @@ mod tests {
             quit_armed: false,
             status: String::new(),
         }
+    }
+
+    /// A gettext `.mo` of `messages`, (original, translation) pairs - the layout
+    /// `diff::content::catalog` reads.
+    fn mo(messages: &[(&str, &str)]) -> Vec<u8> {
+        let count = messages.len();
+        let data_start = 28 + count * 16;
+        let (mut strings, mut tables) = (Vec::new(), [Vec::new(), Vec::new()]);
+        for (original, translation) in messages {
+            for (table, text) in [(0, original), (1, translation)] {
+                let offset = data_start + strings.len();
+                tables[table].extend_from_slice(&(text.len() as u32).to_le_bytes());
+                tables[table].extend_from_slice(&(offset as u32).to_le_bytes());
+                strings.extend_from_slice(text.as_bytes());
+                strings.push(0);
+            }
+        }
+        let header = [
+            0x9504_12de_u32,
+            0,
+            count as u32,
+            28,
+            28 + count as u32 * 8,
+            0,
+            0,
+        ];
+        let mut bytes: Vec<u8> = header.iter().flat_map(|word| word.to_le_bytes()).collect();
+        bytes.extend(tables.concat());
+        bytes.extend(strings);
+        bytes
+    }
+
+    #[test]
+    fn a_catalog_names_its_levels_for_text_on_the_pair_and_every_message() {
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.mo.test"),
+            dir.path().join("after.mo.test"),
+        );
+        fs::write(&a, mo(&[("Open", "Ouvrir"), ("Save", "Enregistrer")])).unwrap();
+        fs::write(&b, mo(&[("Open", "Ouvrir..."), ("Save", "Sauver")])).unwrap();
+        let mut session = ContentSession {
+            name: "mo-x-repo-1234abcd-fr".to_string(),
+            family: Family::Catalogs,
+            path: "fr.mo".to_string(),
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        let names_text = |text: &str| text.contains("2 formatting") && text.contains("4 rewritten");
+
+        let text = screen(&mut session, &app, 200);
+        assert!(names_text(&text), "the whole catalog is text: {text}");
+        handle_key(&mut session, &mut app, KeyCode::Char('4'));
+        assert!(session.status.contains("rewritten"), "{}", session.status);
+
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        assert!(
+            names_text(&screen(&mut session, &app, 200)),
+            "and so is a message"
+        );
+        session.viewer.set_annotating(false);
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            !text.contains("redrawn"),
+            "nor does omnidiff's verdict say redrawn: {text}"
+        );
     }
 
     #[test]

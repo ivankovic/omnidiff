@@ -19,4 +19,6 @@
 //! Font fixtures (`src/test/data/fonts/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a font sample is promoted. See `test::helper::human_content`.
 #[cfg(test)]
+mod sfnt_x_dzaima_bqn_0bbe096f_bqn386;
+#[cfg(test)]
 mod woff2_x_fortawesome_font_awesome_b476ed9a_fa_solid_900;

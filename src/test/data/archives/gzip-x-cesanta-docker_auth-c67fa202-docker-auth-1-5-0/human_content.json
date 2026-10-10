@@ -1,0 +1,7 @@
+{
+  "verdict": "edited",
+  "members": {
+    "docker-auth/Chart.yaml": "edited",
+    "docker-auth/values.yaml": "edited"
+  }
+}
