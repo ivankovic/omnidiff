@@ -57,6 +57,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   plain text.
 - Building OmniDiff needs Rust 1.92 or later (was 1.88): the picture view's graphics library
   needs 1.90, and the PDF renderer 1.92.
+- The TUI shows the two files side by side from 200 terminal columns (was 220); narrower
+  terminals still show one panel at a time.
 
 ## [0.2.0] - 2026-10-01
 

@@ -35,7 +35,7 @@ use omnidiff::tui::widgets::code_viewer::syntax_theme_names;
 struct Args {
     before: PathBuf,
     after: PathBuf,
-    /// Terminal width. Two panels need at least 220 columns.
+    /// Terminal width. Two panels need at least 200 columns.
     #[arg(long, default_value_t = 230)]
     cols: u16,
     /// Terminal height.

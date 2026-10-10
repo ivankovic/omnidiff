@@ -233,9 +233,9 @@ pub(crate) fn render_panel(
 }
 
 /// Below this width `draw_ui` shows only the focused panel: two half-width panels wrap almost every
-/// line. Lower than the main TUI's `SINGLE_PANEL_THRESHOLD` (220) so a 205-column terminal still
-/// shows Before and After side by side while solving.
-pub(crate) const SINGLE_PANEL_WIDTH_THRESHOLD: u16 = 200;
+/// line. Shared with the main TUI's `DiffViewer`.
+pub(crate) const SINGLE_PANEL_WIDTH_THRESHOLD: u16 =
+    omnidiff::tui::components::diff_viewer::SINGLE_PANEL_THRESHOLD;
 
 /// The Before/After panels for a language with no tree-sitter grammar: one row saying why they are
 /// empty. Drawn in the panels, not the status line, because two empty panels otherwise read as

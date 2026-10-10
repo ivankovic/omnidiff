@@ -227,7 +227,7 @@ fn main() -> Result<()> {
     }
 
     // What `/api/state` answers: the defaults, never the local config, so CI and a laptop generate
-    // the same site. Dual, not Auto: Auto's 220-column cut-over is single-panel on most browser
+    // the same site. Dual, not Auto: Auto's 200-column cut-over is single-panel on most browser
     // windows. The paths are placeholders; the shim answers with the selected case.
     let mut state = default_state();
     state.before = Some("before".to_string());

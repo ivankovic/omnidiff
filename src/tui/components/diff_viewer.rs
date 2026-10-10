@@ -28,7 +28,7 @@ use crate::tui::theme::{OverlayTheme, PanelLayout};
 
 /// Below this terminal width two side-by-side panels are too narrow to read, so `Auto` layout
 /// shows one panel.
-pub const SINGLE_PANEL_THRESHOLD: u16 = 220;
+pub const SINGLE_PANEL_THRESHOLD: u16 = 200;
 
 /// The TUI's central content pane: the before/after files side by side (or, under
 /// `DisplayMode::Single`, one at a time), each half owned by its own [`CodeViewer`].
