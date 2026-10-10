@@ -75,6 +75,8 @@ Pictures
                    half blocks elsewhere
   h/l, Left/Right  In the swipe view: move the divider between before and after
   ,/. and Space    For an animation: step a frame back or on, play or pause
+  +/-, HJKL        Zoom in or out (up to 32x) on the same part of before and after; pan
+                   with Shift+h/j/k/l while zoomed
   b                Draw every picture in half blocks, or with the terminal's graphics again:
                    for a terminal that claimed pictures it cannot show (crossed-out boxes).
                    OMNIDIFF_GRAPHICS=halfblocks starts that way and sends no graphics query

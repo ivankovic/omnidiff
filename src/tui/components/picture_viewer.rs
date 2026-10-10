@@ -35,6 +35,11 @@
 //! annotating, the frames pair by position instead, since the engine's pairing is part of its
 //! answer.
 //!
+//! `+` and `-` zoom in and out by twos, up to [`MAX_ZOOM`], and `H`/`J`/`K`/`L` pan: every pane
+//! shows the same part of its picture, as a fraction of the picture, so before and after stay
+//! aligned even when one was resized. The cropped part is scaled up nearest-neighbor, so a pixel
+//! shows as a square.
+//!
 //! Composites are rebuilt only when the view, the divider, the moment, the pane size or the colors
 //! change: encoding a picture for a graphics protocol is the slow part, not drawing it.
 
@@ -329,8 +334,68 @@ struct Built {
     mode: PictureMode,
     swipe_percent: u16,
     moment: usize,
+    zoom: Zoom,
     outline: u32,
     colors: PictureColors,
+}
+
+/// The deepest zoom, as a power of two: 32x, enough to see single pixels of a large screenshot.
+const MAX_ZOOM: u8 = 5;
+
+/// The part of each picture on screen: `2^level` times magnified, centered at `center`, in
+/// thousandths of the picture's width and height.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Zoom {
+    level: u8,
+    center: (u16, u16),
+}
+
+impl Default for Zoom {
+    fn default() -> Self {
+        Self {
+            level: 0,
+            center: (500, 500),
+        }
+    }
+}
+
+impl Zoom {
+    fn factor(self) -> u32 {
+        1 << self.level
+    }
+
+    /// Moved by a quarter of the view, `dx`/`dy` in quarters; kept where the view stays inside
+    /// the picture.
+    fn pan(self, dx: i32, dy: i32) -> Self {
+        let half = 500 / self.factor() as i32;
+        let step = half / 2;
+        let along =
+            |center: u16, d: i32| (center as i32 + d * step).clamp(half, 1000 - half) as u16;
+        Self {
+            center: (along(self.center.0, dx), along(self.center.1, dy)),
+            ..self
+        }
+    }
+
+    fn with_level(self, level: u8) -> Self {
+        // Re-clamped: zooming out near an edge would otherwise show past it.
+        Self { level, ..self }.pan(0, 0)
+    }
+
+    /// `pixels` cut to this view; the whole picture at level 0.
+    fn crop(self, pixels: RgbaImage) -> RgbaImage {
+        if self.level == 0 {
+            return pixels;
+        }
+        let (width, height) = pixels.dimensions();
+        let along = |size: u32, center: u16| {
+            let span = size.div_ceil(self.factor()).max(1);
+            let middle = (u64::from(size) * u64::from(center) / 1000) as u32;
+            (middle.saturating_sub(span / 2).min(size - span), span)
+        };
+        let ((x, w), (y, h)) = (along(width, self.center.0), along(height, self.center.1));
+        image::imageops::crop_imm(&pixels, x, y, w, h).to_image()
+    }
 }
 
 /// Each pane's title and picture, encoded for the terminal; `None` for a side with no picture.
@@ -418,6 +483,7 @@ pub struct PictureViewer {
     playing: Option<Instant>,
     mode: PictureMode,
     swipe_percent: u16,
+    zoom: Zoom,
     picker: Picker,
     shown: Option<(Built, Panes)>,
     /// For a human recording a verdict (`human_solver`): nothing the engine decided is shown - no
@@ -489,6 +555,7 @@ impl PictureViewer {
             playing: None,
             mode: PictureMode::SideBySide,
             swipe_percent: 50,
+            zoom: Zoom::default(),
             picker: {
                 let mut picker = picker;
                 picker.set_background_color(Some(BACKDROP));
@@ -615,6 +682,16 @@ impl PictureViewer {
             KeyCode::Char('l') | KeyCode::Right if self.mode == PictureMode::Swipe => {
                 self.swipe_percent = (self.swipe_percent + 5).min(100);
             }
+            KeyCode::Char('+' | '=') if self.zoom.level < MAX_ZOOM => {
+                self.zoom = self.zoom.with_level(self.zoom.level + 1);
+            }
+            KeyCode::Char('-') if self.zoom.level > 0 => {
+                self.zoom = self.zoom.with_level(self.zoom.level - 1);
+            }
+            KeyCode::Char('H') if self.zoom.level > 0 => self.zoom = self.zoom.pan(-1, 0),
+            KeyCode::Char('L') if self.zoom.level > 0 => self.zoom = self.zoom.pan(1, 0),
+            KeyCode::Char('K') if self.zoom.level > 0 => self.zoom = self.zoom.pan(0, -1),
+            KeyCode::Char('J') if self.zoom.level > 0 => self.zoom = self.zoom.pan(0, 1),
             _ => return false,
         }
         true
@@ -632,11 +709,12 @@ impl PictureViewer {
                 None => "nothing".to_string(),
             };
             return format!(
-                "{} -> {}{} · view: {} (t){}",
+                "{} -> {}{} · view: {} (t){}{}",
                 side(&self.diff.before),
                 side(&self.diff.after),
                 self.frame_status(),
                 self.mode.label(),
+                self.zoom_status(),
                 self.drawing_status()
             );
         }
@@ -675,11 +753,12 @@ impl PictureViewer {
             }
         };
         format!(
-            "{} -> {} · {change}{} · view: {} (t){}",
+            "{} -> {} · {change}{} · view: {} (t){}{}",
             side(&self.diff.before),
             side(&self.diff.after),
             self.frame_status(),
             self.mode.label(),
+            self.zoom_status(),
             self.drawing_status()
         )
     }
@@ -710,6 +789,14 @@ impl PictureViewer {
             position(moment.before, &self.before),
             position(moment.after, &self.after)
         )
+    }
+
+    /// " · zoom 4x (+/-, HJKL pan)" while zoomed, " · +: zoom" otherwise.
+    fn zoom_status(&self) -> String {
+        match self.zoom.level {
+            0 => " · +: zoom".to_string(),
+            _ => format!(" · zoom {}x (+/-, HJKL pan)", self.zoom.factor()),
+        }
     }
 
     /// How pictures are drawn, and that `b` changes it: " · half blocks (b: pixels)", or
@@ -756,6 +843,7 @@ impl PictureViewer {
             mode: self.mode,
             swipe_percent: self.swipe_percent,
             moment: self.moment,
+            zoom: self.zoom,
             outline: self.outline_width(Block::default().borders(Borders::ALL).inner(panes[0])),
             colors,
         };
@@ -835,11 +923,22 @@ impl PictureViewer {
         // A picture scaled up to fill the pane gets one picture pixel, which shows as more than
         // `screen_pixels`; rounding up to whole picture pixels after scaling, not before, keeps
         // it from doubling that.
-        (widest * screen_pixels).div_ceil(pane_pixels).max(1)
+        let shown = widest.div_ceil(self.zoom.factor());
+        (shown * screen_pixels).div_ceil(pane_pixels).max(1)
     }
 
-    /// One `(title, picture)` per pane of `built.mode`; `None` for a side that has no picture.
+    /// One `(title, picture)` per pane of `built.mode`, cut to `built.zoom`; `None` for a side
+    /// that has no picture.
     fn composites(&self, built: Built) -> Vec<(String, Option<RgbaImage>)> {
+        self.whole_composites(built)
+            .into_iter()
+            .map(|(title, pixels)| (title, pixels.map(|pixels| built.zoom.crop(pixels))))
+            .collect()
+    }
+
+    /// [`Self::composites`] before zooming: outlines and the swipe divider are drawn on the whole
+    /// picture, so they are where the regions are whatever part shows.
+    fn whole_composites(&self, built: Built) -> Vec<(String, Option<RgbaImage>)> {
         let moment = &self.timeline[built.moment.min(self.timeline.len() - 1)];
         let regions: &[Region] = if self.annotating {
             &[]
@@ -1176,6 +1275,7 @@ mod tests {
             mode,
             swipe_percent: 50,
             moment: 0,
+            zoom: Zoom::default(),
             outline: 1,
             colors: COLORS,
         }
@@ -1203,6 +1303,64 @@ mod tests {
         assert!(viewer.handle_key(KeyCode::Char('t')));
         assert_eq!(viewer.mode(), PictureMode::SideBySide);
         assert!(!viewer.handle_key(KeyCode::Char('x')));
+    }
+
+    #[test]
+    fn plus_zooms_into_the_same_part_of_both_sides_and_shift_hjkl_pans() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        assert!(!viewer.handle_key(KeyCode::Char('-')), "already whole");
+        assert!(!viewer.handle_key(KeyCode::Char('L')), "nothing to pan");
+        assert!(viewer.handle_key(KeyCode::Char('+')));
+        let sizes = |viewer: &PictureViewer| -> Vec<(u32, u32)> {
+            let built = Built {
+                zoom: viewer.zoom,
+                ..built(PictureMode::SideBySide)
+            };
+            viewer
+                .composites(built)
+                .into_iter()
+                .map(|(_, pixels)| pixels.expect("both sides").dimensions())
+                .collect()
+        };
+        // 20x10 at 2x: the middle 10x5 of each.
+        assert_eq!(sizes(&viewer), vec![(10, 5), (10, 5)]);
+        assert!(viewer.status().contains("zoom 2x"), "{}", viewer.status());
+
+        // Panning stops where the view reaches the edge.
+        for _ in 0..5 {
+            viewer.handle_key(KeyCode::Char('H'));
+            viewer.handle_key(KeyCode::Char('K'));
+        }
+        assert_eq!(viewer.zoom.center, (250, 250));
+        let built = Built {
+            zoom: viewer.zoom,
+            ..built(PictureMode::SideBySide)
+        };
+        let after = viewer.composites(built).remove(1).1.expect("after");
+        // The top-left quarter of after, where its black block starts at (6, 2), outlined.
+        assert_eq!(after.get_pixel(6, 2), &Rgba([0, 0, 0, 255]));
+        assert_eq!(after.get_pixel(0, 0), &Rgba([255, 255, 255, 255]));
+
+        for _ in 0..MAX_ZOOM + 2 {
+            viewer.handle_key(KeyCode::Char('+'));
+        }
+        assert_eq!(viewer.zoom.level, MAX_ZOOM);
+        assert_eq!(
+            sizes(&viewer),
+            vec![(1, 1), (1, 1)],
+            "never less than a pixel"
+        );
+        for _ in 0..MAX_ZOOM {
+            assert!(viewer.handle_key(KeyCode::Char('-')));
+        }
+        assert_eq!(
+            viewer.zoom.center,
+            (500, 500),
+            "the whole picture is centered"
+        );
+        assert_eq!(sizes(&viewer), vec![(20, 10), (20, 10)]);
     }
 
     #[test]

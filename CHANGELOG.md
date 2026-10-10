@@ -19,6 +19,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
   lines are: the report says which frames changed, which were added or removed, and whether the
   same frames now show for different times. In the TUI, `,` and `.` step through the frames and
   space plays the animation.
+- `+` and `-` zoom into the same part of both pictures, up to 32x, and Shift+`h`/`j`/`k`/`l` pans:
+  for a large screenshot whose change is a few pixels.
 - Inside tmux, the TUI draws pictures with the graphics protocol of the terminal in front of the
   pane, as tmux knows it, rather than whichever attached client answered the query: a kitty on a
   desk no longer makes a phone's terminal attached to the same session show crossed-out boxes.

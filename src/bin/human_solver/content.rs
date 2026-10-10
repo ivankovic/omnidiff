@@ -830,7 +830,7 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
         Some(_) => {
             "  j/k member  n/N unjudged  A rest  a all  g grid  J/K change  Enter open  b blocks"
         }
-        None => "  t view  h/l swipe  b blocks",
+        None => "  t view  h/l swipe  +/- zoom  HJKL pan  b blocks",
     };
     frame.render_widget(
         Paragraph::new(
