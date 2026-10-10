@@ -278,7 +278,7 @@ pub(crate) fn run_content_session(
     };
     update_marks(&mut session);
     loop {
-        terminal.draw(|frame| draw(frame, &mut session, app))?;
+        omnidiff::tui::ui::draw_synchronized(terminal, |frame| draw(frame, &mut session, app))?;
         // A playing animation needs drawing at its frame rate, not only on a key.
         let wait = if session.viewer.is_playing() { 20 } else { 250 };
         if !event::poll(Duration::from_millis(wait))? {
