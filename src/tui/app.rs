@@ -82,6 +82,8 @@ pub enum AppScreen {
 /// any other way.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ReviewPosition {
+    /// The repository the set was read from, so stepping never asks the working directory again.
+    root: PathBuf,
     set: ChangeSet,
     files: Vec<ChangedFile>,
     index: usize,
@@ -603,10 +605,15 @@ impl App {
         }
     }
 
-    /// Failure (not a repository, no `git`) goes to the banner, since there is nothing to pick.
+    /// The review of the repository the process runs in.
     fn open_review(&mut self) {
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        match review::load(&cwd, review::DEFAULT_COMMIT_LIMIT) {
+        self.open_review_in(&cwd);
+    }
+
+    /// Failure (not a repository, no `git`) goes to the banner, since there is nothing to pick.
+    fn open_review_in(&mut self, dir: &Path) {
+        match review::load(dir, review::DEFAULT_COMMIT_LIMIT) {
             Ok(review) => {
                 self.review_dialog = Some(ReviewDialog::new(review));
                 self.screen = AppScreen::Review;
@@ -634,12 +641,7 @@ impl App {
             set: position.set.clone(),
             file,
         };
-        let root = match self.review_dialog.as_ref() {
-            Some(dialog) => dialog.review().root.clone(),
-            None => review::repository_root(
-                &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-            )?,
-        };
+        let root = position.root.clone();
         if self.review_workspace.is_none() {
             self.review_workspace = Some(review::Workspace::new()?);
         }
@@ -682,12 +684,20 @@ impl App {
     }
 
     fn handle_review_file_selected(&mut self, target: ReviewTarget, index: usize) -> Result<()> {
-        let files = self
-            .review_dialog
-            .as_ref()
-            .map(|dialog| dialog.review().files_of(&target.set).to_vec())
-            .unwrap_or_else(|| vec![target.file.clone()]);
+        let (root, files) = match self.review_dialog.as_ref() {
+            Some(dialog) => (
+                dialog.review().root.clone(),
+                dialog.review().files_of(&target.set).to_vec(),
+            ),
+            None => (
+                review::repository_root(
+                    &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+                )?,
+                vec![target.file.clone()],
+            ),
+        };
         let position = ReviewPosition {
+            root,
             set: target.set,
             files,
             index,
@@ -1940,9 +1950,10 @@ mod tests {
         Ok(())
     }
 
-    /// A repository with two unstaged modifications, and the process moved into it. nextest runs
-    /// every test in its own process, so `set_current_dir` cannot leak into another test.
-    fn enter_sample_repository() -> tempfile::TempDir {
+    /// A repository with two unstaged modifications. Tests open it by path with `open_review_in`,
+    /// never by moving the process into it: `cargo test` runs tests as threads of one process, and
+    /// a shared working directory would leave the others inside this one once it is deleted.
+    fn sample_repository() -> tempfile::TempDir {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         let git = |args: &[&str]| {
@@ -1969,15 +1980,14 @@ mod tests {
         git(&["commit", "-q", "-m", "first"]);
         std::fs::write(root.join("a.rs"), "fn a() { 1 }\n").unwrap();
         std::fs::write(root.join("b.rs"), "fn b() { 2 }\n").unwrap();
-        std::env::set_current_dir(root).unwrap();
         dir
     }
 
     #[test]
     fn opening_a_reviewed_file_sets_the_position_and_stepping_walks_its_set() -> Result<()> {
-        let dir = enter_sample_repository();
+        let dir = sample_repository();
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         assert_eq!(app.screen, AppScreen::Review);
         let review = app.review_dialog.as_ref().unwrap().review().clone();
         assert_eq!(review.working_tree.len(), 2);
@@ -2038,11 +2048,11 @@ mod tests {
 
     #[test]
     fn a_binary_reviewed_file_is_a_banner_not_a_crash_and_stepping_moves_past_it() -> Result<()> {
-        let dir = enter_sample_repository();
+        let dir = sample_repository();
         // Not UTF-8, and no byte order mark to read it as UTF-16 by.
         std::fs::write(dir.path().join("a.rs"), [0xff, 0x00, 0x41]).unwrap();
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         let review = app.review_dialog.as_ref().unwrap().review().clone();
         assert_eq!(review.working_tree[0].path, "a.rs");
         let target = ReviewTarget {
@@ -2226,9 +2236,8 @@ mod tests {
     #[test]
     fn opening_the_review_outside_a_repository_goes_to_the_banner() -> Result<()> {
         let dir = tempfile::tempdir()?;
-        std::env::set_current_dir(dir.path())?;
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         assert_eq!(app.screen, AppScreen::Viewer);
         assert!(
             app.last_error
