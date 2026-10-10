@@ -266,7 +266,10 @@ pub fn is_comment_only_diff(
                         descend = false;
                         mark_found();
                     }
-                    NodeChange::Leaf(_) | NodeChange::Update(_) => mark_found(),
+                    NodeChange::Leaf(_)
+                    | NodeChange::Update(_)
+                    | NodeChange::GapsChanged(_)
+                    | NodeChange::GapsPlaced(_) => mark_found(),
                     NodeChange::Descend => {}
                 }
             }
