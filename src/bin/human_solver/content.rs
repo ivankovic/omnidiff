@@ -323,7 +323,9 @@ const TAG_KEYS: [(char, Tag); 9] = [
     ('C', Tag::ChangedFiles),
 ];
 
-/// What `0`-`5` give a verdict to: the selected member of a container, or the pair.
+/// What `0`-`5` give a verdict to: the selected member of a container, or the pair. Inside a
+/// member container opened with `Enter`, that member as a whole: verdicts are recorded at the top
+/// level.
 enum Target {
     Pair,
     Member(String),
@@ -333,9 +335,6 @@ fn target(session: &ContentSession) -> Result<Target, String> {
     let Some(members) = session.viewer.members() else {
         return Ok(Target::Pair);
     };
-    if members.has_nested() {
-        return Err("Verdicts are given at the top level: Backspace goes back".to_string());
-    }
     match (members.selected_key(), members.selected_status()) {
         (None, _) => Ok(Target::Pair),
         (Some(key), Some(MemberStatus::Changed)) => Ok(Target::Member(key.to_string())),
@@ -1457,6 +1456,63 @@ mod tests {
         assert!(
             !text.contains("redrawn"),
             "nor does omnidiff's verdict say redrawn: {text}"
+        );
+    }
+
+    #[test]
+    fn an_archive_inside_an_archive_is_judged_as_an_archive() {
+        let zip = |files: &[(&str, &[u8])]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            for (name, contents) in files {
+                writer
+                    .start_file(*name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                std::io::Write::write_all(&mut writer, contents).unwrap();
+            }
+            writer.finish().unwrap();
+            bytes
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.zip.test"),
+            dir.path().join("after.zip.test"),
+        );
+        let inner_before = zip(&[("x.txt", b"1\n")]);
+        let inner_after = zip(&[("x.txt", b"2\n"), ("y.txt", b"new\n")]);
+        fs::write(&a, zip(&[("inner.jar", &inner_before)])).unwrap();
+        fs::write(&b, zip(&[("inner.jar", &inner_after)])).unwrap();
+        let mut session = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for inner.jar: 0 identical 1 changed I added_files"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        handle_key(&mut session, &mut app, KeyCode::Char('I'));
+        assert_eq!(
+            session.judgement.members.get("inner.jar").cloned(),
+            Some(Judgement::Verdict("edited+added_files".parse().unwrap()))
+        );
+
+        // Opened with Enter, the inner archive is still what a verdict is for.
+        handle_key(&mut session, &mut app, KeyCode::Enter);
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for inner.jar: 0 identical 1 changed I added_files"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('C'));
+        assert_eq!(
+            session.judgement.members.get("inner.jar").cloned(),
+            Some(Judgement::Verdict(
+                "edited+added_files+changed_files".parse().unwrap()
+            ))
         );
     }
 
