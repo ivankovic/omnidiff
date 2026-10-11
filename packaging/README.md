@@ -93,7 +93,7 @@ Run this after any `Cargo.lock` change. A stale list produces a package that fai
 users while looking fine in review. `pycargoebuild` does the same job if you have it installed.
 
 The `LICENSE` variable enumerates the vendored crates' licenses alongside the package's own
-`AGPL-3+`; re-check it if the dependency set changes substantially.
+`AGPL-3`; re-check it if the dependency set changes substantially.
 
 ## Debian
 

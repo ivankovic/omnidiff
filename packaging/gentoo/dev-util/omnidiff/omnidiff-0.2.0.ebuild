@@ -1,5 +1,5 @@
 # Copyright 2026 Marko Ivankovic
-# Distributed under the terms of the GNU Affero General Public License v3 or later
+# Distributed under the terms of the GNU Affero General Public License v3 only
 
 EAPI=8
 
@@ -464,11 +464,11 @@ SRC_URI="
 	${CARGO_CRATE_URIS}
 "
 
-# The ebuild's own license is AGPL-3+; the trailing list covers the vendored crates, whose
+# The ebuild's own license is AGPL-3; the trailing list covers the vendored crates, whose
 # licenses cargo.eclass expects to be enumerated here. Regenerate with `pycargoebuild` if the
 # dependency set changes - the list below was read off the crates in Cargo.lock and is the usual
 # Rust-ecosystem spread.
-LICENSE="AGPL-3+"
+LICENSE="AGPL-3"
 LICENSE+=" Apache-2.0 BSD BSD-2 BZIP2 ISC MIT MPL-2.0 Unicode-DFS-2016 Unlicense ZLIB"
 SLOT="0"
 KEYWORDS="~amd64 ~arm64"
