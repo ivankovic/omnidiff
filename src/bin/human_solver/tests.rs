@@ -3843,7 +3843,7 @@ fn the_name_filter_is_a_case_insensitive_substring() {
 #[test]
 fn value_filters_cycle_through_the_values_present_and_back_to_all() {
     let rows = sample_rows();
-    let languages = sample_language_values(&rows);
+    let languages = sample_language_values(&rows, &SampleFilters::default());
     assert_eq!(languages, vec!["Go", "Rust"]);
     assert_eq!(next_value_filter(None, &languages).as_deref(), Some("Go"));
     assert_eq!(
@@ -3859,6 +3859,24 @@ fn value_filters_cycle_through_the_values_present_and_back_to_all() {
     // Offered smallest-stratum-first, and only for strata some row actually has.
     let buckets = sample_bucket_values(&rows);
     assert_eq!(buckets, vec!["30-100", "1000-3000"]);
+}
+
+#[test]
+fn the_language_filter_skips_languages_the_other_filters_leave_empty() {
+    let rows = sample_rows();
+    // Only alpha (Rust) is Promoted, so Go would show an empty list.
+    let filters = SampleFilters {
+        status: Some(SampleTriageStatus::Promoted),
+        ..SampleFilters::default()
+    };
+    assert_eq!(sample_language_values(&rows, &filters), vec!["Rust"]);
+
+    // The language filter itself does not narrow the choices, or cycling would stick.
+    let filters = SampleFilters {
+        language: Some("Go".to_string()),
+        ..SampleFilters::default()
+    };
+    assert_eq!(sample_language_values(&rows, &filters), vec!["Go", "Rust"]);
 }
 
 #[test]

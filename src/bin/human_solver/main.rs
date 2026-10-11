@@ -2026,8 +2026,18 @@ struct SamplePickerView {
 }
 
 /// The distinct values present in a column, in its sort order, for `f` to cycle through.
-fn sample_language_values(rows: &[SampleRow]) -> Vec<String> {
-    let mut values: Vec<String> = rows.iter().map(|row| row.language.clone()).collect();
+/// Languages come only from rows that pass every other filter in `filters`, so `f` never lands on
+/// a language whose list is empty.
+fn sample_language_values(rows: &[SampleRow], filters: &SampleFilters) -> Vec<String> {
+    let others = SampleFilters {
+        language: None,
+        ..filters.clone()
+    };
+    let mut values: Vec<String> = rows
+        .iter()
+        .filter(|row| others.keeps(row))
+        .map(|row| row.language.clone())
+        .collect();
     values.sort();
     values.dedup();
     values
