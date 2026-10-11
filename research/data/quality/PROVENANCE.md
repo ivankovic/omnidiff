@@ -2,8 +2,18 @@
 
 Measured against the human-authored ground-truth fixtures in `src/test/data/diffs/` (NOT the
 sampled corpus in `../samples/` - quality is scored on hand-verified mappings, so re-sampling the
-corpus does not stale these files). `quality_baseline.txt` is updated only via
+corpus does not stale these files). `quality_baseline.csv` is updated only via
 `make update-quality-baseline` at the repository root.
+
+`timing/` holds the gate's wall-clock baselines, one pair of files per machine registered in
+`../machines.csv`: `<machine>.csv`, each fixture's `elapsed_ms`, and `<machine>.txt`, the
+ms/fixture `make check-quality` warns against. Written by `make update-quality-baseline` or, timing
+alone, `make update-timing-baseline`, on that machine. `server.*` are the times that were the
+`elapsed_ms` column of `quality_baseline.csv` and `quality_baseline.txt` until 2026-10-11, split out
+unchanged.
+`laptop.*` were first recorded 2026-10-11 by `make update-timing-baseline`, on AC power with the
+`performance` platform profile, idle: 16.5 ms/fixture against the server's 41.3, a median fixture
+0.42x the server's time.
 
 `human_mapping_analysis.csv` also defines *which* fixtures are in scope for
 `analysis/ambiguity_report.py` (the paper's RA1.1): that script reads the `human_mapping.json`

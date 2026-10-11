@@ -154,7 +154,8 @@ jobs:
   # The release gate, run on every push rather than only at deploy time - a regression is far
   # cheaper to find on the commit that caused it than in the middle of a release. Safe to gate in
   # CI because it is algorithm-only: mismatch counts against the human mapping do not vary by
-  # machine (unlike the runtime figure, which `make check-quality` only warns on).
+  # machine (unlike the runtime figure, which `make check-quality` only warns on, and only on a
+  # machine with its own timing baseline - never on a runner).
   quality:
     name: quality gate
     runs-on: ubuntu-latest

@@ -1,0 +1,3 @@
+machine,cpu,description
+server,Intel(R) Xeon(R) CPU E3-1275 v5 @ 3.60GHz,"4c/8t, 64 GB RAM, 4x16 TB HDD in RAID 5; the paper's MACHINE block"
+laptop,13th Gen Intel(R) Core(TM) i7-1370P,"6P+8E cores/20t, 32 GB RAM"
