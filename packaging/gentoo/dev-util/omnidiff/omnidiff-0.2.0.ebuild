@@ -375,6 +375,7 @@ CRATES="
 	tree-sitter-xml@0.7.0
 	tree-sitter-yaml@0.7.2
 	tree-sitter@0.25.10
+	ts-parser-perl@2.0.0
 	two-face@0.5.2+bat-0.26.1
 	typed-path@0.12.3
 	typenum@1.20.1

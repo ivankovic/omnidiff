@@ -173,6 +173,10 @@ tree-sitter-typescript = "0.23"
 tree-sitter-vim = "0.4"
 tree-sitter-xml = "0.7.0"
 tree-sitter-yaml = "0.7"
+# tree-sitter-perl/tree-sitter-perl, the grammar nvim-treesitter uses, is published under this name;
+# the crate named `tree-sitter-perl` is another grammar (ganezdragon's), which parsed 481 of 825
+# corpus Perl files without errors against this one's 789, and requires tree-sitter 0.26.
+ts-parser-perl = "2.0"
 walkdir = { version = "2", optional = true }
 metrohash = "1.0.7"
 rustc-hash = "2.1"

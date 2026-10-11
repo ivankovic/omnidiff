@@ -200,6 +200,15 @@ pub fn is_reference(node_kind: &str, language: &Language) -> bool {
         }
         Language::R => node_kind == "program" || node_kind == "function_definition",
         Language::ShellScript => node_kind == "program" || node_kind == "function_definition",
+        // Unvalidated: no Perl fixture yet.
+        Language::Perl => {
+            node_kind == "source_file"
+                || node_kind == "package_statement"
+                || node_kind == "class_statement"
+                || node_kind == "subroutine_declaration_statement"
+                || node_kind == "method_declaration_statement"
+                || node_kind == "use_statement"
+        }
         Language::Swift => {
             node_kind == "source_file"
                 || node_kind == "function_declaration"
@@ -285,6 +294,7 @@ pub fn is_import_kind(node_kind: &str, language: &Language) -> bool {
         Language::Scala => node_kind == "import_declaration",
         Language::CSharp => node_kind == "using_directive",
         Language::CSS => node_kind == "import_statement",
+        Language::Perl => node_kind == "use_statement",
         _ => false,
     }
 }
@@ -715,6 +725,13 @@ pub fn is_semantically_structural<'a>(
             | "function_definition" => named_child_text(node, bytes, "name", None),
             _ => None,
         },
+        // `package Foo;` is left out: a file may switch back to a package it already named.
+        Language::Perl => match node_kind {
+            "subroutine_declaration_statement" | "method_declaration_statement" => {
+                named_child_text(node, bytes, "name", None)
+            }
+            _ => None,
+        },
         Language::R | Language::ShellScript | Language::LUA | Language::Vimscript => {
             match node_kind {
                 "function_definition" | "function_declaration" => {
@@ -836,7 +853,7 @@ const COMPARISON_OPS: &[&str] = &[
 
 const ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "//", "@"];
 
-/// PHP's `.` concatenation sits in the arithmetic slot.
+/// PHP's and Perl's `.` concatenation sits in the arithmetic slot.
 const PHP_ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "."];
 
 const BITWISE_OPS: &[&str] = &[
@@ -1198,6 +1215,15 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             NUMERIC_LITERAL_KINDS,
         ],
         Language::ShellScript => &[SHELL_TEST_OPS, SHELL_STRING_BODY_KINDS],
+        // `.` is concatenation, as in PHP. Unvalidated: no Perl fixture yet.
+        Language::Perl => &[
+            COMPARISON_OPS,
+            PHP_ARITHMETIC_OPS,
+            BITWISE_OPS,
+            LOGICAL_OPS,
+            ASSIGNMENT_OPS,
+            INCREMENT_OPS,
+        ],
         Language::HTML | Language::XML => &[HTML_TAG_END],
         Language::CSS => &[NUMERIC_LITERAL_KINDS],
         _ => &[],
