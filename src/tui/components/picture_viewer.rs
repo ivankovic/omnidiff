@@ -830,9 +830,12 @@ impl PictureViewer {
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
         self.advance_playback();
         let panes: Vec<Rect> = if self.mode == PictureMode::SideBySide {
+            // Two equal halves, an odd column left blank: each picture is scaled to fill its
+            // pane, so a pane one column wider shows the same page bigger and resampled.
+            let half = area.width / 2;
             Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .constraints([Constraint::Length(half), Constraint::Length(half)])
                 .split(area)
                 .to_vec()
         } else {
@@ -1361,6 +1364,25 @@ mod tests {
             "the whole picture is centered"
         );
         assert_eq!(sizes(&viewer), vec![(20, 10), (20, 10)]);
+    }
+
+    #[test]
+    fn side_by_side_panes_are_equal_in_an_odd_width() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(101, 20)).expect("terminal");
+        let (_, placements) = record_placements(|| {
+            terminal
+                .draw(|frame| viewer.draw(frame, frame.area(), COLORS))
+                .expect("draws")
+        });
+        let [before, after] = &placements[..] else {
+            panic!("two pictures: {}", placements.len());
+        };
+        assert_eq!(before.area.width, after.area.width);
+        assert_eq!(before.area.height, after.area.height);
     }
 
     #[test]
