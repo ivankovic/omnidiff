@@ -259,6 +259,8 @@ mod cpp_ollama_ollama_update_commit_hash_8;
 #[cfg(test)]
 mod cpp_ollama_ollama_update_commit_hash_string_constant;
 #[cfg(test)]
+mod cpp_opencv_opencv_add_test_case;
+#[cfg(test)]
 mod cpp_opencv_opencv_delete_string_const_from_preprocessor;
 #[cfg(test)]
 mod cpp_opencv_opencv_fix_dimention_dimension_typo_in_two_comments;
@@ -379,15 +381,21 @@ mod css_microsoft_vscode_remove_one_line;
 #[cfg(test)]
 mod css_nextcloud_server_update_import;
 #[cfg(test)]
+mod css_odoo_odoo_a_lot_of_errors;
+#[cfg(test)]
 mod css_shadcn_ui_ui_add_two_bytes;
 #[cfg(test)]
 mod css_twbs_bootstrap_parse_errors;
+#[cfg(test)]
+mod css_wordpress_wordpress_add_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_change_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_go_to_one_line;
 #[cfg(test)]
 mod css_wordpress_wordpress_one_line_to_multiline;
+#[cfg(test)]
+mod css_wordpress_wordpress_only_add;
 #[cfg(test)]
 mod css_wordpress_wordpress_re_format_in_one_line;
 #[cfg(test)]

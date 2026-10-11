@@ -49,6 +49,8 @@ mod gzip_x_guillaumeboehm_nordzy_cursors_5827428b_nordzy_catppuccin_mocha_light_
 #[cfg(test)]
 mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
 #[cfg(test)]
+mod gzip_x_rvaiya_keyd_774cb10d_keyd_1;
+#[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;
 #[cfg(test)]
 mod zip_x_asamk_signal_cli_62811d92_gradle_wrapper;
