@@ -2705,3 +2705,119 @@ fn every_member_of_an_identical_group_paints_as_a_move_even_in_place() {
         assert_eq!(moved_rows(1), vec![1, 2], "{options:?}");
     }
 }
+
+/// The text each non-`Identical` range of `side` (0 before, 1 after) covers, in order, under
+/// `options`: what a reader sees highlighted.
+fn painted_texts(
+    language: crate::code::Language,
+    before_src: &str,
+    after_src: &str,
+    side: usize,
+    options: RenderOptions,
+) -> Vec<String> {
+    let mut before = crate::code::Code::from_string(before_src, &language);
+    let mut after = crate::code::Code::from_string(after_src, &language);
+    before.ensure_parsed().unwrap();
+    after.ensure_parsed().unwrap();
+    let diff = crate::diff::diff_code(&before, &after);
+    let ast = diff.ast.expect("both sides parse");
+    let node_cache = NodeCache::build(&before, &after);
+    let text = TextDiff::from_with_options(&before, &after, &ast, &node_cache, options);
+    let source = if side == 0 { before_src } else { after_src };
+    let rows: Vec<&str> = source.split('\n').collect();
+    text.all(side)
+        .iter()
+        .filter(|r| r.operation != TextOperation::Identical)
+        .map(|r| {
+            let s = &r.source;
+            if s.start_row == s.end_row {
+                rows[s.start_row][s.start_column..s.end_column].to_string()
+            } else {
+                let mut out = rows[s.start_row][s.start_column..].to_string();
+                for row in &rows[s.start_row + 1..s.end_row] {
+                    out.push('\n');
+                    out.push_str(row);
+                }
+                out.push('\n');
+                out.push_str(&rows[s.end_row][..s.end_column]);
+                out
+            }
+        })
+        .collect()
+}
+
+/// An escape splits a string's content into two gaps; an edit in either is narrowed within it
+/// rather than lost (`python-odoo-odoo-version`'s `Odoo 20` -> `Odoo 22`).
+#[test]
+fn an_edit_beside_an_escape_inside_a_string_is_painted() {
+    for preset in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        for (before, after, old, new) in [
+            (
+                "s = \"alpha one\\tbeta\"\n",
+                "s = \"alpha two\\tbeta\"\n",
+                "one",
+                "two",
+            ),
+            (
+                "s = \"alpha\\tbeta one\"\n",
+                "s = \"alpha\\tbeta two\"\n",
+                "one",
+                "two",
+            ),
+        ] {
+            let language = crate::code::Language::Python;
+            assert_eq!(painted_texts(language, before, after, 0, preset), [old]);
+            assert_eq!(painted_texts(language, before, after, 1, preset), [new]);
+        }
+    }
+}
+
+/// An entity splits an XML attribute value the same way.
+#[test]
+fn an_edit_beside_an_entity_in_an_attribute_value_is_painted() {
+    let (before, after) = ("<a b=\"x &amp; one\"/>\n", "<a b=\"x &amp; two\"/>\n");
+    let language = crate::code::Language::XML;
+    assert_eq!(
+        painted_texts(language, before, after, 0, RenderOptions::FULL),
+        ["one"]
+    );
+    assert_eq!(
+        painted_texts(language, before, after, 1, RenderOptions::FULL),
+        ["two"]
+    );
+}
+
+/// A deleted attribute's value sits between its quotes as the value node's own text, not a child;
+/// it is painted with the quotes, so the attribute reads as one deletion
+/// (`xml-genymobile-scrcpy-remove-package-attribute`).
+#[test]
+fn a_deleted_attribute_value_is_painted_between_its_quotes() {
+    let before = "<root>\n<s Label=\"InDualCone\">\n</s>\n</root>\n";
+    let after = "<root>\n<s>\n</s>\n</root>\n";
+    let painted = painted_texts(
+        crate::code::Language::XML,
+        before,
+        after,
+        0,
+        RenderOptions::FULL,
+    );
+    assert_eq!(painted, ["Label=\"InDualCone\""]);
+}
+
+/// A CSS `100%` is `integer_value` text plus a `%` unit child; an inserted declaration paints the
+/// number too (`css-mastodon-mastodon-add-two-lines`).
+#[test]
+fn an_inserted_css_number_with_a_unit_is_painted_whole() {
+    let before = "a {\n  width: 10px;\n}\n";
+    let after = "a {\n  width: 10px;\n  height: 100%;\n}\n";
+    let painted = painted_texts(
+        crate::code::Language::CSS,
+        before,
+        after,
+        1,
+        RenderOptions::FULL,
+    );
+    // The raw range carries the row's newline; `ranges_for_options` trims it later.
+    let painted: Vec<&str> = painted.iter().map(|text| text.trim_end()).collect();
+    assert_eq!(painted, ["height: 100%;"]);
+}
