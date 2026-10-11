@@ -526,7 +526,9 @@ def sampling_provenance(repo_root):
             1 for n in by_language.values() if n > SAMPLE_PER_LANGUAGE
         )
 
-    rejected = [r for r in rows if r["status"] == "REJECTED"]
+    # The paper's datasets only: content families, `encodings` and `crosslang` rows share the file
+    # but not the paper.
+    rejected = [r for r in rows if r["status"] == "REJECTED" and r["dataset"] in PAPER_DATASETS]
     by_language = collections.Counter(r["language"] for r in rejected)
     out["SampleRejectedTotal"] = len(rejected)
     # The paper names these two specifically as the dominant cause; deriving them keeps the claim

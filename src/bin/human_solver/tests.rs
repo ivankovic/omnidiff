@@ -9392,11 +9392,29 @@ fn action_promote_refuses_a_sample_whose_recorded_dataset_is_unknown() {
     );
     let name = "rust-promote-refused-for-unknown-dataset";
 
-    let err = action_promote(&mut app, name, b"fn a() {}\n", b"fn b() {}\n").unwrap_err();
+    let err = action_promote(&mut app, name, b"fn a() {}\n", b"fn b() {}\n", false).unwrap_err();
 
     assert!(format!("{err:#}").contains("not-a-dataset"), "{err:#}");
     assert!(diffs_case_dir(name).is_none(), "nothing may be written");
     assert!(matches!(app.origin, CaseOrigin::Sample(_)));
+}
+
+/// A `crosslang` sample keeps each side's extension on promotion; a git-commit case, one path,
+/// gets that path's on both.
+#[test]
+fn promotion_names_each_side_after_the_samples_own_file() {
+    let sample = tempfile::tempdir().unwrap();
+    fs::write(sample.path().join("before.java.test"), "class A {}\n").unwrap();
+    fs::write(sample.path().join("after.kt.test"), "class A\n").unwrap();
+
+    assert_eq!(
+        promoted_file_names(Some(sample.path()), "src/A.kt").unwrap(),
+        ("before.java.test".to_string(), "after.kt.test".to_string())
+    );
+    assert_eq!(
+        promoted_file_names(None, "src/a.rs").unwrap(),
+        ("before.rs.test".to_string(), "after.rs.test".to_string())
+    );
 }
 
 /// Esc in the text view backs out one step at a time - the live selection, then this side's

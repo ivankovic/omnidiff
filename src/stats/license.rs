@@ -178,13 +178,18 @@ fn blob_url(repo_url: &str, commit: &str, path: &str) -> Option<String> {
 /// Renders the `README.md` of a sample (and its promoted fixture): provenance plus a
 /// commit-pinned license link and label, not the license text.
 ///
+/// `before_path` is the before side's path when it differs from `path` (a file moved to another
+/// language, the `crosslang` dataset); `None` when both sides are `path`.
+///
 /// `unverifiable_reason` means the commit could not be inspected (e.g. it left a shallow clone's
 /// window), unlike an empty `license_files`, which means it was and has none. When set,
 /// `license_files` is ignored.
+#[allow(clippy::too_many_arguments)]
 pub fn render_readme(
     repo_url: Option<&str>,
     repository: &str,
     commit: &str,
+    before_path: Option<&str>,
     path: &str,
     dataset: &str,
     license_files: &[LicenseFile],
@@ -205,13 +210,22 @@ pub fn render_readme(
         }
     }
     let _ = writeln!(out, "- **Commit:** `{commit}`");
+    // Before `File`, which stays the after side's: `test::helper::readme_provenance` reads it.
+    if let Some(before_path) = before_path {
+        let _ = writeln!(out, "- **Before file:** `{before_path}`");
+    }
     let _ = writeln!(out, "- **File:** `{path}`");
     let _ = writeln!(out, "- **Research dataset:** {dataset}");
     let _ = writeln!(out);
+    let files = if before_path.is_some() {
+        "the files above"
+    } else {
+        "the file above"
+    };
     let _ = writeln!(
         out,
-        "`before.*.test`/`after.*.test` in this directory are an unmodified excerpt of the file \
-         above, copied verbatim from the source repository at the commit above (and its single \
+        "`before.*.test`/`after.*.test` in this directory are an unmodified excerpt of {files}, \
+         copied verbatim from the source repository at the commit above (and its single \
          parent) for use as omnidiff test-fixture input. This content is **not** part of \
          omnidiff's own codebase and is **not** covered by omnidiff's own AGPL-3.0 license - it \
          remains under whatever license the source repository itself applies, linked below \
@@ -317,6 +331,7 @@ mod tests {
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "full",
             &[],
@@ -338,6 +353,7 @@ mod tests {
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &files,
@@ -360,6 +376,7 @@ mod tests {
             Some("https://example.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &files,
@@ -369,11 +386,28 @@ mod tests {
     }
 
     #[test]
+    fn render_readme_names_both_files_of_a_move_to_another_language() {
+        let readme = render_readme(
+            Some("https://github.com/example/repo"),
+            "example-repo.git",
+            "abc123",
+            Some("src/Main.java"),
+            "src/Main.kt",
+            "crosslang",
+            &[],
+            None,
+        );
+        assert!(readme.contains("- **Before file:** `src/Main.java`\n- **File:** `src/Main.kt`\n"));
+        assert!(readme.contains("an unmodified excerpt of the files above"));
+    }
+
+    #[test]
     fn render_readme_with_an_unverifiable_reason_explains_why_instead_of_claiming_no_license() {
         let readme = render_readme(
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &[],

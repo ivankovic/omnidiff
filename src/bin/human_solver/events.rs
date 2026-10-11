@@ -1765,7 +1765,8 @@ pub(crate) fn handle_modal_key(
         } => match code {
             KeyCode::Enter => {
                 let new_name = input.trim().to_string();
-                match action_promote(app, &new_name, before_src, after_src) {
+                let text_only = is_text_only(before, after);
+                match action_promote(app, &new_name, before_src, after_src, text_only) {
                     Ok(msg) => app.status = Some(msg),
                     Err(err) => {
                         app.modal = Some(Modal::PromptPromoteName {
@@ -2115,12 +2116,15 @@ pub(crate) fn validate_new_case_name(name: &str) -> Result<()> {
 /// Promotes the open sample or git-commit-sourced case into
 /// `src/test/data/diffs/<dataset>/<new_name>/` (see `promote_target_dataset`), writing
 /// `before_src`/`after_src` and saving via `action_save`. A sample also gets `new_name` recorded in
-/// its sample.csv row. On success `app` is switched to the new diffs/ case.
+/// its sample.csv row. On success `app` is switched to the new diffs/ case. `text_only` is
+/// [`is_text_only`] of the open pair, as for `action_save`: a sample without a grammar on some side
+/// (`encodings`, or a `crosslang` move from Perl or to Markdown) gets a stub without `mapping()`.
 pub(crate) fn action_promote(
     app: &mut App,
     new_name: &str,
     before_src: &[u8],
     after_src: &[u8],
+    text_only: bool,
 ) -> Result<String> {
     let origin = app.origin.clone();
     let (path, sample_source): (String, Option<SampleSource>) = match &origin {
@@ -2153,14 +2157,14 @@ pub(crate) fn action_promote(
     }
     let dir = diffs_root().join(&dataset).join(new_name);
 
-    let ext = Path::new(&path)
-        .extension()
-        .map(|e| e.to_string_lossy().into_owned())
-        .ok_or_else(|| anyhow!("path {} has no extension", path))?;
+    let sample_dir = sample_source
+        .is_some()
+        .then(|| samples_root().join(&app.name));
+    let (before_file, after_file) = promoted_file_names(sample_dir.as_deref(), &path)?;
 
     fs::create_dir_all(&dir).with_context(|| format!("creating {:?}", dir))?;
-    fs::write(dir.join(format!("before.{ext}.test")), before_src)?;
-    fs::write(dir.join(format!("after.{ext}.test")), after_src)?;
+    fs::write(dir.join(before_file), before_src)?;
+    fs::write(dir.join(after_file), after_src)?;
 
     // The README carries the third-party code's license attribution, which must survive
     // promotion. A git-commit case is this repo's own code and has none.
@@ -2186,8 +2190,7 @@ pub(crate) fn action_promote(
         &mut app.dirty,
         new_name,
         comment.as_deref(),
-        // Samples and git-commit files load only with a grammar, so they are never text-only.
-        false,
+        text_only,
     )?;
 
     // The note moves to `description.md`; `update_sample_csv` clears the sample.csv cell so there
@@ -2226,6 +2229,26 @@ pub(crate) fn action_promote(
             ""
         }
     ))
+}
+
+/// The `before.<ext>.test`/`after.<ext>.test` names a promotion writes: those in `sample_dir`, a
+/// sample's own, since a `crosslang` sample's two sides differ in extension (`before.java.test`,
+/// `after.kt.test`); `path`'s extension on both sides for a git-commit case (no `sample_dir`).
+pub(crate) fn promoted_file_names(
+    sample_dir: Option<&Path>,
+    path: &str,
+) -> Result<(String, String)> {
+    if let Some(dir) = sample_dir {
+        let (before, after) = crate::content::pair_paths(dir)
+            .ok_or_else(|| anyhow!("no before/after fixture in {:?}", dir))?;
+        let name = |path: &Path| path.file_name().unwrap().to_string_lossy().into_owned();
+        return Ok((name(&before), name(&after)));
+    }
+    let ext = Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().into_owned())
+        .ok_or_else(|| anyhow!("path {} has no extension", path))?;
+    Ok((format!("before.{ext}.test"), format!("after.{ext}.test")))
 }
 
 /// Rejects the open sample: records `reason` as its sample.csv `comment` with `status` REJECTED.
@@ -2306,6 +2329,8 @@ pub(crate) struct SampleCsvRow {
     /// See `sample_test_diffs::Row::size_bucket`. Unused here, but carried because every write
     /// rewrites the whole file, and a dropped column would be erased for every row.
     pub(crate) size_bucket: String,
+    /// See `sample_test_diffs::Row::before_path`; carried for the same reason as `size_bucket`.
+    pub(crate) before_path: String,
 }
 
 /// The `status` of a row that has none; duplicates `sample_test_diffs::default_status`, as the
@@ -2339,6 +2364,7 @@ pub(crate) fn read_sample_csv_rows(path: &Path) -> Result<Vec<SampleCsvRow>> {
             status,
             comment: record.get(7).unwrap_or("").to_string(),
             size_bucket: record.get(8).unwrap_or("").to_string(),
+            before_path: record.get(9).unwrap_or("").to_string(),
         });
     }
     Ok(rows)
@@ -2356,6 +2382,7 @@ pub(crate) fn write_sample_csv_rows(path: &Path, rows: &[SampleCsvRow]) -> Resul
         "status",
         "comment",
         "size_bucket",
+        "before_path",
     ])?;
     for row in rows {
         writer.write_record([
@@ -2368,6 +2395,7 @@ pub(crate) fn write_sample_csv_rows(path: &Path, rows: &[SampleCsvRow]) -> Resul
             &row.status,
             &row.comment,
             &row.size_bucket,
+            &row.before_path,
         ])?;
     }
     writer.flush()?;

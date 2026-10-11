@@ -121,7 +121,8 @@ struct Args {
 ///
 /// Reconstruction contract: before = blob at `path` in `commit`'s (single) parent tree,
 /// after = blob at `path` in `commit`'s tree. Renames are deliberately excluded (see
-/// `sample_repository`), so `path` always names both sides.
+/// `sample_repository`), so `path` names both sides of every row this binary samples; only a
+/// `crosslang` row, added by hand, has a `before_path`.
 #[derive(Clone, Eq, PartialEq)]
 struct Row {
     language: String,
@@ -139,6 +140,9 @@ struct Row {
     /// `stats::sampling::loc_bucket` of `max(before_loc, after_loc)`, only for a row sampled
     /// under `--stratified`; an unbucketed row never counts towards a stratified target.
     size_bucket: Option<String>,
+    /// The before side's path when it is not `path` (a file moved to another language, the
+    /// `crosslang` dataset); empty otherwise. Carried so a rewrite keeps it.
+    before_path: String,
 }
 
 type SampleKey = (String, String, String);
@@ -200,6 +204,7 @@ fn read_existing_rows(path: &Path) -> Result<Vec<Row>> {
             status,
             comment: record.get(7).unwrap_or("").to_string(),
             size_bucket: record.get(8).filter(|s| !s.is_empty()).map(str::to_string),
+            before_path: record.get(9).unwrap_or("").to_string(),
         });
     }
     Ok(rows)
@@ -398,6 +403,7 @@ fn sample_repository(
                 status: "SAMPLED".to_string(),
                 comment: String::new(),
                 size_bucket: Some(loc_bucket(before_loc.max(after_loc)).to_string()),
+                before_path: String::new(),
             };
             local
                 .entry(cap_key)
@@ -461,6 +467,7 @@ fn sample_repository(
             status: "SAMPLED".to_string(),
             comment: String::new(),
             size_bucket: bucket.map(str::to_string),
+            before_path: String::new(),
         };
         reservoirs
             .entry(cap_key)
@@ -656,6 +663,7 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                     status: "SAMPLED".to_string(),
                     comment: String::new(),
                     size_bucket: Some(bucket.clone()),
+                    before_path: String::new(),
                 };
                 let key = (format, Some(bucket));
                 stratum_family.insert(key.clone(), family);
@@ -770,6 +778,7 @@ fn write_csv(
         "status",
         "comment",
         "size_bucket",
+        "before_path",
     ])?;
     for row in &rows {
         writer.write_record([
@@ -782,6 +791,7 @@ fn write_csv(
             &row.status,
             &row.comment,
             row.size_bucket.as_deref().unwrap_or(""),
+            &row.before_path,
         ])?;
     }
     writer.flush()?;
@@ -1111,6 +1121,7 @@ mod tests {
             status: "SAMPLED".to_string(),
             comment: String::new(),
             size_bucket: None,
+            before_path: String::new(),
         };
 
         let rows = sample(&repo_path, 10, &[unstratified_existing], 1, true)?;

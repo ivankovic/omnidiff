@@ -432,14 +432,12 @@ fn main() -> Result<()> {
         .iter()
         .map(|(name, dir)| (name.as_str(), dir))
         .collect();
-    let mut timed_ms = 0.0f64;
     for row in &mut rows {
         let dir = dirs[row.name.as_str()];
         let Some((before, after)) = helper::code_pair_from_dir(dir)? else {
             continue;
         };
         row.elapsed_ms = elapsed_ms_for(&before, &after, &config);
-        timed_ms += row.elapsed_ms;
     }
 
     // Worst first; unsolved last.
@@ -462,16 +460,34 @@ fn main() -> Result<()> {
         println!("Wrote quality baseline to {path:?}");
     }
 
-    print_table(&rows);
-    print_reason_table(&rows);
-    print_goal_progress(&rows);
+    // A file moved to another language (the `crosslang` dataset) is reported apart: the README's
+    // goals and figures are about code changed within one language. The CSV, the baseline and the
+    // gate keep every fixture. A stable sort, so each part stays worst first.
+    let crosslang: std::collections::HashSet<&str> = cases
+        .iter()
+        .filter(|(_, dir)| dir.parent().and_then(|p| p.file_name()) == Some("crosslang".as_ref()))
+        .map(|(name, _)| name.as_str())
+        .collect();
+    rows.sort_by_key(|row| crosslang.contains(row.name.as_str()));
+    let (code, cross) =
+        rows.split_at(rows.partition_point(|row| !crosslang.contains(row.name.as_str())));
+
+    print_table(code);
+    print_reason_table(code);
+    print_goal_progress(code);
+    let code_ms: f64 = code.iter().map(|row| row.elapsed_ms).sum();
     // The diffs alone: grading runs on every core and is not part of the figure.
     println!(
         "\nRuntime: {:.3}s total, {:.1}ms/fixture ({} fixtures)",
-        timed_ms / 1000.0,
-        timed_ms / rows.len() as f64,
-        rows.len()
+        code_ms / 1000.0,
+        code_ms / code.len() as f64,
+        code.len()
     );
+    if !cross.is_empty() {
+        println!("\nCross-language fixtures, not counted above:\n");
+        print_table(cross);
+        print_goal_progress(cross);
+    }
 
     // Last, so a failing gate still leaves the full table on screen.
     if let Some(path) = &args.compare {
