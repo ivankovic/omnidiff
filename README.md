@@ -11,6 +11,7 @@ Fast, robust, accurate content-aware diffing.
 - **Robust:** can diff 99.95% of code changes
 - **Content-aware:** 98.8% of changes diffed using content-specific algorithms
 
+
 | Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
 |---|---|---|---|
 | Code | 96% | 68% | 89% |
@@ -21,7 +22,8 @@ Fast, robust, accurate content-aware diffing.
 | Message catalogs | 100% | 86% | 86% |
 | PDFs | 57% | 100% | 100% |
 
-Speed measured on a laptop, an Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts,
+
+Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts,
 message catalogs and PDFs have fewer than ten judged test cases each (see [Accurate](#accurate)).
 
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
