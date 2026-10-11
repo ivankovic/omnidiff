@@ -619,7 +619,19 @@ impl MemberViewer {
                 }
             }
             (Some(key), _) => match (self.annotating, self.member_verdict(key)) {
-                (false, Some(verdict)) => format!(" · {key}: omnidiff says {}", verdict.label()),
+                (false, Some(verdict)) => {
+                    let binary = self
+                        .diff
+                        .member(key)
+                        .and_then(|member| member.detail.as_ref());
+                    let label = match binary {
+                        Some(container::MemberDetail::Binary { .. }) => {
+                            verdict.label_in(content::Vocabulary::Binary)
+                        }
+                        _ => verdict.label(),
+                    };
+                    format!(" · {key}: omnidiff says {label}")
+                }
                 _ => format!(" · {key}"),
             },
         };

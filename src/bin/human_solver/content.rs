@@ -25,8 +25,8 @@
 //! resized, `c` canvas, `R` rotated, `d` timing, `f` frames, `m` members, and `I` added, `D`
 //! removed and `C` changed files - those that fit what is judged (`diff::content::Shape`): a
 //! picture's shape and timing, an archive's files, another container's members, nothing for text.
-//! An archive takes only `0` identical and `1` changed; text and catalogs name the levels for text
-//! (`diff::content::Vocabulary`). `u` records that
+//! An archive, and a member that is only bytes, takes only `0` identical and `1` changed; text and
+//! catalogs name the levels for text (`diff::content::Vocabulary`). `u` records that
 //! it cannot be judged, with a typed note on what OmniDiff draws wrong. A picture pair gets one
 //! verdict. A container pair gets one per changed member and, if the human wants, one for the
 //! whole pair: the member list's first row is the pair, `j`/`k` move, `n`/`N` jump to the next or
@@ -376,12 +376,30 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
 /// True if the member `key` is text: every message of a catalog, and any member diffed as text.
 fn is_text(session: &ContentSession, key: &str) -> bool {
     is_catalog(session)
-        || session
-            .viewer
-            .members()
-            .and_then(|members| members.diff().member(key))
-            .and_then(|member| member.detail.as_ref())
-            .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
+        || member_detail_is(session, key, |detail| {
+            matches!(detail, MemberDetail::Text { .. })
+        })
+}
+
+/// True if the member `key` is bytes nothing more is known about.
+fn is_binary(session: &ContentSession, key: &str) -> bool {
+    !is_catalog(session)
+        && member_detail_is(session, key, |detail| {
+            matches!(detail, MemberDetail::Binary { .. })
+        })
+}
+
+fn member_detail_is(
+    session: &ContentSession,
+    key: &str,
+    test: impl FnOnce(&MemberDetail) -> bool,
+) -> bool {
+    session
+        .viewer
+        .members()
+        .and_then(|members| members.diff().member(key))
+        .and_then(|member| member.detail.as_ref())
+        .is_some_and(test)
 }
 
 /// A message catalog is text through and through: its messages, and so the whole file.
@@ -389,8 +407,8 @@ fn is_catalog(session: &ContentSession) -> bool {
     session.family == Family::Catalogs
 }
 
-/// The names `target`'s levels go by: an archive's two, text's, or the pictures' own. The pair is
-/// text only for a catalog.
+/// The names `target`'s levels go by: an archive's two, binary bytes' two, text's, or the
+/// pictures' own. The pair is text only for a catalog.
 fn vocabulary(session: &ContentSession, target: &Target) -> Vocabulary {
     let text = match target {
         Target::Pair => is_catalog(session),
@@ -398,6 +416,8 @@ fn vocabulary(session: &ContentSession, target: &Target) -> Vocabulary {
     };
     if shape(session, target) == Shape::Archive {
         Vocabulary::Archive
+    } else if matches!(target, Target::Member(key) if is_binary(session, key)) {
+        Vocabulary::Binary
     } else if text {
         Vocabulary::Text
     } else {
@@ -1514,6 +1534,55 @@ mod tests {
                 "edited+added_files+changed_files".parse().unwrap()
             ))
         );
+    }
+
+    #[test]
+    fn a_binary_member_is_judged_identical_or_changed() {
+        let zip = |contents: &[u8]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            writer
+                .start_file("blob.bin", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            std::io::Write::write_all(&mut writer, contents).unwrap();
+            writer.finish().unwrap();
+            bytes
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.zip.test"),
+            dir.path().join("after.zip.test"),
+        );
+        fs::write(&a, zip(&[0, 159, 146, 150, 255, 1])).unwrap();
+        fs::write(&b, zip(&[0, 159, 146, 151, 255, 1])).unwrap();
+        let mut session = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for blob.bin: 0 identical 1 changed u can't judge"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('2'));
+        assert!(
+            session
+                .status
+                .contains("Its levels are 0 identical, 1 changed"),
+            "{}",
+            session.status
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        assert_eq!(
+            session.judgement.members.get("blob.bin").cloned(),
+            Some(Judgement::Verdict("edited".parse().unwrap()))
+        );
+
+        session.viewer.set_annotating(false);
+        let text = screen(&mut session, &app, 200);
+        assert!(text.contains("omnidiff says changed"), "{text}");
     }
 
     #[test]

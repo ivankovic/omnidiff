@@ -69,8 +69,9 @@ use container::{Container, ContainerDiff};
 /// takes two levels** ([`Vocabulary::Archive`]): identical (invisible - no file added, removed or
 /// changed, whatever its timestamps or compression) and changed (edited), and says what changed
 /// with the [`Tag::AddedFiles`], [`Tag::RemovedFiles`] and [`Tag::ChangedFiles`] tags; how much a
-/// file changed is that file's own verdict. Only the names differ: files and stubs spell every
-/// level one way ([`Level::name`]).
+/// file changed is that file's own verdict. **So do bytes nothing more is known about**
+/// ([`Vocabulary::Binary`]): with no content to look at, the only question is whether they
+/// differ. Only the names differ: files and stubs spell every level one way ([`Level::name`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Level {
@@ -120,23 +121,26 @@ impl Level {
         Level::ALL.into_iter().find(|level| level.name() == name)
     }
 
-    /// What `vocabulary` calls the level: [`Level::name`] for pictures, plainer names for text
-    /// and archives.
+    /// What `vocabulary` calls the level: [`Level::name`] for pictures, plainer names for text,
+    /// archives and binary bytes.
     pub fn name_in(self, vocabulary: Vocabulary) -> &'static str {
         match (vocabulary, self) {
-            (Vocabulary::Text | Vocabulary::Archive, Level::Invisible) => "identical",
+            (Vocabulary::Text | Vocabulary::Archive | Vocabulary::Binary, Level::Invisible) => {
+                "identical"
+            }
             (Vocabulary::Text, Level::Imperceptible) => "whitespace",
             (Vocabulary::Text, Level::Artifacts) => "formatting",
             (Vocabulary::Text, Level::Redrawn) => "rewritten",
-            (Vocabulary::Archive, Level::Edited) => "changed",
+            (Vocabulary::Archive | Vocabulary::Binary, Level::Edited) => "changed",
             (_, level) => level.name(),
         }
     }
 
-    /// The levels `vocabulary` judges with, in key order: all six, or an archive's two.
+    /// The levels `vocabulary` judges with, in key order: all six, or the two of an archive or of
+    /// binary bytes.
     pub fn offered(vocabulary: Vocabulary) -> &'static [Level] {
         match vocabulary {
-            Vocabulary::Archive => &[Level::Invisible, Level::Edited],
+            Vocabulary::Archive | Vocabulary::Binary => &[Level::Invisible, Level::Edited],
             _ => &Level::ALL,
         }
     }
@@ -148,6 +152,8 @@ pub enum Vocabulary {
     Pictures,
     Text,
     Archive,
+    /// Bytes nothing more is known about ([`container::MemberDetail::Binary`]).
+    Binary,
 }
 
 /// What a verdict is about, for which [`Tag`]s it can take: a picture's shape and timing, an

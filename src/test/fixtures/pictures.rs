@@ -105,15 +105,23 @@ mod jpeg_x_chennes_med_f17a4859_a01401;
 #[cfg(test)]
 mod jpeg_x_chennes_med_f17a4859_a01419;
 #[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_inherit_graph_10;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_inherit_graph_6;
+#[cfg(test)]
 mod jpeg_x_deltj_tempestsdr_82f86af6_demo_adversary;
 #[cfg(test)]
 mod jpeg_x_karlb_bumprace_59f81895_back2;
 #[cfg(test)]
 mod jpeg_x_madmaxms_theme_obsidian_2_93ba8ec1_screenshot;
 #[cfg(test)]
+mod jpeg_x_madmaxms_theme_obsidian_2_a85c7f9f_screenshot;
+#[cfg(test)]
 mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_07f3b276ec8f3d39;
 #[cfg(test)]
 mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_36281f239756cf;
+#[cfg(test)]
+mod jpeg_x_onerng_onerng_github_io_839e29a1_v3_botview;
 #[cfg(test)]
 mod jpeg_x_rubrikinc_wachy_7f73f5d6_overview_screenshot_skitch;
 #[cfg(test)]
