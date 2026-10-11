@@ -561,6 +561,8 @@ mod html_twbs_bootstrap_not_html_template_extract_two_vars;
 #[cfg(test)]
 mod html_twbs_bootstrap_remove_one_line_in_yaml_metadata_preamble;
 #[cfg(test)]
+mod java_genymobile_scrcpy_add;
+#[cfg(test)]
 mod java_genymobile_scrcpy_add_enum_value;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_func;
@@ -572,6 +574,10 @@ mod java_genymobile_scrcpy_add_parameter;
 mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
 mod java_genymobile_scrcpy_char_to_string_bugfix;
+#[cfg(test)]
+mod java_genymobile_scrcpy_only_add;
+#[cfg(test)]
+mod java_genymobile_scrcpy_only_add_2;
 #[cfg(test)]
 mod java_genymobile_scrcpy_only_insert;
 #[cfg(test)]
@@ -647,11 +653,15 @@ mod json_gorhill_ublock_version;
 #[cfg(test)]
 mod json_grafana_grafana_add_pair;
 #[cfg(test)]
+mod json_immich_app_immich_small_change;
+#[cfg(test)]
 mod json_lidarr_lidarr_remove_one_line;
 #[cfg(test)]
 mod json_louislam_uptime_kuma_big_add_only;
 #[cfg(test)]
 mod json_microsoft_playwright_version_update;
+#[cfg(test)]
+mod json_mui_material_ui_version;
 #[cfg(test)]
 mod json_puppeteer_puppeteer_update_version;
 #[cfg(test)]
@@ -660,6 +670,8 @@ mod json_puppeteer_puppeteer_version_update;
 mod json_puppeteer_puppeteer_version_update_2;
 #[cfg(test)]
 mod json_shadcn_ui_ui_add_one_line;
+#[cfg(test)]
+mod json_shadcn_ui_ui_pure_add;
 #[cfg(test)]
 mod json_tauri_apps_tauri_version_change;
 #[cfg(test)]
