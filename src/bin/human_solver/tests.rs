@@ -11292,22 +11292,38 @@ fn m_over_full_sweeps_is_one_match_as_drawn() {
     assert_eq!(entries[0].before[0].end_row, 2);
 }
 
+/// A comment rewritten into more lines (`c-x-sqlite-sqlite-c94f97fa-where`: 6 before, 15 after)
+/// is one update; its rows cannot pair one to one.
 #[test]
-fn m_over_minimal_sweeps_of_unequal_length_is_refused() {
+fn m_over_minimal_sweeps_of_unequal_length_is_one_update_over_every_row() {
     let (before, after) = moved_block();
     let mut state = sweeps_over_the_moved_block();
     // Three rows before, two after.
     state.cursor[0] = (3, TextPaintState::row_text(before, 3).len());
     let (app, _) = press_in_text_view_painting("Minimal", before, after, state, KeyCode::Char('m'));
-    assert!(solution_entries(&app.mapping, &app.text_solution).is_empty());
-    assert!(
-        app.status
-            .as_deref()
-            .unwrap_or("")
-            .starts_with("Not matched: 3 line(s) against 2"),
-        "{:?}",
-        app.status
+    let entries = solution_entries(&app.mapping, &app.text_solution);
+    assert_eq!(entries.len(), 1, "{:?}", app.status);
+    let entry = &entries[0];
+    assert_eq!(
+        (entry.before.len(), entry.after.len()),
+        (3, 2),
+        "a span per row"
     );
+    for span in entry.before.iter().chain(&entry.after) {
+        assert_ne!(span.start_column, 0, "no indentation claimed: {span:?}");
+    }
+    assert_eq!(
+        entry.verdict(before, after).unwrap(),
+        HumanTextVerdict::Update
+    );
+    assert_eq!(
+        app.status.as_deref(),
+        Some(
+            "Matched 3:2 line(s) as one update: unequal line counts cannot pair one to one - \
+             indentation left unpainted (Minimal)"
+        )
+    );
+    assert!(app.dirty);
 }
 
 #[test]

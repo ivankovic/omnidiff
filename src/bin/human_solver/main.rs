@@ -189,8 +189,9 @@ t              text view: read the source, and paint the human text-range ground
                  first code character, never through the indentation -- the rule
                  invariant 6 states, kept for you instead of reported afterwards.
                  m on a full-line sweep on each side does the same and pairs the
-                 rows one to one (the same number of rows on both sides, or it is
-                 refused), one match per row, each a move or an update by itself.
+                 rows one to one, one match per row, each a move or an update by
+                 itself; with a different number of rows on each side, it is one
+                 match over all of them instead, an update (a rewritten passage).
                  A blank row in the sweep drops out; a vertical selection and a
                  Full or free-named painting are left exactly as drawn.
                  Branching a Minimal painting to one named Full (s, Enter) does

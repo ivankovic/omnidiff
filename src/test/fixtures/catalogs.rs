@@ -29,6 +29,10 @@ mod mo_x_motioneye_project_motioneye_9e2ef521_motioneye;
 #[cfg(test)]
 mod mo_x_spirali_rmahjong_abb369a8_rmahjong;
 #[cfg(test)]
+mod mo_x_spyder_ide_spyder_unittest_a83c14f9_spyder_unittest_2;
+#[cfg(test)]
+mod mo_x_spyder_ide_spyder_unittest_a83c14f9_spyder_unittest_4;
+#[cfg(test)]
 mod mo_x_ubernostrum_django_registration_906912aa_django;
 #[cfg(test)]
 mod qm_x_brookiestein_btscreenlocker_5cbb24b0_btscreenlocker_es_us;

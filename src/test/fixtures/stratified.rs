@@ -151,6 +151,8 @@ mod c_rust_lang_rust_add_two_consts;
 #[cfg(test)]
 mod c_sqlite_sqlite_fix_format_string_typo;
 #[cfg(test)]
+mod c_sqlite_sqlite_small_but_complex_case;
+#[cfg(test)]
 mod c_tmux_tmux_delete_one_include;
 #[cfg(test)]
 mod cpp_electron_electron_add_imports;
@@ -380,6 +382,8 @@ mod css_gorhill_ublock_add_one_attribute;
 mod css_mastodon_mastodon_add_two_lines;
 #[cfg(test)]
 mod css_microsoft_vscode_remove_one_line;
+#[cfg(test)]
+mod css_microsoft_vscode_small_update;
 #[cfg(test)]
 mod css_nextcloud_server_update_import;
 #[cfg(test)]
@@ -657,7 +661,17 @@ mod json_puppeteer_puppeteer_version_update_2;
 #[cfg(test)]
 mod json_shadcn_ui_ui_add_one_line;
 #[cfg(test)]
+mod json_tauri_apps_tauri_version_change;
+#[cfg(test)]
+mod json_tauri_apps_tauri_version_change_2;
+#[cfg(test)]
 mod json_vercel_next_version;
+#[cfg(test)]
+mod json_vercel_next_version_change;
+#[cfg(test)]
+mod json_vercel_next_version_change_2;
+#[cfg(test)]
+mod json_vercel_next_version_change_3;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_annotation;
 #[cfg(test)]
@@ -961,6 +975,10 @@ mod shellscript_ansible_ansible_small_add;
 #[cfg(test)]
 mod shellscript_ansible_ansible_small_change;
 #[cfg(test)]
+mod shellscript_cockroachdb_cockroach_another_flags_in_string_example;
+#[cfg(test)]
+mod shellscript_cockroachdb_cockroach_string_content_has_flags;
+#[cfg(test)]
 mod shellscript_genymobile_scrcpy_insert_only;
 #[cfg(test)]
 mod shellscript_genymobile_scrcpy_version;
@@ -1069,6 +1087,8 @@ mod tsx_mui_material_ui_remove_import_4;
 #[cfg(test)]
 mod tsx_mui_material_ui_remove_one_import;
 #[cfg(test)]
+mod tsx_shadcn_ui_ui_move_class_around_in_string;
+#[cfg(test)]
 mod tsx_shadcn_ui_ui_order_of_class_names;
 #[cfg(test)]
 mod tsx_shadcn_ui_ui_update_release_announcement;
@@ -1129,6 +1149,8 @@ mod vimscript_neovim_neovim_add_one_line_to_dict;
 #[cfg(test)]
 mod vimscript_neovim_neovim_add_one_line_to_test;
 #[cfg(test)]
+mod vimscript_neovim_neovim_changes_in_string;
+#[cfg(test)]
 mod vimscript_neovim_neovim_comment_only_insert;
 #[cfg(test)]
 mod vimscript_neovim_neovim_date_update_plus_bugfix;
@@ -1158,6 +1180,8 @@ mod xml_libreoffice_non_latin_string_data_update;
 mod xml_libreoffice_unicode;
 #[cfg(test)]
 mod xml_microsoft_terminal_add_one_element;
+#[cfg(test)]
+mod xml_mozilla_firefox_firefox_add_four_attributes;
 #[cfg(test)]
 mod xml_mozilla_firefox_firefox_update_value;
 #[cfg(test)]
