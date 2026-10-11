@@ -28,7 +28,7 @@ ignore-dev-dependencies = true
 # The root crate itself: cargo-about resolves it too, and its license is not a third party's.
 # Accepted here so the run succeeds; the template leaves its entry out.
 [omnidiff]
-accepted = ["AGPL-3.0-or-later"]
+accepted = ["AGPL-3.0-only"]
 
 # Two crates embed data under a license of their own, which their Cargo.toml does not declare and
 # whose notice must travel with the binary: hayro-interpret's standard PDF fonts (Foxit's, from

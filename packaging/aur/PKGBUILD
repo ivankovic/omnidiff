@@ -6,7 +6,7 @@ pkgrel=1
 pkgdesc="Fast, robust, accurate content-aware diffing"
 arch=('x86_64' 'aarch64')
 url="https://github.com/ivankovic/omnidiff"
-license=('AGPL-3.0-or-later')
+license=('AGPL-3.0-only')
 depends=('gcc-libs' 'glibc')
 makedepends=('cargo')
 # Sourced from the GitHub tag rather than the crates.io tarball: the published crate carries
