@@ -359,6 +359,8 @@ mod csharp_sonarr_sonarr_fix_comment_typo;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_many_updates_with_one_insert;
 #[cfg(test)]
+mod csharp_sonarr_sonarr_move_plus_add;
+#[cfg(test)]
 mod csharp_sonarr_sonarr_ok_small_edit;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_pure_add;
@@ -918,6 +920,8 @@ mod rust_tauri_apps_tauri_add_to_list;
 mod rust_tauri_apps_tauri_add_use_and_function;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_fix_typo_in_string_constant;
+#[cfg(test)]
+mod rust_tauri_apps_tauri_insert_async_modifier;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_rename_mod;
 #[cfg(test)]
