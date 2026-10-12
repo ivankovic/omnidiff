@@ -709,7 +709,7 @@
   ],
   "text_mappings": [
     {
-      "name": "Only one solution",
+      "name": "Minimal",
       "entries": [
         {
           "operation": "Insert",
@@ -741,6 +741,39 @@
               "start_column": 8,
               "end_row": 18,
               "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 41,
+              "start_column": 4,
+              "end_row": 41,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 42,
+              "start_column": 8,
+              "end_row": 42,
+              "end_column": 19
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 43,
+              "start_column": 4,
+              "end_row": 43,
+              "end_column": 5
             }
           ]
         }
