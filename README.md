@@ -4,7 +4,7 @@
 [![Latest release](https://img.shields.io/github/v/release/ivankovic/omnidiff)](https://github.com/ivankovic/omnidiff/releases/latest)
 [![docs.rs](https://docs.rs/omnidiff/badge.svg)](https://docs.rs/omnidiff)
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ivankovic/omnidiff/main/research/data/coverage/badge.json)](CONTRIBUTING.md#coverage)
-[![License: AGPL v3+](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
 Fast, robust, accurate content-aware diffing.
 
@@ -327,8 +327,7 @@ Copyright (C) 2026 Marko Ivankovic
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+by the Free Software Foundation, version 3 of the License.
 
 See the LICENSE file for the full text of the License.
 
