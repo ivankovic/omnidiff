@@ -6,6 +6,8 @@ release does: a minor bump may change the JSON output or the library API, a patc
 
 ## [Unreleased]
 
+A large number of improvements to non-code diffs, and adding more robust tests for non-code content.
+
 ### Added
 
 - Pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF) are diffed instead of reported as "Binary file
