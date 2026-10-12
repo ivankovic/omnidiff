@@ -4,7 +4,9 @@ All notable changes to OmniDiff (named CodeDiff up to v0.1.1). The format follow
 and the version numbers follow [Semantic Versioning](https://semver.org/) as far as a 0.x
 release does: a minor bump may change the JSON output or the library API, a patch bump does not.
 
-## [Unreleased]
+## [0.2.1] - 2026-10-12
+
+A large number of improvements to non-code diffs, and adding more robust tests for non-code content.
 
 ### Added
 
