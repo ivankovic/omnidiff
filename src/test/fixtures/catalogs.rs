@@ -19,6 +19,8 @@
 //! Catalog fixtures (`src/test/data/catalogs/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a `.mo` or `.qm` sample is promoted. See `test::helper::human_content`.
 #[cfg(test)]
+mod mo_x_adammajer_lpe_0d8fb399_fr;
+#[cfg(test)]
 mod mo_x_alsaplayer_alsaplayer_7a32bda0_fr;
 #[cfg(test)]
 mod mo_x_deathkiller_jazz2_native_0aaf3cff_ro;

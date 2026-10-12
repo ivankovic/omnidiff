@@ -1,0 +1,16 @@
+{
+  "verdict": "edited",
+  "members": {
+    "Current buffer modified": "edited",
+    "File saved successfully": "edited",
+    "Not found": "edited",
+    "Unknown debug request": "edited",
+    "Using hard tabs": "edited",
+    "Using soft tabs": "edited",
+    "debug: ": "edited",
+    "file: ": "edited",
+    "line: ": "edited",
+    "search term: ": "edited",
+    "usage:\\t'lpe [--mode mode] [--] file'\\topens file for editing\\n      \\t'lpe --version'              \\tprints version number\\n      \\t'lpe --help'                 \\tprints this help message\\n": "edited"
+  }
+}

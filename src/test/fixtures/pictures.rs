@@ -113,17 +113,41 @@ mod jpeg_x_chennes_med_f17a4859_inherit_graph_8;
 #[cfg(test)]
 mod jpeg_x_deltj_tempestsdr_82f86af6_demo_adversary;
 #[cfg(test)]
+mod jpeg_x_deltj_tempestsdr_82f86af6_demo_target;
+#[cfg(test)]
+mod jpeg_x_docker_classicswarm_c17c5c68_overlay_review;
+#[cfg(test)]
+mod jpeg_x_docker_classicswarm_c17c5c68_tls_2;
+#[cfg(test)]
+mod jpeg_x_governikus_ausweisapp_522d8b0b_wix_dialog;
+#[cfg(test)]
+mod jpeg_x_jpfleury_clearlooks_phenix_f919bfa4_poster;
+#[cfg(test)]
 mod jpeg_x_karlb_bumprace_59f81895_back2;
+#[cfg(test)]
+mod jpeg_x_madmaxms_iconpack_obsidian_5bde0d62_logo;
+#[cfg(test)]
+mod jpeg_x_madmaxms_iconpack_obsidian_8948521e_logo;
 #[cfg(test)]
 mod jpeg_x_madmaxms_theme_obsidian_2_93ba8ec1_screenshot;
 #[cfg(test)]
 mod jpeg_x_madmaxms_theme_obsidian_2_a85c7f9f_screenshot;
 #[cfg(test)]
+mod jpeg_x_madmaxms_theme_obsidian_2_ed5e9cd8_screenshot;
+#[cfg(test)]
 mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_07f3b276ec8f3d39;
 #[cfg(test)]
 mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_36281f239756cf;
 #[cfg(test)]
+mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_82b3248be73e244d;
+#[cfg(test)]
+mod jpeg_x_mupen64plus_mupen64plus_ui_python_ba610283_ec158f5fb3e6896;
+#[cfg(test)]
 mod jpeg_x_onerng_onerng_github_io_839e29a1_v3_botview;
+#[cfg(test)]
+mod jpeg_x_rubjo_victor_mono_c0f90b43_keyboard_dark;
+#[cfg(test)]
+mod jpeg_x_rubjo_victor_mono_c0f90b43_keyboard_light;
 #[cfg(test)]
 mod jpeg_x_rubrikinc_wachy_7f73f5d6_overview_screenshot_skitch;
 #[cfg(test)]

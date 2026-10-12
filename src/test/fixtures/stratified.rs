@@ -421,7 +421,11 @@ mod go_caddyserver_caddy_multiple_solutions_interesting_case;
 #[cfg(test)]
 mod go_cockroachdb_cockroach_add_function;
 #[cfg(test)]
+mod go_cockroachdb_cockroach_add_one_test;
+#[cfg(test)]
 mod go_cockroachdb_cockroach_add_only;
+#[cfg(test)]
+mod go_cockroachdb_cockroach_add_only_2;
 #[cfg(test)]
 mod go_fatedier_frp_build_comment_insert_only;
 #[cfg(test)]
@@ -476,6 +480,8 @@ mod go_jesseduffield_lazygit_add_a_func;
 mod go_jesseduffield_lazygit_add_two_lines;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_change_undo_key;
+#[cfg(test)]
+mod go_jesseduffield_lazygit_delete_only;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_nice_small_change;
 #[cfg(test)]
@@ -733,11 +739,17 @@ mod lua_awesomewm_awesome_add_h_to_align;
 #[cfg(test)]
 mod lua_awesomewm_awesome_add_noreturn_comment;
 #[cfg(test)]
+mod lua_awesomewm_awesome_add_opt_to_comments;
+#[cfg(test)]
 mod lua_awesomewm_awesome_add_to_table_constructor;
+#[cfg(test)]
+mod lua_awesomewm_awesome_align_to_halign_2;
 #[cfg(test)]
 mod lua_awesomewm_awesome_comment_only;
 #[cfg(test)]
 mod lua_awesomewm_awesome_comment_only_2;
+#[cfg(test)]
+mod lua_awesomewm_awesome_delete_one_local;
 #[cfg(test)]
 mod lua_awesomewm_awesome_fix_one_byte_typo_in_comment;
 #[cfg(test)]
