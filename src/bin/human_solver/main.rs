@@ -188,8 +188,9 @@ t              text view: read the source, and paint the human text-range ground
                  first code character, never through the indentation -- the rule
                  invariant 6 states, kept for you instead of reported afterwards.
                  m on a full-line sweep on each side does the same and pairs the
-                 rows one to one (the same number of rows on both sides, or it is
-                 refused), one match per row, each a move or an update by itself.
+                 rows one to one, one match per row, each a move or an update by
+                 itself; with a different number of rows on each side, it is one
+                 match over all of them instead, an update (a rewritten passage).
                  A blank row in the sweep drops out; a vertical selection and a
                  Full or free-named painting are left exactly as drawn.
                  Branching a Minimal painting to one named Full (s, Enter) does
@@ -449,14 +450,13 @@ pub(crate) struct ContentRow {
 }
 
 impl ContentRow {
-    /// A content fixture's row, from its ground truth (`None` before any is saved): an archive's
-    /// verdict in its own names (`changed+added_files`).
+    /// A content fixture's row, from its ground truth (`None` before any is saved): a
+    /// container's verdict in its own names (`changed+added_files`).
     pub(crate) fn of(family: Family, human: Option<HumanContent>) -> Self {
         let human = human.unwrap_or_default();
         let names = match family {
-            Family::Archives => Vocabulary::Archive,
-            Family::Catalogs => Vocabulary::Text,
-            _ => Vocabulary::Pictures,
+            Family::Pictures => Vocabulary::Pictures,
+            _ => Vocabulary::Container,
         };
         let label = match (&human.verdict, human.members.len()) {
             (Some(judgement), _) => judgement.label_in(names),
@@ -2025,8 +2025,18 @@ struct SamplePickerView {
 }
 
 /// The distinct values present in a column, in its sort order, for `f` to cycle through.
-fn sample_language_values(rows: &[SampleRow]) -> Vec<String> {
-    let mut values: Vec<String> = rows.iter().map(|row| row.language.clone()).collect();
+/// Languages come only from rows that pass every other filter in `filters`, so `f` never lands on
+/// a language whose list is empty.
+fn sample_language_values(rows: &[SampleRow], filters: &SampleFilters) -> Vec<String> {
+    let others = SampleFilters {
+        language: None,
+        ..filters.clone()
+    };
+    let mut values: Vec<String> = rows
+        .iter()
+        .filter(|row| others.keeps(row))
+        .map(|row| row.language.clone())
+        .collect();
     values.sort();
     values.dedup();
     values

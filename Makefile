@@ -33,9 +33,15 @@ FEATURES ?= stats
 # Usage: make benchmark-ablation [OUT_DIR=path]
 OUT_DIR ?= research/data/ablation
 
+# Wall-clock figures belong to the machine that measured them, so each registered machine
+# (research/data/machines.csv, recognised by its CPU) keeps its own: timing baselines in
+# research/data/quality/timing/<machine>.*, content speed in
+# research/data/performance/content_speed/<machine>.csv. MACHINE=<name> times a run as that one.
+which-machine = python3 scripts/machine.py $(MACHINE)
+
 .PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
-	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
+	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics
 
@@ -122,10 +128,12 @@ benchmark-quality:
 
 # Speed and accuracy of content diffs per family, the README's figures for content other than code.
 # Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
-# materialize_test_diffs) and writes research/data/performance/content_speed.csv.
+# materialize_test_diffs) and writes research/data/performance/content_speed/<machine>.csv.
 benchmark-content:
+	@machine=$$($(which-machine)) || exit 1; \
+	echo "Timing content on $$machine"; \
 	cargo run --release --features $(FEATURES) --bin benchmark_content -- \
-		--csv research/data/performance/content_speed.csv
+		--csv research/data/performance/content_speed/$$machine.csv
 
 # Regenerates the checked-in src/test/data/diffs.csv fixture inventory; re-run after changing
 # fixtures or their ground truths.
@@ -222,7 +230,7 @@ benchmark-ablation:
 	FEATURES=$(FEATURES) ./scripts/ablation_study.sh $(OUT_DIR)
 
 QUALITY_BASELINE := research/data/quality/quality_baseline.csv
-RUNTIME_BASELINE := research/data/quality/quality_baseline.txt
+TIMING_DIR := research/data/quality/timing
 BENCH_OUTPUT := target/benchmark_optimal_output.txt
 # The one invocation behind benchmark-quality, check-quality and update-quality-baseline.
 BENCH_QUALITY := cargo run --release --features $(FEATURES) --bin benchmark_optimal_solutions --
@@ -233,7 +241,8 @@ extract-ms = grep -oE '[0-9.]+ms/fixture' $(BENCH_OUTPUT) | grep -oE '[0-9.]+'
 #
 # Accuracy is compared per fixture, never aggregated: the corpus grows toward hard cases, so any
 # aggregate reads new data as a regression. Fixtures without a baseline row pass. Runtime only warns
-# (>2x), because wall-clock varies too much between machines to gate on.
+# (>2x), and only against this machine's own timing baseline: a CI runner or an unregistered
+# machine has none, and skips the comparison.
 #
 # bash with `pipefail`, or the `| tee` would report tee's status and a red gate would pass (dash has
 # no pipefail). `mkdir -p` first: tee opens its file at once and would lose the race with cargo
@@ -242,11 +251,21 @@ check-quality: SHELL := /bin/bash
 check-quality: .SHELLFLAGS := -o pipefail -c
 check-quality:
 	@mkdir -p $(dir $(BENCH_OUTPUT))
-	$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) | tee $(BENCH_OUTPUT)
-	@ms=$$($(extract-ms)); \
-	baseline_ms=$$(grep '^MS_PER_FIXTURE=' $(RUNTIME_BASELINE) | cut -d= -f2); \
+	@machine=$$($(which-machine)) || machine=; \
+	timing=; \
+	if [ -n "$$machine" ] && [ -f $(TIMING_DIR)/$$machine.csv ]; then \
+		timing="--compare-timing $(TIMING_DIR)/$$machine.csv"; \
+	fi; \
+	echo "$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) $$timing"; \
+	$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) $$timing | tee $(BENCH_OUTPUT) || exit 1; \
+	ms=$$($(extract-ms)); \
 	echo ""; \
-	echo "Runtime: $$ms ms/fixture (baseline: $$baseline_ms)"; \
+	if [ -z "$$timing" ]; then \
+		echo "Runtime: $$ms ms/fixture (no timing baseline for this machine: not compared)"; \
+		exit 0; \
+	fi; \
+	baseline_ms=$$(grep '^MS_PER_FIXTURE=' $(TIMING_DIR)/$$machine.txt | cut -d= -f2); \
+	echo "Runtime: $$ms ms/fixture (baseline on $$machine: $$baseline_ms)"; \
 	over_2x=$$(awk -v ms="$$ms" -v base="$$baseline_ms" 'BEGIN { print (ms > base * 2) ? 1 : 0 }'); \
 	if [ "$$over_2x" = "1" ]; then \
 		echo "warning: runtime is more than 2x the baseline ($$ms ms/fixture vs $$baseline_ms ms/fixture) - investigate before deploying" >&2; \
@@ -264,29 +283,49 @@ update-painting-attribution:
 	cargo test --profile ci --lib --features test-fixtures \
 		painting_failure_census -- --ignored --nocapture
 
-# Rewrites both baselines; never done by `deploy`. A test pins the accuracy columns to the
-# `src/test/fixtures/` stubs' limits, so this cannot re-baseline an accuracy regression away.
-# Not gated on check-quality, which is red exactly after a reviewed trade-off this exists for.
-# `mkdir -p` for check-quality's tee race; without pipefail it would write an empty MS_PER_FIXTURE.
+# Rewrites the accuracy baseline and this machine's timing baseline; never done by `deploy`. A test
+# pins the accuracy columns to the `src/test/fixtures/` stubs' limits, so this cannot re-baseline an
+# accuracy regression away. Not gated on check-quality, which is red exactly after a reviewed
+# trade-off this exists for. Needs a registered machine, so no timing lands in another's files.
+update-quality-baseline: SHELL := /bin/bash
+update-quality-baseline: .SHELLFLAGS := -o pipefail -c
 update-quality-baseline:
-	@mkdir -p $(dir $(BENCH_OUTPUT))
-	$(BENCH_QUALITY) --write-baseline $(QUALITY_BASELINE) | tee $(BENCH_OUTPUT)
-	@ms=$$($(extract-ms)); \
+	@mkdir -p $(dir $(BENCH_OUTPUT)) $(TIMING_DIR)
+	@machine=$$($(which-machine)) || exit 1; \
+	$(BENCH_QUALITY) --write-baseline $(QUALITY_BASELINE) \
+		--write-timing $(TIMING_DIR)/$$machine.csv | tee $(BENCH_OUTPUT) || exit 1; \
+	$(write-runtime-baseline)
+
+# Rewrites this machine's timing baseline alone, the accuracy baseline untouched: for a machine
+# timed for the first time, or after a change that moved only the speed.
+update-timing-baseline: SHELL := /bin/bash
+update-timing-baseline: .SHELLFLAGS := -o pipefail -c
+update-timing-baseline:
+	@mkdir -p $(dir $(BENCH_OUTPUT)) $(TIMING_DIR)
+	@machine=$$($(which-machine)) || exit 1; \
+	$(BENCH_QUALITY) --write-timing $(TIMING_DIR)/$$machine.csv | tee $(BENCH_OUTPUT) || exit 1; \
+	$(write-runtime-baseline)
+
+# The tail of both update- recipes, with `$$machine` set: $(BENCH_OUTPUT)'s ms/fixture, written as
+# the machine's runtime baseline.
+write-runtime-baseline = \
+	ms=$$($(extract-ms)); \
 	{ \
-		echo "# Runtime baseline for \`make check-quality\` - see Makefile."; \
-		echo "#"; \
-		echo "# MS_PER_FIXTURE: benchmark_optimal_solutions' own \"Runtime: ... ms/fixture\" line: the diffs"; \
-		echo "# alone, timed one at a time after the parallel grading pass."; \
-		echo "# Informational only: a >2x jump warns, it never fails a deploy, because wall-clock"; \
-		echo "# time varies by machine far more than any real regression would."; \
-		echo "#"; \
-		echo "# The accuracy gate does NOT live here. It is per-fixture, in quality_baseline.csv"; \
-		echo "# beside this file, because no single number over a corpus that keeps gaining hard"; \
-		echo "# fixtures can tell a real regression apart from new data - measured, see the"; \
-		echo "# quality-gate section in src/bin/benchmark_optimal_solutions.rs."; \
+		echo "\# Runtime baseline for \`make check-quality\` on $$machine - see Makefile."; \
+		echo "\#"; \
+		echo "\# MS_PER_FIXTURE: benchmark_optimal_solutions' own \"Runtime: ... ms/fixture\" line: the diffs"; \
+		echo "\# alone, timed one at a time after the parallel grading pass."; \
+		echo "\# Informational only: a >2x jump warns, it never fails a deploy. Compared only on the"; \
+		echo "\# machine that recorded it, since wall-clock time varies by machine far more than any"; \
+		echo "\# real regression would. Per-fixture times are in $$machine.csv beside this file."; \
+		echo "\#"; \
+		echo "\# The accuracy gate does NOT live here. It is per-fixture, in ../quality_baseline.csv,"; \
+		echo "\# because no single number over a corpus that keeps gaining hard fixtures can tell a"; \
+		echo "\# real regression apart from new data - measured, see the quality-gate section in"; \
+		echo "\# src/bin/benchmark_optimal_solutions.rs."; \
 		echo "MS_PER_FIXTURE=$$ms"; \
-	} > $(RUNTIME_BASELINE); \
-	echo "Updated $(QUALITY_BASELINE) and $(RUNTIME_BASELINE) (MS_PER_FIXTURE=$$ms)"
+	} > $(TIMING_DIR)/$$machine.txt; \
+	echo "Updated $(TIMING_DIR)/$$machine.csv and $$machine.txt (MS_PER_FIXTURE=$$ms)"
 
 # Every packaging recipe names the version Cargo.toml does - see scripts/check_version_sync.py for
 # which files repeat it by hand. Part of deploy-checks and of CI's python job.

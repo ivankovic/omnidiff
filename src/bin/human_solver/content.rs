@@ -24,8 +24,8 @@
 //! resized, `c` canvas, `R` rotated, `d` timing, `f` frames, `m` members, and `I` added, `D`
 //! removed and `C` changed files - those that fit what is judged (`diff::content::Shape`): a
 //! picture's shape and timing, an archive's files, another container's members, nothing for text.
-//! An archive takes only `0` identical and `1` changed; text and catalogs name the levels for text
-//! (`diff::content::Vocabulary`). `u` records that
+//! An archive, and a member that is only bytes, takes only `0` identical and `1` changed; text and
+//! catalogs name the levels for text (`diff::content::Vocabulary`). `u` records that
 //! it cannot be judged, with a typed note on what OmniDiff draws wrong. A picture pair gets one
 //! verdict. A container pair gets one per changed member and, if the human wants, one for the
 //! whole pair: the member list's first row is the pair, `j`/`k` move, `n`/`N` jump to the next or
@@ -310,13 +310,12 @@ pub(crate) fn run_content_session(
 }
 
 /// The keys that toggle each tag.
-const TAG_KEYS: [(char, Tag); 9] = [
+const TAG_KEYS: [(char, Tag); 8] = [
     ('r', Tag::Resized),
     ('c', Tag::Canvas),
     ('R', Tag::Rotated),
     ('d', Tag::Timing),
     ('f', Tag::Frames),
-    ('m', Tag::Members),
     ('I', Tag::AddedFiles),
     ('D', Tag::RemovedFiles),
     ('C', Tag::ChangedFiles),
@@ -348,15 +347,8 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
     let Some(members) = session.viewer.members() else {
         return Shape::Picture;
     };
-    let container = |family: Family| {
-        if family == Family::Archives {
-            Shape::Archive
-        } else {
-            Shape::Container
-        }
-    };
     let Target::Member(key) = target else {
-        return container(session.family);
+        return Shape::Container;
     };
     match members
         .diff()
@@ -366,7 +358,7 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
         Some(MemberDetail::Picture(_)) => Shape::Picture,
         Some(MemberDetail::Content { content }) => match content.as_ref() {
             ContentDiff::Picture(_) => Shape::Picture,
-            ContentDiff::Container(diff) => container(diff.family),
+            ContentDiff::Container(_) => Shape::Container,
         },
         _ => Shape::Text,
     }
@@ -375,29 +367,45 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
 /// True if the member `key` is text: every message of a catalog, and any member diffed as text.
 fn is_text(session: &ContentSession, key: &str) -> bool {
     is_catalog(session)
-        || session
-            .viewer
-            .members()
-            .and_then(|members| members.diff().member(key))
-            .and_then(|member| member.detail.as_ref())
-            .is_some_and(|detail| matches!(detail, MemberDetail::Text { .. }))
+        || member_detail_is(session, key, |detail| {
+            matches!(detail, MemberDetail::Text { .. })
+        })
 }
 
-/// A message catalog is text through and through: its messages, and so the whole file.
+/// True if the member `key` is bytes nothing more is known about.
+fn is_binary(session: &ContentSession, key: &str) -> bool {
+    !is_catalog(session)
+        && member_detail_is(session, key, |detail| {
+            matches!(detail, MemberDetail::Binary { .. })
+        })
+}
+
+fn member_detail_is(
+    session: &ContentSession,
+    key: &str,
+    test: impl FnOnce(&MemberDetail) -> bool,
+) -> bool {
+    session
+        .viewer
+        .members()
+        .and_then(|members| members.diff().member(key))
+        .and_then(|member| member.detail.as_ref())
+        .is_some_and(test)
+}
+
+/// A message catalog's messages are text, whatever they hold.
 fn is_catalog(session: &ContentSession) -> bool {
     session.family == Family::Catalogs
 }
 
-/// The names `target`'s levels go by: an archive's two, text's, or the pictures' own. The pair is
-/// text only for a catalog.
+/// The names `target`'s levels go by: a container's two (any whole file of members, a catalog
+/// included), binary bytes' two, text's, or the pictures' own.
 fn vocabulary(session: &ContentSession, target: &Target) -> Vocabulary {
-    let text = match target {
-        Target::Pair => is_catalog(session),
-        Target::Member(key) => is_text(session, key),
-    };
-    if shape(session, target) == Shape::Archive {
-        Vocabulary::Archive
-    } else if text {
+    if shape(session, target) == Shape::Container {
+        Vocabulary::Container
+    } else if matches!(target, Target::Member(key) if is_binary(session, key)) {
+        Vocabulary::Binary
+    } else if matches!(target, Target::Member(key) if is_text(session, key)) {
         Vocabulary::Text
     } else {
         Vocabulary::Pictures
@@ -473,7 +481,6 @@ fn toggle_tag(session: &mut ContentSession, tag: Tag) {
     if !tag.fits(shape) {
         let what = match shape {
             Shape::Picture => "a picture",
-            Shape::Archive => "an archive",
             Shape::Container => "a container",
             Shape::Text => "text or bytes",
         };
@@ -875,9 +882,9 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
 
     frame.render_widget(Paragraph::new(Line::from(choices)), rows[2]);
 
-    // The content is drawn as it looks: no theme to follow, only the two outline colors the
-    // annotation view never uses.
-    let colors = PictureColors::from_theme(Color::Red, Color::Green, Color::Yellow);
+    // The content is drawn as it looks: no theme to follow, only the difference view's color,
+    // which the annotation view never uses.
+    let colors = PictureColors::from_theme(Color::Yellow);
     session.viewer.draw(frame, rows[3], colors);
 
     let prompt = match (&session.reject_input, &session.note_input) {
@@ -1418,7 +1425,7 @@ mod tests {
     }
 
     #[test]
-    fn a_catalog_names_its_levels_for_text_on_the_pair_and_every_message() {
+    fn a_catalog_is_a_container_whose_messages_take_the_levels_for_text() {
         let dir = tempfile::tempdir().unwrap();
         let (a, b) = (
             dir.path().join("before.mo.test"),
@@ -1440,10 +1447,23 @@ mod tests {
                 && text.contains("4 rewritten")
         };
 
+        // The whole file is a container like any other: identical or changed, and which messages.
         let text = screen(&mut session, &app, 200);
-        assert!(names_text(&text), "the whole catalog is text: {text}");
+        assert!(
+            text.contains(
+                "Verdict for the whole file: 0 identical 1 changed I added_files D removed_files \
+                 C changed_files u"
+            ),
+            "{text}"
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('4'));
-        assert!(session.status.contains("rewritten"), "{}", session.status);
+        assert!(
+            session
+                .status
+                .contains("Its levels are 0 identical, 1 changed"),
+            "{}",
+            session.status
+        );
 
         handle_key(&mut session, &mut app, KeyCode::Char('j'));
         assert!(
@@ -1516,6 +1536,55 @@ mod tests {
     }
 
     #[test]
+    fn a_binary_member_is_judged_identical_or_changed() {
+        let zip = |contents: &[u8]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            writer
+                .start_file("blob.bin", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            std::io::Write::write_all(&mut writer, contents).unwrap();
+            writer.finish().unwrap();
+            bytes
+        };
+        let dir = tempfile::tempdir().unwrap();
+        let (a, b) = (
+            dir.path().join("before.zip.test"),
+            dir.path().join("after.zip.test"),
+        );
+        fs::write(&a, zip(&[0, 159, 146, 150, 255, 1])).unwrap();
+        fs::write(&b, zip(&[0, 159, 146, 151, 255, 1])).unwrap();
+        let mut session = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        handle_key(&mut session, &mut app, KeyCode::Char('j'));
+        let text = screen(&mut session, &app, 200);
+        assert!(
+            text.contains("Verdict for blob.bin: 0 identical 1 changed u can't judge"),
+            "{text}"
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('2'));
+        assert!(
+            session
+                .status
+                .contains("Its levels are 0 identical, 1 changed"),
+            "{}",
+            session.status
+        );
+        handle_key(&mut session, &mut app, KeyCode::Char('1'));
+        assert_eq!(
+            session.judgement.members.get("blob.bin").cloned(),
+            Some(Judgement::Verdict("edited".parse().unwrap()))
+        );
+
+        session.viewer.set_annotating(false);
+        let text = screen(&mut session, &app, 200);
+        assert!(text.contains("omnidiff says changed"), "{text}");
+    }
+
+    #[test]
     fn a_container_takes_a_verdict_per_changed_member_and_one_for_the_pair() {
         let dir = tempfile::tempdir().unwrap();
         let mut session = archive_session(dir.path());
@@ -1545,13 +1614,12 @@ mod tests {
             verdict("edited+added_files+changed_files"),
             "an archive takes the file tags"
         );
-        for (key, message) in [
-            ('r', "an archive is never resized"),
-            ('m', "an archive is never members"),
-        ] {
-            handle_key(&mut session, &mut app, KeyCode::Char(key));
-            assert!(session.status.contains(message), "{}", session.status);
-        }
+        handle_key(&mut session, &mut app, KeyCode::Char('r'));
+        assert!(
+            session.status.contains("a container is never resized"),
+            "{}",
+            session.status
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('0'));
         assert_eq!(
             session.judgement.pair,
@@ -1653,7 +1721,7 @@ mod tests {
             Family::Archives,
             "zip-x-a-b-c",
             &Mismatches {
-                pair: Some(Verdict::new(Level::Replaced).with(Tag::Members)),
+                pair: Some(Verdict::new(Level::Edited).with(Tag::AddedFiles)),
                 members: vec![
                     (
                         "dir/\"q\".txt".to_string(),
@@ -1663,7 +1731,7 @@ mod tests {
                 ],
             },
         );
-        assert!(pinned.contains("Some(\"replaced+members\")"), "{pinned}");
+        assert!(pinned.contains("Some(\"edited+added_files\")"), "{pinned}");
         assert!(
             pinned.contains(r#"&[("dir/\"q\".txt", Some("edited")), ("gone", None)]"#),
             "{pinned}"

@@ -1463,7 +1463,8 @@ fn spans_share_a_byte(a: HumanTextSpan, b: HumanTextSpan, source: &str) -> bool 
 /// is committed as `d`/`i` would commit it: without indentation, one range per row (invariant 6).
 /// The rows are paired one to one as separate matches, each a move or an update by itself - one
 /// match over every row would be an update as a whole as soon as any row differs. Unequal row
-/// counts are refused.
+/// counts cannot pair, so they are one N:M match over every row instead: a passage rewritten into
+/// more or fewer lines, which is an update.
 pub(crate) fn action_paint_match(
     app: &mut App,
     state: &mut TextPaintState,
@@ -1526,7 +1527,8 @@ pub(crate) fn action_paint_match(
 }
 
 /// The `Minimal` multi-row branch of [`action_paint_match`]: `before` and `after` are the two
-/// sweeps. All or nothing: every row pair is checked before any is painted.
+/// sweeps. All or nothing: every row pair is checked before any is painted. With unequal row
+/// counts, one match over every row of both sides.
 fn action_paint_match_rows(
     app: &mut App,
     state: &mut TextPaintState,
@@ -1537,17 +1539,7 @@ fn action_paint_match_rows(
 ) {
     let before_rows = skip_leading_whitespace(before, before_src);
     let after_rows = skip_leading_whitespace(after, after_src);
-    if before_rows.len() != after_rows.len() {
-        app.status = Some(format!(
-            "Not matched: {} line(s) against {} after dropping blank lines and indentation - \
-             Minimal pairs the rows one to one, so sweep the same number of lines on each side, \
-             or use a vertical selection (V)",
-            before_rows.len(),
-            after_rows.len()
-        ));
-        return;
-    }
-    if before_rows.is_empty() {
+    if before_rows.is_empty() || after_rows.is_empty() {
         app.status = Some(
             "Only blank lines selected - Minimal claims no indentation, so nothing to match"
                 .to_string(),
@@ -1556,6 +1548,35 @@ fn action_paint_match_rows(
     }
 
     let solution = app.text_solution.clone();
+    if before_rows.len() != after_rows.len() {
+        let shape = format!("{}:{}", before_rows.len(), after_rows.len());
+        let entry = HumanTextEntry {
+            operation: HumanTextOperation::Match,
+            before: before_rows,
+            after: after_rows,
+        };
+        // Unequal counts cannot all read the same, so this is always an update; checked anyway
+        // for spans that do not read back.
+        if let Err(err) = entry.verdict(before_src, after_src) {
+            app.status = Some(format!("Not matched: {err:#}"));
+            return;
+        }
+        if let Some(clash) =
+            overlapping_painted_range(&app.mapping, &solution, &entry, before_src, after_src)
+        {
+            app.status = Some(format!("Not matched: {clash} - u removes it first"));
+            return;
+        }
+        solution_entries_mut(&mut app.mapping, &solution).push(entry);
+        app.mark_dirty();
+        state.anchor = [None; 2];
+        state.pending = [Vec::new(), Vec::new()];
+        app.status = Some(format!(
+            "Matched {shape} line(s) as one update: unequal line counts cannot pair one to one - \
+             indentation left unpainted (Minimal)"
+        ));
+        return;
+    }
     let mut entries = Vec::with_capacity(before_rows.len());
     let mut moves = 0usize;
     for (before_row, after_row) in before_rows.into_iter().zip(after_rows) {

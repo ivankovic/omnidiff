@@ -18,6 +18,8 @@
 //! Catalog fixtures (`src/test/data/catalogs/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a `.mo` or `.qm` sample is promoted. See `test::helper::human_content`.
 #[cfg(test)]
+mod mo_x_adammajer_lpe_0d8fb399_fr;
+#[cfg(test)]
 mod mo_x_alsaplayer_alsaplayer_7a32bda0_fr;
 #[cfg(test)]
 mod mo_x_deathkiller_jazz2_native_0aaf3cff_ro;
@@ -27,6 +29,10 @@ mod mo_x_meaneye_sunflower_f7706d69_sunflower;
 mod mo_x_motioneye_project_motioneye_9e2ef521_motioneye;
 #[cfg(test)]
 mod mo_x_spirali_rmahjong_abb369a8_rmahjong;
+#[cfg(test)]
+mod mo_x_spyder_ide_spyder_unittest_a83c14f9_spyder_unittest_2;
+#[cfg(test)]
+mod mo_x_spyder_ide_spyder_unittest_a83c14f9_spyder_unittest_4;
 #[cfg(test)]
 mod mo_x_ubernostrum_django_registration_906912aa_django;
 #[cfg(test)]

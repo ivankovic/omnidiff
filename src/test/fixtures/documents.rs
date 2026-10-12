@@ -18,6 +18,10 @@
 //! Document fixtures (`src/test/data/documents/`): one stub per fixture, `verdicts()`, written by
 //! `human_solver` when a PDF sample is promoted. See `test::helper::human_content`.
 #[cfg(test)]
+mod pdf_x_abacus_gene_paml_dad7e43e_pamldoc;
+#[cfg(test)]
+mod pdf_x_adobe_fonts_source_han_mono_9a10a4fe_sourcehanmonoreadme;
+#[cfg(test)]
 mod pdf_x_dharple_detox_b2187368_detox_tbl_5;
 #[cfg(test)]
 mod pdf_x_erkin_ponysay_151d492a_ponysay;

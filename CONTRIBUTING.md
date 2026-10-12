@@ -178,6 +178,12 @@ benchmark-quality` prints the total runtime and the time per fixture; `make chec
 the p50/p90/p99 distribution against the committed baseline, and warns, never fails, on a runtime
 above 2x the baseline.
 
+Times are only comparable on one machine, so each machine keeps its own baseline. A machine is
+registered in `research/data/machines.csv` by its CPU's model name, and `scripts/machine.py` tells
+the Makefile which one it is on; `MACHINE=<name>` overrides. On a machine new to the project, add
+its row, then run `make update-timing-baseline` (and `make benchmark-content` for the content
+figures). A machine without a baseline, such as a CI runner, skips the runtime comparison.
+
 ## Code structure
 
 Follow Rust's standard project structure.
@@ -275,7 +281,8 @@ Three verbs, and which file a target lives in follows from them:
 * `check-quality` - the gate. What CI runs on every push and what `deploy` runs before it tags a
   release. Fails hard on an accuracy regression against the checked-in baseline; only warns on a
   runtime jump of more than 2x.
-* `update-quality-baseline` - re-cuts both baselines after a reviewed change. `deploy` never runs
+* `update-quality-baseline` - re-cuts the accuracy baseline and this machine's timing baseline
+  after a reviewed change; `update-timing-baseline` re-cuts the timing alone. `deploy` never runs
   it automatically. It cannot lower the accuracy bar: a test pins `quality_baseline.csv`'s
   per-fixture accuracy columns to the `fixtures` stubs' limits, so raising a limit means editing
   that fixture's stub - the same file that holds the prose explaining why.

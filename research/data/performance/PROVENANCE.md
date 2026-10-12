@@ -6,7 +6,18 @@ the `size_bucket` column). `../samples/` has since been re-drawn under the LOC b
 DIFFERENT pair set than these files - do not mix rows across that boundary. `baselines/` snapshots
 are pinned to whatever corpus was current at their date; that is their point.
 
-## `content_speed.csv` (2026-10-06)
+## `content_speed/<machine>.csv`
+
+One file per machine registered in `../machines.csv`, written by `make benchmark-content` on it.
+Compare figures within one file, never across two.
+
+### `content_speed/laptop.csv` (2026-10-11)
+
+The same samples as `server.csv`, timed by `make benchmark-content` on the laptop
+(`../machines.csv`), on AC power with the `performance` platform profile and nothing else running.
+Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures fail).
+
+### `content_speed/server.csv` (2026-10-06)
 
 The README's speed figures for content other than code. Written by `make benchmark-content`
 (`benchmark_content --csv`) on the Intel Xeon E3-1275 v5 the code figures were measured on, with

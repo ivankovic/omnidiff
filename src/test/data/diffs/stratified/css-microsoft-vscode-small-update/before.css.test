@@ -1,0 +1,77 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/* Sessions-app-specific overrides for the agent sessions viewer.
+ * These styles only apply within the agent-sessions-workbench context. */
+
+.agent-sessions-workbench {
+
+	/*
+	 * Show-more / show-less: collapsed to a thin line by default,
+	 * animates open on hover with height + font-size + color transitions.
+	 * Mirrors the prototype's `.sessions-group-stub` pattern.
+	 */
+	.agent-session-show-more {
+		justify-content: center;
+		padding: 0 6px;
+		height: 1px;
+		font-size: 0;
+		color: transparent;
+		overflow: hidden;
+		position: relative;
+		transition: height 0.15s, font-size 0.15s, color 0.15s;
+
+		.agent-session-show-more-label {
+			position: relative;
+			z-index: 1;
+			padding: 0 6px;
+			flex-shrink: 0;
+		}
+
+		/* Lines on both sides of the text */
+		&::before,
+		&::after {
+			content: '';
+			flex: 1;
+			height: 1px;
+			background: var(--vscode-widget-border, var(--vscode-contrastBorder));
+			opacity: 0;
+			transition: opacity 0.15s;
+		}
+	}
+
+	/* Expand on row hover — animate height, font-size, color */
+	.monaco-list-row:hover .agent-session-show-more {
+		height: 20px;
+		font-size: 11px;
+		color: var(--vscode-descriptionForeground);
+
+		&::before,
+		&::after {
+			opacity: 1;
+		}
+	}
+
+	/* Brighter text on direct hover */
+	.monaco-list-row:hover .agent-session-show-more:hover {
+		color: var(--vscode-foreground);
+	}
+
+	/* Time labels: hidden by default, shown on card hover */
+	.agent-session-item .agent-session-status {
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	.monaco-list-row:hover .agent-session-item .agent-session-status,
+	.monaco-list-row.focused .agent-session-item .agent-session-status {
+		opacity: 1;
+	}
+
+	/* Hide separators before time when time is hidden */
+	.agent-session-item .agent-session-status.has-separator::before {
+		content: none;
+	}
+}

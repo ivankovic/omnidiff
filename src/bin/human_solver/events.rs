@@ -3133,7 +3133,7 @@ pub(crate) fn handle_open_sample_picker(
                     return None;
                 }
                 SampleColumn::Lang => {
-                    let values = sample_language_values(&rows);
+                    let values = sample_language_values(&rows, &view.filters);
                     view.filters.language =
                         next_value_filter(view.filters.language.as_deref(), &values);
                 }

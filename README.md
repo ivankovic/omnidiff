@@ -11,15 +11,20 @@ Fast, robust, accurate content-aware diffing.
 - **Robust:** can diff 99.95% of code changes
 - **Content-aware:** 98.8% of changes diffed using content-specific algorithms
 
+
 | Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
 |---|---|---|---|
-| Code | 93% | 70% | 90% |
-| Pictures | 93% | 54% | 85% |
-| Cursors | 100% | 100% | 100% |
-| Fonts | 89% | not judged yet | not judged yet |
-| Archives | 86% | not judged yet | not judged yet |
-| Message catalogs | 100% | not judged yet | not judged yet |
-| PDFs | 37% | not judged yet | not judged yet |
+| Code | 96% | 68% | 89% |
+| Pictures | 96% | 69% | 91% |
+| Cursors | 100% | 90% | 100% |
+| Fonts | 94% | 100% | 100% |
+| Archives | 87% | 95% | 95% |
+| Message catalogs | 100% | 80% | 80% |
+| PDFs | 57% | 100% | 100% |
+
+
+Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts
+and PDFs have fewer than ten judged test cases each (see [Accurate](#accurate)).
 
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
 changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
@@ -344,29 +349,32 @@ OmniDiff's goal is:
 * **A median diff in 100ms or less.**
 * **A 99th-percentile diff in 1000ms or less.**
 
-Both are met. Over the fixtures in `src/test/data/diffs/`, about 2,000, measured 2026-09-18 on an
-Intel Xeon E3-1275 v5 (4 cores, 8 threads) with 64 GB RAM: **p50 7.6ms, p90 78.7ms, p99 347ms**,
-slowest 1,355ms. **100ms is the 92.7th percentile** — 146 fixtures take longer than that, and 2
-take longer than a second.
+Both are met. Over the 2,102 fixtures in `src/test/data/diffs/`, measured 2026-10-11 on a laptop,
+an Intel Core i7-1370P (6 performance and 8 efficiency cores, 20 threads) with 32 GB RAM: **p50
+4.2ms, p90 39.4ms, p99 198ms**, slowest 631ms. **100ms is the 96.4th percentile** — 75 fixtures
+take longer than that, and none takes longer than a second.
 
-Runtime is reported, never gated: `make check-quality` prints this distribution against the
-committed baseline on every push, and warns when the runtime is more than twice the baseline's.
+Times belong to the machine that measured them, so each machine keeps its own (see
+`research/data/machines.csv`): the Intel Xeon E3-1275 v5 server that measured the research
+figures takes about 2.5 times as long per fixture. Runtime is reported, never gated: `make
+check-quality` prints this distribution against the machine's own committed baseline on every
+push, and warns when the runtime is more than twice the baseline's.
 
 Other content is timed over pairs sampled from the same corpus, decoding included - unpacking an
-archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-06 on the same machine:
+archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-11 on the same laptop:
 
 | Content | Pairs | p50 | p90 | p99 | Under 100ms |
 |---|---|---|---|---|---|
-| Pictures | 230 | 2.6ms | 83ms | 887ms | 92.6% |
-| Cursors | 22 | 0.6ms | 1.4ms | 24ms | 100% |
-| Fonts | 100 | 8.6ms | 119ms | 2,042ms | 89% |
-| Archives | 100 | 3.5ms | 406ms | 3,857ms | 86% |
-| Message catalogs | 81 | 0.5ms | 1.5ms | 7.4ms | 100% |
-| PDFs | 100 | 158ms | 874ms | 2,241ms | 37% |
+| Pictures | 230 | 1.9ms | 40ms | 525ms | 96.1% |
+| Cursors | 22 | 0.4ms | 1.3ms | 17ms | 100% |
+| Fonts | 100 | 6.1ms | 57ms | 798ms | 94% |
+| Archives | 100 | 2.4ms | 159ms | 1,861ms | 87% |
+| Message catalogs | 81 | 0.4ms | 2.2ms | 4.7ms | 100% |
+| PDFs | 100 | 66ms | 351ms | 969ms | 57% |
 
-PDFs miss the median goal and fonts, archives and PDFs the 99th-percentile one: a PDF draws every
-changed page, and the slowest archives hold thousands of changed members. `make benchmark-content`
-measures this and writes `research/data/performance/content_speed.csv`.
+Archives miss the 99th-percentile goal: the slowest hold thousands of changed members. PDFs meet
+both goals, but only 57% of them take under 100ms, since a PDF draws every changed page. `make
+benchmark-content` measures this and writes `research/data/performance/content_speed/<machine>.csv`.
 
 ## Robust
 
@@ -400,20 +408,20 @@ ground-truth mappings in `src/test/data/diffs/`:
 * **90% of test cases with zero mismatched bytes.**
 * **99% of test cases with at most 1% of bytes mismatched.**
 
-Neither is met yet. 818 of about 2,000 fixtures carry a hand-painted ground truth - every byte of
+Neither is met yet. 1,016 of the 2,102 fixtures carry a hand-painted ground truth - every byte of
 both files labelled with what a human says happened to it - and OmniDiff's own highlighting is
 compared against it byte by byte, under each of its two highlighting presets (`--full`, which keeps
 brackets, separators and leading whitespace, and `--minimal`, which drops them):
 
 | preset | zero mismatched bytes | at most 1% mismatched | mismatched bytes, whole corpus |
 |---|---|---|---|
-| `--full` | **539 (65.9%)** | **699 (85.5%)** | 27,865 of 28.5M (0.10%) |
-| `--minimal` | **576 (70.4%)** | **728 (89.0%)** | 17,134 of 28.5M (0.06%) |
+| `--full` | **632 (62.2%)** | **869 (85.5%)** | 60,678 of 46.1M (0.13%) |
+| `--minimal` | **692 (68.1%)** | **909 (89.5%)** | 38,442 of 46.1M (0.08%) |
 
 The whole-corpus rate is far below 1% because most of each file is unchanged and nobody gets that
 wrong; the per-test-case numbers are the ones that count, since a reader meets the mistakes one
 diff at a time. Most of what is left is not in the matching: rendering the human's own node
-mapping still disagrees with the painting on 77% of the `--full` bytes and 69% of the `--minimal`
+mapping still disagrees with the painting on 78% of the `--full` bytes and 69% of the `--minimal`
 ones, so the highlighting rules own the gap more than the matcher does.
 
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
@@ -423,9 +431,18 @@ ones, so the highlighting rules own the gap more than the matcher does.
 Other content is judged rather than painted: a human names how much each change is (invisible,
 imperceptible, artifacts, edited, redrawn or replaced, see [supported content](#supported-content))
 and OmniDiff's verdict is compared with theirs. A test case is perfect when every verdict matches,
-and near-perfect when every one is at most one level off. Of the 39 judged picture pairs, **21
-(54%) are perfect and 33 (85%) near-perfect**; all 6 judged cursors are perfect. Fonts, archives,
-message catalogs and PDFs have no judgements yet. `make benchmark-content` counts these too.
+and near-perfect when every one is at most one level off:
+
+| Content | Judged | Perfect | Near-perfect |
+|---|---|---|---|
+| Pictures | 128 | **88 (69%)** | **116 (91%)** |
+| Cursors | 10 | **9 (90%)** | **10 (100%)** |
+| Fonts | 1 | **1 (100%)** | **1 (100%)** |
+| Archives | 19 | **18 (95%)** | **18 (95%)** |
+| Message catalogs | 10 | **8 (80%)** | **8 (80%)** |
+| PDFs | 4 | **4 (100%)** | **4 (100%)** |
+
+`make benchmark-content` counts these too.
 
 # AI policy
 

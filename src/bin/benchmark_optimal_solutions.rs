@@ -264,6 +264,15 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     write_baseline: Option<std::path::PathBuf>,
 
+    /// With `--compare`, report latency against this machine's per-fixture timing baseline
+    /// (`research/data/quality/timing/<machine>.csv`) rather than the accuracy baseline's.
+    #[arg(long, value_name = "PATH", requires = "compare")]
+    compare_timing: Option<std::path::PathBuf>,
+
+    /// Write this run's per-fixture times as this machine's timing baseline.
+    #[arg(long, value_name = "PATH")]
+    write_timing: Option<std::path::PathBuf>,
+
     /// Enable `solve_moved_subtrees` (default).
     #[arg(long = "solver-moved-subtrees", action = clap::ArgAction::SetTrue, default_value_t = true, overrides_with = "no_solver_moved_subtrees")]
     solver_moved_subtrees: bool,
@@ -459,6 +468,11 @@ fn main() -> Result<()> {
         println!("Wrote quality baseline to {path:?}");
     }
 
+    if let Some(path) = &args.write_timing {
+        write_timing(&rows, path)?;
+        println!("Wrote timing baseline to {path:?}");
+    }
+
     // A file moved to another language (the `crosslang` dataset) is reported apart: the README's
     // goals and figures are about code changed within one language. The CSV, the baseline and the
     // gate keep every fixture. A stable sort, so each part stays worst first.
@@ -490,7 +504,10 @@ fn main() -> Result<()> {
 
     // Last, so a failing gate still leaves the full table on screen.
     if let Some(path) = &args.compare {
-        let baseline = read_baseline(path)?;
+        let mut baseline = read_baseline(path)?;
+        if let Some(timing) = &args.compare_timing {
+            with_timing(&mut baseline, &read_timing(timing)?);
+        }
         let report = compare_to_baseline(&rows, &baseline);
         print_gate_report(&report, path);
         if report.failed() {
@@ -782,6 +799,10 @@ fn print_reason_table(rows: &[Row]) {
 // hard cases, so any aggregate total or rate rises when hard fixtures are added and cannot tell
 // that apart from a regression. It also catches drift below the `fixtures` tests'
 // per-fixture clamps, which only fire above the recorded value.
+//
+// Accuracy and time are baselined apart. Mismatch counts are the same on every machine, so there
+// is one accuracy baseline; a fixture's time is not, so each machine (`scripts/machine.py`) keeps
+// its own timing baseline, and latency is only ever compared on the machine that recorded it.
 
 /// One fixture's row in the gate baseline.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -900,21 +921,63 @@ fn read_baseline(path: &std::path::Path) -> Result<BTreeMap<String, BaselineEntr
     Ok(out)
 }
 
+/// The accuracy baseline: no times, which belong to a machine (see [`write_timing`]).
 fn write_baseline(rows: &[Row], path: &std::path::Path) -> Result<()> {
     let mut writer = Writer::from_writer(
         File::create(path).with_context(|| format!("writing the quality baseline to {path:?}"))?,
     );
-    writer.write_record(["solution", "mismatches", "visible_mismatches", "elapsed_ms"])?;
+    writer.write_record(["solution", "mismatches", "visible_mismatches"])?;
     for (name, entry) in baseline_from_rows(rows) {
         writer.write_record([
             name,
             entry.mismatches.to_string(),
             entry.visible_mismatches.to_string(),
-            format!("{:.2}", entry.elapsed_ms),
         ])?;
     }
     writer.flush()?;
     Ok(())
+}
+
+/// One machine's timing baseline: each scored fixture's `elapsed_ms`.
+fn write_timing(rows: &[Row], path: &std::path::Path) -> Result<()> {
+    let mut writer = Writer::from_writer(
+        File::create(path).with_context(|| format!("writing the timing baseline to {path:?}"))?,
+    );
+    writer.write_record(["solution", "elapsed_ms"])?;
+    for (name, entry) in baseline_from_rows(rows) {
+        writer.write_record([name, format!("{:.2}", entry.elapsed_ms)])?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn read_timing(path: &std::path::Path) -> Result<HashMap<String, f64>> {
+    let mut reader = csv::Reader::from_path(path)
+        .with_context(|| format!("reading the timing baseline from {path:?}"))?;
+    let mut out = HashMap::new();
+    for record in reader.deserialize::<HashMap<String, String>>() {
+        let record = record.context("parsing a timing-baseline row")?;
+        let name = record
+            .get("solution")
+            .context("the timing baseline has no 'solution' column")?
+            .trim()
+            .to_string();
+        let elapsed_ms = record
+            .get("elapsed_ms")
+            .context("the timing baseline has no 'elapsed_ms' column")?
+            .trim()
+            .parse()
+            .context("the timing baseline's 'elapsed_ms' column is not a number")?;
+        out.insert(name, elapsed_ms);
+    }
+    Ok(out)
+}
+
+/// Replaces every baseline time with the machine's; a fixture it never timed reads as untimed.
+fn with_timing(baseline: &mut BTreeMap<String, BaselineEntry>, timing: &HashMap<String, f64>) {
+    for (name, entry) in baseline.iter_mut() {
+        entry.elapsed_ms = timing.get(name).copied().unwrap_or(0.0);
+    }
 }
 
 /// Compares a run against a baseline. Both columns gate: a flat total can hide invisible
@@ -1523,6 +1586,32 @@ mod tests {
         assert!(
             report.failed(),
             "the regression must not escape as new+removed"
+        );
+    }
+
+    #[test]
+    fn times_come_from_the_timing_baseline_and_accuracy_from_the_quality_one() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (quality, timing) = (dir.path().join("q.csv"), dir.path().join("t.csv"));
+        let mut slow = row("a", 3, 1);
+        slow.elapsed_ms = 42.0;
+        write_baseline(std::slice::from_ref(&slow), &quality).expect("write");
+        write_timing(&[slow, row("b", 0, 0)], &timing).expect("write");
+
+        let mut baseline = read_baseline(&quality).expect("read");
+        assert_eq!(
+            baseline["a"].elapsed_ms, 0.0,
+            "the accuracy baseline holds no time"
+        );
+        with_timing(&mut baseline, &read_timing(&timing).expect("read"));
+        assert_eq!(baseline["a"].elapsed_ms, 42.0);
+        assert_eq!(
+            (baseline["a"].mismatches, baseline["a"].visible_mismatches),
+            (3, 1)
+        );
+        assert!(
+            !baseline.contains_key("b"),
+            "timing never adds a fixture to gate"
         );
     }
 

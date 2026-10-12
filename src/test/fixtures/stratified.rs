@@ -150,6 +150,8 @@ mod c_rust_lang_rust_add_two_consts;
 #[cfg(test)]
 mod c_sqlite_sqlite_fix_format_string_typo;
 #[cfg(test)]
+mod c_sqlite_sqlite_small_but_complex_case;
+#[cfg(test)]
 mod c_tmux_tmux_delete_one_include;
 #[cfg(test)]
 mod cpp_electron_electron_add_imports;
@@ -258,6 +260,8 @@ mod cpp_ollama_ollama_update_commit_hash_8;
 #[cfg(test)]
 mod cpp_ollama_ollama_update_commit_hash_string_constant;
 #[cfg(test)]
+mod cpp_opencv_opencv_add_test_case;
+#[cfg(test)]
 mod cpp_opencv_opencv_delete_string_const_from_preprocessor;
 #[cfg(test)]
 mod cpp_opencv_opencv_fix_dimention_dimension_typo_in_two_comments;
@@ -356,6 +360,8 @@ mod csharp_sonarr_sonarr_fix_comment_typo;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_many_updates_with_one_insert;
 #[cfg(test)]
+mod csharp_sonarr_sonarr_move_plus_add;
+#[cfg(test)]
 mod csharp_sonarr_sonarr_ok_small_edit;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_pure_add;
@@ -376,17 +382,25 @@ mod css_mastodon_mastodon_add_two_lines;
 #[cfg(test)]
 mod css_microsoft_vscode_remove_one_line;
 #[cfg(test)]
+mod css_microsoft_vscode_small_update;
+#[cfg(test)]
 mod css_nextcloud_server_update_import;
+#[cfg(test)]
+mod css_odoo_odoo_a_lot_of_errors;
 #[cfg(test)]
 mod css_shadcn_ui_ui_add_two_bytes;
 #[cfg(test)]
 mod css_twbs_bootstrap_parse_errors;
+#[cfg(test)]
+mod css_wordpress_wordpress_add_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_change_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_go_to_one_line;
 #[cfg(test)]
 mod css_wordpress_wordpress_one_line_to_multiline;
+#[cfg(test)]
+mod css_wordpress_wordpress_only_add;
 #[cfg(test)]
 mod css_wordpress_wordpress_re_format_in_one_line;
 #[cfg(test)]
@@ -406,7 +420,11 @@ mod go_caddyserver_caddy_multiple_solutions_interesting_case;
 #[cfg(test)]
 mod go_cockroachdb_cockroach_add_function;
 #[cfg(test)]
+mod go_cockroachdb_cockroach_add_one_test;
+#[cfg(test)]
 mod go_cockroachdb_cockroach_add_only;
+#[cfg(test)]
+mod go_cockroachdb_cockroach_add_only_2;
 #[cfg(test)]
 mod go_fatedier_frp_build_comment_insert_only;
 #[cfg(test)]
@@ -462,6 +480,8 @@ mod go_jesseduffield_lazygit_add_two_lines;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_change_undo_key;
 #[cfg(test)]
+mod go_jesseduffield_lazygit_delete_only;
+#[cfg(test)]
 mod go_jesseduffield_lazygit_nice_small_change;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_remove_if_that_is_a_version_guard;
@@ -500,6 +520,8 @@ mod html_caddyserver_caddy_add_one_element;
 #[cfg(test)]
 mod html_caddyserver_caddy_parse_errors_due_to_template;
 #[cfg(test)]
+mod html_eslint_eslint_update_timestamp;
+#[cfg(test)]
 mod html_fatedier_frp_update_hashes;
 #[cfg(test)]
 mod html_fatedier_frp_update_hashes_2;
@@ -528,6 +550,8 @@ mod html_ladybirdbrowser_ladybird_update_pixel_value;
 #[cfg(test)]
 mod html_ladybirdbrowser_ladybird_update_two_pixel_numbers;
 #[cfg(test)]
+mod html_mozilla_firefox_firefox_add_two_elements;
+#[cfg(test)]
 mod html_mozilla_firefox_firefox_href_path;
 #[cfg(test)]
 mod html_mozilla_firefox_firefox_interesting_case;
@@ -546,6 +570,8 @@ mod html_twbs_bootstrap_not_html_template_extract_two_vars;
 #[cfg(test)]
 mod html_twbs_bootstrap_remove_one_line_in_yaml_metadata_preamble;
 #[cfg(test)]
+mod java_genymobile_scrcpy_add;
+#[cfg(test)]
 mod java_genymobile_scrcpy_add_enum_value;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_func;
@@ -557,6 +583,10 @@ mod java_genymobile_scrcpy_add_parameter;
 mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
 mod java_genymobile_scrcpy_char_to_string_bugfix;
+#[cfg(test)]
+mod java_genymobile_scrcpy_only_add;
+#[cfg(test)]
+mod java_genymobile_scrcpy_only_add_2;
 #[cfg(test)]
 mod java_genymobile_scrcpy_only_insert;
 #[cfg(test)]
@@ -632,11 +662,15 @@ mod json_gorhill_ublock_version;
 #[cfg(test)]
 mod json_grafana_grafana_add_pair;
 #[cfg(test)]
+mod json_immich_app_immich_small_change;
+#[cfg(test)]
 mod json_lidarr_lidarr_remove_one_line;
 #[cfg(test)]
 mod json_louislam_uptime_kuma_big_add_only;
 #[cfg(test)]
 mod json_microsoft_playwright_version_update;
+#[cfg(test)]
+mod json_mui_material_ui_version;
 #[cfg(test)]
 mod json_puppeteer_puppeteer_update_version;
 #[cfg(test)]
@@ -646,7 +680,19 @@ mod json_puppeteer_puppeteer_version_update_2;
 #[cfg(test)]
 mod json_shadcn_ui_ui_add_one_line;
 #[cfg(test)]
+mod json_shadcn_ui_ui_pure_add;
+#[cfg(test)]
+mod json_tauri_apps_tauri_version_change;
+#[cfg(test)]
+mod json_tauri_apps_tauri_version_change_2;
+#[cfg(test)]
 mod json_vercel_next_version;
+#[cfg(test)]
+mod json_vercel_next_version_change;
+#[cfg(test)]
+mod json_vercel_next_version_change_2;
+#[cfg(test)]
+mod json_vercel_next_version_change_3;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_annotation;
 #[cfg(test)]
@@ -696,11 +742,17 @@ mod lua_awesomewm_awesome_add_h_to_align;
 #[cfg(test)]
 mod lua_awesomewm_awesome_add_noreturn_comment;
 #[cfg(test)]
+mod lua_awesomewm_awesome_add_opt_to_comments;
+#[cfg(test)]
 mod lua_awesomewm_awesome_add_to_table_constructor;
+#[cfg(test)]
+mod lua_awesomewm_awesome_align_to_halign_2;
 #[cfg(test)]
 mod lua_awesomewm_awesome_comment_only;
 #[cfg(test)]
 mod lua_awesomewm_awesome_comment_only_2;
+#[cfg(test)]
+mod lua_awesomewm_awesome_delete_one_local;
 #[cfg(test)]
 mod lua_awesomewm_awesome_fix_one_byte_typo_in_comment;
 #[cfg(test)]
@@ -910,6 +962,8 @@ mod rust_tauri_apps_tauri_add_use_and_function;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_fix_typo_in_string_constant;
 #[cfg(test)]
+mod rust_tauri_apps_tauri_insert_async_modifier;
+#[cfg(test)]
 mod rust_tauri_apps_tauri_rename_mod;
 #[cfg(test)]
 mod rust_vercel_next_add_mode;
@@ -947,6 +1001,10 @@ mod shellscript_ansible_ansible_only_insert;
 mod shellscript_ansible_ansible_small_add;
 #[cfg(test)]
 mod shellscript_ansible_ansible_small_change;
+#[cfg(test)]
+mod shellscript_cockroachdb_cockroach_another_flags_in_string_example;
+#[cfg(test)]
+mod shellscript_cockroachdb_cockroach_string_content_has_flags;
 #[cfg(test)]
 mod shellscript_genymobile_scrcpy_insert_only;
 #[cfg(test)]
@@ -1056,6 +1114,8 @@ mod tsx_mui_material_ui_remove_import_4;
 #[cfg(test)]
 mod tsx_mui_material_ui_remove_one_import;
 #[cfg(test)]
+mod tsx_shadcn_ui_ui_move_class_around_in_string;
+#[cfg(test)]
 mod tsx_shadcn_ui_ui_order_of_class_names;
 #[cfg(test)]
 mod tsx_shadcn_ui_ui_update_release_announcement;
@@ -1116,6 +1176,8 @@ mod vimscript_neovim_neovim_add_one_line_to_dict;
 #[cfg(test)]
 mod vimscript_neovim_neovim_add_one_line_to_test;
 #[cfg(test)]
+mod vimscript_neovim_neovim_changes_in_string;
+#[cfg(test)]
 mod vimscript_neovim_neovim_comment_only_insert;
 #[cfg(test)]
 mod vimscript_neovim_neovim_date_update_plus_bugfix;
@@ -1145,6 +1207,8 @@ mod xml_libreoffice_non_latin_string_data_update;
 mod xml_libreoffice_unicode;
 #[cfg(test)]
 mod xml_microsoft_terminal_add_one_element;
+#[cfg(test)]
+mod xml_mozilla_firefox_firefox_add_four_attributes;
 #[cfg(test)]
 mod xml_mozilla_firefox_firefox_update_value;
 #[cfg(test)]

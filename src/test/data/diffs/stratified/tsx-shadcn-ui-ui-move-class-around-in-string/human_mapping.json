@@ -1,0 +1,1290 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:1"
+      ],
+      "after_path": [
+        "import_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:2"
+      ],
+      "after_path": [
+        "import_statement:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1"
+      ],
+      "after_path": [
+        "export_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "export:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "export:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "default:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "default:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "function:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "function:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "formal_parameters:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "formal_parameters:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "return:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "return:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "<:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "property_identifier:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "property_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "=:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "string_fragment:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "string_fragment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":2"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        ">:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "<:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "property_identifier:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "property_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "=:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "string_fragment:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "string_fragment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":2"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        "jsx_attribute:1",
+        "string:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        ">:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_opening_element:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_self_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_self_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_text:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_text:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_self_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_self_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "jsx_element:1",
+        "jsx_closing_element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "):1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "return_statement:1",
+        "parenthesized_expression:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "export_statement:1",
+        "function_declaration:1",
+        "statement_block:1",
+        "}:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 20,
+              "end_row": 7,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 78,
+              "end_row": 7,
+              "end_column": 86
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 26,
+              "end_row": 10,
+              "end_column": 36
+            }
+          ],
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 77,
+              "end_row": 10,
+              "end_column": 87
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 20,
+              "end_row": 7,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 78,
+              "end_row": 7,
+              "end_column": 86
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 26,
+              "end_row": 10,
+              "end_column": 36
+            }
+          ],
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 77,
+              "end_row": 10,
+              "end_column": 87
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 76,
+              "end_row": 10,
+              "end_column": 77
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 77,
+              "end_row": 7,
+              "end_column": 78
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 28,
+              "end_row": 7,
+              "end_column": 29
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 36,
+              "end_row": 10,
+              "end_column": 37
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

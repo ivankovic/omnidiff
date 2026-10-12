@@ -208,7 +208,7 @@ mod tests {
 
     /// **`quality_baseline.csv`'s accuracy columns must equal the fixture stubs' limits.**
     /// `write_baseline` writes a run's own numbers; this test is what keeps the two from
-    /// drifting apart. `elapsed_ms` is machine-dependent and not pinned.
+    /// drifting apart. Times are machine-dependent and live per machine, in `quality/timing/`.
     #[test]
     #[cfg(feature = "test-fixtures")]
     fn the_quality_baseline_accuracy_columns_are_a_projection_of_the_stub_limits() -> Result<()> {

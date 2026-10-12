@@ -1,0 +1,13 @@
+# Runtime baseline for `make check-quality` on server - see Makefile.
+#
+# MS_PER_FIXTURE: benchmark_optimal_solutions' own "Runtime: ... ms/fixture" line: the diffs
+# alone, timed one at a time after the parallel grading pass.
+# Informational only: a >2x jump warns, it never fails a deploy. Compared only on the
+# machine that recorded it, since wall-clock time varies by machine far more than any
+# real regression would. Per-fixture times are in server.csv beside this file.
+#
+# The accuracy gate does NOT live here. It is per-fixture, in ../quality_baseline.csv,
+# because no single number over a corpus that keeps gaining hard fixtures can tell a
+# real regression apart from new data - measured, see the quality-gate section in
+# src/bin/benchmark_optimal_solutions.rs.
+MS_PER_FIXTURE=41.3

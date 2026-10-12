@@ -1,0 +1,252 @@
+{
+  "entries": [
+    {
+      "operation": "insert",
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_constant:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "package_declaration:1"
+      ],
+      "after_path": [
+        "package_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:1"
+      ],
+      "after_path": [
+        "import_declaration:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "enum_declaration:1"
+      ],
+      "after_path": [
+        "enum_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_declaration:1",
+        "modifiers:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "modifiers:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "enum_declaration:1",
+        "enum:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "enum_declaration:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_declaration:1",
+        "super_interfaces:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "super_interfaces:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "{:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_constant:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_constant:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        ",:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_constant:2"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_constant:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_body_declarations:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "enum_body_declarations:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "}:1"
+      ],
+      "after_path": [
+        "enum_declaration:1",
+        "enum_body:1",
+        "}:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 4,
+              "end_row": 7,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 6,
+              "start_column": 61,
+              "end_row": 6,
+              "end_column": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 4,
+              "end_row": 7,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 6,
+              "start_column": 61,
+              "end_row": 6,
+              "end_column": 62
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 0,
+              "end_row": 7,
+              "end_column": 4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

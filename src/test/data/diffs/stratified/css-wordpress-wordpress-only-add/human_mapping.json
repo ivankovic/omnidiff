@@ -1,0 +1,130 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "rule_set:6"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1"
+      ],
+      "after_path": [
+        "rule_set:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:2"
+      ],
+      "after_path": [
+        "rule_set:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:3"
+      ],
+      "after_path": [
+        "rule_set:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:4"
+      ],
+      "after_path": [
+        "rule_set:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:5"
+      ],
+      "after_path": [
+        "rule_set:5"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 55
+            },
+            {
+              "start_row": 22,
+              "start_column": 2,
+              "end_row": 22,
+              "end_column": 17
+            },
+            {
+              "start_row": 23,
+              "start_column": 2,
+              "end_row": 23,
+              "end_column": 21
+            },
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 55
+            },
+            {
+              "start_row": 22,
+              "start_column": 0,
+              "end_row": 22,
+              "end_column": 17
+            },
+            {
+              "start_row": 23,
+              "start_column": 0,
+              "end_row": 23,
+              "end_column": 21
+            },
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

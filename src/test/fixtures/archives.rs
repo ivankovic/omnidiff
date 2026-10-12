@@ -46,10 +46,22 @@ mod gzip_x_fbb_git_icmake_973bca8d_bobcat;
 #[cfg(test)]
 mod gzip_x_guillaumeboehm_nordzy_cursors_5827428b_nordzy_catppuccin_mocha_light_tar;
 #[cfg(test)]
+mod gzip_x_james_d_mitchell_gaplint_a8566f1c_expected_pkl;
+#[cfg(test)]
+mod gzip_x_janlelis_unicode_emoji_c25f9805_emoji_marshal;
+#[cfg(test)]
 mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
+#[cfg(test)]
+mod gzip_x_rvaiya_keyd_774cb10d_keyd_1;
 #[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;
 #[cfg(test)]
+mod xz_x_mx_linux_exit_options_3992ee16_exit_options_25_7_tar;
+#[cfg(test)]
+mod xz_x_tx00100xt_serioussam_mods_9af03399_patch_1_05_fe_tar;
+#[cfg(test)]
 mod zip_x_asamk_signal_cli_62811d92_gradle_wrapper;
+#[cfg(test)]
+mod zip_x_jnr_jffi_4984cba4_jffi_x86_64_linux;
 #[cfg(test)]
 mod zip_x_silnrsi_teckit_3d06b4f4_teckit_tools;
