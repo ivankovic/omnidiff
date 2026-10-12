@@ -184,6 +184,8 @@ mod cpp_ladybirdbrowser_ladybird_add_static_to_identifier_name;
 #[cfg(test)]
 mod cpp_ladybirdbrowser_ladybird_change_inherited_class_name;
 #[cfg(test)]
+mod cpp_ladybirdbrowser_ladybird_very_interesting_big_change;
+#[cfg(test)]
 mod cpp_libreoffice_add_const_2;
 #[cfg(test)]
 mod cpp_libreoffice_add_imports_and_function_param;
@@ -193,6 +195,8 @@ mod cpp_libreoffice_delete_function;
 mod cpp_libreoffice_delete_only;
 #[cfg(test)]
 mod cpp_libreoffice_fraction_type_to_double;
+#[cfg(test)]
+mod cpp_libreoffice_interesting_complex_case_with_comments;
 #[cfg(test)]
 mod cpp_libreoffice_remove_two_wrapping_functions;
 #[cfg(test)]
