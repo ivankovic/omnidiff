@@ -1,0 +1,320 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:4",
+        "element:9"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:4",
+        "element:10"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "doctype:1"
+      ],
+      "after_path": [
+        "doctype:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1"
+      ],
+      "after_path": [
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:2"
+      ],
+      "after_path": [
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:1"
+      ],
+      "after_path": [
+        "script_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:2"
+      ],
+      "after_path": [
+        "script_element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:3"
+      ],
+      "after_path": [
+        "script_element:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "style_element:1"
+      ],
+      "after_path": [
+        "style_element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "style_element:2"
+      ],
+      "after_path": [
+        "style_element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:3"
+      ],
+      "after_path": [
+        "element:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:4"
+      ],
+      "after_path": [
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:4",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:1"
+      ],
+      "after_path": [
+        "element:4",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:2"
+      ],
+      "after_path": [
+        "element:4",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:3"
+      ],
+      "after_path": [
+        "element:4",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:4"
+      ],
+      "after_path": [
+        "element:4",
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:5"
+      ],
+      "after_path": [
+        "element:4",
+        "element:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:6"
+      ],
+      "after_path": [
+        "element:4",
+        "element:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:7"
+      ],
+      "after_path": [
+        "element:4",
+        "element:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:8"
+      ],
+      "after_path": [
+        "element:4",
+        "element:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:9"
+      ],
+      "after_path": [
+        "element:4",
+        "element:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:4",
+        "comment:1"
+      ],
+      "after_path": [
+        "element:4",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "element:10"
+      ],
+      "after_path": [
+        "element:4",
+        "element:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:4",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:4",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:5"
+      ],
+      "after_path": [
+        "element:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:4"
+      ],
+      "after_path": [
+        "script_element:4"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 34,
+              "start_column": 2,
+              "end_row": 34,
+              "end_column": 23
+            },
+            {
+              "start_row": 35,
+              "start_column": 2,
+              "end_row": 35,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 34,
+              "start_column": 0,
+              "end_row": 34,
+              "end_column": 23
+            },
+            {
+              "start_row": 35,
+              "start_column": 0,
+              "end_row": 35,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

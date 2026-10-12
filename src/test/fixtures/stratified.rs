@@ -521,6 +521,8 @@ mod html_caddyserver_caddy_add_one_element;
 #[cfg(test)]
 mod html_caddyserver_caddy_parse_errors_due_to_template;
 #[cfg(test)]
+mod html_eslint_eslint_update_timestamp;
+#[cfg(test)]
 mod html_fatedier_frp_update_hashes;
 #[cfg(test)]
 mod html_fatedier_frp_update_hashes_2;
@@ -548,6 +550,8 @@ mod html_ladybirdbrowser_ladybird_remove_one_line;
 mod html_ladybirdbrowser_ladybird_update_pixel_value;
 #[cfg(test)]
 mod html_ladybirdbrowser_ladybird_update_two_pixel_numbers;
+#[cfg(test)]
+mod html_mozilla_firefox_firefox_add_two_elements;
 #[cfg(test)]
 mod html_mozilla_firefox_firefox_href_path;
 #[cfg(test)]
