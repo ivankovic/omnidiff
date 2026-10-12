@@ -69,7 +69,8 @@ Files and diffing
 Pictures
   t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF, and Windows
                    .cur and .ani cursors): cycle the
-                   view - side by side with the changed regions outlined, difference
+                   view - side by side with the changed regions outlined in pink,
+                   changed areas (the changed regions alone, the rest left blank), difference
                    (changed pixels over the faded after picture), blend, swipe. Drawn as
                    pixels where the terminal speaks kitty, sixel or iTerm2 graphics, in
                    half blocks elsewhere

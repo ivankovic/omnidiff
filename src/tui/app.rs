@@ -1253,13 +1253,7 @@ impl App {
         let mut next = 0;
         if let Some(viewer) = self.content_viewer.as_mut() {
             let palette = self.diff_viewer.overlay_theme().palette();
-            // The title colors, not the tints the text panels use as backgrounds: an outline must
-            // stand out on a picture.
-            let colors = PictureColors::from_theme(
-                palette.before_title_fg,
-                palette.after_title_fg,
-                palette.search_bg,
-            );
+            let colors = PictureColors::from_theme(palette.search_bg);
             frame.render_widget(Paragraph::new(viewer.status()), layout[next]);
             next += 1;
             viewer.draw(frame, layout[next], colors);
@@ -2135,7 +2129,7 @@ mod tests {
             let area = f.area();
             app.draw_viewer(f, area).unwrap();
         })?;
-        assert!(rendered_text(&terminal).contains("view: difference"));
+        assert!(rendered_text(&terminal).contains("view: changed areas"));
         Ok(())
     }
 

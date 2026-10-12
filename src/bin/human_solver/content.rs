@@ -896,9 +896,9 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
 
     frame.render_widget(Paragraph::new(Line::from(choices)), rows[2]);
 
-    // The content is drawn as it looks: no theme to follow, only the two outline colors the
-    // annotation view never uses.
-    let colors = PictureColors::from_theme(Color::Red, Color::Green, Color::Yellow);
+    // The content is drawn as it looks: no theme to follow, only the difference view's color,
+    // which the annotation view never uses.
+    let colors = PictureColors::from_theme(Color::Yellow);
     session.viewer.draw(frame, rows[3], colors);
 
     let prompt = match (&session.reject_input, &session.note_input) {

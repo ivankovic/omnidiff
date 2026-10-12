@@ -764,11 +764,7 @@ mod tests {
         terminal
             .draw(|frame| {
                 let area = frame.area();
-                viewer.draw(
-                    frame,
-                    area,
-                    PictureColors::from_theme(Color::Red, Color::Green, Color::Yellow),
-                );
+                viewer.draw(frame, area, PictureColors::from_theme(Color::Yellow));
             })
             .unwrap();
         let buffer = terminal.backend().buffer();

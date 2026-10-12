@@ -17,10 +17,12 @@
  */
 
 //! A picture pair on screen (see [`crate::diff::picture`]): the two pictures with their changed
-//! regions outlined, or one composite of them, in four views `t` cycles through - GitHub's image
-//! diff modes:
+//! regions outlined, or one composite of them, in five views `t` cycles through - GitHub's image
+//! diff modes, and one of our own:
 //!
-//! * **side by side**: both, each region outlined in the delete (before) or insert (after) color;
+//! * **side by side**: both, each region outlined in [`REGION`] pink on both sides;
+//! * **changed areas**: both, with only the changed regions drawn, outlined the same, and nothing
+//!   else - for a small edit on a busy picture;
 //! * **difference**: the after picture faded out, its changed pixels in the update color;
 //! * **blend**: the two mixed half and half, so a shifted element shows twice;
 //! * **swipe**: before left of a divider and after right of it, `h`/`l` moving the divider.
@@ -270,10 +272,12 @@ pub fn record_placements<T>(draw: impl FnOnce() -> T) -> (T, Vec<Placement>) {
     (result, placements.unwrap_or_default())
 }
 
-/// The four ways a picture pair is shown, in the order `t` steps through them.
+/// The five ways a picture pair is shown, in the order `t` steps through them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PictureMode {
     SideBySide,
+    /// Side by side, the changed regions alone.
+    ChangedAreas,
     Difference,
     Blend,
     Swipe,
@@ -282,16 +286,28 @@ pub enum PictureMode {
 impl PictureMode {
     fn next(self) -> Self {
         match self {
-            Self::SideBySide => Self::Difference,
+            Self::SideBySide => Self::ChangedAreas,
+            Self::ChangedAreas => Self::Difference,
             Self::Difference => Self::Blend,
             Self::Blend => Self::Swipe,
             Self::Swipe => Self::SideBySide,
         }
     }
 
+    /// Whether the view shows each side in a pane of its own.
+    fn has_two_panes(self) -> bool {
+        matches!(self, Self::SideBySide | Self::ChangedAreas)
+    }
+
+    /// Whether the view shows what the engine decided, which the annotation mode hides.
+    fn is_engines(self) -> bool {
+        matches!(self, Self::ChangedAreas | Self::Difference)
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::SideBySide => "side by side",
+            Self::ChangedAreas => "changed areas",
             Self::Difference => "difference",
             Self::Blend => "blend",
             Self::Swipe => "swipe",
@@ -299,30 +315,32 @@ impl PictureMode {
     }
 }
 
-/// The overlay colors a picture view paints with, from the current theme.
+/// The overlay colors a picture view paints with, from the current theme. Regions are always
+/// [`REGION`] pink, not themed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PictureColors {
-    pub delete: [u8; 3],
-    pub insert: [u8; 3],
+    /// The difference view's changed pixels.
     pub update: [u8; 3],
 }
 
-/// The swipe divider: deep pink, which few pictures are and which shows on the white backdrop.
-/// Twice an outline's width (`Built::outline`), so it reads as a handle rather than an edge.
-const DIVIDER: [u8; 3] = [255, 20, 147];
+/// Deep pink, which few pictures are and which shows on the white backdrop: the outline of a
+/// changed region, the same on both sides, since a region is where the two differ rather than
+/// something one side has.
+const REGION: [u8; 3] = [255, 20, 147];
+
+/// The swipe divider, in the region pink. Twice an outline's width (`Built::outline`), so it reads
+/// as a handle rather than an edge.
+const DIVIDER: [u8; 3] = REGION;
 
 impl PictureColors {
-    /// From theme colors; a color that is not RGB (a named or indexed one) falls back to a vivid
+    /// From a theme color; one that is not RGB (a named or indexed one) falls back to a vivid
     /// default.
-    pub fn from_theme(delete: Color, insert: Color, update: Color) -> Self {
-        let rgb = |color: Color, fallback: [u8; 3]| match color {
-            Color::Rgb(r, g, b) => [r, g, b],
-            _ => fallback,
-        };
+    pub fn from_theme(update: Color) -> Self {
         Self {
-            delete: rgb(delete, [220, 50, 47]),
-            insert: rgb(insert, [64, 160, 43]),
-            update: rgb(update, [230, 160, 20]),
+            update: match update {
+                Color::Rgb(r, g, b) => [r, g, b],
+                _ => [230, 160, 20],
+            },
         }
     }
 }
@@ -591,7 +609,7 @@ impl PictureViewer {
     /// view and "how much changed" again. Leaving the difference view when it is switched on.
     pub fn set_annotating(&mut self, annotating: bool) {
         self.annotating = annotating;
-        if annotating && self.mode == PictureMode::Difference {
+        if annotating && self.mode.is_engines() {
             self.mode = PictureMode::SideBySide;
         }
         // The pairing changes with it; stay on the after frame being looked at.
@@ -672,7 +690,7 @@ impl PictureViewer {
             }
             KeyCode::Char('t') => {
                 self.mode = self.mode.next();
-                if self.annotating && self.mode == PictureMode::Difference {
+                while self.annotating && self.mode.is_engines() {
                     self.mode = self.mode.next();
                 }
             }
@@ -829,7 +847,7 @@ impl PictureViewer {
     /// Draws the current view into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
         self.advance_playback();
-        let panes: Vec<Rect> = if self.mode == PictureMode::SideBySide {
+        let panes: Vec<Rect> = if self.mode.has_two_panes() {
             // Two equal halves, an odd column left blank: each picture is scaled to fill its
             // pane, so a pane one column wider shows the same page bigger and resampled.
             let half = area.width / 2;
@@ -955,11 +973,21 @@ impl PictureViewer {
             pixels(&self.before, moment.before),
             pixels(&self.after, moment.after),
         );
-        let outlined = |pixels: &Option<RgbaImage>, color: [u8; 3]| {
+        let outlined = |pixels: &Option<RgbaImage>| {
             pixels.as_ref().map(|pixels| {
                 let mut pixels = pixels.clone();
                 for region in regions {
-                    outline(&mut pixels, region, built.outline, color);
+                    outline(&mut pixels, region, built.outline, REGION);
+                }
+                pixels
+            })
+        };
+        // Everything outside the regions left out, then the regions outlined.
+        let changed_areas = |pixels: &Option<RgbaImage>| {
+            pixels.as_ref().map(|pixels| {
+                let mut pixels = only_regions(pixels, regions);
+                for region in regions {
+                    outline(&mut pixels, region, built.outline, REGION);
                 }
                 pixels
             })
@@ -974,8 +1002,8 @@ impl PictureViewer {
         // The other three need both sides at one size: before is scaled to after's.
         let (Some(before), Some(after)) = (&before_pixels, &after_pixels) else {
             return vec![
-                (before_title, outlined(&before_pixels, built.colors.delete)),
-                (after_title, outlined(&after_pixels, built.colors.insert)),
+                (before_title, outlined(&before_pixels)),
+                (after_title, outlined(&after_pixels)),
             ];
         };
         let before_at_after_size = || {
@@ -992,8 +1020,18 @@ impl PictureViewer {
         };
         match built.mode {
             PictureMode::SideBySide => vec![
-                (before_title, outlined(&before_pixels, built.colors.delete)),
-                (after_title, outlined(&after_pixels, built.colors.insert)),
+                (before_title, outlined(&before_pixels)),
+                (after_title, outlined(&after_pixels)),
+            ],
+            PictureMode::ChangedAreas => vec![
+                (
+                    format!("{before_title} · changed areas"),
+                    changed_areas(&before_pixels),
+                ),
+                (
+                    format!("{after_title} · changed areas"),
+                    changed_areas(&after_pixels),
+                ),
             ],
             PictureMode::Difference => {
                 let mask = (before.dimensions() == after.dimensions())
@@ -1039,6 +1077,21 @@ fn over_backdrop(mut pixels: RgbaImage) -> RgbaImage {
         pixel[3] = 255;
     }
     pixels
+}
+
+/// `pixels` with every pixel outside `regions` made fully transparent, so the backdrop shows there.
+fn only_regions(pixels: &RgbaImage, regions: &[Region]) -> RgbaImage {
+    let mut out = RgbaImage::from_pixel(pixels.width(), pixels.height(), Rgba([0, 0, 0, 0]));
+    for region in regions {
+        let x1 = (region.x + region.width).min(pixels.width());
+        let y1 = (region.y + region.height).min(pixels.height());
+        for y in region.y.min(y1)..y1 {
+            for x in region.x.min(x1)..x1 {
+                out.put_pixel(x, y, *pixels.get_pixel(x, y));
+            }
+        }
+    }
+    out
 }
 
 /// Draws `region`'s border, `width` pixels thick and outside the region where there is room.
@@ -1119,8 +1172,6 @@ mod tests {
     use super::*;
 
     const COLORS: PictureColors = PictureColors {
-        delete: [200, 0, 0],
-        insert: [0, 200, 0],
         update: [250, 150, 0],
     };
 
@@ -1294,6 +1345,7 @@ mod tests {
             "no divider outside swipe"
         );
         for expected in [
+            PictureMode::ChangedAreas,
             PictureMode::Difference,
             PictureMode::Blend,
             PictureMode::Swipe,
@@ -1386,7 +1438,7 @@ mod tests {
     }
 
     #[test]
-    fn side_by_side_outlines_each_region_in_its_sides_color() {
+    fn side_by_side_outlines_each_region_in_pink_on_both_sides() {
         let dir = tempfile::tempdir().expect("dir");
         let (a, b) = pair(&dir);
         let panes = viewer(&a, &b).composites(built(PictureMode::SideBySide));
@@ -1394,8 +1446,9 @@ mod tests {
             panic!("two panes, both pictures: {}", panes.len());
         };
         // The outline runs one pixel outside the 4x3 region at (6, 2).
-        assert_eq!(before.get_pixel(5, 1).0, [200, 0, 0, 255]);
-        assert_eq!(after.get_pixel(10, 5).0, [0, 200, 0, 255]);
+        let [r, g, b] = REGION;
+        assert_eq!(before.get_pixel(5, 1).0, [r, g, b, 255]);
+        assert_eq!(after.get_pixel(10, 5).0, [r, g, b, 255]);
         assert_eq!(
             after.get_pixel(7, 3).0,
             [0, 0, 0, 255],
@@ -1406,6 +1459,25 @@ mod tests {
             [255, 255, 255, 255],
             "far away too"
         );
+    }
+
+    #[test]
+    fn changed_areas_draws_the_regions_alone_on_both_sides() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = pair(&dir);
+        let panes = viewer(&a, &b).composites(built(PictureMode::ChangedAreas));
+        let [(before_title, Some(before)), (_, Some(after))] = &panes[..] else {
+            panic!("two panes, both pictures: {}", panes.len());
+        };
+        assert!(before_title.ends_with("changed areas"), "{before_title}");
+        // Inside the 4x3 region at (6, 2), each side as it is: white before, black after.
+        assert_eq!(before.get_pixel(7, 3).0, [255, 255, 255, 255]);
+        assert_eq!(after.get_pixel(7, 3).0, [0, 0, 0, 255]);
+        let [r, g, b] = REGION;
+        assert_eq!(after.get_pixel(5, 1).0, [r, g, b, 255], "outlined");
+        for side in [before, after] {
+            assert_eq!(side.get_pixel(0, 9).0[3], 0, "the rest is not drawn");
+        }
     }
 
     #[test]
@@ -1490,7 +1562,11 @@ mod tests {
         };
         assert_eq!(before.get_pixel(5, 1).0, [255, 255, 255, 255], "no outline");
         viewer.handle_key(KeyCode::Char('t'));
-        assert_eq!(viewer.mode(), PictureMode::Blend, "difference is skipped");
+        assert_eq!(
+            viewer.mode(),
+            PictureMode::Blend,
+            "changed areas and difference are skipped"
+        );
 
         // Switched off, the engine's view is back: outlines and the change summary.
         viewer.set_annotating(false);
@@ -1499,11 +1575,15 @@ mod tests {
         let [(_, Some(before)), _] = &panes[..] else {
             panic!("two panes")
         };
-        assert_eq!(before.get_pixel(5, 1).0, [200, 0, 0, 255], "outlined again");
-        // And on again, the difference view is left.
-        viewer.mode = PictureMode::Difference;
-        viewer.set_annotating(true);
-        assert_eq!(viewer.mode(), PictureMode::SideBySide);
+        let [r, g, b] = REGION;
+        assert_eq!(before.get_pixel(5, 1).0, [r, g, b, 255], "outlined again");
+        // And on again, the engine's views are left.
+        for mode in [PictureMode::ChangedAreas, PictureMode::Difference] {
+            viewer.set_annotating(false);
+            viewer.mode = mode;
+            viewer.set_annotating(true);
+            assert_eq!(viewer.mode(), PictureMode::SideBySide);
+        }
     }
 
     #[test]
