@@ -222,9 +222,13 @@ mod cpp_microsoft_terminal_small_change;
 #[cfg(test)]
 mod cpp_mongodb_mongo_add_function_and_2_call_sites;
 #[cfg(test)]
+mod cpp_mongodb_mongo_test_changes;
+#[cfg(test)]
 mod cpp_mongodb_mongo_use_auto;
 #[cfg(test)]
 mod cpp_mozilla_firefox_firefox_block_to_default;
+#[cfg(test)]
+mod cpp_mozilla_firefox_firefox_changed_identifiers;
 #[cfg(test)]
 mod cpp_mozilla_firefox_firefox_delete_leading_comment;
 #[cfg(test)]

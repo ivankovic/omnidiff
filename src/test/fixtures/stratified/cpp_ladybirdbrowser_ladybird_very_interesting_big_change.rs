@@ -22,11 +22,12 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // Recorded as found, not examined. 19 of these pair `update_layout`'s old condition with
+    // the new `layout_is_up_to_date()` it was extracted into, across two functions.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-ladybirdbrowser-ladybird-very-interesting-big-change",
-        40,
-        25,
+        48,
+        33,
     )
 }
 

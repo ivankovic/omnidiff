@@ -347,6 +347,19 @@ pub(crate) fn member_identity_name(
         None
     };
     let text_of = |id: usize| meta.node_info.get(&id).map(|i| i.text.clone());
+    // Only leaves carry text, so a composite name (`Document::~Document`, `operator==`) is the
+    // concatenation of its leaves.
+    fn leaf_text(id: usize, meta: &ASTMetadata, out: &mut String) {
+        let Some(info) = meta.node_info.get(&id) else {
+            return;
+        };
+        if info.children.is_empty() {
+            out.push_str(&info.text);
+        }
+        for &child in &info.children {
+            leaf_text(child, meta, out);
+        }
+    }
     match (language, info.kind.as_str()) {
         (Language::Java, "method_declaration") => Some((
             "method_declaration",
@@ -367,10 +380,23 @@ pub(crate) fn member_identity_name(
             "field_declaration",
             text_of(through_declarators(node_id, "field_identifier")?)?,
         )),
-        (Language::C | Language::CPP, "function_definition") => Some((
-            "function_definition",
-            text_of(through_declarators(node_id, "identifier")?)?,
-        )),
+        // The name a definition outside its class carries is qualified (`Document::foo`), and
+        // keeps the scope: `A::foo` and `B::foo` in one file are different members. One defined
+        // in a class body is a `field_identifier`.
+        (Language::C | Language::CPP, "function_definition") => {
+            let name = [
+                "identifier",
+                "field_identifier",
+                "qualified_identifier",
+                "destructor_name",
+                "operator_name",
+            ]
+            .into_iter()
+            .find_map(|kind| through_declarators(node_id, kind))?;
+            let mut text = String::new();
+            leaf_text(name, meta, &mut text);
+            (!text.is_empty()).then_some(("function_definition", text))
+        }
         _ => None,
     }
 }
