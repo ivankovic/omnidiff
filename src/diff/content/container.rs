@@ -204,55 +204,14 @@ pub struct ContainerDiff {
 }
 
 impl ContainerDiff {
-    /// The engine's verdict on the pair, from its members': tagged members when any were added or
-    /// removed. Members added, removed or replaced - and redrawn, which then make it redrawn
-    /// unless the others alone pass it - past [`REPLACED_SHARE`] of all members make it replaced;
-    /// failing that, a member added, removed or edited or more makes it edited; failing that, it is
-    /// its most changed member's level, and invisible when no member changed (a recompressed
-    /// archive, a re-hinted font). An added or deleted file is edited.
-    ///
-    /// An archive is only identical (invisible) or changed (edited), tagged with which of its
-    /// files were added, removed or changed: what happened inside a file is that file's verdict.
+    /// The engine's verdict on the pair: identical (invisible) when no member changed, was added
+    /// or was removed (a recompressed archive, a re-hinted font), and changed (edited) otherwise,
+    /// tagged with which of those happened. What happened inside a member is that member's
+    /// verdict. An added or deleted file is edited.
     pub fn verdict(&self) -> Verdict {
         if self.before.is_none() || self.after.is_none() {
             return Verdict::new(Level::Edited);
         }
-        if self.family == Family::Archives {
-            return self.archive_verdict();
-        }
-        let added_or_removed = self
-            .members
-            .iter()
-            .filter(|member| matches!(member.status, MemberStatus::Added | MemberStatus::Removed))
-            .count();
-        let levels: Vec<Level> = self
-            .members
-            .iter()
-            .filter_map(|member| member.verdict().map(|verdict| verdict.level))
-            .collect();
-        let count = |level: Level| levels.iter().filter(|found| **found == level).count();
-        let replaced = added_or_removed + count(Level::Replaced);
-        let past_half =
-            |n: usize| n as f64 > REPLACED_SHARE * (self.unchanged + self.members.len()) as f64;
-        let level = if past_half(replaced) {
-            Level::Replaced
-        } else if past_half(replaced + count(Level::Redrawn)) {
-            Level::Redrawn
-        } else if added_or_removed > 0 || levels.iter().any(|level| *level >= Level::Edited) {
-            Level::Edited
-        } else {
-            levels.into_iter().max().unwrap_or(Level::Invisible)
-        };
-        let verdict = Verdict::new(level);
-        if added_or_removed > 0 {
-            verdict.with(Tag::Members)
-        } else {
-            verdict
-        }
-    }
-
-    /// [`ContainerDiff::verdict`] for an archive.
-    fn archive_verdict(&self) -> Verdict {
         let mut verdict = Verdict::new(if self.members.is_empty() {
             Level::Invisible
         } else {
@@ -653,7 +612,7 @@ mod tests {
     }
 
     #[test]
-    fn verdicts_follow_how_much_changed() {
+    fn a_containers_verdict_says_which_members_changed() {
         let before = loaded(&[("a", "1"), ("b", "2"), ("c", "3")]);
         let same = loaded(&[("a", "1"), ("b", "2"), ("c", "3")]);
         let one = loaded(&[("a", "1"), ("b", "2"), ("c", "x")]);
@@ -664,29 +623,22 @@ mod tests {
                 .verdict()
                 .to_string()
         };
-        let font = |after: &Loaded| verdict(Family::Fonts, after);
-        assert_eq!(font(&same), "invisible");
-        assert_eq!(font(&crlf), "invisible", "only a line ending");
-        assert_eq!(font(&one), "edited", "one member of three replaced");
-        assert_eq!(
-            font(&most),
-            "replaced+members",
-            "b removed, y added, c changed"
-        );
-
-        // An archive says only whether and which files changed: the files' verdicts say how.
-        let archive = |after: &Loaded| verdict(Family::Archives, after);
-        assert_eq!(archive(&same), "invisible");
-        assert_eq!(
-            archive(&crlf),
-            "edited+changed_files",
-            "a file's bytes changed, though it reads the same"
-        );
-        assert_eq!(archive(&one), "edited+changed_files");
-        assert_eq!(
-            archive(&most),
-            "edited+added_files+removed_files+changed_files"
-        );
+        // Every container says only whether and which members changed, whatever its family: the
+        // members' verdicts say how.
+        for family in [Family::Archives, Family::Fonts, Family::Catalogs] {
+            let verdict = |after: &Loaded| verdict(family, after);
+            assert_eq!(verdict(&same), "invisible");
+            assert_eq!(
+                verdict(&crlf),
+                "edited+changed_files",
+                "a member's bytes changed, though it reads the same"
+            );
+            assert_eq!(verdict(&one), "edited+changed_files");
+            assert_eq!(
+                verdict(&most),
+                "edited+added_files+removed_files+changed_files"
+            );
+        }
         assert_eq!(
             compare(Family::Archives, None, Some(&same), 0)
                 .verdict()

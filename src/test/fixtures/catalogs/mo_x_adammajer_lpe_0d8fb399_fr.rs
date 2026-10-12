@@ -25,7 +25,7 @@ fn verdicts() -> Result<()> {
     human_content::assert_known_verdict_mismatches(
         Family::Catalogs,
         "mo-x-adammajer-lpe-0d8fb399-fr",
-        Some("replaced+members"),
+        None,
         &[
             ("Current buffer modified", Some("replaced")),
             ("File saved successfully", Some("redrawn")),

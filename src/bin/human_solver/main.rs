@@ -451,14 +451,13 @@ pub(crate) struct ContentRow {
 }
 
 impl ContentRow {
-    /// A content fixture's row, from its ground truth (`None` before any is saved): an archive's
-    /// verdict in its own names (`changed+added_files`).
+    /// A content fixture's row, from its ground truth (`None` before any is saved): a
+    /// container's verdict in its own names (`changed+added_files`).
     pub(crate) fn of(family: Family, human: Option<HumanContent>) -> Self {
         let human = human.unwrap_or_default();
         let names = match family {
-            Family::Archives => Vocabulary::Archive,
-            Family::Catalogs => Vocabulary::Text,
-            _ => Vocabulary::Pictures,
+            Family::Pictures => Vocabulary::Pictures,
+            _ => Vocabulary::Container,
         };
         let label = match (&human.verdict, human.members.len()) {
             (Some(judgement), _) => judgement.label_in(names),

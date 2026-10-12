@@ -311,13 +311,12 @@ pub(crate) fn run_content_session(
 }
 
 /// The keys that toggle each tag.
-const TAG_KEYS: [(char, Tag); 9] = [
+const TAG_KEYS: [(char, Tag); 8] = [
     ('r', Tag::Resized),
     ('c', Tag::Canvas),
     ('R', Tag::Rotated),
     ('d', Tag::Timing),
     ('f', Tag::Frames),
-    ('m', Tag::Members),
     ('I', Tag::AddedFiles),
     ('D', Tag::RemovedFiles),
     ('C', Tag::ChangedFiles),
@@ -349,15 +348,8 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
     let Some(members) = session.viewer.members() else {
         return Shape::Picture;
     };
-    let container = |family: Family| {
-        if family == Family::Archives {
-            Shape::Archive
-        } else {
-            Shape::Container
-        }
-    };
     let Target::Member(key) = target else {
-        return container(session.family);
+        return Shape::Container;
     };
     match members
         .diff()
@@ -367,7 +359,7 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
         Some(MemberDetail::Picture(_)) => Shape::Picture,
         Some(MemberDetail::Content { content }) => match content.as_ref() {
             ContentDiff::Picture(_) => Shape::Picture,
-            ContentDiff::Container(diff) => container(diff.family),
+            ContentDiff::Container(_) => Shape::Container,
         },
         _ => Shape::Text,
     }
@@ -402,23 +394,19 @@ fn member_detail_is(
         .is_some_and(test)
 }
 
-/// A message catalog is text through and through: its messages, and so the whole file.
+/// A message catalog's messages are text, whatever they hold.
 fn is_catalog(session: &ContentSession) -> bool {
     session.family == Family::Catalogs
 }
 
-/// The names `target`'s levels go by: an archive's two, binary bytes' two, text's, or the
-/// pictures' own. The pair is text only for a catalog.
+/// The names `target`'s levels go by: a container's two (any whole file of members, a catalog
+/// included), binary bytes' two, text's, or the pictures' own.
 fn vocabulary(session: &ContentSession, target: &Target) -> Vocabulary {
-    let text = match target {
-        Target::Pair => is_catalog(session),
-        Target::Member(key) => is_text(session, key),
-    };
-    if shape(session, target) == Shape::Archive {
-        Vocabulary::Archive
+    if shape(session, target) == Shape::Container {
+        Vocabulary::Container
     } else if matches!(target, Target::Member(key) if is_binary(session, key)) {
         Vocabulary::Binary
-    } else if text {
+    } else if matches!(target, Target::Member(key) if is_text(session, key)) {
         Vocabulary::Text
     } else {
         Vocabulary::Pictures
@@ -494,7 +482,6 @@ fn toggle_tag(session: &mut ContentSession, tag: Tag) {
     if !tag.fits(shape) {
         let what = match shape {
             Shape::Picture => "a picture",
-            Shape::Archive => "an archive",
             Shape::Container => "a container",
             Shape::Text => "text or bytes",
         };
@@ -1439,7 +1426,7 @@ mod tests {
     }
 
     #[test]
-    fn a_catalog_names_its_levels_for_text_on_the_pair_and_every_message() {
+    fn a_catalog_is_a_container_whose_messages_take_the_levels_for_text() {
         let dir = tempfile::tempdir().unwrap();
         let (a, b) = (
             dir.path().join("before.mo.test"),
@@ -1461,10 +1448,23 @@ mod tests {
                 && text.contains("4 rewritten")
         };
 
+        // The whole file is a container like any other: identical or changed, and which messages.
         let text = screen(&mut session, &app, 200);
-        assert!(names_text(&text), "the whole catalog is text: {text}");
+        assert!(
+            text.contains(
+                "Verdict for the whole file: 0 identical 1 changed I added_files D removed_files \
+                 C changed_files u"
+            ),
+            "{text}"
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('4'));
-        assert!(session.status.contains("rewritten"), "{}", session.status);
+        assert!(
+            session
+                .status
+                .contains("Its levels are 0 identical, 1 changed"),
+            "{}",
+            session.status
+        );
 
         handle_key(&mut session, &mut app, KeyCode::Char('j'));
         assert!(
@@ -1615,13 +1615,12 @@ mod tests {
             verdict("edited+added_files+changed_files"),
             "an archive takes the file tags"
         );
-        for (key, message) in [
-            ('r', "an archive is never resized"),
-            ('m', "an archive is never members"),
-        ] {
-            handle_key(&mut session, &mut app, KeyCode::Char(key));
-            assert!(session.status.contains(message), "{}", session.status);
-        }
+        handle_key(&mut session, &mut app, KeyCode::Char('r'));
+        assert!(
+            session.status.contains("a container is never resized"),
+            "{}",
+            session.status
+        );
         handle_key(&mut session, &mut app, KeyCode::Char('0'));
         assert_eq!(
             session.judgement.pair,
@@ -1723,7 +1722,7 @@ mod tests {
             Family::Archives,
             "zip-x-a-b-c",
             &Mismatches {
-                pair: Some(Verdict::new(Level::Replaced).with(Tag::Members)),
+                pair: Some(Verdict::new(Level::Edited).with(Tag::AddedFiles)),
                 members: vec![
                     (
                         "dir/\"q\".txt".to_string(),
@@ -1733,7 +1732,7 @@ mod tests {
                 ],
             },
         );
-        assert!(pinned.contains("Some(\"replaced+members\")"), "{pinned}");
+        assert!(pinned.contains("Some(\"edited+added_files\")"), "{pinned}");
         assert!(
             pinned.contains(r#"&[("dir/\"q\".txt", Some("edited")), ("gone", None)]"#),
             "{pinned}"

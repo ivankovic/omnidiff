@@ -58,18 +58,19 @@ use container::{Container, ContainerDiff};
 ///
 /// **The level judges the content once the [`Tag`]s are undone.** A picture scaled to twice its
 /// size and nothing else is `invisible` (or `artifacts`, if resampling left traces) and tagged
-/// `resized`; a new picture at a new size is `replaced` and tagged `resized`. Frames or members
-/// added or removed are content, not undone: they count towards the level as well as tagging it.
+/// `resized`; a new picture at a new size is `replaced` and tagged `resized`. Frames added or
+/// removed are content, not undone: they count towards the level as well as tagging it.
 ///
 /// The first three are three strengths of "nothing", by how hard one has to look; the last three
 /// are kinds of "something", by what the after side is - not by how much of it changed.
 ///
 /// **Text calls four of them by plainer names** ([`Vocabulary::Text`]): identical for invisible,
-/// whitespace for imperceptible, formatting for artifacts, rewritten for redrawn. **An archive
-/// takes two levels** ([`Vocabulary::Archive`]): identical (invisible - no file added, removed or
+/// whitespace for imperceptible, formatting for artifacts, rewritten for redrawn. **A whole
+/// container takes two levels** ([`Vocabulary::Container`]) - an archive, a font, a PDF, a message
+/// catalog, a cursor of several pictures: identical (invisible - no member added, removed or
 /// changed, whatever its timestamps or compression) and changed (edited), and says what changed
 /// with the [`Tag::AddedFiles`], [`Tag::RemovedFiles`] and [`Tag::ChangedFiles`] tags; how much a
-/// file changed is that file's own verdict. **So do bytes nothing more is known about**
+/// member changed is that member's own verdict. **So do bytes nothing more is known about**
 /// ([`Vocabulary::Binary`]): with no content to look at, the only question is whether they
 /// differ. Only the names differ: files and stubs spell every level one way ([`Level::name`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -122,25 +123,25 @@ impl Level {
     }
 
     /// What `vocabulary` calls the level: [`Level::name`] for pictures, plainer names for text,
-    /// archives and binary bytes.
+    /// containers and binary bytes.
     pub fn name_in(self, vocabulary: Vocabulary) -> &'static str {
         match (vocabulary, self) {
-            (Vocabulary::Text | Vocabulary::Archive | Vocabulary::Binary, Level::Invisible) => {
+            (Vocabulary::Text | Vocabulary::Container | Vocabulary::Binary, Level::Invisible) => {
                 "identical"
             }
             (Vocabulary::Text, Level::Imperceptible) => "whitespace",
             (Vocabulary::Text, Level::Artifacts) => "formatting",
             (Vocabulary::Text, Level::Redrawn) => "rewritten",
-            (Vocabulary::Archive | Vocabulary::Binary, Level::Edited) => "changed",
+            (Vocabulary::Container | Vocabulary::Binary, Level::Edited) => "changed",
             (_, level) => level.name(),
         }
     }
 
-    /// The levels `vocabulary` judges with, in key order: all six, or the two of an archive or of
-    /// binary bytes.
+    /// The levels `vocabulary` judges with, in key order: all six, or the two of a container or
+    /// of binary bytes.
     pub fn offered(vocabulary: Vocabulary) -> &'static [Level] {
         match vocabulary {
-            Vocabulary::Archive | Vocabulary::Binary => &[Level::Invisible, Level::Edited],
+            Vocabulary::Container | Vocabulary::Binary => &[Level::Invisible, Level::Edited],
             _ => &Level::ALL,
         }
     }
@@ -151,17 +152,17 @@ impl Level {
 pub enum Vocabulary {
     Pictures,
     Text,
-    Archive,
+    /// A whole container: an archive, a font, a PDF, a catalog, a cursor of several pictures.
+    Container,
     /// Bytes nothing more is known about ([`container::MemberDetail::Binary`]).
     Binary,
 }
 
-/// What a verdict is about, for which [`Tag`]s it can take: a picture's shape and timing, an
-/// archive's files, another container's members, nothing for text.
+/// What a verdict is about, for which [`Tag`]s it can take: a picture's shape and timing, a
+/// container's members, nothing for text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Shape {
     Picture,
-    Archive,
     Container,
     Text,
 }
@@ -181,24 +182,21 @@ pub enum Tag {
     Timing,
     /// An animation gained or lost frames.
     Frames,
-    /// A container gained or lost members.
-    Members,
-    /// An archive gained files.
+    /// A container gained members: an archive's files, a font's glyphs, a PDF's pages.
     AddedFiles,
-    /// An archive lost files.
+    /// A container lost members.
     RemovedFiles,
-    /// Files both sides of an archive hold differ.
+    /// Members both sides of a container hold differ.
     ChangedFiles,
 }
 
 impl Tag {
-    pub const ALL: [Tag; 9] = [
+    pub const ALL: [Tag; 8] = [
         Tag::Resized,
         Tag::Canvas,
         Tag::Rotated,
         Tag::Timing,
         Tag::Frames,
-        Tag::Members,
         Tag::AddedFiles,
         Tag::RemovedFiles,
         Tag::ChangedFiles,
@@ -211,7 +209,6 @@ impl Tag {
             Tag::Rotated => "rotated",
             Tag::Timing => "timing",
             Tag::Frames => "frames",
-            Tag::Members => "members",
             Tag::AddedFiles => "added_files",
             Tag::RemovedFiles => "removed_files",
             Tag::ChangedFiles => "changed_files",
@@ -225,8 +222,7 @@ impl Tag {
     /// True if a verdict about `shape` can take the tag.
     pub fn fits(self, shape: Shape) -> bool {
         match self {
-            Tag::Members => shape == Shape::Container,
-            Tag::AddedFiles | Tag::RemovedFiles | Tag::ChangedFiles => shape == Shape::Archive,
+            Tag::AddedFiles | Tag::RemovedFiles | Tag::ChangedFiles => shape == Shape::Container,
             _ => shape == Shape::Picture,
         }
     }

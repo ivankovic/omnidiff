@@ -28,7 +28,7 @@ fn verdicts() -> Result<()> {
         None,
         &[(
             "Nordzy-catppuccin-mocha-light/cursors/progress",
-            Some("imperceptible"),
+            Some("edited+changed_files"),
         )],
     )
 }
