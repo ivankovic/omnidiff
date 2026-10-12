@@ -15,16 +15,16 @@ Fast, robust, accurate content-aware diffing.
 | Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
 |---|---|---|---|
 | Code | 96% | 68% | 89% |
-| Pictures | 96% | 64% | 89% |
+| Pictures | 96% | 69% | 91% |
 | Cursors | 100% | 90% | 100% |
 | Fonts | 94% | 100% | 100% |
-| Archives | 87% | 92% | 100% |
-| Message catalogs | 100% | 86% | 86% |
+| Archives | 87% | 95% | 95% |
+| Message catalogs | 100% | 80% | 80% |
 | PDFs | 57% | 100% | 100% |
 
 
-Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts,
-message catalogs and PDFs have fewer than ten judged test cases each (see [Accurate](#accurate)).
+Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts
+and PDFs have fewer than ten judged test cases each (see [Accurate](#accurate)).
 
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
 changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
@@ -436,11 +436,11 @@ and near-perfect when every one is at most one level off:
 
 | Content | Judged | Perfect | Near-perfect |
 |---|---|---|---|
-| Pictures | 75 | **48 (64%)** | **67 (89%)** |
+| Pictures | 128 | **88 (69%)** | **116 (91%)** |
 | Cursors | 10 | **9 (90%)** | **10 (100%)** |
 | Fonts | 1 | **1 (100%)** | **1 (100%)** |
-| Archives | 13 | **12 (92%)** | **13 (100%)** |
-| Message catalogs | 7 | **6 (86%)** | **6 (86%)** |
+| Archives | 19 | **18 (95%)** | **18 (95%)** |
+| Message catalogs | 10 | **8 (80%)** | **8 (80%)** |
 | PDFs | 4 | **4 (100%)** | **4 (100%)** |
 
 `make benchmark-content` counts these too.
