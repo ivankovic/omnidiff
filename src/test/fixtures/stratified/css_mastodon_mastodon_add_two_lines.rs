@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-mastodon-mastodon-add-two-lines", 0.08)
+    assert_matches_human_painting_within_limit("css-mastodon-mastodon-add-two-lines", 0.0)
 }
 
 #[test]

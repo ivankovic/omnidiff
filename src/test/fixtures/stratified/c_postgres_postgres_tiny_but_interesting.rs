@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-postgres-postgres-tiny-but-interesting", 0.04)
+    assert_matches_human_painting_within_limit("c-postgres-postgres-tiny-but-interesting", 0.01)
 }
 
 #[test]

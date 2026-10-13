@@ -30,7 +30,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-refactoring", 2.63)
+    assert_matches_human_painting_within_limit("python-refactoring", 0.1)
 }
 
 #[test]

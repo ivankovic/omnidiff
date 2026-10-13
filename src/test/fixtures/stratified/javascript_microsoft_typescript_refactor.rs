@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-microsoft-typescript-refactor", 3.89)
+    assert_matches_human_painting_within_limit("javascript-microsoft-typescript-refactor", 3.88)
 }
 
 #[test]

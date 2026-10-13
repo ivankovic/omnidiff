@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-ladybirdbrowser-ladybird-update-two-pixel-numbers",
-        1.58,
+        1.57,
     )
 }
 

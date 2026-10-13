@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "ruby-mastodon-mastodon-rare-example-of-true-move",
-        15.56,
+        15.55,
     )
 }
 

@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-chart-16-defaultintervalcategorydataset",
-        0.01,
+        0.0,
     )
 }
 

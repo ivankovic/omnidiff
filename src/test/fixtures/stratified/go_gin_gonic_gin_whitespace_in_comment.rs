@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-gin-gonic-gin-whitespace-in-comment", 0.08)
+    assert_matches_human_painting_within_limit("go-gin-gonic-gin-whitespace-in-comment", 0.07)
 }
 
 #[test]

@@ -22,10 +22,8 @@ use anyhow::Result;
 fn mapping() -> Result<()> {
     // Not valid JavaScript (a TypeScript compiler baseline dump). Error recovery is unstable, so
     // removing one substring reshuffles error boundaries throughout the file.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "javascript-microsoft-typescript-broken-js-remove-string-fragment",
-        464,
-        320,
     )
 }
 

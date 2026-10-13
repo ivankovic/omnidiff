@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-rustdesk-rustdesk-move-list-item-with-insert",
-        0.09,
+        0.08,
     )
 }
 

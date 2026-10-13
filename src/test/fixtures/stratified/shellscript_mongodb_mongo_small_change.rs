@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("shellscript-mongodb-mongo-small-change", 1.73)
+    assert_matches_human_painting_within_limit("shellscript-mongodb-mongo-small-change", 1.72)
 }
 
 #[test]

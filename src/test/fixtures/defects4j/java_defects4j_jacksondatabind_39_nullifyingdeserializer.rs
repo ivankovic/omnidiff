@@ -22,12 +22,8 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "java-defects4j-jacksondatabind-39-nullifyingdeserializer",
-        // Includes the N:M floor: 9 all-to-all group members a one-to-one output cannot reach.
-        9,
-        6,
     )
 }
 
@@ -35,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksondatabind-39-nullifyingdeserializer",
-        1.63,
+        1.14,
     )
 }
 

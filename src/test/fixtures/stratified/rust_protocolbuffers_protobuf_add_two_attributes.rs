@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-protocolbuffers-protobuf-add-two-attributes",
-        0.11,
+        0.1,
     )
 }
 

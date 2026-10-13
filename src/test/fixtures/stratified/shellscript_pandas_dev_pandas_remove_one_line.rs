@@ -39,7 +39,7 @@ fn painting() -> Result<()> {
     // `own_content_span` guard in `classify_node` keeps it from being painted whole.
     assert_matches_human_painting_within_limit(
         "shellscript-pandas-dev-pandas-remove-one-line",
-        0.16,
+        0.15,
     )
 }
 

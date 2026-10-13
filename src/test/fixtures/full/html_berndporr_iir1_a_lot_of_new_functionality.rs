@@ -26,8 +26,8 @@ fn mapping() -> Result<()> {
     // boundary.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "html-berndporr-iir1-a-lot-of-new-functionality",
-        734,
-        510,
+        261,
+        177,
     )
 }
 

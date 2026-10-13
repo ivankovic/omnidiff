@@ -32,7 +32,7 @@ fn painting() -> Result<()> {
     // `FULL` sets the limit.
     assert_matches_human_painting_within_limit(
         "c-postgres-postgres-preprocessor-heavy-change",
-        0.53,
+        0.52,
     )
 }
 

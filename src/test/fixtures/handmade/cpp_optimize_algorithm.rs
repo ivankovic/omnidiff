@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-optimize-algorithm", 0.81)
+    assert_matches_human_painting_within_limit("cpp-optimize-algorithm", 0.32)
 }
 
 #[test]

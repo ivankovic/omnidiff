@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("swift-swiftlang-swift-target-comment", 0.21)
+    assert_matches_human_painting_within_limit("swift-swiftlang-swift-target-comment", 0.2)
 }
 
 #[test]

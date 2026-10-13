@@ -37,7 +37,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("kotlin-refactor-function", 58.61)
+    assert_matches_human_painting_within_limit("kotlin-refactor-function", 54.16)
 }
 
 #[test]

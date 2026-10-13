@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-libreoffice-add-imports-and-function-param",
-        2.63,
+        2.62,
     )
 }
 

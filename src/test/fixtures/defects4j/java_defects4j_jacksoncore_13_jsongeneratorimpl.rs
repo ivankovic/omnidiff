@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksoncore-13-jsongeneratorimpl",
-        0.48,
+        0.47,
     )
 }
 

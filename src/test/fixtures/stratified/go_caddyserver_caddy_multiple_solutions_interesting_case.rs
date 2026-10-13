@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-caddyserver-caddy-multiple-solutions-interesting-case",
-        0.03,
+        0.02,
     )
 }
 

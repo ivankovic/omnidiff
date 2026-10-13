@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-lang-19-numericentityunescaper",
-        2.95,
+        2.94,
     )
 }
 

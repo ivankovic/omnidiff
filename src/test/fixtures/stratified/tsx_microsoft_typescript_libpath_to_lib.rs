@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-microsoft-typescript-libpath-to-lib", 0.65)
+    assert_matches_human_painting_within_limit("tsx-microsoft-typescript-libpath-to-lib", 0.64)
 }
 
 #[test]

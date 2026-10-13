@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("kotlin-nextcloud-android-add-param", 0.50)
+    assert_matches_human_painting_within_limit("kotlin-nextcloud-android-add-param", 0.49)
 }
 
 #[test]

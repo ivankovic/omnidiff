@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // that one structural change.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "lua-neovim-neovim-if-flips-two-branches",
-        68,
-        46,
+        4,
+        3,
     )
 }
 

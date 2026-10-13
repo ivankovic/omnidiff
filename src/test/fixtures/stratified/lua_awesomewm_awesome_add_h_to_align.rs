@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("lua-awesomewm-awesome-add-h-to-align", 1.49)
+    assert_matches_human_painting_within_limit("lua-awesomewm-awesome-add-h-to-align", 0.15)
 }
 
 #[test]

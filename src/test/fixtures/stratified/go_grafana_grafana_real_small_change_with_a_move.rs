@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-grafana-grafana-real-small-change-with-a-move",
-        0.76,
+        0.75,
     )
 }
 

@@ -26,8 +26,8 @@ fn mapping() -> Result<()> {
     // N:M correspondence left unmarked.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "vimscript-neovim-neovim-awful-test-case-bunch-of-hex-colours-more-data-than-code",
-        1072,
-        761,
+        109,
+        74,
     )
 }
 

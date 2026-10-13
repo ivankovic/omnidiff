@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-add-destructuring", 26.28)
+    assert_matches_human_painting_within_limit("javascript-add-destructuring", 24.78)
 }
 
 #[test]

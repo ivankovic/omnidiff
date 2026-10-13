@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-microsoft-terminal-remove-unary-expression-from-binary",
-        0.02,
+        0.01,
     )
 }
 

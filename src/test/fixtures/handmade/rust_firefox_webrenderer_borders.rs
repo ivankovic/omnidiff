@@ -47,7 +47,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-firefox-webrenderer-borders", 0.85)
+    assert_matches_human_painting_within_limit("rust-firefox-webrenderer-borders", 0.02)
 }
 
 #[test]

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("swift-swiftlang-swift-insert-only", 0.56)
+    assert_matches_human_painting_within_limit("swift-swiftlang-swift-insert-only", 0.13)
 }
 
 #[test]

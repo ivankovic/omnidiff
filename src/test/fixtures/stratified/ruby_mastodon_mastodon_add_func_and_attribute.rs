@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "ruby-mastodon-mastodon-add-func-and-attribute",
-        1.26,
+        1.25,
     )
 }
 

@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-52-xmldeclaration", 7.77)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-52-xmldeclaration", 7.76)
 }
 
 #[test]

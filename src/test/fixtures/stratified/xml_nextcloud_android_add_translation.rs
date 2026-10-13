@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-nextcloud-android-add-translation", 0.03)
+    assert_matches_human_painting_within_limit("xml-nextcloud-android-add-translation", 0.01)
 }
 
 #[test]

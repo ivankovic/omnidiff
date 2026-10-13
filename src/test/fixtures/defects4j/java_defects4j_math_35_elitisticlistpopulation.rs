@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-math-35-elitisticlistpopulation",
-        1.12,
+        0.53,
     )
 }
 

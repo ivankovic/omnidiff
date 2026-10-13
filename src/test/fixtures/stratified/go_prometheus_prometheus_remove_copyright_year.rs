@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-prometheus-prometheus-remove-copyright-year",
-        0.06,
+        0.05,
     )
 }
 

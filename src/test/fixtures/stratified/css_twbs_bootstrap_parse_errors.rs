@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-twbs-bootstrap-parse-errors", 3.26)
+    assert_matches_human_painting_within_limit("css-twbs-bootstrap-parse-errors", 3.25)
 }
 
 #[test]

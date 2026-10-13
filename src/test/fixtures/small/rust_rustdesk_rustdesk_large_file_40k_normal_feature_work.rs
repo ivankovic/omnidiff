@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // `self.keyboard` line the ground truth inserts: the `else if` nesting artifact (NM_MAPPING.md).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rustdesk-rustdesk-large-file-40k-normal-feature-work",
-        60,
-        40,
+        4,
+        2,
     )
 }
 

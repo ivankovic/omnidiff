@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `MINIMAL` sets the limit.
-    assert_matches_human_painting_within_limit("cpp-add-templates", 10.56)
+    assert_matches_human_painting_within_limit("cpp-add-templates", 3.66)
 }
 
 #[test]

@@ -26,14 +26,14 @@ fn mapping() -> Result<()> {
     // reuses the deleted leaves inside the inserted ones. One container choice, counted per leaf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-1-commandline",
-        106,
-        72,
+        78,
+        54,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-1-commandline", 3.83)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-1-commandline", 1.67)
 }
 
 #[test]

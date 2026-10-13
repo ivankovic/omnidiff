@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-htop-dev-htop-update-import", 0.72)
+    assert_matches_human_painting_within_limit("c-htop-dev-htop-update-import", 0.71)
 }
 
 #[test]

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "php-wordpress-wordpress-not-sure-if-this-parses-correctly",
-        0.02,
+        0.01,
     )
 }
 

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-microsoft-terminal-add-one-element", 1.40)
+    assert_matches_human_painting_within_limit("xml-microsoft-terminal-add-one-element", 0.07)
 }
 
 #[test]

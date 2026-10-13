@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-sonarr-sonarr-use-a-different-class", 18.16)
+    assert_matches_human_painting_within_limit("csharp-sonarr-sonarr-use-a-different-class", 12.9)
 }
 
 #[test]

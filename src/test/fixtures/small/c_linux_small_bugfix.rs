@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // matches the inner `if` as `Identical` rather than the groups' `MatchButNotIdentical`.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-linux-small-bugfix",
-        34,
-        24,
+        8,
+        6,
     )
 }
 
@@ -37,5 +37,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-linux-small-bugfix", 0.08)
+    assert_matches_human_painting_within_limit("c-linux-small-bugfix", 0.07)
 }

@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-microsoft-terminal-change-import-path", 0.45)
+    assert_matches_human_painting_within_limit("c-microsoft-terminal-change-import-path", 0.44)
 }
 
 #[test]

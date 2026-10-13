@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.23)
+    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.22)
 }
 
 #[test]

@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-chart-22-keyedobjects2d", 1.05)
+    assert_matches_human_painting_within_limit("java-defects4j-chart-22-keyedobjects2d", 1.04)
 }
 
 #[test]
