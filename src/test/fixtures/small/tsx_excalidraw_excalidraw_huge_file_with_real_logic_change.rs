@@ -20,7 +20,10 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
+    // Pointer-event bookkeeping is renamed and reshaped. All of it is
+    // `APTED("large_flat_subtree")`, pairing the pointer fields differently from the human
+    // (`missingPointerEventCleanupEmitter` with `lastPointerUp`, `pointerStart` with
+    // `lastPointerDownEvent`) and deleting statements the human keeps.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "tsx-excalidraw-excalidraw-huge-file-with-real-logic-change",
         // Includes the N:M floor: 13 all-to-all group members a one-to-one output cannot reach.

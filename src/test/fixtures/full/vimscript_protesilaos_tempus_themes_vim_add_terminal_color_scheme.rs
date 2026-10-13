@@ -20,8 +20,9 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Pure wrap/reparent: unchanged nodes the human maps into a new wrapper three levels deeper. No
-    // pass targets this shape.
+    // Pure wrap/reparent: unchanged nodes the human maps into a new wrapper three levels deeper.
+    // One is left: the `NOTE` comment, which `APTED("fast_fallback")` deletes where the human moves
+    // it into the new `else` branch.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme",
         1,

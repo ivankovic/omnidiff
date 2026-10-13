@@ -22,8 +22,10 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // The human deletes whole imports and a method and inserts replacements; `qualified_name`
-    // reuses the deleted leaves inside the inserted ones. One container choice, counted per leaf.
+    // The human deletes whole imports and a method and inserts replacements.
+    // `APTED("fast_fallback")` pairs the deleted import lines with the new ones, and
+    // `qualified_name` reuses the deleted method's leaves inside the inserted one. One container
+    // choice each, counted per leaf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-1-commandline",
         78,
