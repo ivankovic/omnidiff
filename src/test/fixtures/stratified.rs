@@ -220,6 +220,8 @@ mod cpp_microsoft_terminal_remove_unary_expression_from_binary;
 #[cfg(test)]
 mod cpp_microsoft_terminal_small_change;
 #[cfg(test)]
+mod cpp_mongodb_mongo_add_and_rename;
+#[cfg(test)]
 mod cpp_mongodb_mongo_add_function_and_2_call_sites;
 #[cfg(test)]
 mod cpp_mongodb_mongo_test_changes;
@@ -279,6 +281,8 @@ mod cpp_paddlepaddle_paddleocr_add_namespace_closing_comment;
 mod cpp_paddlepaddle_paddleocr_childs_to_children_rename;
 #[cfg(test)]
 mod cpp_protocolbuffers_protobuf_add_preprocessor_commands;
+#[cfg(test)]
+mod cpp_protocolbuffers_protobuf_add_tests;
 #[cfg(test)]
 mod cpp_protocolbuffers_protobuf_one_line_insert;
 #[cfg(test)]
@@ -989,6 +993,8 @@ mod rust_rustdesk_rustdesk_add_one_token;
 mod rust_rustdesk_rustdesk_move_list_item_with_insert;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_add_doccomment_empty_line;
+#[cfg(test)]
+mod rust_tauri_apps_tauri_add_one_field_with_doccomment;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_add_path_to_const_string;
 #[cfg(test)]
