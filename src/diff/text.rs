@@ -1179,8 +1179,14 @@ fn node_untouched_on_its_row(
         .min(source_row.len() - prefix)
         .min(destination_row.len() - prefix);
     let in_prefix = s.end_column <= prefix && d.end_column <= prefix;
-    let in_suffix = s.start_column + suffix >= source_row.len()
-        && d.start_column + suffix >= destination_row.len();
+    // The suffix is capped so it never overlaps the prefix, which can leave a node in a repeated
+    // tail outside it (`f(a)` -> `f(a, a)`); under `MINIMAL` an identical tail from the node on
+    // reads the same. Not under `FULL`: `rust-tauri-apps-tauri-add-use-and-function` paints
+    // `PhysicalSize` moved when `PhysicalRect, ` lands before it in the same import list.
+    let in_suffix = (s.start_column + suffix >= source_row.len()
+        && d.start_column + suffix >= destination_row.len())
+        || (read_rows_carrying_several_edits
+            && node_first_row_tail_untouched(source, destination, s, d));
     in_prefix
         || in_suffix
         // Same row index required: uniqueness places the node within each row but cannot say the

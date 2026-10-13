@@ -2533,6 +2533,24 @@ fn renamed_names_are_identifiers_and_operators_outside_content() {
     assert!(!is_renamed_name("string_content", "Fetch", "FetchAll"));
 }
 
+/// The common suffix is capped so it never overlaps the prefix, which leaves a node in a repeated
+/// tail outside it: in `f(a)` -> `f(a, a)` the kept `a` is the after row's second one. Its tail
+/// from the node on, `a)`, is the same on both rows, so under `MINIMAL` the edit is beside it.
+#[test]
+fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
+    let untouched = |read_rows_carrying_several_edits| {
+        node_untouched_on_its_row(
+            "f(a)\n",
+            "f(a, a)\n",
+            &TextRange::new(0, 2, 0, 3),
+            &TextRange::new(0, 5, 0, 6),
+            read_rows_carrying_several_edits,
+        )
+    };
+    assert!(untouched(true));
+    assert!(!untouched(false));
+}
+
 /// A row carrying two edits, one on each side of an untouched node (`cpp-add-const-correctness`).
 /// The node is in neither common affix; `node_uniquely_placed_on_its_row` reads it as untouched
 /// because its text occurs once on each row, at its own columns. `FULL` still paints it.
