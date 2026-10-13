@@ -123,6 +123,7 @@ fn operator_family_masks_agree_with_string_scanning_kinds_update_allowed() {
         Language::HTML,
         Language::XML,
         Language::CSS,
+        Language::YAML,
         // No families at all - the `_ => &[]` arm.
         Language::Unknown,
     ];
@@ -219,6 +220,45 @@ fn kinds_update_allowed_identifiers_do_not_match_non_identifiers() {
         "type_identifier",
         "string_literal",
         &Language::Rust
+    ));
+}
+
+/// A value or type edited across kinds in the same slot; each pair is one a ground truth updates.
+#[test]
+fn kinds_update_allowed_across_literal_and_type_kinds() {
+    assert!(kinds_update_allowed("NULL", "nullptr", &Language::CPP));
+    assert!(kinds_update_allowed("NULL", "nullptr", &Language::C));
+    assert!(kinds_update_allowed(
+        "false",
+        "decimal_integer_literal",
+        &Language::Java
+    ));
+    assert!(kinds_update_allowed(
+        "void_type",
+        "boolean_type",
+        &Language::Java
+    ));
+    assert!(kinds_update_allowed(
+        "string_scalar",
+        "integer_scalar",
+        &Language::YAML
+    ));
+    // The ground truth contradicts itself on these; see the family lists.
+    assert!(!kinds_update_allowed(
+        "type_identifier",
+        "primitive_type",
+        &Language::CPP
+    ));
+    assert!(!kinds_update_allowed(
+        "character_literal",
+        "hex_integer_literal",
+        &Language::Java
+    ));
+    // A class name and a primitive are different types in Java.
+    assert!(!kinds_update_allowed(
+        "type_identifier",
+        "boolean_type",
+        &Language::Java
     ));
 }
 

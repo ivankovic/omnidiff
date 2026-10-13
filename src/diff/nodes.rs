@@ -874,9 +874,47 @@ const RUST_RANGE_OPS: &[&str] = &["..", "..=", "..."];
 /// `foo.bar` -> `foo?.bar`, `s.x` -> `s->x`. Not given to PHP, where `.` is concatenation.
 const MEMBER_ACCESS_OPS: &[&str] = &[".", "?.", "->", "?->", "&."];
 
-// No C/C++ `type_identifier`/`primitive_type` family: the ground truth contradicts itself.
-// `cpp-tensorflow-switch-to-primitive-types` pairs the two as an update; `cpp-add-templates` and
-// `c-linux-small-change-struct-to-char` delete one and insert the other in the same slot.
+// No C/C++ `type_identifier`/`primitive_type`/`sized_type_specifier` family: the ground truth
+// contradicts itself. `cpp-tensorflow-switch-to-primitive-types` and
+// `cpp-libreoffice-fraction-type-to-double` pair the two as an update; `cpp-add-templates` and
+// `c-linux-small-change-struct-to-char` delete one and insert the other in the same slot (measured
+// 2026-10-13: 8 visible gained, 8 lost, and `c-ffmpeg-added-typedef-to-enum` not fixed).
+
+/// Java's primitive types and `void` (`void` -> `boolean`, `java-genymobile-scrcpy-add`). No
+/// `type_identifier`: a class name in a type slot is a different type, not an edited one.
+const JAVA_PRIMITIVE_TYPE_KINDS: &[&str] = &[
+    "void_type",
+    "boolean_type",
+    "integral_type",
+    "floating_point_type",
+];
+
+/// `NULL` -> `nullptr` under the same `null` node (`c-freeciv-freeciv-null-to-nullptr`).
+const NULL_POINTER_KINDS: &[&str] = &["NULL", "nullptr"];
+
+/// Java's number and boolean literals: a value edit across literal kinds (`false` -> `0`,
+/// `java-defects4j-codec-4-base64`). No `character_literal`: `java-defects4j-csv-14-csvformat`
+/// updates `'\n'` -> `0x0A`, but `java-defects4j-jsoup-17-treebuilderstate`'s painting deletes
+/// `0x0000` and inserts `'\u0000'` (its mapping updates them; questionable ground truth).
+const JAVA_VALUE_LITERAL_KINDS: &[&str] = &[
+    "decimal_integer_literal",
+    "hex_integer_literal",
+    "octal_integer_literal",
+    "binary_integer_literal",
+    "decimal_floating_point_literal",
+    "hex_floating_point_literal",
+    "true",
+    "false",
+];
+
+/// A YAML scalar whose resolved type changed (`node` -> `14`, `yaml-axios-axios-node-to-number`).
+const YAML_SCALAR_KINDS: &[&str] = &[
+    "string_scalar",
+    "integer_scalar",
+    "float_scalar",
+    "boolean_scalar",
+    "null_scalar",
+];
 
 /// `1` -> `1.0` is a value edit; human mappings pair these without exception.
 const NUMERIC_LITERAL_KINDS: &[&str] = &[
@@ -1003,6 +1041,10 @@ const ALL_OPERATOR_FAMILIES: &[&[&str]] = &[
     NULL_LITERAL_KINDS,
     BOOLEAN_LITERAL_KINDS,
     SHELL_STRING_BODY_KINDS,
+    JAVA_PRIMITIVE_TYPE_KINDS,
+    NULL_POINTER_KINDS,
+    JAVA_VALUE_LITERAL_KINDS,
+    YAML_SCALAR_KINDS,
 ];
 
 /// A family past the mask's width would wrap silently in release; fail to compile instead.
@@ -1077,6 +1119,7 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             ASSIGNMENT_OPS,
             INCREMENT_OPS,
             MEMBER_ACCESS_OPS,
+            NULL_POINTER_KINDS,
         ],
         Language::CPP => &[
             COMPARISON_OPS,
@@ -1087,6 +1130,7 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             INCREMENT_OPS,
             MEMBER_ACCESS_OPS,
             ACCESS_MODIFIERS,
+            NULL_POINTER_KINDS,
         ],
         Language::Java => &[
             COMPARISON_OPS,
@@ -1098,6 +1142,8 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             NUMERIC_LITERAL_KINDS,
             ACCESS_MODIFIERS,
             BOOLEAN_LITERAL_KINDS,
+            JAVA_PRIMITIVE_TYPE_KINDS,
+            JAVA_VALUE_LITERAL_KINDS,
         ],
         Language::Go => &[
             COMPARISON_OPS,
@@ -1224,6 +1270,7 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             INCREMENT_OPS,
         ],
         Language::HTML | Language::XML => &[HTML_TAG_END],
+        Language::YAML => &[YAML_SCALAR_KINDS],
         Language::CSS => &[NUMERIC_LITERAL_KINDS],
         _ => &[],
     }
