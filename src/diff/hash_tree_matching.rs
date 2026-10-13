@@ -14,11 +14,11 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::code::metadata::metadata_of;
 use crate::code::{ASTMetadata, Code};
-use crate::diff::apted::SEGMENT_SIMILARITY_MAX_CELLS;
+use crate::diff::apted::{SEGMENT_SIMILARITY_MAX_CELLS, entry_similarity};
 use crate::diff::nodes::is_reference;
 use crate::diff::{ASTDiff, ASTMapping, ASTMappingOperation, ASTMappingReason, NodeCache};
 
@@ -98,6 +98,26 @@ fn shift_at(anchors: &ShiftAnchors, byte: usize) -> i64 {
         .map_or(0, |(_, &shift)| shift)
 }
 
+/// The node of `kind` in `index` (see `solve_with_hash_map`) whose start is nearest `byte`, the
+/// earlier on a tie.
+fn nearest_of_kind(
+    index: &rustc_hash::FxHashMap<String, BTreeMap<(usize, usize), usize>>,
+    kind: &str,
+    byte: i64,
+) -> Option<usize> {
+    let same_kind = index.get(kind)?;
+    let byte = byte.max(0) as usize;
+    let earlier = same_kind.range(..(byte, usize::MAX)).next_back();
+    let later = same_kind.range((byte, usize::MAX)..).next();
+    match (earlier, later) {
+        (Some((&(e, _), &e_id)), Some((&(l, _), &l_id))) => {
+            Some(if byte - e <= l - byte { e_id } else { l_id })
+        }
+        (Some((_, &id)), None) | (None, Some((_, &id))) => Some(id),
+        (None, None) => None,
+    }
+}
+
 /// Whether an edit lies among `nodes`, as the anchors see it: not all at the same shift.
 fn shifts_differ(nodes: &[tree_sitter::Node], anchors: &ShiftAnchors) -> bool {
     let mut shifts = nodes.iter().map(|n| shift_at(anchors, n.start_byte()));
@@ -124,6 +144,11 @@ fn shifts_differ(nodes: &[tree_sitter::Node], anchors: &ShiftAnchors) -> bool {
 /// alone paired image-map `<area>`s by position, href and alt aside
 /// (`html-berndporr-iir1-a-lot-of-new-functionality`). Byte-identical candidates all cost 0, so
 /// the kind-and-value tier is ranked by position alone.
+///
+/// A shape-only pair is refused outright when either node's positional counterpart - the
+/// same-kind node nearest where it lands under the shift - is free and more alike in content
+/// (`entry_similarity`): an edit took the counterpart's shape, and a far twin with the old shape
+/// stands in for it. The refused nodes stay for the later passes.
 ///
 /// The per-node pick stays for buckets of more than [`SEGMENT_SIMILARITY_MAX_CELLS`] pairs, and
 /// for buckets with more before nodes than after nodes when neither content nor position tells
@@ -309,6 +334,74 @@ pub(crate) fn solve_with_hash_map(
             .map_or(usize::MAX, |info| info.preorder_index)
     };
 
+    // Nodes by kind, then start, per side, for a shape-only pair's positional counterparts.
+    let by_kind = |meta: &ASTMetadata| {
+        let mut index: rustc_hash::FxHashMap<String, BTreeMap<(usize, usize), usize>> =
+            rustc_hash::FxHashMap::default();
+        for (&id, info) in &meta.node_info {
+            index
+                .entry(info.kind.clone())
+                .or_default()
+                .insert((info.start_byte, info.preorder_index), id);
+        }
+        index
+    };
+    let before_by_kind = std::cell::OnceCell::new();
+    let after_by_kind = std::cell::OnceCell::new();
+    // A shape-only pair is refused when, on either side, the same-kind node where the other one
+    // lands under the shift is free and more alike in content: its own counterpart lost its shape
+    // to an edit, and a far twin of the old shape took its place
+    // (`css-madmaxms-theme-obsidian-2-add-gnome-44-and-a-few-changes`: a rule that gained a
+    // selector, and a new rule 400 lines down with the old one's shape).
+    let vetoed = |diff: &ASTDiff,
+                  anchors: &ShiftAnchors,
+                  before_node: tree_sitter::Node,
+                  after_node: tree_sitter::Node| {
+        let identical = before_metadata
+            .node_to_kind_and_value_hash
+            .get(&before_node.id())
+            .is_some_and(|hash| {
+                after_metadata
+                    .node_to_kind_and_value_hash
+                    .get(&after_node.id())
+                    == Some(hash)
+            });
+        if identical {
+            return false;
+        }
+        let similarity =
+            |b: usize, a: usize| entry_similarity(&before_metadata, b, &after_metadata, a);
+        let pair = similarity(before_node.id(), after_node.id());
+        // Where the before node lands on the after side.
+        let after_byte =
+            before_node.start_byte() as i64 + shift_at(anchors, before_node.start_byte());
+        let after_index = after_by_kind.get_or_init(|| by_kind(&after_metadata));
+        if let Some(counterpart) = nearest_of_kind(after_index, before_node.kind(), after_byte)
+            && counterpart != after_node.id()
+            && !diff.after_node_map.contains_key(&counterpart)
+            && similarity(before_node.id(), counterpart) > pair
+        {
+            return true;
+        }
+        // Where the after node comes from on the before side: the inverse of the shift of the
+        // last anchor that lands above it.
+        let inverse = anchors
+            .iter()
+            .rev()
+            .find(|&(&byte, &shift)| byte as i64 + shift <= after_node.start_byte() as i64)
+            .map_or(0, |(_, &shift)| shift);
+        let before_byte = after_node.start_byte() as i64 - inverse;
+        let before_index = before_by_kind.get_or_init(|| by_kind(&before_metadata));
+        if let Some(counterpart) = nearest_of_kind(before_index, after_node.kind(), before_byte)
+            && counterpart != before_node.id()
+            && !diff.before_node_map.contains_key(&counterpart)
+            && similarity(counterpart, after_node.id()) > pair
+        {
+            return true;
+        }
+        false
+    };
+
     for &before_node_id in &before_node_ids {
         if diff.before_node_map.contains_key(&before_node_id) {
             continue;
@@ -418,6 +511,9 @@ pub(crate) fn solve_with_hash_map(
         };
 
         for (b, a) in pairs {
+            if vetoed(diff, anchors, b, a) {
+                continue;
+            }
             map_pair(diff, b, a);
             for (before_byte, after_byte) in [
                 (b.start_byte(), a.start_byte()),
@@ -908,6 +1004,42 @@ mod tests {
         assert_eq!(
             diff.before_node_map.get(&before_fns[1]),
             Some(&after_fns[0])
+        );
+    }
+
+    /// `css-madmaxms-theme-obsidian-2-add-gnome-44-and-a-few-changes`: a rule that gains a
+    /// selector loses its shape, and a new rule further down has the old one. The shape-only
+    /// pairing is refused, because the rule where the old one stands is more alike.
+    #[test]
+    fn a_shape_twin_is_refused_when_the_rule_in_place_is_more_alike() {
+        let before = Code::from_string(
+            ".menu .arrow:ltr { border-radius: 0 5px 5px 0; }\n.menu .arrow:rtl { border-radius: 5px 0 0 5px; }\n",
+            &Language::CSS,
+        );
+        let after = Code::from_string(
+            ".menu .arrow:ltr, .menu .tip:ltr { border-radius: 0 5px 5px 0; }\n.menu .arrow:rtl, .menu .tip:rtl { border-radius: 5px 0 0 5px; }\n.panel { color: red; }\n.menu .toggle:rtl { border-radius: 0 5px 5px 0; }\n",
+            &Language::CSS,
+        );
+        let node_cache = NodeCache::build(&before, &after);
+        let mut diff = ASTDiff::default();
+
+        crate::diff::solve_hash_descent::solve(
+            &crate::diff::PassCtx::new(&before, &after, &node_cache),
+            &mut diff,
+        );
+
+        let rules = |code: &Code| {
+            let root = code.ast.as_ref().unwrap().root_node();
+            let mut cursor = root.walk();
+            root.children(&mut cursor)
+                .filter(|n| n.kind() == "rule_set")
+                .map(|n| n.id())
+                .collect::<Vec<_>>()
+        };
+        let (before_rules, after_rules) = (rules(&before), rules(&after));
+        assert_ne!(
+            diff.before_node_map.get(&before_rules[0]),
+            Some(&after_rules[3])
         );
     }
 }
