@@ -29,9 +29,9 @@ mod zhang_shasha;
 
 pub use common::{Algorithm, for_nodes, for_roots};
 pub(crate) use common::{
-    SEGMENT_MUTUAL_SIMILARITY_MIN, add_delete_mappings, add_insert_mappings, entry_similarity,
-    myers_lcs, prematch_identical_if_clauses, prematch_identical_statement_siblings,
-    prematch_unique_named_locals,
+    SEGMENT_MUTUAL_SIMILARITY_MIN, SEGMENT_SIMILARITY_MAX_CELLS, add_delete_mappings,
+    add_insert_mappings, entry_similarity, myers_lcs, prematch_identical_if_clauses,
+    prematch_identical_statement_siblings, prematch_unique_named_locals,
 };
 
 use crate::code::Code;

@@ -18,6 +18,7 @@ use std::collections::HashMap;
 
 use crate::code::metadata::metadata_of;
 use crate::code::{ASTMetadata, Code};
+use crate::diff::apted::SEGMENT_SIMILARITY_MAX_CELLS;
 use crate::diff::nodes::is_reference;
 use crate::diff::{ASTDiff, ASTMapping, ASTMappingOperation, ASTMappingReason, NodeCache};
 
@@ -81,9 +82,47 @@ pub fn build_extended_node_list(
         .collect()
 }
 
-/// Matches each selected, still-unmatched before node to the nearest unmatched after node with the
-/// same value in the caller's hash, then maps both subtrees in lockstep. The caller picks the hash;
+/// Where the after side sits relative to the before side, learnt from matched roots: a before
+/// byte offset (a root's start or end) to the after offset minus it. Shared by the two tiers of
+/// phase 1, so the kind-only tier reads the shifts the kind-and-value tier found.
+pub(crate) type ShiftAnchors = std::collections::BTreeMap<usize, i64>;
+
+/// The shift at `byte`: that of the nearest anchor at or before it, or 0 above the first one, as
+/// the two files start together. An anchor above, because only an edit above a node moves it: an
+/// anchor below can carry the size of new code inserted between the two
+/// (`go-kubernetes-kubernetes-add-unit-test-cases`: new test functions after the edited one).
+fn shift_at(anchors: &ShiftAnchors, byte: usize) -> i64 {
+    anchors
+        .range(..=byte)
+        .next_back()
+        .map_or(0, |(_, &shift)| shift)
+}
+
+/// Whether an edit lies among `nodes`, as the anchors see it: not all at the same shift.
+fn shifts_differ(nodes: &[tree_sitter::Node], anchors: &ShiftAnchors) -> bool {
+    let mut shifts = nodes.iter().map(|n| shift_at(anchors, n.start_byte()));
+    let first = shifts.next();
+    shifts.any(|shift| Some(shift) != first)
+}
+
+/// Matches each selected, still-unmatched before node to an unmatched after node with the same
+/// value in the caller's hash, then maps both subtrees in lockstep. The caller picks the hash;
 /// whether a pair is identical is always decided by `node_to_kind_and_value_hash`.
+///
+/// A single candidate is taken. Among several, the whole bucket - every selected, unmatched before
+/// node and every unmatched after node with that hash - is paired at once, in document order
+/// ([`ordered_assignment`]), at the least total distance between each after node and where its
+/// before node lands under the shift of the matched roots above it ([`shift_at`]). Picking per
+/// before node by raw byte distance was one-sided, and an edit above a run of twins shifts every
+/// offset, so a twin one line down could be nearer than the node's own counterpart
+/// (`javascript-microsoft-typescript-broken-js-remove-string-fragment`, `cpp-cgdb-cgdb-struct-to-
+/// pointer`).
+///
+/// The per-node pick stays for buckets of more than [`SEGMENT_SIMILARITY_MAX_CELLS`] pairs, and
+/// for buckets with more before nodes than after nodes whose before nodes all sit at one shift:
+/// then nothing locates which twin went, and the shift is only as good as the anchors above it -
+/// an edit below the last one moves the after twins without the anchors seeing it
+/// (`c-genymobile-scrcpy-big-change`: new `#include`s above three identical parameters).
 // Every parameter is distinct context; a params struct would only relocate them.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn solve_with_hash_map(
@@ -96,6 +135,7 @@ pub(crate) fn solve_with_hash_map(
     root_reason: ASTMappingReason,
     descendant_reason: ASTMappingReason,
     node_list_selector: impl Fn(&ASTMetadata) -> Vec<usize>,
+    anchors: &mut ShiftAnchors,
 ) {
     let before_metadata = metadata_of(before);
     let after_metadata = metadata_of(after);
@@ -130,7 +170,104 @@ pub(crate) fn solve_with_hash_map(
         }
     };
 
+    let map_pair =
+        |diff: &mut ASTDiff, before_node: tree_sitter::Node, after_node: tree_sitter::Node| {
+            let before_node_id = before_node.id();
+            let (operation, cost) = classify(before_node_id, after_node.id());
+            diff.add_mapping(
+                before_node_id,
+                after_node.id(),
+                ASTMapping {
+                    cost,
+                    operation,
+                    reason: root_reason,
+                },
+            );
+
+            // Nodes whose own children were reordered; their ancestors are downgraded afterwards.
+            let mut reordered_ids: Vec<usize> = Vec::new();
+            let mut stack = vec![(before_node, after_node)];
+            while let Some((before_parent, after_parent)) = stack.pop() {
+                let (pairs, reordered) = pair_children_for_descent(
+                    before_parent,
+                    after_parent,
+                    &before_metadata,
+                    &after_metadata,
+                );
+
+                // The parent's mapping is already recorded, so patch it. A pure reorder is not a no-op:
+                // the ground truth records it as `MatchButNotIdentical` at `COST_UPDATE`.
+                if reordered {
+                    if let Some(mapping) = diff
+                        .mapping
+                        .get_mut(&(before_parent.id(), after_parent.id()))
+                    {
+                        mapping.reason = ASTMappingReason::FullyMappingSubtrees;
+                        mapping.operation = ASTMappingOperation::MatchButNotIdentical;
+                        mapping.cost = crate::diff::COST_UPDATE;
+                    }
+                    reordered_ids.push(before_parent.id());
+                }
+
+                for (before_child, after_child) in pairs {
+                    // Either side may already be decided: the kind-only run descends through subtrees
+                    // the kind-and-value run already matched inside, and `add_mapping` would silently
+                    // overwrite the earlier partner.
+                    if diff.before_node_map.contains_key(&before_child.id())
+                        || diff.after_node_map.contains_key(&after_child.id())
+                    {
+                        continue;
+                    }
+                    let (operation, cost) = classify(before_child.id(), after_child.id());
+                    diff.add_mapping(
+                        before_child.id(),
+                        after_child.id(),
+                        ASTMapping {
+                            cost,
+                            operation,
+                            reason: descendant_reason,
+                        },
+                    );
+                    stack.push((before_child, after_child));
+                }
+            }
+
+            // A container is not a no-op if anything inside it was reordered, up to this match's root.
+            // The ancestors keep their reason: only the reordered container itself reordered.
+            for reordered_id in reordered_ids {
+                let mut cur = reordered_id;
+                while let Some(&parent_id) = before_metadata.node_to_parent.get(&cur) {
+                    let Some(&after_parent_id) = diff.before_node_map.get(&parent_id) else {
+                        break;
+                    };
+                    if let Some(mapping) = diff.mapping.get_mut(&(parent_id, after_parent_id))
+                        && mapping.operation == ASTMappingOperation::Identical
+                    {
+                        mapping.operation = ASTMappingOperation::MatchButNotIdentical;
+                        mapping.cost = crate::diff::COST_UPDATE;
+                    }
+                    if parent_id == before_node_id {
+                        break;
+                    }
+                    cur = parent_id;
+                }
+            }
+        };
+
     let before_node_ids = node_list_selector(&before_metadata);
+    // A bucket's members share a hash, hence a size: they sit together in the largest-first order,
+    // and nothing processed between them can match inside one.
+    let mut bucket_of: rustc_hash::FxHashMap<u64, Vec<usize>> = rustc_hash::FxHashMap::default();
+    for &id in &before_node_ids {
+        if let Some(&hash) = before_hash.get(&id) {
+            bucket_of.entry(hash).or_default().push(id);
+        }
+    }
+    let preorder = |meta: &ASTMetadata, id: usize| {
+        meta.node_info
+            .get(&id)
+            .map_or(usize::MAX, |info| info.preorder_index)
+    };
 
     for &before_node_id in &before_node_ids {
         if diff.before_node_map.contains_key(&before_node_id) {
@@ -145,105 +282,109 @@ pub(crate) fn solve_with_hash_map(
         let Some(after_candidates) = after_hash_to_nodes.get(before_hash_value) else {
             continue;
         };
-
-        // Proximity in the file, not discovery order, tells true duplicates from coincidences.
-        let Some(&after_node_id) = after_candidates
+        let free_after: Vec<tree_sitter::Node> = after_candidates
             .iter()
             .filter(|&&id| !diff.after_node_map.contains_key(&id))
-            .min_by_key(|&&id| {
-                node_cache
-                    .after
-                    .get(&id)
-                    .map(|n| n.start_byte().abs_diff(before_node.start_byte()))
-                    .unwrap_or(usize::MAX)
-            })
-        else {
-            continue;
+            .filter_map(|id| node_cache.after.get(id).copied())
+            .collect();
+        let free_before: Vec<tree_sitter::Node> = if free_after.len() > 1 {
+            bucket_of
+                .get(before_hash_value)
+                .into_iter()
+                .flatten()
+                .filter(|&&id| !diff.before_node_map.contains_key(&id))
+                .filter_map(|id| node_cache.before.get(id).copied())
+                .collect()
+        } else {
+            Vec::new()
         };
-        let Some(&after_node) = node_cache.after.get(&after_node_id) else {
-            continue;
+
+        let pairs = if free_after.len() > 1
+            && (free_before.len() <= free_after.len() || shifts_differ(&free_before, anchors))
+            && free_before.len() * free_after.len() <= SEGMENT_SIMILARITY_MAX_CELLS
+        {
+            let mut free_before = free_before;
+            let mut free_after = free_after;
+            free_before.sort_by_key(|n| preorder(&before_metadata, n.id()));
+            free_after.sort_by_key(|n| preorder(&after_metadata, n.id()));
+            let costs: Vec<Vec<u64>> = free_before
+                .iter()
+                .map(|b| {
+                    let expected = b.start_byte() as i64 + shift_at(anchors, b.start_byte());
+                    free_after
+                        .iter()
+                        .map(|a| (a.start_byte() as i64).abs_diff(expected))
+                        .collect()
+                })
+                .collect();
+            ordered_assignment(&costs)
+                .into_iter()
+                .map(|(bi, ai)| (free_before[bi], free_after[ai]))
+                .collect()
+        } else {
+            // Proximity in the file, not discovery order, tells true duplicates from coincidences.
+            let Some(&after_node) = free_after
+                .iter()
+                .min_by_key(|n| n.start_byte().abs_diff(before_node.start_byte()))
+            else {
+                continue;
+            };
+            vec![(before_node, after_node)]
         };
 
-        let (operation, cost) = classify(before_node_id, after_node_id);
-        diff.add_mapping(
-            before_node_id,
-            after_node_id,
-            ASTMapping {
-                cost,
-                operation,
-                reason: root_reason,
-            },
-        );
-
-        // Nodes whose own children were reordered; their ancestors are downgraded afterwards.
-        let mut reordered_ids: Vec<usize> = Vec::new();
-        let mut stack = vec![(before_node, after_node)];
-        while let Some((before_parent, after_parent)) = stack.pop() {
-            let (pairs, reordered) = pair_children_for_descent(
-                before_parent,
-                after_parent,
-                &before_metadata,
-                &after_metadata,
-            );
-
-            // The parent's mapping is already recorded, so patch it. A pure reorder is not a no-op:
-            // the ground truth records it as `MatchButNotIdentical` at `COST_UPDATE`.
-            if reordered {
-                if let Some(mapping) = diff
-                    .mapping
-                    .get_mut(&(before_parent.id(), after_parent.id()))
-                {
-                    mapping.reason = ASTMappingReason::FullyMappingSubtrees;
-                    mapping.operation = ASTMappingOperation::MatchButNotIdentical;
-                    mapping.cost = crate::diff::COST_UPDATE;
-                }
-                reordered_ids.push(before_parent.id());
-            }
-
-            for (before_child, after_child) in pairs {
-                // Either side may already be decided: the kind-only run descends through subtrees
-                // the kind-and-value run already matched inside, and `add_mapping` would silently
-                // overwrite the earlier partner.
-                if diff.before_node_map.contains_key(&before_child.id())
-                    || diff.after_node_map.contains_key(&after_child.id())
-                {
-                    continue;
-                }
-                let (operation, cost) = classify(before_child.id(), after_child.id());
-                diff.add_mapping(
-                    before_child.id(),
-                    after_child.id(),
-                    ASTMapping {
-                        cost,
-                        operation,
-                        reason: descendant_reason,
-                    },
-                );
-                stack.push((before_child, after_child));
-            }
-        }
-
-        // A container is not a no-op if anything inside it was reordered, up to this match's root.
-        // The ancestors keep their reason: only the reordered container itself reordered.
-        for reordered_id in reordered_ids {
-            let mut cur = reordered_id;
-            while let Some(&parent_id) = before_metadata.node_to_parent.get(&cur) {
-                let Some(&after_parent_id) = diff.before_node_map.get(&parent_id) else {
-                    break;
-                };
-                if let Some(mapping) = diff.mapping.get_mut(&(parent_id, after_parent_id))
-                    && mapping.operation == ASTMappingOperation::Identical
-                {
-                    mapping.operation = ASTMappingOperation::MatchButNotIdentical;
-                    mapping.cost = crate::diff::COST_UPDATE;
-                }
-                if parent_id == before_node_id {
-                    break;
-                }
-                cur = parent_id;
+        for (b, a) in pairs {
+            map_pair(diff, b, a);
+            for (before_byte, after_byte) in [
+                (b.start_byte(), a.start_byte()),
+                (b.end_byte(), a.end_byte()),
+            ] {
+                anchors
+                    .entry(before_byte)
+                    .or_insert(after_byte as i64 - before_byte as i64);
             }
         }
     }
+}
+
+/// The order-preserving pairing of `costs`' rows with its columns (both in document order) that
+/// pairs as many as the smaller side has, at the least total cost; on a tie, earlier columns
+/// (rows) are used. Order-preserving because twins keep their order more often than not: before
+/// any shift is known, raw offsets make a later twin nearer an earlier one's counterpart
+/// (`typescript-refactor-interface`: an interface added above two identical class bodies).
+fn ordered_assignment(costs: &[Vec<u64>]) -> Vec<(usize, usize)> {
+    let n = costs.len();
+    let m = costs.first().map_or(0, Vec::len);
+    if n > m {
+        let transposed: Vec<Vec<u64>> = (0..m)
+            .map(|j| (0..n).map(|i| costs[i][j]).collect())
+            .collect();
+        return ordered_assignment(&transposed)
+            .into_iter()
+            .map(|(j, i)| (i, j))
+            .collect();
+    }
+    // best[i][j]: least cost pairing every one of the first `i` rows into the first `j` columns.
+    let mut best = vec![vec![u64::MAX; m + 1]; n + 1];
+    best[0].fill(0);
+    for i in 1..=n {
+        for j in i..=m {
+            let take = best[i - 1][j - 1].saturating_add(costs[i - 1][j - 1]);
+            best[i][j] = best[i][j - 1].min(take);
+        }
+    }
+    let (mut i, mut j) = (n, m);
+    let mut pairs = Vec::with_capacity(n);
+    while i > 0 {
+        if j > i && best[i][j - 1] == best[i][j] {
+            j -= 1;
+        } else {
+            pairs.push((i - 1, j - 1));
+            i -= 1;
+            j -= 1;
+        }
+    }
+    pairs.reverse();
+    pairs
 }
 
 /// Pairs two matched parents' children for the lockstep descent, and reports whether a
@@ -574,5 +715,67 @@ mod tests {
                 a.start_byte() - after_use_list.start_byte()
             );
         }
+    }
+
+    /// `javascript-microsoft-typescript-broken-js-remove-string-fragment`: text removed above a
+    /// pair of identical functions shifts both, by more than half a function, so the second one's
+    /// raw offset sits nearer the first one's. The matched function above them carries the shift.
+    #[test]
+    fn identical_twins_pair_by_their_shifted_position_not_their_raw_offset() {
+        let twin = "fn f() { a(1); }\n";
+        let anchor = "fn h() { q(1, 2, 3); r(4, 5, 6); s(7, 8, 9); }\n";
+        let before = Code::from_string(
+            &format!("// a comment that the change removes\n{anchor}{twin}{twin}"),
+            &Language::Rust,
+        );
+        let after = Code::from_string(&format!("{anchor}{twin}{twin}"), &Language::Rust);
+        let node_cache = NodeCache::build(&before, &after);
+        let mut diff = ASTDiff::default();
+
+        crate::diff::solve_hash_descent::solve(
+            &crate::diff::PassCtx::new(&before, &after, &node_cache),
+            &mut diff,
+        );
+
+        let functions = |code: &Code| {
+            let root = code.ast.as_ref().unwrap().root_node();
+            let mut cursor = root.walk();
+            root.children(&mut cursor)
+                .filter(|n| n.kind() == "function_item")
+                .map(|n| n.id())
+                .collect::<Vec<_>>()
+        };
+        let (before_fns, after_fns) = (functions(&before), functions(&after));
+        for i in 0..3 {
+            assert_eq!(
+                diff.before_node_map.get(&before_fns[i]),
+                Some(&after_fns[i]),
+                "function {i} pairs with its own counterpart"
+            );
+        }
+    }
+
+    /// Twins keep their order: a crossing pairing is never chosen, however cheap.
+    #[test]
+    fn ordered_assignment_preserves_order_and_skips_the_farthest_surplus() {
+        assert_eq!(
+            ordered_assignment(&[vec![5, 1], vec![1, 5]]),
+            vec![(0, 0), (1, 1)]
+        );
+        assert_eq!(ordered_assignment(&[vec![9, 0, 9]]), vec![(0, 1)]);
+        assert_eq!(
+            ordered_assignment(&[vec![9], vec![0], vec![9]]),
+            vec![(1, 0)]
+        );
+        assert_eq!(ordered_assignment(&[vec![3, 3]]), vec![(0, 0)]);
+    }
+
+    #[test]
+    fn shift_at_reads_the_anchor_above_and_zero_above_the_first() {
+        let anchors: ShiftAnchors = [(10, 5), (20, -3)].into_iter().collect();
+        assert_eq!(shift_at(&anchors, 5), 0);
+        assert_eq!(shift_at(&anchors, 10), 5);
+        assert_eq!(shift_at(&anchors, 19), 5);
+        assert_eq!(shift_at(&anchors, 25), -3);
     }
 }
