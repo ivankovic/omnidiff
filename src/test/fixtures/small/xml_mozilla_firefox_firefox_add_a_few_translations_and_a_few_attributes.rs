@@ -20,9 +20,9 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // New attributes plus seven new <string> elements at scattered points. Byte-identical
-    // whitespace `CharData` downstream of each insertion matches a content-identical sibling other
-    // than the human's (see xml-nextcloud-android-add-few-translations).
+    // New attributes plus seven new <string> elements at scattered points. One is left: a
+    // whitespace `CharData` (`\n` -> `\n  `) the human grades Update and `APTED("fast_fallback")`
+    // Identical.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "xml-mozilla-firefox-firefox-add-a-few-translations-and-a-few-attributes",
         1,

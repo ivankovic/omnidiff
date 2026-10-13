@@ -20,9 +20,9 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // `if ... else if ... end end` becomes `if ... elseif ... end`, adding a level: every
-    // descendant is `MatchButNotIdentical`/`Update` rather than `Identical`, all downstream of
-    // that one structural change.
+    // `if ... else if ... end end` becomes `if ... elseif ... end`, adding a level. The identical
+    // clauses are prematched; what is left is the restructured chain's keywords (`then`, `elseif`),
+    // which `APTED("qualified_name")` deletes or pairs with the other clause's.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "lua-neovim-neovim-if-flips-two-branches",
         4,

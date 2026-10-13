@@ -20,9 +20,10 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Two mechanisms in equal parts: `StructurallyIdenticalAncestor` containers whose descendants
-    // inherit an operation, and descendants of human-deleted/inserted subtrees paired with
-    // byte-identical twins elsewhere (a stylesheet is mostly repeated punctuation and names).
+    // Mostly `MovedSubtree` among byte-identical twins (a stylesheet is mostly repeated punctuation
+    // and names): leaves the human inserts are moved in from elsewhere, and leaves the human keeps
+    // are moved to a different twin. The rest is `APTED("fast_fallback")` deleting leaves the human
+    // keeps.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "css-madmaxms-theme-obsidian-2-add-gnome-44-and-a-few-changes",
         71,

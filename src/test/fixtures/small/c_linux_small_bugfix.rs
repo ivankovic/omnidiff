@@ -21,8 +21,9 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // The added `if` can map either way (inner or outer), expressed as two multi-map groups; omnidiff
-    // matches the inner `if` as `Identical` rather than the groups' `MatchButNotIdentical`.
+    // The added `if` can map either way (inner or outer), expressed as two multi-map groups. What
+    // is left is the N:M floor: a group pairs one `P(SNOOP, HITM)` before with two after, and a
+    // one-to-one output keeps only one of them.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-linux-small-bugfix",
         8,
