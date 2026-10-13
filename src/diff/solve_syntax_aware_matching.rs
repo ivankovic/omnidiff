@@ -176,9 +176,18 @@ fn match_qualified_name_groups(
                 after_metadata,
                 diff,
             );
-            // Both pre-matches only emit exact, scoped matches, so they narrow the APTED call
-            // below without changing what it would resolve.
+            // The statement and local pre-matches only emit exact, scoped matches, so they narrow
+            // the APTED call below without changing what it would resolve. The if-clause one
+            // does change it: a swap is the one edit ordered APTED cannot express.
             apted::prematch_identical_statement_siblings(
+                before_id,
+                after_id,
+                before_metadata,
+                after_metadata,
+                "qualified_name",
+                diff,
+            );
+            apted::prematch_identical_if_clauses(
                 before_id,
                 after_id,
                 before_metadata,
