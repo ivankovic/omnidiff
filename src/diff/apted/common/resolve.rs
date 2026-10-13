@@ -48,6 +48,7 @@ pub(crate) const PREMATCH_SIBLING_ORDER_SOURCES: &[&str] = &[
     "qualified_name",
     "large_flat_subtree_container",
     "unique_named_local",
+    DATA_LITERAL_ELEMENT_SOURCE,
 ];
 
 impl<'a> ContainmentCtx<'a> {

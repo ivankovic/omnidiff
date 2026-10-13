@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-add-memory-management", 7.79)
+    assert_matches_human_painting_within_limit("cpp-add-memory-management", 7.78)
 }
 
 #[test]

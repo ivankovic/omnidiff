@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-ollama-ollama-update-commit-hash-7", 0.61)
+    assert_matches_human_painting_within_limit("cpp-ollama-ollama-update-commit-hash-7", 0.6)
 }
 
 #[test]

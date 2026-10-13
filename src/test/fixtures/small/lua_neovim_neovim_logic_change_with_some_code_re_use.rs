@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "lua-neovim-neovim-logic-change-with-some-code-re-use",
         // Includes the N:M floor: 9 all-to-all group members a one-to-one output cannot reach.
-        16,
-        14,
+        15,
+        13,
     )
 }
 

@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // answer costs more than the human's, so this is not a cost tie; something picks it anyway.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "shellscript-docker-docker-bench-security-move-all-functions-by-one-and-add-one-to-the-end",
-        334,
-        227,
+        128,
+        96,
     )
 }
 

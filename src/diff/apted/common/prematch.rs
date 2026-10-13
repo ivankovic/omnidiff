@@ -15,7 +15,8 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 //! Pre-matching passes that pin obvious pairs before the general search runs: identical statement
-//! siblings, and locals that are unique by name.
+//! siblings, identical if-chain clauses wherever they moved in the chain, and locals that are
+//! unique by name.
 
 use super::*;
 
@@ -228,4 +229,322 @@ pub(crate) fn prematch_unique_named_locals(
             diff,
         );
     }
+}
+/// Kinds that open one clause of an if-chain: the `if` itself and the wrapped later clauses
+/// (Lua `elseif_statement`, Python `elif_clause`, Ruby `elsif`, PHP `else_if_clause`).
+fn is_if_clause_frame(kind: &str) -> bool {
+    matches!(
+        kind,
+        "if_statement"
+            | "if_expression"
+            | "elseif_statement"
+            | "elif_clause"
+            | "else_if_clause"
+            | "elsif"
+            | "if"
+    )
+}
+
+/// Kinds that hold the rest of an if-chain rather than a clause's own condition or body.
+fn is_if_alternative(kind: &str) -> bool {
+    kind.contains("else") || matches!(kind, "elif_clause" | "elsif")
+}
+
+/// A clause's own parts: its frame's named children (keywords and punctuation are anonymous)
+/// minus the alternative - an `else`-kind child, or everything after a bare `else` token (Go's
+/// `else if`).
+fn if_clause_parts(frame: usize, meta: &ASTMetadata) -> Vec<usize> {
+    let Some(info) = meta.node_info.get(&frame) else {
+        return Vec::new();
+    };
+    let mut parts = Vec::new();
+    for &child in &info.children {
+        let Some(child_info) = meta.node_info.get(&child) else {
+            continue;
+        };
+        if !child_info.is_named {
+            if child_info.kind == "else" {
+                break;
+            }
+            continue;
+        }
+        if is_if_alternative(&child_info.kind) {
+            continue;
+        }
+        parts.push(child);
+    }
+    parts
+}
+
+/// Whether `frame` is one clause of several: it has an alternative, or it is one (an `elseif`
+/// kind, or an `if` directly under an `else` or under another `if`, as Go's `else if` is).
+fn in_if_chain(frame: usize, meta: &ASTMetadata) -> bool {
+    let Some(info) = meta.node_info.get(&frame) else {
+        return false;
+    };
+    let has_alternative = info.children.iter().any(|child| {
+        meta.node_info.get(child).is_some_and(|c| {
+            (c.is_named && is_if_alternative(&c.kind)) || (!c.is_named && c.kind == "else")
+        })
+    });
+    let is_alternative = is_if_alternative(&info.kind)
+        || meta
+            .node_to_parent
+            .get(&frame)
+            .and_then(|parent| meta.node_info.get(parent))
+            .is_some_and(|p| is_if_alternative(&p.kind) || is_if_clause_frame(&p.kind));
+    has_alternative || is_alternative
+}
+
+/// An if-chain clause: its frame and its parts ([`if_clause_parts`]).
+type IfClause = (usize, Vec<usize>);
+
+/// Every unmapped clause under `root_id`, keyed by its parts' full hashes.
+fn collect_if_clauses(
+    root_id: usize,
+    meta: &ASTMetadata,
+    node_map: &rustc_hash::FxHashMap<usize, usize>,
+    out: &mut rustc_hash::FxHashMap<Vec<u64>, Vec<IfClause>>,
+) {
+    let mut stack = vec![root_id];
+    while let Some(id) = stack.pop() {
+        if node_map.contains_key(&id) {
+            continue;
+        }
+        let Some(info) = meta.node_info.get(&id) else {
+            continue;
+        };
+        if info.is_named && is_if_clause_frame(&info.kind) {
+            let parts = if_clause_parts(id, meta);
+            if !parts.is_empty() && parts.iter().all(|p| !node_map.contains_key(p)) {
+                let key: Vec<u64> = parts
+                    .iter()
+                    .map(|p| meta.node_to_full_hash.get(p).copied().unwrap_or(0))
+                    .collect();
+                out.entry(key).or_default().push((id, parts));
+            }
+        }
+        stack.extend(info.children.iter().rev().copied());
+    }
+}
+
+/// Pre-matches the if-chain clauses (condition and body) that are byte-identical and unique on
+/// both sides, wherever they sit in the chain, so two swapped branches keep their content
+/// (`lua-neovim-neovim-if-flips-two-branches`). Ordered APTED cannot express the swap and renames
+/// both branches in place instead.
+///
+/// Both clauses must belong to a chain of several ([`in_if_chain`]). A lone `if` that moved is a
+/// statement, left to APTED and phase 7: pinned here, `java-defects4j-cli-14-groupimpl`'s moved
+/// `if (validate)` block maps as the human's does (19 -> 2 visible mismatches) but paints worse
+/// (+28 Full, +38 Minimal bytes), the renderer blaming what the block jumped over.
+///
+/// Only the parts are matched, the frames only when the whole frame is identical: in Lua the
+/// first clause sits bare in `if_statement` and the second in `elseif_statement`, so a swap moves
+/// each body to a frame of another kind.
+pub(crate) fn prematch_identical_if_clauses(
+    before_id: usize,
+    after_id: usize,
+    before_meta: &ASTMetadata,
+    after_meta: &ASTMetadata,
+    source: &'static str,
+    diff: &mut ASTDiff,
+) {
+    let mut before_clauses = rustc_hash::FxHashMap::default();
+    collect_if_clauses(
+        before_id,
+        before_meta,
+        &diff.before_node_map,
+        &mut before_clauses,
+    );
+    if before_clauses.is_empty() {
+        return;
+    }
+    let mut after_clauses = rustc_hash::FxHashMap::default();
+    collect_if_clauses(
+        after_id,
+        after_meta,
+        &diff.after_node_map,
+        &mut after_clauses,
+    );
+
+    let mut pairs: Vec<(&IfClause, &IfClause)> = before_clauses
+        .iter()
+        .filter_map(|(key, before)| {
+            let after = after_clauses.get(key)?;
+            (before.len() == 1
+                && after.len() == 1
+                && in_if_chain(before[0].0, before_meta)
+                && in_if_chain(after[0].0, after_meta))
+            .then(|| (&before[0], &after[0]))
+        })
+        .collect();
+    // `HashMap` iteration order is not deterministic.
+    pairs.sort_unstable_by_key(|((b, _), _)| {
+        before_meta
+            .node_info
+            .get(b)
+            .map(|i| i.preorder_index)
+            .unwrap_or(usize::MAX)
+    });
+    for ((before_frame, before_parts), (after_frame, after_parts)) in pairs {
+        // A nested clause may already be inside an earlier pair's parts.
+        if diff.before_node_map.contains_key(before_frame)
+            || before_parts
+                .iter()
+                .any(|p| diff.before_node_map.contains_key(p))
+            || after_parts
+                .iter()
+                .any(|p| diff.after_node_map.contains_key(p))
+        {
+            continue;
+        }
+        let same_frame = before_meta.node_to_full_hash.get(before_frame)
+            == after_meta.node_to_full_hash.get(after_frame)
+            && !diff.after_node_map.contains_key(after_frame);
+        if same_frame {
+            emit_identical_subtree(
+                *before_frame,
+                *after_frame,
+                before_meta,
+                after_meta,
+                source,
+                diff,
+            );
+            continue;
+        }
+        for (&b, &a) in before_parts.iter().zip(after_parts) {
+            emit_identical_subtree(b, a, before_meta, after_meta, source, diff);
+        }
+    }
+}
+
+/// `source` of the APTED call that follows [`prematch_identical_data_literal_elements`]; listed in
+/// `PREMATCH_SIBLING_ORDER_SOURCES`, so nothing pairs across the pinned elements.
+pub(crate) const DATA_LITERAL_ELEMENT_SOURCE: &str = "data_literal_elements";
+
+/// Literal containers whose elements are values in a list or table: an element is identified by
+/// its content, not its index. Bash's `list` is a command list (`a && b`), not data.
+fn is_data_literal_container(kind: &str, language: &Language) -> bool {
+    if *language == Language::ShellScript {
+        return kind == "array";
+    }
+    matches!(
+        kind,
+        "tuple"
+            | "list"
+            | "dictionary"
+            | "set"
+            | "expression_list"
+            | "array"
+            | "object"
+            | "array_expression"
+            | "tuple_expression"
+            | "literal_value"
+            | "initializer_list"
+            | "hash"
+    )
+}
+
+/// The widest data-literal container at the shallowest depth under `root_id` that has one, if it
+/// holds at least half of `root_id`'s nodes: the pair is a table, not code that mentions one.
+fn outermost_data_literal(root_id: usize, meta: &ASTMetadata) -> Option<usize> {
+    let size = |id: usize| meta.node_to_subtree_size.get(&id).copied().unwrap_or(0);
+    let mut level = vec![root_id];
+    while !level.is_empty() {
+        let mut best: Option<(usize, usize)> = None;
+        let mut next_level = Vec::new();
+        for id in level {
+            let Some(info) = meta.node_info.get(&id) else {
+                continue;
+            };
+            if info.is_named && is_data_literal_container(&info.kind, &meta.language) {
+                if best.is_none_or(|(count, _)| info.children.len() > count) {
+                    best = Some((info.children.len(), id));
+                }
+            } else {
+                next_level.extend(info.children.iter().copied());
+            }
+        }
+        if let Some((_, id)) = best {
+            return (size(id) * 2 >= size(root_id)).then_some(id);
+        }
+        level = next_level;
+    }
+    None
+}
+
+/// Pre-matches the byte-identical elements of the two sides' outermost data literals of the same
+/// kind (Myers over full hashes), so that a table which lost rows at the top and gained rows at the
+/// bottom keeps its unchanged rows (`python-aboutcode-org-license-expression-excellent-test-case`:
+/// `"37", "38", "39", "310"` -> `"39", "310", "311", "312", "313"`). Unit-cost APTED prefers the
+/// shift there, pairing `"37"` with `"39"` and so on, because the quotes and separators match.
+///
+/// Single-node elements (separators, bare numbers) are left out: they are not evidence of which
+/// row is which. Returns whether anything was pinned; the caller then runs APTED under
+/// [`DATA_LITERAL_ELEMENT_SOURCE`].
+pub(crate) fn prematch_identical_data_literal_elements(
+    before_id: usize,
+    after_id: usize,
+    before_meta: &ASTMetadata,
+    after_meta: &ASTMetadata,
+    source: &'static str,
+    diff: &mut ASTDiff,
+) -> bool {
+    let (Some(before_container), Some(after_container)) = (
+        outermost_data_literal(before_id, before_meta),
+        outermost_data_literal(after_id, after_meta),
+    ) else {
+        return false;
+    };
+    if before_meta
+        .node_info
+        .get(&before_container)
+        .map(|i| &i.kind)
+        != after_meta.node_info.get(&after_container).map(|i| &i.kind)
+    {
+        return false;
+    }
+    let elements = |container: usize,
+                    meta: &ASTMetadata,
+                    node_map: &rustc_hash::FxHashMap<usize, usize>|
+     -> Vec<usize> {
+        meta.node_info
+            .get(&container)
+            .map(|info| {
+                info.children
+                    .iter()
+                    .copied()
+                    .filter(|id| {
+                        !node_map.contains_key(id)
+                            && meta.node_to_subtree_size.get(id).copied().unwrap_or(0) > 1
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let before_elements = elements(before_container, before_meta, &diff.before_node_map);
+    let after_elements = elements(after_container, after_meta, &diff.after_node_map);
+    let hashes = |ids: &[usize], meta: &ASTMetadata| -> Vec<u64> {
+        ids.iter()
+            .map(|id| meta.node_to_full_hash.get(id).copied().unwrap_or(0))
+            .collect()
+    };
+    let Some(pairs) = myers_lcs(
+        &hashes(&before_elements, before_meta),
+        &hashes(&after_elements, after_meta),
+        FLAT_MAX_EDIT,
+    ) else {
+        return false;
+    };
+    for &(bi, ai) in &pairs {
+        emit_identical_subtree(
+            before_elements[bi],
+            after_elements[ai],
+            before_meta,
+            after_meta,
+            source,
+            diff,
+        );
+    }
+    !pairs.is_empty()
 }

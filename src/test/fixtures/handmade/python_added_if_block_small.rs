@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-added-if-block-small", 18.45)
+    assert_matches_human_painting_within_limit("python-added-if-block-small", 7.1)
 }
 
 #[test]

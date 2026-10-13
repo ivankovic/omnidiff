@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-multi-map-duplicate-calls", 58.12)
+    assert_matches_human_painting_within_limit("rust-multi-map-duplicate-calls", 55.24)
 }
 
 #[test]

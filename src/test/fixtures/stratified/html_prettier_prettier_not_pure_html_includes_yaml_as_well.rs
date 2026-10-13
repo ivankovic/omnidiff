@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-prettier-prettier-not-pure-html-includes-yaml-as-well",
-        41.45,
+        41.44,
     )
 }
 

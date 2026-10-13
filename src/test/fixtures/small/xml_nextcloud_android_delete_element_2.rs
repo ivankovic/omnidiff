@@ -34,5 +34,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-nextcloud-android-delete-element-2", 0.03)
+    assert_matches_human_painting_within_limit("xml-nextcloud-android-delete-element-2", 0.01)
 }

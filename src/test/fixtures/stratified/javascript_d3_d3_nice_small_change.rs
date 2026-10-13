@@ -36,7 +36,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Mostly `ours=None, theirs=Move`, inherited from the wrong `call_expression` pairing the
     // mapping clamp describes.
-    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.26)
+    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.25)
 }
 
 #[test]

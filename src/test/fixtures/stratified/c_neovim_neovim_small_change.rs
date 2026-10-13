@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("c-neovim-neovim-small-change", 59.11)
+    assert_matches_human_painting_within_limit("c-neovim-neovim-small-change", 59.1)
 }
 
 #[test]

@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // A whitespace reflow: interior whitespace lives between AST nodes where no painting can reach,
     // so omnidiff paints the reflowed statements while Minimal paints nothing.
-    assert_matches_human_painting_within_limit("c-openssl-openssl-format-only-change", 11.20)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-format-only-change", 11.19)
 }
 
 #[test]

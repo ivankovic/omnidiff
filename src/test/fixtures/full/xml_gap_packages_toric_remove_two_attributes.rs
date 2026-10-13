@@ -20,10 +20,8 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "xml-gap-packages-toric-remove-two-attributes",
-        34,
-        22,
     )
 }
 

@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-19-posixparser", 0.42)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-19-posixparser", 0.41)
 }
 
 #[test]

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("c-freeciv-add-parameter-to-function", 1.14)
+    assert_matches_human_painting_within_limit("c-freeciv-add-parameter-to-function", 1.13)
 }
 
 #[test]

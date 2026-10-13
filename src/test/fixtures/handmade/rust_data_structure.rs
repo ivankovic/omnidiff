@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-data-structure", 13.8)
+    assert_matches_human_painting_within_limit("rust-data-structure", 7.52)
 }
 
 #[test]

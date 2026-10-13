@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // pass targets this shape.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme",
-        19,
-        15,
+        1,
+        1,
     )
 }
 

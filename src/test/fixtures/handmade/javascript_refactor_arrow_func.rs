@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-refactor-arrow-func", 6.79)
+    assert_matches_human_painting_within_limit("javascript-refactor-arrow-func", 3.96)
 }
 
 #[test]

@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("html-gohugoio-hugo-update-href-template", 11.17)
+    assert_matches_human_painting_within_limit("html-gohugoio-hugo-update-href-template", 11.16)
 }
 
 #[test]

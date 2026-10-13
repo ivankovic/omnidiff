@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-openhands-openhands-small-change", 8.64)
+    assert_matches_human_painting_within_limit("python-openhands-openhands-small-change", 8.63)
 }
 
 #[test]

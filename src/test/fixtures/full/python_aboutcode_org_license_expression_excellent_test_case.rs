@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // literals omnidiff keeps matched (identical bytes, same order), each counting its subtree.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "python-aboutcode-org-license-expression-excellent-test-case",
-        251,
-        186,
+        12,
+        7,
     )
 }
 

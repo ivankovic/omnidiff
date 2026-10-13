@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // byte-identical twins elsewhere (a stylesheet is mostly repeated punctuation and names).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "css-madmaxms-theme-obsidian-2-add-gnome-44-and-a-few-changes",
-        125,
-        75,
+        71,
+        31,
     )
 }
 

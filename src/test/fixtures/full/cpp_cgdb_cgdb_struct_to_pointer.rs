@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // bucket: the human matches differently-kinded nodes across the struct-to-pointer rewrite.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-cgdb-cgdb-struct-to-pointer",
-        110,
-        73,
+        2,
+        2,
     )
 }
 

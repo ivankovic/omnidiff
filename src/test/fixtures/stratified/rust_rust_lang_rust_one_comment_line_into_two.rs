@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-rust-lang-rust-one-comment-line-into-two",
-        0.84,
+        0.83,
     )
 }
 

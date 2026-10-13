@@ -36,7 +36,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "c-ladybirdbrowser-ladybird-small-parse-errors",
-        0.04,
+        0.03,
     )
 }
 

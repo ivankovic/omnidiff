@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "swift-swiftlang-swift-delete-and-insert-in-the-typecheck-comment",
-        66.45,
+        66.44,
     )
 }
 

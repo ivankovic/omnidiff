@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("shellscript-ansible-ansible-small-change", 0.17)
+    assert_matches_human_painting_within_limit("shellscript-ansible-ansible-small-change", 0.16)
 }
 
 #[test]

@@ -22,13 +22,8 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Shared by all four `CoreOperation*` fixtures: the human replaces the first
-    // `method_declaration` whole, omnidiff reuses its scaffolding (`}`, `;`, the `>=` leaf) in the
-    // surviving method. One choice of which near-identical method survives.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "java-defects4j-jxpath-7-coreoperationgreaterthanorequal",
-        36,
-        22,
     )
 }
 
@@ -41,6 +36,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jxpath-7-coreoperationgreaterthanorequal",
-        4.49,
+        0.0,
     )
 }

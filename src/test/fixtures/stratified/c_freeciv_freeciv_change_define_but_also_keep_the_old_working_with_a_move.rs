@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-freeciv-freeciv-change-define-but-also-keep-the-old-working-with-a-move",
-        7,
-        5,
+        2,
+        2,
     )
 }
 
@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "c-freeciv-freeciv-change-define-but-also-keep-the-old-working-with-a-move",
-        0.39,
+        0.18,
     )
 }
 

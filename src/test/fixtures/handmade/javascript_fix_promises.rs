@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-fix-promises", 6.76)
+    assert_matches_human_painting_within_limit("javascript-fix-promises", 5.06)
 }
 
 #[test]

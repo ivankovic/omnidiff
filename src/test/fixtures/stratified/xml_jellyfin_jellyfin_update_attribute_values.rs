@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "xml-jellyfin-jellyfin-update-attribute-values",
-        22.35,
+        22.34,
     )
 }
 

@@ -32,8 +32,8 @@ fn mapping() -> Result<()> {
     // limit is high because the mapping is specific, not because omnidiff is wrong there.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-postgres-real-logic-change",
-        124,
-        82,
+        123,
+        81,
     )
 }
 

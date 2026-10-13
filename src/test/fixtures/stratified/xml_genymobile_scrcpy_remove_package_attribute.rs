@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "xml-genymobile-scrcpy-remove-package-attribute",
-        10.16,
+        0.0,
     )
 }
 

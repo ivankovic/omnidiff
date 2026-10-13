@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // omnidiff splits into Insert+Delete what the painting calls one Update.
-    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-small-change-2", 5.62)
+    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-small-change-2", 5.17)
 }
 
 #[test]

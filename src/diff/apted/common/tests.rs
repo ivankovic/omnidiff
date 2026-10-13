@@ -2222,3 +2222,110 @@ fn the_name_guard_keeps_a_named_entry_with_its_own_name_when_one_is_on_offer() {
         "a rename with no same-named alternative stays open"
     );
 }
+
+/// `lua-neovim-neovim-if-flips-two-branches`: two branches of an if-chain swap places, each
+/// unchanged. The first sits bare in `if_statement`, the second in `elseif_statement`.
+#[test]
+fn prematch_identical_if_clauses_follows_swapped_branches() {
+    let before = Code::from_string(
+        "function f()\n  if opts.loclist then\n    setloc(list)\n    lopen()\n  \
+         elseif opts.on_list then\n    on_list(list)\n  else\n    setq(list)\n  end\nend\n",
+        &Language::LUA,
+    );
+    let after = Code::from_string(
+        "function f()\n  if opts.on_list then\n    on_list(list)\n  \
+         elseif opts.loclist then\n    setloc(list)\n    lopen()\n  else\n    setq(list)\n  end\nend\n",
+        &Language::LUA,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    // The `block` whose first leaf is `callee`.
+    let block_calling = |meta: &ASTMetadata, callee: &str| -> usize {
+        let first_leaf = |mut id: usize| {
+            while let Some(&child) = meta.node_info[&id].children.first() {
+                id = child;
+            }
+            meta.node_info[&id].text.clone()
+        };
+        *meta
+            .node_info
+            .iter()
+            .find(|(id, info)| info.kind == "block" && first_leaf(**id) == callee)
+            .unwrap()
+            .0
+    };
+    let root = |code: &Code| code.ast.as_ref().unwrap().root_node().id();
+
+    let mut diff = ASTDiff::default();
+    prematch_identical_if_clauses(
+        root(&before),
+        root(&after),
+        &before_meta,
+        &after_meta,
+        "test",
+        &mut diff,
+    );
+
+    for callee in ["setloc", "on_list"] {
+        assert_eq!(
+            diff.before_node_map
+                .get(&block_calling(&before_meta, callee)),
+            Some(&block_calling(&after_meta, callee)),
+            "the {callee} body should follow its branch"
+        );
+    }
+}
+
+/// `python-aboutcode-org-license-expression-excellent-test-case`: a version table loses rows at
+/// the top and gains rows at the bottom. The kept rows stay paired; unit-cost APTED alone shifts
+/// every row by one.
+#[test]
+fn residual_pair_keeps_identical_data_literal_elements() {
+    let before = Code::from_string(
+        "import x\nV = \"37\", \"38\", \"39\", \"310\"\n",
+        &Language::Python,
+    );
+    let after = Code::from_string(
+        "import x\nV = \"39\", \"310\", \"311\", \"312\", \"313\"\n",
+        &Language::Python,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    // The `string` whose content is `text`.
+    let string_of = |meta: &ASTMetadata, text: &str| -> usize {
+        *meta
+            .node_info
+            .iter()
+            .find(|(_, info)| {
+                info.kind == "string"
+                    && info.children.iter().any(|c| meta.node_info[c].text == text)
+            })
+            .unwrap()
+            .0
+    };
+    let before_root = before.ast.as_ref().unwrap().root_node().id();
+    let after_root = after.ast.as_ref().unwrap().root_node().id();
+
+    let mut diff = ASTDiff::default();
+    matched(&mut diff, before_root, after_root);
+    resolve_residual_forest_via_myers_lcs(
+        &before_meta,
+        &after_meta,
+        before_root,
+        after_root,
+        "test",
+        &mut diff,
+    );
+
+    for version in ["39", "310"] {
+        assert_eq!(
+            diff.before_node_map.get(&string_of(&before_meta, version)),
+            Some(&string_of(&after_meta, version)),
+            "{version}"
+        );
+    }
+    assert_eq!(
+        diff.before_node_map.get(&string_of(&before_meta, "37")),
+        Some(&0)
+    );
+}

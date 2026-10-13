@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // A `\`-continued container holds a non-whitespace character in every gap; the
     // `own_content_span` guard in `classify_node` keeps it from being painted whole.
-    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-add-one-dict-item", 0.02)
+    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-add-one-dict-item", 0.01)
 }
 
 #[test]

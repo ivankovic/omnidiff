@@ -169,6 +169,42 @@ pub(crate) fn rescue_wrapped_trivial_entries(
     }
 }
 
+/// [`resolve_forest`] on one aligned residual pair, after
+/// [`prematch_identical_data_literal_elements`]: a residual pair is often a table edited at both
+/// ends, whose unit-cost alignment shifts every row by one.
+fn resolve_residual_pair(
+    before_id: usize,
+    after_id: usize,
+    before_meta: &ASTMetadata,
+    after_meta: &ASTMetadata,
+    cost_model: &UnitCostModel,
+    source: &'static str,
+    diff: &mut ASTDiff,
+) {
+    let pinned = prematch_identical_data_literal_elements(
+        before_id,
+        after_id,
+        before_meta,
+        after_meta,
+        source,
+        diff,
+    );
+    resolve_forest(
+        vec![before_id],
+        vec![after_id],
+        before_meta,
+        after_meta,
+        cost_model,
+        Algorithm::Apted,
+        if pinned {
+            DATA_LITERAL_ELEMENT_SOURCE
+        } else {
+            source
+        },
+        diff,
+    );
+}
+
 /// The terminal fallback (phase 6): Myers LCS over the full hashes of every maximal
 /// still-unmatched subtree root on each side, identical pairs emitted as such, then each gap
 /// between them resolved.
@@ -221,16 +257,7 @@ pub(crate) fn resolve_residual_forest_via_myers_lcs(
         if recursable {
             let cost_model = UnitCostModel::new(before_meta.language);
             for (&b, &a) in before_seg.iter().zip(after_seg.iter()) {
-                resolve_forest(
-                    vec![b],
-                    vec![a],
-                    before_meta,
-                    after_meta,
-                    &cost_model,
-                    Algorithm::Apted,
-                    source,
-                    diff,
-                );
+                resolve_residual_pair(b, a, before_meta, after_meta, &cost_model, source, diff);
             }
         } else if !before_seg.is_empty() && !after_seg.is_empty() {
             // Wrap/reparent: the count mismatch may be only trivial leaves beside a real reparent
@@ -264,16 +291,7 @@ pub(crate) fn resolve_residual_forest_via_myers_lcs(
             {
                 let cost_model = UnitCostModel::new(before_meta.language);
                 for (&b, &a) in before_substantial.iter().zip(after_substantial.iter()) {
-                    resolve_forest(
-                        vec![b],
-                        vec![a],
-                        before_meta,
-                        after_meta,
-                        &cost_model,
-                        Algorithm::Apted,
-                        source,
-                        diff,
-                    );
+                    resolve_residual_pair(b, a, before_meta, after_meta, &cost_model, source, diff);
                 }
                 rescue_wrapped_trivial_entries(
                     &before_seg,
@@ -387,13 +405,12 @@ pub(crate) fn resolve_unequal_segment_via_kind_only_anchors(
     for (bi, ai) in &pairs {
         matched_before[*bi] = true;
         matched_after[*ai] = true;
-        resolve_forest(
-            vec![before_seg[*bi]],
-            vec![after_seg[*ai]],
+        resolve_residual_pair(
+            before_seg[*bi],
+            after_seg[*ai],
             before_meta,
             after_meta,
             &cost_model,
-            Algorithm::Apted,
             source,
             diff,
         );

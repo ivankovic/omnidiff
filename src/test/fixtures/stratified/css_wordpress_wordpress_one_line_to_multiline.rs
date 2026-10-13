@@ -34,7 +34,7 @@ fn painting() -> Result<()> {
     // family, amplified by a tiny file. Recorded to stop it growing, not endorsed.
     assert_matches_human_painting_within_limit(
         "css-wordpress-wordpress-one-line-to-multiline",
-        71.60,
+        71.59,
     )
 }
 

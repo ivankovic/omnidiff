@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Ground truth anchors an ambiguous add/delete inside a value LEFT; `intra_node_update_ranges`
     // is right-anchored by construction. An expected residual, the price of that rule.
-    assert_matches_human_painting_within_limit("rust-gyulyvgc-sniffnet-rename-one-identifier", 0.05)
+    assert_matches_human_painting_within_limit("rust-gyulyvgc-sniffnet-rename-one-identifier", 0.01)
 }
 
 #[test]

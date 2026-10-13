@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // than the human's (see xml-nextcloud-android-add-few-translations).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "xml-mozilla-firefox-firefox-add-a-few-translations-and-a-few-attributes",
-        69,
-        49,
+        1,
+        1,
     )
 }
 

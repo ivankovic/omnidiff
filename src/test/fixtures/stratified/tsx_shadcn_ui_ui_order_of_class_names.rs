@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Two `ours=Update, theirs=Move` - a class-attribute reorder that omnidiff reads as a rewrite.
     // Move-vs-Update, the second-largest painting family.
-    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-order-of-class-names", 3.24)
+    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-order-of-class-names", 3.23)
 }
 
 #[test]

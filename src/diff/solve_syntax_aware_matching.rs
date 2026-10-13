@@ -51,6 +51,9 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
 /// No rejection threshold: a shared qualified name already *is* the identity signal, even for a
 /// fully rewritten body, so cost (`solve_greedy_anchor_blocks::cost_ratio`) only breaks ties within
 /// a group. Runs before positional anchoring so identity beats position.
+///
+/// The members of an accepted pair that have no name counterpart go through
+/// [`resolve_orphan_members`] before the pair's APTED call, which would otherwise pair them by slot.
 fn solve_qualified_name_groups(before: &Code, after: &Code, diff: &mut ASTDiff) {
     let before_metadata = metadata_of(before);
     let after_metadata = metadata_of(after);
@@ -144,6 +147,8 @@ fn match_qualified_name_groups(
     after_metadata: &crate::code::ASTMetadata,
     diff: &mut ASTDiff,
 ) {
+    let before_orphans = collect_orphan_members(&before_groups, &after_groups, before_metadata);
+    let after_orphans = collect_orphan_members(&after_groups, &before_groups, after_metadata);
     let before_candidates = flatten_and_sort_candidates(before_groups, before_metadata);
     let after_candidates = flatten_and_sort_candidates(after_groups, after_metadata);
 
@@ -162,9 +167,27 @@ fn match_qualified_name_groups(
         },
         None,
         |before_id, after_id, diff| {
-            // Both pre-matches only emit exact, scoped matches, so they narrow the APTED call
-            // below without changing what it would resolve.
+            resolve_orphan_members(
+                before_id,
+                after_id,
+                &before_orphans,
+                &after_orphans,
+                before_metadata,
+                after_metadata,
+                diff,
+            );
+            // The statement and local pre-matches only emit exact, scoped matches, so they narrow
+            // the APTED call below without changing what it would resolve. The if-clause one
+            // does change it: a swap is the one edit ordered APTED cannot express.
             apted::prematch_identical_statement_siblings(
+                before_id,
+                after_id,
+                before_metadata,
+                after_metadata,
+                "qualified_name",
+                diff,
+            );
+            apted::prematch_identical_if_clauses(
                 before_id,
                 after_id,
                 before_metadata,
@@ -191,6 +214,281 @@ fn match_qualified_name_groups(
             );
         },
     );
+}
+
+/// A named member that owns a body (function, method, class, impl; not a field or an import)
+/// whose `(kind, qualified name)` has no counterpart on the other side: renamed, or removed (or
+/// added) outright.
+struct OrphanMember {
+    id: usize,
+    kind: String,
+    /// The nearest enclosing candidate whose key the other side also has: two orphans are compared
+    /// only within the same scope.
+    scope: (String, String),
+    /// The name without its qualification or a Kotlin signature (`getActivities(Long)`).
+    bare_name: String,
+}
+
+/// The orphan members of one side, outermost only (an orphan inside another goes with it), in
+/// preorder. One with no enclosing matched-by-name scope is never inside an accepted pair, so it
+/// is left out.
+fn collect_orphan_members(
+    groups: &HashMap<(String, String), Vec<usize>>,
+    other_groups: &HashMap<(String, String), Vec<usize>>,
+    metadata: &crate::code::ASTMetadata,
+) -> Vec<OrphanMember> {
+    let language = metadata.language;
+    let key_of: HashMap<usize, &(String, String)> = groups
+        .iter()
+        .flat_map(|(key, ids)| ids.iter().map(move |&id| (id, key)))
+        .collect();
+    let mut orphans = Vec::new();
+    for (key, ids) in groups {
+        if other_groups.contains_key(key) {
+            continue;
+        }
+        for &id in ids {
+            let Some(info) = metadata.node_info.get(&id) else {
+                continue;
+            };
+            // A field is one line whose rename reads as an edit; a body is what APTED pairs
+            // statement by statement into unrelated code.
+            if !nodes::is_reference(&info.kind, &language)
+                || nodes::is_import_kind(&info.kind, &language)
+                || info.kind == "field_declaration"
+            {
+                continue;
+            }
+            let mut scope = None;
+            let mut node = id;
+            while let Some(&parent) = metadata.node_to_parent.get(&node) {
+                if let Some(parent_key) = key_of.get(&parent) {
+                    if other_groups.contains_key(*parent_key) {
+                        scope = Some((*parent_key).clone());
+                    }
+                    // Either the scope, or an enclosing orphan that this one goes with.
+                    break;
+                }
+                node = parent;
+            }
+            let Some(scope) = scope else {
+                continue;
+            };
+            let unqualified = key.1.rsplit("::").next().unwrap_or(&key.1);
+            let bare_name = unqualified
+                .split('(')
+                .next()
+                .unwrap_or(unqualified)
+                .to_string();
+            orphans.push(OrphanMember {
+                id,
+                kind: info.kind.clone(),
+                scope,
+                bare_name,
+            });
+        }
+    }
+    orphans.sort_by_key(|orphan| {
+        metadata
+            .node_info
+            .get(&orphan.id)
+            .map(|i| i.preorder_index)
+            .unwrap_or(usize::MAX)
+    });
+    orphans
+}
+
+/// Whether `ancestor` is a strict ancestor of `id`.
+fn is_strict_descendant(
+    mut id: usize,
+    ancestor: usize,
+    metadata: &crate::code::ASTMetadata,
+) -> bool {
+    while let Some(&parent) = metadata.node_to_parent.get(&id) {
+        if parent == ancestor {
+            return true;
+        }
+        id = parent;
+    }
+    false
+}
+
+/// The orphan-member gate, run inside an accepted name pair before its whole-pair APTED call.
+///
+/// Unit-cost APTED pairs same-shaped constructs for free (same-kind internal nodes cost nothing),
+/// so a removed method and an added one in the same slot come out paired leaf by leaf, keywords
+/// and punctuation included, though they share no name and no statement
+/// (`java-defects4j-jxpath-7-*`). Within one scope, an orphan that has same-kind orphans on the
+/// other side pairs with the one of the same bare name when that name is unique on both sides,
+/// else with its strict mutual best by [`apted::entry_similarity`] at or above
+/// [`apted::SEGMENT_MUTUAL_SIMILARITY_MIN`] (every renamed method in the ground truth scores 0.56
+/// or more; the jxpath replacements 0.25 or less), each pair through its own APTED call. The rest
+/// of those are deleted or inserted whole, which leaves them to phase 7 to move if they only
+/// moved. An orphan with no same-kind rival is left to the pair's APTED call, as before.
+#[allow(clippy::too_many_arguments)]
+fn resolve_orphan_members(
+    before_id: usize,
+    after_id: usize,
+    before_orphans: &[OrphanMember],
+    after_orphans: &[OrphanMember],
+    before_metadata: &crate::code::ASTMetadata,
+    after_metadata: &crate::code::ASTMetadata,
+    diff: &mut ASTDiff,
+) {
+    let inside = |orphans: &'_ [OrphanMember],
+                  root: usize,
+                  metadata: &crate::code::ASTMetadata,
+                  node_map: &rustc_hash::FxHashMap<usize, usize>|
+     -> Vec<usize> {
+        (0..orphans.len())
+            .filter(|&i| {
+                !node_map.contains_key(&orphans[i].id)
+                    && is_strict_descendant(orphans[i].id, root, metadata)
+            })
+            .collect()
+    };
+    let before_inside = inside(
+        before_orphans,
+        before_id,
+        before_metadata,
+        &diff.before_node_map,
+    );
+    let after_inside = inside(
+        after_orphans,
+        after_id,
+        after_metadata,
+        &diff.after_node_map,
+    );
+    // Only an orphan with a same-kind rival in its scope on the other side is the gate's business.
+    // A lone new method may be built from leftovers around it (comments, statements) that the
+    // pair's APTED call carries in (`java-defects4j-cli-13-writeablecommandlineimpl`).
+    let contested = |own: &OrphanMember, others: &[OrphanMember], indices: &[usize]| {
+        indices
+            .iter()
+            .any(|&i| others[i].scope == own.scope && others[i].kind == own.kind)
+    };
+    let before_inside: Vec<usize> = before_inside
+        .iter()
+        .copied()
+        .filter(|&bi| contested(&before_orphans[bi], after_orphans, &after_inside))
+        .collect();
+    let after_inside: Vec<usize> = after_inside
+        .iter()
+        .copied()
+        .filter(|&ai| contested(&after_orphans[ai], before_orphans, &before_inside))
+        .collect();
+    if before_inside.is_empty() && after_inside.is_empty() {
+        return;
+    }
+
+    let mut pairs: Vec<(usize, usize)> = Vec::new();
+    let mut paired_before: HashSet<usize> = HashSet::new();
+    let mut paired_after: HashSet<usize> = HashSet::new();
+    for &bi in &before_inside {
+        let b = &before_orphans[bi];
+        let same_name = |orphans: &'_ [OrphanMember], indices: &[usize], name: &str| {
+            indices
+                .iter()
+                .copied()
+                .filter(|&i| {
+                    orphans[i].scope == b.scope
+                        && orphans[i].kind == b.kind
+                        && orphans[i].bare_name == name
+                })
+                .collect::<Vec<usize>>()
+        };
+        let rivals = same_name(before_orphans, &before_inside, &b.bare_name);
+        let partners = same_name(after_orphans, &after_inside, &b.bare_name);
+        if rivals.len() == 1 && partners.len() == 1 {
+            pairs.push((bi, partners[0]));
+            paired_before.insert(bi);
+            paired_after.insert(partners[0]);
+        }
+    }
+
+    let similarity = |bi: usize, ai: usize| -> f32 {
+        let (b, a) = (&before_orphans[bi], &after_orphans[ai]);
+        if b.scope != a.scope || b.kind != a.kind {
+            return 0.0;
+        }
+        apted::entry_similarity(before_metadata, b.id, after_metadata, a.id)
+    };
+    let open_before: Vec<usize> = before_inside
+        .iter()
+        .copied()
+        .filter(|bi| !paired_before.contains(bi))
+        .collect();
+    let open_after: Vec<usize> = after_inside
+        .iter()
+        .copied()
+        .filter(|ai| !paired_after.contains(ai))
+        .collect();
+    let scores: Vec<Vec<f32>> = open_before
+        .iter()
+        .map(|&bi| open_after.iter().map(|&ai| similarity(bi, ai)).collect())
+        .collect();
+    // The single best at or above the floor; a tie disqualifies.
+    let strict_best = |values: &mut dyn Iterator<Item = f32>| -> Option<usize> {
+        let mut best: Option<(usize, f32)> = None;
+        let mut tied = false;
+        for (i, v) in values.enumerate() {
+            match best {
+                Some((_, bv)) if v > bv => {
+                    best = Some((i, v));
+                    tied = false;
+                }
+                Some((_, bv)) if v == bv => tied = true,
+                None => best = Some((i, v)),
+                _ => {}
+            }
+        }
+        match best {
+            Some((i, v)) if !tied && v >= apted::SEGMENT_MUTUAL_SIMILARITY_MIN => Some(i),
+            _ => None,
+        }
+    };
+    for (row, &bi) in open_before.iter().enumerate() {
+        let Some(col) = strict_best(&mut scores[row].iter().copied()) else {
+            continue;
+        };
+        if strict_best(&mut scores.iter().map(|r| r[col])) == Some(row) {
+            pairs.push((bi, open_after[col]));
+            paired_before.insert(bi);
+            paired_after.insert(open_after[col]);
+        }
+    }
+
+    for (bi, ai) in pairs {
+        apted::for_nodes(
+            before_metadata,
+            after_metadata,
+            vec![before_orphans[bi].id],
+            vec![after_orphans[ai].id],
+            Algorithm::Apted,
+            "qualified_name",
+            diff,
+        );
+    }
+    for &bi in &before_inside {
+        if !paired_before.contains(&bi) {
+            apted::add_delete_mappings(
+                before_orphans[bi].id,
+                before_metadata,
+                "qualified_name",
+                diff,
+            );
+        }
+    }
+    for &ai in &after_inside {
+        if !paired_after.contains(&ai) {
+            apted::add_insert_mappings(
+                after_orphans[ai].id,
+                after_metadata,
+                "qualified_name",
+                diff,
+            );
+        }
+    }
 }
 
 /// Only nodes `nodes::is_semantically_structural` names push onto the scope, so unnamed wrappers
@@ -581,6 +879,105 @@ impl Bar { fn new() -> Bar { Bar::default() } }
             bar_new_mapping.operation,
             ASTMappingOperation::MatchButNotIdentical,
             "Bar::new should be changed"
+        );
+    }
+
+    /// Runs the phase on two Java sources and returns the diff with the `method_declaration`s
+    /// named `before_name` and `after_name`.
+    fn diff_java_methods(
+        before_src: &str,
+        after_src: &str,
+        before_name: &str,
+        after_name: &str,
+    ) -> (ASTDiff, usize, usize) {
+        let before = Code::from_string(before_src, &Language::Java);
+        let after = Code::from_string(after_src, &Language::Java);
+        let node_cache = NodeCache::build(&before, &after);
+        let mut diff = ASTDiff::default();
+        solve(
+            &crate::diff::PassCtx::new(&before, &after, &node_cache),
+            &mut diff,
+        );
+        let method_named = |code: &Code, name: &str| {
+            let meta = metadata_of(code);
+            meta.node_info
+                .iter()
+                .find(|(_, info)| {
+                    info.kind == "method_declaration"
+                        && info.children.iter().any(|c| {
+                            meta.node_info
+                                .get(c)
+                                .is_some_and(|i| i.kind == "identifier" && i.text == name)
+                        })
+                })
+                .map(|(&id, _)| id)
+                .unwrap()
+        };
+        let before_method = method_named(&before, before_name);
+        let after_method = method_named(&after, after_name);
+        (diff, before_method, after_method)
+    }
+
+    /// `java-defects4j-jxpath-7-*`: a method replaced by an unrelated one in the same slot. Without
+    /// the orphan gate the class's APTED pairs the two leaf by leaf.
+    #[test]
+    fn a_replaced_method_is_deleted_whole_not_paired_by_its_slot() {
+        let before_src = "
+class GreaterThan extends Base {
+    public GreaterThan(Expression[] args) { super(args); }
+    public Object computeValue(EvalContext context) {
+        double l = InfoSetUtil.doubleValue(args[0].computeValue(context));
+        double r = InfoSetUtil.doubleValue(args[1].computeValue(context));
+        return l > r ? Boolean.TRUE : Boolean.FALSE;
+    }
+    public String getSymbol() { return \">\"; }
+}
+";
+        let after_src = "
+class GreaterThan extends Base {
+    public GreaterThan(Expression[] args) { super(args); }
+    protected boolean evaluateCompare(int compare) {
+        return compare > 0;
+    }
+    public String getSymbol() { return \">\"; }
+}
+";
+        let (diff, before_method, after_method) =
+            diff_java_methods(before_src, after_src, "computeValue", "evaluateCompare");
+        assert_eq!(diff.before_node_map.get(&before_method), Some(&0));
+        assert_eq!(diff.after_node_map.get(&after_method), Some(&0));
+    }
+
+    /// A renamed method with the same body is still one method: the gate pairs it by similarity.
+    #[test]
+    fn a_renamed_method_is_paired_by_similarity() {
+        let before_src = "
+class Counter {
+    private int base;
+    int countItems(List<String> items) {
+        int total = base;
+        for (String item : items) { total += item.length(); }
+        return total;
+    }
+    void reset() { base = 0; }
+}
+";
+        let after_src = "
+class Counter {
+    private int base;
+    int sumLengths(List<String> items) {
+        int total = base;
+        for (String item : items) { total += item.length(); }
+        return total;
+    }
+    void reset() { base = 0; }
+}
+";
+        let (diff, before_method, after_method) =
+            diff_java_methods(before_src, after_src, "countItems", "sumLengths");
+        assert_eq!(
+            diff.before_node_map.get(&before_method),
+            Some(&after_method)
         );
     }
 

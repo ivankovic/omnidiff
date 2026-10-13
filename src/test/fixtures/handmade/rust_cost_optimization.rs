@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-cost-optimization", 5.51)
+    assert_matches_human_painting_within_limit("rust-cost-optimization", 2.61)
 }
 
 #[test]

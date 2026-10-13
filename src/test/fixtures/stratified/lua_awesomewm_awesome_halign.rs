@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("lua-awesomewm-awesome-halign", 0.62)
+    assert_matches_human_painting_within_limit("lua-awesomewm-awesome-halign", 0.07)
 }
 
 #[test]

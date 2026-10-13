@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-radarr-radarr-remove-import-and-func", 0.19)
+    assert_matches_human_painting_within_limit("csharp-radarr-radarr-remove-import-and-func", 0.18)
 }
 
 #[test]
