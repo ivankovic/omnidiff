@@ -30,7 +30,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-changes-in-string", 0.58)
+    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-changes-in-string", 0.53)
 }
 
 #[test]

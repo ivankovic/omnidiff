@@ -1582,16 +1582,17 @@ fn node_kind_for_id(root: Node, node_id: usize) -> String {
     "None".to_string()
 }
 
-/// Pushes a mismatch for every node in `node`'s subtree (inclusive) that `node_map` does not map
+/// Pushes a mismatch for every node in `node`'s subtree (inclusive) that `diff_ast` does not map
 /// to zero. `side` is `node`'s side.
 fn check_subtree_maps_to_zero(
     node: Node,
-    node_map: &rustc_hash::FxHashMap<usize, usize>,
+    diff_ast: &ASTDiff,
     context: &str,
     mismatches: &mut Vec<Mismatch>,
     lookup_root: Node,
     side: Side,
 ) {
+    let node_map = side_node_map(diff_ast, side);
     let mut stack = vec![node];
     while let Some(n) = stack.pop() {
         match node_map.get(&n.id()) {
@@ -1603,10 +1604,11 @@ fn check_subtree_maps_to_zero(
                 };
                 mismatches.push(Mismatch {
                     message: format!(
-                        "{}: descendant node '{}' was expected to be removed (mapped to 0), but was mapped to {}",
+                        "{}: descendant node '{}' was expected to be removed (mapped to 0), but was mapped to {}{}",
                         context,
                         n.kind(),
-                        mapped_kind
+                        mapped_kind,
+                        actual_mapping_info_on(diff_ast, side, n.id(), other.copied())
                     ),
                     node_id: n.id(),
                     side,
@@ -1635,18 +1637,19 @@ fn subtree_ids(node: Node) -> std::collections::HashSet<usize> {
     ids
 }
 
-/// Pushes a mismatch for every node in `subtree_root`'s subtree (inclusive) whose counterpart via
-/// `node_map` is not in `counterpart_ids` - one half of [`check_subtree_maps_within`].
+/// Pushes a mismatch for every node in `subtree_root`'s subtree (inclusive) whose counterpart in
+/// `diff_ast` is not in `counterpart_ids` - one half of [`check_subtree_maps_within`].
 /// `counterpart_lookup_root` is only for describing the wrongly-mapped-to node.
 fn check_subtree_closed_within(
     subtree_root: Node,
-    node_map: &rustc_hash::FxHashMap<usize, usize>,
+    diff_ast: &ASTDiff,
     counterpart_ids: &std::collections::HashSet<usize>,
     counterpart_lookup_root: Node,
     context: &str,
     mismatches: &mut Vec<Mismatch>,
     side: Side,
 ) {
+    let node_map = side_node_map(diff_ast, side);
     let mut stack = vec![subtree_root];
     while let Some(n) = stack.pop() {
         match node_map.get(&n.id()) {
@@ -1658,10 +1661,11 @@ fn check_subtree_closed_within(
                 };
                 mismatches.push(Mismatch {
                     message: format!(
-                        "{}: descendant node '{}' was expected to map within the matched pair's counterpart subtree, but was mapped to {}",
+                        "{}: descendant node '{}' was expected to map within the matched pair's counterpart subtree, but was mapped to {}{}",
                         context,
                         n.kind(),
-                        mapped_kind
+                        mapped_kind,
+                        actual_mapping_info_on(diff_ast, side, n.id(), other.copied())
                     ),
                     node_id: n.id(),
                     side,
@@ -1679,12 +1683,10 @@ fn check_subtree_closed_within(
 /// Pushes a mismatch for every node in either subtree that is not mapped into the other subtree:
 /// the two form a *closed* pairing. For a [`MultiMapGroup`] with `with_children`, where which pair
 /// matched is only known after the fact, so a closure property replaces fixed expected ids.
-#[allow(clippy::too_many_arguments)]
 fn check_subtree_maps_within(
     before_node: Node,
     after_node: Node,
-    before_node_map: &rustc_hash::FxHashMap<usize, usize>,
-    after_node_map: &rustc_hash::FxHashMap<usize, usize>,
+    diff_ast: &ASTDiff,
     before_root: Node,
     after_root: Node,
     context: &str,
@@ -1694,7 +1696,7 @@ fn check_subtree_maps_within(
     let after_ids = subtree_ids(after_node);
     check_subtree_closed_within(
         before_node,
-        before_node_map,
+        diff_ast,
         &after_ids,
         after_root,
         context,
@@ -1703,7 +1705,7 @@ fn check_subtree_maps_within(
     );
     check_subtree_closed_within(
         after_node,
-        after_node_map,
+        diff_ast,
         &before_ids,
         before_root,
         context,
@@ -1740,6 +1742,27 @@ fn actual_mapping_info_after(
     match diff_ast.mapping.get(&(partner, after_id)) {
         Some(m) => format!(" (op {:?}, reason {:?})", m.operation, m.reason),
         None => String::new(),
+    }
+}
+
+/// `actual_mapping_info` or `actual_mapping_info_after`, by the side `node_id` is on.
+fn actual_mapping_info_on(
+    diff_ast: &ASTDiff,
+    side: Side,
+    node_id: usize,
+    actual_partner: Option<usize>,
+) -> String {
+    match side {
+        Side::Before => actual_mapping_info(diff_ast, node_id, actual_partner),
+        Side::After => actual_mapping_info_after(diff_ast, node_id, actual_partner),
+    }
+}
+
+/// `diff_ast`'s node map for `side`: node id to partner id, 0 for deleted/inserted.
+fn side_node_map(diff_ast: &ASTDiff, side: Side) -> &rustc_hash::FxHashMap<usize, usize> {
+    match side {
+        Side::Before => &diff_ast.before_node_map,
+        Side::After => &diff_ast.after_node_map,
     }
 }
 
@@ -2154,8 +2177,13 @@ fn check_entry<'b, 'a>(
                 Some(actual_mapping) if actual_mapping.operation == expected_op => {}
                 Some(actual_mapping) => mismatches.push(Mismatch {
                     message: format!(
-                        "{:?} {:?} <-> {:?}: expected omnidiff operation {:?}, but it chose {:?}",
-                        entry.operation, before_path, after_path, expected_op, actual_mapping.operation
+                        "{:?} {:?} <-> {:?}: expected omnidiff operation {:?}, but it chose {:?}{}",
+                        entry.operation,
+                        before_path,
+                        after_path,
+                        expected_op,
+                        actual_mapping.operation,
+                        actual_mapping_info(diff_ast, before_node.id(), Some(after_node.id()))
                     ),
                     node_id: before_node.id(),
                     side: Side::Before,
@@ -2182,7 +2210,7 @@ fn check_entry<'b, 'a>(
             if entry.operation == HumanOperation::DeleteWithChildren {
                 check_subtree_maps_to_zero(
                     before_node,
-                    &diff_ast.before_node_map,
+                    diff_ast,
                     &format!("Delete (with children) {:?}", before_path),
                     mismatches,
                     after_root,
@@ -2221,7 +2249,7 @@ fn check_entry<'b, 'a>(
             if entry.operation == HumanOperation::InsertWithChildren {
                 check_subtree_maps_to_zero(
                     after_node,
-                    &diff_ast.after_node_map,
+                    diff_ast,
                     &format!("Insert (with children) {:?}", after_path),
                     mismatches,
                     before_root,
@@ -2459,10 +2487,11 @@ fn check_group_entry<'b, 'a>(
             Some(actual_mapping) if accepted_ops.contains(&actual_mapping.operation) => {}
             Some(actual_mapping) => mismatches.push(Mismatch {
                 message: format!(
-                    "{context}: pair '{}' <-> '{}' expected omnidiff operation {accepted_ops:?}, but it chose {:?}",
+                    "{context}: pair '{}' <-> '{}' expected omnidiff operation {accepted_ops:?}, but it chose {:?}{}",
                     b.kind(),
                     a.kind(),
-                    actual_mapping.operation
+                    actual_mapping.operation,
+                    actual_mapping_info(diff_ast, b.id(), Some(a.id()))
                 ),
                 node_id: b.id(),
                 side: Side::Before,
@@ -2489,7 +2518,7 @@ fn check_group_entry<'b, 'a>(
         for &b in &before_nodes {
             check_subtree_closed_within(
                 b,
-                &diff_ast.before_node_map,
+                diff_ast,
                 &after_union,
                 after_root,
                 &context,
@@ -2500,7 +2529,7 @@ fn check_group_entry<'b, 'a>(
         for &a in &after_nodes {
             check_subtree_closed_within(
                 a,
-                &diff_ast.after_node_map,
+                diff_ast,
                 &before_union,
                 before_root,
                 &context,
@@ -2513,8 +2542,7 @@ fn check_group_entry<'b, 'a>(
             check_subtree_maps_within(
                 b,
                 a,
-                &diff_ast.before_node_map,
-                &diff_ast.after_node_map,
+                diff_ast,
                 before_root,
                 after_root,
                 &context,
@@ -2524,7 +2552,7 @@ fn check_group_entry<'b, 'a>(
         for &b in &leftover_before {
             check_subtree_maps_to_zero(
                 b,
-                &diff_ast.before_node_map,
+                diff_ast,
                 &format!("{context} (leftover delete)"),
                 mismatches,
                 after_root,
@@ -2534,7 +2562,7 @@ fn check_group_entry<'b, 'a>(
         for &a in &leftover_after {
             check_subtree_maps_to_zero(
                 a,
-                &diff_ast.after_node_map,
+                diff_ast,
                 &format!("{context} (leftover insert)"),
                 mismatches,
                 before_root,

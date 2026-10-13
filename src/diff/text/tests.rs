@@ -2453,10 +2453,10 @@ fn a_phrase_added_inside_a_string_renders_as_an_insert_not_an_update() {
     );
 }
 
-/// `IntBox` -> `Box` leaves an empty middle too, but an identifier is a name: painters call it a
-/// rename, not the deletion of `Int`.
+/// `IntBox` -> `Box` leaves an empty middle too. `FULL` paints a renamed identifier whole
+/// (`whole_identifier_updates`), so it is no deletion of `Int` there.
 #[test]
-fn a_renamed_identifier_stays_an_update_even_though_one_side_is_empty() {
+fn a_renamed_identifier_stays_an_update_under_full() {
     let before = Code::from_string("struct IntBox;\n", &crate::code::Language::Rust);
     let after = Code::from_string("struct Box;\n", &crate::code::Language::Rust);
     let diff = crate::diff::diff_code(&before, &after);
@@ -2472,8 +2472,83 @@ fn a_renamed_identifier_stays_an_update_even_though_one_side_is_empty() {
         .collect();
     assert!(
         !ops.contains(&TextOperation::Delete),
-        "a rename is not a deletion of the dropped prefix: {ops:?}"
+        "FULL paints a rename whole, not a deletion of the dropped prefix: {ops:?}"
     );
+}
+
+/// Under `MINIMAL` the same `IntBox` -> `Box` is narrowed, and its middle stays an `Update`: a
+/// renamed name is no deletion of `Int`. A non-name losing a part is a deletion: the CSS property
+/// `-webkit-transition` becoming `transition` (`css-wordpress-wordpress-remove-webkit-prefix`).
+#[test]
+fn a_part_dropped_from_a_non_name_is_a_delete_but_a_name_keeps_its_update() {
+    let painted = |before: &str, after: &str, language| {
+        let before = Code::from_string(before, &language);
+        let after = Code::from_string(after, &language);
+        let diff = crate::diff::diff_code(&before, &after);
+        let ast = diff.ast.as_ref().expect("an AST diff");
+        let node_cache = NodeCache::build(&before, &after);
+        TextDiff::from_with_options(&before, &after, ast, &node_cache, RenderOptions::MINIMAL)
+            .all(0)
+            .iter()
+            .filter(|r| !r.source.is_empty() && r.operation != TextOperation::Identical)
+            .map(|r| {
+                (
+                    r.operation.clone(),
+                    r.source.start_column,
+                    r.source.end_column,
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(
+        painted(
+            "struct IntBox;\n",
+            "struct Box;\n",
+            crate::code::Language::Rust
+        ),
+        vec![(TextOperation::Update, 7, 10)]
+    );
+    assert_eq!(
+        painted(
+            "a {\n  -webkit-transition: none;\n}\n",
+            "a {\n  transition: none;\n}\n",
+            crate::code::Language::CSS
+        ),
+        vec![(TextOperation::Delete, 2, 10)]
+    );
+}
+
+/// A changed operator is a renamed name too, so `%%` -> `%` stays one `Update`
+/// (`scala-ymnk-jzlib-interesting-probably-has-no-optimal-solution`); content never is.
+#[test]
+fn renamed_names_are_identifiers_and_operators_outside_content() {
+    assert!(is_renamed_name("identifier", "IntBox", "Box"));
+    assert!(is_renamed_name("operator", "%%", "%"));
+    assert!(!is_renamed_name(
+        "property_name",
+        "-webkit-transition",
+        "transition"
+    ));
+    assert!(!is_renamed_name("string_content", "Fetch", "FetchAll"));
+}
+
+/// The common suffix is capped so it never overlaps the prefix, which leaves a node in a repeated
+/// tail outside it: in `f(a)` -> `f(a, a)` the kept `a` is the after row's second one. Its tail
+/// from the node on, `a)`, is the same on both rows, so under `MINIMAL` the edit is beside it.
+#[test]
+fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
+    let untouched = |read_rows_carrying_several_edits| {
+        node_untouched_on_its_row(
+            "f(a)\n",
+            "f(a, a)\n",
+            &TextRange::new(0, 2, 0, 3),
+            &TextRange::new(0, 5, 0, 6),
+            read_rows_carrying_several_edits,
+        )
+    };
+    assert!(untouched(true));
+    assert!(!untouched(false));
 }
 
 /// A row carrying two edits, one on each side of an untouched node (`cpp-add-const-correctness`).

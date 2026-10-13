@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-paddlepaddle-paddleocr-insert-inside-a-string",
-        2.02,
+        0.0,
     )
 }
 
