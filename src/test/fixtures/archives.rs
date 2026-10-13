@@ -52,6 +52,10 @@ mod gzip_x_janlelis_unicode_emoji_c25f9805_emoji_marshal;
 #[cfg(test)]
 mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
 #[cfg(test)]
+mod gzip_x_pre_commit_pre_commit_fc33a62f_rbenv_tar;
+#[cfg(test)]
+mod gzip_x_pre_commit_pre_commit_fc33a62f_ruby_build_tar;
+#[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_1;
 #[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;

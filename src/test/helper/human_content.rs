@@ -29,6 +29,12 @@
 //! one by one, a **pair verdict** stands in for them, and a fixture may carry both. A fixture is
 //! complete when it has a pair verdict, or a verdict for every changed member.
 //!
+//! **A member can be paired by hand**: a file one side removed and the other added that a human
+//! says is the same file, moved or renamed (`renames`, before's key to after's). The engine matches
+//! members by key alone (`diff::content::container`), so it sees one removed and one added; the
+//! human judges the pair as a changed member, under after's key, and the engine's silence on that
+//! key is the disagreement the stub records.
+//!
 //! **Or none: "can't judge"**, with a note, where OmniDiff draws a side wrong or not at all. That
 //! records a defect rather than a verdict on a picture nobody can trust, and is not compared with
 //! the engine.
@@ -38,6 +44,7 @@
 //!
 //! ```json
 //! { "verdict": "edited", "members": { "U+0041 A": "redrawn", "U+00E9 é": "cant_judge" } }
+//! { "renames": { "ls.1.gz": "man1/ls.1.gz" }, "members": { "man1/ls.1.gz": "invisible" } }
 //! ```
 //!
 //! The fixtures live outside `src/test/data/diffs/`, the code corpus, because everything that
@@ -143,7 +150,10 @@ pub struct HumanContent {
     /// The verdict on the whole pair, when one was given: a picture's only one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verdict: Option<Judgement>,
-    /// A verdict per changed member, by key.
+    /// Members the human paired: a removed member's key, to the added member's it became.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub renames: BTreeMap<String, String>,
+    /// A verdict per changed member, by key; a paired one's by after's key.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub members: BTreeMap<String, Judgement>,
     /// How many changed members had no verdict when this was saved, so a picker can tell a
@@ -374,7 +384,7 @@ mod tests {
                 ),
                 ("gone".to_string(), judged("edited")),
             ]),
-            unjudged: 0,
+            ..HumanContent::default()
         };
         assert_eq!(
             mismatches(&human, &engine()),
@@ -416,7 +426,7 @@ mod tests {
                     Judgement::CantJudge("blank glyph".to_string()),
                 ),
             ]),
-            unjudged: 0,
+            ..HumanContent::default()
         };
         let json = serde_json::to_string(&human).unwrap();
         assert_eq!(
@@ -425,6 +435,21 @@ mod tests {
         );
         assert_eq!(serde_json::from_str::<HumanContent>(&json).unwrap(), human);
         assert!(serde_json::from_str::<HumanContent>(r#"{"verdict":"content_change"}"#).is_err());
+
+        let renamed = HumanContent {
+            renames: BTreeMap::from([("a".to_string(), "dir/a".to_string())]),
+            members: BTreeMap::from([("dir/a".to_string(), judged("invisible"))]),
+            ..HumanContent::default()
+        };
+        let json = serde_json::to_string(&renamed).unwrap();
+        assert_eq!(
+            json,
+            r#"{"renames":{"a":"dir/a"},"members":{"dir/a":"invisible"}}"#
+        );
+        assert_eq!(
+            serde_json::from_str::<HumanContent>(&json).unwrap(),
+            renamed
+        );
         assert!(serde_json::from_str::<HumanContent>(r#"{"verdict":"edited+wobbly"}"#).is_err());
     }
 }
