@@ -267,8 +267,8 @@ struct TextSpan<'a> {
 }
 
 /// Whether a node's own text is content a reader reads (a literal or comment) rather than a name
-/// or grammar glue. Adding a phrase to a docstring is an insertion; `IntBox` becoming `Box` is a
-/// rename and `<=` becoming `<` a changed operator, which painters call updated.
+/// or grammar glue. Content is never a renamed name ([`is_renamed_name`]): `Fetch` becoming
+/// `FetchAll` in a docstring is an insertion even though both read like identifiers.
 fn is_content_node(kind: &str) -> bool {
     // Not folded into `nodes::is_literal_kind`: that list also drives the APTED rename cost and
     // `code::hash`, and widening it for a rendering choice would change matching too. Python's
@@ -327,6 +327,16 @@ fn is_renamed_identifier(kind: &str, a: &str, b: &str) -> bool {
     !is_content_node(kind) && kind != "text" && identifier(a) && identifier(b)
 }
 
+/// Whether a changed node of `kind` reading `a` and `b` is a renamed name: a renamed identifier
+/// ([`is_renamed_identifier`]) or a changed operator, both sides nothing but punctuation (`%%` ->
+/// `%`). [`intra_node_update_ranges`] keeps its changed middle an `Update` even when one side of it
+/// is empty: painters read `IntBox` -> `Box` as a rename, not as `Int` deleted.
+fn is_renamed_name(kind: &str, a: &str, b: &str) -> bool {
+    let operator = |text: &str| !text.is_empty() && text.chars().all(|c| c.is_ascii_punctuation());
+    is_renamed_identifier(kind, a, b)
+        || (!is_content_node(kind) && kind != "text" && operator(a) && operator(b))
+}
+
 /// Whether an affix split of `a` against `b` would cut through one of [`WHOLE_TOKENS`]: `<=` to
 /// `<` is a different comparison, not a kept `<`.
 fn splits_a_whole_token(a: &str, b: &str) -> bool {
@@ -339,9 +349,14 @@ fn splits_a_whole_token(a: &str, b: &str) -> bool {
 /// `Identical` common suffix, so a small edit inside a long string or name paints only what
 /// changed. One whole-span `Update` when there is no common affix or `whole_pair_updates` is set.
 ///
-/// When one side's middle is empty on a content node, nothing was replaced: the middle is an
-/// `Insert`/`Delete`, chosen by `source_is_before`, since the texts alone cannot say which. On a
-/// name or operator it stays `Update`.
+/// When one side's middle is empty, nothing was replaced: the middle is an `Insert`/`Delete`,
+/// chosen by `source_is_before`, since the texts alone cannot say which. That holds for every node
+/// but a renamed name (`renamed_name`, see [`is_renamed_name`]), whose middle stays `Update`. The
+/// line is drawn by the text, not the node kind: a number, a preprocessor argument, a markup value
+/// or a path gaining a part is an insertion, as in a string or comment (`xml-godotengine-godot-
+/// update-element-value`). The painted corpus is split on names: `IDecisionEngineSpecification`
+/// gaining `Download` is one `Update` in `csharp-sonarr-sonarr-many-updates-with-one-insert` and an
+/// insertion in `csharp-sonarr-sonarr-use-a-different-class`, so a name keeps the reading it had.
 ///
 /// Only ever one middle: the painted corpus never marks two separate runs inside one updated node.
 ///
@@ -357,7 +372,7 @@ fn intra_node_update_ranges(
     source: TextSpan,
     destination: TextSpan,
     source_is_before: bool,
-    content_node: bool,
+    renamed_name: bool,
     whole_pair_updates: bool,
 ) -> Vec<RangeMatch> {
     let prefix_len = common_prefix_byte_len(source.text, destination.text);
@@ -392,7 +407,7 @@ fn intra_node_update_ranges(
     // `source` is the painted side: "no text here, text there" is an insertion seen from before
     // and a deletion seen from after.
     let middle_operation = match (source_mid_len, destination_mid_len, source_is_before) {
-        _ if !content_node => TextOperation::Update,
+        _ if renamed_name => TextOperation::Update,
         (0, _, true) | (_, 0, false) => TextOperation::Insert,
         (0, _, false) | (_, 0, true) => TextOperation::Delete,
         _ => TextOperation::Update,
@@ -818,7 +833,7 @@ impl RangeWalk<'_> {
                 columns: &self.destination_columns,
             },
             self.source_is_before,
-            is_content_node(kind),
+            is_renamed_name(kind, source_text, destination_text),
             self.options.whole_pair_updates
                 || splits_a_whole_token(source_text, destination_text)
                 || (self.options.whole_identifier_updates
@@ -1002,7 +1017,7 @@ impl RangeWalk<'_> {
                 columns: &self.destination_columns,
             },
             self.source_is_before,
-            is_content_node(node.kind()),
+            is_renamed_name(node.kind(), source_text, destination_text),
             self.options.whole_pair_updates
                 || splits_a_whole_token(source_text, destination_text)
                 || (self.options.whole_identifier_updates
@@ -1030,7 +1045,11 @@ impl RangeWalk<'_> {
                         columns: &self.destination_columns,
                     },
                     self.source_is_before,
-                    is_content_node(node.kind()),
+                    is_renamed_name(
+                        node.kind(),
+                        &self.source.contents[s_from..s_to],
+                        &self.destination.contents[d_from..d_to],
+                    ),
                     self.options.whole_pair_updates
                         || splits_a_whole_token(
                             &self.source.contents[s_from..s_to],
