@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-insert-only", 0.17)
+    assert_matches_human_painting_within_limit("vimscript-neovim-neovim-insert-only", 0.0)
 }
 
 #[test]

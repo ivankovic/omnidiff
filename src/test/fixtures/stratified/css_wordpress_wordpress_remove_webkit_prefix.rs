@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-wordpress-wordpress-remove-webkit-prefix", 0.21)
+    assert_matches_human_painting_within_limit("css-wordpress-wordpress-remove-webkit-prefix", 0.0)
 }
 
 #[test]
