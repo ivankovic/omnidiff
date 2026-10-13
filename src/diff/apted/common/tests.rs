@@ -2275,3 +2275,57 @@ fn prematch_identical_if_clauses_follows_swapped_branches() {
         );
     }
 }
+
+/// `python-aboutcode-org-license-expression-excellent-test-case`: a version table loses rows at
+/// the top and gains rows at the bottom. The kept rows stay paired; unit-cost APTED alone shifts
+/// every row by one.
+#[test]
+fn residual_pair_keeps_identical_data_literal_elements() {
+    let before = Code::from_string(
+        "import x\nV = \"37\", \"38\", \"39\", \"310\"\n",
+        &Language::Python,
+    );
+    let after = Code::from_string(
+        "import x\nV = \"39\", \"310\", \"311\", \"312\", \"313\"\n",
+        &Language::Python,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    // The `string` whose content is `text`.
+    let string_of = |meta: &ASTMetadata, text: &str| -> usize {
+        *meta
+            .node_info
+            .iter()
+            .find(|(_, info)| {
+                info.kind == "string"
+                    && info.children.iter().any(|c| meta.node_info[c].text == text)
+            })
+            .unwrap()
+            .0
+    };
+    let before_root = before.ast.as_ref().unwrap().root_node().id();
+    let after_root = after.ast.as_ref().unwrap().root_node().id();
+
+    let mut diff = ASTDiff::default();
+    matched(&mut diff, before_root, after_root);
+    resolve_residual_forest_via_myers_lcs(
+        &before_meta,
+        &after_meta,
+        before_root,
+        after_root,
+        "test",
+        &mut diff,
+    );
+
+    for version in ["39", "310"] {
+        assert_eq!(
+            diff.before_node_map.get(&string_of(&before_meta, version)),
+            Some(&string_of(&after_meta, version)),
+            "{version}"
+        );
+    }
+    assert_eq!(
+        diff.before_node_map.get(&string_of(&before_meta, "37")),
+        Some(&0)
+    );
+}

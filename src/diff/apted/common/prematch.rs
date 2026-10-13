@@ -417,3 +417,134 @@ pub(crate) fn prematch_identical_if_clauses(
         }
     }
 }
+
+/// `source` of the APTED call that follows [`prematch_identical_data_literal_elements`]; listed in
+/// `PREMATCH_SIBLING_ORDER_SOURCES`, so nothing pairs across the pinned elements.
+pub(crate) const DATA_LITERAL_ELEMENT_SOURCE: &str = "data_literal_elements";
+
+/// Literal containers whose elements are values in a list or table: an element is identified by
+/// its content, not its index. Bash's `list` is a command list (`a && b`), not data.
+fn is_data_literal_container(kind: &str, language: &Language) -> bool {
+    if *language == Language::ShellScript {
+        return kind == "array";
+    }
+    matches!(
+        kind,
+        "tuple"
+            | "list"
+            | "dictionary"
+            | "set"
+            | "expression_list"
+            | "array"
+            | "object"
+            | "array_expression"
+            | "tuple_expression"
+            | "literal_value"
+            | "initializer_list"
+            | "hash"
+    )
+}
+
+/// The widest data-literal container at the shallowest depth under `root_id` that has one, if it
+/// holds at least half of `root_id`'s nodes: the pair is a table, not code that mentions one.
+fn outermost_data_literal(root_id: usize, meta: &ASTMetadata) -> Option<usize> {
+    let size = |id: usize| meta.node_to_subtree_size.get(&id).copied().unwrap_or(0);
+    let mut level = vec![root_id];
+    while !level.is_empty() {
+        let mut best: Option<(usize, usize)> = None;
+        let mut next_level = Vec::new();
+        for id in level {
+            let Some(info) = meta.node_info.get(&id) else {
+                continue;
+            };
+            if info.is_named && is_data_literal_container(&info.kind, &meta.language) {
+                if best.is_none_or(|(count, _)| info.children.len() > count) {
+                    best = Some((info.children.len(), id));
+                }
+            } else {
+                next_level.extend(info.children.iter().copied());
+            }
+        }
+        if let Some((_, id)) = best {
+            return (size(id) * 2 >= size(root_id)).then_some(id);
+        }
+        level = next_level;
+    }
+    None
+}
+
+/// Pre-matches the byte-identical elements of the two sides' outermost data literals of the same
+/// kind (Myers over full hashes), so that a table which lost rows at the top and gained rows at the
+/// bottom keeps its unchanged rows (`python-aboutcode-org-license-expression-excellent-test-case`:
+/// `"37", "38", "39", "310"` -> `"39", "310", "311", "312", "313"`). Unit-cost APTED prefers the
+/// shift there, pairing `"37"` with `"39"` and so on, because the quotes and separators match.
+///
+/// Single-node elements (separators, bare numbers) are left out: they are not evidence of which
+/// row is which. Returns whether anything was pinned; the caller then runs APTED under
+/// [`DATA_LITERAL_ELEMENT_SOURCE`].
+pub(crate) fn prematch_identical_data_literal_elements(
+    before_id: usize,
+    after_id: usize,
+    before_meta: &ASTMetadata,
+    after_meta: &ASTMetadata,
+    source: &'static str,
+    diff: &mut ASTDiff,
+) -> bool {
+    let (Some(before_container), Some(after_container)) = (
+        outermost_data_literal(before_id, before_meta),
+        outermost_data_literal(after_id, after_meta),
+    ) else {
+        return false;
+    };
+    if before_meta
+        .node_info
+        .get(&before_container)
+        .map(|i| &i.kind)
+        != after_meta.node_info.get(&after_container).map(|i| &i.kind)
+    {
+        return false;
+    }
+    let elements = |container: usize,
+                    meta: &ASTMetadata,
+                    node_map: &rustc_hash::FxHashMap<usize, usize>|
+     -> Vec<usize> {
+        meta.node_info
+            .get(&container)
+            .map(|info| {
+                info.children
+                    .iter()
+                    .copied()
+                    .filter(|id| {
+                        !node_map.contains_key(id)
+                            && meta.node_to_subtree_size.get(id).copied().unwrap_or(0) > 1
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let before_elements = elements(before_container, before_meta, &diff.before_node_map);
+    let after_elements = elements(after_container, after_meta, &diff.after_node_map);
+    let hashes = |ids: &[usize], meta: &ASTMetadata| -> Vec<u64> {
+        ids.iter()
+            .map(|id| meta.node_to_full_hash.get(id).copied().unwrap_or(0))
+            .collect()
+    };
+    let Some(pairs) = myers_lcs(
+        &hashes(&before_elements, before_meta),
+        &hashes(&after_elements, after_meta),
+        FLAT_MAX_EDIT,
+    ) else {
+        return false;
+    };
+    for &(bi, ai) in &pairs {
+        emit_identical_subtree(
+            before_elements[bi],
+            after_elements[ai],
+            before_meta,
+            after_meta,
+            source,
+            diff,
+        );
+    }
+    !pairs.is_empty()
+}
