@@ -420,6 +420,10 @@ mod css_wordpress_wordpress_change_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_go_to_one_line;
 #[cfg(test)]
+mod css_wordpress_wordpress_one_line_to_multi_line;
+#[cfg(test)]
+mod css_wordpress_wordpress_one_line_to_multi_line_2;
+#[cfg(test)]
 mod css_wordpress_wordpress_one_line_to_multiline;
 #[cfg(test)]
 mod css_wordpress_wordpress_only_add;
@@ -696,11 +700,15 @@ mod javascript_vercel_next_add_doccomment;
 #[cfg(test)]
 mod json_apache_superset_js_to_ts;
 #[cfg(test)]
+mod json_excalidraw_excalidraw_version;
+#[cfg(test)]
 mod json_gorhill_ublock_version;
 #[cfg(test)]
 mod json_grafana_grafana_add_pair;
 #[cfg(test)]
 mod json_immich_app_immich_small_change;
+#[cfg(test)]
+mod json_jesseduffield_lazygit_delete_only;
 #[cfg(test)]
 mod json_lidarr_lidarr_remove_one_line;
 #[cfg(test)]
@@ -710,11 +718,23 @@ mod json_microsoft_playwright_version_update;
 #[cfg(test)]
 mod json_mui_material_ui_version;
 #[cfg(test)]
+mod json_mui_material_ui_version_2;
+#[cfg(test)]
+mod json_mui_material_ui_version_3;
+#[cfg(test)]
+mod json_mui_material_ui_version_4;
+#[cfg(test)]
 mod json_puppeteer_puppeteer_update_version;
+#[cfg(test)]
+mod json_puppeteer_puppeteer_version;
 #[cfg(test)]
 mod json_puppeteer_puppeteer_version_update;
 #[cfg(test)]
 mod json_puppeteer_puppeteer_version_update_2;
+#[cfg(test)]
+mod json_radarr_radarr_update_only;
+#[cfg(test)]
+mod json_radarr_radarr_update_pair_key;
 #[cfg(test)]
 mod json_shadcn_ui_ui_add_one_line;
 #[cfg(test)]

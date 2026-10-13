@@ -1,0 +1,13 @@
+{
+  "verdict": "edited+changed_files",
+  "members": {
+    "M_CLI2.3m_cli2.gz": "edited+changed_files",
+    "get_args.3m_cli2.gz": "edited+changed_files",
+    "get_args_fixed_length.3m_cli2.gz": "edited+changed_files",
+    "get_args_fixed_size.3m_cli2.gz": "edited+changed_files",
+    "get_subcommand.3m_cli2.gz": "edited+changed_files",
+    "set_args.3m_cli2.gz": "edited+changed_files",
+    "set_mode.3m_cli2.gz": "edited+changed_files",
+    "specified.3m_cli2.gz": "edited+changed_files"
+  }
+}

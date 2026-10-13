@@ -60,6 +60,10 @@ mod gzip_x_rvaiya_keyd_774cb10d_keyd_1;
 #[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;
 #[cfg(test)]
+mod gzip_x_urbanjost_m_cli2_82437d30_manpages;
+#[cfg(test)]
+mod gzip_x_urbanjost_m_cli2_f80b4c28_manpages;
+#[cfg(test)]
 mod xz_x_mx_linux_exit_options_3992ee16_exit_options_25_7_tar;
 #[cfg(test)]
 mod xz_x_tx00100xt_serioussam_mods_9af03399_patch_1_05_fe_tar;
