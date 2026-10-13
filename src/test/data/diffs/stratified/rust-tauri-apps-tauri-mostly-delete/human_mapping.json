@@ -1,0 +1,5812 @@
+{
+  "entries": [
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:3"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_pattern:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "::1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "::1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        "generic_type:1",
+        "type_arguments:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "generic_type:1",
+        "type_arguments:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:10",
+        "tuple_type:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:10"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:11"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:11"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "):1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:3"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:3",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:8"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "tuple_expression:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:1"
+      ],
+      "after_path": [
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:2"
+      ],
+      "after_path": [
+        "line_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:3"
+      ],
+      "after_path": [
+        "line_comment:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:1"
+      ],
+      "after_path": [
+        "use_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:2"
+      ],
+      "after_path": [
+        "use_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:3"
+      ],
+      "after_path": [
+        "use_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:4"
+      ],
+      "after_path": [
+        "use_declaration:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:5"
+      ],
+      "after_path": [
+        "use_declaration:5"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:6"
+      ],
+      "after_path": [
+        "use_declaration:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "use:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "use:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "crate:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "crate:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        ":::1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:2"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:2"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        ":::1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        ",:2"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:4"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "identifier:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:3",
+        "use_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:3"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:4"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:4"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "scoped_use_list:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:5"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:6"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:7"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:3"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:8"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:8"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:4"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:9"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:5"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:10"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:6"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:11"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        "scoped_use_list:1",
+        "use_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:6",
+        ";:1"
+      ],
+      "after_path": [
+        "use_declaration:6",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:7"
+      ],
+      "after_path": [
+        "use_declaration:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:1"
+      ],
+      "after_path": [
+        "mod_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:2"
+      ],
+      "after_path": [
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:2"
+      ],
+      "after_path": [
+        "mod_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:3"
+      ],
+      "after_path": [
+        "mod_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:4"
+      ],
+      "after_path": [
+        "mod_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:3"
+      ],
+      "after_path": [
+        "attribute_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:4"
+      ],
+      "after_path": [
+        "line_comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:1"
+      ],
+      "after_path": [
+        "struct_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:5"
+      ],
+      "after_path": [
+        "line_comment:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:6"
+      ],
+      "after_path": [
+        "line_comment:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:4"
+      ],
+      "after_path": [
+        "attribute_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:1"
+      ],
+      "after_path": [
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:7"
+      ],
+      "after_path": [
+        "line_comment:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:2"
+      ],
+      "after_path": [
+        "function_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:3"
+      ],
+      "after_path": [
+        "function_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:8"
+      ],
+      "after_path": [
+        "line_comment:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:5"
+      ],
+      "after_path": [
+        "attribute_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:2"
+      ],
+      "after_path": [
+        "struct_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:1"
+      ],
+      "after_path": [
+        "impl_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:6"
+      ],
+      "after_path": [
+        "attribute_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:3"
+      ],
+      "after_path": [
+        "struct_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:2"
+      ],
+      "after_path": [
+        "impl_item:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3"
+      ],
+      "after_path": [
+        "impl_item:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "impl:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "impl:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "type_parameters:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "type_parameters:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "generic_type:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "generic_type:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "visibility_modifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "visibility_modifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "fn:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "fn:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "(:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:8"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "attribute_item:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:9"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        "parameter:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:9"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1",
+        ",:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "->:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "->:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "line_comment:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "::1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "scoped_type_identifier:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "scoped_type_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:3",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:8"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:9"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:9"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:10"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:10"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:11"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:11"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:12"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:12"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:12"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:13"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:13"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:13"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:14"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:14"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:14"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:15"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:15"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:15"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:16"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:16"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:16"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "shorthand_field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:17"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:17"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:2"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:3"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "line_comment:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:9"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:10"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:11"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:12"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:13"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:4"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:14"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:15"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:16"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:17"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:18"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:5"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:19"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:6"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:20"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:7"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:21"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:22"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:23"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:24"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:8"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "attribute_item:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:25"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:26"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:27"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:28"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:29"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:29"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:30"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "function_item:30"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "impl_item:3",
+        "declaration_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:7"
+      ],
+      "after_path": [
+        "attribute_item:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:4"
+      ],
+      "after_path": [
+        "impl_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:8"
+      ],
+      "after_path": [
+        "attribute_item:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:5"
+      ],
+      "after_path": [
+        "mod_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:9"
+      ],
+      "after_path": [
+        "attribute_item:9"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6"
+      ],
+      "after_path": [
+        "mod_item:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "mod:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "mod:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "identifier:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "use_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:4"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:5"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:6"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:7"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:8"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:9"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "const_item:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "fn:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "fn:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "parameters:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "let:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "let:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "identifier:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "::1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "::1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "generic_type:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "generic_type:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "=:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:4"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:5"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:4"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:6"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:5"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:7"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:6"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:8"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:7"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:9"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:10"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:8"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:11"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        ",:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        ";:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "let_declaration:2",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "expression_statement:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "struct_item:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "struct_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:2"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:4"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:5"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:3"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "attribute_item:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:6"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:7"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "function_item:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "mod_item:6",
+        "declaration_list:1",
+        "}:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 24,
+              "start_column": 31,
+              "end_row": 24,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 4,
+              "end_row": 256,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 51,
+              "end_row": 256,
+              "end_column": 52
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 54,
+              "end_row": 256,
+              "end_column": 87
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 94,
+              "end_row": 256,
+              "end_column": 95
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 278,
+              "start_column": 8,
+              "end_row": 278,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 6,
+              "end_row": 733,
+              "end_column": 12
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 22,
+              "end_row": 733,
+              "end_column": 23
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 24,
+              "start_column": 31,
+              "end_row": 24,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 4,
+              "end_row": 256,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 51,
+              "end_row": 256,
+              "end_column": 52
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 54,
+              "end_row": 256,
+              "end_column": 87
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 94,
+              "end_row": 256,
+              "end_column": 95
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 278,
+              "start_column": 0,
+              "end_row": 278,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 6,
+              "end_row": 733,
+              "end_column": 12
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 22,
+              "end_row": 733,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 23,
+              "end_row": 256,
+              "end_column": 51
+            }
+          ],
+          "after": [
+            {
+              "start_row": 256,
+              "start_column": 4,
+              "end_row": 256,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 0,
+              "end_row": 256,
+              "end_column": 4
+            }
+          ],
+          "after": [
+            {
+              "start_row": 256,
+              "start_column": 0,
+              "end_row": 256,
+              "end_column": 4
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 22,
+              "end_row": 256,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 87,
+              "end_row": 256,
+              "end_column": 94
+            }
+          ],
+          "after": [
+            {
+              "start_row": 256,
+              "start_column": 33,
+              "end_row": 256,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 52,
+              "end_row": 256,
+              "end_column": 53
+            }
+          ],
+          "after": [
+            {
+              "start_row": 256,
+              "start_column": 32,
+              "end_row": 256,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 256,
+              "start_column": 53,
+              "end_row": 256,
+              "end_column": 54
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 13,
+              "end_row": 733,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 732,
+              "start_column": 6,
+              "end_row": 732,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 0,
+              "end_row": 733,
+              "end_column": 6
+            }
+          ],
+          "after": [
+            {
+              "start_row": 732,
+              "start_column": 0,
+              "end_row": 732,
+              "end_column": 6
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 733,
+              "start_column": 12,
+              "end_row": 733,
+              "end_column": 13
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

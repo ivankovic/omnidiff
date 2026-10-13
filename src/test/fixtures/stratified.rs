@@ -916,6 +916,8 @@ mod rust_gyulyvgc_sniffnet_add_mod_2;
 #[cfg(test)]
 mod rust_gyulyvgc_sniffnet_add_mod_3;
 #[cfg(test)]
+mod rust_gyulyvgc_sniffnet_mostly_delete;
+#[cfg(test)]
 mod rust_gyulyvgc_sniffnet_nice_small_move;
 #[cfg(test)]
 mod rust_gyulyvgc_sniffnet_remoev_attribute;
@@ -927,6 +929,8 @@ mod rust_gyulyvgc_sniffnet_small_change;
 mod rust_protocolbuffers_protobuf_add_enum_variant;
 #[cfg(test)]
 mod rust_protocolbuffers_protobuf_add_two_attributes;
+#[cfg(test)]
+mod rust_rust_lang_rust_a_few_small_changes;
 #[cfg(test)]
 mod rust_rust_lang_rust_add_note_comment;
 #[cfg(test)]
@@ -972,9 +976,13 @@ mod rust_tauri_apps_tauri_fix_typo_in_string_constant;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_insert_async_modifier;
 #[cfg(test)]
+mod rust_tauri_apps_tauri_mostly_delete;
+#[cfg(test)]
 mod rust_tauri_apps_tauri_rename_mod;
 #[cfg(test)]
 mod rust_vercel_next_add_mode;
+#[cfg(test)]
+mod rust_vercel_next_medium_change;
 #[cfg(test)]
 mod rust_vercel_next_refactoring_multi_merge_with_update;
 #[cfg(test)]
@@ -983,6 +991,8 @@ mod rust_vercel_next_remove_mod;
 mod rust_vercel_next_simple_identifier_change;
 #[cfg(test)]
 mod rust_vercel_nextjs_add_a_function;
+#[cfg(test)]
+mod rust_zed_industries_zed_a_lot_of_removed;
 #[cfg(test)]
 mod rust_zed_industries_zed_add_mod;
 #[cfg(test)]
