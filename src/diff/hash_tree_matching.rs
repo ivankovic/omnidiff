@@ -118,10 +118,18 @@ fn shifts_differ(nodes: &[tree_sitter::Node], anchors: &ShiftAnchors) -> bool {
 /// (`javascript-microsoft-typescript-broken-js-remove-string-fragment`, `cpp-cgdb-cgdb-struct-to-
 /// pointer`).
 ///
+/// Content comes before position. A shape-only hash matches subtrees whose leaves differ, and the
+/// candidates are ranked by what the lockstep descent from each pair would cost (`descent_cost`):
+/// the cheapest pairs are taken first, in document order, then the next cost, and so on. Shape
+/// alone paired image-map `<area>`s by position, href and alt aside
+/// (`html-berndporr-iir1-a-lot-of-new-functionality`). Byte-identical candidates all cost 0, so
+/// the kind-and-value tier is ranked by position alone.
+///
 /// The per-node pick stays for buckets of more than [`SEGMENT_SIMILARITY_MAX_CELLS`] pairs, and
-/// for buckets with more before nodes than after nodes whose before nodes all sit at one shift:
-/// then nothing locates which twin went, and the shift is only as good as the anchors above it -
-/// an edit below the last one moves the after twins without the anchors seeing it
+/// for buckets with more before nodes than after nodes when neither content nor position tells
+/// them apart - every pair costs the same and the before nodes all sit at one shift. Then
+/// nothing locates which twin went, and the shift is only as good as the anchors above it: an
+/// edit below the last one moves the after twins without the anchors seeing it
 /// (`c-genymobile-scrcpy-big-change`: new `#include`s above three identical parameters).
 // Every parameter is distinct context; a params struct would only relocate them.
 #[allow(clippy::too_many_arguments)]
@@ -254,6 +262,38 @@ pub(crate) fn solve_with_hash_map(
             }
         };
 
+    // What the lockstep descent from a root pair would cost (`classify` over every pair
+    // `pair_children_for_descent` makes): how far two same-shaped subtrees differ in content.
+    let descent_cost = |before_node: tree_sitter::Node, after_node: tree_sitter::Node| -> u64 {
+        let identical = before_metadata
+            .node_to_kind_and_value_hash
+            .get(&before_node.id())
+            .is_some_and(|hash| {
+                after_metadata
+                    .node_to_kind_and_value_hash
+                    .get(&after_node.id())
+                    == Some(hash)
+            });
+        if identical {
+            return 0;
+        }
+        let mut total = classify(before_node.id(), after_node.id()).1;
+        let mut stack = vec![(before_node, after_node)];
+        while let Some((before_parent, after_parent)) = stack.pop() {
+            let (pairs, _) = pair_children_for_descent(
+                before_parent,
+                after_parent,
+                &before_metadata,
+                &after_metadata,
+            );
+            for (before_child, after_child) in pairs {
+                total += classify(before_child.id(), after_child.id()).1;
+                stack.push((before_child, after_child));
+            }
+        }
+        total
+    };
+
     let before_node_ids = node_list_selector(&before_metadata);
     // A bucket's members share a hash, hence a size: they sit together in the largest-first order,
     // and nothing processed between them can match inside one.
@@ -299,37 +339,82 @@ pub(crate) fn solve_with_hash_map(
             Vec::new()
         };
 
-        let pairs = if free_after.len() > 1
-            && (free_before.len() <= free_after.len() || shifts_differ(&free_before, anchors))
-            && free_before.len() * free_after.len() <= SEGMENT_SIMILARITY_MAX_CELLS
-        {
-            let mut free_before = free_before;
-            let mut free_after = free_after;
-            free_before.sort_by_key(|n| preorder(&before_metadata, n.id()));
-            free_after.sort_by_key(|n| preorder(&after_metadata, n.id()));
-            let costs: Vec<Vec<u64>> = free_before
-                .iter()
-                .map(|b| {
-                    let expected = b.start_byte() as i64 + shift_at(anchors, b.start_byte());
-                    free_after
-                        .iter()
-                        .map(|a| (a.start_byte() as i64).abs_diff(expected))
-                        .collect()
-                })
-                .collect();
-            ordered_assignment(&costs)
-                .into_iter()
-                .map(|(bi, ai)| (free_before[bi], free_after[ai]))
-                .collect()
-        } else {
-            // Proximity in the file, not discovery order, tells true duplicates from coincidences.
-            let Some(&after_node) = free_after
-                .iter()
-                .min_by_key(|n| n.start_byte().abs_diff(before_node.start_byte()))
-            else {
-                continue;
-            };
-            vec![(before_node, after_node)]
+        let assigned = (free_after.len() > 1
+            && free_before.len() * free_after.len() <= SEGMENT_SIMILARITY_MAX_CELLS)
+            .then(|| {
+                let mut free_before = free_before.clone();
+                let mut free_after = free_after.clone();
+                free_before.sort_by_key(|n| preorder(&before_metadata, n.id()));
+                free_after.sort_by_key(|n| preorder(&after_metadata, n.id()));
+                let distance: Vec<Vec<u64>> = free_before
+                    .iter()
+                    .map(|b| {
+                        let expected = b.start_byte() as i64 + shift_at(anchors, b.start_byte());
+                        free_after
+                            .iter()
+                            .map(|a| (a.start_byte() as i64).abs_diff(expected))
+                            .collect()
+                    })
+                    .collect();
+                let content: Vec<Vec<u64>> = free_before
+                    .iter()
+                    .map(|&b| free_after.iter().map(|&a| descent_cost(b, a)).collect())
+                    .collect();
+                let mut levels: Vec<u64> = content.iter().flatten().copied().collect();
+                levels.sort_unstable();
+                levels.dedup();
+                if free_before.len() > free_after.len()
+                    && levels.len() == 1
+                    && !shifts_differ(&free_before, anchors)
+                {
+                    return None;
+                }
+                let mut used_before = vec![false; free_before.len()];
+                let mut used_after = vec![false; free_after.len()];
+                let mut pairs = Vec::new();
+                // Cheapest content first; within one cost, in document order, and again for pairs
+                // that cross the ones taken (two same-shaped functions swapped).
+                for level in levels {
+                    loop {
+                        let cells: Vec<Vec<Option<u64>>> = (0..free_before.len())
+                            .map(|bi| {
+                                (0..free_after.len())
+                                    .map(|ai| {
+                                        (!used_before[bi]
+                                            && !used_after[ai]
+                                            && content[bi][ai] == level)
+                                            .then_some(distance[bi][ai])
+                                    })
+                                    .collect()
+                            })
+                            .collect();
+                        let round = ordered_assignment(&cells);
+                        if round.is_empty() {
+                            break;
+                        }
+                        for (bi, ai) in round {
+                            used_before[bi] = true;
+                            used_after[ai] = true;
+                            pairs.push((free_before[bi], free_after[ai]));
+                        }
+                    }
+                }
+                Some(pairs)
+            })
+            .flatten();
+        let pairs = match assigned {
+            Some(pairs) => pairs,
+            None => {
+                // Proximity in the file, not discovery order, tells true duplicates from
+                // coincidences.
+                let Some(&after_node) = free_after
+                    .iter()
+                    .min_by_key(|n| n.start_byte().abs_diff(before_node.start_byte()))
+                else {
+                    continue;
+                };
+                vec![(before_node, after_node)]
+            }
         };
 
         for (b, a) in pairs {
@@ -346,37 +431,40 @@ pub(crate) fn solve_with_hash_map(
     }
 }
 
-/// The order-preserving pairing of `costs`' rows with its columns (both in document order) that
-/// pairs as many as the smaller side has, at the least total cost; on a tie, earlier columns
+/// The order-preserving pairing of `costs`' rows with its columns (both in document order) with
+/// the most pairs, then the least total cost; `None` cells may not pair. On a tie, earlier columns
 /// (rows) are used. Order-preserving because twins keep their order more often than not: before
 /// any shift is known, raw offsets make a later twin nearer an earlier one's counterpart
 /// (`typescript-refactor-interface`: an interface added above two identical class bodies).
-fn ordered_assignment(costs: &[Vec<u64>]) -> Vec<(usize, usize)> {
+fn ordered_assignment(costs: &[Vec<Option<u64>>]) -> Vec<(usize, usize)> {
     let n = costs.len();
     let m = costs.first().map_or(0, Vec::len);
-    if n > m {
-        let transposed: Vec<Vec<u64>> = (0..m)
-            .map(|j| (0..n).map(|i| costs[i][j]).collect())
-            .collect();
-        return ordered_assignment(&transposed)
-            .into_iter()
-            .map(|(j, i)| (i, j))
-            .collect();
-    }
-    // best[i][j]: least cost pairing every one of the first `i` rows into the first `j` columns.
-    let mut best = vec![vec![u64::MAX; m + 1]; n + 1];
-    best[0].fill(0);
+    let better = |x: (usize, u64), y: (usize, u64)| x.0 > y.0 || (x.0 == y.0 && x.1 < y.1);
+    // best[i][j]: (pairs, cost) of the best pairing within the first `i` rows and `j` columns.
+    let mut best = vec![vec![(0usize, 0u64); m + 1]; n + 1];
     for i in 1..=n {
-        for j in i..=m {
-            let take = best[i - 1][j - 1].saturating_add(costs[i - 1][j - 1]);
-            best[i][j] = best[i][j - 1].min(take);
+        for j in 1..=m {
+            let mut cell = best[i - 1][j];
+            if better(best[i][j - 1], cell) {
+                cell = best[i][j - 1];
+            }
+            if let Some(cost) = costs[i - 1][j - 1] {
+                let (pairs, total) = best[i - 1][j - 1];
+                let take = (pairs + 1, total.saturating_add(cost));
+                if better(take, cell) {
+                    cell = take;
+                }
+            }
+            best[i][j] = cell;
         }
     }
     let (mut i, mut j) = (n, m);
-    let mut pairs = Vec::with_capacity(n);
-    while i > 0 {
-        if j > i && best[i][j - 1] == best[i][j] {
+    let mut pairs = Vec::new();
+    while i > 0 && j > 0 {
+        if best[i][j - 1] == best[i][j] {
             j -= 1;
+        } else if best[i - 1][j] == best[i][j] {
+            i -= 1;
         } else {
             pairs.push((i - 1, j - 1));
             i -= 1;
@@ -758,16 +846,23 @@ mod tests {
     /// Twins keep their order: a crossing pairing is never chosen, however cheap.
     #[test]
     fn ordered_assignment_preserves_order_and_skips_the_farthest_surplus() {
+        let some = |rows: &[&[u64]]| -> Vec<Vec<Option<u64>>> {
+            rows.iter()
+                .map(|row| row.iter().map(|&c| Some(c)).collect())
+                .collect()
+        };
         assert_eq!(
-            ordered_assignment(&[vec![5, 1], vec![1, 5]]),
+            ordered_assignment(&some(&[&[5, 1], &[1, 5]])),
             vec![(0, 0), (1, 1)]
         );
-        assert_eq!(ordered_assignment(&[vec![9, 0, 9]]), vec![(0, 1)]);
+        assert_eq!(ordered_assignment(&some(&[&[9, 0, 9]])), vec![(0, 1)]);
+        assert_eq!(ordered_assignment(&some(&[&[9], &[0], &[9]])), vec![(1, 0)]);
+        assert_eq!(ordered_assignment(&some(&[&[3, 3]])), vec![(0, 0)]);
+        // Of two crossing pairs only one is taken, the cheaper; a `None` cell never pairs.
         assert_eq!(
-            ordered_assignment(&[vec![9], vec![0], vec![9]]),
+            ordered_assignment(&[vec![None, Some(7)], vec![Some(1), None]]),
             vec![(1, 0)]
         );
-        assert_eq!(ordered_assignment(&[vec![3, 3]]), vec![(0, 0)]);
     }
 
     #[test]
@@ -777,5 +872,42 @@ mod tests {
         assert_eq!(shift_at(&anchors, 10), 5);
         assert_eq!(shift_at(&anchors, 19), 5);
         assert_eq!(shift_at(&anchors, 25), -3);
+    }
+
+    /// Two same-shaped functions swapped, each edited: the shape-only tier pairs each with the
+    /// one its content matches, not the one at its position.
+    #[test]
+    fn same_shaped_twins_pair_by_content_before_position() {
+        let before = Code::from_string("fn a() { x(1); }\nfn b() { y(2); }\n", &Language::Rust);
+        // The new `c` keeps the two files' roots from sharing a shape.
+        let after = Code::from_string(
+            "fn b() { y(3); }\nfn a() { x(4); }\nfn c() {}\n",
+            &Language::Rust,
+        );
+        let node_cache = NodeCache::build(&before, &after);
+        let mut diff = ASTDiff::default();
+
+        crate::diff::solve_hash_descent::solve(
+            &crate::diff::PassCtx::new(&before, &after, &node_cache),
+            &mut diff,
+        );
+
+        let functions = |code: &Code| {
+            let root = code.ast.as_ref().unwrap().root_node();
+            let mut cursor = root.walk();
+            root.children(&mut cursor)
+                .filter(|n| n.kind() == "function_item")
+                .map(|n| n.id())
+                .collect::<Vec<_>>()
+        };
+        let (before_fns, after_fns) = (functions(&before), functions(&after));
+        assert_eq!(
+            diff.before_node_map.get(&before_fns[0]),
+            Some(&after_fns[1])
+        );
+        assert_eq!(
+            diff.before_node_map.get(&before_fns[1]),
+            Some(&after_fns[0])
+        );
     }
 }
