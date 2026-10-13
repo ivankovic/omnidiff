@@ -294,6 +294,14 @@ mod csharp_jellyfin_jellyfin_add_line;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_only;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_only_2;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_only_3;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_only_4;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_only_5;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_nice_move_example;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_small_add;
@@ -357,6 +365,8 @@ mod csharp_sonarr_sonarr_add_import_and_annotation;
 mod csharp_sonarr_sonarr_add_list_item;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_add_only;
+#[cfg(test)]
+mod csharp_sonarr_sonarr_add_tests;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_add_two_attributes;
 #[cfg(test)]
@@ -434,6 +444,8 @@ mod go_cockroachdb_cockroach_add_only;
 #[cfg(test)]
 mod go_cockroachdb_cockroach_add_only_2;
 #[cfg(test)]
+mod go_cockroachdb_cockroach_add_test_case;
+#[cfg(test)]
 mod go_fatedier_frp_build_comment_insert_only;
 #[cfg(test)]
 mod go_fatedier_frp_delete_and_update;
@@ -477,6 +489,8 @@ mod go_golang_go_add_an_if;
 mod go_golang_go_add_one_line;
 #[cfg(test)]
 mod go_golang_go_update_copyright_year;
+#[cfg(test)]
+mod go_grafana_grafana_add_tests;
 #[cfg(test)]
 mod go_grafana_grafana_interesting_how_escapes_impact_string_parsing;
 #[cfg(test)]
@@ -550,6 +564,8 @@ mod html_gohugoio_hugo_update_href_template;
 #[cfg(test)]
 mod html_gorhill_ublock_add_one_meta_element;
 #[cfg(test)]
+mod html_gorhill_ublock_small_change;
+#[cfg(test)]
 mod html_ladybirdbrowser_ladybird_remove_meta_attribute;
 #[cfg(test)]
 mod html_ladybirdbrowser_ladybird_remove_one_line;
@@ -557,6 +573,8 @@ mod html_ladybirdbrowser_ladybird_remove_one_line;
 mod html_ladybirdbrowser_ladybird_update_pixel_value;
 #[cfg(test)]
 mod html_ladybirdbrowser_ladybird_update_two_pixel_numbers;
+#[cfg(test)]
+mod html_mermaid_js_mermaid_add_only;
 #[cfg(test)]
 mod html_mozilla_firefox_firefox_add_two_elements;
 #[cfg(test)]
@@ -578,7 +596,11 @@ mod html_twbs_bootstrap_not_html_template_extract_two_vars;
 #[cfg(test)]
 mod html_twbs_bootstrap_remove_one_line_in_yaml_metadata_preamble;
 #[cfg(test)]
+mod java_genymobile_scrcpy_a_single_move;
+#[cfg(test)]
 mod java_genymobile_scrcpy_add;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_a_path_element;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_enum_value;
 #[cfg(test)]
@@ -587,6 +609,8 @@ mod java_genymobile_scrcpy_add_func;
 mod java_genymobile_scrcpy_add_func_2;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_parameter;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_path_identifier;
 #[cfg(test)]
 mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
@@ -619,6 +643,8 @@ mod java_protocolbuffers_protobuf_update_comment_2;
 mod javascript_axios_axios_real_small_change;
 #[cfg(test)]
 mod javascript_d3_d3_nice_small_change;
+#[cfg(test)]
+mod javascript_eslint_eslint_doccoment_change;
 #[cfg(test)]
 mod javascript_facebook_react_add_test_case;
 #[cfg(test)]
