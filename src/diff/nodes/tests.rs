@@ -1227,3 +1227,63 @@ fn map_identical_descendants_leaves_an_already_mapped_child_and_its_subtree_alon
             .is_some_and(|a| *a != 0)
     );
 }
+
+/// The member keys `apted::anchor_leftovers_by_member_name` anchors leftovers by, per language.
+#[test]
+fn member_identity_name_keys_members_by_their_declared_name() {
+    let key_of = |source: &str, language: Language, kind: &str, nth: usize| {
+        let code = Code::from_string(source, &language);
+        let meta = crate::code::metadata::metadata_of(&code);
+        let mut ids: Vec<usize> = meta
+            .node_info
+            .iter()
+            .filter(|(_, info)| info.kind == kind)
+            .map(|(&id, _)| id)
+            .collect();
+        ids.sort_by_key(|id| meta.node_info[id].preorder_index);
+        member_identity_name(ids[nth], &meta, &language)
+    };
+    let ts = "class A {\n  private h = 1;\n  get y() { return 1; }\n  set y(v) {}\n  m(a) {}\n}\n";
+    assert_eq!(
+        key_of(ts, Language::TypeScript, "public_field_definition", 0),
+        Some(("field_definition", "h".to_string()))
+    );
+    assert_eq!(
+        key_of(ts, Language::TypeScript, "method_definition", 0),
+        Some(("method_definition", "get y".to_string()))
+    );
+    assert_eq!(
+        key_of(ts, Language::TypeScript, "method_definition", 1),
+        Some(("method_definition", "set y".to_string()))
+    );
+    assert_eq!(
+        key_of(ts, Language::TypeScript, "method_definition", 2),
+        Some(("method_definition", "m".to_string()))
+    );
+    assert_eq!(
+        key_of("{\"a\": 1, \"b\": 2}\n", Language::JSON, "pair", 1),
+        Some(("pair", "b".to_string()))
+    );
+    assert_eq!(
+        key_of(
+            "#define X 1\n#define F(a) a\n",
+            Language::C,
+            "preproc_function_def",
+            0
+        ),
+        Some(("preproc_def", "F".to_string()))
+    );
+    assert_eq!(
+        key_of(
+            "hi! link A B\n",
+            Language::Vimscript,
+            "highlight_statement",
+            0
+        ),
+        Some(("highlight_statement", "A".to_string()))
+    );
+    assert_eq!(
+        key_of("const MAX: usize = 4;\n", Language::Rust, "const_item", 0),
+        Some(("const_item", "MAX".to_string()))
+    );
+}

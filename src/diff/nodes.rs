@@ -307,9 +307,10 @@ pub(crate) fn has_local_identity_coverage(language: &Language) -> bool {
     )
 }
 
-/// The `(kind, name)` of a container member (Java method, constructor or field; C/C++ field or
-/// function definition), for anchoring members whose bodies changed. Overloads are not a concern:
-/// the caller only trusts a name unique among the leftovers on both sides.
+/// The `(kind, name)` of a container member, for anchoring members whose bodies changed: a Java
+/// method, constructor or field; a C/C++ field, function definition or `#define`; a JS/TS class
+/// method or field; a JSON object's pair (by key); a Vim `hi` statement (by group); a Rust
+/// `const`. Overloads are not a concern: the caller pairs only equal holder counts.
 pub(crate) fn member_identity_name(
     node_id: usize,
     meta: &ASTMetadata,
@@ -370,6 +371,51 @@ pub(crate) fn member_identity_name(
         (Language::C | Language::CPP, "function_definition") => Some((
             "function_definition",
             text_of(through_declarators(node_id, "identifier")?)?,
+        )),
+        (Language::JavaScript | Language::TypeScript | Language::TSX, "method_definition") => {
+            let name_id = first_child_of_kind(node_id, "property_identifier")
+                .or_else(|| first_child_of_kind(node_id, "private_property_identifier"))?;
+            let name = text_of(name_id)?;
+            // A getter and a setter share their property's name.
+            let accessor = ["get", "set"]
+                .into_iter()
+                .find(|keyword| first_child_of_kind(node_id, keyword).is_some());
+            Some((
+                "method_definition",
+                match accessor {
+                    Some(keyword) => format!("{keyword} {name}"),
+                    None => name,
+                },
+            ))
+        }
+        (
+            Language::JavaScript | Language::TypeScript | Language::TSX,
+            "public_field_definition" | "field_definition",
+        ) => {
+            let name_id = first_child_of_kind(node_id, "property_identifier")
+                .or_else(|| first_child_of_kind(node_id, "private_property_identifier"))?;
+            Some(("field_definition", text_of(name_id)?))
+        }
+        // The key's text; `""` has no `string_content`.
+        (Language::JSON, "pair") => {
+            let key_id = *info.children.first()?;
+            let content = first_child_of_kind(key_id, "string_content")
+                .and_then(text_of)
+                .unwrap_or_default();
+            Some(("pair", content))
+        }
+        (Language::C | Language::CPP, "preproc_def" | "preproc_function_def") => Some((
+            "preproc_def",
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
+        )),
+        // `hi Group ...` and `hi link Group Other` both name `Group` first.
+        (Language::Vimscript, "highlight_statement") => Some((
+            "highlight_statement",
+            text_of(first_child_of_kind(node_id, "hl_group")?)?,
+        )),
+        (Language::Rust, "const_item") => Some((
+            "const_item",
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
         )),
         _ => None,
     }
