@@ -1,0 +1,16 @@
+{
+  "verdict": "edited+changed_files",
+  "members": {
+    "U+00C0 À": "imperceptible",
+    "U+00C3 Ã": "artifacts",
+    "U+00C4 Ä": "artifacts",
+    "U+00C5 Å": "artifacts",
+    "U+0100 Ā": "invisible",
+    "U+0105 ą": "edited",
+    "U+04A2 Ң": "artifacts",
+    "U+04B3 ҳ": "edited",
+    "U+04D2 Ӓ": "artifacts",
+    "U+1FB9 Ᾱ": "invisible",
+    "names": "edited"
+  }
+}

@@ -960,6 +960,8 @@ mod rust_protocolbuffers_protobuf_add_enum_variant;
 #[cfg(test)]
 mod rust_protocolbuffers_protobuf_add_two_attributes;
 #[cfg(test)]
+mod rust_protocolbuffers_protobuf_add_with_a_move;
+#[cfg(test)]
 mod rust_rust_lang_rust_a_few_small_changes;
 #[cfg(test)]
 mod rust_rust_lang_rust_add_note_comment;
@@ -996,6 +998,10 @@ mod rust_tauri_apps_tauri_add_doccomment_empty_line;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_add_one_field_with_doccomment;
 #[cfg(test)]
+mod rust_tauri_apps_tauri_add_only;
+#[cfg(test)]
+mod rust_tauri_apps_tauri_add_only_2;
+#[cfg(test)]
 mod rust_tauri_apps_tauri_add_path_to_const_string;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_add_pub_to_mod;
@@ -1012,6 +1018,8 @@ mod rust_tauri_apps_tauri_mostly_delete;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_rename_mod;
 #[cfg(test)]
+mod rust_tauri_apps_tauri_small_change;
+#[cfg(test)]
 mod rust_vercel_next_add_mode;
 #[cfg(test)]
 mod rust_vercel_next_medium_change;
@@ -1026,17 +1034,27 @@ mod rust_vercel_nextjs_add_a_function;
 #[cfg(test)]
 mod rust_zed_industries_zed_a_lot_of_removed;
 #[cfg(test)]
+mod rust_zed_industries_zed_add_and_one_small_delete;
+#[cfg(test)]
 mod rust_zed_industries_zed_add_mod;
 #[cfg(test)]
 mod rust_zed_industries_zed_add_only;
 #[cfg(test)]
 mod rust_zed_industries_zed_add_only_2;
 #[cfg(test)]
+mod rust_zed_industries_zed_add_only_3;
+#[cfg(test)]
+mod rust_zed_industries_zed_add_test;
+#[cfg(test)]
 mod rust_zed_industries_zed_change_mod_and_use;
 #[cfg(test)]
 mod rust_zed_industries_zed_change_mods;
 #[cfg(test)]
 mod rust_zed_industries_zed_delete_only;
+#[cfg(test)]
+mod rust_zed_industries_zed_normal_change;
+#[cfg(test)]
+mod rust_zed_industries_zed_one_or_condition_moving_between_ifs;
 #[cfg(test)]
 mod rust_zed_industries_zed_small_change;
 #[cfg(test)]
@@ -1056,6 +1074,14 @@ mod shellscript_cockroachdb_cockroach_another_flags_in_string_example;
 #[cfg(test)]
 mod shellscript_cockroachdb_cockroach_string_content_has_flags;
 #[cfg(test)]
+mod shellscript_fatedier_frp_add_to_string;
+#[cfg(test)]
+mod shellscript_freeciv_freeciv_add_and_remove_flags;
+#[cfg(test)]
+mod shellscript_freeciv_freeciv_version;
+#[cfg(test)]
+mod shellscript_freeciv_freeciv_version_2;
+#[cfg(test)]
 mod shellscript_genymobile_scrcpy_insert_only;
 #[cfg(test)]
 mod shellscript_genymobile_scrcpy_version;
@@ -1068,7 +1094,25 @@ mod shellscript_microsoft_playwright_version;
 #[cfg(test)]
 mod shellscript_mongodb_mongo_small_change;
 #[cfg(test)]
+mod shellscript_nvbn_thefuck_repository_name_is_appropriate;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_add;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_add_command;
+#[cfg(test)]
 mod shellscript_nvm_sh_nvm_add_one_line;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_add_only;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_single_char_add;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_tiny_change_lowercase_to_uppercase;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_version;
+#[cfg(test)]
+mod shellscript_nvm_sh_nvm_version_change;
+#[cfg(test)]
+mod shellscript_nzbgetcom_nzbget_version;
 #[cfg(test)]
 mod shellscript_openhands_openhands_update_string_value;
 #[cfg(test)]
