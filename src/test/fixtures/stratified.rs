@@ -224,6 +224,8 @@ mod cpp_mongodb_mongo_add_and_rename;
 #[cfg(test)]
 mod cpp_mongodb_mongo_add_function_and_2_call_sites;
 #[cfg(test)]
+mod cpp_mongodb_mongo_add_with_a_small_move;
+#[cfg(test)]
 mod cpp_mongodb_mongo_test_changes;
 #[cfg(test)]
 mod cpp_mongodb_mongo_use_auto;
@@ -291,6 +293,10 @@ mod cpp_protocolbuffers_protobuf_small_change;
 mod cpp_pytorch_pytorch_two_inserted_lines;
 #[cfg(test)]
 mod cpp_tensorflow_tensorflow_new_to_make_unique;
+#[cfg(test)]
+mod csharp_ansible_ansible_complex_change;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_a_few_lines_but_complex_reuse_across_trees;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_a_loop;
 #[cfg(test)]
