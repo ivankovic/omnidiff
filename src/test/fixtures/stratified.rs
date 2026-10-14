@@ -292,6 +292,8 @@ mod cpp_pytorch_pytorch_two_inserted_lines;
 #[cfg(test)]
 mod cpp_tensorflow_tensorflow_new_to_make_unique;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_a_loop;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_const_string;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_line;
@@ -550,6 +552,8 @@ mod html_caddyserver_caddy_add_one_element;
 #[cfg(test)]
 mod html_caddyserver_caddy_parse_errors_due_to_template;
 #[cfg(test)]
+mod html_django_django_template_code_not_pure_html;
+#[cfg(test)]
 mod html_eslint_eslint_update_timestamp;
 #[cfg(test)]
 mod html_fatedier_frp_update_hashes;
@@ -570,9 +574,13 @@ mod html_gohugoio_hugo_template_not_pure_html_2;
 #[cfg(test)]
 mod html_gohugoio_hugo_update_href_template;
 #[cfg(test)]
+mod html_gorhill_ublock_add_attribute;
+#[cfg(test)]
 mod html_gorhill_ublock_add_one_meta_element;
 #[cfg(test)]
 mod html_gorhill_ublock_small_change;
+#[cfg(test)]
+mod html_ladybirdbrowser_ladybird_js_code_in_html;
 #[cfg(test)]
 mod html_ladybirdbrowser_ladybird_remove_meta_attribute;
 #[cfg(test)]
@@ -596,13 +604,19 @@ mod html_mozilla_firefox_firefox_test_span;
 #[cfg(test)]
 mod html_mozilla_pdf_add_closing_tags;
 #[cfg(test)]
+mod html_nzbgetcom_nzbget_add_to_attribute;
+#[cfg(test)]
 mod html_pandas_dev_pandas_release_banner_update;
 #[cfg(test)]
 mod html_prettier_prettier_not_pure_html_includes_yaml_as_well;
 #[cfg(test)]
+mod html_scrapy_scrapy_update_copyright_notice;
+#[cfg(test)]
 mod html_twbs_bootstrap_not_html_template_extract_two_vars;
 #[cfg(test)]
 mod html_twbs_bootstrap_remove_one_line_in_yaml_metadata_preamble;
+#[cfg(test)]
+mod html_twbs_bootstrap_template;
 #[cfg(test)]
 mod java_genymobile_scrcpy_a_single_move;
 #[cfg(test)]
@@ -1042,6 +1056,8 @@ mod rust_tauri_apps_tauri_small_change;
 #[cfg(test)]
 mod rust_vercel_next_add_mode;
 #[cfg(test)]
+mod rust_vercel_next_delete_only;
+#[cfg(test)]
 mod rust_vercel_next_medium_change;
 #[cfg(test)]
 mod rust_vercel_next_refactoring_multi_merge_with_update;
@@ -1375,3 +1391,5 @@ mod yaml_mastodon_mastodon_remove_translation;
 mod yaml_mongodb_mongo_add_two_block_sequence_items;
 #[cfg(test)]
 mod yaml_puppeteer_puppeteer_false_to_true;
+#[cfg(test)]
+mod yaml_ytdl_org_youtube_dl_add_prepare_linux_step;
