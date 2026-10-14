@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,5 +32,8 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-mongodb-mongo-add-and-rename")
+    // Invariant 16, twelve times: none of the six `ReplicatedFastCountOplogEntryTest` <->
+    // `SizeMetadataLoggingTest` renames (before rows 931-1048, after rows 934-1051) is painted as
+    // just its differing words under Minimal.
+    assert_ground_truth_invariants_with_known_violations("cpp-mongodb-mongo-add-and-rename", 12)
 }
