@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-langflow-ai-langflow-insert-only", 1.37)
+    assert_matches_human_painting_within_limit("tsx-langflow-ai-langflow-insert-only", 1.36)
 }
 
 #[test]

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("ruby-mastodon-mastodon-normal-change", 9.54)
+    assert_matches_human_painting_within_limit("ruby-mastodon-mastodon-normal-change", 9.0)
 }
 
 #[test]

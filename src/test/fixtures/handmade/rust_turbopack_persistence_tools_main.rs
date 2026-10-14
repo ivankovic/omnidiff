@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `MINIMAL` sets the limit.
-    assert_matches_human_painting_within_limit("rust-turbopack-persistence-tools-main", 1.37)
+    assert_matches_human_painting_within_limit("rust-turbopack-persistence-tools-main", 1.36)
 }
 
 #[test]

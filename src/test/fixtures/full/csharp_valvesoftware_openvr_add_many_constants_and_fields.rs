@@ -20,14 +20,8 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Many constants and fields added to a large declaration list. Roughly half the residual is
-    // `StructurallyIdenticalAncestor` (52) - omnidiff inherits a match from an ancestor whose
-    // shape survived, where the human paired the members individually - with
-    // `APTED("qualified_name")` (32) and `MovedSubtree` (13) accounting for most of the rest.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "csharp-valvesoftware-openvr-add-many-constants-and-fields",
-        106,
-        58,
     )
 }
 

@@ -37,5 +37,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-godot-small-bugfix", 0.57)
+    assert_matches_human_painting_within_limit("cpp-godot-small-bugfix", 0.56)
 }

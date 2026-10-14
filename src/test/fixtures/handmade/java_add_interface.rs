@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-add-interface", 1.01)
+    assert_matches_human_painting_within_limit("java-add-interface", 0.34)
 }
 
 #[test]

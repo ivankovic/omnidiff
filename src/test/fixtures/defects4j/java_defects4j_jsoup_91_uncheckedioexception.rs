@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-91-uncheckedioexception", 0.01)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-91-uncheckedioexception", 0.0)
 }
 
 #[test]

@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("typescript-add-generics", 9.47)
+    assert_matches_human_painting_within_limit("typescript-add-generics", 8.86)
 }
 
 #[test]

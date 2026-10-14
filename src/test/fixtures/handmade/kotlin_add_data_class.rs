@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // A matching gap: the human marks the shifted name/age parameters Move, omnidiff leaves them
     // Identical.
-    assert_matches_human_painting_within_limit("kotlin-add-data-class", 9.0)
+    assert_matches_human_painting_within_limit("kotlin-add-data-class", 8.99)
 }
 
 #[test]

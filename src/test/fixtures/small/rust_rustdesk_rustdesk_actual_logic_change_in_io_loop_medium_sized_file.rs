@@ -20,11 +20,13 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
+    // The four leaves of a `.is_file_transfer()` call form a multi-map group with one after node,
+    // of which omnidiff matches none; and `APTED("qualified_name")` deletes an `if` keyword the
+    // human keeps.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rustdesk-rustdesk-actual-logic-change-in-io-loop-medium-sized-file",
-        74,
-        46,
+        10,
+        5,
     )
 }
 

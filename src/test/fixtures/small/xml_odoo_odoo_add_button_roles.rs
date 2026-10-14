@@ -20,13 +20,7 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // New <button> elements at scattered points: byte-identical whitespace `CharData` downstream
-    // of each insertion matches another sibling (see xml-nextcloud-android-add-few-translations).
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "xml-odoo-odoo-add-button-roles",
-        109,
-        71,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("xml-odoo-odoo-add-button-roles")
 }
 
 #[test]

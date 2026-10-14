@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "c-freeciv-freeciv-change-define-but-also-keep-the-old-working-with-a-move",
-        0.39,
+        0.18,
     )
 }
 

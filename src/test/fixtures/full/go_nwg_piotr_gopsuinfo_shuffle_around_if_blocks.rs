@@ -20,11 +20,12 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
+    // Two nested `if`s swap nesting levels. The bodies match; what is left is the swapped
+    // `if`/`else` scaffolding, which `APTED("qualified_name")` pairs by position or deletes.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-nwg-piotr-gopsuinfo-shuffle-around-if-blocks",
-        91,
-        57,
+        14,
+        9,
     )
 }
 

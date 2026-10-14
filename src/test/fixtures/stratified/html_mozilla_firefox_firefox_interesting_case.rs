@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-mozilla-firefox-firefox-interesting-case",
-        19.52,
+        19.51,
     )
 }
 

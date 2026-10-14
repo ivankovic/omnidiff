@@ -34,5 +34,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-mozilla-firefox-firefox-update-value", 2.6)
+    assert_matches_human_painting_within_limit("xml-mozilla-firefox-firefox-update-value", 1.78)
 }

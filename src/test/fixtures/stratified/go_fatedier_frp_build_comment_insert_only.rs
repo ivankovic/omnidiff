@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-fatedier-frp-build-comment-insert-only", 0.20)
+    assert_matches_human_painting_within_limit("go-fatedier-frp-build-comment-insert-only", 0.19)
 }
 
 #[test]

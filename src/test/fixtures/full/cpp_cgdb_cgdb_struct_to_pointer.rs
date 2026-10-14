@@ -20,12 +20,13 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Which nodes of different kinds may map to each other. Nearly all in the `qualified_name`
-    // bucket: the human matches differently-kinded nodes across the struct-to-pointer rewrite.
+    // Which nodes of different kinds may map to each other. Two are left, in the parameter
+    // rewritten from `struct ... *` to `const ... &`: the human pairs `struct` with `const` and `*`
+    // with `&`, `APTED("qualified_name")` deletes and inserts them.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-cgdb-cgdb-struct-to-pointer",
-        110,
-        73,
+        2,
+        2,
     )
 }
 

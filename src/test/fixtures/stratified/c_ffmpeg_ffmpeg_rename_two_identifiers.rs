@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-ffmpeg-ffmpeg-rename-two-identifiers", 0.09)
+    assert_matches_human_painting_within_limit("c-ffmpeg-ffmpeg-rename-two-identifiers", 0.02)
 }
 
 #[test]

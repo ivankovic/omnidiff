@@ -38,7 +38,7 @@ fn painting() -> Result<()> {
     // first row and pushed down by an insertion above is not a `Move`.
     assert_matches_human_painting_within_limit(
         "rust-small-addition-with-reuse-of-binary-expressions",
-        0.07,
+        0.06,
     )
 }
 

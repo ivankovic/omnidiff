@@ -73,6 +73,10 @@ annotation has reached, not a draw - do not read a Defects4J figure as an estima
   `analyze_human_mappings --kind-mismatches`.
 - `kind_invariant_candidates.csv` - the delete+insert leaf pairs the kind invariants would force
   to match, written by `analyze_human_mappings --kind-invariant-cost`.
+- `ground_truth_conflicts.md` - the open ground-truth conflicts: conventions the fixtures answer
+  both ways, single fixtures that hold back a general change, and the fixtures whose 2026-10-13
+  `analysis.md` flags their ground truth. Written by hand; a settled conflict moves to its
+  *Resolved* section.
 
 The four census tests live in `src/test/helper/human_mapping/tests/exploratory.rs`, are
 `#[ignore]`d, and run with `cargo test --release --lib --features test-fixtures <name> --

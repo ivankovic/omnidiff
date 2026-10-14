@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "scala-ymnk-jzlib-interesting-probably-has-no-optimal-solution",
-        2.47,
+        2.46,
     )
 }
 

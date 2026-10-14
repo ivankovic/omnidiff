@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-odoo-odoo-insert-only", 5.91)
+    assert_matches_human_painting_within_limit("xml-odoo-odoo-insert-only", 0.23)
 }
 
 #[test]

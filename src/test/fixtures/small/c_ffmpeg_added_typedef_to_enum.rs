@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-ffmpeg-added-typedef-to-enum", 0.20)
+    assert_matches_human_painting_within_limit("c-ffmpeg-added-typedef-to-enum", 0.1)
 }
 
 #[test]

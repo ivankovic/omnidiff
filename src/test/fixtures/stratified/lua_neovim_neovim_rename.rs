@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("lua-neovim-neovim-rename", 1.33)
+    assert_matches_human_painting_within_limit("lua-neovim-neovim-rename", 0.66)
 }
 
 #[test]

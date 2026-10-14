@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Ground truth anchors an ambiguous add/delete inside a value LEFT; `intra_node_update_ranges`
     // is right-anchored by construction. An expected residual, the price of that rule.
-    assert_matches_human_painting_within_limit("rust-rust-lang-rust-update-comment", 4.51)
+    assert_matches_human_painting_within_limit("rust-rust-lang-rust-update-comment", 4.5)
 }
 
 #[test]

@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-libreoffice-add-one-menu-item", 0.05)
+    assert_matches_human_painting_within_limit("xml-libreoffice-add-one-menu-item", 0.0)
 }
 
 #[test]

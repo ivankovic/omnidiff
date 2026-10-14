@@ -20,14 +20,14 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // A hex colour table: short, repetitive, genuinely relocated content. `solve_moved_subtrees`'s
-    // ambiguity guard refuses to pick among identical small move targets, and
-    // `disambiguate_by_context`'s similarity sketch recovers most of them. Most of the count is an
-    // N:M correspondence left unmarked.
+    // A hex colour table: short, repetitive, genuinely relocated content. The `hi` lines pair by
+    // group name; what is left is mostly `MovedSubtree` moving byte-identical attributes
+    // (`guibg=NONE` and the like) into lines the human inserts, and `APTED("fast_fallback")`
+    // pairing identical leaves with other twins.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "vimscript-neovim-neovim-awful-test-case-bunch-of-hex-colours-more-data-than-code",
-        1072,
-        761,
+        109,
+        74,
     )
 }
 

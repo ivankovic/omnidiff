@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-gohugoio-hugo-update-and-add-some-values", 0.24)
+    assert_matches_human_painting_within_limit("go-gohugoio-hugo-update-and-add-some-values", 0.23)
 }
 
 #[test]

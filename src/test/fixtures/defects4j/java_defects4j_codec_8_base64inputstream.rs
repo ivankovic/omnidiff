@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-codec-8-base64inputstream", 0.01)
+    assert_matches_human_painting_within_limit("java-defects4j-codec-8-base64inputstream", 0.0)
 }
 
 #[test]

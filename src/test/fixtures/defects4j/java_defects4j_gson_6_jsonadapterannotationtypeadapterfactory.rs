@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-gson-6-jsonadapterannotationtypeadapterfactory",
-        0.09,
+        0.08,
     )
 }
 

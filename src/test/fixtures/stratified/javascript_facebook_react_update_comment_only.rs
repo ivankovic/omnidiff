@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "javascript-facebook-react-update-comment-only",
-        0.34,
+        0.33,
     )
 }
 

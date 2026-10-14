@@ -44,6 +44,9 @@ use crate::diff::{ASTDiff, ASTMapping, ASTMappingReason, PassCtx};
 /// Smallest subtree, in nodes, that is grouped with its twin.
 const MIN_COPY_SIZE: usize = 5;
 
+/// What [`nesting`] reads an `else` clause holding an `if` as: one branch of an `else if` chain.
+const ELIF: &str = "elif";
+
 /// Kind-name fragments of a function-like construct, for "the same function".
 const FUNCTION_WORDS: [&str; 6] = [
     "function",
@@ -149,14 +152,28 @@ fn is_statement(kind: &str) -> bool {
 /// (re-wrapped into a new `else`), whatever the rest of the diff paired; reading it from the node
 /// maps instead would let a parent omnidiff failed to pair (an `if` that grew an `else`,
 /// `java-defects4j-closure-134-typedscopecreator`) pass for a displacement.
+///
+/// An `else if` chain is read flat, as it is written: an `else` clause that holds an `if` is folded
+/// into it as one [`ELIF`], and a run of them is one entry. A branch added to the chain nests every
+/// later branch one `else` deeper in the tree, but does not displace the statements in them
+/// (`c-linux-small-bugfix`, `rust-rustdesk-rustdesk-large-file-40k-normal-feature-work`).
 fn nesting(id: usize, meta: &ASTMetadata) -> Vec<&str> {
-    let mut kinds = Vec::new();
+    let mut kinds: Vec<&str> = Vec::new();
     let mut current = meta.node_to_parent.get(&id).copied();
     while let Some(ancestor) = current {
         let Some(info) = meta.node_info.get(&ancestor) else {
             break;
         };
-        kinds.push(info.kind.as_str());
+        let kind = info.kind.as_str();
+        let holds_an_if = kinds.last().is_some_and(|below| below.starts_with("if"));
+        if kind == "else_clause" && holds_an_if {
+            kinds.pop();
+            if kinds.last() != Some(&ELIF) {
+                kinds.push(ELIF);
+            }
+        } else {
+            kinds.push(kind);
+        }
         if FUNCTION_WORDS.iter().any(|w| info.kind.contains(w)) {
             break;
         }
@@ -367,6 +384,25 @@ mod tests {
         let after = Code::from_string(
             "class A { void f(P p) {\n    if (p.named()) {\n        p.skipChildren();\n    } else {\n        while (true) {\n            p.skipChildren();\n        }\n    }\n} }\n",
             &Language::Java,
+        );
+
+        let ast = diff_code(&before, &after).ast.unwrap();
+
+        assert!(ast.groups.is_empty());
+    }
+
+    /// The shape of `c-linux-small-bugfix`: a branch added at the head of an `else if` chain
+    /// nests the later branches one `else` deeper, but the line in one of them stays where it was.
+    /// The same line written into a new `else` of the enclosing `if` is new code.
+    #[test]
+    fn a_branch_added_to_an_else_if_chain_does_not_displace_the_later_branches() {
+        let before = Code::from_string(
+            "int f(int a, int b) {\n    int v = 0;\n    if (a == 1) {\n        if (b == 0)\n            v |= g(1, 2);\n        else if (b == 1)\n            v |= g(3, 4);\n    } else if (a > 2) {\n        v |= h(5);\n    }\n    return v;\n}\n",
+            &Language::C,
+        );
+        let after = Code::from_string(
+            "int f(int a, int b) {\n    int v = 0;\n    if (a == 1) {\n        if (b == 7)\n            v |= g(9, 9);\n        else if (b == 0)\n            v |= g(1, 2);\n        else if (b == 1)\n            v |= g(3, 4);\n    } else if (a > 2) {\n        v |= h(5);\n    } else {\n        v |= g(3, 4);\n    }\n    return v;\n}\n",
+            &Language::C,
         );
 
         let ast = diff_code(&before, &after).ast.unwrap();

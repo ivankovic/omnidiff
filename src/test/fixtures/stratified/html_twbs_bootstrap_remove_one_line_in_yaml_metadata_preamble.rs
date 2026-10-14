@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-twbs-bootstrap-remove-one-line-in-yaml-metadata-preamble",
-        0.69,
+        0.0,
     )
 }
 

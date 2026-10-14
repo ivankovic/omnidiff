@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("java-refactor-constants", 12.81)
+    assert_matches_human_painting_within_limit("java-refactor-constants", 12.8)
 }
 
 #[test]

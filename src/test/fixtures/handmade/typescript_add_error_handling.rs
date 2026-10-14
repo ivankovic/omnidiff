@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Wrapping existing code in new error-handling structure is the shape omnidiff renders least
     // like a human (as in kotlin-refactor-function and java-add-exception-handling).
-    assert_matches_human_painting_within_limit("typescript-add-error-handling", 35.61)
+    assert_matches_human_painting_within_limit("typescript-add-error-handling", 1.96)
 }
 
 #[test]

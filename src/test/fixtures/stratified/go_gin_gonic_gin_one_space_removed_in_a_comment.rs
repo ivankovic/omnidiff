@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-gin-gonic-gin-one-space-removed-in-a-comment",
-        0.23,
+        0.22,
     )
 }
 

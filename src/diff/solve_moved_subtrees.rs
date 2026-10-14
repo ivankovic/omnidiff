@@ -26,7 +26,8 @@
 //! Guardrails:
 //!
 //! - Only a *fully*-deleted subtree pairs with a *fully*-inserted one; a matched descendant already
-//!   has a footprint in the other tree whose ancestry a remap could contradict.
+//!   has a footprint in the other tree whose ancestry a remap could contradict. On the after side,
+//!   undecided counts as inserted, since phase 10 makes it so.
 //! - Largest first, claiming whole subtrees, so a moved function moves as one piece.
 //! - Several identical targets for a small subtree is a coin flip, so it is refused unless
 //!   `disambiguate_by_context` finds one clearly better surrounding.
@@ -106,7 +107,9 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         if claimed_before.contains(&b) {
             continue;
         }
-        if !subtree_fully_unmapped(b, before_metadata, &diff.before_node_map) {
+        if !subtree_fully_unmapped(b, before_metadata, &|id| {
+            diff.before_node_map.get(&id) == Some(&0)
+        }) {
             continue;
         }
         let Some(hash) = before_metadata.node_to_full_hash.get(&b) else {
@@ -122,8 +125,9 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
             .copied()
             .filter(|a| {
                 !claimed_after.contains(a)
-                    && diff.after_node_map.get(a) == Some(&0)
-                    && subtree_fully_unmapped(*a, after_metadata, &diff.after_node_map)
+                    && subtree_fully_unmapped(*a, after_metadata, &|id| {
+                        unpaired(id, &diff.after_node_map)
+                    })
             })
             .collect();
         candidates.sort_unstable_by_key(|a| {
@@ -286,12 +290,17 @@ fn outermost_unmapped_reference_kind<'m>(
     outermost
 }
 
-fn subtree_fully_unmapped(
-    root: usize,
-    meta: &ASTMetadata,
-    node_map: &rustc_hash::FxHashMap<usize, usize>,
-) -> bool {
-    if node_map.get(&root) != Some(&0) {
+/// No real partner on the after side: inserted, or not decided yet - phase 10 records what is
+/// still undecided as inserted (the convention of `solve_multi_maps`). A statement re-wrapped into
+/// a new `else` is left undecided by the fallback that saw the whole new `if` as one root
+/// (`vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme`).
+fn unpaired(id: usize, map: &rustc_hash::FxHashMap<usize, usize>) -> bool {
+    map.get(&id).is_none_or(|&partner| partner == 0)
+}
+
+/// Whether `root` and every node below it pass `free`.
+fn subtree_fully_unmapped(root: usize, meta: &ASTMetadata, free: &impl Fn(usize) -> bool) -> bool {
+    if !free(root) {
         return false;
     }
     let Some(info) = meta.node_info.get(&root) else {
@@ -299,7 +308,7 @@ fn subtree_fully_unmapped(
     };
     info.children
         .iter()
-        .all(|&child| subtree_fully_unmapped(child, meta, node_map))
+        .all(|&child| subtree_fully_unmapped(child, meta, free))
 }
 
 fn claim_subtree(root: usize, meta: &ASTMetadata, claimed: &mut HashSet<usize>) {
@@ -416,6 +425,42 @@ mod tests {
             first_of_kind(&after, "line_comment"),
         );
         assert_eq!(ast.before_node_map.get(&b).copied(), Some(a));
+    }
+
+    /// `vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme`: a statement re-wrapped
+    /// into the `else` of a new `if` is still undecided when this pass runs, and moves there.
+    #[test]
+    fn a_statement_moves_into_a_new_else_still_undecided() -> anyhow::Result<()> {
+        let (before, after) = &*crate::test::helper::handmade_test_code_pair(
+            "vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme",
+        )?;
+
+        let ast = diff_code(before, after).ast.unwrap();
+
+        // The highlight statements whose text starts with `prefix`.
+        let statements = |code: &Code, prefix: &str| {
+            let mut out = Vec::new();
+            let mut stack = vec![code.ast.as_ref().unwrap().root_node()];
+            while let Some(node) = stack.pop() {
+                if node.kind() == "highlight_statement"
+                    && code.contents[node.byte_range()].starts_with(prefix)
+                {
+                    out.push(node.id());
+                }
+                let mut cursor = node.walk();
+                stack.extend(node.children(&mut cursor));
+            }
+            out
+        };
+        let original = "hi Normal guibg=#202427 guifg=#8da3b8 ctermbg=none";
+        let ([b], [a]) = (
+            &statements(before, original)[..],
+            &statements(after, original)[..],
+        ) else {
+            panic!("one such statement on each side");
+        };
+        assert_eq!(ast.before_node_map.get(b), Some(a));
+        Ok(())
     }
 
     /// Out of a deleted function into a kept one, the same sentence reads as new text: the only

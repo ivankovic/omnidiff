@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-rename-defines", 39.01)
+    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-rename-defines", 2.53)
 }
 
 #[test]

@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-sniffnet-protocol", 0.33)
+    assert_matches_human_painting_within_limit("rust-sniffnet-protocol", 0.14)
 }
 
 #[test]

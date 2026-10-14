@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksoncore-12-utf8streamjsonparser",
-        0.04,
+        0.01,
     )
 }
 

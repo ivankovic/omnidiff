@@ -31,7 +31,7 @@ fn painting() -> Result<()> {
     // The alignment run between `NULL,` and `/* opener */` collapses to one space; no narrower
     // painting ends on a visible character, so the rows are painted whole. omnidiff paints nothing:
     // interior whitespace is out of reach (as in c-openssl-openssl-format-only-change).
-    assert_matches_human_painting_within_limit("c-openssl-openssl-whitepsace-only", 21.12)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-whitepsace-only", 21.11)
 }
 
 #[test]

@@ -30,7 +30,7 @@ fn painting() -> Result<()> {
     // One word changes inside a `\`-continued triple-quoted string, whose content is split
     // across several gaps; the `own_content_span` guard in `classify_node` descends instead of
     // painting the string whole.
-    assert_matches_human_painting_within_limit("python-odoo-odoo-version", 0.13)
+    assert_matches_human_painting_within_limit("python-odoo-odoo-version", 0.0)
 }
 
 #[test]

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-chart-20-valuemarker", 0.34)
+    assert_matches_human_painting_within_limit("java-defects4j-chart-20-valuemarker", 0.33)
 }
 
 #[test]

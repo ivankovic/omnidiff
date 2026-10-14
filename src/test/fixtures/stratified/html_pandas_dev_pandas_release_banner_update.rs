@@ -36,6 +36,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-pandas-dev-pandas-release-banner-update",
-        26.69,
+        20.91,
     )
 }

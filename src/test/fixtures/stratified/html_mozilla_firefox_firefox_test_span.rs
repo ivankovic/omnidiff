@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("html-mozilla-firefox-firefox-test-span", 2.72)
+    assert_matches_human_painting_within_limit("html-mozilla-firefox-firefox-test-span", 2.71)
 }
 
 #[test]
