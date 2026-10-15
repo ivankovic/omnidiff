@@ -904,6 +904,12 @@ mod php_wordpress_wordpress_version_8;
 #[cfg(test)]
 mod python_ansible_ansible_add_comment;
 #[cfg(test)]
+mod python_ansible_ansible_small_rename;
+#[cfg(test)]
+mod python_django_django_identifier_update;
+#[cfg(test)]
+mod python_kovidgoyal_calibre_add_a_parameter;
+#[cfg(test)]
 mod python_langchain_ai_langchain_version_change;
 #[cfg(test)]
 mod python_langflow_ai_langflow_bob;
@@ -920,6 +926,10 @@ mod python_nvbn_thefuck_small_change_3;
 #[cfg(test)]
 mod python_nvbn_thefuck_stdout_stderr_change;
 #[cfg(test)]
+mod python_nvbn_thefuck_update_string;
+#[cfg(test)]
+mod python_odoo_odoo_add_function_call;
+#[cfg(test)]
 mod python_odoo_odoo_add_import;
 #[cfg(test)]
 mod python_odoo_odoo_add_import_2;
@@ -928,7 +938,11 @@ mod python_odoo_odoo_add_two_imports;
 #[cfg(test)]
 mod python_odoo_odoo_version;
 #[cfg(test)]
+mod python_openhands_openhands_add_only;
+#[cfg(test)]
 mod python_openhands_openhands_small_change;
+#[cfg(test)]
+mod python_openhands_openhands_version_update;
 #[cfg(test)]
 mod python_paddlepaddle_paddleocr_remove_import;
 #[cfg(test)]
