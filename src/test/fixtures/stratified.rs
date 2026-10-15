@@ -470,6 +470,8 @@ mod go_fatedier_frp_pure_delete;
 #[cfg(test)]
 mod go_gin_gonic_gin_enclose_with_var;
 #[cfg(test)]
+mod go_gin_gonic_gin_interesting_case_end_of_line_comment_becomes_full_line;
+#[cfg(test)]
 mod go_gin_gonic_gin_one_space_removed_in_a_comment;
 #[cfg(test)]
 mod go_gin_gonic_gin_replace_replaced_with_replaceall;
@@ -492,7 +494,11 @@ mod go_gin_gonic_gin_whitespace_in_comment;
 #[cfg(test)]
 mod go_gohugoio_hugo_add_and_upadate_list_items;
 #[cfg(test)]
+mod go_gohugoio_hugo_complex;
+#[cfg(test)]
 mod go_gohugoio_hugo_for_loop_change;
+#[cfg(test)]
+mod go_gohugoio_hugo_good_example_of_small_but_complex_change;
 #[cfg(test)]
 mod go_gohugoio_hugo_update_and_add_list_items;
 #[cfg(test)]
@@ -519,6 +525,8 @@ mod go_jesseduffield_lazygit_add_two_lines;
 mod go_jesseduffield_lazygit_change_undo_key;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_delete_only;
+#[cfg(test)]
+mod go_jesseduffield_lazygit_many_multi_maps_very_difficult;
 #[cfg(test)]
 mod go_jesseduffield_lazygit_nice_small_change;
 #[cfg(test)]
