@@ -314,6 +314,8 @@ mod csharp_jellyfin_jellyfin_add_only_4;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_only_5;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_big_change;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_nice_move_example;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_small_add;
@@ -668,9 +670,13 @@ mod java_paddlepaddle_paddleocr_whitespace_only;
 #[cfg(test)]
 mod java_paddlepaddle_paddleocr_whitespace_only_2;
 #[cfg(test)]
+mod java_protocolbuffers_protobuf_add_final;
+#[cfg(test)]
 mod java_protocolbuffers_protobuf_add_one_annotation;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_add_one_import;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_move_from_one_utf8_object_to_other_via_import;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_update_comment;
 #[cfg(test)]
@@ -679,6 +685,8 @@ mod java_protocolbuffers_protobuf_update_comment_2;
 mod javascript_axios_axios_real_small_change;
 #[cfg(test)]
 mod javascript_d3_d3_nice_small_change;
+#[cfg(test)]
+mod javascript_eslint_eslint_add_only;
 #[cfg(test)]
 mod javascript_eslint_eslint_doccoment_change;
 #[cfg(test)]
@@ -727,6 +735,8 @@ mod javascript_mui_material_ui_delete_one_import;
 mod javascript_vercel_next_add_doccomment;
 #[cfg(test)]
 mod json_apache_superset_js_to_ts;
+#[cfg(test)]
+mod json_electron_electron_remove_only;
 #[cfg(test)]
 mod json_excalidraw_excalidraw_version;
 #[cfg(test)]
