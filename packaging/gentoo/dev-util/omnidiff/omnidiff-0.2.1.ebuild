@@ -192,6 +192,7 @@ CRATES="
 	mio@1.2.3
 	moxcms@0.8.1
 	nix@0.29.0
+	nix@0.31.3
 	nom@7.1.3
 	nu-ansi-term@0.50.3
 	num-conv@0.2.2
@@ -444,7 +445,7 @@ CRATES="
 	zerocopy@0.8.59
 	zerofrom-derive@0.1.8
 	zerofrom@0.1.8
-	zip@8.6.0
+	zip@9.0.4
 	zlib-rs@0.6.8
 	zmij@1.0.23
 	zune-core@0.5.3
