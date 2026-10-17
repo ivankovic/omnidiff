@@ -300,6 +300,8 @@ mod csharp_jellyfin_jellyfin_a_few_lines_but_complex_reuse_across_trees;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_a_loop;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_add_and_move;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_const_string;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_add_line;
@@ -315,6 +317,8 @@ mod csharp_jellyfin_jellyfin_add_only_4;
 mod csharp_jellyfin_jellyfin_add_only_5;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_big_change;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_delete_only;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_nice_move_example;
 #[cfg(test)]
@@ -410,7 +414,11 @@ mod css_facebook_react_add_two_selectors;
 #[cfg(test)]
 mod css_gorhill_ublock_add_one_attribute;
 #[cfg(test)]
+mod css_gorhill_ublock_many_parse_errors;
+#[cfg(test)]
 mod css_mastodon_mastodon_add_two_lines;
+#[cfg(test)]
+mod css_microsoft_vscode_add_with_whitespace_change;
 #[cfg(test)]
 mod css_microsoft_vscode_remove_one_line;
 #[cfg(test)]
