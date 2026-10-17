@@ -62,7 +62,7 @@ pub fn is_hyprcursor(bytes: &[u8]) -> bool {
     zip::ZipArchive::new(Cursor::new(bytes)).is_ok_and(|archive| {
         archive
             .file_names()
-            .any(|name| HYPRCURSOR_META.contains(&name))
+            .any(|name| name.is_ok_and(|name| HYPRCURSOR_META.contains(&name.as_ref())))
     })
 }
 
