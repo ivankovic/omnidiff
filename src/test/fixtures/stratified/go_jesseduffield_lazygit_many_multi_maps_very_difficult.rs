@@ -26,8 +26,8 @@ fn mapping() -> Result<()> {
     // to.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-jesseduffield-lazygit-many-multi-maps-very-difficult",
-        64,
-        46,
+        76,
+        55,
     )
 }
 

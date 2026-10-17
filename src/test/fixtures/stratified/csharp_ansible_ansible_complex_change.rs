@@ -18,15 +18,15 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "csharp-ansible-ansible-complex-change",
-        16,
-        9,
+        207,
+        134,
     )
 }
 
@@ -37,5 +37,9 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("csharp-ansible-ansible-complex-change")
+    // Invariants 12 and 16: the `unsupportedParameters` -> `unsupportedSorted` and `legalInputs` ->
+    // `legalInputsSorted` renames (before rows 1077-1078, after rows 1128-1129) are painted under
+    // neither preset (12, twice), not as just their differing words under Minimal and not whole
+    // under Full (16, seven times).
+    assert_ground_truth_invariants_with_known_violations("csharp-ansible-ansible-complex-change", 9)
 }

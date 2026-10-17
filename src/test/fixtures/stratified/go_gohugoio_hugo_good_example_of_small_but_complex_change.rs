@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,5 +40,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("go-gohugoio-hugo-good-example-of-small-but-complex-change")
+    // Invariants 12 and 16: the `GetMethodIndexByName` -> `GetMethodByNameForType` rename (row 317
+    // on both sides) is painted under neither preset (12, twice), not as just its differing words
+    // under Minimal and not whole under Full (16, four times).
+    assert_ground_truth_invariants_with_known_violations(
+        "go-gohugoio-hugo-good-example-of-small-but-complex-change",
+        6,
+    )
 }

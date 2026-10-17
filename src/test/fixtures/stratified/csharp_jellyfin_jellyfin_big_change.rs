@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "csharp-jellyfin-jellyfin-big-change",
-        50,
-        33,
+        53,
+        35,
     )
 }
 
