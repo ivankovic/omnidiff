@@ -135,7 +135,7 @@ impl Zip {
                 bail!("expands past {MAX_EXPANDED_BYTES} bytes");
             }
             members.push(Member {
-                key: file.name().to_string(),
+                key: file.name().context("reading a member's name")?.into_owned(),
                 hash: u64::from(file.crc32()) << 32 ^ file.size(),
             });
             indices.push(index);

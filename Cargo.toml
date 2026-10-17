@@ -131,7 +131,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 flate2 = "1.1"
 # Archives (diff::content::archive), every decoder pure Rust: zip's default features would pull in
 # C zstd, and bzip2's default backend is libbz2-rs-sys.
-zip = { version = "8", default-features = false, features = ["deflate-flate2"] }
+zip = { version = "9", default-features = false, features = ["deflate-flate2"] }
 tar = { version = "0.4", default-features = false }
 lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz"] }
 bzip2 = "0.6"
