@@ -1,0 +1,30 @@
+{
+  "verdict": "edited+changed_files",
+  "members": {
+    "U+0051 Q": "edited",
+    "U+005B [": "edited",
+    "U+005D ]": "edited",
+    "U+0061 a": "artifacts",
+    "U+0062 b": "artifacts",
+    "U+0063 c": "artifacts",
+    "U+0064 d": "artifacts",
+    "U+0065 e": "artifacts",
+    "U+0066 f": "artifacts",
+    "U+0067 g": "artifacts",
+    "U+0068 h": "artifacts",
+    "U+0069 i": "imperceptible",
+    "U+006A j": "imperceptible",
+    "U+006C l": "imperceptible",
+    "U+006D m": "artifacts",
+    "U+006E n": "artifacts",
+    "U+006F o": "artifacts",
+    "U+0070 p": "artifacts",
+    "U+0071 q": "artifacts",
+    "U+0072 r": "artifacts",
+    "U+0073 s": "artifacts",
+    "U+0074 t": "imperceptible",
+    "U+0075 u": "artifacts",
+    "U+0079 y": "artifacts",
+    "names": "edited"
+  }
+}

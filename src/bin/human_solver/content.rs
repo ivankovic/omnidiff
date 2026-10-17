@@ -32,6 +32,10 @@
 //! previous member without a verdict, and `A` gives the last verdict to every member still without
 //! one - for a font with hundreds of changed glyphs, which a pair verdict can also stand in for.
 //!
+//! `p` pairs a removed member with an added one - a file moved into a folder, or renamed - as the
+//! same file: `p` on one, then `p` on the other. The pair becomes a changed member, judged like any
+//! other, and saved as a rename (`test::helper::human_content`). `p` on a pair splits it again.
+//!
 //! The pair is shown through `ContentViewer` in its annotation mode - the files' own metadata, and
 //! nothing the engine decided - so the verdicts stay the human's. `e` shows the engine's view on
 //! request (its verdicts, outlined regions, the difference view) and hides it again; each sample
@@ -192,12 +196,14 @@ impl Origin {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct Judgements {
     pair: Option<Judgement>,
+    /// Members paired by `p`: a removed member's key, to the added member's it became.
+    renames: BTreeMap<String, String>,
     members: BTreeMap<String, Judgement>,
 }
 
 impl Judgements {
     fn is_empty(&self) -> bool {
-        self.pair.is_none() && self.members.is_empty()
+        self.pair.is_none() && self.renames.is_empty() && self.members.is_empty()
     }
 }
 
@@ -217,6 +223,8 @@ struct ContentSession {
     reject_input: Option<String>,
     /// A can't-judge note being typed, after `u`.
     note_input: Option<String>,
+    /// The removed or added member `p` was pressed on, waiting for its other half.
+    pairing: Option<(String, MemberStatus)>,
     /// `q` was pressed with unsaved verdicts, and was warned about it: another `q` quits.
     quit_armed: bool,
     status: String,
@@ -227,6 +235,7 @@ fn load_judgement(family: Family, fixture: &str) -> Judgements {
     human_content::load(family, fixture)
         .map(|content| Judgements {
             pair: content.verdict,
+            renames: content.renames,
             members: content.members,
         })
         .unwrap_or_default()
@@ -275,9 +284,11 @@ pub(crate) fn run_content_session(
         last: None,
         reject_input: None,
         note_input: None,
+        pairing: None,
         quit_armed: false,
         status: "0-5 records a verdict; s saves it".to_string(),
     };
+    apply_renames(&mut session);
     update_marks(&mut session);
     loop {
         omnidiff::tui::ui::draw_synchronized(terminal, |frame| draw(frame, &mut session, app))?;
@@ -350,11 +361,7 @@ fn shape(session: &ContentSession, target: &Target) -> Shape {
     let Target::Member(key) = target else {
         return Shape::Container;
     };
-    match members
-        .diff()
-        .member(key)
-        .and_then(|member| member.detail.as_ref())
-    {
+    match members.member_detail(key) {
         Some(MemberDetail::Picture(_)) => Shape::Picture,
         Some(MemberDetail::Content { content }) => match content.as_ref() {
             ContentDiff::Picture(_) => Shape::Picture,
@@ -388,8 +395,7 @@ fn member_detail_is(
     session
         .viewer
         .members()
-        .and_then(|members| members.diff().member(key))
-        .and_then(|member| member.detail.as_ref())
+        .and_then(|members| members.member_detail(key))
         .is_some_and(test)
 }
 
@@ -553,6 +559,93 @@ fn judge_the_rest(session: &mut ContentSession) {
     let label = judgement.label_in(vocabulary(session, &Target::Pair));
     session.status = format!("{given} more {noun}: {label} (s to save)");
     update_marks(session);
+}
+
+/// Pairs the saved renames in the viewer; one whose members are no longer removed and added is
+/// dropped, and said so.
+fn apply_renames(session: &mut ContentSession) {
+    let Some(members) = session.viewer.members_mut() else {
+        return;
+    };
+    let mut dropped = Vec::new();
+    for (before, after) in &session.judgement.renames {
+        if members.pair(before, after).is_err() {
+            dropped.push(before.clone());
+        }
+    }
+    members.select(None);
+    if !dropped.is_empty() {
+        for before in &dropped {
+            session.judgement.renames.remove(before);
+        }
+        session.status = format!(
+            "Pairs dropped, no longer removed and added: {}",
+            dropped.join(", ")
+        );
+    }
+}
+
+/// `p`: pairs a removed member with an added one, in two presses, or splits the selected pair.
+fn pair_members(session: &mut ContentSession) {
+    let Some(members) = session.viewer.members() else {
+        session.status = "A picture has no members to pair".to_string();
+        return;
+    };
+    if members.has_nested() {
+        session.status = "Members pair at the top level: Backspace first".to_string();
+        return;
+    }
+    let (Some(key), Some(status)) = (members.selected_key(), members.selected_status()) else {
+        session.status = "p pairs a removed member with an added one".to_string();
+        return;
+    };
+    let key = key.to_string();
+    if let Some(before) = members.renamed_from(&key).map(str::to_string) {
+        if let Some(members) = session.viewer.members_mut() {
+            members.unpair(&key);
+        }
+        session.judgement.renames.remove(&before);
+        session.judgement.members.remove(&key);
+        session.pairing = None;
+        session.status = format!("{before} and {key} are two members again (s to save)");
+        update_marks(session);
+        return;
+    }
+    if !matches!(status, MemberStatus::Removed | MemberStatus::Added) {
+        session.status = "p pairs a removed member with an added one".to_string();
+        return;
+    }
+    let (before, after) = match session.pairing.take() {
+        Some((first, first_status)) if first_status != status => match status {
+            MemberStatus::Added => (first, key),
+            _ => (key, first),
+        },
+        Some((first, _)) if first == key => {
+            session.status = "Pairing cancelled".to_string();
+            return;
+        }
+        _ => {
+            let other = match status {
+                MemberStatus::Removed => "an added",
+                _ => "a removed",
+            };
+            session.status = format!("{key}: p on {other} member pairs them, p here cancels");
+            session.pairing = Some((key, status));
+            return;
+        }
+    };
+    let Some(members) = session.viewer.members_mut() else {
+        return;
+    };
+    match members.pair(&before, &after) {
+        Ok(()) => {
+            session.status =
+                format!("{before} -> {after}: one member, give it a verdict (s to save)");
+            session.judgement.renames.insert(before, after);
+            update_marks(session);
+        }
+        Err(message) => session.status = message,
+    }
 }
 
 /// Shows each judged member's verdict in the list, and the engine's where it is shown and differs.
@@ -719,6 +812,7 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
         KeyCode::Char('n') => next_unjudged(session, true),
         KeyCode::Char('N') => next_unjudged(session, false),
         KeyCode::Char('A') => judge_the_rest(session),
+        KeyCode::Char('p') => pair_members(session),
         KeyCode::Char('s') => {
             session.status = match save(session) {
                 Ok(message) => message,
@@ -901,7 +995,7 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
     };
     let more = match session.viewer.members() {
         Some(_) => {
-            "  j/k member  n/N unjudged  A rest  a all  g grid  J/K change  Enter open  b blocks"
+            "  j/k member  n/N unjudged  A rest  p pair  a all  g grid  J/K change  Enter open  b blocks"
         }
         None => "  t view  h/l swipe  +/- zoom  HJKL pan  b blocks",
     };
@@ -1023,6 +1117,7 @@ fn human_content_of(session: &ContentSession) -> HumanContent {
         .unwrap_or_default();
     HumanContent {
         verdict: session.judgement.pair.clone(),
+        renames: session.judgement.renames.clone(),
         members: session.judgement.members.clone(),
         unjudged: changed
             .iter()
@@ -1133,6 +1228,7 @@ mod tests {
             last: None,
             reject_input: None,
             note_input: None,
+            pairing: None,
             quit_armed: false,
             status: String::new(),
         }
@@ -1389,6 +1485,7 @@ mod tests {
             last: None,
             reject_input: None,
             note_input: None,
+            pairing: None,
             quit_armed: false,
             status: String::new(),
         }
@@ -1706,6 +1803,122 @@ mod tests {
         assert!(
             screen(&mut session, &app, 160).contains("b.txt  can't judge: blank"),
             "and is no disagreement with the engine"
+        );
+    }
+
+    /// The bug that asked for it: `gzip-x-urbanjost-m_cli2-82437d30-manpages` moved every page into
+    /// `man3/`, which the engine sees as every page removed and another added.
+    #[test]
+    fn p_pairs_a_removed_member_with_an_added_one_and_splits_it_again() {
+        let zip = |files: &[(&str, &str)]| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            for (name, text) in files {
+                writer
+                    .start_file(*name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                std::io::Write::write_all(&mut writer, text.as_bytes()).unwrap();
+            }
+            writer.finish().unwrap();
+            bytes
+        };
+        let dir = tempfile::tempdir().unwrap();
+        // Apart from the zips `archive_session` writes, which the sessions below are built on.
+        let pair = dir.path().join("pair");
+        fs::create_dir(&pair).unwrap();
+        let (a, b) = (pair.join("before.zip.test"), pair.join("after.zip.test"));
+        fs::write(&a, zip(&[("ls.1", "page\n"), ("gone.1", "g\n")])).unwrap();
+        fs::write(&b, zip(&[("man1/ls.1", "page\n"), ("new.1", "n\n")])).unwrap();
+        let mut session = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            ..archive_session(dir.path())
+        };
+        let mut app = test_app();
+        let select = |session: &mut ContentSession, key: &str| {
+            session.viewer.members_mut().unwrap().select(Some(key));
+        };
+
+        select(&mut session, "man1/ls.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert!(
+            session.status.contains("p on a removed member"),
+            "{}",
+            session.status
+        );
+        select(&mut session, "new.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert!(
+            session.status.contains("p on a removed member"),
+            "two added members do not pair; the second waits instead: {}",
+            session.status
+        );
+        select(&mut session, "ls.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert_eq!(
+            session.judgement.renames,
+            BTreeMap::from([("ls.1".to_string(), "new.1".to_string())])
+        );
+        // The wrong two: p on the pair splits it.
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert!(session.judgement.renames.is_empty(), "{}", session.status);
+        select(&mut session, "ls.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        select(&mut session, "man1/ls.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert_eq!(
+            session.judgement.renames,
+            BTreeMap::from([("ls.1".to_string(), "man1/ls.1".to_string())])
+        );
+        assert_eq!(
+            session.viewer.members().unwrap().selected_key(),
+            Some("man1/ls.1")
+        );
+        let text = screen(&mut session, &app, 200);
+        assert!(text.contains("> ls.1 -> man1/ls.1"), "{text}");
+        assert!(
+            text.contains("Verdict for man1/ls.1: 0 identical"),
+            "{text}"
+        );
+
+        handle_key(&mut session, &mut app, KeyCode::Char('0'));
+        let human = human_content_of(&session);
+        assert_eq!(human.renames, session.judgement.renames);
+        assert_eq!(
+            human.members,
+            BTreeMap::from([(
+                "man1/ls.1".to_string(),
+                Judgement::Verdict(Verdict::new(Level::Invisible))
+            )])
+        );
+        assert_eq!(human.unjudged, 0);
+        let engine = omnidiff::diff::content::diff(&fs::read(&a).unwrap(), &fs::read(&b).unwrap())
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            human_content::mismatches(&human, &engine).members,
+            vec![("man1/ls.1".to_string(), None)],
+            "the engine does not follow the move"
+        );
+
+        // Saved pairs are paired again when the case is opened.
+        let saved = session.judgement.clone();
+        let mut reopened = ContentSession {
+            viewer: ContentViewer::open_for_annotation(&a, &b, Picker::halfblocks()).unwrap(),
+            judgement: saved,
+            ..archive_session(dir.path())
+        };
+        apply_renames(&mut reopened);
+        assert_eq!(
+            reopened.viewer.members().unwrap().changed_keys(),
+            vec!["man1/ls.1".to_string()]
+        );
+
+        select(&mut session, "man1/ls.1");
+        handle_key(&mut session, &mut app, KeyCode::Char('p'));
+        assert!(session.judgement.renames.is_empty());
+        assert!(
+            session.judgement.members.is_empty(),
+            "an added member takes no verdict"
         );
     }
 

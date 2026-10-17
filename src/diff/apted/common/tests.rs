@@ -323,6 +323,64 @@ fn test_apted_engine_matches_oracle_multi_root_forest() {
 }
 
 #[test]
+fn compute_edit_mapping_decides_every_tree_of_a_multi_root_forest() {
+    // before forest: leaf(a), leaf(b), inner(c -> leaf(d))
+    let before = synthetic_meta(&[
+        (0, "leaf", "a", &[]),
+        (1, "leaf", "b", &[]),
+        (2, "inner", "", &[3]),
+        (3, "leaf", "d", &[]),
+    ]);
+    // after forest: leaf(a), inner(c -> leaf(d), leaf(e)), leaf(z)
+    let after = synthetic_meta(&[
+        (10, "leaf", "a", &[]),
+        (11, "inner", "", &[12, 13]),
+        (12, "leaf", "d", &[]),
+        (13, "leaf", "e", &[]),
+        (14, "leaf", "z", &[]),
+    ]);
+    let empty_map = rustc_hash::FxHashMap::default();
+    let before_idx = PostorderIndexer::build(&before, &[0, 1, 2], &empty_map);
+    let after_idx = PostorderIndexer::build(&after, &[10, 11, 14], &empty_map);
+    let cost_model = UnitCostModel::new(Language::Unknown);
+    let mut delta =
+        compute_delta_zhang_shasha(&before_idx, &after_idx, &before, &after, &cost_model, None);
+    let decisions = compute_edit_mapping(
+        &before_idx,
+        &after_idx,
+        &before,
+        &after,
+        &cost_model,
+        None,
+        &mut delta,
+    );
+
+    // Not only the last tree's: a leading tree left undecided is read as deleted.
+    let mut before_decided: Vec<usize> = Vec::new();
+    let mut after_decided: Vec<usize> = Vec::new();
+    for decision in &decisions {
+        match *decision {
+            RawDecision::Match(b, a) => {
+                before_decided.push(b);
+                after_decided.push(a);
+            }
+            RawDecision::Delete(b) => before_decided.push(b),
+            RawDecision::Insert(a) => after_decided.push(a),
+        }
+    }
+    before_decided.sort_unstable();
+    after_decided.sort_unstable();
+    assert_eq!(before_decided, vec![0, 1, 2, 3]);
+    assert_eq!(after_decided, vec![10, 11, 12, 13, 14]);
+    assert!(
+        decisions
+            .iter()
+            .any(|d| matches!(*d, RawDecision::Match(0, 10))),
+        "{decisions:?}"
+    );
+}
+
+#[test]
 fn test_apted_engine_matches_oracle_deep_unbalanced() {
     // before: a deep left chain with a branchy right side.
     let before = synthetic_meta(&[
@@ -1956,6 +2014,50 @@ fn anchor_leftovers_by_member_name_zips_equal_counts_and_leaves_unequal_counts_a
     assert!(before_left.contains(&b[2]) && before_left.contains(&b[3]));
     assert!(after_left.contains(&a[2]));
     assert!(!diff.before_node_map.contains_key(&b[2]));
+}
+
+#[test]
+fn anchor_leftovers_by_member_name_pairs_cpp_definitions_by_their_qualified_names() {
+    let before = Code::from_string(
+        "void A::f() { a(1); }\nvoid B::f() { b(1); }\nA::~A() { c(1); }\n\
+         bool A::operator==(A const&) const { return d(1); }\n",
+        &Language::CPP,
+    );
+    let after = Code::from_string(
+        "void A::g() { e(); }\nvoid A::f() { a(2); }\nvoid B::f() { b(2); }\n\
+         A::~A() { c(2); }\nbool A::operator==(A const&) const { return d(2); }\n",
+        &Language::CPP,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    let definitions = |code: &Code, meta: &ASTMetadata| {
+        let root = code.ast.as_ref().unwrap().root_node().id();
+        meta.node_info[&root].children.clone()
+    };
+    let b = definitions(&before, &before_meta);
+    let a = definitions(&after, &after_meta);
+
+    let mut diff = ASTDiff::default();
+    let (before_left, after_left) = anchor_leftovers_by_member_name(
+        b.clone(),
+        a.clone(),
+        &before_meta,
+        &after_meta,
+        "test",
+        &mut diff,
+    );
+
+    // Every body changed and `A::g` is new, so neither exact hashes nor positions pair these:
+    // the scope keeps `A::f` and `B::f` apart, and a destructor and an operator have names too.
+    for (before_index, after_index) in [(0, 1), (1, 2), (2, 3), (3, 4)] {
+        assert_eq!(
+            diff.before_node_map.get(&b[before_index]),
+            Some(&a[after_index]),
+            "definition {before_index}"
+        );
+    }
+    assert!(before_left.is_empty());
+    assert_eq!(after_left, vec![a[0]]);
 }
 
 #[test]

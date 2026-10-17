@@ -104,6 +104,10 @@ mod jpeg_x_chennes_med_f17a4859_a01401;
 #[cfg(test)]
 mod jpeg_x_chennes_med_f17a4859_a01419;
 #[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01497;
+#[cfg(test)]
+mod jpeg_x_chennes_med_f17a4859_a01953;
+#[cfg(test)]
 mod jpeg_x_chennes_med_f17a4859_inherit_graph_10;
 #[cfg(test)]
 mod jpeg_x_chennes_med_f17a4859_inherit_graph_6;

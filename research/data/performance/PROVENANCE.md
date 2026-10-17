@@ -11,11 +11,13 @@ are pinned to whatever corpus was current at their date; that is their point.
 One file per machine registered in `../machines.csv`, written by `make benchmark-content` on it.
 Compare figures within one file, never across two.
 
-### `content_speed/laptop.csv` (2026-10-11)
+### `content_speed/laptop.csv` (2026-10-17)
 
 The same samples as `server.csv`, timed by `make benchmark-content` on the laptop
-(`../machines.csv`), on AC power with the `performance` platform profile and nothing else running.
-Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures fail).
+(`../machines.csv`), first on 2026-10-11 on AC power with the `performance` platform profile and
+nothing else running, and re-timed 2026-10-17 with nothing else running (power profile not
+recorded). Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures
+fail).
 
 ### `content_speed/server.csv` (2026-10-06)
 

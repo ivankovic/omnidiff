@@ -1,0 +1,629 @@
+{
+  "entries": [
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_selector:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_selector:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_selector:1",
+        "class_name:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_selector:1",
+        "class_name:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_name:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:1",
+        "class_name:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:2",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:2",
+        "class_name:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1",
+        "class_selector:2",
+        "class_name:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "rule_set:1"
+      ],
+      "after_path": [
+        "rule_set:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "selectors:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "selectors:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:2"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:3"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:2"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:3"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:4"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:5"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:6"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:7"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:7"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "selectors:1",
+        "descendant_selector:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "block:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:8",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:9"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:10"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:11"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:12"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:13"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:14"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:15"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:16"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:17"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:18"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:19"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:20"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "rule_set:20"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "rule_set:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "rule_set:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "keyframes_statement:1"
+      ],
+      "after_path": [
+        "keyframes_statement:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 51,
+              "start_column": 0,
+              "end_row": 51,
+              "end_column": 47
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

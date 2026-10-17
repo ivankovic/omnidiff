@@ -20,7 +20,11 @@
 #[cfg(test)]
 mod mo_x_adammajer_lpe_0d8fb399_fr;
 #[cfg(test)]
+mod mo_x_alsaplayer_alsaplayer_7a32bda0_en_gb;
+#[cfg(test)]
 mod mo_x_alsaplayer_alsaplayer_7a32bda0_fr;
+#[cfg(test)]
+mod mo_x_deathkiller_jazz2_native_09123bd8_hu;
 #[cfg(test)]
 mod mo_x_deathkiller_jazz2_native_0aaf3cff_ro;
 #[cfg(test)]

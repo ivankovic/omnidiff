@@ -345,9 +345,37 @@ pub(crate) fn forest_dist(
     forestdist: &mut ForestDist,
     write_delta_on_aligned: bool,
 ) {
-    let lld_i = before.post_to_lld[i - 1];
-    let lld_j = after.post_to_lld[j - 1];
+    forest_dist_from(
+        before,
+        after,
+        before_meta,
+        after_meta,
+        cost_model,
+        containment,
+        delta,
+        (before.post_to_lld[i - 1], after.post_to_lld[j - 1]),
+        (i, j),
+        forestdist,
+        write_delta_on_aligned,
+    );
+}
 
+/// [`forest_dist`] over the forests between boundaries `(lld_i, lld_j)` and `(i, j)`, which need
+/// not be one subtree each: from `(0, 0)` it is the distance between two whole forests.
+#[allow(clippy::too_many_arguments)]
+fn forest_dist_from(
+    before: &PostorderIndexer,
+    after: &PostorderIndexer,
+    before_meta: &ASTMetadata,
+    after_meta: &ASTMetadata,
+    cost_model: &UnitCostModel,
+    containment: Option<&ContainmentCtx>,
+    delta: &mut DeltaTable,
+    (lld_i, lld_j): (usize, usize),
+    (i, j): (usize, usize),
+    forestdist: &mut ForestDist,
+    write_delta_on_aligned: bool,
+) {
     forestdist[(lld_i, lld_j)] = 0;
 
     let dj_info: Vec<(usize, &ASTNodeMetadata, usize, usize)> = ((lld_j + 1)..=j)
@@ -440,8 +468,11 @@ pub(crate) fn compute_edit_mapping(
         return decisions;
     }
 
+    // The first pass spans the whole forests, from boundary 0: starting from the last root's
+    // leftmost leaf, as for one tree, would leave every earlier root of a multi-root forest
+    // without a decision, and an undecided node reads as deleted.
     let mut forestdist = ForestDist::new(size1 + 1, size2 + 1, 0);
-    forest_dist(
+    forest_dist_from(
         before,
         after,
         before_meta,
@@ -449,8 +480,8 @@ pub(crate) fn compute_edit_mapping(
         cost_model,
         containment,
         delta,
-        size1,
-        size2,
+        (0, 0),
+        (size1, size2),
         &mut forestdist,
         false,
     );
@@ -459,6 +490,14 @@ pub(crate) fn compute_edit_mapping(
     let mut tree_pairs: Vec<(usize, usize)> = vec![(size1, size2)];
 
     while let Some((last_row, last_col)) = tree_pairs.pop() {
+        let (first_row, first_col) = if root_node_pair {
+            (0, 0)
+        } else {
+            (
+                before.post_to_lld[last_row - 1],
+                after.post_to_lld[last_col - 1],
+            )
+        };
         if !root_node_pair {
             forest_dist(
                 before,
@@ -476,8 +515,6 @@ pub(crate) fn compute_edit_mapping(
         }
         root_node_pair = false;
 
-        let first_row = before.post_to_lld[last_row - 1];
-        let first_col = after.post_to_lld[last_col - 1];
         let mut row = last_row;
         let mut col = last_col;
 

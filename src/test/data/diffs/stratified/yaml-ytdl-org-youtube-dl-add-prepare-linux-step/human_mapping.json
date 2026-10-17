@@ -1,0 +1,1981 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1"
+      ],
+      "after_path": [
+        "document:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "flow_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "flow_node:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "::1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "flow_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "flow_node:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "::1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:6"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:6"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "flow_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "flow_node:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "::1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "-:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "-:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:3"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:4"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:5"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:6"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:7"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:8"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:9"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:10"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:11"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:12"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:13"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:14"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:15"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:16"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:17"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:18"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:19"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:20"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:21"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:22"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:23"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:24"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:25"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:26"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:27"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:2",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:7",
+        "block_node:1",
+        "block_sequence:1",
+        "block_sequence_item:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ],
+      "after_path": [
+        "document:1",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:5",
+        "block_node:1",
+        "block_mapping:1",
+        "block_mapping_pair:3"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 123,
+              "start_column": 4,
+              "end_row": 123,
+              "end_column": 25
+            },
+            {
+              "start_row": 124,
+              "start_column": 6,
+              "end_row": 124,
+              "end_column": 48
+            },
+            {
+              "start_row": 125,
+              "start_column": 6,
+              "end_row": 125,
+              "end_column": 17
+            },
+            {
+              "start_row": 126,
+              "start_column": 6,
+              "end_row": 126,
+              "end_column": 12
+            },
+            {
+              "start_row": 127,
+              "start_column": 8,
+              "end_row": 127,
+              "end_column": 57
+            },
+            {
+              "start_row": 128,
+              "start_column": 8,
+              "end_row": 128,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 136,
+              "start_column": 6,
+              "end_row": 136,
+              "end_column": 43
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

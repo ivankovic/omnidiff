@@ -1,0 +1,3466 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "doctype:1"
+      ],
+      "after_path": [
+        "doctype:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1"
+      ],
+      "after_path": [
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:4"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:4"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:5"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:5"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:6"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:6"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:7"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:7"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:8"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:8"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:8"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:9"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:9"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:10"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:10"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:11"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:11"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:12"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:12"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:12"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:13"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:13"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:13"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:14"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:14"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:14"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:15"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:15"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:15"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:16"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:16"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:16"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:17"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:17"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:17"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:18"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:18"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:18"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:19"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:19"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:19"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:20"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:20"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:20"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:21"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:21"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:21"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:22"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:22"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:22"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:23"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:23"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:23"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:24"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:24"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:24"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:25"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:25"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:25"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:26"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:26"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:26"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:27"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:27"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:27"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:28"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:28"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:28"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:29"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:29"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:29"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:29"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:30"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:30"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:30"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:30"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:31"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:31"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:31"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:31"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:32"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:32"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:32"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:32"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:33"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:33"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:33"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:33"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:34"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:34"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:34"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:34"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:35"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:35"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:35"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:35"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:36"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:36"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:36"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:36"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:37"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:37"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:37"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:37"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:38"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:38"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:38"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:38"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:39"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:39"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:39"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:39"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:40"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:40"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "<:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "tag_name:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "tag_name:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "attribute_name:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "attribute_name:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "=:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "\":1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "attribute_value:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "attribute_value:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "\":2"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:3",
+        "quoted_attribute_value:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:4"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:5"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        "attribute:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        ">:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:2",
+        "start_tag:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:4"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "element:2",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:2",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:4"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:5"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:6"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "element:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "element:1",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "element:1",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "element:1",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:2",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:3"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:40",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:41"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:41"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:41"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:41"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:42"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:42"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:42"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:42"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:43"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:43"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:43"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:43"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:44"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:44"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:44"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:44"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:45"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:45"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:45"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:45"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:46"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:46"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:46"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:46"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:47"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:47"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:47"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:47"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:48"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:48"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:48"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:48"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:49"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:49"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:49"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:49"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:50"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:50"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:50"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:50"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:51"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:51"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:51"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:51"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:52"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:52"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:52"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:52"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:53"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:53"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:53"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:53"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:54"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:54"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:54"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:54"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:55"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:55"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:55"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:55"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:56"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:56"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:56"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:56"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:57"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:57"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:57"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:57"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:58"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:58"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:58"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:58"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "comment:59"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "comment:59"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:59"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:59"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:60"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:60"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:61"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:61"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:62"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:62"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:63"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:63"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:64"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:64"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:65"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:65"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:66"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:66"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:67"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:67"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:68"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:68"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:69"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:69"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:70"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:70"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:71"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:71"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:72"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:72"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:73"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:73"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:74"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:74"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:75"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:75"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:76"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:76"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:77"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:77"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:78"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:78"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:79"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:79"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:80"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:80"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:81"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:81"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:82"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:82"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:83"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:83"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:84"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:84"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:85"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:85"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:86"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:86"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:87"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:87"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:88"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:88"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:89"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:89"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:90"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:90"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:91"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:91"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:92"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:92"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:93"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:93"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:94"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:94"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:95"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:95"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:96"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:96"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:97"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:97"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:98"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:98"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:99"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:99"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:100"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:100"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:101"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:101"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:102"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:102"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:103"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:103"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:104"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:104"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:105"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:105"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "element:106"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "element:106"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "element:2",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "element:2",
+        "end_tag:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "end_tag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "end_tag:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2819,
+              "start_column": 57,
+              "end_row": 2819,
+              "end_column": 107
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2819,
+              "start_column": 53,
+              "end_row": 2819,
+              "end_column": 57
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2819,
+              "start_column": 53,
+              "end_row": 2819,
+              "end_column": 107
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

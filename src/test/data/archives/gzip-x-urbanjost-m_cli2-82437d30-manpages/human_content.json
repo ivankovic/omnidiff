@@ -1,0 +1,23 @@
+{
+  "verdict": "edited+changed_files",
+  "renames": {
+    "M_CLI2.3m_cli2.gz": "man3/M_CLI2.3m_cli2.gz",
+    "get_args.3m_cli2.gz": "man3/get_args.3m_cli2.gz",
+    "get_args_fixed_length.3m_cli2.gz": "man3/get_args_fixed_length.3m_cli2.gz",
+    "get_args_fixed_size.3m_cli2.gz": "man3/get_args_fixed_size.3m_cli2.gz",
+    "get_subcommand.3m_cli2.gz": "man3/get_subcommand.3m_cli2.gz",
+    "set_args.3m_cli2.gz": "man3/set_args.3m_cli2.gz",
+    "set_mode.3m_cli2.gz": "man3/set_mode.3m_cli2.gz",
+    "specified.3m_cli2.gz": "man3/specified.3m_cli2.gz"
+  },
+  "members": {
+    "man3/M_CLI2.3m_cli2.gz": "edited+changed_files",
+    "man3/get_args.3m_cli2.gz": "edited+changed_files",
+    "man3/get_args_fixed_length.3m_cli2.gz": "edited+changed_files",
+    "man3/get_args_fixed_size.3m_cli2.gz": "edited+changed_files",
+    "man3/get_subcommand.3m_cli2.gz": "edited+changed_files",
+    "man3/set_args.3m_cli2.gz": "edited+changed_files",
+    "man3/set_mode.3m_cli2.gz": "edited+changed_files",
+    "man3/specified.3m_cli2.gz": "edited+changed_files"
+  }
+}

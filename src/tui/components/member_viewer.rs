@@ -29,6 +29,11 @@
 //! `Enter` on a member that is itself a container (a jar in a zip) opens it in place, and
 //! `Backspace` comes back out. `g` shows every changed member that is a picture at once - a
 //! font's changed glyphs, a theme's changed cursors - as a grid on each side, in the picture view.
+//!
+//! A removed and an added member can be paired ([`MemberViewer::pair`]), for `human_solver` to say
+//! a file was moved or renamed: the two become one changed row, `> old -> new`, opened and diffed
+//! like any changed member. The engine's diff ([`MemberViewer::diff`]) is left as the engine made
+//! it; the pair's own detail is [`MemberViewer::member_detail`].
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -47,7 +52,8 @@ use super::content_viewer::ContentViewer;
 use super::picture_viewer::{PictureColors, PictureViewer};
 use super::text_pair_view::TextPairView;
 use crate::diff::content::container::{
-    self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberStatus,
+    self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberDetail,
+    MemberStatus,
 };
 use crate::diff::content::{self, Engine, Family, Verdict};
 use crate::diff::picture::{self, Frames, PictureInfo};
@@ -83,6 +89,10 @@ pub struct MemberViewer {
     after: Option<Box<dyn Container>>,
     diff: ContainerDiff,
     rows: Vec<Aligned>,
+    /// Members paired by hand: a removed member's index to the added member's it became.
+    pairs: Vec<(usize, usize)>,
+    /// What changed in each pair, by after's key: `None` if a side does not open.
+    pair_details: HashMap<String, Option<MemberDetail>>,
     /// Show every member, not only the ones that changed, were added or were removed.
     show_all: bool,
     /// Show every changed picture member at once, in a grid (`g`), instead of the selected one.
@@ -121,6 +131,8 @@ impl MemberViewer {
             after,
             diff,
             rows,
+            pairs: Vec::new(),
+            pair_details: HashMap::new(),
             show_all: false,
             grid: false,
             selected: 0,
@@ -213,6 +225,13 @@ impl MemberViewer {
             .collect()
     }
 
+    /// The key before has for a paired row, which differs from after's; `None` for any other.
+    fn renamed_key_of(&self, row: &Aligned) -> Option<&str> {
+        let (before, after) = (row.before?, row.after?);
+        let before = &self.before.as_deref()?.members()[before].key;
+        (*before != self.after.as_deref()?.members()[after].key).then_some(before.as_str())
+    }
+
     fn key_of(&self, row: &Aligned) -> &str {
         let (side, index) = match (row.after, row.before) {
             (Some(index), _) => (self.after.as_deref(), index),
@@ -270,6 +289,97 @@ impl MemberViewer {
     /// The engine's verdict on member `key`, if it changed.
     pub fn member_verdict(&self, key: &str) -> Option<Verdict> {
         self.diff.member(key)?.verdict()
+    }
+
+    /// What changed in member `key`: the engine's detail, or a pair's.
+    pub fn member_detail(&self, key: &str) -> Option<&MemberDetail> {
+        match self.pair_details.get(key) {
+            Some(detail) => detail.as_ref(),
+            None => self.diff.member(key)?.detail.as_ref(),
+        }
+    }
+
+    /// The key member `key` had before, if it is after's side of a pair.
+    pub fn renamed_from(&self, key: &str) -> Option<&str> {
+        self.rows
+            .iter()
+            .find(|row| row.after.is_some() && self.key_of(row) == key)
+            .and_then(|row| self.renamed_key_of(row))
+    }
+
+    /// Every pair, as (before's key, after's key).
+    pub fn pairs(&self) -> Vec<(String, String)> {
+        let key = |side: Option<&dyn Container>, index: usize| {
+            side.expect("a paired side is present").members()[index]
+                .key
+                .clone()
+        };
+        self.pairs
+            .iter()
+            .map(|&(before, after)| {
+                (
+                    key(self.before.as_deref(), before),
+                    key(self.after.as_deref(), after),
+                )
+            })
+            .collect()
+    }
+
+    /// Pairs the removed member `before` with the added member `after`: one changed row, under
+    /// after's key, in the added member's place.
+    pub fn pair(&mut self, before: &str, after: &str) -> Result<(), String> {
+        let index = |status: MemberStatus, key: &str| {
+            self.rows
+                .iter()
+                .find(|row| row.status == status && self.key_of(row) == key)
+                .and_then(|row| match status {
+                    MemberStatus::Removed => row.before,
+                    _ => row.after,
+                })
+        };
+        let before_index = index(MemberStatus::Removed, before)
+            .ok_or_else(|| format!("{before} is not a removed member"))?;
+        let after_index = index(MemberStatus::Added, after)
+            .ok_or_else(|| format!("{after} is not an added member"))?;
+        let open = |side: Option<&dyn Container>, index: usize| side?.open(index).ok();
+        let detail = open(self.before.as_deref(), before_index)
+            .zip(open(self.after.as_deref(), after_index))
+            .map(|(before, after)| container::compare_members(before, after, 0));
+        self.pair_details.insert(after.to_string(), detail);
+        self.pairs.push((before_index, after_index));
+        self.realign(after);
+        Ok(())
+    }
+
+    /// Undoes the pair whose after side is `after`, returning before's key.
+    pub fn unpair(&mut self, after: &str) -> Option<String> {
+        let before = self.renamed_from(after)?.to_string();
+        self.pair_details.remove(after);
+        let after_members = self.after.as_deref().map_or(&[][..], |side| side.members());
+        self.pairs
+            .retain(|&(_, index)| after_members[index].key != after);
+        self.realign(after);
+        Some(before)
+    }
+
+    /// The rows again, with every pair applied, keeping `key` selected.
+    fn realign(&mut self, key: &str) {
+        let mut rows = container::align(self.before.as_deref(), self.after.as_deref());
+        for &(before, after) in &self.pairs {
+            rows.retain(|row| !(row.status == MemberStatus::Removed && row.before == Some(before)));
+            if let Some(row) = rows
+                .iter_mut()
+                .find(|row| row.status == MemberStatus::Added && row.after == Some(after))
+            {
+                *row = Aligned {
+                    before: Some(before),
+                    after: Some(after),
+                    status: MemberStatus::Changed,
+                };
+            }
+        }
+        self.rows = rows;
+        self.select(Some(key));
     }
 
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
@@ -372,6 +482,7 @@ impl MemberViewer {
             return;
         };
         let key = self.key_of(&row).to_string();
+        let before_key = self.renamed_key_of(&row).unwrap_or(&key).to_string();
         let open = |side: Option<&dyn Container>,
                     index: Option<usize>|
          -> Result<Option<MemberContent>, String> {
@@ -386,20 +497,22 @@ impl MemberViewer {
         let opened = open(self.before.as_deref(), row.before)
             .and_then(|before| Ok((before, open(self.after.as_deref(), row.after)?)));
         self.view = Some(match opened {
-            Ok((before, after)) => self.member_view(&key, before, after),
+            Ok((before, after)) => self.member_view((&before_key, &key), before, after),
             Err(message) => MemberView::Message(message),
         });
     }
 
-    /// The view of one member, from what each side opened to.
+    /// The view of one member, from what each side opened to; `keys` are its key on each side,
+    /// which differ only for a pair.
     fn member_view(
         &self,
-        key: &str,
+        keys: (&str, &str),
         before: Option<MemberContent>,
         after: Option<MemberContent>,
     ) -> MemberView {
+        let key = keys.1;
         // The picture viewer titles each pane "before: <name>" itself.
-        let names = (key.to_string(), key.to_string());
+        let names = (keys.0.to_string(), keys.1.to_string());
         match (before, after) {
             (before, after)
                 if [&before, &after]
@@ -567,8 +680,12 @@ impl MemberViewer {
 
     fn counts(&self) -> String {
         let count = |status| self.rows.iter().filter(|row| row.status == status).count();
+        let paired = match self.pairs.len() {
+            0 => String::new(),
+            pairs => format!(" ({pairs} paired)"),
+        };
         format!(
-            "{} changed, {} added, {} removed, {} unchanged",
+            "{} changed{paired}, {} added, {} removed, {} unchanged",
             count(MemberStatus::Changed),
             count(MemberStatus::Added),
             count(MemberStatus::Removed),
@@ -696,22 +813,22 @@ impl MemberViewer {
                 0 => (' ', "(the whole file)".to_string()),
                 _ => {
                     let row = visible[index - 1];
-                    let mark = match row.status {
-                        MemberStatus::Same => ' ',
-                        MemberStatus::Changed => '~',
-                        MemberStatus::Added => '+',
-                        MemberStatus::Removed => '-',
-                    };
-                    (mark, self.key_of(row).to_string())
+                    let key = self.key_of(row).to_string();
+                    match (row.status, self.renamed_key_of(row)) {
+                        (_, Some(before)) => ('>', format!("{before} -> {key}")),
+                        (MemberStatus::Same, None) => (' ', key),
+                        (MemberStatus::Changed, None) => ('~', key),
+                        (MemberStatus::Added, None) => ('+', key),
+                        (MemberStatus::Removed, None) => ('-', key),
+                    }
                 }
             };
-            let label = if index == 0 {
-                self.marks.get("").cloned()
-            } else {
-                self.marks.get(&key).cloned()
+            let label = match index {
+                0 => self.marks.get("").cloned(),
+                _ => self.marks.get(self.key_of(visible[index - 1])).cloned(),
             };
             let color = match mark {
-                '~' => Color::Yellow,
+                '~' | '>' => Color::Yellow,
                 '+' => Color::Green,
                 '-' => Color::Red,
                 _ => Color::Reset,
@@ -828,6 +945,57 @@ mod tests {
             "{}",
             viewer.status()
         );
+    }
+
+    #[test]
+    fn a_removed_and_an_added_member_pair_into_one_changed_row() {
+        let mut viewer = viewer(
+            &[("old.txt", b"one\ntwo\n"), ("gone.txt", b"g\n")],
+            &[("dir/new.txt", b"one\n2\n"), ("added.txt", b"a\n")],
+        );
+        assert_eq!(
+            viewer.pair("old.txt", "gone.txt"),
+            Err("gone.txt is not an added member".to_string())
+        );
+        viewer.pair("old.txt", "dir/new.txt").unwrap();
+        assert_eq!(viewer.selected_key(), Some("dir/new.txt"));
+        assert_eq!(viewer.selected_status(), Some(MemberStatus::Changed));
+        assert_eq!(viewer.changed_keys(), vec!["dir/new.txt".to_string()]);
+        assert_eq!(viewer.renamed_from("dir/new.txt"), Some("old.txt"));
+        assert_eq!(
+            viewer.pairs(),
+            vec![("old.txt".to_string(), "dir/new.txt".to_string())]
+        );
+        assert!(matches!(
+            viewer.member_detail("dir/new.txt"),
+            Some(MemberDetail::Text {
+                removed: 1,
+                added: 1,
+                ..
+            })
+        ));
+        assert_eq!(
+            viewer.member_verdict("dir/new.txt"),
+            None,
+            "the engine's diff is its own: it sees one added member"
+        );
+        let text = screen(&mut viewer);
+        assert!(text.contains("> old.txt -> dir/new.txt"), "{text}");
+        assert!(!text.contains("- old.txt"), "{text}");
+        assert!(text.contains("- two"), "the pair is diffed: {text}");
+        assert!(text.contains("+ 2"), "{text}");
+        let status = viewer.status();
+        assert!(
+            status.contains("1 changed (1 paired), 1 added, 1 removed"),
+            "{status}"
+        );
+
+        assert_eq!(viewer.unpair("dir/new.txt"), Some("old.txt".to_string()));
+        assert!(viewer.pairs().is_empty());
+        assert_eq!(viewer.member_detail("dir/new.txt"), None);
+        let text = screen(&mut viewer);
+        assert!(text.contains("- old.txt"), "{text}");
+        assert!(text.contains("+ dir/new.txt"), "{text}");
     }
 
     #[test]

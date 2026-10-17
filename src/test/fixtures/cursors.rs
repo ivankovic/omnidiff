@@ -38,3 +38,9 @@ mod hyprcursor_x_guillaumeboehm_nordzy_cursors_39478f04_progress;
 mod hyprcursor_x_guillaumeboehm_nordzy_cursors_5bd0b1ba_wait;
 #[cfg(test)]
 mod xcursor_x_alvatip_neonly_8085a361_left_tee;
+#[cfg(test)]
+mod xcursor_x_alvatip_neonly_8085a361_nw_resize;
+#[cfg(test)]
+mod xcursor_x_alvatip_neonly_ecfc2a62_cell;
+#[cfg(test)]
+mod xcursor_x_alvatip_neonly_ecfc2a62_down_arrow;

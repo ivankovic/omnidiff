@@ -1,0 +1,30 @@
+/*  This file is part of the OmniDiff code diffing tool.
+ *
+ *  Copyright (C) 2026 Marko Ivankovic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, version 3 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+use anyhow::Result;
+
+use crate::test::helper::human_content::{self, Family};
+
+#[test]
+fn verdicts() -> Result<()> {
+    // Recorded as found, not examined.
+    human_content::assert_known_verdict_mismatches(
+        Family::Cursors,
+        "xcursor-x-alvatip-neonly-8085a361-nw-resize",
+        Some("edited+added_files+changed_files"),
+        &[("24px", Some("imperceptible"))],
+    )
+}

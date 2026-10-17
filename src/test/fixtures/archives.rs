@@ -52,9 +52,17 @@ mod gzip_x_janlelis_unicode_emoji_c25f9805_emoji_marshal;
 #[cfg(test)]
 mod gzip_x_poetaman_arttime_3f0e855e_artprint_1;
 #[cfg(test)]
+mod gzip_x_pre_commit_pre_commit_fc33a62f_rbenv_tar;
+#[cfg(test)]
+mod gzip_x_pre_commit_pre_commit_fc33a62f_ruby_build_tar;
+#[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_1;
 #[cfg(test)]
 mod gzip_x_rvaiya_keyd_774cb10d_keyd_application_mapper_1;
+#[cfg(test)]
+mod gzip_x_urbanjost_m_cli2_82437d30_manpages;
+#[cfg(test)]
+mod gzip_x_urbanjost_m_cli2_f80b4c28_manpages;
 #[cfg(test)]
 mod xz_x_mx_linux_exit_options_3992ee16_exit_options_25_7_tar;
 #[cfg(test)]

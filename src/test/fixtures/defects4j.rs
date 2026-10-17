@@ -304,7 +304,15 @@ mod java_defects4j_closure_144_typedscopecreator;
 #[cfg(test)]
 mod java_defects4j_closure_145_codegenerator;
 #[cfg(test)]
+mod java_defects4j_closure_146_jstype;
+#[cfg(test)]
 mod java_defects4j_closure_147_checkglobalthis;
+#[cfg(test)]
+mod java_defects4j_closure_147_runtimetypecheck;
+#[cfg(test)]
+mod java_defects4j_closure_148_peepholefoldconstants;
+#[cfg(test)]
+mod java_defects4j_closure_149_abstractcommandlinerunner;
 #[cfg(test)]
 mod java_defects4j_closure_149_commandlinerunner;
 #[cfg(test)]

@@ -14,17 +14,17 @@ Fast, robust, accurate content-aware diffing.
 
 | Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
 |---|---|---|---|
-| Code | 96% | 68% | 89% |
+| Code | 97% | 67% | 90% |
 | Pictures | 96% | 69% | 91% |
-| Cursors | 100% | 90% | 100% |
-| Fonts | 94% | 100% | 100% |
-| Archives | 87% | 95% | 95% |
-| Message catalogs | 100% | 80% | 80% |
+| Cursors | 100% | 85% | 100% |
+| Fonts | 95% | 82% | 100% |
+| Archives | 88% | 87% | 87% |
+| Message catalogs | 100% | 83% | 83% |
 | PDFs | 57% | 100% | 100% |
 
 
-Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). Fonts
-and PDFs have fewer than ten judged test cases each (see [Accurate](#accurate)).
+Speed measured on a T14s, Intel Core i7-1370P with 32 GB RAM (see [Fast](#fast)). PDFs
+have fewer than ten judged test cases (see [Accurate](#accurate)).
 
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
 changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
@@ -349,9 +349,9 @@ OmniDiff's goal is:
 * **A median diff in 100ms or less.**
 * **A 99th-percentile diff in 1000ms or less.**
 
-Both are met. Over the 2,102 fixtures in `src/test/data/diffs/`, measured 2026-10-11 on a laptop,
+Both are met. Over the 2,223 fixtures in `src/test/data/diffs/`, measured 2026-10-17 on a laptop,
 an Intel Core i7-1370P (6 performance and 8 efficiency cores, 20 threads) with 32 GB RAM: **p50
-4.2ms, p90 39.4ms, p99 198ms**, slowest 631ms. **100ms is the 96.4th percentile** — 75 fixtures
+4.2ms, p90 39.4ms, p99 199ms**, slowest 644ms. **100ms is the 96.6th percentile** — 75 fixtures
 take longer than that, and none takes longer than a second.
 
 Times belong to the machine that measured them, so each machine keeps its own (see
@@ -361,16 +361,16 @@ check-quality` prints this distribution against the machine's own committed base
 push, and warns when the runtime is more than twice the baseline's.
 
 Other content is timed over pairs sampled from the same corpus, decoding included - unpacking an
-archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-11 on the same laptop:
+archive, drawing a font's glyphs or a PDF's pages - measured 2026-10-17 on the same laptop:
 
 | Content | Pairs | p50 | p90 | p99 | Under 100ms |
 |---|---|---|---|---|---|
-| Pictures | 230 | 1.9ms | 40ms | 525ms | 96.1% |
-| Cursors | 22 | 0.4ms | 1.3ms | 17ms | 100% |
-| Fonts | 100 | 6.1ms | 57ms | 798ms | 94% |
-| Archives | 100 | 2.4ms | 159ms | 1,861ms | 87% |
-| Message catalogs | 81 | 0.4ms | 2.2ms | 4.7ms | 100% |
-| PDFs | 100 | 66ms | 351ms | 969ms | 57% |
+| Pictures | 230 | 1.8ms | 41ms | 526ms | 96.1% |
+| Cursors | 22 | 0.6ms | 1.3ms | 15ms | 100% |
+| Fonts | 100 | 6.4ms | 57ms | 826ms | 95% |
+| Archives | 100 | 2.6ms | 156ms | 1,938ms | 88% |
+| Message catalogs | 81 | 0.4ms | 1.9ms | 4.7ms | 100% |
+| PDFs | 100 | 69ms | 310ms | 985ms | 57% |
 
 Archives miss the 99th-percentile goal: the slowest hold thousands of changed members. PDFs meet
 both goals, but only 57% of them take under 100ms, since a PDF draws every changed page. `make
@@ -408,20 +408,20 @@ ground-truth mappings in `src/test/data/diffs/`:
 * **90% of test cases with zero mismatched bytes.**
 * **99% of test cases with at most 1% of bytes mismatched.**
 
-Neither is met yet. 1,016 of the 2,102 fixtures carry a hand-painted ground truth - every byte of
+Neither is met yet. 1,141 of the 2,223 fixtures carry a hand-painted ground truth - every byte of
 both files labelled with what a human says happened to it - and OmniDiff's own highlighting is
 compared against it byte by byte, under each of its two highlighting presets (`--full`, which keeps
 brackets, separators and leading whitespace, and `--minimal`, which drops them):
 
 | preset | zero mismatched bytes | at most 1% mismatched | mismatched bytes, whole corpus |
 |---|---|---|---|
-| `--full` | **632 (62.2%)** | **869 (85.5%)** | 60,678 of 46.1M (0.13%) |
-| `--minimal` | **692 (68.1%)** | **909 (89.5%)** | 38,442 of 46.1M (0.08%) |
+| `--full` | **701 (61.4%)** | **981 (86.0%)** | 91,169 of 57.0M (0.16%) |
+| `--minimal` | **769 (67.4%)** | **1,028 (90.1%)** | 47,088 of 57.0M (0.08%) |
 
 The whole-corpus rate is far below 1% because most of each file is unchanged and nobody gets that
 wrong; the per-test-case numbers are the ones that count, since a reader meets the mistakes one
 diff at a time. Most of what is left is not in the matching: rendering the human's own node
-mapping still disagrees with the painting on 78% of the `--full` bytes and 69% of the `--minimal`
+mapping still disagrees with the painting on 80% of the `--full` bytes and 67% of the `--minimal`
 ones, so the highlighting rules own the gap more than the matcher does.
 
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
@@ -435,11 +435,11 @@ and near-perfect when every one is at most one level off:
 
 | Content | Judged | Perfect | Near-perfect |
 |---|---|---|---|
-| Pictures | 128 | **88 (69%)** | **116 (91%)** |
-| Cursors | 10 | **9 (90%)** | **10 (100%)** |
-| Fonts | 1 | **1 (100%)** | **1 (100%)** |
-| Archives | 19 | **18 (95%)** | **18 (95%)** |
-| Message catalogs | 10 | **8 (80%)** | **8 (80%)** |
+| Pictures | 130 | **90 (69%)** | **118 (91%)** |
+| Cursors | 13 | **11 (85%)** | **13 (100%)** |
+| Fonts | 11 | **9 (82%)** | **11 (100%)** |
+| Archives | 23 | **20 (87%)** | **20 (87%)** |
+| Message catalogs | 12 | **10 (83%)** | **10 (83%)** |
 | PDFs | 4 | **4 (100%)** | **4 (100%)** |
 
 `make benchmark-content` counts these too.
