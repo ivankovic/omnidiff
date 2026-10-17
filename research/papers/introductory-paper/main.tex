@@ -461,8 +461,11 @@ more than 3000 lines of code, and the larger of the two sizes was used. In each 
 sampled per language, and inspected as above.\footnote{\label{fn:in-progress}The corpus and this
 paper are being written in parallel. Drawing and solving the stratified sample, and hand-annotating
 the Defects4J list below, are both still in progress, and the ambiguity pass over those two has not
-been made at all. Every figure in this paper is over the \NumFixtures{} changes solved so far, and
-every figure that depends on the ambiguity pass is a lower bound for those two datasets.}
+been made at all. Every figure in this paper is over the \NumFixtures{} changes solved so far,
+except the tool comparison of Section~\ref{sec:tools} and the line-level, speed and robustness
+figures of Section~\ref{sec:omnidiff}, which were measured at an earlier stage of the corpus, over
+the \UnixDiffFixtures{} changes solved then. Every figure that depends on the ambiguity pass is a
+lower bound for those two datasets.}
 
 A fourth list further extends the corpus. The AST node-mapping oracle of Alikhanifard and
 Tsantalis~\cite{astdiffbenchmark} contains the \OracleUnits{} AST mappings for \OracleCases{}
@@ -773,8 +776,8 @@ visualisations?
 \textbf{RQ4.2.} How fast are real-world state-of-the-art tools?
 
 \textbf{Comparison tools.} We measure eight established tools, all introduced in
-Section~\ref{sec:background}, on the \NumFixtures{}-fixture corpus described in
-Section~\ref{sec:dataset}. \texttt{git diff} is measured
+Section~\ref{sec:background}, on \UnixDiffFixtures{} of the fixtures described in
+Section~\ref{sec:dataset}.\textsuperscript{\ref{fn:in-progress}} \texttt{git diff} is measured
 under each of its four algorithms, Myers, minimal, patience and histogram, giving eleven configurations in all. Five configurations report at line granularity only: Unix
 \texttt{diff} and the four \texttt{git} algorithms. Six report sub-line detail: BDiff~\cite{bdiff},
 Neovim's diff mode, and the four AST-aware tools, GumTree (\GumTreeVersion{})~\cite{gumtreediff-2014},

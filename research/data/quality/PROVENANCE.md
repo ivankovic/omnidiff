@@ -48,6 +48,28 @@ per-dataset node columns against this CSV, and a fixture solved after this CSV w
 `int('-')`. A crash was the right outcome - the other reading was a comparison section over 1217
 fixtures inside a paper whose every other block said 1056.
 
+## Refresh of 2026-10-17
+
+`optimal_solutions_benchmark.csv` and `human_mapping_analysis.csv` re-run, in that order, on the
+laptop, with the CORPUS block, the ambiguity, rendering and shape reports and both AST-diff oracle
+runs. Unlike 2026-09-26 this is a partial refresh: the tool comparison (`../comparison/`
+`benchmark_other.csv` and `benchmark_accuracy.csv`) and the fixture robustness run were not re-run,
+because the external tools were not installed on the laptop and the timings belong to the server.
+They still describe 1,217 fixtures, and the paper says so in footnote `fn:in-progress`.
+282 more fixtures in scope: 221 stratified and 61 Defects4J.
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 712 | 712 |
+| `defects4j` | 996 | 335 |
+| **total** | **2223** | **1561** |
+
+The paper's scope is **1499** fixtures. Over them omnidiff maps 16,322,226 of 16,329,845 nodes
+(99.95%), and 11,013,577 of 11,018,678 visible nodes.
+
 ## Scope
 
 The paper's scope is `_common.PAPER_DATASETS`: every dataset above except `handmade`, which stays
