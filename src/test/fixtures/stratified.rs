@@ -554,11 +554,17 @@ mod go_kubernetes_kubernetes_add_only;
 #[cfg(test)]
 mod go_kubernetes_kubernetes_int_to_string;
 #[cfg(test)]
+mod go_kubernetes_kubernetes_small_but_interesting_change_with_condition_moves;
+#[cfg(test)]
 mod go_ollama_ollama_add_go_build_comment;
 #[cfg(test)]
 mod go_ollama_ollama_delete_a_param;
 #[cfg(test)]
 mod go_ollama_ollama_delete_go_build_comment;
+#[cfg(test)]
+mod go_ollama_ollama_interesting_comment_reduces_by_one_line;
+#[cfg(test)]
+mod go_ollama_ollama_interesting_commenting_out_code;
 #[cfg(test)]
 mod go_ollama_ollama_remove_go_build_comment;
 #[cfg(test)]
@@ -646,13 +652,21 @@ mod java_genymobile_scrcpy_a_single_move;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add;
 #[cfg(test)]
+mod java_genymobile_scrcpy_add_2;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_a_few_arguments;
+#[cfg(test)]
 mod java_genymobile_scrcpy_add_a_path_element;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_and_modify;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_enum_value;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_func;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_func_2;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_only;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_parameter;
 #[cfg(test)]
@@ -662,15 +676,23 @@ mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
 mod java_genymobile_scrcpy_char_to_string_bugfix;
 #[cfg(test)]
+mod java_genymobile_scrcpy_match_comments_by_content;
+#[cfg(test)]
 mod java_genymobile_scrcpy_only_add;
 #[cfg(test)]
 mod java_genymobile_scrcpy_only_add_2;
 #[cfg(test)]
 mod java_genymobile_scrcpy_only_insert;
 #[cfg(test)]
+mod java_genymobile_scrcpy_small_but_many_operations;
+#[cfg(test)]
 mod java_genymobile_scrcpy_whitespace_only;
 #[cfg(test)]
 mod java_genymobile_scrcpy_whitespace_only_2;
+#[cfg(test)]
+mod java_genymobile_scrcpy_whitespace_only_3;
+#[cfg(test)]
+mod java_nextcloud_android_add;
 #[cfg(test)]
 mod java_nextcloud_android_add_one_line;
 #[cfg(test)]
@@ -684,7 +706,13 @@ mod java_protocolbuffers_protobuf_add_one_annotation;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_add_one_import;
 #[cfg(test)]
+mod java_protocolbuffers_protobuf_if_null_replaced_with_checknotnull;
+#[cfg(test)]
 mod java_protocolbuffers_protobuf_move_from_one_utf8_object_to_other_via_import;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_single_update;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_small;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_update_comment;
 #[cfg(test)]
