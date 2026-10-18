@@ -1122,6 +1122,8 @@ mod rust_rust_lang_rust_update_comment;
 #[cfg(test)]
 mod rust_rustdesk_rustdesk_add_one_token;
 #[cfg(test)]
+mod rust_rustdesk_rustdesk_complex_change_with_a_lot_of_add;
+#[cfg(test)]
 mod rust_rustdesk_rustdesk_move_list_item_with_insert;
 #[cfg(test)]
 mod rust_tauri_apps_tauri_add_doccomment_empty_line;
