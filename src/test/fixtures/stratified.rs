@@ -654,11 +654,17 @@ mod java_genymobile_scrcpy_add;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_2;
 #[cfg(test)]
+mod java_genymobile_scrcpy_add_3;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_4;
+#[cfg(test)]
 mod java_genymobile_scrcpy_add_a_few_arguments;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_a_path_element;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_and_modify;
+#[cfg(test)]
+mod java_genymobile_scrcpy_add_delete;
 #[cfg(test)]
 mod java_genymobile_scrcpy_add_enum_value;
 #[cfg(test)]
@@ -675,6 +681,8 @@ mod java_genymobile_scrcpy_add_path_identifier;
 mod java_genymobile_scrcpy_call_slightly_different_function;
 #[cfg(test)]
 mod java_genymobile_scrcpy_char_to_string_bugfix;
+#[cfg(test)]
+mod java_genymobile_scrcpy_good_example_of_3_to_1_map;
 #[cfg(test)]
 mod java_genymobile_scrcpy_match_comments_by_content;
 #[cfg(test)]
@@ -694,17 +702,31 @@ mod java_genymobile_scrcpy_whitespace_only_3;
 #[cfg(test)]
 mod java_nextcloud_android_add;
 #[cfg(test)]
+mod java_nextcloud_android_add_2;
+#[cfg(test)]
+mod java_nextcloud_android_add_and_delete;
+#[cfg(test)]
 mod java_nextcloud_android_add_one_line;
+#[cfg(test)]
+mod java_nextcloud_android_public_private;
 #[cfg(test)]
 mod java_paddlepaddle_paddleocr_whitespace_only;
 #[cfg(test)]
 mod java_paddlepaddle_paddleocr_whitespace_only_2;
 #[cfg(test)]
+mod java_protocolbuffers_protobuf_add_and_update;
+#[cfg(test)]
 mod java_protocolbuffers_protobuf_add_final;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_add_if_block;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_add_one_annotation;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_add_one_import;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_add_throws;
+#[cfg(test)]
+mod java_protocolbuffers_protobuf_delete_and_update;
 #[cfg(test)]
 mod java_protocolbuffers_protobuf_if_null_replaced_with_checknotnull;
 #[cfg(test)]
