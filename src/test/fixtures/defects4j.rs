@@ -384,6 +384,8 @@ mod java_defects4j_closure_92_processclosureprimitives;
 #[cfg(test)]
 mod java_defects4j_codec_10_caverphone;
 #[cfg(test)]
+mod java_defects4j_codec_12_basencodecinputstream;
+#[cfg(test)]
 mod java_defects4j_codec_16_base32;
 #[cfg(test)]
 mod java_defects4j_codec_17_stringutils;
@@ -399,6 +401,8 @@ mod java_defects4j_codec_2_base64;
 mod java_defects4j_codec_3_doublemetaphone;
 #[cfg(test)]
 mod java_defects4j_codec_4_base64;
+#[cfg(test)]
+mod java_defects4j_codec_6_base64inputstream;
 #[cfg(test)]
 mod java_defects4j_codec_7_base64;
 #[cfg(test)]
@@ -435,6 +439,8 @@ mod java_defects4j_compress_29_ziparchiveinputstream;
 mod java_defects4j_compress_33_deflatecompressorinputstream;
 #[cfg(test)]
 mod java_defects4j_compress_38_tararchiveentry;
+#[cfg(test)]
+mod java_defects4j_compress_40_bitinputstream;
 #[cfg(test)]
 mod java_defects4j_compress_42_unixstat;
 #[cfg(test)]
@@ -512,6 +518,8 @@ mod java_defects4j_jacksondatabind_105_jdkdeserializers;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_107_typedeserializerbase;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_10_anygetterwriter;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_111_atomicreferencedeserializer;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_15_beanserializerfactory;
@@ -534,11 +542,17 @@ mod java_defects4j_jacksondatabind_34_numberserializer;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_39_nullifyingdeserializer;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_43_objectidvalueproperty;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_49_writableobjectid;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_59_typefactory;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_79_objectidinfo;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_84_resolvedrecursivetype;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_86_resolvedrecursivetype;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_94_subtypevalidator;
 #[cfg(test)]
@@ -551,6 +565,8 @@ mod java_defects4j_jsoup_17_treebuilderstate;
 mod java_defects4j_jsoup_24_tokeniserstate;
 #[cfg(test)]
 mod java_defects4j_jsoup_26_cleaner;
+#[cfg(test)]
+mod java_defects4j_jsoup_28_parser;
 #[cfg(test)]
 mod java_defects4j_jsoup_2_parser;
 #[cfg(test)]
@@ -566,6 +582,8 @@ mod java_defects4j_jsoup_39_datautil;
 #[cfg(test)]
 mod java_defects4j_jsoup_40_documenttype;
 #[cfg(test)]
+mod java_defects4j_jsoup_44_treebuilder;
+#[cfg(test)]
 mod java_defects4j_jsoup_52_xmldeclaration;
 #[cfg(test)]
 mod java_defects4j_jsoup_54_w3cdom;
@@ -579,6 +597,8 @@ mod java_defects4j_jsoup_76_htmltreebuilderstate;
 mod java_defects4j_jsoup_79_leafnode;
 #[cfg(test)]
 mod java_defects4j_jsoup_86_comment;
+#[cfg(test)]
+mod java_defects4j_jsoup_87_tag;
 #[cfg(test)]
 mod java_defects4j_jsoup_91_uncheckedioexception;
 #[cfg(test)]
@@ -665,6 +685,8 @@ mod java_defects4j_mockito_19_typebasedcandidatefilter;
 mod java_defects4j_mockito_21_constructorinstantiator;
 #[cfg(test)]
 mod java_defects4j_mockito_22_equality;
+#[cfg(test)]
+mod java_defects4j_mockito_28_defaultinjectionengine;
 #[cfg(test)]
 mod java_defects4j_mockito_29_same;
 #[cfg(test)]
