@@ -318,6 +318,10 @@ mod java_defects4j_closure_149_commandlinerunner;
 #[cfg(test)]
 mod java_defects4j_closure_14_controlflowanalysis;
 #[cfg(test)]
+mod java_defects4j_closure_151_commandlinerunner;
+#[cfg(test)]
+mod java_defects4j_closure_155_scope;
+#[cfg(test)]
 mod java_defects4j_closure_165_recordtypebuilder;
 #[cfg(test)]
 mod java_defects4j_closure_168_typedscopecreator;
