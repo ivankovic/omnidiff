@@ -798,6 +798,8 @@ mod javascript_nextcloud_server_remove_two_translations;
 #[cfg(test)]
 mod javascript_vercel_next_add_doccomment;
 #[cfg(test)]
+mod javascript_wordpress_wordpress_add_update_all_in_one_line;
+#[cfg(test)]
 mod json_apache_superset_js_to_ts;
 #[cfg(test)]
 mod json_electron_electron_remove_only;
@@ -809,6 +811,8 @@ mod json_gorhill_ublock_version;
 mod json_grafana_grafana_add_pair;
 #[cfg(test)]
 mod json_immich_app_immich_small_change;
+#[cfg(test)]
+mod json_jellyfin_jellyfin_add_to_list;
 #[cfg(test)]
 mod json_jesseduffield_lazygit_delete_only;
 #[cfg(test)]
@@ -825,6 +829,10 @@ mod json_mui_material_ui_version_2;
 mod json_mui_material_ui_version_3;
 #[cfg(test)]
 mod json_mui_material_ui_version_4;
+#[cfg(test)]
+mod json_nextcloud_server_delete_last_pair_in_list;
+#[cfg(test)]
+mod json_openhands_openhands_version;
 #[cfg(test)]
 mod json_puppeteer_puppeteer_update_version;
 #[cfg(test)]
@@ -846,7 +854,11 @@ mod json_tauri_apps_tauri_version_change;
 #[cfg(test)]
 mod json_tauri_apps_tauri_version_change_2;
 #[cfg(test)]
+mod json_twbs_bootstrap_version;
+#[cfg(test)]
 mod json_vercel_next_version;
+#[cfg(test)]
+mod json_vercel_next_version_2;
 #[cfg(test)]
 mod json_vercel_next_version_change;
 #[cfg(test)]
@@ -862,6 +874,8 @@ mod kotlin_mozilla_firefox_firefox_add_one_line;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_line_2;
 #[cfg(test)]
+mod kotlin_mozilla_firefox_firefox_insert_and_update;
+#[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_rename;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_version;
@@ -872,7 +886,13 @@ mod kotlin_nextcloud_android_add_param;
 #[cfg(test)]
 mod kotlin_nextcloud_android_add_param_to_class;
 #[cfg(test)]
+mod kotlin_nextcloud_android_ast_has_more_invisible_changes_than_text;
+#[cfg(test)]
+mod kotlin_nextcloud_android_delete_one_condition;
+#[cfg(test)]
 mod kotlin_nextcloud_android_different_function;
+#[cfg(test)]
+mod kotlin_nextcloud_android_navigation_expressions_replaced_with_simple_identifier;
 #[cfg(test)]
 mod kotlin_nextcloud_android_real_small_change;
 #[cfg(test)]
@@ -886,11 +906,21 @@ mod kotlin_nextcloud_android_remove_one_import;
 #[cfg(test)]
 mod kotlin_nextcloud_android_rename;
 #[cfg(test)]
+mod kotlin_nextcloud_android_rename_3;
+#[cfg(test)]
 mod kotlin_nextcloud_android_rename_field;
+#[cfg(test)]
+mod kotlin_nextcloud_android_rename_function;
+#[cfg(test)]
+mod kotlin_nextcloud_android_rename_function_2;
 #[cfg(test)]
 mod kotlin_nextcloud_android_small_change;
 #[cfg(test)]
+mod kotlin_nextcloud_android_whitespace;
+#[cfg(test)]
 mod kotlin_nextcloud_android_whitespace_only;
+#[cfg(test)]
+mod kotlin_nextcloud_android_whitespace_only_2;
 #[cfg(test)]
 mod kotlin_rustdesk_rustdesk_add_func;
 #[cfg(test)]
