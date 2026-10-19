@@ -760,6 +760,8 @@ mod javascript_microsoft_typescript_add_use_strict_2;
 #[cfg(test)]
 mod javascript_microsoft_typescript_concat_to_template;
 #[cfg(test)]
+mod javascript_microsoft_typescript_errors;
+#[cfg(test)]
 mod javascript_microsoft_typescript_refactor;
 #[cfg(test)]
 mod javascript_microsoft_typescript_remove_one_line;
@@ -786,9 +788,13 @@ mod javascript_microsoft_typescript_use_strict_7;
 #[cfg(test)]
 mod javascript_microsoft_typescript_use_strict_8;
 #[cfg(test)]
+mod javascript_mozilla_firefox_firefox_add_two_lines;
+#[cfg(test)]
 mod javascript_mozilla_firefox_firefox_remove_one_comment;
 #[cfg(test)]
 mod javascript_mui_material_ui_delete_one_import;
+#[cfg(test)]
+mod javascript_nextcloud_server_remove_two_translations;
 #[cfg(test)]
 mod javascript_vercel_next_add_doccomment;
 #[cfg(test)]
@@ -848,6 +854,8 @@ mod json_vercel_next_version_change_2;
 #[cfg(test)]
 mod json_vercel_next_version_change_3;
 #[cfg(test)]
+mod kotlin_mozilla_firefox_firefox_add;
+#[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_annotation;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_line;
@@ -855,6 +863,8 @@ mod kotlin_mozilla_firefox_firefox_add_one_line;
 mod kotlin_mozilla_firefox_firefox_add_one_line_2;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_rename;
+#[cfg(test)]
+mod kotlin_mozilla_firefox_firefox_version;
 #[cfg(test)]
 mod kotlin_nextcloud_android_add_one_annotation;
 #[cfg(test)]
@@ -905,6 +915,8 @@ mod lua_awesomewm_awesome_align_to_halign_2;
 mod lua_awesomewm_awesome_comment_only;
 #[cfg(test)]
 mod lua_awesomewm_awesome_comment_only_2;
+#[cfg(test)]
+mod lua_awesomewm_awesome_delete_comments_only;
 #[cfg(test)]
 mod lua_awesomewm_awesome_delete_one_local;
 #[cfg(test)]
@@ -1017,6 +1029,10 @@ mod python_paddlepaddle_paddleocr_remove_import;
 mod python_paddlepaddle_paddleocr_whitespace_only;
 #[cfg(test)]
 mod python_paddlepaddle_paddleocr_whitespace_only_change;
+#[cfg(test)]
+mod python_pandas_dev_pandas_interesting_case_code_becomes_string;
+#[cfg(test)]
+mod python_pandas_dev_pandas_update_one_letter;
 #[cfg(test)]
 mod python_scrapy_scrapy_comment_update;
 #[cfg(test)]
