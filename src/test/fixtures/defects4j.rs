@@ -316,11 +316,15 @@ mod java_defects4j_closure_149_abstractcommandlinerunner;
 #[cfg(test)]
 mod java_defects4j_closure_149_commandlinerunner;
 #[cfg(test)]
+mod java_defects4j_closure_149_compiler;
+#[cfg(test)]
 mod java_defects4j_closure_14_controlflowanalysis;
 #[cfg(test)]
 mod java_defects4j_closure_151_commandlinerunner;
 #[cfg(test)]
 mod java_defects4j_closure_155_scope;
+#[cfg(test)]
+mod java_defects4j_closure_15_flowsensitiveinlinevariables;
 #[cfg(test)]
 mod java_defects4j_closure_165_recordtypebuilder;
 #[cfg(test)]
