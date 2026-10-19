@@ -326,6 +326,8 @@ mod java_defects4j_closure_165_recordtypebuilder;
 #[cfg(test)]
 mod java_defects4j_closure_168_typedscopecreator;
 #[cfg(test)]
+mod java_defects4j_closure_16_scopedaliases;
+#[cfg(test)]
 mod java_defects4j_closure_18_compiler;
 #[cfg(test)]
 mod java_defects4j_closure_19_chainablereverseabstractinterpreter;
