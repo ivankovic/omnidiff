@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,5 +40,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-genymobile-scrcpy-match-comments-by-content")
+    // Invariant 12: both paintings leave two edited comments (before rows 76, 77, after rows 77, 79,
+    // starting `// <https://github.com/Genymobile/scrcpy`) unpainted although the tree mapping says
+    // their text changed.
+    assert_ground_truth_invariants_with_known_violations(
+        "java-genymobile-scrcpy-match-comments-by-content",
+        2,
+    )
 }

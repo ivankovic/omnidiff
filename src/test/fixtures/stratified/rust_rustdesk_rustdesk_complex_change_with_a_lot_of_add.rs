@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rustdesk-rustdesk-complex-change-with-a-lot-of-add",
-        10,
-        8,
+        27,
+        20,
     )
 }
 

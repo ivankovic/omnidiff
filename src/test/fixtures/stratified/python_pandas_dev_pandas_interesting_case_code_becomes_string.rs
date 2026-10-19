@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -41,5 +41,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("python-pandas-dev-pandas-interesting-case-code-becomes-string")
+    // Invariant 12: the Minimal painting of row 5229 (`np` -> `np.ndarray`, and two more edited
+    // leaves) paints nothing on either side although the tree mapping says the text changed.
+    assert_ground_truth_invariants_with_known_violations(
+        "python-pandas-dev-pandas-interesting-case-code-becomes-string",
+        1,
+    )
 }
