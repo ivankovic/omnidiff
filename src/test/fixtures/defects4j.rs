@@ -578,6 +578,8 @@ mod java_defects4j_jacksondatabind_57_objectreader;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_59_typefactory;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_60_jsonvalueserializer;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_70_beanpropertymap;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_71_stdkeydeserializer;
@@ -600,13 +602,29 @@ mod java_defects4j_jacksondatabind_95_typeparser;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_96_basicdeserializerfactory;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_97_pojonode;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_99_referencetype;
+#[cfg(test)]
+mod java_defects4j_jacksonxml_5_xmlserializerprovider;
+#[cfg(test)]
+mod java_defects4j_jsoup_10_node;
+#[cfg(test)]
+mod java_defects4j_jsoup_15_treebuilderstate;
 #[cfg(test)]
 mod java_defects4j_jsoup_16_documenttype;
 #[cfg(test)]
 mod java_defects4j_jsoup_17_treebuilderstate;
 #[cfg(test)]
+mod java_defects4j_jsoup_19_whitelist;
+#[cfg(test)]
+mod java_defects4j_jsoup_20_datautil;
+#[cfg(test)]
+mod java_defects4j_jsoup_23_tokeniser;
+#[cfg(test)]
 mod java_defects4j_jsoup_24_tokeniserstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_25_tag;
 #[cfg(test)]
 mod java_defects4j_jsoup_26_cleaner;
 #[cfg(test)]
@@ -619,6 +637,8 @@ mod java_defects4j_jsoup_31_token;
 mod java_defects4j_jsoup_31_tokeniserstate;
 #[cfg(test)]
 mod java_defects4j_jsoup_33_htmltreebuilder;
+#[cfg(test)]
+mod java_defects4j_jsoup_34_characterreader;
 #[cfg(test)]
 mod java_defects4j_jsoup_35_htmltreebuilderstate;
 #[cfg(test)]
