@@ -322,6 +322,8 @@ mod java_defects4j_closure_14_controlflowanalysis;
 #[cfg(test)]
 mod java_defects4j_closure_151_commandlinerunner;
 #[cfg(test)]
+mod java_defects4j_closure_154_typecheck;
+#[cfg(test)]
 mod java_defects4j_closure_155_scope;
 #[cfg(test)]
 mod java_defects4j_closure_15_flowsensitiveinlinevariables;
@@ -546,25 +548,57 @@ mod java_defects4j_jacksondatabind_1_beanpropertywriter;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_20_objectnode;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_25_basicdeserializerfactory;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_25_deserializercache;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_25_simpleabstracttyperesolver;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_25_typedeserializerbase;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_27_beandeserializer;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_34_numberserializer;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_37_simpletype;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_39_nullifyingdeserializer;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_43_objectidvalueproperty;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_46_referencetype;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_49_writableobjectid;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_51_typedeserializerbase;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_52_beandeserializerbase;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_57_objectreader;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_59_typefactory;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_70_beanpropertymap;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_71_stdkeydeserializer;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_79_objectidinfo;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_82_beandeserializerfactory;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_83_fromstringdeserializer;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_84_resolvedrecursivetype;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_86_resolvedrecursivetype;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_90_valueinstantiator;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_94_subtypevalidator;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_95_typeparser;
+#[cfg(test)]
+mod java_defects4j_jacksondatabind_96_basicdeserializerfactory;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_99_referencetype;
 #[cfg(test)]
@@ -643,6 +677,8 @@ mod java_defects4j_lang_28_numericentityunescaper;
 mod java_defects4j_lang_38_fastdateformat;
 #[cfg(test)]
 mod java_defects4j_lang_43_extendedmessageformat;
+#[cfg(test)]
+mod java_defects4j_lang_48_equalsbuilder;
 #[cfg(test)]
 mod java_defects4j_lang_4_lookuptranslator;
 #[cfg(test)]
