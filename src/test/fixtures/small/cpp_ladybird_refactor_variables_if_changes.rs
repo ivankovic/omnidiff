@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -30,7 +30,14 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-ladybird-refactor-variables-if-changes")
+    // Invariant 25, 4 time(s): the deleted `declaration` on before row 207 starts delete but its
+    // `;` is move ('Full'); the deleted `declaration` on before row 207 starts delete but its `;`
+    // is unpainted ('Minimal'); the inserted `expression_statement` on after row 211 starts move
+    // but its `;` is insert (both presets).
+    assert_ground_truth_invariants_with_known_violations(
+        "cpp-ladybird-refactor-variables-if-changes",
+        4,
+    )
 }
 
 #[test]

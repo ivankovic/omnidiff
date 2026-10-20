@@ -2865,3 +2865,473 @@ fn boolean_identifier_census() -> Result<()> {
     }
     Ok(())
 }
+
+/// EXPLORATORY: two painting conventions noticed while hand painting, measured over every painting
+/// of every fixture, before either is considered as an invariant.
+///
+/// **Call dot.** In `foo.bar()` the `.` is painted like `bar`, the member being called - unless a
+/// line break separates the two: in `a().\nb()` the dot ends `a().`'s line and goes with `a()`.
+/// A case is a `.`, `?.` or `->` token whose parent is a member access; it counts only where its
+/// two neighbours - the object's last byte before it and the member's first byte after it - are
+/// painted differently, since otherwise any painting of the dot agrees with one of them. Each case
+/// is classed by layout (`same row` as the member, or `trailing` with the member on a later row),
+/// by whether the access is called, by what happened to each neighbour (`removed`, `move`,
+/// `edited` - a member painted only in part counts as edited - or `unpainted`), and by which
+/// neighbour the dot's own label follows.
+///
+/// **Statement end.** The first visible byte of a row is painted like the row's last `;` token
+/// (a tree leaf, so never one inside a string or comment). Rows where the `;` is itself the first
+/// visible byte, or where both are unpainted, are skipped. Each row is classed by whether it
+/// `opens` the statement the `;` closes or `continues` one begun earlier, and by what happened to
+/// its first token, judged whole as for the dot.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` also prints every case that breaks a convention.
+#[test]
+#[ignore]
+fn painting_convention_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{LeafStatus, TreeContext, painted_labels};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    fn is_call(node: Node) -> bool {
+        node.kind().contains("call") || node.kind().contains("invocation")
+    }
+    /// Whether the member access holding a dot is called: it is the callee of a call, or (Java's
+    /// `method_invocation`, Ruby's `call`, PHP's `member_call_expression`) is the call itself.
+    fn access_is_called(access: Node) -> bool {
+        // Kotlin and Swift put the dot in a `navigation_suffix` under the access.
+        let access = if access.kind() == "navigation_suffix" {
+            access.parent().unwrap_or(access)
+        } else {
+            access
+        };
+        is_call(access)
+            || access.parent().is_some_and(|parent| {
+                is_call(parent)
+                    && parent
+                        .named_child(0)
+                        .is_some_and(|callee| callee.id() == access.id())
+            })
+    }
+    fn label_name(label: Option<TextLabel>) -> &'static str {
+        match label {
+            None => "unpainted",
+            Some(TextLabel::Update) => "update",
+            Some(TextLabel::Move) => "move",
+            Some(TextLabel::Delete) => "delete",
+            Some(TextLabel::Insert) => "insert",
+        }
+    }
+    fn tally(table: &mut BTreeMap<String, (usize, BTreeSet<String>)>, key: String, name: &str) {
+        let entry = table.entry(key).or_default();
+        entry.0 += 1;
+        entry.1.insert(name.to_string());
+    }
+    fn print_table(title: &str, table: &BTreeMap<String, (usize, BTreeSet<String>)>) {
+        println!("\n{title}:");
+        for (class, (count, names)) in table {
+            println!("{count:>7}  {:>4} fixtures  {class}", names.len());
+        }
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    let mut dots: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut ends: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut end_shapes: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        for named in &mapping.text_mappings {
+            let labels = painted_labels(named, &before, &after)?;
+            let preset = if crate::test::helper::human_mapping::invariants::designates_minimal(
+                &named.name,
+            ) {
+                "Minimal"
+            } else if crate::test::helper::human_mapping::invariants::designates_full(&named.name) {
+                "Full"
+            } else {
+                "other"
+            };
+            for side in 0..2 {
+                let contents = codes[side].contents.as_str();
+                let label = |byte: usize| labels[side].get(byte).copied().flatten();
+                let row_of = |byte: usize| contents[..byte].matches('\n').count();
+                let row_text = |row: usize| contents.split('\n').nth(row).unwrap_or("").trim();
+
+                // Call dot.
+                for &leaf in &context.leaves[side] {
+                    if !matches!(leaf.kind(), "." | "?." | "->") {
+                        continue;
+                    }
+                    let Some(access) = leaf.parent() else {
+                        continue;
+                    };
+                    let mut member = leaf.next_named_sibling();
+                    while member.is_some_and(|m| m.kind().contains("comment")) {
+                        member = member.and_then(|m| m.next_named_sibling());
+                    }
+                    let Some(member) = member else { continue };
+                    let Some(object_end) = contents[..leaf.start_byte()]
+                        .trim_end()
+                        .len()
+                        .checked_sub(1)
+                    else {
+                        continue;
+                    };
+                    let (object, dot, callee) = (
+                        label(object_end),
+                        label(leaf.start_byte()),
+                        label(member.start_byte()),
+                    );
+                    if object == callee {
+                        continue;
+                    }
+                    // A member painted in part (`Minimal`'s `unsafe_` before `layout_node`) is
+                    // edited in place, like a rename, not inserted or deleted.
+                    let member_whole = member.byte_range().all(|byte| {
+                        label(byte) == callee || contents.as_bytes()[byte].is_ascii_whitespace()
+                    });
+                    let member_class = match callee {
+                        _ if !member_whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let object_class = match object {
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let trailing = row_of(leaf.start_byte()) != row_of(member.start_byte());
+                    let follows = if dot == callee {
+                        "member"
+                    } else if dot == object {
+                        "object"
+                    } else {
+                        "neither"
+                    };
+                    let expected = if trailing { "object" } else { "member" };
+                    let layout = if trailing { "trailing" } else { "same row" };
+                    let called = if access_is_called(access) {
+                        "call  "
+                    } else {
+                        "access"
+                    };
+                    tally(
+                        &mut dots,
+                        format!(
+                            "{called} {layout:<8} {object_class:>9} . {member_class:<9} dot follows \
+                             {follows}"
+                        ),
+                        &name,
+                    );
+                    if detail
+                        && follows != expected
+                        && called == "call  "
+                        && matches!(member_class, "removed" | "move")
+                    {
+                        println!(
+                            "dot\t{name}\t{preset}\t{} row {}\t{} {} / dot {} / {} {}\t{}",
+                            ["before", "after"][side],
+                            row_of(leaf.start_byte()) + 1,
+                            label_name(object),
+                            &contents[object_end..=object_end],
+                            label_name(dot),
+                            label_name(callee),
+                            &contents[member.byte_range()],
+                            row_text(row_of(leaf.start_byte())),
+                        );
+                    }
+                }
+
+                // Statement end: the last `;` leaf of each row.
+                let mut last_semicolon: BTreeMap<usize, Node> = BTreeMap::new();
+                for &leaf in &context.leaves[side] {
+                    if leaf.kind() == ";" {
+                        last_semicolon.insert(leaf.start_position().row, leaf);
+                    }
+                }
+                let root = [bt.root_node(), at.root_node()][side];
+                let mut offset = 0usize;
+                for (row, line) in contents.split('\n').enumerate() {
+                    let start = offset;
+                    offset += line.len() + 1;
+                    let Some(&semicolon_leaf) = last_semicolon.get(&row) else {
+                        continue;
+                    };
+                    let semicolon = semicolon_leaf.start_byte();
+                    let Some(first) = line.find(|c: char| !c.is_whitespace()) else {
+                        continue;
+                    };
+                    if start + first == semicolon {
+                        continue;
+                    }
+                    let (head, end) = (label(start + first), label(semicolon));
+                    if head.is_none() && end.is_none() {
+                        continue;
+                    }
+                    // Whether the row opens the statement its `;` closes, rather than continuing
+                    // one begun on an earlier row.
+                    let mut opens = None;
+                    let mut node = semicolon_leaf.parent();
+                    while let Some(statement) =
+                        node.filter(|n| n.end_byte() == semicolon_leaf.end_byte())
+                    {
+                        if statement.start_byte() == start + first {
+                            opens = Some(statement);
+                        }
+                        node = statement.parent();
+                    }
+                    let statement = opens;
+                    let opens = opens.is_some();
+                    let shape = if opens { "opens    " } else { "continues" };
+                    // The first token's class, judged whole: a token painted in part is edited.
+                    let token = root
+                        .descendant_for_byte_range(start + first, start + first + 1)
+                        .unwrap_or(semicolon_leaf);
+                    let whole = token.byte_range().all(|byte| label(byte) == head);
+                    let class = match head {
+                        _ if !whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let agree = if head == end { "agree   " } else { "disagree" };
+                    tally(
+                        &mut ends,
+                        format!("{shape} {class:<9} {agree} {preset}"),
+                        &name,
+                    );
+                    tally(
+                        &mut end_shapes,
+                        format!(
+                            "{shape} {agree} {preset:<7} {} / {}",
+                            label_name(head),
+                            label_name(end)
+                        ),
+                        &name,
+                    );
+                    if detail && head != end && opens && matches!(class, "removed" | "move") {
+                        let status = |leaf: Node| match context.status(leaf, side) {
+                            LeafStatus::Same(_) => "same",
+                            LeafStatus::Paired(_) => "paired",
+                            LeafStatus::Removed => "removed",
+                            LeafStatus::Undecided => "undecided",
+                        };
+                        let held = statement.map_or("?".to_string(), |statement| {
+                            format!(
+                                "{} {}, first {}, `;` {}",
+                                statement.kind(),
+                                if context.partner(statement, side).is_some() {
+                                    "paired"
+                                } else {
+                                    "unpaired"
+                                },
+                                status(token),
+                                status(semicolon_leaf),
+                            )
+                        });
+                        println!(
+                            "end\t{name}\t{preset}\t{} row {}\t{} / {}\t{}\t{held}",
+                            ["before", "after"][side],
+                            row + 1,
+                            label_name(head),
+                            label_name(end),
+                            line.trim(),
+                        );
+                    }
+                }
+            }
+        }
+    }
+    print_table(
+        "Call dot (object's last byte and member's first byte painted differently)",
+        &dots,
+    );
+    print_table(
+        "Statement end by first token's class (first visible byte vs the row's last `;`)",
+        &ends,
+    );
+    print_table("Statement end by label (first / `;`)", &end_shapes);
+    Ok(())
+}
+
+/// EXPLORATORY: invariants 24 (call dot) and 25 (statement end) held against omnidiff's *own*
+/// painting under each preset, with the human tree mapping deciding which statements were removed.
+/// Prints each break as `fixture  preset  message` and a count per invariant and preset.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_engine_census --
+/// --ignored --nocapture`
+#[test]
+#[ignore]
+fn painting_convention_engine_census() -> Result<()> {
+    use crate::diff::text::RenderOptions;
+    use crate::test::helper::human_mapping::invariants::{
+        PaintedLabels, TreeContext, call_dots_go_with_their_member,
+        removed_statements_take_their_terminator,
+    };
+    use std::collections::BTreeMap;
+
+    let mut counts: BTreeMap<(u8, &str), (usize, std::collections::BTreeSet<String>)> =
+        BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let diff = crate::test::helper::human_mapping::omnidiff_diff_for_painting(&before, &after)?;
+        for (preset, options) in [
+            ("Minimal", RenderOptions::MINIMAL),
+            ("Full", RenderOptions::FULL),
+        ] {
+            let labels: PaintedLabels =
+                crate::test::helper::human_mapping::omnidiff_painting_labels(
+                    &diff, &before, &after, options,
+                );
+            let found = call_dots_go_with_their_member(preset, &labels, &context, &before, &after)
+                .into_iter()
+                .chain(removed_statements_take_their_terminator(
+                    preset, &labels, &context, &before, &after,
+                ));
+            for violation in found {
+                // For 25: what omnidiff's own mapping does with the `;`, and why.
+                let mut ours = String::new();
+                if let (
+                    25,
+                    Some(site),
+                    crate::test::helper::human_mapping::PaintingDiff::Ast { ast, .. },
+                ) = (violation.invariant, violation.sites.get(1), &diff)
+                {
+                    let root = [bt.root_node(), at.root_node()][site.side];
+                    let point = |row, column| tree_sitter::Point { row, column };
+                    if let Some(semicolon) = root.descendant_for_point_range(
+                        point(site.span.start_row, site.span.start_column),
+                        point(site.span.end_row, site.span.end_column),
+                    ) {
+                        let map = if site.side == 0 {
+                            &ast.before_node_map
+                        } else {
+                            &ast.after_node_map
+                        };
+                        let partner = map.get(&semicolon.id()).copied().unwrap_or(0);
+                        let key = if site.side == 0 {
+                            (semicolon.id(), partner)
+                        } else {
+                            (partner, semicolon.id())
+                        };
+                        let parent_partner = semicolon
+                            .parent()
+                            .and_then(|parent| map.get(&parent.id()).copied())
+                            .unwrap_or(0);
+                        ours = format!(
+                            "\tours: `;` partner {} reason {:?}, statement {}",
+                            if partner == 0 { "none" } else { "some" },
+                            ast.mapping.get(&key).map(|m| m.reason),
+                            if parent_partner == 0 {
+                                "unmatched"
+                            } else {
+                                "matched"
+                            },
+                        );
+                    }
+                }
+                println!("{name}\t{preset}\t{}{ours}", violation.message);
+                let entry = counts.entry((violation.invariant, preset)).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+            }
+        }
+    }
+    println!();
+    for ((invariant, preset), (count, names)) in &counts {
+        println!(
+            "invariant {invariant} {preset:<7} {count:>5} in {:>4} fixtures",
+            names.len()
+        );
+    }
+    Ok(())
+}
+
+/// Census of human tree mappings that pair a statement-closing `;` across two statements the
+/// mapping does not pair with each other - the pairing `solve_stray_terminators` undoes in the
+/// engine. Prints each as `fixture  before row  after row  before statement => after statement`.
+///
+/// `cargo test --profile ci --lib --features test-fixtures stray_terminator_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn stray_terminator_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::TreeContext;
+
+    /// The statement `leaf` closes, if it is a `;` and its parent's last child.
+    fn closed_statement(leaf: Node) -> Option<Node> {
+        let parent = leaf.parent()?;
+        (leaf.kind() == ";"
+            && parent.child_count() > 1
+            && parent.child(parent.child_count() - 1).map(|n| n.id()) == Some(leaf.id()))
+        .then_some(parent)
+    }
+    fn first_line(node: Node, contents: &str) -> String {
+        contents[node.byte_range()]
+            .lines()
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    }
+
+    let mut total = 0;
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        for &leaf in &context.leaves[0] {
+            let Some(statement) = closed_statement(leaf) else {
+                continue;
+            };
+            let Some(partner) = context.partner(leaf, 0) else {
+                continue;
+            };
+            let Some(partner_statement) = closed_statement(partner) else {
+                continue;
+            };
+            if context
+                .partner(statement, 0)
+                .is_some_and(|p| p.id() == partner_statement.id())
+            {
+                continue;
+            }
+            total += 1;
+            println!(
+                "{name}\tb{}\ta{}\t{} `{}` => {} `{}`",
+                leaf.start_position().row + 1,
+                partner.start_position().row + 1,
+                statement.kind(),
+                first_line(statement, &before.contents),
+                partner_statement.kind(),
+                first_line(partner_statement, &after.contents),
+            );
+        }
+    }
+    println!("{total} stray terminators");
+    Ok(())
+}

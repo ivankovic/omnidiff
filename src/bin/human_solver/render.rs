@@ -1318,8 +1318,16 @@ pub(crate) fn render_invariant_list(
     let block = Block::default()
         .borders(Borders::ALL)
         .title(format!(
-            "Invariants — {} violation(s), j/k move, Enter jumps, Esc closes",
-            entries.len()
+            "Invariants — {} violation(s), {} review item(s), j/k move, Enter jumps, x drops a \
+             review item, Esc closes",
+            entries
+                .iter()
+                .filter(|entry| entry.review.is_none())
+                .count(),
+            entries
+                .iter()
+                .filter(|entry| entry.review.is_some())
+                .count()
         ))
         .border_style(
             Style::default()
@@ -1353,11 +1361,16 @@ pub(crate) fn render_invariant_list(
                 Style::default()
             };
             Row::new(vec![
-                Cell::from(entry.violation.invariant.to_string()),
-                Cell::from(entry.violation.painting.clone().unwrap_or_else(|| {
+                Cell::from(match entry.review {
+                    Some(_) => "R".to_string(),
+                    None => entry.violation.invariant.to_string(),
+                }),
+                Cell::from(match (&entry.review, &entry.violation.painting) {
+                    (Some(_), _) => "(review)".to_string(),
+                    (None, Some(painting)) => painting.clone(),
                     // The rules that read only the tree mapping have no painting to name.
-                    "(mapping)".to_string()
-                })),
+                    (None, None) => "(mapping)".to_string(),
+                }),
                 Cell::from(entry.violation.message.clone()),
             ])
             .style(style)
@@ -1486,6 +1499,10 @@ pub(crate) fn render_open_diff_picker(
             );
             let disagree_cell = measured(data.disagreement_of(name).map(|bytes| bytes.to_string()));
             let invariant_cell = measured(data.invariants_of(name).map(|count| count.to_string()));
+            let review_cell = match data.review_of(name) {
+                Some(0) | None => String::new(),
+                Some(count) => count.to_string(),
+            };
             let size_cell = measured(data.size_of(name).map(|lines| lines.to_string()));
             let verdict_cell = data
                 .content_of(name)
@@ -1503,6 +1520,7 @@ pub(crate) fn render_open_diff_picker(
                 Cell::from(painted_mark),
                 Cell::from(disagree_cell),
                 Cell::from(invariant_cell),
+                Cell::from(review_cell),
                 Cell::from(size_cell),
                 Cell::from(verdict_cell),
             ])
@@ -1568,6 +1586,7 @@ pub(crate) fn render_open_diff_picker(
             Constraint::Length(7),
             Constraint::Length(10),
             Constraint::Length(11),
+            Constraint::Length(8),
             Constraint::Length(7),
             Constraint::Length(17),
         ],

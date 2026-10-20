@@ -68,6 +68,11 @@
 //!     partner's painting (10 needs both).
 //! 23. [`painted_matches_hold_the_mapping_partner`] - a named leaf inside a painted `Match` has its
 //!     tree-mapping partner inside, or overlapping, that `Match`'s spans on the other side.
+//! 24. [`call_dots_go_with_their_member`] - in a call whose member is inserted, deleted or moved
+//!     while its object stays, the dot is painted like the member (`.bar()` leaves whole), unless
+//!     the member starts a later row: then the dot ends the object's row and is painted with it.
+//! 25. [`removed_statements_take_their_terminator`] - a statement the tree mapping deletes or
+//!     inserts is painted alike at its first byte and its closing `;`.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -81,7 +86,7 @@
 //! while its `{` stays) and "a matched pair lands in one painting entry" (a rename is ordinarily
 //! painted as a `Delete` plus an `Insert`).
 //!
-//! **All twenty-three are intra-fixture**; `cross_fixture_convention_census`
+//! **All twenty-five are intra-fixture**; `cross_fixture_convention_census`
 //! (`tests/exploratory.rs`) covers the cross-fixture axis. They run as each fixture stub's
 //! `invariants()` test, so a fixture records its own known violations beside its other clamps
 //! rather than in a corpus-wide exemption list.
@@ -98,7 +103,7 @@ use crate::diff::text::{RenderOptions, WHOLE_TOKENS};
 
 /// One painting projected to per-byte labels, `[before, after]` - `None` where nothing paints that
 /// byte.
-type PaintedLabels = [Vec<Option<TextLabel>>; 2];
+pub(crate) type PaintedLabels = [Vec<Option<TextLabel>>; 2];
 
 /// Where a violation is, on one side.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,7 +119,7 @@ pub struct ViolationSite {
 /// look. The sites let a tool (`human_solver`'s `V` popup) jump to each location.
 #[derive(Debug, Clone)]
 pub struct GroundTruthViolation {
-    /// Which of the twenty-three rules, numbered as the module doc lists them.
+    /// Which of the twenty-five rules, numbered as the module doc lists them.
     pub invariant: u8,
     /// The painting this is about, or `None` for the three rules that read only the tree mapping.
     pub painting: Option<String>,
@@ -317,6 +322,12 @@ pub fn ground_truth_invariant_violations_for(
                 name, labels, &context, before, after,
             ));
             violations.extend(tokens_are_painted_whole(
+                name, labels, &context, before, after,
+            ));
+            violations.extend(call_dots_go_with_their_member(
+                name, labels, &context, before, after,
+            ));
+            violations.extend(removed_statements_take_their_terminator(
                 name, labels, &context, before, after,
             ));
         }
@@ -1507,6 +1518,30 @@ impl<'tree> TreeContext<'tree> {
             match current.parent() {
                 Some(parent) => current = parent,
                 None => return LeafStatus::Undecided,
+            }
+        }
+    }
+
+    /// Whether the mapping deletes or inserts `node`: by an entry of its own, childless or not, or
+    /// under a `*WithChildren` ancestor - and no multi-map group could have left it over instead.
+    pub(crate) fn removed(&self, node: Node<'tree>, side: usize) -> bool {
+        let (matches, removed) = if side == 0 {
+            (&self.caches.before_match, &self.caches.before_removed)
+        } else {
+            (&self.caches.after_match, &self.caches.after_removed)
+        };
+        let mut current = node;
+        loop {
+            if matches.contains_key(&current.id()) {
+                return false;
+            }
+            if let Some(&with_children) = removed.get(&current.id()) {
+                return (current.id() == node.id() || with_children)
+                    && !group_leaves_status_open(current, side, &self.groups, &self.caches);
+            }
+            match current.parent() {
+                Some(parent) => current = parent,
+                None => return false,
             }
         }
     }
@@ -2955,6 +2990,212 @@ fn tokens_are_painted_whole(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 24: a call's dot goes with the member it calls
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// Whether the member access holding a dot is called: it is the callee of a call, or (Java's
+/// `method_invocation`, Ruby's `call`, PHP's `member_call_expression`) is the call itself. Kotlin
+/// and Swift put the dot one level down, in a `navigation_suffix`.
+fn access_is_called(access: Node) -> bool {
+    fn is_call(node: Node) -> bool {
+        node.kind().contains("call") || node.kind().contains("invocation")
+    }
+    let access = if access.kind() == "navigation_suffix" {
+        access.parent().unwrap_or(access)
+    } else {
+        access
+    };
+    is_call(access)
+        || access.parent().is_some_and(|parent| {
+            is_call(parent)
+                && parent
+                    .named_child(0)
+                    .is_some_and(|callee| callee.id() == access.id())
+        })
+}
+
+/// **Invariant 24.** In a call `foo.bar()` whose member `bar` is inserted, deleted or moved whole
+/// while the object `foo` stays, the dot is painted like `bar`: a reader sees `.bar()` arrive or
+/// leave, not `bar()` with `foo.` left holding a dot. A line break between the two reverses it:
+/// in `a().\nb()` the dot ends `a().`'s row and is painted like the object.
+///
+/// Only that shape is held. A renamed member (`Update`, or painted in part as `Minimal` paints
+/// `unsafe_` before `layout_node`) leaves the dot alone, since the dot itself did not change. An
+/// object that is inserted or deleted takes the dot with it necessarily - the dot has no partner
+/// either - so there is nothing to choose. `.`, `?.` and `->` are dots.
+pub(crate) fn call_dots_go_with_their_member(
+    painting: &str,
+    painted: &PaintedLabels,
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    let mut violations = Vec::new();
+    for (side, code) in [(0usize, before), (1usize, after)] {
+        let contents = code.contents.as_str();
+        let label = |byte: usize| painted[side].get(byte).copied().flatten();
+        for dot in &context.leaves[side] {
+            if !matches!(dot.kind(), "." | "?." | "->") {
+                continue;
+            }
+            if !dot.parent().is_some_and(access_is_called) {
+                continue;
+            }
+            let mut member = dot.next_named_sibling();
+            while member.is_some_and(|m| m.kind().contains("comment")) {
+                member = member.and_then(|m| m.next_named_sibling());
+            }
+            let Some(member) = member else { continue };
+            let Some(member_label) = whole_leaf_label(&painted[side], member)
+                .flatten()
+                .filter(|l| *l != TextLabel::Update)
+            else {
+                continue;
+            };
+            let Some(object_end) = contents[..dot.start_byte()].trim_end().len().checked_sub(1)
+            else {
+                continue;
+            };
+            let object_label = label(object_end);
+            if object_label == Some(member_label)
+                || matches!(object_label, Some(TextLabel::Insert | TextLabel::Delete))
+            {
+                continue;
+            }
+            let trailing = dot.start_position().row != member.start_position().row;
+            let (expected, owner) = if trailing {
+                (
+                    object_label,
+                    "the object before it, since the member starts a later row",
+                )
+            } else {
+                (Some(member_label), "the member it calls")
+            };
+            if label(dot.start_byte()) == expected {
+                continue;
+            }
+            violations.push(GroundTruthViolation::new(
+                24,
+                Some(painting),
+                format!(
+                    "painting '{painting}' {} row {} paints the `{}` before `{}` apart from {owner}",
+                    side_name(side),
+                    row_of(contents, dot.start_byte()),
+                    &contents[dot.byte_range()],
+                    leaf_text(member, contents),
+                ),
+                vec![ViolationSite {
+                    side,
+                    span: span_of_node(*dot),
+                }],
+            ));
+        }
+    }
+    violations
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 25: a statement that enters or leaves takes its `;` along
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// **Invariant 25.** A statement the tree mapping deletes or inserts is painted alike at its first byte and at the `;` that ends it. The `;`
+/// belongs to its statement: `break;` becoming `continue;` as two statements removes one `;` and
+/// adds another, rather than keeping a `;` that outlives the `break` before it.
+///
+/// A statement the mapping pairs is not held: a prefix added to a surviving statement
+/// (`pub mod plugins;`) or contents replaced inside a paired one (`this.x = x;` ->
+/// `setX(x);`) rightly leave the `;` unpainted while the first token is painted. Nor is one the
+/// painting reads as surviving, `Move` or `Update` at both ends and nowhere `Insert`/`Delete`:
+/// `break` -> `continue` painted as one update keeps its `;`, and whether the mapping should then
+/// pair the two statements is a question for the mapping invariants.
+pub(crate) fn removed_statements_take_their_terminator(
+    painting: &str,
+    painted: &PaintedLabels,
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    let mut violations = Vec::new();
+    for (side, code) in [(0usize, before), (1usize, after)] {
+        let contents = code.contents.as_str();
+        let label = |byte: usize| painted[side].get(byte).copied().flatten();
+        for semicolon in &context.leaves[side] {
+            if semicolon.kind() != ";" {
+                continue;
+            }
+            let Some(statement) = semicolon.parent().filter(|statement| {
+                statement.end_byte() == semicolon.end_byte()
+                    && statement.start_byte() < semicolon.start_byte()
+            }) else {
+                continue;
+            };
+            if !context.removed(statement, side) {
+                continue;
+            }
+            let Some(first) = first_leaf(statement) else {
+                continue;
+            };
+            // A new statement around a surviving one - `template <...>` before a class, `typedef`
+            // around an enum - hangs the `;` on the wrapper, but it closes the survivor.
+            let mut cursor = statement.walk();
+            if statement
+                .named_children(&mut cursor)
+                .any(|child| context.partner(child, side).is_some())
+            {
+                continue;
+            }
+            let (head, end) = (label(statement.start_byte()), label(semicolon.start_byte()));
+            let removed = |label| matches!(label, Some(TextLabel::Insert | TextLabel::Delete));
+            if head == end || !(removed(head) || removed(end)) {
+                continue;
+            }
+            violations.push(GroundTruthViolation::new(
+                25,
+                Some(painting),
+                format!(
+                    "painting '{painting}' {} row {} paints the removed `{}` {} at its start but \
+                     its `;` {} - the `;` belongs to its statement",
+                    side_name(side),
+                    row_of(contents, statement.start_byte()),
+                    statement.kind(),
+                    label_word(head),
+                    label_word(end),
+                ),
+                vec![
+                    ViolationSite {
+                        side,
+                        span: span_of_node(first),
+                    },
+                    ViolationSite {
+                        side,
+                        span: span_of_node(*semicolon),
+                    },
+                ],
+            ));
+        }
+    }
+    violations
+}
+
+fn first_leaf(node: Node) -> Option<Node> {
+    let mut node = node;
+    while node.child_count() > 0 {
+        node = node.child(0)?;
+    }
+    Some(node)
+}
+
+fn label_word(label: Option<TextLabel>) -> &'static str {
+    match label {
+        None => "unpainted",
+        Some(TextLabel::Move) => "move",
+        Some(TextLabel::Update) => "update",
+        Some(TextLabel::Delete) => "delete",
+        Some(TextLabel::Insert) => "insert",
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
 // The assertions the per-fixture tests call
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -4002,6 +4243,123 @@ mod tests {
             .into_iter()
             .filter(|v| v.contains(phrase))
             .collect()
+    }
+
+    fn violations_of(
+        invariant: u8,
+        mapping: &HumanMapping,
+        before: &Code,
+        after: &Code,
+    ) -> Vec<String> {
+        ground_truth_invariant_violations_for(mapping, before, after)
+            .expect("checks run")
+            .into_iter()
+            .filter(|violation| violation.invariant == invariant)
+            .map(|violation| violation.message)
+            .collect()
+    }
+
+    // ── Invariant 24 ────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn an_inserted_call_takes_its_dot() {
+        let (before, after) = (rust("a.b();\n"), rust("a.b().c();\n"));
+        let mapping = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![inserted(5, 4)],
+        );
+        assert!(violations_of(24, &mapping, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn an_inserted_call_leaving_its_dot_behind_is_reported() {
+        let (before, after) = (rust("a.b();\n"), rust("a.b().c();\n"));
+        let mapping = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![inserted(6, 3)],
+        );
+        let found = violations_of(24, &mapping, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains("after row 1 paints the `.` before `c` apart from the member"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_renamed_member_leaves_its_dot_alone() {
+        let (before, after) = (rust("a.b();\n"), rust("a.c();\n"));
+        let mapping = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![matched((2, 3), (2, 3))],
+        );
+        assert!(violations_of(24, &mapping, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_dot_ending_its_row_goes_with_the_object() {
+        let (before, after) = (rust("a.b();\n"), rust("a.b().\nc();\n"));
+        let insert = |spans| HumanTextEntry {
+            operation: HumanTextOperation::Insert,
+            before: Vec::new(),
+            after: spans,
+        };
+        let member_only = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![insert(vec![span(1, 0, 1, 3)])],
+        );
+        assert!(violations_of(24, &member_only, &before, &after).is_empty());
+        let with_dot = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![insert(vec![span(0, 5, 0, 6), span(1, 0, 1, 3)])],
+        );
+        let found = violations_of(24, &with_dot, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains("apart from the object before it"),
+            "{found:?}"
+        );
+    }
+
+    // ── Invariant 25 ────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn an_inserted_statement_takes_its_semicolon() {
+        let (before, after) = (rust("f();\n"), rust("f();\ng();\n"));
+        let insert = |end_column| HumanTextEntry {
+            operation: HumanTextOperation::Insert,
+            before: Vec::new(),
+            after: vec![span(1, 0, 1, end_column)],
+        };
+        let whole = with_painting(mapping_by_text(&before, &after), "Full", vec![insert(4)]);
+        assert!(violations_of(25, &whole, &before, &after).is_empty());
+        let without_semicolon =
+            with_painting(mapping_by_text(&before, &after), "Full", vec![insert(3)]);
+        let found = violations_of(25, &without_semicolon, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains(
+                "after row 2 paints the removed `expression_statement` insert at its start but \
+                 its `;` unpainted"
+            ),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_paired_statement_may_keep_its_semicolon() {
+        let (before, after) = (rust("x = 1;\n"), rust("y = 1;\n"));
+        let mapping = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![deleted(0, 1), inserted(0, 1)],
+        );
+        assert!(violations_of(25, &mapping, &before, &after).is_empty());
     }
 
     #[test]
