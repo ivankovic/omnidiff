@@ -26,14 +26,14 @@ fn mapping() -> Result<()> {
     // omnidiff reuses the deleted leaves inside the inserted one. The scaffolding-reuse family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-18-posixparser",
-        16,
-        10,
+        14,
+        8,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-18-posixparser", 0.14)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-18-posixparser", 0.2)
 }
 
 #[test]

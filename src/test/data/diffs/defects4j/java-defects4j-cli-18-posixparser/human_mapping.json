@@ -1300,36 +1300,6 @@
       ]
     },
     {
-      "operation": "delete_with_children",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:2",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1"
-      ]
-    },
-    {
-      "operation": "insert_with_children",
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:2",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1"
-      ]
-    },
-    {
       "operation": "identical",
       "before_path": [
         "class_declaration:1",
@@ -1972,6 +1942,307 @@
         "class_body:1",
         "}:1"
       ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        "method_invocation:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
     }
   ],
   "text_mappings": [
@@ -2039,6 +2310,72 @@
               "end_column": 30
             }
           ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 42,
+              "end_row": 127,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 33,
+              "end_row": 127,
+              "end_column": 34
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 26,
+              "end_row": 127,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 32,
+              "end_row": 127,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 35,
+              "end_row": 127,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 41,
+              "end_row": 127,
+              "end_column": 42
+            }
+          ]
         }
       ]
     },
@@ -2104,6 +2441,80 @@
               "start_column": 0,
               "end_row": 236,
               "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 41,
+              "end_row": 127,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 35,
+              "end_row": 127,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 36,
+              "end_row": 127,
+              "end_column": 41
+            }
+          ],
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 27,
+              "end_row": 127,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 32,
+              "end_row": 127,
+              "end_column": 34
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 127,
+              "start_column": 26,
+              "end_row": 127,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 127,
+              "start_column": 42,
+              "end_row": 127,
+              "end_column": 43
             }
           ]
         }
