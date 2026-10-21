@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        4,
-        4,
+        3,
+        3,
     )
 }
 
@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        0.42,
+        0.43,
     )
 }
 

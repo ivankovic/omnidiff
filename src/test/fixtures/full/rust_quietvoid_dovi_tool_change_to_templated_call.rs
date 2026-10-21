@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-quietvoid-dovi_tool-change-to-templated-call",
-        6,
-        6,
+        3,
+        3,
     )
 }
 

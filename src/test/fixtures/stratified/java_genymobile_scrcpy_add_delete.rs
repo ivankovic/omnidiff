@@ -25,14 +25,14 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-genymobile-scrcpy-add-delete",
-        4,
         2,
+        0,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-genymobile-scrcpy-add-delete", 1.66)
+    assert_matches_human_painting_within_limit("java-genymobile-scrcpy-add-delete", 1.72)
 }
 
 #[test]

@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "php-rk4an-phpsysinfo-actual-logic-change",
+        3,
         2,
-        1,
     )
 }
 

@@ -28,8 +28,8 @@ fn mapping() -> Result<()> {
     // under unit costs: the cost function speaking, not a search failure.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-axios-axios-real-small-change",
-        3,
-        1,
+        2,
+        0,
     )
 }
 

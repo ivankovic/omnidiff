@@ -22,13 +22,8 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // `null` becomes `source` as the third argument. The mapping pairs across the kind change;
-    // omnidiff deletes and inserts (`APTED("large_flat_subtree")`). The shape of
-    // `cli-8-helpformatter` and `jsoup-17-treebuilderstate`.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "java-defects4j-closure-144-functiontype",
-        1,
-        1,
     )
 }
 

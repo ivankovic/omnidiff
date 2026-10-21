@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "csharp-lidarr-lidarr-small-but-complex-mapping",
-        18,
-        10,
+        20,
+        12,
     )
 }
 

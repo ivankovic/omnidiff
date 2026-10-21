@@ -27,8 +27,8 @@ fn mapping() -> Result<()> {
     // inner copy: phase-1 hash matching preferring the identical inner copy on a wrap.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "tsx-mui-material-ui-add-to-empty-block",
-        23,
-        14,
+        22,
+        13,
     )
 }
 

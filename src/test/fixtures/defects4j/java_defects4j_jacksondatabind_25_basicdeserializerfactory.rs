@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-jacksondatabind-25-basicdeserializerfactory",
-        6,
-        6,
+        4,
+        4,
     )
 }
 

@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-grafana-grafana-interesting-how-escapes-impact-string-parsing",
-        99,
         81,
+        63,
     )
 }
 

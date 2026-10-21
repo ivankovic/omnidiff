@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-gyulyvgc-sniffnet-small-change",
         2,
-        2,
+        1,
     )
 }
 

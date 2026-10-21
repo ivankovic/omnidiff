@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-jxpath-18-attributecontext",
-        45,
-        34,
+        44,
+        33,
     )
 }
 

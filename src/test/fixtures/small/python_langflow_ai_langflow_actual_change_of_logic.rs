@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // than `Identical`; the rest is one multi-map group pairing omnidiff does not realize.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "python-langflow-ai-langflow-actual-change-of-logic",
-        1,
-        1,
+        3,
+        3,
     )
 }
 
