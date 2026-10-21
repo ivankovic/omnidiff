@@ -318,13 +318,29 @@ mod java_defects4j_closure_149_commandlinerunner;
 #[cfg(test)]
 mod java_defects4j_closure_149_compiler;
 #[cfg(test)]
+mod java_defects4j_closure_149_compileroptions;
+#[cfg(test)]
 mod java_defects4j_closure_14_controlflowanalysis;
+#[cfg(test)]
+mod java_defects4j_closure_150_typedscopecreator;
 #[cfg(test)]
 mod java_defects4j_closure_151_commandlinerunner;
 #[cfg(test)]
+mod java_defects4j_closure_152_functiontype;
+#[cfg(test)]
 mod java_defects4j_closure_154_typecheck;
 #[cfg(test)]
+mod java_defects4j_closure_154_typevalidator;
+#[cfg(test)]
+mod java_defects4j_closure_155_inlinevariables;
+#[cfg(test)]
+mod java_defects4j_closure_155_referencecollectingcallback;
+#[cfg(test)]
 mod java_defects4j_closure_155_scope;
+#[cfg(test)]
+mod java_defects4j_closure_156_collapseproperties;
+#[cfg(test)]
+mod java_defects4j_closure_157_renameprototypes;
 #[cfg(test)]
 mod java_defects4j_closure_15_flowsensitiveinlinevariables;
 #[cfg(test)]
@@ -642,11 +658,27 @@ mod java_defects4j_jsoup_34_characterreader;
 #[cfg(test)]
 mod java_defects4j_jsoup_35_htmltreebuilderstate;
 #[cfg(test)]
+mod java_defects4j_jsoup_37_element;
+#[cfg(test)]
 mod java_defects4j_jsoup_39_datautil;
 #[cfg(test)]
 mod java_defects4j_jsoup_40_documenttype;
 #[cfg(test)]
+mod java_defects4j_jsoup_41_element;
+#[cfg(test)]
+mod java_defects4j_jsoup_43_element;
+#[cfg(test)]
 mod java_defects4j_jsoup_44_treebuilder;
+#[cfg(test)]
+mod java_defects4j_jsoup_45_htmltreebuilder;
+#[cfg(test)]
+mod java_defects4j_jsoup_46_entities;
+#[cfg(test)]
+mod java_defects4j_jsoup_47_entities;
+#[cfg(test)]
+mod java_defects4j_jsoup_49_node;
+#[cfg(test)]
+mod java_defects4j_jsoup_51_characterreader;
 #[cfg(test)]
 mod java_defects4j_jsoup_52_xmldeclaration;
 #[cfg(test)]
@@ -656,9 +688,19 @@ mod java_defects4j_jsoup_55_tokeniserstate;
 #[cfg(test)]
 mod java_defects4j_jsoup_56_documenttype;
 #[cfg(test)]
+mod java_defects4j_jsoup_56_htmltreebuilderstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_56_tokeniserstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_56_xmltreebuilder;
+#[cfg(test)]
+mod java_defects4j_jsoup_57_attributes;
+#[cfg(test)]
 mod java_defects4j_jsoup_76_htmltreebuilderstate;
 #[cfg(test)]
 mod java_defects4j_jsoup_79_leafnode;
+#[cfg(test)]
+mod java_defects4j_jsoup_7_document;
 #[cfg(test)]
 mod java_defects4j_jsoup_86_comment;
 #[cfg(test)]

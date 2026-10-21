@@ -3335,3 +3335,349 @@ fn stray_terminator_census() -> Result<()> {
     println!("{total} stray terminators");
     Ok(())
 }
+
+/// **Cost models with moves.** Scores omnidiff's mapping and the human's under three models, from
+/// the node pairing alone (both sides judged the same way, ignoring how either labels its
+/// operations):
+///
+/// - `unit`: insert 1, delete 1, update 1, identity 0, no moves - today's `diff_cost`.
+/// - `double_no_move`: insert 2, delete 2, update 1, identity 0, no moves - the doubling alone.
+/// - `move_per_node`: insert 2, delete 2, update 1, identity 0, and 1 per node a move carries.
+/// - `move_per_subtree`: the same, but a move costs 1 whatever the size of the subtree it carries.
+/// - `token_per_token` / `token_per_block`: insert 2, delete 2, update 1, with moves read off
+///   token order instead of the tree - 1 per moved leaf, or 1 per block of moved leaves adjacent
+///   on both sides. Re-nesting (`a.b.c` -> `a.b.x.c`) moves no token.
+///
+/// A pair is updated when its kinds differ, or its text does (a leaf's whole text, an inner node's
+/// own text between its children). A pair is a move root when its parents are not paired with
+/// each other, or when, among siblings whose parents are paired, it falls outside the longest run
+/// kept in order. A move carries every node under its root paired into its partner's subtree.
+///
+/// The question it answers: under which model is the human mapping the cheaper one, i.e. does
+/// minimising the model's cost lead towards what a human paints.
+///
+/// `cargo test --profile ci --lib --features test-fixtures move_cost_model_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` prints every fixture.
+#[test]
+#[ignore]
+fn move_cost_model_census() -> Result<()> {
+    use crate::code::ASTMetadata;
+    use std::collections::{HashMap, HashSet};
+
+    #[derive(Default, Clone, Copy)]
+    struct Score {
+        inserted: u64,
+        deleted: u64,
+        updated: u64,
+        move_roots: u64,
+        moved_nodes: u64,
+        moved_tokens: u64,
+        moved_blocks: u64,
+    }
+    impl Score {
+        fn costs(self) -> [u64; 6] {
+            let removed = 2 * (self.inserted + self.deleted) + self.updated;
+            [
+                self.inserted + self.deleted + self.updated,
+                removed,
+                removed + self.moved_nodes,
+                removed + self.move_roots,
+                removed + self.moved_tokens,
+                removed + self.moved_blocks,
+            ]
+        }
+    }
+
+    fn all_nodes(root: Node) -> Vec<Node> {
+        let mut nodes = Vec::new();
+        let mut stack = vec![root];
+        while let Some(node) = stack.pop() {
+            nodes.push(node);
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                stack.push(child);
+            }
+        }
+        nodes
+    }
+    fn subtree_ids(node: Node) -> HashSet<usize> {
+        all_nodes(node).into_iter().map(|n| n.id()).collect()
+    }
+    /// Indices into `seq` of one longest strictly increasing subsequence.
+    fn longest_increasing(seq: &[usize]) -> HashSet<usize> {
+        let mut tails: Vec<usize> = Vec::new();
+        let mut previous = vec![usize::MAX; seq.len()];
+        for (i, &value) in seq.iter().enumerate() {
+            let at = tails.partition_point(|&t| seq[t] < value);
+            if at > 0 {
+                previous[i] = tails[at - 1];
+            }
+            if at == tails.len() {
+                tails.push(i);
+            } else {
+                tails[at] = i;
+            }
+        }
+        let mut kept = HashSet::new();
+        let mut current = tails.last().copied().unwrap_or(usize::MAX);
+        while current != usize::MAX {
+            kept.insert(current);
+            current = previous[current];
+        }
+        kept
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn score(
+        before_root: Node,
+        after_root: Node,
+        before_src: &str,
+        after_src: &str,
+        before_meta: &ASTMetadata,
+        after_meta: &ASTMetadata,
+        pairs: &HashMap<usize, usize>,
+    ) -> Score {
+        let before_nodes = all_nodes(before_root);
+        let after_nodes = all_nodes(after_root);
+        let after_by_id: HashMap<usize, Node> = after_nodes.iter().map(|n| (n.id(), *n)).collect();
+        let paired_after: HashSet<usize> = pairs.values().copied().collect();
+        let mut s = Score {
+            deleted: before_nodes
+                .iter()
+                .filter(|n| !pairs.contains_key(&n.id()))
+                .count() as u64,
+            inserted: after_nodes
+                .iter()
+                .filter(|n| !paired_after.contains(&n.id()))
+                .count() as u64,
+            ..Score::default()
+        };
+        let owned =
+            |meta: &ASTMetadata, id: usize| meta.node_info.get(&id).map(|i| i.owned_text_hash);
+        let mut roots: Vec<(Node, Node)> = Vec::new();
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let changed = b.kind() != a.kind()
+                || if b.child_count() == 0 || a.child_count() == 0 {
+                    before_src[b.byte_range()] != after_src[a.byte_range()]
+                } else {
+                    owned(before_meta, b.id()) != owned(after_meta, a.id())
+                };
+            s.updated += changed as u64;
+            if let (Some(bp), Some(ap)) = (b.parent(), a.parent())
+                && pairs.get(&bp.id()) != Some(&ap.id())
+            {
+                roots.push((*b, *a));
+            }
+        }
+        // Reorders under a paired parent.
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let mut after_index: HashMap<usize, usize> = HashMap::new();
+            let mut cursor = a.walk();
+            for (i, child) in a.children(&mut cursor).enumerate() {
+                after_index.insert(child.id(), i);
+            }
+            let mut cursor = b.walk();
+            let kids: Vec<(Node, usize)> = b
+                .children(&mut cursor)
+                .filter_map(|child| {
+                    let partner = pairs.get(&child.id())?;
+                    Some((child, *after_index.get(partner)?))
+                })
+                .collect();
+            let seq: Vec<usize> = kids.iter().map(|(_, i)| *i).collect();
+            let kept = longest_increasing(&seq);
+            for (i, (child, _)) in kids.iter().enumerate() {
+                if !kept.contains(&i) {
+                    roots.push((*child, after_by_id[&pairs[&child.id()]]));
+                }
+            }
+        }
+        s.move_roots = roots.len() as u64;
+        let mut carried: HashSet<usize> = HashSet::new();
+        for (b, a) in roots {
+            let inside = subtree_ids(a);
+            for id in subtree_ids(b) {
+                if pairs.get(&id).is_some_and(|p| inside.contains(p)) {
+                    carried.insert(id);
+                }
+            }
+        }
+        s.moved_nodes = carried.len() as u64;
+
+        // Token order: paired leaves in before order, read off by their partners' after order.
+        // Those outside one longest increasing run are moved, however the tree around them
+        // regrouped; a block is a run of moved tokens adjacent on both sides.
+        let mut after_leaf_rank: HashMap<usize, usize> = HashMap::new();
+        let mut after_leaves: Vec<Node> = after_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        after_leaves.sort_by_key(|n| n.start_byte());
+        for (rank, leaf) in after_leaves.iter().enumerate() {
+            after_leaf_rank.insert(leaf.id(), rank);
+        }
+        let mut before_leaves: Vec<Node> = before_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        before_leaves.sort_by_key(|n| n.start_byte());
+        let ranks: Vec<usize> = before_leaves
+            .iter()
+            .filter_map(|leaf| after_leaf_rank.get(pairs.get(&leaf.id())?).copied())
+            .collect();
+        let kept = longest_increasing(&ranks);
+        let mut previous_moved: Option<usize> = None;
+        for (i, &rank) in ranks.iter().enumerate() {
+            if kept.contains(&i) {
+                previous_moved = None;
+                continue;
+            }
+            s.moved_tokens += 1;
+            if previous_moved != Some(rank.wrapping_sub(1)) {
+                s.moved_blocks += 1;
+            }
+            previous_moved = Some(rank);
+        }
+        s
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    const MODELS: [&str; 6] = [
+        "unit",
+        "double_no_move",
+        "move_per_node",
+        "move_per_subtree",
+        "token_per_token",
+        "token_per_block",
+    ];
+    // Per model: (engine total, human total, fixtures engine cheaper, equal, human cheaper).
+    let mut totals = [(0u64, 0u64, 0usize, 0usize, 0usize); 6];
+    let (mut fixtures, mut incomplete) = (0, 0);
+    let (mut engine_score, mut human_score) = (Score::default(), Score::default());
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let (br, ar) = (bt.root_node(), at.root_node());
+        let caches = rebuild_caches_for_mapping(&mapping, br, ar);
+        if caches.unresolved > 0 {
+            continue;
+        }
+        let Some(diff) = crate::diff::diff_code(&before, &after).ast else {
+            continue;
+        };
+        let engine_pairs: HashMap<usize, usize> = diff
+            .before_node_map
+            .iter()
+            .filter(|&(&b, &a)| b != 0 && a != 0)
+            .map(|(&b, &a)| (b, a))
+            .collect();
+        // An `Identical` entry vouches for its whole subtree: pair the descendants in lockstep.
+        let mut human_pairs: HashMap<usize, usize> = caches.before_match.clone();
+        let after_ids: HashMap<usize, Node> =
+            all_nodes(ar).into_iter().map(|n| (n.id(), n)).collect();
+        let mut stack: Vec<(Node, Node)> = all_nodes(br)
+            .into_iter()
+            .filter_map(|b| {
+                let a = after_ids.get(caches.before_match.get(&b.id())?)?;
+                let identical = matches!(
+                    caches.before_operation.get(&b.id()),
+                    None | Some(HumanOperation::Identical)
+                );
+                identical.then_some((b, *a))
+            })
+            .collect();
+        while let Some((b, a)) = stack.pop() {
+            if b.child_count() != a.child_count() {
+                continue;
+            }
+            for i in 0..b.child_count() {
+                let (Some(bc), Some(ac)) = (b.child(i), a.child(i)) else {
+                    continue;
+                };
+                human_pairs.entry(bc.id()).or_insert(ac.id());
+                stack.push((bc, ac));
+            }
+        }
+        // An unfinished mapping would read its unmarked nodes as deleted and inserted.
+        let paired_after: HashSet<usize> = human_pairs.values().copied().collect();
+        let unmarked = all_nodes(br).into_iter().any(|n| {
+            !human_pairs.contains_key(&n.id())
+                && !matches!(status_before(n, &caches), NodeStatus::Marked { .. })
+        }) || all_nodes(ar).into_iter().any(|n| {
+            !paired_after.contains(&n.id())
+                && !matches!(status_after(n, &caches), NodeStatus::Marked { .. })
+        });
+        if unmarked {
+            incomplete += 1;
+            continue;
+        }
+        let (bm, am) = (
+            crate::code::metadata::metadata_of(&before),
+            crate::code::metadata::metadata_of(&after),
+        );
+        let (bs, as_) = (before.contents.as_str(), after.contents.as_str());
+        let engine = score(br, ar, bs, as_, &bm, &am, &engine_pairs);
+        let human = score(br, ar, bs, as_, &bm, &am, &human_pairs);
+        for (total, s) in [(&mut engine_score, engine), (&mut human_score, human)] {
+            total.inserted += s.inserted;
+            total.deleted += s.deleted;
+            total.updated += s.updated;
+            total.move_roots += s.move_roots;
+            total.moved_nodes += s.moved_nodes;
+            total.moved_tokens += s.moved_tokens;
+            total.moved_blocks += s.moved_blocks;
+        }
+        fixtures += 1;
+        let (ec, hc) = (engine.costs(), human.costs());
+        for model in 0..MODELS.len() {
+            let t = &mut totals[model];
+            t.0 += ec[model];
+            t.1 += hc[model];
+            match ec[model].cmp(&hc[model]) {
+                std::cmp::Ordering::Less => t.2 += 1,
+                std::cmp::Ordering::Equal => t.3 += 1,
+                std::cmp::Ordering::Greater => t.4 += 1,
+            }
+        }
+        if detail {
+            println!("{name}\tengine {ec:?}\thuman {hc:?}");
+        }
+    }
+    println!("\n{fixtures} fixtures ({incomplete} with unmarked nodes skipped)");
+    for (label, s) in [("engine", engine_score), ("human", human_score)] {
+        println!(
+            "{label:>6}: inserted {} deleted {} updated {} move roots {} moved nodes {} \
+             moved tokens {} moved blocks {}",
+            s.inserted,
+            s.deleted,
+            s.updated,
+            s.move_roots,
+            s.moved_nodes,
+            s.moved_tokens,
+            s.moved_blocks
+        );
+    }
+    println!(
+        "\n{:<18} {:>10} {:>10} {:>8}  {:>14} {:>6} {:>14}",
+        "model", "engine", "human", "ratio", "engine cheaper", "equal", "human cheaper"
+    );
+    for (model, (engine, human, less, equal, more)) in MODELS.iter().zip(totals) {
+        println!(
+            "{model:<18} {engine:>10} {human:>10} {:>8.4}  {less:>14} {equal:>6} {more:>14}",
+            engine as f64 / human as f64
+        );
+    }
+    Ok(())
+}
