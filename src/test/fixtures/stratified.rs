@@ -972,6 +972,8 @@ mod lua_awesomewm_awesome_update_comment;
 #[cfg(test)]
 mod lua_neovim_neovim_add_leading_comment;
 #[cfg(test)]
+mod lua_neovim_neovim_add_only;
+#[cfg(test)]
 mod lua_neovim_neovim_rename;
 #[cfg(test)]
 mod php_nextcloud_server_add_a_few_types;
