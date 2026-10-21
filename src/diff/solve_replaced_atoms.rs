@@ -1,0 +1,294 @@
+/*  This file is part of the OmniDiff code diffing tool.
+ *
+ *  Copyright (C) 2026 Marko Ivankovic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, version 3 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+//! Phase 9b, after the leaf re-pairings: pairs an argument replaced in place. When a matched call
+//! swaps one atomic argument for another in the same slot - `append(c)` becoming
+//! `append("&#xa0;")` (`java-defects4j-jsoup-46-entities`), `';'` becoming `">;"`, an identifier
+//! becoming `0` (`java-defects4j-cli-8-helpformatter`) - the reader sees that argument changed,
+//! not one removed and an unrelated one added. The tree edit distance cannot say so: the two
+//! differ in kind, or in shape (a leaf against a string with quotes and a fragment), and it
+//! prices that above a delete and an insert.
+//!
+//! Only in argument lists (call and template arguments) and comparisons (`c < '0'` becoming
+//! `c < 0x20`, `java-defects4j-csv-14-csvformat`). Elsewhere the hand-painted corpus reads
+//! a replaced value as removed and added: an assignment's new right-hand side (`argName = "arg"`
+//! becoming `argName = null`), a literal extracted into a constant (`3.14159` becoming `PI`), a
+//! field's type made generic (`int` becoming `T`).
+//!
+//! The slot must be unambiguous: under a matched parent pair with as many named children on each
+//! side, exactly one named child per side is wholly unpaired, at the same index. Both must be
+//! atoms - a leaf, or a literal whose children are all leaves - and neither a comment. Neither
+//! value may survive as an unpaired copy elsewhere on the other side, which makes it a move (a
+//! literal extracted into a constant) rather than a replacement. Two leaves
+//! pair as one match, across kinds where need be (`ASTDiff::is_valid` accepts that from this
+//! pass alone); anything else is an all-to-all group of the two subtrees, the way a reader
+//! would paint it: every part of the old value became every part of the new one.
+
+use crate::code::ASTMetadata;
+use crate::diff::{ASTDiff, ASTMapping, ASTMappingOperation, ASTMappingReason, PassCtx};
+use rustc_hash::FxHashMap;
+
+/// `id` and its descendants in document order.
+fn subtree(meta: &ASTMetadata, id: usize) -> Vec<usize> {
+    let mut out = Vec::new();
+    let mut stack = vec![id];
+    while let Some(id) = stack.pop() {
+        out.push(id);
+        if let Some(info) = meta.node_info.get(&id) {
+            stack.extend(info.children.iter().rev().copied());
+        }
+    }
+    out
+}
+
+fn unpaired(map: &FxHashMap<usize, usize>, id: usize) -> bool {
+    map.get(&id).is_none_or(|&partner| partner == 0)
+}
+
+/// A leaf, or a literal whose children are all leaves (`"&#xa0;"`: two quotes and a fragment);
+/// never a comment.
+fn is_atom(meta: &ASTMetadata, id: usize) -> bool {
+    let Some(info) = meta.node_info.get(&id) else {
+        return false;
+    };
+    if crate::diff::nodes::is_comment(&info.kind) {
+        return false;
+    }
+    info.children.is_empty()
+        || (info.kind.contains("literal")
+            && info.children.iter().all(|child| {
+                meta.node_info
+                    .get(child)
+                    .is_some_and(|c| c.children.is_empty())
+            }))
+}
+
+/// An atom's text, its leaves' texts joined: what it reads as, wherever it sits.
+fn atom_text(meta: &ASTMetadata, id: usize) -> String {
+    subtree(meta, id)
+        .iter()
+        .filter_map(|id| meta.node_info.get(id))
+        .filter(|info| info.children.is_empty())
+        .map(|info| info.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\u{1}")
+}
+
+/// How many wholly unpaired atoms read as each text, on one side.
+fn unpaired_atom_texts(
+    meta: &ASTMetadata,
+    map: &FxHashMap<usize, usize>,
+) -> FxHashMap<String, usize> {
+    let mut counts: FxHashMap<String, usize> = FxHashMap::default();
+    for &id in meta.node_info.keys() {
+        if is_atom(meta, id) && subtree(meta, id).iter().all(|&id| unpaired(map, id)) {
+            *counts.entry(atom_text(meta, id)).or_default() += 1;
+        }
+    }
+    counts
+}
+
+/// The one wholly unpaired named child of `parent`, by its index among the named children, and
+/// how many named children there are.
+fn sole_unpaired_child(
+    meta: &ASTMetadata,
+    parent: usize,
+    map: &FxHashMap<usize, usize>,
+) -> Option<(usize, usize, usize)> {
+    let named: Vec<usize> = meta
+        .node_info
+        .get(&parent)?
+        .children
+        .iter()
+        .copied()
+        .filter(|child| meta.node_info.get(child).is_some_and(|c| c.is_named))
+        .collect();
+    let mut found = None;
+    for (index, &child) in named.iter().enumerate() {
+        if subtree(meta, child).iter().all(|&id| unpaired(map, id)) {
+            if found.is_some() {
+                return None;
+            }
+            found = Some((index, child));
+        } else if unpaired(map, child) {
+            // Half-paired: whatever replaced it is not a plain swap.
+            return None;
+        }
+    }
+    found.map(|(index, child)| (index, child, named.len()))
+}
+
+/// A construct whose operands a reader reads as values compared or passed: an argument list, a
+/// type in a template's arguments, or a comparison. Not arithmetic or concatenation, where the
+/// corpus reads a replaced operand as removed and added (`'"'` becoming `"'"` in
+/// `java-genymobile-scrcpy-char-to-string-bugfix`).
+fn is_value_slot(meta: &ASTMetadata, id: usize) -> bool {
+    let Some(info) = meta.node_info.get(&id) else {
+        return false;
+    };
+    match info.kind.as_str() {
+        "type_descriptor" => true,
+        "binary_expression" => info.children.iter().any(|child| {
+            meta.node_info.get(child).is_some_and(|c| {
+                !c.is_named && matches!(c.text.as_str(), "<" | ">" | "<=" | ">=" | "==" | "!=")
+            })
+        }),
+        kind => kind.contains("argument"),
+    }
+}
+
+pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
+    let (before, after) = (ctx.before_metadata(), ctx.after_metadata());
+    let mut parents: Vec<(usize, usize)> = diff
+        .before_node_map
+        .iter()
+        .filter(|&(&b, &a)| b != 0 && a != 0)
+        .map(|(&b, &a)| (b, a))
+        .collect();
+    // Sorted so the pairing order, and so `mapping`'s history, is reproducible run to run.
+    parents.sort_unstable();
+    let before_texts = unpaired_atom_texts(before, &diff.before_node_map);
+    let after_texts = unpaired_atom_texts(after, &diff.after_node_map);
+    for (before_parent, after_parent) in parents {
+        if !is_value_slot(before, before_parent) || !is_value_slot(after, after_parent) {
+            continue;
+        }
+        let Some((before_index, before_child, before_count)) =
+            sole_unpaired_child(before, before_parent, &diff.before_node_map)
+        else {
+            continue;
+        };
+        let Some((after_index, after_child, after_count)) =
+            sole_unpaired_child(after, after_parent, &diff.after_node_map)
+        else {
+            continue;
+        };
+        if before_index != after_index
+            || before_count != after_count
+            || !is_atom(before, before_child)
+            || !is_atom(after, after_child)
+        {
+            continue;
+        }
+        // A value that still has an unpaired copy on the other side was moved, not replaced: a
+        // literal extracted into a constant (`"DISPLAY"` into `ENV_KEY_DISPLAY`), or two argument
+        // lists the tree edit distance paired one call apart.
+        let (before_text, after_text) = (
+            atom_text(before, before_child),
+            atom_text(after, after_child),
+        );
+        let same = usize::from(before_text == after_text);
+        if after_texts.get(&before_text).copied().unwrap_or(0) > same
+            || before_texts.get(&after_text).copied().unwrap_or(0) > same
+        {
+            continue;
+        }
+        let before_members = subtree(before, before_child);
+        let after_members = subtree(after, after_child);
+        for &id in &before_members {
+            diff.remove_delete_mapping(id);
+        }
+        for &id in &after_members {
+            diff.remove_insert_mapping(id);
+        }
+        let mapping = ASTMapping {
+            cost: 0,
+            operation: ASTMappingOperation::MatchButNotIdentical,
+            reason: ASTMappingReason::ReplacedAtom,
+        };
+        if before_members.len() == 1 && after_members.len() == 1 {
+            diff.add_mapping(before_child, after_child, mapping);
+        } else {
+            diff.add_group(&before_members, &after_members, mapping);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::code::{Code, Language};
+    use crate::diff::{ASTMappingReason, diff_code};
+
+    fn replaced(before_src: &str, after_src: &str, language: Language) -> usize {
+        let before = Code::from_string(before_src, &language);
+        let after = Code::from_string(after_src, &language);
+        let diff = diff_code(&before, &after).ast.expect("ast diff");
+        diff.mapping
+            .values()
+            .filter(|m| m.reason == ASTMappingReason::ReplacedAtom)
+            .count()
+    }
+
+    #[test]
+    fn an_argument_replaced_by_a_string_is_one_group() {
+        assert!(
+            replaced(
+                "class C { void f() { accum.append(c); } }",
+                "class C { void f() { accum.append(\"&#xa0;\"); } }",
+                Language::Java,
+            ) > 0
+        );
+    }
+
+    #[test]
+    fn an_identifier_replaced_by_a_number_is_paired() {
+        assert_eq!(
+            replaced(
+                "int f() { return g(a, FLAG); }",
+                "int f() { return g(a, 0); }",
+                Language::C,
+            ),
+            1
+        );
+    }
+
+    #[test]
+    fn an_assigned_value_replaced_is_left_alone() {
+        assert_eq!(
+            replaced(
+                "class C { void f() { argName = \"arg\"; } }",
+                "class C { void f() { argName = null; } }",
+                Language::Java,
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn a_literal_extracted_into_a_constant_is_left_alone() {
+        assert_eq!(
+            replaced(
+                "fn f() { g(\"DISPLAY\"); }",
+                "const KEY: &str = \"DISPLAY\";\nfn f() { g(KEY); }",
+                Language::Rust,
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn a_call_replacing_an_identifier_is_not_an_atom() {
+        assert_eq!(
+            replaced(
+                "int f() { return g(a, FLAG); }",
+                "int f() { return g(a, h(1)); }",
+                Language::C,
+            ),
+            0
+        );
+    }
+}

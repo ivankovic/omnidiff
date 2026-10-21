@@ -67,6 +67,8 @@ pub(crate) mod solve_multi_maps;
 pub(crate) mod solve_mutual_ancestors;
 pub(crate) mod solve_nested_condition_collapse;
 pub(crate) mod solve_orphaned_leaves;
+pub(crate) mod solve_renamed_twins;
+pub(crate) mod solve_replaced_atoms;
 pub(crate) mod solve_stray_renames;
 pub(crate) mod solve_stray_terminators;
 pub(crate) mod solve_syntax_aware_matching;
@@ -391,6 +393,11 @@ impl<'code> PendingDiff<'code> {
         solve_stray_renames::solve(&ctx, &mut ast_diff);
         // Beside stray renames and for the same reason: after every pass that can pair a leaf.
         solve_stray_terminators::solve(&ctx, &mut ast_diff);
+        // After stray renames, so only a rename that stayed in its construct is weighed against a
+        // twin; after every pass that can pair a leaf, so the twin is truly unpaired.
+        solve_renamed_twins::solve(&ctx, &mut ast_diff);
+        // After the leaf re-pairings, so a slot it reads as wholly unpaired really is.
+        solve_replaced_atoms::solve(&ctx, &mut ast_diff);
 
         // Phase 9c: after every matching pass, so "unpaired" means gone and a twin's parent that
         // a late pass pairs (an `if` that grew an `else`) is not mistaken for a displaced one.
@@ -494,7 +501,8 @@ impl ASTDiff {
     }
 
     /// Whether every real pair joins two nodes that exist and are of the same kind, or of a
-    /// cross-kind pair `nodes::kinds_update_allowed` permits; every group member's partner lies in
+    /// cross-kind pair `nodes::kinds_update_allowed` permits or `solve_replaced_atoms` made (a
+    /// [`ASTMappingReason::ReplacedAtom`]); every group member's partner lies in
     /// its group; and the node maps agree outside groups ([`Self::node_map_disagreements`]). Null
     /// mappings always pass. `before` gives the language; `node_cache` holds both sides' nodes.
     pub fn is_valid(&self, before: &Code, node_cache: &NodeCache) -> bool {
@@ -514,7 +522,12 @@ impl ASTDiff {
 
             let before_node = before_node.unwrap();
             let after_node = after_node.unwrap();
+            // A value replaced in place pairs across kinds on purpose (`FLAG` becoming `0`); the
+            // kind rule guards the tree edit distance's relabelling, not that judgement.
+            let replaced_atom =
+                self.mapping[&(*before_id, *after_id)].reason == ASTMappingReason::ReplacedAtom;
             if before_node.kind() != after_node.kind()
+                && !replaced_atom
                 && !crate::diff::nodes::kinds_update_allowed(
                     before_node.kind(),
                     after_node.kind(),
@@ -837,6 +850,12 @@ pub enum ASTMappingReason {
     OrphanedLeafUnderMatchedParent,
     /// A member of an N:M group of identical copies. See `solve_multi_maps`.
     MultiMap,
+    /// A leaf re-paired with its unpaired same-text twin in the same construct, instead of
+    /// renamed or dropped. See `solve_renamed_twins`.
+    RenamedTwin,
+    /// A value replaced by another in the same slot of a matched construct, paired or grouped.
+    /// See `solve_replaced_atoms`.
+    ReplacedAtom,
 }
 
 impl ASTMappingReason {
@@ -865,6 +884,8 @@ impl ASTMappingReason {
             ASTMappingReason::OrphanedLeafUnderMatchedParent => "OrphanLeaf",
             ASTMappingReason::LeafBetweenMatchedNeighbours => "NeighbourLeaf",
             ASTMappingReason::MultiMap => "MultiMap",
+            ASTMappingReason::RenamedTwin => "RenamedTwin",
+            ASTMappingReason::ReplacedAtom => "ReplacedAtom",
         }
     }
 }
