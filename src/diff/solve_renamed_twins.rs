@@ -25,7 +25,12 @@
 //!
 //! For a renamed named leaf, the twin is the one unpaired leaf of the same kind and text inside
 //! the partner of the leaf's parent, on the other side. Exactly one candidate on that side, and
-//! none left over on this side, so the re-pairing is never a guess between copies. Both
+//! none left over on this side, so the re-pairing is never a guess between copies. Nor may
+//! another unpaired copy sit anywhere else on the other side: when the tree edit distance paired
+//! the wrong statement, the copy nearby is not the one that survived. `image.BlurHash = ...`
+//! paired with `anyChange = ... image.BlurHash ...` would otherwise pull `image` into the
+//! comparison, with the real `image.BlurHash = blurhash;` a line below
+//! (`csharp-jellyfin-jellyfin-add-and-move`). Both
 //! directions are tried: the before leaf's twin among the after side's unpaired leaves, and the
 //! after leaf's among the before side's.
 //!
@@ -34,7 +39,14 @@
 //! A leaf that moved within its statement without being renamed over is left unpaired on both
 //! sides instead. It is paired with its twin when the twin sits directly in the partner of its
 //! statement (not in a statement nested inside it), the statement holds no body (a block, a loop's
-//! or a function's), and each is the only unpaired copy of that text in its statement.
+//! or a function's), and each is the only unpaired copy of that text in its statement. An
+//! identifier is left unpaired when another unpaired copy elsewhere plays its role (the same
+//! ancestor kinds up to the statement) and the twin does not: `image.BlurHash = ...` paired with
+//! `anyChange = ... image.BlurHash ...` survives as `image.BlurHash = blurhash;` a line below. A
+//! literal is left unpaired when it is an operand of a binary operator on one side only: `12`
+//! moving from `get_n(12)` into `read::<12, u16>()`, the `1` of `match[1]` into `[](regex, 1)`
+//! and `size == 0` moving to the front of a condition are one value each, but the `0` of `x > 0`
+//! and of `Math.Max(0, ...)` are two that read alike (`csharp-jellyfin-add-function`).
 
 use crate::code::ASTMetadata;
 use crate::diff::{ASTDiff, ASTMapping, ASTMappingOperation, ASTMappingReason, PassCtx};
@@ -65,6 +77,24 @@ fn unpaired_twins(
         }
     }
     found
+}
+
+/// How many unpaired named leaves in the whole of `meta` read like `like`.
+fn unpaired_copies(
+    meta: &ASTMetadata,
+    like: &crate::code::ASTNodeMetadata,
+    node_map: &rustc_hash::FxHashMap<usize, usize>,
+) -> usize {
+    meta.node_info
+        .iter()
+        .filter(|&(id, info)| {
+            info.children.is_empty()
+                && info.is_named
+                && info.kind == like.kind
+                && info.text == like.text
+                && node_map.get(id).is_none_or(|&partner| partner == 0)
+        })
+        .count()
 }
 
 /// The nearest ancestor of `id` (inclusive) that is a statement, declaration or function: the
@@ -114,7 +144,10 @@ fn sole_twin(
     // small enough to read roles from: a loop variable renamed `num` -> `i` is not `num` read
     // again in the body (`python-bugfix-loop`).
     let statement = enclosing_statement(other, twin)?;
-    if enclosing_statement(other, renamed_to) != Some(statement) || has_body(other, statement) {
+    if enclosing_statement(other, renamed_to) != Some(statement)
+        || has_body(other, statement)
+        || unpaired_copies(other, info, other_map) != 1
+    {
         return None;
     }
     unpaired_twins(this, parent, info, this_map)
@@ -206,6 +239,56 @@ fn has_body(meta: &ASTMetadata, id: usize) -> bool {
     false
 }
 
+/// The kinds from `id`'s parent up to its statement: the role it plays there.
+fn role(meta: &ASTMetadata, id: usize) -> Vec<&str> {
+    let statement = enclosing_statement(meta, id);
+    let mut kinds = Vec::new();
+    let mut current = id;
+    while Some(current) != statement {
+        let Some(&parent) = meta.node_to_parent.get(&current) else {
+            break;
+        };
+        kinds.extend(meta.node_info.get(&parent).map(|info| info.kind.as_str()));
+        current = parent;
+    }
+    kinds
+}
+
+/// Whether `twin` plays another role than `leaf` while some other unpaired copy elsewhere in
+/// `after` plays the same one: the copy that survived, a statement away from where the tree
+/// edit distance paired `leaf`'s.
+fn better_copy_elsewhere(
+    before: &ASTMetadata,
+    after: &ASTMetadata,
+    leaf: usize,
+    twin: usize,
+    after_map: &rustc_hash::FxHashMap<usize, usize>,
+) -> bool {
+    let Some(info) = before.node_info.get(&leaf) else {
+        return false;
+    };
+    let leaf_role = role(before, leaf);
+    if role(after, twin) == leaf_role {
+        return false;
+    }
+    after.node_info.iter().any(|(&id, other)| {
+        id != twin
+            && other.children.is_empty()
+            && other.kind == info.kind
+            && other.text == info.text
+            && after_map.get(&id).is_none_or(|&partner| partner == 0)
+            && role(after, id) == leaf_role
+    })
+}
+
+/// Whether `id` is an operand of a binary operator.
+fn is_operand(meta: &ASTMetadata, id: usize) -> bool {
+    meta.node_to_parent
+        .get(&id)
+        .and_then(|parent| meta.node_info.get(parent))
+        .is_some_and(|parent| parent.kind.starts_with("binary"))
+}
+
 /// An unpaired named leaf and its one unpaired twin directly inside the partner of its statement:
 /// `get_n(12)` becoming `read::<12, u16>()` (`rust-quietvoid-dovi_tool-change-to-templated-call`)
 /// moves the `12` from the arguments into the type arguments, whose parents the tree edit
@@ -246,6 +329,11 @@ fn pair_orphans_within_statements(before: &ASTMetadata, after: &ASTMetadata, dif
             || has_body(before, statement)
             || has_body(after, partner)
             || unpaired_twins(before, statement, info, &diff.before_node_map) != [leaf]
+            || if crate::diff::nodes::is_identifier_kind(&info.kind) {
+                better_copy_elsewhere(before, after, leaf, twin, &diff.after_node_map)
+            } else {
+                is_operand(before, leaf) != is_operand(after, twin)
+            }
         {
             continue;
         }
@@ -335,5 +423,25 @@ mod tests {
         let after = Code::from_string(after_src, &Language::Java);
         let after_start = partner_start(&before, &after, "e").expect("e is paired");
         assert_eq!(&after_src[after_start..after_start + 2], "ex");
+    }
+
+    #[test]
+    fn a_literal_compared_is_not_the_literal_passed() {
+        let before_src = "class C { int f() { var p = (n > 0 ? n : 4) - k; return p; } }";
+        let after_src = "class C { int f() { var p = Math.Max(0, g() - k); return p; } }";
+        let before = Code::from_string(before_src, &Language::CSharp);
+        let after = Code::from_string(after_src, &Language::CSharp);
+        assert_eq!(partner_start(&before, &after, "0"), None);
+    }
+
+    #[test]
+    fn a_twin_with_another_unpaired_copy_elsewhere_is_left_alone() {
+        let before_src = "class C { void f() { log(e.getMessage()); } }";
+        let after_src =
+            "class C { void f() { log(ClassUtil.exceptionMessage(e)); } void g() { use(e); } }";
+        let before = Code::from_string(before_src, &Language::Java);
+        let after = Code::from_string(after_src, &Language::Java);
+        let after_start = partner_start(&before, &after, "e");
+        assert!(after_start.is_none_or(|start| &after_src[start..start + 1] != "e"));
     }
 }

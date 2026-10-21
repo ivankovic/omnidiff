@@ -492,6 +492,8 @@ pub(crate) enum NodeChange<'c> {
 /// marker in every gap, so gaining a child changes its own content, and painting it whole would
 /// bury the new child (`vimscript-neovim-neovim-add-one-dict-entry`).
 ///
+/// A leaf matched to a node with children is `Update`: it has no gaps to narrow.
+///
 /// A deleted or inserted node with children is `GapsPlaced` when it has own content beyond
 /// whitespace, so text its children do not cover is painted too; `Descend` otherwise.
 pub(crate) fn classify_node<'c>(
@@ -515,6 +517,12 @@ pub(crate) fn classify_node<'c>(
         }
         ASTMappingOperation::Update => NodeChange::Update(counterpart()),
         ASTMappingOperation::MatchButNotIdentical => match counterpart() {
+            // A leaf paired with a whole construct, the one old token of a replaced-value group
+            // (`c` becoming `"&#xa0;"`, `solve_replaced_atoms`): it has no gaps to narrow against
+            // the construct's, so it changed as a whole.
+            Some(other) if node.child_count() == 0 && other.child_count() > 0 => {
+                NodeChange::Update(Some(other))
+            }
             Some(other)
                 if !whitespace_stripped_equal(
                     &own_content(node, own_bytes),

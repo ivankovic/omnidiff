@@ -33,7 +33,12 @@
 //! side, exactly one named child per side is wholly unpaired, at the same index. Both must be
 //! atoms - a leaf, or a literal whose children are all leaves - and neither a comment. Neither
 //! value may survive as an unpaired copy elsewhere on the other side, which makes it a move (a
-//! literal extracted into a constant) rather than a replacement. Two leaves
+//! literal extracted into a constant) rather than a replacement. Nor may a name have another
+//! unpaired copy on its own side declared beside the other value: that is the constant the old
+//! value moved into, even when the declaration's value was paired elsewhere
+//! (`get_env("DISPLAY")` becoming `get_env(ENV_KEY_DISPLAY)` beside a new
+//! `const ENV_KEY_DISPLAY: &str = "DISPLAY";`,
+//! `rust-rustdesk-rustdesk-complex-change-with-a-lot-of-add`), or the one inlined. Two leaves
 //! pair as one match, across kinds where need be (`ASTDiff::is_valid` accepts that from this
 //! pass alone); anything else is an all-to-all group of the two subtrees, the way a reader
 //! would paint it: every part of the old value became every part of the new one.
@@ -100,6 +105,35 @@ fn unpaired_atom_texts(
         }
     }
     counts
+}
+
+/// Whether `id`, an identifier, has another unpaired copy on its side beside a value reading
+/// `value`: the name declared for the value that moved (`KEY = "DISPLAY"`), not a replacement for
+/// it.
+fn named_after(meta: &ASTMetadata, id: usize, value: &str, map: &FxHashMap<usize, usize>) -> bool {
+    let Some(info) = meta.node_info.get(&id) else {
+        return false;
+    };
+    if !crate::diff::nodes::is_identifier_kind(&info.kind) {
+        return false;
+    }
+    meta.node_info.iter().any(|(&other, other_info)| {
+        other != id
+            && other_info.children.is_empty()
+            && other_info.kind == info.kind
+            && other_info.text == info.text
+            && unpaired(map, other)
+            && meta
+                .node_to_parent
+                .get(&other)
+                .and_then(|parent| meta.node_info.get(parent))
+                .is_some_and(|parent| {
+                    parent
+                        .children
+                        .iter()
+                        .any(|&sibling| sibling != other && atom_text(meta, sibling) == value)
+                })
+    })
 }
 
 /// The one wholly unpaired named child of `parent`, by its index among the named children, and
@@ -197,6 +231,11 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         {
             continue;
         }
+        if named_after(before, before_child, &after_text, &diff.before_node_map)
+            || named_after(after, after_child, &before_text, &diff.after_node_map)
+        {
+            continue;
+        }
         let before_members = subtree(before, before_child);
         let after_members = subtree(after, after_child);
         for &id in &before_members {
@@ -287,6 +326,18 @@ mod tests {
                 "int f() { return g(a, FLAG); }",
                 "int f() { return g(a, h(1)); }",
                 Language::C,
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn a_literal_moved_into_a_new_constant_is_left_alone() {
+        assert_eq!(
+            replaced(
+                "fn f() { g(\"DISPLAY\"); }\nfn k() { h(\"DISPLAY\"); }",
+                "const KEY: &str = \"DISPLAY\";\nfn f() { g(KEY); }\nfn k() { h(\"X\"); }",
+                Language::Rust,
             ),
             0
         );
