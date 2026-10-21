@@ -320,6 +320,10 @@ mod csharp_jellyfin_jellyfin_big_change;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_delete_only;
 #[cfg(test)]
+mod csharp_jellyfin_jellyfin_extract_multiple_function_calls_to_variable;
+#[cfg(test)]
+mod csharp_jellyfin_jellyfin_interesting_example_of_operator_multi_merge;
+#[cfg(test)]
 mod csharp_jellyfin_jellyfin_nice_move_example;
 #[cfg(test)]
 mod csharp_jellyfin_jellyfin_small_add;
@@ -402,6 +406,8 @@ mod csharp_sonarr_sonarr_ok_small_edit;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_pure_add;
 #[cfg(test)]
+mod csharp_sonarr_sonarr_switch_to_is_or_expression;
+#[cfg(test)]
 mod csharp_sonarr_sonarr_the_in_string_insert_is_tricky;
 #[cfg(test)]
 mod csharp_sonarr_sonarr_two_small_updates;
@@ -437,6 +443,8 @@ mod css_wordpress_wordpress_add_comment;
 mod css_wordpress_wordpress_change_comment;
 #[cfg(test)]
 mod css_wordpress_wordpress_go_to_one_line;
+#[cfg(test)]
+mod css_wordpress_wordpress_minified;
 #[cfg(test)]
 mod css_wordpress_wordpress_one_line_to_multi_line;
 #[cfg(test)]
@@ -503,6 +511,8 @@ mod go_gin_gonic_gin_update_version_string_6;
 mod go_gin_gonic_gin_whitespace_in_comment;
 #[cfg(test)]
 mod go_gohugoio_hugo_add_and_upadate_list_items;
+#[cfg(test)]
+mod go_gohugoio_hugo_big_change;
 #[cfg(test)]
 mod go_gohugoio_hugo_complex;
 #[cfg(test)]
