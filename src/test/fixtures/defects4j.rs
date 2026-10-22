@@ -344,6 +344,8 @@ mod java_defects4j_closure_157_renameprototypes;
 #[cfg(test)]
 mod java_defects4j_closure_15_flowsensitiveinlinevariables;
 #[cfg(test)]
+mod java_defects4j_closure_164_arrowtype;
+#[cfg(test)]
 mod java_defects4j_closure_165_recordtypebuilder;
 #[cfg(test)]
 mod java_defects4j_closure_168_typedscopecreator;
@@ -594,6 +596,8 @@ mod java_defects4j_jacksondatabind_51_typedeserializerbase;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_52_beandeserializerbase;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_55_stdkeyserializers;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_57_objectreader;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_59_typefactory;
@@ -798,13 +802,25 @@ mod java_defects4j_lang_54_localeutils;
 #[cfg(test)]
 mod java_defects4j_lang_55_stopwatch;
 #[cfg(test)]
+mod java_defects4j_lang_57_localeutils;
+#[cfg(test)]
+mod java_defects4j_lang_59_strbuilder;
+#[cfg(test)]
+mod java_defects4j_lang_61_strbuilder;
+#[cfg(test)]
 mod java_defects4j_lang_64_valuedenum;
 #[cfg(test)]
 mod java_defects4j_lang_6_charsequencetranslator;
 #[cfg(test)]
 mod java_defects4j_math_103_normaldistributionimpl;
 #[cfg(test)]
+mod java_defects4j_math_104_gamma;
+#[cfg(test)]
+mod java_defects4j_math_105_simpleregression;
+#[cfg(test)]
 mod java_defects4j_math_10_dscompiler;
+#[cfg(test)]
+mod java_defects4j_math_11_multivariatenormaldistribution;
 #[cfg(test)]
 mod java_defects4j_math_14_weight;
 #[cfg(test)]
@@ -812,7 +828,21 @@ mod java_defects4j_math_22_fdistribution;
 #[cfg(test)]
 mod java_defects4j_math_22_uniformrealdistribution;
 #[cfg(test)]
+mod java_defects4j_math_27_fraction;
+#[cfg(test)]
+mod java_defects4j_math_2_hypergeometricdistribution;
+#[cfg(test)]
+mod java_defects4j_math_30_mannwhitneyutest;
+#[cfg(test)]
+mod java_defects4j_math_32_polygonsset;
+#[cfg(test)]
+mod java_defects4j_math_33_simplextableau;
+#[cfg(test)]
+mod java_defects4j_math_34_listpopulation;
+#[cfg(test)]
 mod java_defects4j_math_35_elitisticlistpopulation;
+#[cfg(test)]
+mod java_defects4j_math_41_variance;
 #[cfg(test)]
 mod java_defects4j_math_6_baseoptimizer;
 #[cfg(test)]
