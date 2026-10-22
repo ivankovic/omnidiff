@@ -2666,6 +2666,11 @@ fn raw_affix(text: &str, other: &str) -> (usize, usize) {
 /// words (the widened span) or the differing characters (the bare affix). The corpus holds both
 /// readings, and words alone misfire on case fixes (`PRIU64` -> `PRIu64`). What is rejected is
 /// marking the unchanged rest of the identifier.
+///
+/// When this side is the other with one run inserted, the run may sit wherever both sides still
+/// line up, and every such placement is a reading: `computeValue` -> `compute` is `eValu` by the
+/// bare affix (the shared `e` taken as the suffix) but `Value` to a reader
+/// (`java-defects4j-jxpath-10-coreoperationrelationalexpression`).
 fn minimal_affix_candidates(text: &str, other: &str) -> Vec<(usize, usize)> {
     let widened = differing_affix(text, other);
     let (start, end) = raw_affix(text, other);
@@ -2673,7 +2678,30 @@ fn minimal_affix_candidates(text: &str, other: &str) -> Vec<(usize, usize)> {
     if (start, end) != widened {
         candidates.push((start, end.max(start)));
     }
+    for placement in inserted_run_placements(text, other) {
+        if !candidates.contains(&placement) {
+            candidates.push(placement);
+        }
+    }
     candidates
+}
+
+/// Every `(start, end)` at which removing `text[start..end]` leaves exactly `other`; empty unless
+/// `text` is longer.
+fn inserted_run_placements(text: &str, other: &str) -> Vec<(usize, usize)> {
+    let Some(length) = text.len().checked_sub(other.len()).filter(|&l| l > 0) else {
+        return Vec::new();
+    };
+    (0..=other.len())
+        .filter(|&start| {
+            other.is_char_boundary(start)
+                && text.is_char_boundary(start)
+                && text.is_char_boundary(start + length)
+                && text[..start] == other[..start]
+                && text[start + length..] == other[start..]
+        })
+        .map(|start| (start, start + length))
+        .collect()
 }
 
 /// A leaf that is an identifier: a named leaf whose text reads as one, and not a keyword. Judged
@@ -3305,6 +3333,18 @@ mod tests {
         assert_eq!(
             minimal_affix_candidates("getDeclaredConstructors", "getDeclaredConstructor"),
             vec![(11, 23), (22, 23)]
+        );
+    }
+
+    #[test]
+    fn an_inserted_run_may_sit_wherever_both_sides_line_up() {
+        // The shared `e` makes the bare affix `eValu`; the reader's `Value` lines up as well.
+        let candidates = minimal_affix_candidates("computeValue", "compute");
+        assert!(candidates.contains(&(6, 11)), "`eValu`");
+        assert!(candidates.contains(&(7, 12)), "`Value`");
+        assert!(
+            !candidates.contains(&(0, 7)),
+            "never the unchanged `compute`"
         );
     }
 
