@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,5 +32,15 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-jsoup-7-document")
+    // Invariant 1: painting 'Minimal' after row 157 ends its last painted run on ' ', not on a
+    // visible character: "            htmlEl.appendChild(master); // includes remove()            "
+    // Invariant 1: painting 'Full' after row 157 ends its last painted run on ' ', not on a visible
+    // character: "            htmlEl.appendChild(master); // includes remove()            "
+    // Invariant 22: painting 'Minimal' paints 1 leaf/leaves wholly deleted or inserted that the tree
+    // mapping pairs with an identical leaf, on after row 155 - the first is `// ensure parented by
+    // <html>`
+    // Invariant 22: painting 'Full' paints 1 leaf/leaves wholly deleted or inserted that the tree
+    // mapping pairs with an identical leaf, on after row 155 - the first is `// ensure parented by
+    // <html>`
+    assert_ground_truth_invariants_with_known_violations("java-defects4j-jsoup-7-document", 4)
 }

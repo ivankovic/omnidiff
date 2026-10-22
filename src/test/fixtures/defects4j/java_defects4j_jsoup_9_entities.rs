@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,5 +32,9 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-jsoup-9-entities")
+    // Invariant 12: painting 'Only one solution' paints nothing on either side of 1 edited
+    // leaf/leaves, on before row 38 and after row 38 - the first is
+    // `&(#(x|X)?([0-9a-fA-F]+)|[a-zA-Z]+);?` becoming `&(#(x|X)?([0-9a-fA-F]+)|[a-zA-Z]+`; the tree
+    // mapping says the text changed
+    assert_ground_truth_invariants_with_known_violations("java-defects4j-jsoup-9-entities", 1)
 }

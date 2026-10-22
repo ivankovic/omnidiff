@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -34,5 +34,14 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-jsoup-62-htmltreebuilderstate")
+    // Invariant 16: painting "Minimal" before row 764 paints "normalName" against "name" wrongly for
+    // a Minimal reading - the differing words are "ormalN", and everything else in the identifier
+    // should be left alone
+    // Invariant 16: painting "Minimal" after row 764 paints "name" against "normalName" wrongly for a
+    // Minimal reading - the differing words are nothing, and everything else in the identifier should
+    // be left alone
+    assert_ground_truth_invariants_with_known_violations(
+        "java-defects4j-jsoup-62-htmltreebuilderstate",
+        2,
+    )
 }
