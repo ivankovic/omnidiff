@@ -255,16 +255,17 @@ correspondences at all at any granularity, so they could never be included in su
 
 ## astdiff_oracle_defects4j.csv
 
-**Both oracle CSVs were last re-run on 2026-10-17**, on the laptop, against the same oracle commit:
-a fresh fetch that day got RefactoringMiner `7050a7e2`, which rewrites 9 of the Defects4J oracle
-files, so the checkout was re-pinned to `6e926908` before scoring. The human run
-(`astdiff_oracle_defects4j_human.csv`) covers 335 solved units in 272 cases and agrees with the
-oracle at 99.60% precision / 99.58% recall, 527 disagreeing pairs in 63,955, and 64 of 10,592 at
-statement level. omnidiff's own run, over all 800 cases, is at 99.43% / 98.92%.
+**Both oracle CSVs were last re-run on 2026-10-22**, on the laptop, against the oracle commit pinned
+on 2026-10-17: a fresh fetch that day got RefactoringMiner `7050a7e2`, which rewrites 9 of the
+Defects4J oracle files, so the checkout was re-pinned to `6e926908` before scoring. The human run
+(`astdiff_oracle_defects4j_human.csv`) covers 440 solved units in 365 cases and agrees with the
+oracle at 99.62% precision / 99.64% recall, 624 disagreeing pairs in 84,887, and 67 of 14,059 at
+statement level. omnidiff's own run, over all 800 cases, is at 99.43% / 98.93%.
 
-That refresh did not re-run the rest of this directory: `benchmark_other.csv`,
-`benchmark_accuracy.csv` and the robustness run still describe the 1,217 fixtures of 2026-09-26, the
-external tools were not installed on the machine that ran it, and the timings belong to the server.
+Neither the 2026-10-17 nor the 2026-10-22 refresh re-ran the rest of this directory:
+`benchmark_other.csv`, `benchmark_accuracy.csv` and the robustness run still describe the 1,217
+fixtures of 2026-09-26, the external tools were not installed on the machine that ran them, and the
+timings belong to the server.
 The paper's footnote `fn:in-progress` says which figures are on which corpus state.
 
 omnidiff's accuracy against ground truth this project did not write. Produced

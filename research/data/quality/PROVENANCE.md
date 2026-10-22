@@ -70,6 +70,26 @@ They still describe 1,217 fixtures, and the paper says so in footnote `fn:in-pro
 The paper's scope is **1499** fixtures. Over them omnidiff maps 16,322,226 of 16,329,845 nodes
 (99.95%), and 11,013,577 of 11,018,678 visible nodes.
 
+## Refresh of 2026-10-22
+
+The same partial refresh as 2026-10-17, on the laptop: `optimal_solutions_benchmark.csv` and
+`human_mapping_analysis.csv` re-run in that order, with the CORPUS block, the ambiguity, rendering and
+shape reports and both AST-diff oracle runs. The tool comparison and the fixture robustness run are
+still at the 1,217 fixtures of 2026-09-26. 184 more fixtures in scope: 79 stratified and 105
+Defects4J.
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 791 | 791 |
+| `defects4j` | 996 | 440 |
+| **total** | **2302** | **1745** |
+
+The paper's scope is **1683** fixtures. Over them omnidiff maps 18,597,127 of 18,605,165 nodes
+(99.96%), and 12,569,053 of 12,574,430 visible nodes.
+
 ## Scope
 
 The paper's scope is `_common.PAPER_DATASETS`: every dataset above except `handmade`, which stays
