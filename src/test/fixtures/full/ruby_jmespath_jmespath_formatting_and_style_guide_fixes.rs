@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // `research/data/quality/move_attribution.md`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-jmespath-jmespath-formatting-and-style-guide-fixes",
-        17,
-        15,
+        16,
+        14,
     )
 }
 

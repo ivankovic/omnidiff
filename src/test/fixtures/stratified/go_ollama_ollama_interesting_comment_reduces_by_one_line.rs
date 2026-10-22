@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,5 +40,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("go-ollama-ollama-interesting-comment-reduces-by-one-line")
+    // Invariant 12: both paintings leave `0.01` -> `0.1` (before row 775, after row 774) unpainted
+    // although the tree mapping says the text changed. Invariant 19: the Minimal painting paints only
+    // part of `+=` on after row 774.
+    assert_ground_truth_invariants_with_known_violations(
+        "go-ollama-ollama-interesting-comment-reduces-by-one-line",
+        3,
+    )
 }

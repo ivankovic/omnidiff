@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // `rust_sniffnet_protocol.rs`), which is cheaper by the objective but further from the labels.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-add-comments-and-real-new-logic",
-        85,
-        54,
+        84,
+        53,
     )
 }
 

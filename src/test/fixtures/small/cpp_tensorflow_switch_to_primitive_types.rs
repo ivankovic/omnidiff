@@ -22,8 +22,8 @@ use anyhow::Result;
 fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-tensorflow-switch-to-primitive-types",
-        6,
-        6,
+        1,
+        1,
     )
 }
 

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,5 +40,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-jacksondatabind-10-anygetterwriter")
+    // Invariant 16: the Minimal painting of the `MapSerializer` <-> `JsonSerializer` renames (before
+    // row 29, after row 30) and `_mapSerializer` <-> `_serializer` (before row 82, after row 89) paints
+    // more of each identifier than its differing words.
+    assert_ground_truth_invariants_with_known_violations(
+        "java-defects4j-jacksondatabind-10-anygetterwriter",
+        4,
+    )
 }

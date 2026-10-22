@@ -11456,3 +11456,103 @@ fn a_picture_pair_is_found_by_its_before_and_after_files() {
     let (before, after) = content::pair_paths(dir.path()).unwrap();
     assert!(before.ends_with("before.png.test") && after.ends_with("after.png.test"));
 }
+
+#[test]
+fn the_review_queue_reads_cases_sites_and_notes_and_skips_what_does_not_parse() {
+    let items = review::parse_queue(
+        "# a comment\n\
+         \n\
+         cli-28\tb290 a290\tbreak -> continue\n\
+         cli-40\tx3\tnot a site\n\
+         zed\ta1\n",
+    );
+    assert_eq!(items.len(), 2, "{items:#?}");
+    assert_eq!(items[0].case, "cli-28");
+    assert_eq!(
+        items[0].sites,
+        vec![(0, 289), (1, 289)],
+        "1-based lines, 0-based rows"
+    );
+    assert_eq!(items[0].note, "break -> continue");
+    assert_eq!(items[1].sites, vec![(1, 0)]);
+    assert_eq!(items[1].note, "", "the note is optional");
+}
+
+#[test]
+fn dropping_a_review_item_removes_only_its_first_copy() {
+    let text = "a\tb1\tx\nb\tb2\ty\na\tb1\tx\n";
+    assert_eq!(
+        review::without_line(text, "a\tb1\tx"),
+        "b\tb2\ty\na\tb1\tx\n"
+    );
+}
+
+/// A review item jumps like a violation: each site is its whole line, from the first code
+/// character, and Enter lands both cursors there.
+#[test]
+fn a_review_item_jumps_to_its_lines() {
+    let source = "fn f() {\n    let x = 1;\n}\n";
+    let code = Code::from_string(source, &Language::Rust);
+    let items = review::parse_queue("case\tb2 a2\tlook here\nother\tb1\tnot this case\n");
+    let entries = review::review_entries(&items, "case", &code, &code);
+    assert_eq!(entries.len(), 1);
+    let entry = &entries[0];
+    assert_eq!(entry.review.as_deref(), Some("case\tb2 a2\tlook here"));
+    assert_eq!(entry.violation.message, "look here");
+    let span = entry.violation.sites[0].span;
+    assert_eq!(
+        (span.start_row, span.start_column, span.end_column),
+        (1, 4, 14)
+    );
+
+    let root = code.ast.as_ref().unwrap().root_node();
+    let mut app = App::new(
+        "case".to_string(),
+        CaseOrigin::Diffs,
+        root.id(),
+        root.id(),
+        HumanMapping::default(),
+    );
+    action_focus_violation(&mut app, entry, &code, &code);
+    let Some(Modal::TextView { state }) = &app.modal else {
+        panic!("Enter should open the text view, got {:?}", app.modal);
+    };
+    assert_eq!(state.cursor, [(1, 4), (1, 4)]);
+    assert!(
+        app.status
+            .as_deref()
+            .is_some_and(|s| s.starts_with("Review item")),
+        "{:?}",
+        app.status
+    );
+}
+
+/// A case the queue does not name has nothing queued - a known 0, not an unscanned `?`.
+#[test]
+fn the_review_filter_keeps_only_queued_cases() {
+    let options = vec![
+        ("queued".to_string(), "handmade"),
+        ("clear".to_string(), "handmade"),
+    ];
+    let counts = std::collections::HashMap::from([("queued".to_string(), 2)]);
+    let data = DiffPickerData {
+        review: Some(&counts),
+        ..DiffPickerData::default()
+    };
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Review, FlagFilter::Yes),
+            data
+        ),
+        vec!["queued"]
+    );
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Review, FlagFilter::No),
+            data
+        ),
+        vec!["clear"]
+    );
+}

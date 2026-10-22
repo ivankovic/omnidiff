@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -26,19 +26,17 @@ fn mapping() -> Result<()> {
     // omnidiff reuses the deleted leaves inside the inserted one. The scaffolding-reuse family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-18-posixparser",
-        16,
-        10,
+        14,
+        8,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-18-posixparser", 0.14)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-18-posixparser", 0.2)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 11, both sides under both presets: the removed `identifier` `token` on row 128 is
-    // unpainted. Waiting on a repair of the painting.
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-cli-18-posixparser", 4)
+    assert_ground_truth_invariants("java-defects4j-cli-18-posixparser")
 }

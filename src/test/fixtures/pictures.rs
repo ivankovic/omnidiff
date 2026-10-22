@@ -174,6 +174,8 @@ mod png_x_azelpg_azpainter_3f8b9169_application_x_azpainter_apd;
 #[cfg(test)]
 mod png_x_cxong_cdogs_sdl_086cd9e0_upper_idle_32x32;
 #[cfg(test)]
+mod png_x_dmlc_dlpack_bbd2f4d3_dlpack_diagram;
+#[cfg(test)]
 mod png_x_elparaguayo_qtile_extras_82e28d57_border_default_grouped_padding;
 #[cfg(test)]
 mod png_x_elparaguayo_qtile_extras_82e28d57_powerline_custom_path;

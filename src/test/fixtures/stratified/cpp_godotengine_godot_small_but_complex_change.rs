@@ -48,9 +48,12 @@ fn invariants() -> Result<()> {
     // Invariant 16, twice: `set_size` <-> `set_ratio` (before row 83, after row 87) is not painted
     // as its differing words (`size`, `ratio`) under Minimal. Invariant 17: `false` on before row
     // 87 is removed and `true` on after row 109 added inside the subtree the mapping pairs, where
-    // one Update entry would say the literal flipped.
+    // one Update entry would say the literal flipped. Invariant 25, 4 time(s): the inserted
+    // `expression_statement` on after row 113 starts move but its `;` is insert (both presets);
+    // the inserted `expression_statement` on after row 95 starts move but its `;` is insert (both
+    // presets).
     assert_ground_truth_invariants_with_known_violations(
         "cpp-godotengine-godot-small-but-complex-change",
-        3,
+        7,
     )
 }

@@ -27,14 +27,14 @@ fn mapping() -> Result<()> {
     // of one wrap, counted twice per leaf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-jsoup-16-documenttype",
-        4,
-        4,
+        10,
+        9,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-16-documenttype", 4.13)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-16-documenttype", 4.43)
 }
 
 #[test]

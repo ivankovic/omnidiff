@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-xpra-org-xpra-html5-small-change",
-        4,
-        4,
+        3,
+        3,
     )
 }
 

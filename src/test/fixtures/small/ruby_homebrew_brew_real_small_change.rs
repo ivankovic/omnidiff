@@ -20,12 +20,8 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // A single integer literal deep in an identical-looking chain of nested do_blocks ends up
-    // mapped to Delete instead of matched to its counterpart.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "ruby-homebrew-brew-real-small-change",
-        1,
-        1,
     )
 }
 

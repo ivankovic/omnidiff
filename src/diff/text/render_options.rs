@@ -279,7 +279,92 @@ pub fn ranges_for_options(
     if options.structural_punctuation {
         return result;
     }
-    restore_paired_brackets(ranges, source, options, result)
+    let result = restore_paired_brackets(ranges, source, options, result);
+    restore_statement_terminators(ranges, source, options, result)
+}
+
+/// Restores a `;` dropped as standalone punctuation when the first visible byte of its row is
+/// painted with the same `Insert`/`Delete`: a statement that enters or leaves takes its `;` along,
+/// as every hand painting has it. Without this, `foo(x);` inserted around a surviving `x` paints
+/// `foo(` and `)` but leaves the `;` looking as if it survived from somewhere else.
+///
+/// Read off the text, like the bracket restore: a row that opens on a word painted `Insert` is the
+/// row of an inserted statement in all but the rare row that opens with an inserted prefix and
+/// ends on a `;` that is itself inserted, which this paints the same way.
+pub(crate) fn restore_statement_terminators(
+    ranges: &[RangeMatch],
+    source: &str,
+    options: RenderOptions,
+    mut result: Vec<RangeMatch>,
+) -> Vec<RangeMatch> {
+    let with_structural_kept = ranges_for_options_impl(
+        ranges,
+        source,
+        RenderOptions {
+            structural_punctuation: true,
+            ..options
+        },
+    );
+    let dropped: Vec<&RangeMatch> = with_structural_kept
+        .iter()
+        .filter(|candidate| {
+            !result.contains(candidate)
+                && matches!(
+                    candidate.operation,
+                    TextOperation::Insert | TextOperation::Delete
+                )
+        })
+        .collect();
+    if dropped.is_empty() {
+        return result;
+    }
+
+    let text = SourceText::new(source);
+    let byte_range = |range: &TextRange| -> Option<(usize, usize)> {
+        let start = text.byte_index(
+            crate::diff::text_range::SourceRow::from_raw(range.start_row),
+            crate::diff::text_range::SourceColumn::from_raw(range.start_column),
+        )?;
+        let end = text.byte_index(
+            crate::diff::text_range::SourceRow::from_raw(range.end_row),
+            crate::diff::text_range::SourceColumn::from_raw(range.end_column),
+        )?;
+        Some((start.get(), end.get()))
+    };
+    let painted_as = |byte: usize, operation: &TextOperation| {
+        result.iter().any(|kept| {
+            kept.operation == *operation
+                && byte_range(&kept.source).is_some_and(|(s, e)| s <= byte && byte < e)
+        })
+    };
+
+    let mut restored = Vec::new();
+    for candidate in dropped {
+        let Some((start, end)) = byte_range(&candidate.source) else {
+            continue;
+        };
+        let Some(semicolon) = source.get(start..end).and_then(|text| text.rfind(';')) else {
+            continue;
+        };
+        let semicolon = start + semicolon;
+        let row_start = source[..semicolon]
+            .rfind('\n')
+            .map_or(0, |newline| newline + 1);
+        let row = &source[row_start..semicolon];
+        let Some(first) = row.find(|c: char| !c.is_whitespace()) else {
+            continue;
+        };
+        // A row opening on punctuation - `.shadow(x);` in a builder chain, `) && y;` - continues a
+        // statement begun on an earlier row; its first byte says nothing about the `;`.
+        if !row[first..].starts_with(|c: char| c.is_alphanumeric() || c == '_')
+            || !painted_as(row_start + first, &candidate.operation)
+        {
+            continue;
+        }
+        restored.push((*candidate).clone());
+    }
+    result.extend(restored);
+    result
 }
 
 pub(crate) fn ranges_for_options_impl(

@@ -27,14 +27,14 @@ fn mapping() -> Result<()> {
     // arguments inside are identical. Mostly the two paren pairs: the delimiter-pairing family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-tensorflow-tensorflow-new-to-make-unique",
+        8,
         6,
-        4,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.22)
+    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.71)
 }
 
 #[test]

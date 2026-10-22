@@ -1,0 +1,2932 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "import_declaration:6"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "import_declaration:15"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "new:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:4"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        "variable_declarator:1",
+        "object_creation_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:2",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:4"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "class_declaration:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "package_declaration:1"
+      ],
+      "after_path": [
+        "package_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:1"
+      ],
+      "after_path": [
+        "import_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:2"
+      ],
+      "after_path": [
+        "import_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:3"
+      ],
+      "after_path": [
+        "import_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:4"
+      ],
+      "after_path": [
+        "import_declaration:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:5"
+      ],
+      "after_path": [
+        "import_declaration:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:6"
+      ],
+      "after_path": [
+        "import_declaration:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:7"
+      ],
+      "after_path": [
+        "import_declaration:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:8"
+      ],
+      "after_path": [
+        "import_declaration:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:9"
+      ],
+      "after_path": [
+        "import_declaration:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:10"
+      ],
+      "after_path": [
+        "import_declaration:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:11"
+      ],
+      "after_path": [
+        "import_declaration:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:12"
+      ],
+      "after_path": [
+        "import_declaration:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:13"
+      ],
+      "after_path": [
+        "import_declaration:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:14"
+      ],
+      "after_path": [
+        "import_declaration:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:15"
+      ],
+      "after_path": [
+        "import_declaration:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_declaration:16"
+      ],
+      "after_path": [
+        "import_declaration:18"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "block_comment:1"
+      ],
+      "after_path": [
+        "block_comment:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "modifiers:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "modifiers:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "superclass:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "superclass:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "super_interfaces:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "super_interfaces:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "{:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:4"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:4"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "constructor_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "constructor_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "constructor_declaration:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "constructor_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:5"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:6"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:7"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:4"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "modifiers:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "modifiers:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "void_type:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "void_type:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "formal_parameters:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "formal_parameters:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "throws:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "throws:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "line_comment:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "local_variable_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "local_variable_declaration:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "try:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "try:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "if_statement:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "if_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "local_variable_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "if_statement:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "if_statement:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:4"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "line_comment:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "identifier:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:3"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        "method_invocation:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        ";:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "expression_statement:2",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "catch_clause:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "catch_clause:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "catch_clause:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "try_statement:1",
+        "catch_clause:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:5",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:6"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:8"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:8"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:9"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:9"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:10"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:10"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:11"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "block_comment:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "}:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "}:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 0,
+              "end_row": 8,
+              "end_column": 56
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 0,
+              "end_row": 17,
+              "end_column": 62
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 12,
+              "end_row": 227,
+              "end_column": 67
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 75,
+              "end_row": 227,
+              "end_column": 82
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 82,
+              "end_row": 227,
+              "end_column": 83
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 225,
+              "start_column": 56,
+              "end_row": 225,
+              "end_column": 64
+            }
+          ],
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 67,
+              "end_row": 227,
+              "end_column": 75
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 228,
+              "start_column": 56,
+              "end_row": 228,
+              "end_column": 58
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 365,
+              "start_column": 4,
+              "end_row": 365,
+              "end_column": 39
+            },
+            {
+              "start_row": 366,
+              "start_column": 8,
+              "end_row": 366,
+              "end_column": 30
+            },
+            {
+              "start_row": 367,
+              "start_column": 4,
+              "end_row": 367,
+              "end_column": 5
+            },
+            {
+              "start_row": 368,
+              "start_column": 8,
+              "end_row": 368,
+              "end_column": 55
+            },
+            {
+              "start_row": 369,
+              "start_column": 8,
+              "end_row": 369,
+              "end_column": 42
+            },
+            {
+              "start_row": 371,
+              "start_column": 8,
+              "end_row": 371,
+              "end_column": 69
+            },
+            {
+              "start_row": 372,
+              "start_column": 12,
+              "end_row": 372,
+              "end_column": 33
+            },
+            {
+              "start_row": 373,
+              "start_column": 12,
+              "end_row": 373,
+              "end_column": 28
+            },
+            {
+              "start_row": 374,
+              "start_column": 8,
+              "end_row": 374,
+              "end_column": 9
+            },
+            {
+              "start_row": 376,
+              "start_column": 8,
+              "end_row": 376,
+              "end_column": 17
+            },
+            {
+              "start_row": 377,
+              "start_column": 8,
+              "end_row": 377,
+              "end_column": 89
+            },
+            {
+              "start_row": 378,
+              "start_column": 12,
+              "end_row": 378,
+              "end_column": 54
+            },
+            {
+              "start_row": 379,
+              "start_column": 8,
+              "end_row": 379,
+              "end_column": 9
+            },
+            {
+              "start_row": 381,
+              "start_column": 8,
+              "end_row": 381,
+              "end_column": 17
+            },
+            {
+              "start_row": 382,
+              "start_column": 8,
+              "end_row": 382,
+              "end_column": 38
+            },
+            {
+              "start_row": 383,
+              "start_column": 12,
+              "end_row": 383,
+              "end_column": 54
+            },
+            {
+              "start_row": 384,
+              "start_column": 8,
+              "end_row": 384,
+              "end_column": 9
+            },
+            {
+              "start_row": 386,
+              "start_column": 8,
+              "end_row": 386,
+              "end_column": 17
+            },
+            {
+              "start_row": 387,
+              "start_column": 8,
+              "end_row": 387,
+              "end_column": 41
+            },
+            {
+              "start_row": 388,
+              "start_column": 12,
+              "end_row": 388,
+              "end_column": 53
+            },
+            {
+              "start_row": 389,
+              "start_column": 8,
+              "end_row": 389,
+              "end_column": 9
+            },
+            {
+              "start_row": 391,
+              "start_column": 8,
+              "end_row": 391,
+              "end_column": 17
+            },
+            {
+              "start_row": 392,
+              "start_column": 8,
+              "end_row": 392,
+              "end_column": 51
+            },
+            {
+              "start_row": 393,
+              "start_column": 12,
+              "end_row": 393,
+              "end_column": 55
+            },
+            {
+              "start_row": 394,
+              "start_column": 8,
+              "end_row": 394,
+              "end_column": 9
+            },
+            {
+              "start_row": 396,
+              "start_column": 8,
+              "end_row": 396,
+              "end_column": 17
+            },
+            {
+              "start_row": 397,
+              "start_column": 8,
+              "end_row": 397,
+              "end_column": 98
+            },
+            {
+              "start_row": 398,
+              "start_column": 12,
+              "end_row": 398,
+              "end_column": 70
+            },
+            {
+              "start_row": 399,
+              "start_column": 8,
+              "end_row": 399,
+              "end_column": 9
+            },
+            {
+              "start_row": 401,
+              "start_column": 8,
+              "end_row": 401,
+              "end_column": 17
+            },
+            {
+              "start_row": 402,
+              "start_column": 8,
+              "end_row": 402,
+              "end_column": 98
+            },
+            {
+              "start_row": 403,
+              "start_column": 12,
+              "end_row": 403,
+              "end_column": 70
+            },
+            {
+              "start_row": 404,
+              "start_column": 8,
+              "end_row": 404,
+              "end_column": 9
+            },
+            {
+              "start_row": 406,
+              "start_column": 8,
+              "end_row": 406,
+              "end_column": 17
+            },
+            {
+              "start_row": 407,
+              "start_column": 8,
+              "end_row": 407,
+              "end_column": 97
+            },
+            {
+              "start_row": 408,
+              "start_column": 12,
+              "end_row": 408,
+              "end_column": 69
+            },
+            {
+              "start_row": 409,
+              "start_column": 8,
+              "end_row": 409,
+              "end_column": 9
+            },
+            {
+              "start_row": 411,
+              "start_column": 8,
+              "end_row": 411,
+              "end_column": 17
+            },
+            {
+              "start_row": 412,
+              "start_column": 8,
+              "end_row": 412,
+              "end_column": 98
+            },
+            {
+              "start_row": 413,
+              "start_column": 12,
+              "end_row": 413,
+              "end_column": 70
+            },
+            {
+              "start_row": 414,
+              "start_column": 8,
+              "end_row": 414,
+              "end_column": 9
+            },
+            {
+              "start_row": 416,
+              "start_column": 8,
+              "end_row": 416,
+              "end_column": 17
+            },
+            {
+              "start_row": 417,
+              "start_column": 8,
+              "end_row": 417,
+              "end_column": 98
+            },
+            {
+              "start_row": 418,
+              "start_column": 12,
+              "end_row": 418,
+              "end_column": 70
+            },
+            {
+              "start_row": 419,
+              "start_column": 8,
+              "end_row": 419,
+              "end_column": 9
+            },
+            {
+              "start_row": 421,
+              "start_column": 8,
+              "end_row": 421,
+              "end_column": 17
+            },
+            {
+              "start_row": 422,
+              "start_column": 8,
+              "end_row": 422,
+              "end_column": 97
+            },
+            {
+              "start_row": 423,
+              "start_column": 12,
+              "end_row": 423,
+              "end_column": 69
+            },
+            {
+              "start_row": 424,
+              "start_column": 8,
+              "end_row": 424,
+              "end_column": 9
+            },
+            {
+              "start_row": 426,
+              "start_column": 8,
+              "end_row": 426,
+              "end_column": 113
+            },
+            {
+              "start_row": 427,
+              "start_column": 12,
+              "end_row": 427,
+              "end_column": 76
+            },
+            {
+              "start_row": 428,
+              "start_column": 8,
+              "end_row": 428,
+              "end_column": 9
+            },
+            {
+              "start_row": 430,
+              "start_column": 8,
+              "end_row": 430,
+              "end_column": 113
+            },
+            {
+              "start_row": 431,
+              "start_column": 12,
+              "end_row": 431,
+              "end_column": 76
+            },
+            {
+              "start_row": 432,
+              "start_column": 8,
+              "end_row": 432,
+              "end_column": 9
+            },
+            {
+              "start_row": 434,
+              "start_column": 8,
+              "end_row": 434,
+              "end_column": 112
+            },
+            {
+              "start_row": 435,
+              "start_column": 12,
+              "end_row": 435,
+              "end_column": 75
+            },
+            {
+              "start_row": 436,
+              "start_column": 8,
+              "end_row": 436,
+              "end_column": 9
+            },
+            {
+              "start_row": 438,
+              "start_column": 8,
+              "end_row": 438,
+              "end_column": 17
+            },
+            {
+              "start_row": 439,
+              "start_column": 8,
+              "end_row": 439,
+              "end_column": 98
+            },
+            {
+              "start_row": 440,
+              "start_column": 16,
+              "end_row": 440,
+              "end_column": 36
+            },
+            {
+              "start_row": 441,
+              "start_column": 12,
+              "end_row": 441,
+              "end_column": 84
+            },
+            {
+              "start_row": 442,
+              "start_column": 8,
+              "end_row": 442,
+              "end_column": 9
+            },
+            {
+              "start_row": 444,
+              "start_column": 8,
+              "end_row": 444,
+              "end_column": 17
+            },
+            {
+              "start_row": 445,
+              "start_column": 8,
+              "end_row": 445,
+              "end_column": 119
+            },
+            {
+              "start_row": 446,
+              "start_column": 12,
+              "end_row": 446,
+              "end_column": 84
+            },
+            {
+              "start_row": 447,
+              "start_column": 8,
+              "end_row": 447,
+              "end_column": 9
+            },
+            {
+              "start_row": 449,
+              "start_column": 8,
+              "end_row": 449,
+              "end_column": 17
+            },
+            {
+              "start_row": 450,
+              "start_column": 8,
+              "end_row": 450,
+              "end_column": 118
+            },
+            {
+              "start_row": 451,
+              "start_column": 12,
+              "end_row": 451,
+              "end_column": 83
+            },
+            {
+              "start_row": 452,
+              "start_column": 8,
+              "end_row": 452,
+              "end_column": 9
+            },
+            {
+              "start_row": 454,
+              "start_column": 8,
+              "end_row": 454,
+              "end_column": 17
+            },
+            {
+              "start_row": 455,
+              "start_column": 8,
+              "end_row": 455,
+              "end_column": 119
+            },
+            {
+              "start_row": 456,
+              "start_column": 12,
+              "end_row": 456,
+              "end_column": 84
+            },
+            {
+              "start_row": 457,
+              "start_column": 8,
+              "end_row": 457,
+              "end_column": 9
+            },
+            {
+              "start_row": 459,
+              "start_column": 8,
+              "end_row": 459,
+              "end_column": 17
+            },
+            {
+              "start_row": 460,
+              "start_column": 8,
+              "end_row": 460,
+              "end_column": 119
+            },
+            {
+              "start_row": 461,
+              "start_column": 12,
+              "end_row": 461,
+              "end_column": 84
+            },
+            {
+              "start_row": 462,
+              "start_column": 8,
+              "end_row": 462,
+              "end_column": 9
+            },
+            {
+              "start_row": 464,
+              "start_column": 8,
+              "end_row": 464,
+              "end_column": 17
+            },
+            {
+              "start_row": 465,
+              "start_column": 8,
+              "end_row": 465,
+              "end_column": 118
+            },
+            {
+              "start_row": 466,
+              "start_column": 12,
+              "end_row": 466,
+              "end_column": 83
+            },
+            {
+              "start_row": 467,
+              "start_column": 8,
+              "end_row": 467,
+              "end_column": 9
+            },
+            {
+              "start_row": 468,
+              "start_column": 4,
+              "end_row": 468,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 0,
+              "end_row": 8,
+              "end_column": 56
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 0,
+              "end_row": 17,
+              "end_column": 62
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 12,
+              "end_row": 227,
+              "end_column": 67
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 75,
+              "end_row": 227,
+              "end_column": 82
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 82,
+              "end_row": 227,
+              "end_column": 83
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 225,
+              "start_column": 56,
+              "end_row": 225,
+              "end_column": 64
+            }
+          ],
+          "after": [
+            {
+              "start_row": 227,
+              "start_column": 67,
+              "end_row": 227,
+              "end_column": 75
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 228,
+              "start_column": 56,
+              "end_row": 228,
+              "end_column": 58
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 365,
+              "start_column": 0,
+              "end_row": 365,
+              "end_column": 39
+            },
+            {
+              "start_row": 366,
+              "start_column": 0,
+              "end_row": 366,
+              "end_column": 30
+            },
+            {
+              "start_row": 367,
+              "start_column": 0,
+              "end_row": 367,
+              "end_column": 5
+            },
+            {
+              "start_row": 368,
+              "start_column": 0,
+              "end_row": 368,
+              "end_column": 55
+            },
+            {
+              "start_row": 369,
+              "start_column": 0,
+              "end_row": 369,
+              "end_column": 42
+            },
+            {
+              "start_row": 371,
+              "start_column": 0,
+              "end_row": 371,
+              "end_column": 69
+            },
+            {
+              "start_row": 372,
+              "start_column": 0,
+              "end_row": 372,
+              "end_column": 33
+            },
+            {
+              "start_row": 373,
+              "start_column": 0,
+              "end_row": 373,
+              "end_column": 28
+            },
+            {
+              "start_row": 374,
+              "start_column": 0,
+              "end_row": 374,
+              "end_column": 9
+            },
+            {
+              "start_row": 376,
+              "start_column": 0,
+              "end_row": 376,
+              "end_column": 17
+            },
+            {
+              "start_row": 377,
+              "start_column": 0,
+              "end_row": 377,
+              "end_column": 89
+            },
+            {
+              "start_row": 378,
+              "start_column": 0,
+              "end_row": 378,
+              "end_column": 54
+            },
+            {
+              "start_row": 379,
+              "start_column": 0,
+              "end_row": 379,
+              "end_column": 9
+            },
+            {
+              "start_row": 381,
+              "start_column": 0,
+              "end_row": 381,
+              "end_column": 17
+            },
+            {
+              "start_row": 382,
+              "start_column": 0,
+              "end_row": 382,
+              "end_column": 38
+            },
+            {
+              "start_row": 383,
+              "start_column": 0,
+              "end_row": 383,
+              "end_column": 54
+            },
+            {
+              "start_row": 384,
+              "start_column": 0,
+              "end_row": 384,
+              "end_column": 9
+            },
+            {
+              "start_row": 386,
+              "start_column": 0,
+              "end_row": 386,
+              "end_column": 17
+            },
+            {
+              "start_row": 387,
+              "start_column": 0,
+              "end_row": 387,
+              "end_column": 41
+            },
+            {
+              "start_row": 388,
+              "start_column": 0,
+              "end_row": 388,
+              "end_column": 53
+            },
+            {
+              "start_row": 389,
+              "start_column": 0,
+              "end_row": 389,
+              "end_column": 9
+            },
+            {
+              "start_row": 391,
+              "start_column": 0,
+              "end_row": 391,
+              "end_column": 17
+            },
+            {
+              "start_row": 392,
+              "start_column": 0,
+              "end_row": 392,
+              "end_column": 51
+            },
+            {
+              "start_row": 393,
+              "start_column": 0,
+              "end_row": 393,
+              "end_column": 55
+            },
+            {
+              "start_row": 394,
+              "start_column": 0,
+              "end_row": 394,
+              "end_column": 9
+            },
+            {
+              "start_row": 396,
+              "start_column": 0,
+              "end_row": 396,
+              "end_column": 17
+            },
+            {
+              "start_row": 397,
+              "start_column": 0,
+              "end_row": 397,
+              "end_column": 98
+            },
+            {
+              "start_row": 398,
+              "start_column": 0,
+              "end_row": 398,
+              "end_column": 70
+            },
+            {
+              "start_row": 399,
+              "start_column": 0,
+              "end_row": 399,
+              "end_column": 9
+            },
+            {
+              "start_row": 401,
+              "start_column": 0,
+              "end_row": 401,
+              "end_column": 17
+            },
+            {
+              "start_row": 402,
+              "start_column": 0,
+              "end_row": 402,
+              "end_column": 98
+            },
+            {
+              "start_row": 403,
+              "start_column": 0,
+              "end_row": 403,
+              "end_column": 70
+            },
+            {
+              "start_row": 404,
+              "start_column": 0,
+              "end_row": 404,
+              "end_column": 9
+            },
+            {
+              "start_row": 406,
+              "start_column": 0,
+              "end_row": 406,
+              "end_column": 17
+            },
+            {
+              "start_row": 407,
+              "start_column": 0,
+              "end_row": 407,
+              "end_column": 97
+            },
+            {
+              "start_row": 408,
+              "start_column": 0,
+              "end_row": 408,
+              "end_column": 69
+            },
+            {
+              "start_row": 409,
+              "start_column": 0,
+              "end_row": 409,
+              "end_column": 9
+            },
+            {
+              "start_row": 411,
+              "start_column": 0,
+              "end_row": 411,
+              "end_column": 17
+            },
+            {
+              "start_row": 412,
+              "start_column": 0,
+              "end_row": 412,
+              "end_column": 98
+            },
+            {
+              "start_row": 413,
+              "start_column": 0,
+              "end_row": 413,
+              "end_column": 70
+            },
+            {
+              "start_row": 414,
+              "start_column": 0,
+              "end_row": 414,
+              "end_column": 9
+            },
+            {
+              "start_row": 416,
+              "start_column": 0,
+              "end_row": 416,
+              "end_column": 17
+            },
+            {
+              "start_row": 417,
+              "start_column": 0,
+              "end_row": 417,
+              "end_column": 98
+            },
+            {
+              "start_row": 418,
+              "start_column": 0,
+              "end_row": 418,
+              "end_column": 70
+            },
+            {
+              "start_row": 419,
+              "start_column": 0,
+              "end_row": 419,
+              "end_column": 9
+            },
+            {
+              "start_row": 421,
+              "start_column": 0,
+              "end_row": 421,
+              "end_column": 17
+            },
+            {
+              "start_row": 422,
+              "start_column": 0,
+              "end_row": 422,
+              "end_column": 97
+            },
+            {
+              "start_row": 423,
+              "start_column": 0,
+              "end_row": 423,
+              "end_column": 69
+            },
+            {
+              "start_row": 424,
+              "start_column": 0,
+              "end_row": 424,
+              "end_column": 9
+            },
+            {
+              "start_row": 426,
+              "start_column": 0,
+              "end_row": 426,
+              "end_column": 113
+            },
+            {
+              "start_row": 427,
+              "start_column": 0,
+              "end_row": 427,
+              "end_column": 76
+            },
+            {
+              "start_row": 428,
+              "start_column": 0,
+              "end_row": 428,
+              "end_column": 9
+            },
+            {
+              "start_row": 430,
+              "start_column": 0,
+              "end_row": 430,
+              "end_column": 113
+            },
+            {
+              "start_row": 431,
+              "start_column": 0,
+              "end_row": 431,
+              "end_column": 76
+            },
+            {
+              "start_row": 432,
+              "start_column": 0,
+              "end_row": 432,
+              "end_column": 9
+            },
+            {
+              "start_row": 434,
+              "start_column": 0,
+              "end_row": 434,
+              "end_column": 112
+            },
+            {
+              "start_row": 435,
+              "start_column": 0,
+              "end_row": 435,
+              "end_column": 75
+            },
+            {
+              "start_row": 436,
+              "start_column": 0,
+              "end_row": 436,
+              "end_column": 9
+            },
+            {
+              "start_row": 438,
+              "start_column": 0,
+              "end_row": 438,
+              "end_column": 17
+            },
+            {
+              "start_row": 439,
+              "start_column": 0,
+              "end_row": 439,
+              "end_column": 98
+            },
+            {
+              "start_row": 440,
+              "start_column": 0,
+              "end_row": 440,
+              "end_column": 36
+            },
+            {
+              "start_row": 441,
+              "start_column": 0,
+              "end_row": 441,
+              "end_column": 84
+            },
+            {
+              "start_row": 442,
+              "start_column": 0,
+              "end_row": 442,
+              "end_column": 9
+            },
+            {
+              "start_row": 444,
+              "start_column": 0,
+              "end_row": 444,
+              "end_column": 17
+            },
+            {
+              "start_row": 445,
+              "start_column": 0,
+              "end_row": 445,
+              "end_column": 119
+            },
+            {
+              "start_row": 446,
+              "start_column": 0,
+              "end_row": 446,
+              "end_column": 84
+            },
+            {
+              "start_row": 447,
+              "start_column": 0,
+              "end_row": 447,
+              "end_column": 9
+            },
+            {
+              "start_row": 449,
+              "start_column": 0,
+              "end_row": 449,
+              "end_column": 17
+            },
+            {
+              "start_row": 450,
+              "start_column": 0,
+              "end_row": 450,
+              "end_column": 118
+            },
+            {
+              "start_row": 451,
+              "start_column": 0,
+              "end_row": 451,
+              "end_column": 83
+            },
+            {
+              "start_row": 452,
+              "start_column": 0,
+              "end_row": 452,
+              "end_column": 9
+            },
+            {
+              "start_row": 454,
+              "start_column": 0,
+              "end_row": 454,
+              "end_column": 17
+            },
+            {
+              "start_row": 455,
+              "start_column": 0,
+              "end_row": 455,
+              "end_column": 119
+            },
+            {
+              "start_row": 456,
+              "start_column": 0,
+              "end_row": 456,
+              "end_column": 84
+            },
+            {
+              "start_row": 457,
+              "start_column": 0,
+              "end_row": 457,
+              "end_column": 9
+            },
+            {
+              "start_row": 459,
+              "start_column": 0,
+              "end_row": 459,
+              "end_column": 17
+            },
+            {
+              "start_row": 460,
+              "start_column": 0,
+              "end_row": 460,
+              "end_column": 119
+            },
+            {
+              "start_row": 461,
+              "start_column": 0,
+              "end_row": 461,
+              "end_column": 84
+            },
+            {
+              "start_row": 462,
+              "start_column": 0,
+              "end_row": 462,
+              "end_column": 9
+            },
+            {
+              "start_row": 464,
+              "start_column": 0,
+              "end_row": 464,
+              "end_column": 17
+            },
+            {
+              "start_row": 465,
+              "start_column": 0,
+              "end_row": 465,
+              "end_column": 118
+            },
+            {
+              "start_row": 466,
+              "start_column": 0,
+              "end_row": 466,
+              "end_column": 83
+            },
+            {
+              "start_row": 467,
+              "start_column": 0,
+              "end_row": 467,
+              "end_column": 9
+            },
+            {
+              "start_row": 468,
+              "start_column": 0,
+              "end_row": 468,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

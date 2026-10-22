@@ -37,9 +37,16 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariants 12 and 16: the `unsupportedParameters` -> `unsupportedSorted` and `legalInputs` ->
-    // `legalInputsSorted` renames (before rows 1077-1078, after rows 1128-1129) are painted under
-    // neither preset (12, twice), not as just their differing words under Minimal and not whole
-    // under Full (16, seven times).
-    assert_ground_truth_invariants_with_known_violations("csharp-ansible-ansible-complex-change", 9)
+    // Invariants 12 and 16: the `unsupportedParameters` -> `unsupportedSorted` and `legalInputs`
+    // -> `legalInputsSorted` renames (before rows 1077-1078, after rows 1128-1129) are painted
+    // under neither preset (12, twice), not as just their differing words under Minimal and not
+    // whole under Full (16, seven times). Invariant 24, 6 time(s): the `.` before
+    // `CreateDirectory` on after row 191 is not painted with the member it calls (both presets);
+    // the `.` before `SetAccessControl` on before row 167 is not painted with the member it calls
+    // (both presets); the `.` before `SetAccessControl` on before row 198 is not painted with the
+    // member it calls (both presets).
+    assert_ground_truth_invariants_with_known_violations(
+        "csharp-ansible-ansible-complex-change",
+        15,
+    )
 }

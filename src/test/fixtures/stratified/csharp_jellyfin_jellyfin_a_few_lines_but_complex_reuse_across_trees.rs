@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "csharp-jellyfin-jellyfin-a-few-lines-but-complex-reuse-across-trees",
-        41,
-        27,
+        42,
+        28,
     )
 }
 

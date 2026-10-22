@@ -557,6 +557,9 @@ pub(crate) fn verdict_at(
 pub(crate) struct InvariantEntry {
     pub(crate) violation: human_mapping::invariants::GroundTruthViolation,
     pub(crate) details: Vec<String>,
+    /// For a review-queue item (see `review`), its line in `review_queue.tsv`; `None` for an
+    /// invariant violation.
+    pub(crate) review: Option<String>,
 }
 
 /// Every violation of the *in-memory* mapping, with rendered sites. Not the by-name form, which
@@ -576,14 +579,18 @@ pub(crate) fn invariant_entries(
                 .iter()
                 .map(|site| site_detail(*site, before, after))
                 .collect();
-            InvariantEntry { violation, details }
+            InvariantEntry {
+                violation,
+                details,
+                review: None,
+            }
         })
         .collect())
 }
 
 /// One site as a line: `before 17:54-17:56  ": "  in line_comment 534..606`. The node part is
 /// dropped for a side with no tree, and for a span that reads back as nothing.
-fn site_detail(
+pub(crate) fn site_detail(
     site: human_mapping::invariants::ViolationSite,
     before: &Code,
     after: &Code,
@@ -677,9 +684,12 @@ pub(crate) fn action_focus_violation(
     };
     state.scroll_into_view(20);
     app.modal = Some(Modal::TextView { state });
+    let what = match entry.review {
+        Some(_) => "Review item".to_string(),
+        None => format!("Invariant {}", entry.violation.invariant),
+    };
     app.status = Some(format!(
-        "Invariant {} - {} side(s) moved, Esc for the trees behind this",
-        entry.violation.invariant,
+        "{what} - {} side(s) moved, Esc for the trees behind this",
         moved.join(" and "),
     ));
 }
@@ -2022,6 +2032,8 @@ pub(crate) struct App {
     /// Invariant violations per case, for the `Invariant` column. Lazy like the caches above; a
     /// case with no mapping is absent rather than 0.
     pub(crate) diff_invariants: Option<std::collections::HashMap<String, usize>>,
+    /// Open `review_queue.tsv` items per case, for the `Review` column. Re-read on each `o`.
+    pub(crate) review_counts: std::collections::HashMap<String, usize>,
     /// Changed-line count per case (`diff_case_size`), for the `Size` column. Lazy.
     pub(crate) diff_sizes: Option<std::collections::HashMap<String, usize>>,
     /// Whether each case has a painting (`diff_case_has_text_mapping`), for the `Paint` column.
@@ -2094,6 +2106,7 @@ impl App {
             diff_view: DiffPickerView::default(),
             diff_disagreement: None,
             diff_invariants: None,
+            review_counts: std::collections::HashMap::new(),
             diff_sizes: None,
             diff_text_painted: None,
             diff_comments: None,

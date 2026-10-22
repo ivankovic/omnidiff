@@ -1238,14 +1238,26 @@ pub(crate) fn handle_tree_independent_key(
         }
         KeyCode::Char('V') => {
             match invariant_entries(&app.mapping, before, after) {
-                Ok(entries) if entries.is_empty() => {
-                    app.status =
-                        Some("This case's ground truth breaks none of its invariants".to_string());
-                }
-                Ok(entries) => {
+                Ok(mut entries) => {
+                    let violations = entries.len();
+                    entries.extend(crate::review::review_entries(
+                        &crate::review::load_queue(),
+                        &app.name,
+                        before,
+                        after,
+                    ));
+                    if entries.is_empty() {
+                        app.status = Some(
+                            "This case's ground truth breaks none of its invariants, and nothing \
+                             is queued for review"
+                                .to_string(),
+                        );
+                        return None;
+                    }
                     app.status = Some(format!(
-                        "{} invariant violation(s) - j/k to move, Enter to jump, Esc to close",
-                        entries.len()
+                        "{violations} invariant violation(s), {} review item(s) - j/k to move, \
+                         Enter to jump, Esc to close",
+                        entries.len() - violations
                     ));
                     app.modal = Some(Modal::InvariantList {
                         entries,
@@ -1985,6 +1997,31 @@ pub(crate) fn handle_modal_key(
                 KeyCode::Enter => {
                     if let Some(entry) = entries.get(selected) {
                         action_focus_violation(app, entry, before, after);
+                    }
+                }
+                KeyCode::Char('x') => {
+                    let mut entries = entries;
+                    match entries.get(selected).and_then(|entry| entry.review.clone()) {
+                        None => {
+                            app.status =
+                                Some("x drops a review item; this row is an invariant".to_string());
+                        }
+                        Some(line) => match crate::review::remove_from_queue(&line) {
+                            Ok(()) => {
+                                entries.remove(selected);
+                                if let Some(count) = app.review_counts.get_mut(&app.name) {
+                                    *count = count.saturating_sub(1);
+                                }
+                                app.status = Some("Dropped the review item".to_string());
+                            }
+                            Err(err) => {
+                                app.status = Some(format!("Could not drop it: {err:#}"));
+                            }
+                        },
+                    }
+                    if !entries.is_empty() {
+                        let selected = selected.min(entries.len() - 1);
+                        app.modal = Some(Modal::InvariantList { entries, selected });
                     }
                 }
                 KeyCode::Esc | KeyCode::Char('V') | KeyCode::Char('q') => {
@@ -2962,6 +2999,7 @@ pub(crate) fn open_diff_picker(app: &mut App, current: &str) {
     }
     // Re-read every time: the content session saves verdicts behind the picker's back.
     app.content_rows = read_content_rows();
+    app.review_counts = crate::review::queue_counts(&crate::review::load_queue());
     match list_picker_cases() {
         Ok(options) if !options.is_empty() => {
             let modal = open_diff_picker_modal(

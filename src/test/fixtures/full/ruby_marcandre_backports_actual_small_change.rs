@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-marcandre-backports-actual-small-change",
-        11,
-        6,
+        10,
+        5,
     )
 }
 

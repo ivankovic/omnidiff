@@ -28,8 +28,8 @@ fn mapping() -> Result<()> {
     // choice each, counted per leaf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-1-commandline",
-        78,
-        54,
+        77,
+        53,
     )
 }
 

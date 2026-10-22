@@ -54,6 +54,7 @@ mod flatten;
 mod keylog;
 mod navigate;
 mod render;
+mod review;
 mod state;
 mod stubs;
 use actions::*;
@@ -247,7 +248,10 @@ V              list every ground-truth invariant this case breaks: the rule's
                  j/k move, g/G ends, Enter puts both trees and both text panels
                  on it (opening the text view over them, one Esc from the trees),
                  Esc closes. Read from the mapping in memory, so it sees unsaved
-                 edits; the o picker's Invariant column is the same count
+                 edits; the o picker's Invariant column is the same count.
+                 After them come the case's review_queue.tsv items, numbered R
+                 (places someone asked you to look at again; the file's format
+                 is in review.rs); x on one drops it from the queue
 
 s              save -- or, on a sample, prompt for a name (pre-filled with
                  <language>-<repository>) and promote it
@@ -259,13 +263,16 @@ e              on a diff, enter/edit its description.md (written on Enter, empty
                  works regardless of status; carried into the generated test stub
                  if present when later promoted)
 o              open a different test case (src/test/data/diffs/) as a table:
-                 Name, Dataset, Cmpl, Unmarked, Paint, Disagree, Invariant, Size.
+                 Name, Dataset, Cmpl, Unmarked, Paint, Disagree, Invariant, Review,
+                 Size.
                  j/k pick a row, h/l pick a column, s sorts by that column (again to
                  reverse), f filters on it -- substring on Name, dataset cycle on
                  Dataset, off/yes/no on the rest. Filters AND across columns.
                  Invariant counts the ground-truth invariants this case's own
                  mapping breaks, the number its invariants() test asserts on;
-                 Size is the diff's changed lines, as in the O picker.
+                 Review counts its review_queue.tsv items; filtered to yes, } and {
+                 walk the review queue. Size is the diff's changed lines, as in
+                 the O picker.
                  The scans behind Cmpl/Unmarked, Paint, Disagree, Invariant and
                  Size run on the first s or f on that column (Cmpl/Unmarked blocks
                  for ~12s and Disagree ~7s on the full corpus the first time; their
@@ -534,6 +541,11 @@ fn visible_diff_options(
         })
         .filter(|(name, _)| {
             filters
+                .review
+                .keeps(data.review_of(name).map(|count| count > 0))
+        })
+        .filter(|(name, _)| {
+            filters
                 .size
                 .keeps(data.size_of(name).map(|lines| lines > 0))
         })
@@ -565,6 +577,7 @@ fn visible_diff_options(
             DiffColumn::Invariant => {
                 sort_rank(data.invariants_of(a)).cmp(&sort_rank(data.invariants_of(b)))
             }
+            DiffColumn::Review => sort_rank(data.review_of(a)).cmp(&sort_rank(data.review_of(b))),
             DiffColumn::Size => sort_rank(data.size_of(a)).cmp(&sort_rank(data.size_of(b))),
             DiffColumn::Verdict => {
                 sort_rank(data.verdict_rank(a)).cmp(&sort_rank(data.verdict_rank(b)))
@@ -627,6 +640,7 @@ struct DiffFiltersRecord {
     paint: FlagFilter,
     disagree: FlagFilter,
     invariant: FlagFilter,
+    review: FlagFilter,
     size: FlagFilter,
 }
 
@@ -640,6 +654,7 @@ impl From<DiffFilters> for DiffFiltersRecord {
             paint: filters.paint,
             disagree: filters.disagree,
             invariant: filters.invariant,
+            review: filters.review,
             size: filters.size,
         }
     }
@@ -669,6 +684,7 @@ impl From<DiffFiltersRecord> for DiffFilters {
             paint: record.paint,
             disagree: record.disagree,
             invariant: record.invariant,
+            review: record.review,
             size: record.size,
         }
     }
@@ -1044,8 +1060,8 @@ fn ensure_diff_column_data(app: &mut App, column: DiffColumn) {
                 app.diff_sizes = Some(compute_diff_sizes());
             }
         }
-        // Read on every `o` (`read_picture_verdicts`): a few hundred small files.
-        DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => {}
+        // Read on every `o` (`read_picture_verdicts`, `review::load_queue`): small files.
+        DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict | DiffColumn::Review => {}
     }
 }
 
@@ -1536,6 +1552,8 @@ enum DiffColumn {
     Paint,
     Disagree,
     Invariant,
+    /// Items `review_queue.tsv` holds for the case (see `review`).
+    Review,
     /// Changed lines of the case's `diff -u`, the same measure as the `O` picker's `Size`.
     Size,
     /// A picture fixture's human verdict; blank for code. Never the engine's, so the listing does
@@ -1545,7 +1563,7 @@ enum DiffColumn {
 
 impl DiffColumn {
     /// Left-to-right order, shared by the header, cursor movement and `render_open_diff_picker`.
-    const ALL: [DiffColumn; 9] = [
+    const ALL: [DiffColumn; 10] = [
         DiffColumn::Name,
         DiffColumn::Dataset,
         DiffColumn::Cmpl,
@@ -1553,6 +1571,7 @@ impl DiffColumn {
         DiffColumn::Paint,
         DiffColumn::Disagree,
         DiffColumn::Invariant,
+        DiffColumn::Review,
         DiffColumn::Size,
         DiffColumn::Verdict,
     ];
@@ -1583,6 +1602,7 @@ impl DiffColumn {
             DiffColumn::Paint => "Paint",
             DiffColumn::Disagree => "Disagree",
             DiffColumn::Invariant => "Invariant",
+            DiffColumn::Review => "Review",
             DiffColumn::Size => "Size",
             DiffColumn::Verdict => "Verdict",
         }
@@ -1597,6 +1617,7 @@ impl DiffColumn {
             DiffColumn::Paint => Some(("painted only", "unpainted only")),
             DiffColumn::Disagree => Some(("disagreements only", "agreeing only")),
             DiffColumn::Invariant => Some(("breaks invariants", "invariants hold")),
+            DiffColumn::Review => Some(("queued for review", "nothing queued")),
             // An empty diff is a broken fixture; "No" finds them.
             DiffColumn::Size => Some(("has changed lines", "empty diffs only")),
             DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => None,
@@ -1648,6 +1669,7 @@ struct DiffFilters {
     paint: FlagFilter,
     disagree: FlagFilter,
     invariant: FlagFilter,
+    review: FlagFilter,
     size: FlagFilter,
 }
 
@@ -1660,6 +1682,7 @@ impl DiffFilters {
             (DiffColumn::Paint, self.paint),
             (DiffColumn::Disagree, self.disagree),
             (DiffColumn::Invariant, self.invariant),
+            (DiffColumn::Review, self.review),
             (DiffColumn::Size, self.size),
         ]
         .into_iter()
@@ -1675,6 +1698,7 @@ impl DiffFilters {
             DiffColumn::Paint => Some(&mut self.paint),
             DiffColumn::Disagree => Some(&mut self.disagree),
             DiffColumn::Invariant => Some(&mut self.invariant),
+            DiffColumn::Review => Some(&mut self.review),
             DiffColumn::Size => Some(&mut self.size),
             DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => None,
         }
@@ -1687,6 +1711,7 @@ impl DiffFilters {
             DiffColumn::Paint => self.paint,
             DiffColumn::Disagree => self.disagree,
             DiffColumn::Invariant => self.invariant,
+            DiffColumn::Review => self.review,
             DiffColumn::Size => self.size,
             DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => FlagFilter::Off,
         }
@@ -1782,6 +1807,8 @@ struct DiffPickerData<'a> {
     text_painted: Option<&'a HashMap<String, bool>>,
     disagreement: Option<&'a HashMap<String, usize>>,
     invariants: Option<&'a HashMap<String, usize>>,
+    /// `App::review_counts`. A case the queue does not name has 0 items, not an unknown count.
+    review: Option<&'a HashMap<String, usize>>,
     sizes: Option<&'a HashMap<String, usize>>,
     /// `App::content_rows`: which rows are content fixtures, and their verdicts.
     content: Option<&'a HashMap<String, ContentRow>>,
@@ -1794,6 +1821,7 @@ impl<'a> DiffPickerData<'a> {
             text_painted: app.diff_text_painted.as_ref(),
             disagreement: app.diff_disagreement.as_ref(),
             invariants: app.diff_invariants.as_ref(),
+            review: Some(&app.review_counts),
             sizes: app.diff_sizes.as_ref(),
             content: Some(&app.content_rows),
         }
@@ -1839,6 +1867,10 @@ impl<'a> DiffPickerData<'a> {
 
     fn invariants_of(&self, name: &str) -> Option<usize> {
         self.invariants.and_then(|map| map.get(name)).copied()
+    }
+
+    fn review_of(&self, name: &str) -> Option<usize> {
+        self.review.map(|map| map.get(name).copied().unwrap_or(0))
     }
 }
 

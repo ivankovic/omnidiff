@@ -2865,3 +2865,819 @@ fn boolean_identifier_census() -> Result<()> {
     }
     Ok(())
 }
+
+/// EXPLORATORY: two painting conventions noticed while hand painting, measured over every painting
+/// of every fixture, before either is considered as an invariant.
+///
+/// **Call dot.** In `foo.bar()` the `.` is painted like `bar`, the member being called - unless a
+/// line break separates the two: in `a().\nb()` the dot ends `a().`'s line and goes with `a()`.
+/// A case is a `.`, `?.` or `->` token whose parent is a member access; it counts only where its
+/// two neighbours - the object's last byte before it and the member's first byte after it - are
+/// painted differently, since otherwise any painting of the dot agrees with one of them. Each case
+/// is classed by layout (`same row` as the member, or `trailing` with the member on a later row),
+/// by whether the access is called, by what happened to each neighbour (`removed`, `move`,
+/// `edited` - a member painted only in part counts as edited - or `unpainted`), and by which
+/// neighbour the dot's own label follows.
+///
+/// **Statement end.** The first visible byte of a row is painted like the row's last `;` token
+/// (a tree leaf, so never one inside a string or comment). Rows where the `;` is itself the first
+/// visible byte, or where both are unpainted, are skipped. Each row is classed by whether it
+/// `opens` the statement the `;` closes or `continues` one begun earlier, and by what happened to
+/// its first token, judged whole as for the dot.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` also prints every case that breaks a convention.
+#[test]
+#[ignore]
+fn painting_convention_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{LeafStatus, TreeContext, painted_labels};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    fn is_call(node: Node) -> bool {
+        node.kind().contains("call") || node.kind().contains("invocation")
+    }
+    /// Whether the member access holding a dot is called: it is the callee of a call, or (Java's
+    /// `method_invocation`, Ruby's `call`, PHP's `member_call_expression`) is the call itself.
+    fn access_is_called(access: Node) -> bool {
+        // Kotlin and Swift put the dot in a `navigation_suffix` under the access.
+        let access = if access.kind() == "navigation_suffix" {
+            access.parent().unwrap_or(access)
+        } else {
+            access
+        };
+        is_call(access)
+            || access.parent().is_some_and(|parent| {
+                is_call(parent)
+                    && parent
+                        .named_child(0)
+                        .is_some_and(|callee| callee.id() == access.id())
+            })
+    }
+    fn label_name(label: Option<TextLabel>) -> &'static str {
+        match label {
+            None => "unpainted",
+            Some(TextLabel::Update) => "update",
+            Some(TextLabel::Move) => "move",
+            Some(TextLabel::Delete) => "delete",
+            Some(TextLabel::Insert) => "insert",
+        }
+    }
+    fn tally(table: &mut BTreeMap<String, (usize, BTreeSet<String>)>, key: String, name: &str) {
+        let entry = table.entry(key).or_default();
+        entry.0 += 1;
+        entry.1.insert(name.to_string());
+    }
+    fn print_table(title: &str, table: &BTreeMap<String, (usize, BTreeSet<String>)>) {
+        println!("\n{title}:");
+        for (class, (count, names)) in table {
+            println!("{count:>7}  {:>4} fixtures  {class}", names.len());
+        }
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    let mut dots: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut ends: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut end_shapes: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        for named in &mapping.text_mappings {
+            let labels = painted_labels(named, &before, &after)?;
+            let preset = if crate::test::helper::human_mapping::invariants::designates_minimal(
+                &named.name,
+            ) {
+                "Minimal"
+            } else if crate::test::helper::human_mapping::invariants::designates_full(&named.name) {
+                "Full"
+            } else {
+                "other"
+            };
+            for side in 0..2 {
+                let contents = codes[side].contents.as_str();
+                let label = |byte: usize| labels[side].get(byte).copied().flatten();
+                let row_of = |byte: usize| contents[..byte].matches('\n').count();
+                let row_text = |row: usize| contents.split('\n').nth(row).unwrap_or("").trim();
+
+                // Call dot.
+                for &leaf in &context.leaves[side] {
+                    if !matches!(leaf.kind(), "." | "?." | "->") {
+                        continue;
+                    }
+                    let Some(access) = leaf.parent() else {
+                        continue;
+                    };
+                    let mut member = leaf.next_named_sibling();
+                    while member.is_some_and(|m| m.kind().contains("comment")) {
+                        member = member.and_then(|m| m.next_named_sibling());
+                    }
+                    let Some(member) = member else { continue };
+                    let Some(object_end) = contents[..leaf.start_byte()]
+                        .trim_end()
+                        .len()
+                        .checked_sub(1)
+                    else {
+                        continue;
+                    };
+                    let (object, dot, callee) = (
+                        label(object_end),
+                        label(leaf.start_byte()),
+                        label(member.start_byte()),
+                    );
+                    if object == callee {
+                        continue;
+                    }
+                    // A member painted in part (`Minimal`'s `unsafe_` before `layout_node`) is
+                    // edited in place, like a rename, not inserted or deleted.
+                    let member_whole = member.byte_range().all(|byte| {
+                        label(byte) == callee || contents.as_bytes()[byte].is_ascii_whitespace()
+                    });
+                    let member_class = match callee {
+                        _ if !member_whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let object_class = match object {
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let trailing = row_of(leaf.start_byte()) != row_of(member.start_byte());
+                    let follows = if dot == callee {
+                        "member"
+                    } else if dot == object {
+                        "object"
+                    } else {
+                        "neither"
+                    };
+                    let expected = if trailing { "object" } else { "member" };
+                    let layout = if trailing { "trailing" } else { "same row" };
+                    let called = if access_is_called(access) {
+                        "call  "
+                    } else {
+                        "access"
+                    };
+                    tally(
+                        &mut dots,
+                        format!(
+                            "{called} {layout:<8} {object_class:>9} . {member_class:<9} dot follows \
+                             {follows}"
+                        ),
+                        &name,
+                    );
+                    if detail
+                        && follows != expected
+                        && called == "call  "
+                        && matches!(member_class, "removed" | "move")
+                    {
+                        println!(
+                            "dot\t{name}\t{preset}\t{} row {}\t{} {} / dot {} / {} {}\t{}",
+                            ["before", "after"][side],
+                            row_of(leaf.start_byte()) + 1,
+                            label_name(object),
+                            &contents[object_end..=object_end],
+                            label_name(dot),
+                            label_name(callee),
+                            &contents[member.byte_range()],
+                            row_text(row_of(leaf.start_byte())),
+                        );
+                    }
+                }
+
+                // Statement end: the last `;` leaf of each row.
+                let mut last_semicolon: BTreeMap<usize, Node> = BTreeMap::new();
+                for &leaf in &context.leaves[side] {
+                    if leaf.kind() == ";" {
+                        last_semicolon.insert(leaf.start_position().row, leaf);
+                    }
+                }
+                let root = [bt.root_node(), at.root_node()][side];
+                let mut offset = 0usize;
+                for (row, line) in contents.split('\n').enumerate() {
+                    let start = offset;
+                    offset += line.len() + 1;
+                    let Some(&semicolon_leaf) = last_semicolon.get(&row) else {
+                        continue;
+                    };
+                    let semicolon = semicolon_leaf.start_byte();
+                    let Some(first) = line.find(|c: char| !c.is_whitespace()) else {
+                        continue;
+                    };
+                    if start + first == semicolon {
+                        continue;
+                    }
+                    let (head, end) = (label(start + first), label(semicolon));
+                    if head.is_none() && end.is_none() {
+                        continue;
+                    }
+                    // Whether the row opens the statement its `;` closes, rather than continuing
+                    // one begun on an earlier row.
+                    let mut opens = None;
+                    let mut node = semicolon_leaf.parent();
+                    while let Some(statement) =
+                        node.filter(|n| n.end_byte() == semicolon_leaf.end_byte())
+                    {
+                        if statement.start_byte() == start + first {
+                            opens = Some(statement);
+                        }
+                        node = statement.parent();
+                    }
+                    let statement = opens;
+                    let opens = opens.is_some();
+                    let shape = if opens { "opens    " } else { "continues" };
+                    // The first token's class, judged whole: a token painted in part is edited.
+                    let token = root
+                        .descendant_for_byte_range(start + first, start + first + 1)
+                        .unwrap_or(semicolon_leaf);
+                    let whole = token.byte_range().all(|byte| label(byte) == head);
+                    let class = match head {
+                        _ if !whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let agree = if head == end { "agree   " } else { "disagree" };
+                    tally(
+                        &mut ends,
+                        format!("{shape} {class:<9} {agree} {preset}"),
+                        &name,
+                    );
+                    tally(
+                        &mut end_shapes,
+                        format!(
+                            "{shape} {agree} {preset:<7} {} / {}",
+                            label_name(head),
+                            label_name(end)
+                        ),
+                        &name,
+                    );
+                    if detail && head != end && opens && matches!(class, "removed" | "move") {
+                        let status = |leaf: Node| match context.status(leaf, side) {
+                            LeafStatus::Same(_) => "same",
+                            LeafStatus::Paired(_) => "paired",
+                            LeafStatus::Removed => "removed",
+                            LeafStatus::Undecided => "undecided",
+                        };
+                        let held = statement.map_or("?".to_string(), |statement| {
+                            format!(
+                                "{} {}, first {}, `;` {}",
+                                statement.kind(),
+                                if context.partner(statement, side).is_some() {
+                                    "paired"
+                                } else {
+                                    "unpaired"
+                                },
+                                status(token),
+                                status(semicolon_leaf),
+                            )
+                        });
+                        println!(
+                            "end\t{name}\t{preset}\t{} row {}\t{} / {}\t{}\t{held}",
+                            ["before", "after"][side],
+                            row + 1,
+                            label_name(head),
+                            label_name(end),
+                            line.trim(),
+                        );
+                    }
+                }
+            }
+        }
+    }
+    print_table(
+        "Call dot (object's last byte and member's first byte painted differently)",
+        &dots,
+    );
+    print_table(
+        "Statement end by first token's class (first visible byte vs the row's last `;`)",
+        &ends,
+    );
+    print_table("Statement end by label (first / `;`)", &end_shapes);
+    Ok(())
+}
+
+/// EXPLORATORY: invariants 24 (call dot) and 25 (statement end) held against omnidiff's *own*
+/// painting under each preset, with the human tree mapping deciding which statements were removed.
+/// Prints each break as `fixture  preset  message` and a count per invariant and preset.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_engine_census --
+/// --ignored --nocapture`
+#[test]
+#[ignore]
+fn painting_convention_engine_census() -> Result<()> {
+    use crate::diff::text::RenderOptions;
+    use crate::test::helper::human_mapping::invariants::{
+        PaintedLabels, TreeContext, call_dots_go_with_their_member,
+        removed_statements_take_their_terminator,
+    };
+    use std::collections::BTreeMap;
+
+    let mut counts: BTreeMap<(u8, &str), (usize, std::collections::BTreeSet<String>)> =
+        BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let diff = crate::test::helper::human_mapping::omnidiff_diff_for_painting(&before, &after)?;
+        for (preset, options) in [
+            ("Minimal", RenderOptions::MINIMAL),
+            ("Full", RenderOptions::FULL),
+        ] {
+            let labels: PaintedLabels =
+                crate::test::helper::human_mapping::omnidiff_painting_labels(
+                    &diff, &before, &after, options,
+                );
+            let found = call_dots_go_with_their_member(preset, &labels, &context, &before, &after)
+                .into_iter()
+                .chain(removed_statements_take_their_terminator(
+                    preset, &labels, &context, &before, &after,
+                ));
+            for violation in found {
+                // For 25: what omnidiff's own mapping does with the `;`, and why.
+                let mut ours = String::new();
+                if let (
+                    25,
+                    Some(site),
+                    crate::test::helper::human_mapping::PaintingDiff::Ast { ast, .. },
+                ) = (violation.invariant, violation.sites.get(1), &diff)
+                {
+                    let root = [bt.root_node(), at.root_node()][site.side];
+                    let point = |row, column| tree_sitter::Point { row, column };
+                    if let Some(semicolon) = root.descendant_for_point_range(
+                        point(site.span.start_row, site.span.start_column),
+                        point(site.span.end_row, site.span.end_column),
+                    ) {
+                        let map = if site.side == 0 {
+                            &ast.before_node_map
+                        } else {
+                            &ast.after_node_map
+                        };
+                        let partner = map.get(&semicolon.id()).copied().unwrap_or(0);
+                        let key = if site.side == 0 {
+                            (semicolon.id(), partner)
+                        } else {
+                            (partner, semicolon.id())
+                        };
+                        let parent_partner = semicolon
+                            .parent()
+                            .and_then(|parent| map.get(&parent.id()).copied())
+                            .unwrap_or(0);
+                        ours = format!(
+                            "\tours: `;` partner {} reason {:?}, statement {}",
+                            if partner == 0 { "none" } else { "some" },
+                            ast.mapping.get(&key).map(|m| m.reason),
+                            if parent_partner == 0 {
+                                "unmatched"
+                            } else {
+                                "matched"
+                            },
+                        );
+                    }
+                }
+                println!("{name}\t{preset}\t{}{ours}", violation.message);
+                let entry = counts.entry((violation.invariant, preset)).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+            }
+        }
+    }
+    println!();
+    for ((invariant, preset), (count, names)) in &counts {
+        println!(
+            "invariant {invariant} {preset:<7} {count:>5} in {:>4} fixtures",
+            names.len()
+        );
+    }
+    Ok(())
+}
+
+/// Census of human tree mappings that pair a statement-closing `;` across two statements the
+/// mapping does not pair with each other - the pairing `solve_stray_terminators` undoes in the
+/// engine. Prints each as `fixture  before row  after row  before statement => after statement`.
+///
+/// `cargo test --profile ci --lib --features test-fixtures stray_terminator_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn stray_terminator_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::TreeContext;
+
+    /// The statement `leaf` closes, if it is a `;` and its parent's last child.
+    fn closed_statement(leaf: Node) -> Option<Node> {
+        let parent = leaf.parent()?;
+        (leaf.kind() == ";"
+            && parent.child_count() > 1
+            && parent.child(parent.child_count() - 1).map(|n| n.id()) == Some(leaf.id()))
+        .then_some(parent)
+    }
+    fn first_line(node: Node, contents: &str) -> String {
+        contents[node.byte_range()]
+            .lines()
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    }
+
+    let mut total = 0;
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        for &leaf in &context.leaves[0] {
+            let Some(statement) = closed_statement(leaf) else {
+                continue;
+            };
+            let Some(partner) = context.partner(leaf, 0) else {
+                continue;
+            };
+            let Some(partner_statement) = closed_statement(partner) else {
+                continue;
+            };
+            if context
+                .partner(statement, 0)
+                .is_some_and(|p| p.id() == partner_statement.id())
+            {
+                continue;
+            }
+            total += 1;
+            println!(
+                "{name}\tb{}\ta{}\t{} `{}` => {} `{}`",
+                leaf.start_position().row + 1,
+                partner.start_position().row + 1,
+                statement.kind(),
+                first_line(statement, &before.contents),
+                partner_statement.kind(),
+                first_line(partner_statement, &after.contents),
+            );
+        }
+    }
+    println!("{total} stray terminators");
+    Ok(())
+}
+
+/// **Cost models with moves.** Scores omnidiff's mapping and the human's under three models, from
+/// the node pairing alone (both sides judged the same way, ignoring how either labels its
+/// operations):
+///
+/// - `unit`: insert 1, delete 1, update 1, identity 0, no moves - today's `diff_cost`.
+/// - `double_no_move`: insert 2, delete 2, update 1, identity 0, no moves - the doubling alone.
+/// - `move_per_node`: insert 2, delete 2, update 1, identity 0, and 1 per node a move carries.
+/// - `move_per_subtree`: the same, but a move costs 1 whatever the size of the subtree it carries.
+/// - `token_per_token` / `token_per_block`: insert 2, delete 2, update 1, with moves read off
+///   token order instead of the tree - 1 per moved leaf, or 1 per block of moved leaves adjacent
+///   on both sides. Re-nesting (`a.b.c` -> `a.b.x.c`) moves no token.
+///
+/// A pair is updated when its kinds differ, or its text does (a leaf's whole text, an inner node's
+/// own text between its children). A pair is a move root when its parents are not paired with
+/// each other, or when, among siblings whose parents are paired, it falls outside the longest run
+/// kept in order. A move carries every node under its root paired into its partner's subtree.
+///
+/// The question it answers: under which model is the human mapping the cheaper one, i.e. does
+/// minimising the model's cost lead towards what a human paints.
+///
+/// `cargo test --profile ci --lib --features test-fixtures move_cost_model_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` prints every fixture.
+#[test]
+#[ignore]
+fn move_cost_model_census() -> Result<()> {
+    use crate::code::ASTMetadata;
+    use std::collections::{HashMap, HashSet};
+
+    #[derive(Default, Clone, Copy)]
+    struct Score {
+        inserted: u64,
+        deleted: u64,
+        updated: u64,
+        move_roots: u64,
+        moved_nodes: u64,
+        moved_tokens: u64,
+        moved_blocks: u64,
+    }
+    impl Score {
+        fn costs(self) -> [u64; 6] {
+            let removed = 2 * (self.inserted + self.deleted) + self.updated;
+            [
+                self.inserted + self.deleted + self.updated,
+                removed,
+                removed + self.moved_nodes,
+                removed + self.move_roots,
+                removed + self.moved_tokens,
+                removed + self.moved_blocks,
+            ]
+        }
+    }
+
+    fn all_nodes(root: Node) -> Vec<Node> {
+        let mut nodes = Vec::new();
+        let mut stack = vec![root];
+        while let Some(node) = stack.pop() {
+            nodes.push(node);
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                stack.push(child);
+            }
+        }
+        nodes
+    }
+    fn subtree_ids(node: Node) -> HashSet<usize> {
+        all_nodes(node).into_iter().map(|n| n.id()).collect()
+    }
+    /// Indices into `seq` of one longest strictly increasing subsequence.
+    fn longest_increasing(seq: &[usize]) -> HashSet<usize> {
+        let mut tails: Vec<usize> = Vec::new();
+        let mut previous = vec![usize::MAX; seq.len()];
+        for (i, &value) in seq.iter().enumerate() {
+            let at = tails.partition_point(|&t| seq[t] < value);
+            if at > 0 {
+                previous[i] = tails[at - 1];
+            }
+            if at == tails.len() {
+                tails.push(i);
+            } else {
+                tails[at] = i;
+            }
+        }
+        let mut kept = HashSet::new();
+        let mut current = tails.last().copied().unwrap_or(usize::MAX);
+        while current != usize::MAX {
+            kept.insert(current);
+            current = previous[current];
+        }
+        kept
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn score(
+        before_root: Node,
+        after_root: Node,
+        before_src: &str,
+        after_src: &str,
+        before_meta: &ASTMetadata,
+        after_meta: &ASTMetadata,
+        pairs: &HashMap<usize, usize>,
+    ) -> Score {
+        let before_nodes = all_nodes(before_root);
+        let after_nodes = all_nodes(after_root);
+        let after_by_id: HashMap<usize, Node> = after_nodes.iter().map(|n| (n.id(), *n)).collect();
+        let paired_after: HashSet<usize> = pairs.values().copied().collect();
+        let mut s = Score {
+            deleted: before_nodes
+                .iter()
+                .filter(|n| !pairs.contains_key(&n.id()))
+                .count() as u64,
+            inserted: after_nodes
+                .iter()
+                .filter(|n| !paired_after.contains(&n.id()))
+                .count() as u64,
+            ..Score::default()
+        };
+        let owned =
+            |meta: &ASTMetadata, id: usize| meta.node_info.get(&id).map(|i| i.owned_text_hash);
+        let mut roots: Vec<(Node, Node)> = Vec::new();
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let changed = b.kind() != a.kind()
+                || if b.child_count() == 0 || a.child_count() == 0 {
+                    before_src[b.byte_range()] != after_src[a.byte_range()]
+                } else {
+                    owned(before_meta, b.id()) != owned(after_meta, a.id())
+                };
+            s.updated += changed as u64;
+            if let (Some(bp), Some(ap)) = (b.parent(), a.parent())
+                && pairs.get(&bp.id()) != Some(&ap.id())
+            {
+                roots.push((*b, *a));
+            }
+        }
+        // Reorders under a paired parent.
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let mut after_index: HashMap<usize, usize> = HashMap::new();
+            let mut cursor = a.walk();
+            for (i, child) in a.children(&mut cursor).enumerate() {
+                after_index.insert(child.id(), i);
+            }
+            let mut cursor = b.walk();
+            let kids: Vec<(Node, usize)> = b
+                .children(&mut cursor)
+                .filter_map(|child| {
+                    let partner = pairs.get(&child.id())?;
+                    Some((child, *after_index.get(partner)?))
+                })
+                .collect();
+            let seq: Vec<usize> = kids.iter().map(|(_, i)| *i).collect();
+            let kept = longest_increasing(&seq);
+            for (i, (child, _)) in kids.iter().enumerate() {
+                if !kept.contains(&i) {
+                    roots.push((*child, after_by_id[&pairs[&child.id()]]));
+                }
+            }
+        }
+        s.move_roots = roots.len() as u64;
+        let mut carried: HashSet<usize> = HashSet::new();
+        for (b, a) in roots {
+            let inside = subtree_ids(a);
+            for id in subtree_ids(b) {
+                if pairs.get(&id).is_some_and(|p| inside.contains(p)) {
+                    carried.insert(id);
+                }
+            }
+        }
+        s.moved_nodes = carried.len() as u64;
+
+        // Token order: paired leaves in before order, read off by their partners' after order.
+        // Those outside one longest increasing run are moved, however the tree around them
+        // regrouped; a block is a run of moved tokens adjacent on both sides.
+        let mut after_leaf_rank: HashMap<usize, usize> = HashMap::new();
+        let mut after_leaves: Vec<Node> = after_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        after_leaves.sort_by_key(|n| n.start_byte());
+        for (rank, leaf) in after_leaves.iter().enumerate() {
+            after_leaf_rank.insert(leaf.id(), rank);
+        }
+        let mut before_leaves: Vec<Node> = before_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        before_leaves.sort_by_key(|n| n.start_byte());
+        let ranks: Vec<usize> = before_leaves
+            .iter()
+            .filter_map(|leaf| after_leaf_rank.get(pairs.get(&leaf.id())?).copied())
+            .collect();
+        let kept = longest_increasing(&ranks);
+        let mut previous_moved: Option<usize> = None;
+        for (i, &rank) in ranks.iter().enumerate() {
+            if kept.contains(&i) {
+                previous_moved = None;
+                continue;
+            }
+            s.moved_tokens += 1;
+            if previous_moved != Some(rank.wrapping_sub(1)) {
+                s.moved_blocks += 1;
+            }
+            previous_moved = Some(rank);
+        }
+        s
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    const MODELS: [&str; 6] = [
+        "unit",
+        "double_no_move",
+        "move_per_node",
+        "move_per_subtree",
+        "token_per_token",
+        "token_per_block",
+    ];
+    // Per model: (engine total, human total, fixtures engine cheaper, equal, human cheaper).
+    let mut totals = [(0u64, 0u64, 0usize, 0usize, 0usize); 6];
+    let (mut fixtures, mut incomplete) = (0, 0);
+    let (mut engine_score, mut human_score) = (Score::default(), Score::default());
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let (br, ar) = (bt.root_node(), at.root_node());
+        let caches = rebuild_caches_for_mapping(&mapping, br, ar);
+        if caches.unresolved > 0 {
+            continue;
+        }
+        let Some(diff) = crate::diff::diff_code(&before, &after).ast else {
+            continue;
+        };
+        let engine_pairs: HashMap<usize, usize> = diff
+            .before_node_map
+            .iter()
+            .filter(|&(&b, &a)| b != 0 && a != 0)
+            .map(|(&b, &a)| (b, a))
+            .collect();
+        // An `Identical` entry vouches for its whole subtree: pair the descendants in lockstep.
+        let mut human_pairs: HashMap<usize, usize> = caches.before_match.clone();
+        let after_ids: HashMap<usize, Node> =
+            all_nodes(ar).into_iter().map(|n| (n.id(), n)).collect();
+        let mut stack: Vec<(Node, Node)> = all_nodes(br)
+            .into_iter()
+            .filter_map(|b| {
+                let a = after_ids.get(caches.before_match.get(&b.id())?)?;
+                let identical = matches!(
+                    caches.before_operation.get(&b.id()),
+                    None | Some(HumanOperation::Identical)
+                );
+                identical.then_some((b, *a))
+            })
+            .collect();
+        while let Some((b, a)) = stack.pop() {
+            if b.child_count() != a.child_count() {
+                continue;
+            }
+            for i in 0..b.child_count() {
+                let (Some(bc), Some(ac)) = (b.child(i), a.child(i)) else {
+                    continue;
+                };
+                human_pairs.entry(bc.id()).or_insert(ac.id());
+                stack.push((bc, ac));
+            }
+        }
+        // An unfinished mapping would read its unmarked nodes as deleted and inserted.
+        let paired_after: HashSet<usize> = human_pairs.values().copied().collect();
+        let unmarked = all_nodes(br).into_iter().any(|n| {
+            !human_pairs.contains_key(&n.id())
+                && !matches!(status_before(n, &caches), NodeStatus::Marked { .. })
+        }) || all_nodes(ar).into_iter().any(|n| {
+            !paired_after.contains(&n.id())
+                && !matches!(status_after(n, &caches), NodeStatus::Marked { .. })
+        });
+        if unmarked {
+            incomplete += 1;
+            continue;
+        }
+        let (bm, am) = (
+            crate::code::metadata::metadata_of(&before),
+            crate::code::metadata::metadata_of(&after),
+        );
+        let (bs, as_) = (before.contents.as_str(), after.contents.as_str());
+        let engine = score(br, ar, bs, as_, &bm, &am, &engine_pairs);
+        let human = score(br, ar, bs, as_, &bm, &am, &human_pairs);
+        for (total, s) in [(&mut engine_score, engine), (&mut human_score, human)] {
+            total.inserted += s.inserted;
+            total.deleted += s.deleted;
+            total.updated += s.updated;
+            total.move_roots += s.move_roots;
+            total.moved_nodes += s.moved_nodes;
+            total.moved_tokens += s.moved_tokens;
+            total.moved_blocks += s.moved_blocks;
+        }
+        fixtures += 1;
+        let (ec, hc) = (engine.costs(), human.costs());
+        for model in 0..MODELS.len() {
+            let t = &mut totals[model];
+            t.0 += ec[model];
+            t.1 += hc[model];
+            match ec[model].cmp(&hc[model]) {
+                std::cmp::Ordering::Less => t.2 += 1,
+                std::cmp::Ordering::Equal => t.3 += 1,
+                std::cmp::Ordering::Greater => t.4 += 1,
+            }
+        }
+        if detail {
+            println!("{name}\tengine {ec:?}\thuman {hc:?}");
+        }
+    }
+    println!("\n{fixtures} fixtures ({incomplete} with unmarked nodes skipped)");
+    for (label, s) in [("engine", engine_score), ("human", human_score)] {
+        println!(
+            "{label:>6}: inserted {} deleted {} updated {} move roots {} moved nodes {} \
+             moved tokens {} moved blocks {}",
+            s.inserted,
+            s.deleted,
+            s.updated,
+            s.move_roots,
+            s.moved_nodes,
+            s.moved_tokens,
+            s.moved_blocks
+        );
+    }
+    println!(
+        "\n{:<18} {:>10} {:>10} {:>8}  {:>14} {:>6} {:>14}",
+        "model", "engine", "human", "ratio", "engine cheaper", "equal", "human cheaper"
+    );
+    for (model, (engine, human, less, equal, more)) in MODELS.iter().zip(totals) {
+        println!(
+            "{model:<18} {engine:>10} {human:>10} {:>8.4}  {less:>14} {equal:>6} {more:>14}",
+            engine as f64 / human as f64
+        );
+    }
+    Ok(())
+}

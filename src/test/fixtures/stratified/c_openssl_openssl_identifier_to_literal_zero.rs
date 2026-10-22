@@ -22,12 +22,8 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // An `identifier` argument became the literal `0`. The human calls that an update; omnidiff
-    // deletes the identifier, since the two share no text and nothing forces the pair.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "c-openssl-openssl-identifier-to-literal-zero",
-        1,
-        1,
     )
 }
 

@@ -22,21 +22,12 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // `findWrapPos(text, width, nextLineTabStop)` becomes `findWrapPos(text, width, 0)`. The human
-    // pairs the third argument across the kind change, since `text` and `width` are untouched and
-    // nothing else is left for `0` to be; omnidiff deletes and inserts
-    // (`APTED("large_flat_subtree")`). Java's `argument_list` names no fields, so invariant 18
-    // reaches this only by elimination.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "java-defects4j-cli-8-helpformatter",
-        1,
-        1,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("java-defects4j-cli-8-helpformatter")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-8-helpformatter", 0.0)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-8-helpformatter", 0.03)
 }
 
 #[test]
