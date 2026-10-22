@@ -1,0 +1,65 @@
+{
+  "entries": [
+    {
+      "operation": "identical_with_children",
+      "before_path": [],
+      "after_path": []
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 126,
+              "start_column": 44,
+              "end_row": 126,
+              "end_column": 85
+            }
+          ],
+          "after": [
+            {
+              "start_row": 128,
+              "start_column": 12,
+              "end_row": 128,
+              "end_column": 53
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 128,
+              "start_column": 0,
+              "end_row": 128,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 126,
+              "start_column": 43,
+              "end_row": 126,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 128,
+              "start_column": 11,
+              "end_row": 128,
+              "end_column": 12
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

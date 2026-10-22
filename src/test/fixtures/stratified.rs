@@ -878,6 +878,8 @@ mod json_vercel_next_version_change_2;
 #[cfg(test)]
 mod json_vercel_next_version_change_3;
 #[cfg(test)]
+mod kotlin_godotengine_godot_version;
+#[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_add_one_annotation;
@@ -889,6 +891,8 @@ mod kotlin_mozilla_firefox_firefox_add_one_line_2;
 mod kotlin_mozilla_firefox_firefox_insert_and_update;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_rename;
+#[cfg(test)]
+mod kotlin_mozilla_firefox_firefox_small_change;
 #[cfg(test)]
 mod kotlin_mozilla_firefox_firefox_version;
 #[cfg(test)]
@@ -928,11 +932,15 @@ mod kotlin_nextcloud_android_rename_function_2;
 #[cfg(test)]
 mod kotlin_nextcloud_android_small_change;
 #[cfg(test)]
+mod kotlin_nextcloud_android_update;
+#[cfg(test)]
 mod kotlin_nextcloud_android_whitespace;
 #[cfg(test)]
 mod kotlin_nextcloud_android_whitespace_only;
 #[cfg(test)]
 mod kotlin_nextcloud_android_whitespace_only_2;
+#[cfg(test)]
+mod kotlin_nextcloud_android_whitespace_only_3;
 #[cfg(test)]
 mod kotlin_rustdesk_rustdesk_add_func;
 #[cfg(test)]
