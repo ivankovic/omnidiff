@@ -350,6 +350,8 @@ mod java_defects4j_closure_168_typedscopecreator;
 #[cfg(test)]
 mod java_defects4j_closure_16_scopedaliases;
 #[cfg(test)]
+mod java_defects4j_closure_175_functioninjector;
+#[cfg(test)]
 mod java_defects4j_closure_18_compiler;
 #[cfg(test)]
 mod java_defects4j_closure_19_chainablereverseabstractinterpreter;
@@ -728,9 +730,13 @@ mod java_defects4j_jsoup_87_tag;
 #[cfg(test)]
 mod java_defects4j_jsoup_88_attribute;
 #[cfg(test)]
+mod java_defects4j_jsoup_90_httpconnection;
+#[cfg(test)]
 mod java_defects4j_jsoup_91_uncheckedioexception;
 #[cfg(test)]
 mod java_defects4j_jsoup_92_parsesettings;
+#[cfg(test)]
+mod java_defects4j_jsoup_92_token;
 #[cfg(test)]
 mod java_defects4j_jsoup_92_xmltreebuilder;
 #[cfg(test)]
@@ -738,9 +744,15 @@ mod java_defects4j_jsoup_93_formelement;
 #[cfg(test)]
 mod java_defects4j_jsoup_9_entities;
 #[cfg(test)]
+mod java_defects4j_jxpath_10_coreoperationrelationalexpression;
+#[cfg(test)]
 mod java_defects4j_jxpath_15_unioncontext;
 #[cfg(test)]
+mod java_defects4j_jxpath_16_jdomnodepointer;
+#[cfg(test)]
 mod java_defects4j_jxpath_18_attributecontext;
+#[cfg(test)]
+mod java_defects4j_jxpath_1_jdomnodepointer;
 #[cfg(test)]
 mod java_defects4j_jxpath_7_coreoperationgreaterthan;
 #[cfg(test)]
@@ -754,11 +766,23 @@ mod java_defects4j_jxpath_7_coreoperationrelationalexpression;
 #[cfg(test)]
 mod java_defects4j_lang_14_stringutils;
 #[cfg(test)]
+mod java_defects4j_lang_16_numberutils;
+#[cfg(test)]
 mod java_defects4j_lang_17_charsequencetranslator;
 #[cfg(test)]
 mod java_defects4j_lang_19_numericentityunescaper;
 #[cfg(test)]
+mod java_defects4j_lang_21_dateutils;
+#[cfg(test)]
+mod java_defects4j_lang_24_numberutils;
+#[cfg(test)]
+mod java_defects4j_lang_26_fastdateformat;
+#[cfg(test)]
 mod java_defects4j_lang_28_numericentityunescaper;
+#[cfg(test)]
+mod java_defects4j_lang_29_systemutils;
+#[cfg(test)]
+mod java_defects4j_lang_33_classutils;
 #[cfg(test)]
 mod java_defects4j_lang_38_fastdateformat;
 #[cfg(test)]
@@ -771,6 +795,8 @@ mod java_defects4j_lang_4_lookuptranslator;
 mod java_defects4j_lang_51_booleanutils;
 #[cfg(test)]
 mod java_defects4j_lang_54_localeutils;
+#[cfg(test)]
+mod java_defects4j_lang_55_stopwatch;
 #[cfg(test)]
 mod java_defects4j_lang_64_valuedenum;
 #[cfg(test)]
