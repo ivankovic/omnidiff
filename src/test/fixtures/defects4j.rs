@@ -466,6 +466,8 @@ mod java_defects4j_compress_29_ziparchiveinputstream;
 #[cfg(test)]
 mod java_defects4j_compress_33_deflatecompressorinputstream;
 #[cfg(test)]
+mod java_defects4j_compress_36_sevenzfile;
+#[cfg(test)]
 mod java_defects4j_compress_38_tararchiveentry;
 #[cfg(test)]
 mod java_defects4j_compress_40_bitinputstream;
@@ -696,15 +698,35 @@ mod java_defects4j_jsoup_56_xmltreebuilder;
 #[cfg(test)]
 mod java_defects4j_jsoup_57_attributes;
 #[cfg(test)]
+mod java_defects4j_jsoup_58_jsoup;
+#[cfg(test)]
+mod java_defects4j_jsoup_59_token;
+#[cfg(test)]
+mod java_defects4j_jsoup_61_element;
+#[cfg(test)]
+mod java_defects4j_jsoup_62_htmltreebuilderstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_64_htmltreebuilderstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_71_queryparser;
+#[cfg(test)]
+mod java_defects4j_jsoup_72_characterreader;
+#[cfg(test)]
 mod java_defects4j_jsoup_76_htmltreebuilderstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_77_xmltreebuilder;
 #[cfg(test)]
 mod java_defects4j_jsoup_79_leafnode;
 #[cfg(test)]
 mod java_defects4j_jsoup_7_document;
 #[cfg(test)]
+mod java_defects4j_jsoup_80_xmltreebuilder;
+#[cfg(test)]
 mod java_defects4j_jsoup_86_comment;
 #[cfg(test)]
 mod java_defects4j_jsoup_87_tag;
+#[cfg(test)]
+mod java_defects4j_jsoup_88_attribute;
 #[cfg(test)]
 mod java_defects4j_jsoup_91_uncheckedioexception;
 #[cfg(test)]
@@ -713,6 +735,8 @@ mod java_defects4j_jsoup_92_parsesettings;
 mod java_defects4j_jsoup_92_xmltreebuilder;
 #[cfg(test)]
 mod java_defects4j_jsoup_93_formelement;
+#[cfg(test)]
+mod java_defects4j_jsoup_9_entities;
 #[cfg(test)]
 mod java_defects4j_jxpath_15_unioncontext;
 #[cfg(test)]
