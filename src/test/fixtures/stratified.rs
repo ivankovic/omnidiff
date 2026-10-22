@@ -586,6 +586,8 @@ mod go_prometheus_prometheus_remove_copyright_year;
 #[cfg(test)]
 mod html_apache_echarts_delete_one_script_tag;
 #[cfg(test)]
+mod html_apache_echarts_raw_text_contains_code;
+#[cfg(test)]
 mod html_axios_axios_add_script_element;
 #[cfg(test)]
 mod html_caddyserver_caddy_add_one_element;
@@ -976,6 +978,8 @@ mod lua_neovim_neovim_add_only;
 #[cfg(test)]
 mod lua_neovim_neovim_rename;
 #[cfg(test)]
+mod php_nextcloud_server_add;
+#[cfg(test)]
 mod php_nextcloud_server_add_a_few_types;
 #[cfg(test)]
 mod php_nextcloud_server_add_declare;
@@ -997,6 +1001,8 @@ mod php_nextcloud_server_add_one_element_to_array_init;
 mod php_nextcloud_server_add_readonly;
 #[cfg(test)]
 mod php_nextcloud_server_real_small_change;
+#[cfg(test)]
+mod php_nextcloud_server_variable_to_null;
 #[cfg(test)]
 mod php_wordpress_wordpress_add_one_require_statement;
 #[cfg(test)]
@@ -1028,7 +1034,11 @@ mod python_ansible_ansible_add_comment;
 #[cfg(test)]
 mod python_ansible_ansible_small_rename;
 #[cfg(test)]
+mod python_django_django_add_test;
+#[cfg(test)]
 mod python_django_django_identifier_update;
+#[cfg(test)]
+mod python_django_django_tiny_change;
 #[cfg(test)]
 mod python_kovidgoyal_calibre_add_a_parameter;
 #[cfg(test)]
@@ -1038,7 +1048,13 @@ mod python_langflow_ai_langflow_bob;
 #[cfg(test)]
 mod python_langflow_ai_langflow_real_small_change;
 #[cfg(test)]
+mod python_langflow_ai_langflow_small_but_a_lot;
+#[cfg(test)]
 mod python_nvbn_thefuck_add_three_arguments;
+#[cfg(test)]
+mod python_nvbn_thefuck_change;
+#[cfg(test)]
+mod python_nvbn_thefuck_extract_function_to_local_var;
 #[cfg(test)]
 mod python_nvbn_thefuck_small_change;
 #[cfg(test)]
@@ -1058,7 +1074,13 @@ mod python_odoo_odoo_add_import_2;
 #[cfg(test)]
 mod python_odoo_odoo_add_two_imports;
 #[cfg(test)]
+mod python_odoo_odoo_interesting_complex_change;
+#[cfg(test)]
 mod python_odoo_odoo_version;
+#[cfg(test)]
+mod python_open_webui_open_webui_add;
+#[cfg(test)]
+mod python_openhands_openhands_add;
 #[cfg(test)]
 mod python_openhands_openhands_add_only;
 #[cfg(test)]
@@ -1068,15 +1090,31 @@ mod python_openhands_openhands_version_update;
 #[cfg(test)]
 mod python_paddlepaddle_paddleocr_remove_import;
 #[cfg(test)]
+mod python_paddlepaddle_paddleocr_update;
+#[cfg(test)]
 mod python_paddlepaddle_paddleocr_whitespace_only;
 #[cfg(test)]
 mod python_paddlepaddle_paddleocr_whitespace_only_change;
 #[cfg(test)]
+mod python_pandas_dev_pandas_add;
+#[cfg(test)]
 mod python_pandas_dev_pandas_interesting_case_code_becomes_string;
+#[cfg(test)]
+mod python_pandas_dev_pandas_small_removal;
+#[cfg(test)]
+mod python_pandas_dev_pandas_update_comment_one_byte;
 #[cfg(test)]
 mod python_pandas_dev_pandas_update_one_letter;
 #[cfg(test)]
+mod python_redis_redis_add;
+#[cfg(test)]
+mod python_scrapy_scrapy_add_comments;
+#[cfg(test)]
+mod python_scrapy_scrapy_assert_to_assert;
+#[cfg(test)]
 mod python_scrapy_scrapy_comment_update;
+#[cfg(test)]
+mod python_ytdl_org_youtube_dl_regex_update;
 #[cfg(test)]
 mod python_ytdl_org_youtube_dl_version_update;
 #[cfg(test)]
@@ -1545,6 +1583,8 @@ mod yaml_mastodon_mastodon_remove_one_translation;
 mod yaml_mastodon_mastodon_remove_translation;
 #[cfg(test)]
 mod yaml_mongodb_mongo_add_two_block_sequence_items;
+#[cfg(test)]
+mod yaml_ollama_ollama_expand_flag;
 #[cfg(test)]
 mod yaml_puppeteer_puppeteer_false_to_true;
 #[cfg(test)]
