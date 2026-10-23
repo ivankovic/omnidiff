@@ -1108,7 +1108,7 @@
       "name": "Only one solution",
       "entries": [
         {
-          "operation": "Delete",
+          "operation": "Match",
           "before": [
             {
               "start_row": 1450,
@@ -1116,10 +1116,7 @@
               "end_row": 1450,
               "end_column": 60
             }
-          ]
-        },
-        {
-          "operation": "Insert",
+          ],
           "after": [
             {
               "start_row": 1450,

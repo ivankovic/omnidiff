@@ -234,23 +234,6 @@
       ]
     },
     {
-      "operation": "update",
-      "before_path": [
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "call_expression:1",
-        "template_string:1",
-        "string_fragment:4"
-      ],
-      "after_path": [
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "call_expression:1",
-        "template_string:1",
-        "string_fragment:4"
-      ]
-    },
-    {
       "operation": "identical",
       "before_path": [
         "lexical_declaration:1",
@@ -296,15 +279,66 @@
         "template_string:1",
         "template_substitution:4"
       ]
-    },
+    }
+  ],
+  "groups": [
     {
-      "operation": "insert",
-      "after_path": [
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "call_expression:1",
-        "template_string:1",
-        "string_fragment:5"
+      "before_paths": [
+        [
+          "lexical_declaration:1",
+          "variable_declarator:1",
+          "call_expression:1",
+          "template_string:1",
+          "string_fragment:4"
+        ]
+      ],
+      "after_paths": [
+        [
+          "lexical_declaration:1",
+          "variable_declarator:1",
+          "call_expression:1",
+          "template_string:1",
+          "string_fragment:4"
+        ],
+        [
+          "lexical_declaration:1",
+          "variable_declarator:1",
+          "call_expression:1",
+          "template_string:1",
+          "string_fragment:5"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 15,
+              "start_column": 15,
+              "end_row": 15,
+              "end_column": 53
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 15,
+              "start_column": 15,
+              "end_row": 15,
+              "end_column": 19
+            }
+          ]
+        }
       ]
     }
   ]
