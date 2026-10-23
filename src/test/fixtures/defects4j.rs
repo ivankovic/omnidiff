@@ -666,6 +666,8 @@ mod java_defects4j_jsoup_34_characterreader;
 #[cfg(test)]
 mod java_defects4j_jsoup_35_htmltreebuilderstate;
 #[cfg(test)]
+mod java_defects4j_jsoup_36_datautil;
+#[cfg(test)]
 mod java_defects4j_jsoup_37_element;
 #[cfg(test)]
 mod java_defects4j_jsoup_39_datautil;
@@ -843,6 +845,12 @@ mod java_defects4j_math_34_listpopulation;
 mod java_defects4j_math_35_elitisticlistpopulation;
 #[cfg(test)]
 mod java_defects4j_math_41_variance;
+#[cfg(test)]
+mod java_defects4j_math_57_kmeansplusplusclusterer;
+#[cfg(test)]
+mod java_defects4j_math_58_gaussianfitter;
+#[cfg(test)]
+mod java_defects4j_math_5_complex;
 #[cfg(test)]
 mod java_defects4j_math_6_baseoptimizer;
 #[cfg(test)]
