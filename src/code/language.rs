@@ -223,6 +223,13 @@ pub fn stable_name(language: Language) -> &'static str {
     }
 }
 
+/// The language [`stable_name`] spells `name`, for files that store one (a human mapping's
+/// embedded layers).
+pub fn from_stable_name(name: &str) -> Option<Language> {
+    use strum::IntoEnumIterator;
+    Language::iter().find(|language| stable_name(*language) == name)
+}
+
 /// The language's name as a person writes it, where the variant name is not that.
 pub fn human_name(language: Language) -> String {
     match language {

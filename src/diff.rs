@@ -50,6 +50,7 @@
 pub mod apted;
 pub mod content;
 pub mod cost;
+pub mod embedded;
 pub(crate) mod grouped_greedy_matcher;
 pub(crate) mod hash_tree_matching;
 pub mod nodes;
@@ -407,6 +408,10 @@ impl<'code> PendingDiff<'code> {
         // after it would find every node claimed.
         solve_unresolved_nodes::solve(&ctx, &mut ast_diff);
 
+        // After the host mapping is final, which it reads and never changes: each changed pair of
+        // host strings holding code of another language gets a diff of its own.
+        embedded::solve(&ctx, &mut ast_diff);
+
         Diff {
             ast: Some(ast_diff),
             language: before.metadata.language.unwrap_or(Language::Unknown),
@@ -456,6 +461,9 @@ pub struct ASTDiff {
     /// N:M correspondences, each member also in the node maps with a representative partner; see
     /// the module docs.
     pub groups: Vec<NodeGroup>,
+    /// Code of another language in the host's strings, one diff per changed pair (see
+    /// [`embedded`]), in the before host strings' document order.
+    pub embedded: Vec<embedded::EmbeddedDiff>,
     /// Member id to its index in `groups`, per side.
     before_group: rustc_hash::FxHashMap<usize, usize>,
     after_group: rustc_hash::FxHashMap<usize, usize>,

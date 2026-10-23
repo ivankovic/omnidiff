@@ -164,6 +164,9 @@ pub(crate) fn run_event_loop(
     // trees, since `ASTDiff` is keyed by node id and a re-parse would number the nodes afresh.
     let mut before = Arc::new(before);
     let mut after = Arc::new(after);
+    // The host files under each open embedded layer, outermost first; `app.layers` holds the
+    // rest of their session state.
+    let mut host_codes: Vec<(Arc<Code>, Arc<Code>)> = Vec::new();
     loop {
         // The session borrows `before`/`after` immutably, so its cached `FrameState` can live for
         // the whole session; only this loop reassigns them, between sessions.
@@ -183,8 +186,33 @@ pub(crate) fn run_event_loop(
         }
         // Before the switch, so the memory names the case being left; on quit it is the last.
         remember_session(app);
+        // Every other target opens a different case, which no open layer belongs to.
+        if !matches!(
+            end,
+            SessionEnd::Open(OpenTarget::EnterLayer(_) | OpenTarget::LeaveLayer)
+        ) {
+            host_codes.clear();
+            app.layers.clear();
+        }
         match end {
             SessionEnd::Quit => break,
+            SessionEnd::Open(OpenTarget::EnterLayer(request)) => {
+                match enter_layer(app, &before, &after, &request) {
+                    Ok((inner_before, inner_after)) => {
+                        let host_before = std::mem::replace(&mut before, Arc::new(inner_before));
+                        let host_after = std::mem::replace(&mut after, Arc::new(inner_after));
+                        host_codes.push((host_before, host_after));
+                    }
+                    Err(err) => app.status = Some(format!("Cannot open the layer: {err:#}")),
+                }
+            }
+            SessionEnd::Open(OpenTarget::LeaveLayer) => {
+                if let Some((host_before, host_after)) = host_codes.pop() {
+                    leave_layer(app);
+                    before = host_before;
+                    after = host_after;
+                }
+            }
             SessionEnd::Open(OpenTarget::Diffs(name)) => match load_case(&name) {
                 Ok((new_before, new_after)) => {
                     let before_root_id = starting_cursor_id(&new_before);
@@ -540,7 +568,7 @@ pub(crate) fn run_case_session(
 
         if needs_redraw {
             // Cloned: `draw_ui` also takes `app` mutably.
-            let current_name = app.name.clone();
+            let current_name = app.display_name();
             terminal.draw(|f| {
                 draw_ui(
                     f,
@@ -1128,6 +1156,18 @@ pub(crate) fn handle_key(
             });
             None
         }
+        KeyCode::Enter => {
+            let (flat, panel, side) = match focus {
+                Focus::Before => (before_flat, &app.before, Side::Before),
+                Focus::After => (after_flat, &app.after, Side::After),
+            };
+            let node = flat.node_for_id(panel.cursor_id)?;
+            match layer_request(app, node, side, caches, before, after) {
+                Ok(request) => return Some(OpenTarget::EnterLayer(request)),
+                Err(reason) => app.status = Some(reason),
+            }
+            None
+        }
         KeyCode::Char('H') => {
             app.hide_solved = !app.hide_solved;
             app.status = Some(if app.hide_solved {
@@ -1192,6 +1232,9 @@ pub(crate) fn handle_tree_independent_key(
     tree_available: bool,
 ) -> Option<OpenTarget> {
     let result: Option<Result<String>> = match code {
+        KeyCode::Char('q') | KeyCode::Esc if !app.layers.is_empty() => {
+            return Some(OpenTarget::LeaveLayer);
+        }
         KeyCode::Char('q') | KeyCode::Esc => {
             app.should_quit = true;
             None
@@ -1278,7 +1321,7 @@ pub(crate) fn handle_tree_independent_key(
         KeyCode::Char('s') => match &app.origin {
             CaseOrigin::Diffs => {
                 let result = action_save(
-                    &mut app.mapping,
+                    &mut app.whole_mapping(),
                     &mut app.dirty,
                     &app.name,
                     None,
@@ -1738,7 +1781,7 @@ pub(crate) fn handle_modal_key(
         Modal::ConfirmDiscardUnsaved { target, can_save } => match code {
             KeyCode::Char('s') | KeyCode::Char('S') if can_save => {
                 match action_save(
-                    &mut app.mapping,
+                    &mut app.whole_mapping(),
                     &mut app.dirty,
                     &app.name,
                     None,
@@ -2222,7 +2265,7 @@ pub(crate) fn action_promote(
         None => None,
     };
     let save_msg = action_save(
-        &mut app.mapping,
+        &mut app.whole_mapping(),
         &mut app.dirty,
         new_name,
         comment.as_deref(),

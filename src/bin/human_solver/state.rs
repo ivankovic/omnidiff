@@ -1959,6 +1959,10 @@ pub(crate) enum OpenTarget {
         summary: String,
         path: String,
     },
+    /// `Enter` on a host string: its embedded layer (see [`LayerFrame`]).
+    EnterLayer(LayerRequest),
+    /// `q`/`Esc` inside an embedded layer: back to the host file.
+    LeaveLayer,
 }
 
 impl OpenTarget {
@@ -1966,8 +1970,43 @@ impl OpenTarget {
         match self {
             OpenTarget::Diffs(name) | OpenTarget::Sample(name) => name,
             OpenTarget::GitCommitFile { path, .. } => path,
+            OpenTarget::EnterLayer(_) => "the embedded layer",
+            OpenTarget::LeaveLayer => "the host file",
         }
     }
+}
+
+/// The embedded layer `Enter` asks for: the host string pair, by path, and its language.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct LayerRequest {
+    pub(crate) before_path: Vec<String>,
+    pub(crate) after_path: Vec<String>,
+    pub(crate) language: omnidiff::code::Language,
+}
+
+/// What an open embedded layer hides of the file it is in, restored by `q`/`Esc`.
+///
+/// Inside a layer the session is an ordinary session over the *decoded* pair: `App::mapping` is
+/// the layer's own [`HumanMapping`] and the panels, `t` view and omnidiff's run are all about the
+/// embedded code, so every key works as in a file. Only saving and leaving know about the host:
+/// `s` writes the layer back into the host's mapping, all the way out, and saves the fixture
+/// ([`App::whole_mapping`]). `dirty` is one flag across the stack, since one file holds it all.
+pub(crate) struct LayerFrame {
+    /// The host's mapping, with this layer at `embedded[index]` (its content stale while the
+    /// layer is open: `App::mapping` is the live copy).
+    pub(crate) mapping: HumanMapping,
+    pub(crate) index: usize,
+    /// Whether the layer was created by opening it, so leaving it untouched removes it again.
+    pub(crate) created: bool,
+    /// For the title line: the language and where the string is.
+    pub(crate) label: String,
+    pub(crate) focus: Focus,
+    pub(crate) before: PanelState,
+    pub(crate) after: PanelState,
+    pub(crate) undo_stack: Vec<HumanMapping>,
+    pub(crate) redo_stack: Vec<HumanMapping>,
+    pub(crate) algo_diff: Option<ASTDiff>,
+    pub(crate) text_solution: String,
 }
 
 /// Where the open case's content lives. Decides what `s` does and what switching away with
@@ -2067,6 +2106,8 @@ pub(crate) struct App {
     /// How the pending selection's members correspond, flipped by `X`. Reset whenever the
     /// selection is cleared, so all-to-all is always deliberate.
     pub(crate) multi_select_pairing: GroupPairing,
+    /// Open embedded layers, outermost first; empty in the host file (see [`LayerFrame`]).
+    pub(crate) layers: Vec<LayerFrame>,
 }
 
 impl App {
@@ -2119,7 +2160,31 @@ impl App {
             before_multi_select: std::collections::BTreeSet::new(),
             after_multi_select: std::collections::BTreeSet::new(),
             multi_select_pairing: GroupPairing::default(),
+            layers: Vec::new(),
         }
+    }
+
+    /// The fixture's whole mapping: `mapping` itself in the host file; inside a layer, the host's
+    /// mapping with each open layer's live mapping written back into it, all the way out. What
+    /// `s` saves.
+    pub(crate) fn whole_mapping(&self) -> HumanMapping {
+        let mut inner = self.mapping.clone();
+        for frame in self.layers.iter().rev() {
+            let mut outer = frame.mapping.clone();
+            outer.embedded[frame.index].mapping = inner;
+            inner = outer;
+        }
+        inner
+    }
+
+    /// The case's name, with the open layers after it, for the title line.
+    pub(crate) fn display_name(&self) -> String {
+        let mut name = self.name.clone();
+        for frame in &self.layers {
+            name.push_str(" > ");
+            name.push_str(&frame.label);
+        }
+        name
     }
 
     /// Drops the pending selection and its pairing: the only way it is cleared, so no `X` leaks

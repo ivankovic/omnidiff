@@ -350,6 +350,57 @@ pub fn ground_truth_invariant_violations_for(
     violations.extend(interior);
     violations.extend(minimal_indentation);
 
+    // An embedded layer is a file of its own: every rule reads it against its decoded pair. Its
+    // sites are in the decoded text, which the host's rows do not show, so they are dropped here;
+    // the same violations, sites and all, are what the layer reports when it is open. A painted
+    // layer paints its stretch of the host files, so the host's own rules do not judge a site
+    // there: the host painting is not what grading reads for those bytes.
+    let mut painted_stretches: Vec<(usize, std::ops::Range<usize>)> = Vec::new();
+    let mut layer_violations = Vec::new();
+    for layer in &mapping.embedded {
+        let decoded = layer.resolve(before, after)?;
+        if !layer.mapping.text_mappings.is_empty() {
+            for (side, offsets) in [(0, &decoded.before_offsets), (1, &decoded.after_offsets)] {
+                let end = *offsets.last().expect("a byte map is never empty");
+                painted_stretches.push((side, offsets[0]..end));
+            }
+        }
+        for violation in
+            ground_truth_invariant_violations_for(&layer.mapping, &decoded.before, &decoded.after)?
+        {
+            layer_violations.push(GroundTruthViolation {
+                message: format!(
+                    "[embedded {} at {:?}] {}",
+                    layer.language, layer.before_path, violation.message
+                ),
+                sites: Vec::new(),
+                ..violation
+            });
+        }
+    }
+    if !painted_stretches.is_empty() {
+        let contents = [&before.contents, &after.contents];
+        let in_a_layer = |site: &ViolationSite| {
+            let start = super::byte_offset(
+                contents[site.side],
+                site.span.start_row,
+                site.span.start_column,
+            );
+            let end =
+                super::byte_offset(contents[site.side], site.span.end_row, site.span.end_column);
+            let (Some(start), Some(end)) = (start, end) else {
+                return false;
+            };
+            painted_stretches.iter().any(|(side, stretch)| {
+                *side == site.side && stretch.start <= start && end <= stretch.end
+            })
+        };
+        violations.retain(|violation| {
+            violation.sites.is_empty() || !violation.sites.iter().all(in_a_layer)
+        });
+    }
+    violations.extend(layer_violations);
+
     Ok(violations)
 }
 

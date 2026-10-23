@@ -3682,6 +3682,50 @@ fn move_cost_model_census() -> Result<()> {
     Ok(())
 }
 
+/// EXPLORATORY: every fixture in which `diff::embedded` finds a layer - a changed pair of host
+/// strings diffed as code of another language - with the language, the decoded sizes, how many
+/// inner nodes changed, and whether the fixture's human mapping has a layer for it yet.
+///
+/// `cargo test --profile ci --lib --features test-fixtures embedded_layer_census -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore]
+fn embedded_layer_census() -> Result<()> {
+    let pairs = crate::test::helper::handmade_test_code_pairs()?;
+    let mut names: Vec<&String> = pairs.keys().collect();
+    names.sort();
+    let mut found = 0;
+    for name in names {
+        let (before, after) = &pairs[name];
+        let Some(ast) = crate::diff::diff_code(before, after).ast else {
+            continue;
+        };
+        if ast.embedded.is_empty() {
+            continue;
+        }
+        let human_layers = load_with(name, before, after)
+            .map(|mapping| mapping.embedded.len())
+            .unwrap_or(0);
+        for layer in &ast.embedded {
+            found += 1;
+            let changed = layer
+                .diff
+                .mapping
+                .values()
+                .filter(|mapping| mapping.operation != ASTMappingOperation::Identical)
+                .count();
+            println!(
+                "{name}\t{}\t{}/{} rows\t{changed} changed\thuman layers: {human_layers}",
+                crate::code::language::stable_name(layer.language),
+                layer.before.contents.lines().count(),
+                layer.after.contents.lines().count(),
+            );
+        }
+    }
+    println!("{found} embedded layers");
+    Ok(())
+}
+
 /// EXPLORATORY: fixtures with code of another language held in a string literal - SQL in a Java
 /// string, shell in a YAML `run:` scalar or a `package.json` script, CSS in an HTML `style`
 /// attribute, a Vim command in a Vimscript string. A grammar parses such a string as one leaf, so a

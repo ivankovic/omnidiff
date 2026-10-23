@@ -3368,6 +3368,7 @@ fn the_text_view_renders_painted_ranges() {
     let mut terminal = Terminal::new(backend).unwrap();
     let area = Rect::new(0, 0, width, 24);
     let mapping = HumanMapping {
+        embedded: Vec::new(),
         entries: vec![],
         groups: vec![],
         text_mappings: vec![NamedTextMapping {
@@ -11554,5 +11555,128 @@ fn the_review_filter_keeps_only_queued_cases() {
             data
         ),
         vec!["clear"]
+    );
+}
+
+/// The shadcn registry fixture, opened as `main` opens a case, with omnidiff's diff in place.
+fn shadcn_app() -> (App, Code, Code) {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (before, after) = load_case(name).expect("fixture loads");
+    let mapping = human_mapping::load_with(name, &before, &after).expect("mapping loads");
+    let mut app = App::new(
+        name.to_string(),
+        CaseOrigin::Diffs,
+        starting_cursor_id(&before),
+        starting_cursor_id(&after),
+        mapping,
+    );
+    app.algo_diff = diff_code(&before, &after).ast;
+    (app, before, after)
+}
+
+/// The JSON string holding the TSX file, in `code`.
+fn shadcn_host_string(code: &Code) -> Node<'_> {
+    let path = [
+        "object:1", "pair:4", "array:1", "object:1", "pair:2", "string:2",
+    ];
+    node_for_path(code.ast.as_ref().expect("parsed").root_node(), &path).expect("host string")
+}
+
+#[test]
+fn enter_on_a_host_string_opens_its_embedded_layer_and_q_closes_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    assert_eq!(request.language, Language::TSX);
+
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(inner_before.contents.starts_with("import * as React"));
+    assert!(inner_after.contents.contains("phosphor=\"CaretLeftIcon\""));
+    assert!(
+        app.mapping.entries.is_empty(),
+        "a new layer starts unmapped"
+    );
+    assert!(
+        app.algo_diff.is_none(),
+        "omnidiff reruns on the decoded pair"
+    );
+    assert!(
+        app.display_name()
+            .ends_with("> TSX in the string at line 10")
+    );
+
+    // What `s` would save: the host mapping, with this layer's work written into it.
+    app.mapping.text_mappings.push(NamedTextMapping {
+        name: "Minimal".to_string(),
+        mapping: HumanTextMapping::default(),
+    });
+    let whole = app.whole_mapping();
+    assert_eq!(whole.embedded.len(), 1);
+    assert_eq!(whole.embedded[0].mapping.text_mappings.len(), 1);
+    assert!(!whole.entries.is_empty(), "the host's own entries are kept");
+
+    leave_layer(&mut app);
+    assert!(app.layers.is_empty());
+    assert_eq!(
+        app.mapping.embedded.len(),
+        1,
+        "a layer with work in it stays"
+    );
+    assert!(
+        app.algo_diff.is_some(),
+        "the host's omnidiff run comes back"
+    );
+}
+
+#[test]
+fn a_layer_opened_and_left_untouched_is_not_kept() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&before),
+        Side::Before,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    leave_layer(&mut app);
+    assert!(app.mapping.embedded.is_empty());
+}
+
+#[test]
+fn enter_on_a_string_with_no_code_says_why() {
+    let (app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let root = before.ast.as_ref().expect("parsed").root_node();
+    let name_value = node_for_path(root, &["object:1", "pair:2", "string:2"]).expect("name");
+    let reason = layer_request(&app, name_value, Side::Before, &caches, &before, &after)
+        .expect_err("no code in the component's name");
+    assert!(
+        reason.contains("partner") || reason.contains("language"),
+        "{reason}"
     );
 }

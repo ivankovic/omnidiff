@@ -52,6 +52,7 @@ mod content;
 mod events;
 mod flatten;
 mod keylog;
+mod layers;
 mod navigate;
 mod render;
 mod review;
@@ -61,6 +62,7 @@ use actions::*;
 use events::*;
 use flatten::*;
 use keylog::*;
+use layers::*;
 use navigate::*;
 use render::*;
 use state::*;
@@ -160,6 +162,15 @@ n / N          jump to next / previous mismatch (`*`) vs. omnidiff's verdict
 } / {          open the next / previous case as the o picker lists it - its
                  sort and filters apply, so with Unmarked filtered to yes this
                  walks the unfinished cases; unsaved changes prompt first
+Enter          on a string holding code of another language (TSX in a JSON
+                 string, shell in a YAML run: block, CSS in a styled template):
+                 open that code as a file of its own - escapes resolved, the
+                 host's indentation gone - and map and paint it like any file.
+                 Works where omnidiff found the code, on a layer already
+                 mapped, or on a string you matched whose context names a
+                 language. s saves the whole fixture; q or Esc goes back. A
+                 painted layer is what grading reads for its string: paint the
+                 rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the
                  given string (plain substring, no regex)
 
