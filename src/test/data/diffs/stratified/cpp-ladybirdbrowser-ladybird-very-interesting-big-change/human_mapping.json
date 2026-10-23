@@ -31338,6 +31338,28 @@
               "end_column": 29
             }
           ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1652,
+              "start_column": 12,
+              "end_row": 1652,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1437,
+              "start_column": 53,
+              "end_row": 1437,
+              "end_column": 60
+            }
+          ]
         }
       ]
     },
@@ -32632,6 +32654,36 @@
               "start_column": 16,
               "end_row": 527,
               "end_column": 29
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1652,
+              "start_column": 12,
+              "end_row": 1652,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1432,
+              "start_column": 53,
+              "end_row": 1432,
+              "end_column": 64
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1437,
+              "start_column": 53,
+              "end_row": 1437,
+              "end_column": 71
             }
           ]
         }

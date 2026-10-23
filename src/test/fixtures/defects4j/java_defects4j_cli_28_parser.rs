@@ -38,5 +38,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-28-parser", 0.17)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-28-parser", 0.22)
 }

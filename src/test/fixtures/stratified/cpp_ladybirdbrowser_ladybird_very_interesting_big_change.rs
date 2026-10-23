@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-ladybirdbrowser-ladybird-very-interesting-big-change",
-        0.79,
+        0.4,
     )
 }
 
