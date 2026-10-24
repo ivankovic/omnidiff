@@ -169,9 +169,10 @@ Enter          on a string holding code of another language (TSX in a JSON
                  Works where omnidiff found the code, on a layer already
                  mapped, or on a string you matched whose context names a
                  language. Enter in the t view opens the string under the text
-                 cursor, straight into the layer's own t view; Esc closes that,
-                 and a second Esc goes back to the host's t view. In the panels
-                 q or Esc goes back. s saves the whole fixture. A
+                 cursor, straight into the layer's own t view, and Esc there
+                 goes back to the host's t view (enter from the panels to map
+                 the layer's trees). In the panels q or Esc goes back. s saves
+                 the whole fixture. A
                  painted layer is what grading reads for its string: paint the
                  rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the

@@ -3051,7 +3051,16 @@ fn handle_text_view(
         _ => {}
     }
 
-    if close {
+    if close
+        && app
+            .layers
+            .last()
+            .is_some_and(|frame| frame.text_view.is_some())
+    {
+        // A layer entered from the host's `t` view is left the way it came, back to that view;
+        // one entered from the panels closes to its own panels like any file.
+        return Some(OpenTarget::LeaveLayer);
+    } else if close {
         app.status = Some("Closed text view".to_string());
     } else {
         state.scroll_into_view(VIEWPORT_ROWS);

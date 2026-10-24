@@ -11558,11 +11558,13 @@ fn the_review_filter_keeps_only_queued_cases() {
     );
 }
 
-/// The shadcn registry fixture, opened as `main` opens a case, with omnidiff's diff in place.
+/// The shadcn registry fixture, opened as `main` opens a case, with omnidiff's diff in place and
+/// any layer saved in it removed, so painting the fixture does not change what these tests see.
 fn shadcn_app() -> (App, Code, Code) {
     let name = "json-shadcn-ui-ui-react-code-in-string-constant";
     let (before, after) = load_case(name).expect("fixture loads");
-    let mapping = human_mapping::load_with(name, &before, &after).expect("mapping loads");
+    let mut mapping = human_mapping::load_with(name, &before, &after).expect("mapping loads");
+    mapping.embedded.clear();
     let mut app = App::new(
         name.to_string(),
         CaseOrigin::Diffs,
@@ -11682,7 +11684,7 @@ fn enter_on_a_string_with_no_code_says_why() {
 }
 
 #[test]
-fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_twice_comes_back() {
+fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_comes_back() {
     let (mut app, before, after) = shadcn_app();
     let before_root = before.ast.as_ref().expect("parsed").root_node();
     let after_root = after.ast.as_ref().expect("parsed").root_node();
@@ -11716,14 +11718,41 @@ fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_twice_comes_
         Some(OpenTarget::EnterLayer(request)) => request,
         _ => panic!("Enter should open the layer, status {:?}", app.status),
     };
-    enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
     assert!(
         matches!(&app.modal, Some(Modal::TextView { state }) if *state == TextPaintState::default()),
         "the layer opens in its own t view"
     );
 
-    // Esc closes the layer's t view; Esc in its panels goes back, to the host's t view.
-    app.modal = None;
+    // Esc in the layer's t view goes back the way it came, to the host's t view.
+    let inner_before_root = inner_before.ast.as_ref().expect("parsed").root_node();
+    let inner_after_root = inner_after.ast.as_ref().expect("parsed").root_node();
+    let inner_caches = rebuild_caches(&app.mapping.entries, inner_before_root, inner_after_root);
+    let inner_before_flat = FlatIndex::new(flatten_visible(
+        inner_before_root,
+        &app.before.collapsed,
+        None,
+    ));
+    let inner_after_flat = FlatIndex::new(flatten_visible(
+        inner_after_root,
+        &app.after.collapsed,
+        None,
+    ));
+    let esc = handle_modal_key(
+        &mut app,
+        KeyCode::Esc,
+        &inner_before_flat,
+        &inner_after_flat,
+        Some(inner_before_root),
+        Some(inner_after_root),
+        &inner_caches,
+        inner_before.contents.as_bytes(),
+        inner_after.contents.as_bytes(),
+        &inner_before,
+        &inner_after,
+    );
+    assert!(matches!(esc, Some(OpenTarget::LeaveLayer)));
     leave_layer(&mut app);
     assert!(matches!(&app.modal, Some(Modal::TextView { state: back }) if *back == state));
 }
