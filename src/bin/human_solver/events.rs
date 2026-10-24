@@ -170,6 +170,7 @@ pub(crate) fn run_event_loop(
     loop {
         // The session borrows `before`/`after` immutably, so its cached `FrameState` can live for
         // the whole session; only this loop reassigns them, between sessions.
+        app.layer_paint = project_layer_paint(&app.mapping, &before, &after);
         let mut end = run_case_session(terminal, app, &before, &after)?;
         // A picture sample or fixture has no trees: it gets its own session, which hands back
         // whatever is opened from it. The tree session's case stays loaded underneath.

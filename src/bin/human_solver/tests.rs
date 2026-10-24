@@ -791,6 +791,7 @@ fn render_modal_prompt_search_shows_the_prefilled_query_and_instructions() {
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -830,6 +831,7 @@ fn render_modal_prompt_promote_name_shows_the_actual_target_dataset_not_a_fixed_
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -3397,6 +3399,7 @@ fn the_text_view_renders_painted_ranges() {
                 "fn new_name() {}",
                 &mapping,
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -3459,6 +3462,7 @@ fn render_open_diff_picker_shows_the_unmarked_column_and_the_sort_and_filter_mar
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
@@ -3510,6 +3514,7 @@ fn the_diff_picker_title_keeps_its_filter_list_when_the_terminal_truncates_it() 
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -3543,6 +3548,7 @@ fn text_view_modal_renders_both_sides_content() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -4684,6 +4690,7 @@ fn render_open_diff_picker_shows_a_pictures_verdict_and_dashes_for_what_only_cod
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
@@ -10356,6 +10363,7 @@ fn the_text_view_draws_only_the_focused_side_on_a_narrow_terminal() {
                     "fn new_name() {}",
                     &HumanMapping::default(),
                     "Minimal",
+                    &[],
                     TextOverlay::Human,
                     None,
                     &state,
@@ -11202,6 +11210,7 @@ fn the_text_view_title_shows_the_search_prompt_on_the_focused_side() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &state,
@@ -11755,4 +11764,56 @@ fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_comes_back()
     assert!(matches!(esc, Some(OpenTarget::LeaveLayer)));
     leave_layer(&mut app);
     assert!(matches!(&app.modal, Some(Modal::TextView { state: back }) if *back == state));
+}
+
+#[test]
+fn a_layers_painting_is_drawn_in_the_host_where_the_string_spells_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    let (_, inner_after) = enter_layer(&mut app, &before, &after, &request).expect("opens");
+    let attribute = "phosphor=\"CaretLeftIcon\"";
+    let (row, line) = inner_after
+        .contents
+        .lines()
+        .enumerate()
+        .find(|(_, line)| line.contains(attribute))
+        .expect("the TSX has the attribute");
+    let column = line.find(attribute).expect("on that line");
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Insert,
+        before: Vec::new(),
+        after: vec![HumanTextSpan {
+            start_row: row,
+            start_column: column,
+            end_row: row,
+            end_column: column + attribute.len(),
+        }],
+    });
+    leave_layer(&mut app);
+
+    let projected = project_layer_paint(&app.mapping, &before, &after);
+    let spans = projected[0].for_solution("Minimal").expect("painted");
+    assert!(spans[0].is_empty());
+    let [(span, verdict)] = spans[1][..] else {
+        panic!("one span, got {:?}", spans[1]);
+    };
+    assert_eq!(verdict, HumanTextVerdict::Insert);
+    let host_line = after.contents.lines().nth(span.start_row).expect("row");
+    assert_eq!(
+        &host_line[span.start_column..span.end_column],
+        r#"phosphor=\"CaretLeftIcon\""#
+    );
 }

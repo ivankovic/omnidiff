@@ -24,6 +24,10 @@
 //! the node when it found one, then from an existing human layer, then from the human's pairing of
 //! the node and `diff::embedded::detect`. The session state of the file underneath is kept in a
 //! [`LayerFrame`]; the decoded `Code`s live in `run_event_loop`, beside the host's.
+//!
+//! Back in the host, its `t` view draws each layer's painting where the string spells it
+//! ([`LayerPaint`]), read-only: the layer's own painting is what grading reads there, so it is
+//! changed by entering the layer, not by painting over the escaped text.
 
 use crate::*;
 use omnidiff::diff::embedded;
@@ -253,4 +257,118 @@ pub(crate) fn leave_layer(app: &mut App) {
     app.text_overlay = TextOverlay::default();
     app.clear_multi_select();
     app.status = Some(format!("Back from {}", frame.label));
+}
+
+/// One painted layer's paintings, projected onto the host files for the host's `t` view.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct LayerPaint {
+    /// Per painting name, both sides' painted spans in host rows and columns.
+    pub(crate) paintings: Vec<(String, PaintedSpans)>,
+}
+
+/// Both sides' painted spans with their verdicts, as `painted_spans` gives one side's.
+pub(crate) type PaintedSpans = [Vec<(HumanTextSpan, HumanTextVerdict)>; 2];
+
+impl LayerPaint {
+    /// The layer's painting named `solution`, else its first: the host and the layer need not use
+    /// the same names.
+    pub(crate) fn for_solution(&self, solution: &str) -> Option<&PaintedSpans> {
+        self.paintings
+            .iter()
+            .find(|(name, _)| name == solution)
+            .or(self.paintings.first())
+            .map(|(_, spans)| spans)
+    }
+}
+
+/// Every painted layer of `mapping`, projected onto `before`/`after`; a layer whose strings no
+/// longer decode is left out.
+pub(crate) fn project_layer_paint(
+    mapping: &HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Vec<LayerPaint> {
+    mapping
+        .embedded
+        .iter()
+        .filter(|layer| !layer.mapping.text_mappings.is_empty())
+        .filter_map(|layer| {
+            let decoded = layer.resolve(before, after).ok()?;
+            let sides = [
+                (
+                    &decoded.before.contents,
+                    &decoded.before_offsets,
+                    &before.contents,
+                ),
+                (
+                    &decoded.after.contents,
+                    &decoded.after_offsets,
+                    &after.contents,
+                ),
+            ];
+            let paintings = layer
+                .mapping
+                .text_mappings
+                .iter()
+                .map(|named| {
+                    let mut spans: PaintedSpans = [Vec::new(), Vec::new()];
+                    for entry in &named.mapping.entries {
+                        let Ok(verdict) =
+                            entry.verdict(&decoded.before.contents, &decoded.after.contents)
+                        else {
+                            continue;
+                        };
+                        for (side, inner) in [&entry.before, &entry.after].into_iter().enumerate() {
+                            let (text, offsets, host) = sides[side];
+                            for span in inner {
+                                let start = TextPaintState::byte_offset(
+                                    text,
+                                    span.start_row,
+                                    span.start_column,
+                                );
+                                let end = TextPaintState::byte_offset(
+                                    text,
+                                    span.end_row,
+                                    span.end_column,
+                                );
+                                let (Some(start), Some(end)) = (start, end) else {
+                                    continue;
+                                };
+                                spans[side].extend(
+                                    spans_of_bytes(host, offsets[start]..offsets[end])
+                                        .into_iter()
+                                        .map(|span| (span, verdict)),
+                                );
+                            }
+                        }
+                    }
+                    (named.name.clone(), spans)
+                })
+                .collect();
+            Some(LayerPaint { paintings })
+        })
+        .collect()
+}
+
+/// `range` of `source` as one span per row it touches, line breaks left out.
+fn spans_of_bytes(source: &str, range: std::ops::Range<usize>) -> Vec<HumanTextSpan> {
+    let mut spans = Vec::new();
+    let mut line_start = 0;
+    for (row, line) in source.split('\n').enumerate() {
+        let line_end = line_start + line.len();
+        let (from, to) = (range.start.max(line_start), range.end.min(line_end));
+        if from < to {
+            spans.push(HumanTextSpan {
+                start_row: row,
+                start_column: from - line_start,
+                end_row: row,
+                end_column: to - line_start,
+            });
+        }
+        if line_end >= range.end {
+            break;
+        }
+        line_start = line_end + 1;
+    }
+    spans
 }

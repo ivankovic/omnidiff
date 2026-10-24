@@ -173,7 +173,8 @@ Enter          on a string holding code of another language (TSX in a JSON
                  goes back to the host's t view (enter from the panels to map
                  the layer's trees). In the panels q or Esc goes back. s saves
                  the whole fixture. A
-                 painted layer is what grading reads for its string: paint the
+                 painted layer is what grading reads for its string, and the
+                 host's t view shows it, read-only, on the escaped text: paint the
                  rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the
                  given string (plain substring, no regex)

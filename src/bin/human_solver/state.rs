@@ -2110,6 +2110,8 @@ pub(crate) struct App {
     pub(crate) multi_select_pairing: GroupPairing,
     /// Open embedded layers, outermost first; empty in the host file (see [`LayerFrame`]).
     pub(crate) layers: Vec<LayerFrame>,
+    /// The case's painted layers as the `t` view draws them; set as each session starts.
+    pub(crate) layer_paint: Vec<LayerPaint>,
 }
 
 impl App {
@@ -2163,6 +2165,7 @@ impl App {
             after_multi_select: std::collections::BTreeSet::new(),
             multi_select_pairing: GroupPairing::default(),
             layers: Vec::new(),
+            layer_paint: Vec::new(),
         }
     }
 
