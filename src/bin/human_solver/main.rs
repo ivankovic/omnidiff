@@ -168,7 +168,10 @@ Enter          on a string holding code of another language (TSX in a JSON
                  host's indentation gone - and map and paint it like any file.
                  Works where omnidiff found the code, on a layer already
                  mapped, or on a string you matched whose context names a
-                 language. s saves the whole fixture; q or Esc goes back. A
+                 language. Enter in the t view opens the string under the text
+                 cursor, straight into the layer's own t view; Esc closes that,
+                 and a second Esc goes back to the host's t view. In the panels
+                 q or Esc goes back. s saves the whole fixture. A
                  painted layer is what grading reads for its string: paint the
                  rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the
@@ -194,7 +197,8 @@ t              text view: read the source, and paint the human text-range ground
                  Z marks a nothing-to-paint fixture, : jumps to a line number,
                  / searches this side's text (plain substring; Enter jumps to the
                  next match, wrapping; the last query is offered again, so / Enter
-                 repeats it), Esc unselects or closes.
+                 repeats it), Enter opens the code in the string under the
+                 cursor (see Enter above), Esc unselects or closes.
                  In a painting named Minimal, d/i on a multi-row full-line (V)
                  sweep is recorded as one range per row starting at that row's
                  first code character, never through the indentation -- the rule

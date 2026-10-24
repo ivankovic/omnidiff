@@ -2007,6 +2007,8 @@ pub(crate) struct LayerFrame {
     pub(crate) redo_stack: Vec<HumanMapping>,
     pub(crate) algo_diff: Option<ASTDiff>,
     pub(crate) text_solution: String,
+    /// The host's `t` view when `Enter` was pressed in it, reopened on the way back.
+    pub(crate) text_view: Option<TextPaintState>,
 }
 
 /// Where the open case's content lives. Decides what `s` does and what switching away with

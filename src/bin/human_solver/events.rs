@@ -1950,7 +1950,9 @@ pub(crate) fn handle_modal_key(
             }
         },
         Modal::TextView { state } => {
-            return handle_text_view(app, code, state, before_src, after_src, before, after);
+            return handle_text_view(
+                app, code, state, caches, before_src, after_src, before, after,
+            );
         }
         Modal::SolutionPicker {
             names,
@@ -2726,10 +2728,12 @@ fn handle_solution_picker(
 }
 
 /// `handle_modal_key`'s `Modal::TextView` arm.
+#[allow(clippy::too_many_arguments)]
 fn handle_text_view(
     app: &mut App,
     code: KeyCode,
     mut state: TextPaintState,
+    caches: &Caches,
     before_src: &[u8],
     after_src: &[u8],
     before: &Code,
@@ -2999,6 +3003,30 @@ fn handle_text_view(
                 state,
             });
             return None;
+        }
+        // As in the tree panels, on the string around the text cursor.
+        KeyCode::Enter => {
+            let side = if state.side == 0 {
+                Side::Before
+            } else {
+                Side::After
+            };
+            let (row, column) = state.cursor[state.side];
+            let code_on_side = if state.side == 0 { before } else { after };
+            match host_string_at(code_on_side, focused_source, row, column) {
+                Some(node) => match layer_request(app, node, side, caches, before, after) {
+                    Ok(request) => {
+                        // Kept open, so `enter_layer` finds the view to put back on the way out.
+                        app.modal = Some(Modal::TextView { state });
+                        return Some(OpenTarget::EnterLayer(request));
+                    }
+                    Err(reason) => app.status = Some(reason),
+                },
+                None => {
+                    app.status =
+                        Some("Enter opens the code in a string; the cursor is not in one".into())
+                }
+            }
         }
         KeyCode::Char('T') => match run_unix_diff(before_src, after_src) {
             Ok(output) => {

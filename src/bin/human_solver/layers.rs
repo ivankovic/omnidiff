@@ -110,6 +110,26 @@ pub(crate) fn layer_request(
     })
 }
 
+/// The innermost string around `(row, column)` of `code` that can hold embedded code.
+pub(crate) fn host_string_at<'c>(
+    code: &'c Code,
+    source: &str,
+    row: usize,
+    column: usize,
+) -> Option<Node<'c>> {
+    let host = code.metadata.language.unwrap_or_default();
+    let offset = TextPaintState::byte_offset(source, row, column)?;
+    let mut node = code
+        .ast
+        .as_ref()?
+        .root_node()
+        .descendant_for_byte_range(offset, offset)?;
+    while !embedded::is_host_string(host, node) {
+        node = node.parent()?;
+    }
+    Some(node)
+}
+
 /// Opens the layer `request` names: returns its decoded pair, and moves the host file's session
 /// state into a new [`LayerFrame`].
 pub(crate) fn enter_layer(
@@ -163,7 +183,21 @@ pub(crate) fn enter_layer(
     let inner_before_root = starting_cursor_id(&decoded.before);
     let inner_after_root = starting_cursor_id(&decoded.after);
     let text_solution = starting_solution(&inner);
+    // Entered from the `t` view, the layer opens in its own; the host's comes back on leaving.
+    let text_view = match app.modal.take() {
+        Some(Modal::TextView { state }) => Some(state),
+        other => {
+            app.modal = other;
+            None
+        }
+    };
+    if text_view.is_some() {
+        app.modal = Some(Modal::TextView {
+            state: TextPaintState::default(),
+        });
+    }
     let frame = LayerFrame {
+        text_view,
         mapping: std::mem::replace(&mut app.mapping, inner),
         index,
         created,
@@ -213,6 +247,9 @@ pub(crate) fn leave_layer(app: &mut App) {
     app.algo_diff_pending = None;
     app.algo_text_spans = None;
     app.text_solution = frame.text_solution;
+    if let Some(state) = frame.text_view {
+        app.modal = Some(Modal::TextView { state });
+    }
     app.text_overlay = TextOverlay::default();
     app.clear_multi_select();
     app.status = Some(format!("Back from {}", frame.label));

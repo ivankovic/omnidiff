@@ -11680,3 +11680,50 @@ fn enter_on_a_string_with_no_code_says_why() {
         "{reason}"
     );
 }
+
+#[test]
+fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_twice_comes_back() {
+    let (mut app, before, after) = shadcn_app();
+    let before_root = before.ast.as_ref().expect("parsed").root_node();
+    let after_root = after.ast.as_ref().expect("parsed").root_node();
+    let caches = rebuild_caches(&app.mapping.entries, before_root, after_root);
+    let before_flat = FlatIndex::new(flatten_visible(before_root, &app.before.collapsed, None));
+    let after_flat = FlatIndex::new(flatten_visible(after_root, &app.after.collapsed, None));
+    let line = after.contents.lines().nth(9).expect("line 10");
+    let column = line.find("import").expect("the TSX starts on line 10");
+    let state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (9, column)],
+        ..Default::default()
+    };
+    app.modal = Some(Modal::TextView {
+        state: state.clone(),
+    });
+
+    let request = match handle_modal_key(
+        &mut app,
+        KeyCode::Enter,
+        &before_flat,
+        &after_flat,
+        Some(before_root),
+        Some(after_root),
+        &caches,
+        before.contents.as_bytes(),
+        after.contents.as_bytes(),
+        &before,
+        &after,
+    ) {
+        Some(OpenTarget::EnterLayer(request)) => request,
+        _ => panic!("Enter should open the layer, status {:?}", app.status),
+    };
+    enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(
+        matches!(&app.modal, Some(Modal::TextView { state }) if *state == TextPaintState::default()),
+        "the layer opens in its own t view"
+    );
+
+    // Esc closes the layer's t view; Esc in its panels goes back, to the host's t view.
+    app.modal = None;
+    leave_layer(&mut app);
+    assert!(matches!(&app.modal, Some(Modal::TextView { state: back }) if *back == state));
+}
