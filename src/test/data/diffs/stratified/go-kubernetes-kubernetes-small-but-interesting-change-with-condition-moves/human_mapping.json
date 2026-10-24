@@ -1373,17 +1373,6 @@
       "name": "Minimal",
       "entries": [
         {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 215,
-              "start_column": 0,
-              "end_row": 215,
-              "end_column": 17
-            }
-          ]
-        },
-        {
           "operation": "Delete",
           "before": [
             {
@@ -1455,6 +1444,17 @@
               "start_column": 4,
               "end_row": 216,
               "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 215,
+              "start_column": 1,
+              "end_row": 215,
+              "end_column": 17
             }
           ]
         }
@@ -1623,17 +1623,6 @@
               "start_column": 28,
               "end_row": 216,
               "end_column": 29
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 215,
-              "start_column": 17,
-              "end_row": 215,
-              "end_column": 18
             }
           ]
         }

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-grafana-grafana-interesting-how-escapes-impact-string-parsing",
-        0.67,
+        0.58,
     )
 }
 

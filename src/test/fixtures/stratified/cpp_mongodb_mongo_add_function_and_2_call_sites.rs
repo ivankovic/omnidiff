@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-mongodb-mongo-add-function-and-2-call-sites",
-        0.04,
+        0.0,
     )
 }
 
