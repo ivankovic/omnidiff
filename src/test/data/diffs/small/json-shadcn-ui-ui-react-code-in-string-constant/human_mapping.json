@@ -9668,5 +9668,107 @@
         "\":1"
       ]
     }
+  ],
+  "embedded": [
+    {
+      "before_path": [
+        "object:1",
+        "pair:4",
+        "array:1",
+        "object:1",
+        "pair:2",
+        "string:2"
+      ],
+      "after_path": [
+        "object:1",
+        "pair:4",
+        "array:1",
+        "object:1",
+        "pair:2",
+        "string:2"
+      ],
+      "language": "TSX",
+      "mapping": {
+        "entries": [],
+        "text_mappings": [
+          {
+            "name": "Minimal",
+            "entries": [
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 81,
+                    "start_column": 8,
+                    "end_row": 81,
+                    "end_column": 32
+                  }
+                ]
+              },
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 107,
+                    "start_column": 8,
+                    "end_row": 107,
+                    "end_column": 33
+                  }
+                ]
+              },
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 132,
+                    "start_column": 8,
+                    "end_row": 132,
+                    "end_column": 32
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Full",
+            "entries": [
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 81,
+                    "start_column": 0,
+                    "end_row": 81,
+                    "end_column": 32
+                  }
+                ]
+              },
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 107,
+                    "start_column": 0,
+                    "end_row": 107,
+                    "end_column": 33
+                  }
+                ]
+              },
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 132,
+                    "start_column": 0,
+                    "end_row": 132,
+                    "end_column": 32
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
   ]
 }
