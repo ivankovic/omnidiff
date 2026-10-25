@@ -2851,5 +2851,254 @@
         "}:1"
       ]
     }
+  ],
+  "embedded": [
+    {
+      "before_path": [
+        "object:1",
+        "pair:3",
+        "array:1",
+        "object:1",
+        "pair:2",
+        "string:2"
+      ],
+      "after_path": [
+        "object:1",
+        "pair:3",
+        "array:1",
+        "object:1",
+        "pair:2",
+        "string:2"
+      ],
+      "language": "TSX",
+      "mapping": {
+        "entries": [
+          {
+            "operation": "match_but_not_identical",
+            "before_path": [],
+            "after_path": []
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "expression_statement:1"
+            ],
+            "after_path": [
+              "expression_statement:1"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "import_statement:1"
+            ],
+            "after_path": [
+              "import_statement:1"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "import_statement:2"
+            ],
+            "after_path": [
+              "import_statement:2"
+            ]
+          },
+          {
+            "operation": "match_but_not_identical",
+            "before_path": [
+              "import_statement:3"
+            ],
+            "after_path": [
+              "import_statement:3"
+            ]
+          },
+          {
+            "operation": "identical",
+            "before_path": [
+              "import_statement:3",
+              "import:1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "import:1"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "import_statement:3",
+              "import_clause:1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "import_clause:1"
+            ]
+          },
+          {
+            "operation": "identical",
+            "before_path": [
+              "import_statement:3",
+              "from:1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "from:1"
+            ]
+          },
+          {
+            "operation": "match_but_not_identical",
+            "before_path": [
+              "import_statement:3",
+              "string:1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "string:1"
+            ]
+          },
+          {
+            "operation": "identical",
+            "before_path": [
+              "import_statement:3",
+              "string:1",
+              "\":1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "string:1",
+              "\":1"
+            ]
+          },
+          {
+            "operation": "update",
+            "before_path": [
+              "import_statement:3",
+              "string:1",
+              "string_fragment:1"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "string:1",
+              "string_fragment:1"
+            ]
+          },
+          {
+            "operation": "identical",
+            "before_path": [
+              "import_statement:3",
+              "string:1",
+              "\":2"
+            ],
+            "after_path": [
+              "import_statement:3",
+              "string:1",
+              "\":2"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "function_declaration:1"
+            ],
+            "after_path": [
+              "function_declaration:1"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "function_declaration:2"
+            ],
+            "after_path": [
+              "function_declaration:2"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "function_declaration:3"
+            ],
+            "after_path": [
+              "function_declaration:3"
+            ]
+          },
+          {
+            "operation": "identical_with_children",
+            "before_path": [
+              "export_statement:1"
+            ],
+            "after_path": [
+              "export_statement:1"
+            ]
+          }
+        ],
+        "text_mappings": [
+          {
+            "name": "Minimal",
+            "entries": [
+              {
+                "operation": "Delete",
+                "before": [
+                  {
+                    "start_row": 5,
+                    "start_column": 30,
+                    "end_row": 5,
+                    "end_column": 36
+                  }
+                ]
+              },
+              {
+                "operation": "Insert",
+                "after": [
+                  {
+                    "start_row": 5,
+                    "start_column": 36,
+                    "end_row": 5,
+                    "end_column": 41
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Full",
+            "entries": [
+              {
+                "operation": "Delete",
+                "before": [
+                  {
+                    "start_row": 5,
+                    "start_column": 30,
+                    "end_row": 5,
+                    "end_column": 36
+                  }
+                ]
+              },
+              {
+                "operation": "Match",
+                "before": [
+                  {
+                    "start_row": 5,
+                    "start_column": 36,
+                    "end_row": 5,
+                    "end_column": 42
+                  }
+                ],
+                "after": [
+                  {
+                    "start_row": 5,
+                    "start_column": 30,
+                    "end_row": 5,
+                    "end_column": 41
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

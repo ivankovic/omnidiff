@@ -168,5 +168,23 @@
         "end_tag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 91,
+              "start_column": 24,
+              "end_row": 91,
+              "end_column": 45
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

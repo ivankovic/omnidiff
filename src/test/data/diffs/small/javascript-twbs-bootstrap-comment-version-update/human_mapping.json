@@ -32,5 +32,31 @@
         "comment:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 28,
+              "end_row": 1,
+              "end_column": 29
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 28,
+              "end_row": 1,
+              "end_column": 29
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

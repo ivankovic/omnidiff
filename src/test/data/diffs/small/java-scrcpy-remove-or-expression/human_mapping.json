@@ -1202,5 +1202,50 @@
       "operation": "match_but_not_identical",
       "with_children": false
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 76,
+              "end_row": 66,
+              "end_column": 147
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 76,
+              "end_row": 66,
+              "end_column": 147
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 75,
+              "end_row": 66,
+              "end_column": 76
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

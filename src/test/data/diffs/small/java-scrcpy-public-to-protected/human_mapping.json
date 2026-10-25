@@ -685,5 +685,31 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 48,
+              "start_column": 4,
+              "end_row": 48,
+              "end_column": 10
+            }
+          ],
+          "after": [
+            {
+              "start_row": 48,
+              "start_column": 4,
+              "end_row": 48,
+              "end_column": 13
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
