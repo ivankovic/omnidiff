@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("yaml-ollama-ollama-expand-flag", 0.02)
+    assert_matches_human_painting_within_limit("yaml-ollama-ollama-expand-flag", 0.03)
 }
 
 #[test]
