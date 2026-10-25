@@ -2713,28 +2713,93 @@ fn raw_affix(text: &str, other: &str) -> (usize, usize) {
     (prefix, end.max(prefix))
 }
 
-/// Every span a `Minimal` painting may legitimately mark on this side of a rename: the differing
-/// words (the widened span) or the differing characters (the bare affix). The corpus holds both
-/// readings, and words alone misfire on case fixes (`PRIU64` -> `PRIu64`). What is rejected is
-/// marking the unchanged rest of the identifier.
+/// A `start..end` byte span inside an identifier.
+type WordSpan = (usize, usize);
+
+/// Every set of spans a `Minimal` painting may legitimately mark on this side of a rename: the
+/// differing words (the widened span) or the differing characters (the bare affix). The corpus
+/// holds both readings, and words alone misfire on case fixes (`PRIU64` -> `PRIu64`). What is
+/// rejected is marking the unchanged rest of the identifier.
 ///
 /// When this side is the other with one run inserted, the run may sit wherever both sides still
 /// line up, and every such placement is a reading: `computeValue` -> `compute` is `eValu` by the
 /// bare affix (the shared `e` taken as the suffix) but `Value` to a reader
-/// (`java-defects4j-jxpath-10-coreoperationrelationalexpression`).
-fn minimal_affix_candidates(text: &str, other: &str) -> Vec<(usize, usize)> {
+/// (`java-defects4j-jxpath-10-coreoperationrelationalexpression`). So is the word-by-word reading
+/// of [`word_aligned_spans`].
+fn minimal_affix_candidates(text: &str, other: &str) -> Vec<Vec<WordSpan>> {
     let widened = differing_affix(text, other);
     let (start, end) = raw_affix(text, other);
-    let mut candidates = vec![widened];
-    if (start, end) != widened {
-        candidates.push((start, end.max(start)));
-    }
+    let mut candidates = vec![vec![widened]];
+    let mut push = |candidate: Vec<(usize, usize)>| {
+        if !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    };
+    push(vec![(start, end.max(start))]);
     for placement in inserted_run_placements(text, other) {
-        if !candidates.contains(&placement) {
-            candidates.push(placement);
+        push(vec![placement]);
+    }
+    push(word_aligned_spans(text, other));
+    candidates
+}
+
+/// The rename read word by word ([`identifier_word_starts`]): words pair up in order where they
+/// read the same ignoring case, an unpaired word is painted whole, and a paired word only at the
+/// characters whose case changed. `normalName` -> `name` pairs `Name` with `name`: `normal` is
+/// deleted and `N` becomes `n`, where the shared `ame` suffix would cut `ormalN` instead
+/// (`java-defects4j-jsoup-62-htmltreebuilderstate`). Adjacent spans are merged.
+fn word_aligned_spans(text: &str, other: &str) -> Vec<(usize, usize)> {
+    let words = |text: &str| -> Vec<(usize, usize)> {
+        identifier_word_starts(text)
+            .windows(2)
+            .map(|pair| (pair[0], pair[1]))
+            .collect()
+    };
+    let (ours, theirs) = (words(text), words(other));
+    let same = |a: (usize, usize), b: (usize, usize)| {
+        text[a.0..a.1].to_lowercase() == other[b.0..b.1].to_lowercase()
+    };
+    // Longest common subsequence of words, case-insensitively.
+    let mut longest = vec![vec![0usize; theirs.len() + 1]; ours.len() + 1];
+    for i in (0..ours.len()).rev() {
+        for j in (0..theirs.len()).rev() {
+            longest[i][j] = if same(ours[i], theirs[j]) {
+                longest[i + 1][j + 1] + 1
+            } else {
+                longest[i + 1][j].max(longest[i][j + 1])
+            };
         }
     }
-    candidates
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    let mut paint = |start: usize, end: usize| match spans.last_mut() {
+        Some(last) if last.1 == start => last.1 = end,
+        _ => spans.push((start, end)),
+    };
+    let (mut i, mut j) = (0, 0);
+    while i < ours.len() {
+        if j < theirs.len() && same(ours[i], theirs[j]) {
+            let (word, partner) = (
+                &text[ours[i].0..ours[i].1],
+                &other[theirs[j].0..theirs[j].1],
+            );
+            for ((offset, character), (_, counterpart)) in
+                word.char_indices().zip(partner.char_indices())
+            {
+                if character != counterpart {
+                    let at = ours[i].0 + offset;
+                    paint(at, at + character.len_utf8());
+                }
+            }
+            i += 1;
+            j += 1;
+        } else if j < theirs.len() && longest[i][j + 1] >= longest[i + 1][j] {
+            j += 1;
+        } else {
+            paint(ours[i].0, ours[i].1);
+            i += 1;
+        }
+    }
+    spans
 }
 
 /// Every `(start, end)` at which removing `text[start..end]` leaves exactly `other`; empty unless
@@ -2841,14 +2906,21 @@ fn identifier_updates_are_painted_by_preset(
                 continue;
             }
             let candidates = minimal_affix_candidates(text, other);
-            let mut nearest: Option<(usize, usize, Vec<usize>, Vec<usize>)> = None;
-            for (start, end) in candidates.iter().copied() {
+            // The closest reading: its spans, then the bytes painted outside and unpainted inside.
+            let mut nearest: Option<(&[WordSpan], Vec<usize>, Vec<usize>)> = None;
+            for spans in &candidates {
+                let inside = |offset: &usize| {
+                    spans
+                        .iter()
+                        .any(|&(start, end)| (start..end).contains(offset))
+                };
                 let painted_outside: Vec<usize> = (0..text.len())
-                    .filter(|offset| !(start..end).contains(offset))
+                    .filter(|offset| !inside(offset))
                     .filter(|offset| labels[node.start_byte() + offset].is_some())
                     .map(|offset| node.start_byte() + offset)
                     .collect();
-                let unpainted_inside: Vec<usize> = (start..end)
+                let unpainted_inside: Vec<usize> = (0..text.len())
+                    .filter(|offset| inside(offset))
                     .filter(|offset| labels[node.start_byte() + offset].is_none())
                     .map(|offset| node.start_byte() + offset)
                     .collect();
@@ -2859,19 +2931,24 @@ fn identifier_updates_are_painted_by_preset(
                 let wrong = painted_outside.len() + unpainted_inside.len();
                 if nearest
                     .as_ref()
-                    .is_none_or(|(_, _, outside, inside)| wrong < outside.len() + inside.len())
+                    .is_none_or(|(_, outside, inside)| wrong < outside.len() + inside.len())
                 {
-                    nearest = Some((start, end, painted_outside, unpainted_inside));
+                    nearest = Some((spans.as_slice(), painted_outside, unpainted_inside));
                 }
             }
             // Any candidate matching exactly is agreement; the message names the closest one.
-            let Some((start, end, painted_outside, unpainted_inside)) = nearest else {
+            let Some((spans, painted_outside, unpainted_inside)) = nearest else {
                 continue;
             };
-            let wanted = if start == end {
+            let words: Vec<String> = spans
+                .iter()
+                .filter(|(start, end)| start < end)
+                .map(|&(start, end)| format!("{:?}", &text[start..end]))
+                .collect();
+            let wanted = if words.is_empty() {
                 "nothing".to_string()
             } else {
-                format!("{:?}", &text[start..end])
+                words.join(" and ")
             };
             violations.push(GroundTruthViolation::new(
                 16,
@@ -3375,15 +3452,15 @@ mod tests {
     fn a_single_word_identifier_accepts_the_bare_affix_or_the_whole_token() {
         // `align` -> `halign` and `v` -> `value` have nothing to orient on, so both readings pass.
         let candidates = minimal_affix_candidates("halign", "align");
-        assert!(candidates.contains(&(0, 1)), "the added `h` alone");
-        assert!(candidates.contains(&(0, 6)), "or the whole token");
+        assert!(candidates.contains(&vec![(0, 1)]), "the added `h` alone");
+        assert!(candidates.contains(&vec![(0, 6)]), "or the whole token");
         let candidates = minimal_affix_candidates("value", "v");
-        assert!(candidates.contains(&(1, 5)));
-        assert!(candidates.contains(&(0, 5)));
+        assert!(candidates.contains(&vec![(1, 5)]));
+        assert!(candidates.contains(&vec![(0, 5)]));
         // With a boundary to orient on, the word and the characters both pass.
         assert_eq!(
             minimal_affix_candidates("getDeclaredConstructors", "getDeclaredConstructor"),
-            vec![(11, 23), (22, 23)]
+            vec![vec![(11, 23)], vec![(22, 23)]]
         );
     }
 
@@ -3391,10 +3468,10 @@ mod tests {
     fn an_inserted_run_may_sit_wherever_both_sides_line_up() {
         // The shared `e` makes the bare affix `eValu`; the reader's `Value` lines up as well.
         let candidates = minimal_affix_candidates("computeValue", "compute");
-        assert!(candidates.contains(&(6, 11)), "`eValu`");
-        assert!(candidates.contains(&(7, 12)), "`Value`");
+        assert!(candidates.contains(&vec![(6, 11)]), "`eValu`");
+        assert!(candidates.contains(&vec![(7, 12)]), "`Value`");
         assert!(
-            !candidates.contains(&(0, 7)),
+            !candidates.contains(&vec![(0, 7)]),
             "never the unchanged `compute`"
         );
     }
@@ -3406,6 +3483,21 @@ mod tests {
         assert_eq!(differing_affix("area", "calculateArea"), (0, 4));
         // A suffix added at a word boundary stays narrow.
         assert_eq!(differing_affix("ReplaceAll", "Replace"), (7, 10));
+    }
+
+    #[test]
+    fn words_that_differ_only_in_case_pair_up_and_paint_the_changed_letters() {
+        // `normal` goes, `Name` becomes `name`: the "ame" suffix would cut "ormalN" instead.
+        assert_eq!(word_aligned_spans("normalName", "name"), [(0, 7)]);
+        assert_eq!(word_aligned_spans("name", "normalName"), [(0, 1)]);
+        assert!(minimal_affix_candidates("normalName", "name").contains(&vec![(0, 7)]));
+        // Separate changes stay separate spans.
+        assert_eq!(
+            word_aligned_spans("fooBarBaz", "FooBarQux"),
+            [(0, 1), (6, 9)]
+        );
+        // A word with no case-insensitive partner is painted whole.
+        assert_eq!(word_aligned_spans("getFooBar", "getFoobar"), [(3, 9)]);
     }
 
     fn rust(source: &str) -> Code {

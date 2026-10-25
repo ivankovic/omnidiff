@@ -34,11 +34,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: `okeylen` -> `md_len` on after row 321 is not painted as its differing word `md_`
-    // under Minimal. Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted
-    // regions on before row 298 and after row 301.
+    // Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted regions on
+    // before row 298 and after row 301.
     assert_ground_truth_invariants_with_known_violations(
         "c-openssl-openssl-very-interesting-test-case",
-        3,
+        2,
     )
 }
