@@ -170,6 +170,29 @@ pub(crate) fn wrap_comment_lines_with_prefix(comment: &str, prefix: &str) -> Str
         .collect()
 }
 
+/// Whether a save of `mapping` under `name` has a painting to test: its own, or the empty one its
+/// painted embedded layers imply (`human_mapping::implied_host_painting`). Only that second case
+/// reads the fixture's files.
+pub(crate) fn is_painted(
+    name: &str,
+    mapping: &omnidiff::test::helper::human_mapping::HumanMapping,
+) -> Result<bool> {
+    if !mapping.text_mappings.is_empty() {
+        return Ok(true);
+    }
+    if mapping
+        .embedded
+        .iter()
+        .all(|layer| layer.mapping.text_mappings.is_empty())
+    {
+        return Ok(false);
+    }
+    let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;
+    Ok(omnidiff::test::helper::human_mapping::has_painting(
+        mapping, before, after,
+    ))
+}
+
 /// Appends a `painting()` test to the file [`ensure_stub_test`] created; a missing file is an
 /// error, since a fixture's results live in one file. Returns whether one was added. A file that
 /// already has one is left alone: its recorded limit and prose belong to the human.
@@ -346,7 +369,7 @@ pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeas
         ))
     };
 
-    let painting_percent = if load(name)?.text_mappings.is_empty() {
+    let painting_percent = if !is_painted(name, &load(name)?)? {
         None
     } else {
         let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;

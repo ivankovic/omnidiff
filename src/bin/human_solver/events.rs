@@ -2116,7 +2116,7 @@ pub(crate) fn action_save(
     human_mapping::save(name, mapping)?;
     let created = ensure_stub_test(name, comment, text_only)?;
     // An unpainted fixture has nothing to score, and its painting stub would fail.
-    if !mapping.text_mappings.is_empty() {
+    if is_painted(name, mapping)? {
         ensure_painting_stub_test(name)?;
     }
     // The invariants also cover the tree mapping, which every saved fixture has.

@@ -41,6 +41,12 @@
 //! its painting projected into the host files where the string is ([`compare_painting_with_diff`]),
 //! its invariants against the decoded pair - and the host's own painting is not read over a painted
 //! layer's bytes.
+//!
+//! A host with painted layers and no painting of its own is painted empty when its files read the
+//! same outside those layers' strings ([`implied_host_painting`]): every change is then inside a
+//! layer, so nothing is left for the host to paint. Byte equality, not the host's tree mapping,
+//! decides it, so an unfinished mapping cannot imply a painting. Anywhere else no painting still
+//! means unpainted.
 use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -200,6 +206,57 @@ impl HumanEmbeddedLayer {
             .with_context(|| format!("unknown embedded language {:?}", self.language))?;
         resolve_layer(before, after, &self.before_path, &self.after_path, language)
     }
+}
+
+/// The name of [`implied_host_painting`]'s painting.
+pub const IMPLIED_HOST_PAINTING: &str = "Nothing outside the embedded code";
+
+/// The empty painting a host without one has when its painted layers hold every change: `before`
+/// and `after` read the same outside the layers' strings. `None` when the host has a painting, no
+/// layer is painted, a layer does not resolve, or any byte outside them differs.
+pub fn implied_host_painting(
+    mapping: &HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Option<NamedTextMapping> {
+    if !mapping.text_mappings.is_empty() {
+        return None;
+    }
+    let mut strings = Vec::new();
+    for layer in &mapping.embedded {
+        if layer.mapping.text_mappings.is_empty() {
+            continue;
+        }
+        let decoded = layer.resolve(before, after).ok()?;
+        let span = |offsets: &[usize]| offsets[0]..offsets[offsets.len() - 1];
+        strings.push([span(&decoded.before_offsets), span(&decoded.after_offsets)]);
+    }
+    if strings.is_empty() {
+        return None;
+    }
+    strings.sort_by_key(|[before, _]| before.start);
+    // The text between consecutive strings, and around them, must match on both sides.
+    let (mut before_from, mut after_from) = (0, 0);
+    for [before_string, after_string] in &strings {
+        if before_string.start < before_from
+            || after_string.start < after_from
+            || before.contents[before_from..before_string.start]
+                != after.contents[after_from..after_string.start]
+        {
+            return None;
+        }
+        before_from = before_string.end;
+        after_from = after_string.end;
+    }
+    (before.contents[before_from..] == after.contents[after_from..]).then(|| NamedTextMapping {
+        name: IMPLIED_HOST_PAINTING.to_string(),
+        mapping: HumanTextMapping::default(),
+    })
+}
+
+/// Whether `mapping` has a painting to grade: its own, or [`implied_host_painting`]'s.
+pub fn has_painting(mapping: &HumanMapping, before: &Code, after: &Code) -> bool {
+    !mapping.text_mappings.is_empty() || implied_host_painting(mapping, before, after).is_some()
 }
 
 /// The decoded pair at two host paths, parsed as `language`.
@@ -918,6 +975,17 @@ pub fn compare_painting_for_mapping(
     after: &crate::code::Code,
     diff: &PaintingDiff,
 ) -> Result<PaintingComparison> {
+    let implied;
+    let mapping = match implied_host_painting(mapping, before, after) {
+        Some(painting) => {
+            implied = HumanMapping {
+                text_mappings: vec![painting],
+                ..mapping.clone()
+            };
+            &implied
+        }
+        None => mapping,
+    };
     let candidates = paintings_for_mode(mapping, options)?;
 
     let mut ours = omnidiff_painting_labels(diff, before, after, options);

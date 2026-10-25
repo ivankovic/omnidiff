@@ -11817,3 +11817,34 @@ fn a_layers_painting_is_drawn_in_the_host_where_the_string_spells_it() {
         r#"phosphor=\"CaretLeftIcon\""#
     );
 }
+
+#[test]
+fn a_fixture_painted_only_in_its_layer_counts_as_painted_when_saved() {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (mut app, before, after) = shadcn_app();
+    app.mapping.text_mappings.clear();
+    assert!(!is_painted(name, &app.mapping).expect("checks"));
+
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("opens");
+    action_paint_mark_empty(&mut app);
+    leave_layer(&mut app);
+    assert!(app.mapping.text_mappings.is_empty());
+    assert!(
+        is_painted(name, &app.mapping).expect("checks"),
+        "the JSON reads the same outside the string, so its painting is implied"
+    );
+}

@@ -217,3 +217,61 @@ fn a_painted_layer_keeps_the_hosts_rules_off_its_bytes() -> Result<()> {
     );
     Ok(())
 }
+
+/// `shadcn_with_a_layer` with its layer painted and no host painting of its own.
+fn shadcn_painted_only_in_its_layer() -> Result<(Code, Code, HumanMapping, ASTDiff)> {
+    let (before, after, mut mapping, ast) = shadcn_with_a_layer()?;
+    mapping.text_mappings.clear();
+    let decoded = mapping.embedded[0].resolve(&before, &after)?;
+    mapping.embedded[0].mapping.text_mappings =
+        vec![shadcn_layer_painting(&decoded.after.contents)];
+    Ok((before, after, mapping, ast))
+}
+
+#[test]
+fn a_host_changed_only_inside_its_painted_layers_is_painted_empty() -> Result<()> {
+    use crate::diff::text::RenderOptions;
+
+    let (before, after, mapping, ast) = shadcn_painted_only_in_its_layer()?;
+    let implied = implied_host_painting(&mapping, &before, &after).context("implied")?;
+    assert!(implied.mapping.entries.is_empty());
+    assert!(has_painting(&mapping, &before, &after));
+
+    let diff = PaintingDiff::Ast {
+        ast: Box::new(ast),
+        node_cache: NodeCache::build(&before, &after),
+    };
+    // The layer painting is a minimal one: Full would also paint each insertion's indentation.
+    let comparison =
+        compare_painting_for_mapping(&mapping, RenderOptions::MINIMAL, &before, &after, &diff)?;
+    assert_eq!(comparison.mismatched_bytes, 0);
+    assert_eq!(comparison.solution, IMPLIED_HOST_PAINTING);
+    Ok(())
+}
+
+#[test]
+fn no_painting_is_implied_while_anything_outside_the_layers_differs() -> Result<()> {
+    let (before, after, mapping, _) = shadcn_painted_only_in_its_layer()?;
+    let edited = Code::from_string(
+        &format!("{}\n", after.contents),
+        &crate::code::Language::JSON,
+    );
+    assert!(implied_host_painting(&mapping, &before, &edited).is_none());
+    assert!(!has_painting(&mapping, &before, &edited));
+    Ok(())
+}
+
+#[test]
+fn no_painting_is_implied_by_an_unpainted_layer_or_beside_the_hosts_own() -> Result<()> {
+    let (before, after, mut mapping, _) = shadcn_painted_only_in_its_layer()?;
+    let layer_painting = std::mem::take(&mut mapping.embedded[0].mapping.text_mappings);
+    assert!(implied_host_painting(&mapping, &before, &after).is_none());
+
+    mapping.embedded[0].mapping.text_mappings = layer_painting;
+    mapping.text_mappings = vec![NamedTextMapping {
+        name: "Minimal".to_string(),
+        mapping: HumanTextMapping::default(),
+    }];
+    assert!(implied_host_painting(&mapping, &before, &after).is_none());
+    Ok(())
+}
