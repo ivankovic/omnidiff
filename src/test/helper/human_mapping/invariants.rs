@@ -72,7 +72,8 @@
 //!     while its object stays, the dot is painted like the member (`.bar()` leaves whole), unless
 //!     the member starts a later row: then the dot ends the object's row and is painted with it.
 //! 25. [`removed_statements_take_their_terminator`] - a statement the tree mapping deletes or
-//!     inserts is painted alike at its first byte and its closing `;`.
+//!     inserts is painted alike at its first byte and its closing `;`, unless the `;` survives
+//!     with a value the statement wraps.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -3260,7 +3261,12 @@ pub(crate) fn call_dots_go_with_their_member(
 ///
 /// A statement the mapping pairs is not held: a prefix added to a surviving statement
 /// (`pub mod plugins;`) or contents replaced inside a paired one (`this.x = x;` ->
-/// `setX(x);`) rightly leave the `;` unpainted while the first token is painted. Nor is one the
+/// `setX(x);`) rightly leave the `;` unpainted while the first token is painted. Nor is a new
+/// statement around a surviving value whose `;` survives with it: `x.run();` -> `Object y =
+/// x.run();` inserts the declaration but pairs the call, at any depth, and the `;` into one
+/// statement, so only `Object y =` entered (`java-defects4j-mockito-28-defaultinjectionengine`).
+/// A value pulled out into a statement of its own - `double d = x.get().value();` -> `Number n =
+/// x.get();` - is still held: its `;` is new. Nor is one the
 /// painting reads as surviving, `Move` or `Update` at both ends and nowhere `Insert`/`Delete`:
 /// `break` -> `continue` painted as one update keeps its `;`, and whether the mapping should then
 /// pair the two statements is a question for the mapping invariants.
@@ -3300,6 +3306,13 @@ pub(crate) fn removed_statements_take_their_terminator(
             {
                 continue;
             }
+            if context
+                .partner(*semicolon, side)
+                .and_then(|partner| partner.parent())
+                .is_some_and(|owner| holds_a_survivor_of(statement, owner, side, context))
+            {
+                continue;
+            }
             let (head, end) = (label(statement.start_byte()), label(semicolon.start_byte()));
             let removed = |label| matches!(label, Some(TextLabel::Insert | TextLabel::Delete));
             if head == end || !(removed(head) || removed(end)) {
@@ -3331,6 +3344,27 @@ pub(crate) fn removed_statements_take_their_terminator(
         }
     }
     violations
+}
+
+/// Whether a subtree below `statement` (not a lone token) is paired into `owner` on the other
+/// side: the value a new statement wraps, or an old one unwraps, surviving inside `owner`.
+fn holds_a_survivor_of(statement: Node, owner: Node, side: usize, context: &TreeContext) -> bool {
+    let mut stack = vec![statement];
+    while let Some(node) = stack.pop() {
+        let mut cursor = node.walk();
+        for child in node.named_children(&mut cursor) {
+            let survives = child.child_count() > 0
+                && context.partner(child, side).is_some_and(|partner| {
+                    owner.start_byte() <= partner.start_byte()
+                        && partner.end_byte() <= owner.end_byte()
+                });
+            if survives {
+                return true;
+            }
+            stack.push(child);
+        }
+    }
+    false
 }
 
 fn first_leaf(node: Node) -> Option<Node> {
@@ -4530,6 +4564,114 @@ mod tests {
                 "after row 2 paints the removed `expression_statement` insert at its start but \
                  its `;` unpainted"
             ),
+            "{found:?}"
+        );
+    }
+
+    /// `x.run();` -> `Object y = x.run();`: the call survives inside the new declaration, and the
+    /// `;` is paired with `;` when `semicolon_survives`, else deleted and inserted.
+    fn declaration_around_a_call(semicolon_survives: bool) -> (Code, Code, HumanMapping) {
+        let java = |source: &str| Code::from_string(source, &Language::Java);
+        let (before, after) = (
+            java("class A { void m() { x.run(); } }\n"),
+            java("class A { void m() { Object y = x.run(); } }\n"),
+        );
+        let first = |code: &Code, kind: &str| -> Vec<String> {
+            let root = code.ast.as_ref().expect("parsed").root_node();
+            path_for_node(crate::test::helper::find_first_of_kind(root, kind).expect("present"))
+        };
+        let statement = first(&before, "expression_statement");
+        let declaration = first(&after, "local_variable_declaration");
+        let mut mapping = mapping_by_text(&before, &after);
+        // The positional walk pairs the two statements; this mapping does not.
+        mapping.entries.retain(|entry| {
+            !entry
+                .before_path
+                .as_ref()
+                .is_some_and(|path| path.starts_with(&statement))
+                && !entry
+                    .after_path
+                    .as_ref()
+                    .is_some_and(|path| path.starts_with(&declaration))
+        });
+        let entry = |operation, before_path, after_path| HumanMappingEntry {
+            operation,
+            before_path,
+            after_path,
+        };
+        let child = |path: &[String], step: &str| -> Vec<String> {
+            let mut path = path.to_vec();
+            path.push(step.to_string());
+            path
+        };
+        let declarator = child(&declaration, "variable_declarator:1");
+        mapping.entries.extend([
+            entry(HumanOperation::Delete, Some(statement.clone()), None),
+            entry(HumanOperation::Insert, None, Some(declaration.clone())),
+            entry(
+                HumanOperation::InsertWithChildren,
+                None,
+                Some(child(&declaration, "type_identifier:1")),
+            ),
+            entry(HumanOperation::Insert, None, Some(declarator.clone())),
+            entry(
+                HumanOperation::InsertWithChildren,
+                None,
+                Some(child(&declarator, "identifier:1")),
+            ),
+            entry(
+                HumanOperation::InsertWithChildren,
+                None,
+                Some(child(&declarator, "=:1")),
+            ),
+            entry(
+                HumanOperation::Identical,
+                Some(child(&statement, "method_invocation:1")),
+                Some(child(&declarator, "method_invocation:1")),
+            ),
+        ]);
+        let (before_semicolon, after_semicolon) =
+            (child(&statement, ";:1"), child(&declaration, ";:1"));
+        if semicolon_survives {
+            mapping.entries.push(entry(
+                HumanOperation::Identical,
+                Some(before_semicolon),
+                Some(after_semicolon),
+            ));
+        } else {
+            mapping.entries.extend([
+                entry(
+                    HumanOperation::DeleteWithChildren,
+                    Some(before_semicolon),
+                    None,
+                ),
+                entry(
+                    HumanOperation::InsertWithChildren,
+                    None,
+                    Some(after_semicolon),
+                ),
+            ]);
+        }
+        // Only `Object y = ` is painted: the call and the `;` read as they did.
+        let at = after.contents.find("Object").expect("present");
+        let mapping = with_painting(mapping, "Full", vec![inserted(at, "Object y = ".len())]);
+        (before, after, mapping)
+    }
+
+    #[test]
+    fn a_new_statement_around_a_surviving_value_keeps_the_surviving_semicolon() {
+        let (before, after, mapping) = declaration_around_a_call(true);
+        let found = violations_of(25, &mapping, &before, &after);
+        assert!(found.is_empty(), "{found:?}");
+    }
+
+    #[test]
+    fn a_new_statement_around_a_surviving_value_takes_a_new_semicolon() {
+        let (before, after, mapping) = declaration_around_a_call(false);
+        let found = violations_of(25, &mapping, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains("`local_variable_declaration` insert at its start"),
             "{found:?}"
         );
     }

@@ -30,13 +30,11 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 4 time(s): the deleted `declaration` on before row 207 starts delete but its
-    // `;` is move ('Full'); the deleted `declaration` on before row 207 starts delete but its `;`
-    // is unpainted ('Minimal'); the inserted `expression_statement` on after row 211 starts move
-    // but its `;` is insert (both presets).
+    // Invariant 25, twice: the inserted `expression_statement` on after row 211 starts move but
+    // its `;` is insert (both presets).
     assert_ground_truth_invariants_with_known_violations(
         "cpp-ladybird-refactor-variables-if-changes",
-        4,
+        2,
     )
 }
 
