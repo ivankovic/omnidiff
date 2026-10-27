@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jacksondatabind-97-pojonode", 0.51)
+    assert_matches_human_painting_within_limit("java-defects4j-jacksondatabind-97-pojonode", 0.41)
 }
 
 #[test]

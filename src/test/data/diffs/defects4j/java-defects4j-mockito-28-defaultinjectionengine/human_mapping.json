@@ -1289,6 +1289,17 @@
               "end_column": 35
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 92,
+              "start_column": 29,
+              "end_row": 92,
+              "end_column": 30
+            }
+          ]
         }
       ]
     }

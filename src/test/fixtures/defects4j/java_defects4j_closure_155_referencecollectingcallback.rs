@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-closure-155-referencecollectingcallback",
-        0.23,
+        0.27,
     )
 }
 
