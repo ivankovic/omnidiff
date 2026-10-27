@@ -32,8 +32,8 @@ fn mapping() -> Result<()> {
     // sibling-order-consistency check.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-nginx-add-typedef",
-        50,
-        32,
+        46,
+        28,
     )
 }
 
