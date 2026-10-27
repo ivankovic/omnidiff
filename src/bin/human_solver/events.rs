@@ -2948,6 +2948,9 @@ fn handle_text_view(
         KeyCode::Char('a') => {
             action_paint_align(app, &mut state, before_text, after_text, VIEWPORT_ROWS)
         }
+        KeyCode::Char('f') => {
+            action_paint_follow_match(app, &mut state, before_text, after_text, VIEWPORT_ROWS)
+        }
         // Unlike `a`, aligns this side's *tree* panel with the text cursor.
         KeyCode::Char('A') => action_paint_reveal_node(app, &state, before, after),
         // Adopts omnidiff's rendering (what `o` shows) as the draft to correct.

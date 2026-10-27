@@ -11848,3 +11848,89 @@ fn a_fixture_painted_only_in_its_layer_counts_as_painted_when_saved() {
         "the JSON reads the same outside the string, so its painting is implied"
     );
 }
+
+/// One `helper()` call extracted out of two places: a 1:2 match, before row 1 against after rows
+/// 0 and 2.
+fn one_to_two_match() -> (App, &'static str, &'static str) {
+    let before = "a\nhelper()\nb\n";
+    let after = "helper()\nx\nhelper()\n";
+    let mut app = test_app();
+    app.text_solution = "Minimal".to_string();
+    let span = |row| HumanTextSpan {
+        start_row: row,
+        start_column: 0,
+        end_row: row,
+        end_column: 8,
+    };
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Match,
+        before: vec![span(1)],
+        after: vec![span(0), span(2)],
+    });
+    (app, before, after)
+}
+
+#[test]
+fn f_walks_the_other_ranges_of_the_match_under_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(1, 3), (1, 0)],
+        ..Default::default()
+    };
+
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0));
+    assert!(
+        app.status.as_deref().unwrap_or("").contains("1 of 2"),
+        "{:?}",
+        app.status
+    );
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (2, 0));
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0), "wrapping");
+    assert_eq!(state.side, 0, "the focus stays, so f walks on");
+    assert_eq!(state.cursor[0], (1, 3));
+
+    // From the other side, its one partner.
+    state.side = 1;
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+}
+
+#[test]
+fn f_scrolls_the_partner_level_with_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (2, 0)],
+        scroll: [0, 1],
+        ..Default::default()
+    };
+    // The cursor sits on screen row 1; its partner, before row 1, is scrolled to show there too.
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+    assert_eq!(state.scroll[0], 0);
+}
+
+#[test]
+fn f_off_a_painted_match_says_so_and_moves_nothing() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(0, 0), (1, 0)],
+        ..Default::default()
+    };
+    let unchanged = state.clone();
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state, unchanged);
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("No painted match"),
+        "{:?}",
+        app.status
+    );
+}

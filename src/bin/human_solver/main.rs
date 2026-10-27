@@ -241,6 +241,9 @@ t              text view: read the source, and paint the human text-range ground
                  puts the other panel on the same line number as this one and
                  scrolls it to the same place on screen -- the two ways to stop
                  hand-scrolling two independently scrolled panels
+                 f on a painted match puts the other panel's cursor on the range
+                 it is matched with, level with this one; f again walks the
+                 other ranges of an N:M match in turn, wrapping
                  A puts THIS side's AST panel on the leaf under the text cursor,
                  expanding whatever is collapsed over it and focusing that panel,
                  without closing this view -- so a row an invariant names becomes

@@ -1327,6 +1327,93 @@ pub(crate) fn action_paint_align(
     app.status = Some(status);
 }
 
+/// `f` in the text view: puts the other side's cursor on a range the painted `Match` under this
+/// side's cursor pairs with, scrolled level with this cursor. Pressed again it takes the next one,
+/// wrapping, so an N:M match is walked range by range; the focus stays on this side for that.
+pub(crate) fn action_paint_follow_match(
+    app: &mut App,
+    state: &mut TextPaintState,
+    before_src: &str,
+    after_src: &str,
+    viewport_rows: usize,
+) {
+    let sources = [before_src, after_src];
+    let (side, other) = (state.side, 1 - state.side);
+    let contains = |span: &HumanTextSpan, source: &str, offset: usize| {
+        let start = TextPaintState::byte_offset(source, span.start_row, span.start_column);
+        let end = TextPaintState::byte_offset(source, span.end_row, span.end_column);
+        matches!((start, end), (Some(start), Some(end)) if start <= offset && offset < end)
+    };
+    let (row, column) = state.cursor[side];
+    let entry = TextPaintState::byte_offset(sources[side], row, column).and_then(|offset| {
+        solution_entries(&app.mapping, &app.text_solution)
+            .iter()
+            .find(|entry| {
+                let spans = if side == 0 {
+                    &entry.before
+                } else {
+                    &entry.after
+                };
+                entry.operation == HumanTextOperation::Match
+                    && spans
+                        .iter()
+                        .any(|span| contains(span, sources[side], offset))
+            })
+    });
+    let Some(entry) = entry else {
+        app.status = Some(
+            "No painted match under the cursor - f follows a match (m) to its other side"
+                .to_string(),
+        );
+        return;
+    };
+    let mut partners = if other == 0 {
+        entry.before.clone()
+    } else {
+        entry.after.clone()
+    };
+    partners.sort_by_key(|span| (span.start_row, span.start_column));
+    let verdict = match entry.verdict(before_src, after_src) {
+        Ok(HumanTextVerdict::Move) => "move",
+        _ => "update",
+    };
+
+    // The range after the one the other cursor is already on, so repeating walks them all.
+    let (other_row, other_column) = state.cursor[other];
+    let current =
+        TextPaintState::byte_offset(sources[other], other_row, other_column).and_then(|offset| {
+            partners
+                .iter()
+                .position(|span| contains(span, sources[other], offset))
+        });
+    let next = current.map_or(0, |index| (index + 1) % partners.len());
+    let target = partners[next];
+    state.cursor[other] = (target.start_row, target.start_column);
+    state.scroll[other] = target
+        .start_row
+        .saturating_sub(row.saturating_sub(state.scroll[side]));
+    state.scroll_side_into_view(other, viewport_rows);
+
+    let name = if other == 0 { "Before" } else { "After" };
+    let mut status = if partners.len() == 1 {
+        format!(
+            "The {verdict}'s {name} range, line {}",
+            target.start_row + 1
+        )
+    } else {
+        format!(
+            "The {verdict}'s {name} range {} of {}, line {} - f for the next",
+            next + 1,
+            partners.len(),
+            target.start_row + 1
+        )
+    };
+    if state.anchor[other].is_some() {
+        status.push_str(" - its selection now reaches there too");
+    }
+    app.status = Some(status);
+}
+
 /// The first leaf of `node`'s subtree not ended by `offset`: the leaf containing it, or in
 /// whitespace the next one; `None` in the file's trailing whitespace. Not
 /// `descendant_for_byte_range`, which answers with a container in whitespace.
