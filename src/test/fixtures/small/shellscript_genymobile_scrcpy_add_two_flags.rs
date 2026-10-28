@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -29,4 +30,9 @@ fn mapping() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("shellscript-genymobile-scrcpy-add-two-flags")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("shellscript-genymobile-scrcpy-add-two-flags", 0.51)
 }

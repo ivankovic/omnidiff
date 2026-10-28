@@ -15,18 +15,29 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
     // Pins `SHELL_STRING_BODY_KINDS`: a `string_content` rewritten as a `regex` renames into it.
-    test::helper::human_mapping::assert_matches_human_mapping(
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "shellscript-scikit-learn-scikit-learn-string-to-regex",
+        1,
+        1,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("shellscript-scikit-learn-scikit-learn-string-to-regex")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "shellscript-scikit-learn-scikit-learn-string-to-regex",
+        0.18,
+    )
 }

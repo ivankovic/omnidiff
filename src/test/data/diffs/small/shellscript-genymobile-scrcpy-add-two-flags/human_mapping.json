@@ -5408,5 +5408,50 @@
         "command:25"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 70,
+              "start_column": 6,
+              "end_row": 70,
+              "end_column": 21
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 70,
+              "start_column": 6,
+              "end_row": 70,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 70,
+              "start_column": 5,
+              "end_row": 70,
+              "end_column": 6
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

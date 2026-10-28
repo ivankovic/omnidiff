@@ -778,5 +778,66 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 40,
+              "end_row": 49,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 45,
+              "end_row": 49,
+              "end_column": 46
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 40,
+              "end_row": 49,
+              "end_column": 41
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 40,
+              "end_row": 49,
+              "end_column": 57
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 40,
+              "end_row": 49,
+              "end_column": 52
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -1176,5 +1176,31 @@
         "if_statement:17"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 156,
+              "start_column": 115,
+              "end_row": 156,
+              "end_column": 117
+            }
+          ],
+          "after": [
+            {
+              "start_row": 156,
+              "start_column": 115,
+              "end_row": 156,
+              "end_column": 117
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

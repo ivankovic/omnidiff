@@ -2602,5 +2602,31 @@
         "comment:10"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 4167,
+              "start_column": 21,
+              "end_row": 4167,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 4167,
+              "start_column": 21,
+              "end_row": 4167,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

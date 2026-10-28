@@ -1707,9 +1707,17 @@ fn paired_leaves_are_not_deleted_and_inserted(
         if !is_visible_leaf(*leaf, &before.contents) {
             continue;
         }
-        let LeafStatus::Same(partner) = context.status(*leaf, 0) else {
+        let LeafStatus::Paired(partner) = context.status(*leaf, 0) else {
             continue;
         };
+        eprintln!(
+            "CENSUS27\t{painting}\tb{}\t`{}` -> `{}`\t{:?}/{:?}",
+            row_of(&before.contents, leaf.start_byte()),
+            leaf_text(*leaf, &before.contents),
+            leaf_text(partner, &after.contents),
+            whole_leaf_label(&painted[0], *leaf),
+            whole_leaf_label(&painted[1], partner)
+        );
         if whole_leaf_label(&painted[0], *leaf) != Some(Some(TextLabel::Delete))
             || whole_leaf_label(&painted[1], partner) != Some(Some(TextLabel::Insert))
         {
