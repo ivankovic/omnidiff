@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -32,5 +32,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-pdftk-java-pdftk-real-change-all-across-the-file")
+    // Invariant 26: `int retVal = -1;` (before row 237) is paired with `int retVal = getBack();`
+    // (after row 207), but its `;` is deleted and the other one inserted.
+    assert_ground_truth_invariants_with_known_violations(
+        "java-pdftk-java-pdftk-real-change-all-across-the-file",
+        1,
+    )
 }

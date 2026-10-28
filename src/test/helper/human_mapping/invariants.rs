@@ -74,6 +74,9 @@
 //! 25. [`removed_statements_take_their_terminator`] - a statement the tree mapping deletes or
 //!     inserts is painted alike at its first byte and its closing `;`, unless the `;` survives
 //!     with a value the statement wraps.
+//! 26. [`terminators_follow_their_statements`] - the tree mapping pairs a statement's `;` with the
+//!     `;` of the statement it pairs the statement with, and deletes or inserts it with a statement
+//!     it deletes or inserts - unless the `;` goes with a value the statement wraps.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -332,6 +335,7 @@ pub fn ground_truth_invariant_violations_for(
                 name, labels, &context, before, after,
             ));
         }
+        violations.extend(terminators_follow_their_statements(&context, before, after));
         violations.extend(boolean_flips_are_one_edit(
             &paintings, &context, before, after,
         ));
@@ -1596,6 +1600,16 @@ impl<'tree> TreeContext<'tree> {
                 None => return false,
             }
         }
+    }
+
+    /// Whether `node` is a member of one of the mapping's multi-map groups.
+    pub(crate) fn in_group(&self, node: Node<'tree>, side: usize) -> bool {
+        let groups = if side == 0 {
+            &self.caches.before_group
+        } else {
+            &self.caches.after_group
+        };
+        groups.contains_key(&node.id())
     }
 
     /// The node `node` is matched with on the other side, or `None` when the mapping pairs it with
@@ -3367,6 +3381,144 @@ fn holds_a_survivor_of(statement: Node, owner: Node, side: usize, context: &Tree
     false
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 26: a `;` is paired, deleted or inserted with its statement
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// The statement `semicolon` ends, when it is its parent's last child and not its only one.
+fn statement_ended_by(semicolon: Node) -> Option<Node> {
+    let statement = semicolon.parent()?;
+    (semicolon.kind() == ";"
+        && statement.child_count() > 1
+        && statement
+            .child(statement.child_count() - 1)
+            .map(|last| last.id())
+            == Some(semicolon.id()))
+    .then_some(statement)
+}
+
+/// The `;` that ends `statement`, if one does.
+fn semicolon_ending(statement: Node) -> Option<Node> {
+    let last = statement.child(statement.child_count().checked_sub(1)?)?;
+    statement_ended_by(last)
+        .is_some_and(|ended| ended.id() == statement.id())
+        .then_some(last)
+}
+
+/// **Invariant 26.** The tree mapping treats a `;` as part of its statement: a statement paired
+/// with another has its `;` paired with that statement's `;`, and a statement deleted or inserted
+/// takes its `;` along. `const EVP_MD *md;` -> `EVP_MD *md = NULL;` merged out of `EVP_MD *evp_md =
+/// NULL;` keeps the `;` of the declaration that survives, not of the one deleted beside it
+/// (`c-openssl-openssl-big-multi-map-change`).
+///
+/// The `;` may instead go with a value the statement wraps, which survives into the statement
+/// holding the `;`'s partner: `x.run();` -> `Object y = x.run();`, or `T v = x;` split into
+/// `T v;` and `v = x;` with the `;` beside `x` ([`removed_statements_take_their_terminator`] reads
+/// the painting the same way). A multi-map group decides its own pairing - any of the `;` merged
+/// into one may be the survivor - so its members are not held, nor is a statement whose partner
+/// has no `;`, nor one inside a parse error. A pair of statements is reported once, from the
+/// before side.
+fn terminators_follow_their_statements(
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    let codes = [before, after];
+    let place = |node: Node, side: usize| {
+        format!(
+            "{} row {}",
+            side_name(side),
+            row_of(&codes[side].contents, node.start_byte())
+        )
+    };
+    let mut violations = Vec::new();
+    for side in 0..2 {
+        for semicolon in &context.leaves[side] {
+            let Some(statement) = statement_ended_by(*semicolon) else {
+                continue;
+            };
+            if statement.is_error()
+                || context.in_group(statement, side)
+                || context.in_group(*semicolon, side)
+            {
+                continue;
+            }
+            let goes_to = match context.status(*semicolon, side) {
+                LeafStatus::Same(partner) | LeafStatus::Paired(partner) => Some(partner),
+                LeafStatus::Removed => None,
+                LeafStatus::Undecided => continue,
+            };
+            let keeps_value = goes_to
+                .and_then(|partner| partner.parent())
+                .is_some_and(|owner| holds_a_survivor_of(statement, owner, side, context));
+            let mut sites = vec![ViolationSite {
+                side,
+                span: span_of_node(*semicolon),
+            }];
+            let message = if let Some(partner) = context.partner(statement, side) {
+                if context.in_group(partner, 1 - side) {
+                    continue;
+                }
+                let Some(theirs) = semicolon_ending(partner) else {
+                    continue;
+                };
+                let mutual = context
+                    .partner(partner, 1 - side)
+                    .is_some_and(|back| back.id() == statement.id());
+                if goes_to.is_some_and(|ours| ours.id() == theirs.id())
+                    || keeps_value
+                    || (side == 1 && mutual)
+                {
+                    continue;
+                }
+                sites.push(ViolationSite {
+                    side: 1 - side,
+                    span: span_of_node(theirs),
+                });
+                let instead = match goes_to {
+                    Some(other) => format!("paired with the `;` on {}", place(other, 1 - side)),
+                    None if side == 0 => "deleted".to_string(),
+                    None => "inserted".to_string(),
+                };
+                format!(
+                    "the `{}` on {} is paired with the `{}` on {}, but its `;` is {instead} rather \
+                     than paired with that statement's own - a `;` goes with its statement",
+                    statement.kind(),
+                    place(statement, side),
+                    partner.kind(),
+                    place(partner, 1 - side),
+                )
+            } else if context.removed(statement, side) {
+                let Some(other) = goes_to.filter(|_| !keeps_value) else {
+                    continue;
+                };
+                // Two removed statements trading a `;` are one fact, reported from before.
+                if side == 1
+                    && statement_ended_by(other).is_some_and(|theirs| context.removed(theirs, 0))
+                {
+                    continue;
+                }
+                sites.push(ViolationSite {
+                    side: 1 - side,
+                    span: span_of_node(other),
+                });
+                format!(
+                    "the `{}` on {} is {}, but its `;` is paired with the `;` on {} - a `;` \
+                     leaves with its statement",
+                    statement.kind(),
+                    place(statement, side),
+                    if side == 0 { "deleted" } else { "inserted" },
+                    place(other, 1 - side),
+                )
+            } else {
+                continue;
+            };
+            violations.push(GroundTruthViolation::new(26, None, message, sites));
+        }
+    }
+    violations
+}
+
 fn first_leaf(node: Node) -> Option<Node> {
     let mut node = node;
     while node.child_count() > 0 {
@@ -4656,6 +4808,117 @@ mod tests {
         let at = after.contents.find("Object").expect("present");
         let mapping = with_painting(mapping, "Full", vec![inserted(at, "Object y = ".len())]);
         (before, after, mapping)
+    }
+
+    // ── Invariant 26 ────────────────────────────────────────────────────────────────────────
+
+    /// `mapping_by_text`'s mapping of `before`/`after` with the first `;` pair replaced by
+    /// `replacement`.
+    fn with_semicolons(
+        before: &Code,
+        after: &Code,
+        replacement: impl Fn(Vec<String>, Vec<String>) -> Vec<HumanMappingEntry>,
+    ) -> HumanMapping {
+        let mut mapping = mapping_by_text(before, after);
+        let index = mapping
+            .entries
+            .iter()
+            .position(|entry| {
+                entry
+                    .before_path
+                    .as_ref()
+                    .and_then(|path| path.last())
+                    .is_some_and(|step| step.starts_with(";:"))
+            })
+            .expect("a paired `;`");
+        let entry = mapping.entries.remove(index);
+        mapping.entries.extend(replacement(
+            entry.before_path.expect("before"),
+            entry.after_path.expect("after"),
+        ));
+        mapping
+    }
+
+    #[test]
+    fn a_paired_statement_keeps_its_semicolon_paired() {
+        let (before, after) = (rust("x = 1;\n"), rust("x = 2;\n"));
+        let paired = mapping_by_text(&before, &after);
+        assert!(violations_of(26, &paired, &before, &after).is_empty());
+
+        let traded = with_semicolons(&before, &after, |before_path, after_path| {
+            vec![
+                HumanMappingEntry {
+                    operation: HumanOperation::Delete,
+                    before_path: Some(before_path),
+                    after_path: None,
+                },
+                HumanMappingEntry {
+                    operation: HumanOperation::Insert,
+                    before_path: None,
+                    after_path: Some(after_path),
+                },
+            ]
+        });
+        let found = violations_of(26, &traded, &before, &after);
+        assert_eq!(
+            found,
+            [
+                "the `expression_statement` on before row 1 is paired with the `expression_statement` \
+             on after row 1, but its `;` is deleted rather than paired with that statement's own - \
+             a `;` goes with its statement"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_removed_statement_takes_its_semicolon_along() {
+        let (before, after) = (rust("a();\n"), rust("b();\n"));
+        // Both statements removed, every node split into a delete and an insert, but the `;`
+        // paired.
+        let mut mapping = mapping_by_text(&before, &after);
+        mapping.entries = mapping
+            .entries
+            .into_iter()
+            .flat_map(|entry| {
+                let semicolon = entry
+                    .before_path
+                    .as_ref()
+                    .and_then(|path| path.last())
+                    .is_some_and(|step| step.starts_with(";:"));
+                if semicolon {
+                    return vec![entry];
+                }
+                vec![
+                    HumanMappingEntry {
+                        operation: HumanOperation::Delete,
+                        before_path: entry.before_path,
+                        after_path: None,
+                    },
+                    HumanMappingEntry {
+                        operation: HumanOperation::Insert,
+                        before_path: None,
+                        after_path: entry.after_path,
+                    },
+                ]
+            })
+            .collect();
+        let found = violations_of(26, &mapping, &before, &after);
+        assert_eq!(
+            found,
+            [
+                "the `expression_statement` on before row 1 is deleted, but its `;` is paired with \
+             the `;` on after row 1 - a `;` leaves with its statement"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_new_statement_around_a_surviving_value_may_keep_its_semicolon() {
+        for semicolon_survives in [true, false] {
+            let (before, after, mapping) = declaration_around_a_call(semicolon_survives);
+            let found = violations_of(26, &mapping, &before, &after);
+            assert!(found.is_empty(), "{found:?}");
+        }
     }
 
     #[test]
