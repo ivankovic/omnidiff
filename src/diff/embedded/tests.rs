@@ -153,6 +153,20 @@ fn all_of_kind<'c>(code: &'c Code, kind: &str) -> Vec<Node<'c>> {
 }
 
 #[test]
+fn a_shell_double_quoted_string_drops_its_escapes_and_fills_its_expansions() {
+    let source = "q=\"SELECT \\\"a\\\" FROM $table WHERE x = '1'\"\n";
+    let code = Code::from_string(source, &Language::ShellScript);
+    let string = all_of_kind(&code, "string")[0];
+    let decoded = decode(Language::ShellScript, string, source).unwrap();
+    assert_eq!(decoded.text, "SELECT \"a\" FROM ______ WHERE x = '1'");
+    assert_offsets_spell(
+        &decoded,
+        source,
+        &[("\"a\"", "\\\"a\\\""), ("WHERE", "WHERE")],
+    );
+}
+
+#[test]
 fn a_csharp_raw_string_loses_its_closing_indentation() {
     let indented =
         "class A { string q = \"\"\"\n        SELECT a\n\n          FROM b\n        \"\"\"; }\n";

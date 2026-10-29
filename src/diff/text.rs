@@ -32,7 +32,8 @@ mod render_options;
 mod summary;
 
 pub use plain_text_diff::{
-    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, whole_file_text_class,
+    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, plain_text_token_diff,
+    text_layer_diff, token_edit_count, whole_file_text_class,
 };
 pub use render_options::{
     RangeMatch, RenderOptions, TextOperation, is_structural_only, ranges_for_options,
@@ -1595,7 +1596,7 @@ fn embedded_ranges(
         // A plain-text layer has no trees: it is painted as a file without a grammar is.
         let (inner_before, inner_after) = if layer.before.ast.is_none() || layer.after.ast.is_none()
         {
-            plain_text_line_diff(&layer.before.contents, &layer.after.contents)
+            text_layer_diff(&layer.before.contents, &layer.after.contents)
         } else {
             let node_cache = NodeCache::build(&layer.before, &layer.after);
             plain_ranges(

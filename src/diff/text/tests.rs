@@ -2895,3 +2895,68 @@ fn an_inserted_css_number_with_a_unit_is_painted_whole() {
     let painted: Vec<&str> = painted.iter().map(|text| text.trim_end()).collect();
     assert_eq!(painted, ["height: 100%;"]);
 }
+
+/// `ranges`' changed spans of `text`, each as `(operation, text)`.
+fn changed_spans<'t>(ranges: &[RangeMatch], text: &'t str) -> Vec<(TextOperation, &'t str)> {
+    ranges
+        .iter()
+        .filter(|range| range.operation != TextOperation::Identical)
+        .map(|range| {
+            (
+                range.operation.clone(),
+                &text[range.source.start_column..range.source.end_column],
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_token_diff_paints_two_far_apart_edits_apart() {
+    let before = "CASE e WHEN '0' THEN '  no' WHEN '1' THEN '  yes' END";
+    let after = "CASE e WHEN '0' THEN '--no---' WHEN '1' THEN '--yes--' END";
+    let (before_ranges, after_ranges) = plain_text_token_diff(before, after).unwrap();
+    // Whitespace replaced is a delete and an insert, not an edit of that whitespace.
+    assert_eq!(
+        changed_spans(&before_ranges, before),
+        [(TextOperation::Delete, "  "), (TextOperation::Delete, "  ")]
+    );
+    assert_eq!(
+        changed_spans(&after_ranges, after),
+        [
+            (TextOperation::Insert, "--"),
+            (TextOperation::Insert, "---"),
+            (TextOperation::Insert, "--"),
+            (TextOperation::Insert, "--"),
+        ]
+    );
+    assert_eq!(token_edit_count(before, after), Some(2));
+}
+
+#[test]
+fn a_token_diff_updates_only_the_characters_that_differ() {
+    let (before_ranges, after_ranges) =
+        plain_text_token_diff("x canary.21 y", "x canary.22 y").unwrap();
+    assert_eq!(
+        changed_spans(&before_ranges, "x canary.21 y"),
+        [(TextOperation::Update, "1")]
+    );
+    assert_eq!(
+        changed_spans(&after_ranges, "x canary.22 y"),
+        [(TextOperation::Update, "2")]
+    );
+}
+
+#[test]
+fn edits_count_apart_only_across_unchanged_words_and_spaces() {
+    // A version bump, a renamed word and a rewritten phrase are one edit each.
+    assert_eq!(token_edit_count("^3.0.2", "^4.0.0"), Some(1));
+    assert_eq!(
+        token_edit_count("-p next-swc-napi -p x", "-p next-napi-bindings -p x"),
+        Some(1)
+    );
+    assert_eq!(
+        token_edit_count("'Did you mean'", "'The most similar command'"),
+        Some(1)
+    );
+    assert_eq!(token_edit_count("a b c d", "x b c y"), Some(2));
+}

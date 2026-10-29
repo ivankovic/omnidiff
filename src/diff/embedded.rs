@@ -45,12 +45,13 @@
 //!   consulted only for markup and for C preprocessor text (a shell `'...'` string of `#include`
 //!   lines). A detection that is wrong almost never survives the gate, since both sides must parse
 //!   without an error.
-//! - **Text when nothing names a language.** A changed multi-line string whose language is not
-//!   detected, or does not parse cleanly, is still a layer: plain text ([`Language::Unknown`], no
-//!   tree), diffed line by line as a file without a grammar is
-//!   ([`super::text::plain_text_line_diff`]). An awk program in a shell `'...'` string then paints
-//!   its deleted lines one by one, not one span from its first change to its last. A one-line
-//!   string gains nothing from this and is left to the host.
+//! - **Text when nothing names a language.** A changed string whose language is not detected, or
+//!   does not parse cleanly, is still a layer: plain text ([`Language::Unknown`], no tree), diffed
+//!   by [`super::text::text_layer_diff`] - line by line as a file without a grammar is, or token by
+//!   token when it is one line. An awk program in a shell `'...'` string then paints its deleted
+//!   lines one by one, and two edits far apart in one long SQL string are painted apart, where the
+//!   host alone paints one span from the first change to the last. A one-line string with a single
+//!   edit is left to the host, which paints that edit the same way.
 //! - **Only changed pairs.** A string inserted or deleted whole is painted whole either way, so it
 //!   gets no embedded layer.
 use tree_sitter::Node;
@@ -221,7 +222,7 @@ fn pair_at(
 
 /// Both sides of the embedded layer at a host pair, parsed as `language`, with an empty diff;
 /// `None` if either side does not decode or does not parse cleanly. [`Language::Unknown`] is a
-/// plain-text layer: never parsed, and only for a string of several lines. What [`solve`] diffs,
+/// plain-text layer, never parsed. What [`solve`] diffs,
 /// and what a human mapping's embedded layer is resolved against, so the two always see the same
 /// text.
 pub fn layer(
@@ -235,8 +236,12 @@ pub fn layer(
     let before_decoded = decode(host, before_node, &before.contents)?;
     let after_decoded = decode(host, after_node, &after.contents)?;
     let (before_code, after_code) = if language == Language::Unknown {
-        let lines = |text: &str| text.trim_end_matches('\n').contains('\n');
-        if !lines(&before_decoded.text) && !lines(&after_decoded.text) {
+        // One line with a single edit is painted by the host just as well: one changed span.
+        let one_line = !before_decoded.text.contains('\n') && !after_decoded.text.contains('\n');
+        if one_line
+            && crate::diff::text::token_edit_count(&before_decoded.text, &after_decoded.text)
+                .is_none_or(|edits| edits < 2)
+        {
             return None;
         }
         (
@@ -297,7 +302,7 @@ pub fn is_host_string(host: Language, node: Node) -> bool {
         Language::JavaScript | Language::TypeScript | Language::TSX => {
             node.kind() == "template_string"
         }
-        Language::ShellScript => node.kind() == "raw_string",
+        Language::ShellScript => matches!(node.kind(), "raw_string" | "string"),
         Language::Python => node.kind() == "string",
         Language::CSharp => node.kind() == "raw_string_literal",
         _ => false,
@@ -313,6 +318,7 @@ pub fn decode(host: Language, node: Node, source: &str) -> Option<Decoded> {
     match host {
         Language::JSON => decode_json_string(node, source),
         Language::YAML => decode_yaml_block_scalar(node, source),
+        Language::ShellScript if node.kind() == "string" => decode_shell_string(node, source),
         Language::ShellScript => decode_shell_raw_string(node, source),
         Language::Python => decode_python_string(node, source),
         Language::CSharp => decode_csharp_raw_string(node, source),
@@ -499,6 +505,48 @@ fn decode_shell_raw_string(node: Node, source: &str) -> Option<Decoded> {
     let mut decoded = Decoded::with_capacity(raw.len() - 2);
     decoded.push_verbatim(source, start + 1, end - 1);
     Some(decoded.finish(end - 1))
+}
+
+/// A shell `"..."` string between its quotes: a backslash before `$`, `` ` ``, `"`, `\` or a
+/// newline is dropped, and each expansion (`$x`, `${x}`, `$(...)`) is filler.
+fn decode_shell_string(node: Node, source: &str) -> Option<Decoded> {
+    let (start, end) = (node.start_byte(), node.end_byte());
+    let raw = source.get(start..end)?;
+    if raw.len() < 2 || !raw.starts_with('"') || !raw.ends_with('"') {
+        return None;
+    }
+    let (from, to) = (start + 1, end - 1);
+    let mut decoded = Decoded::with_capacity(to - from);
+    let mut cursor = node.walk();
+    let expansions: Vec<(usize, usize)> = node
+        .named_children(&mut cursor)
+        .filter(|child| child.kind() != "string_content")
+        .map(|child| (child.start_byte(), child.end_byte()))
+        .collect();
+    let mut i = from;
+    for &(expansion_start, expansion_end) in expansions.iter().chain([&(to, to)]) {
+        let bytes = source.as_bytes();
+        while i < expansion_start {
+            if bytes[i] == b'\\'
+                && i + 1 < expansion_start
+                && matches!(bytes[i + 1], b'$' | b'`' | b'"' | b'\\' | b'\n')
+            {
+                if bytes[i + 1] != b'\n' {
+                    decoded.push_from(&source[i + 1..i + 2], i);
+                }
+                i += 2;
+                continue;
+            }
+            let length = source[i..].chars().next()?.len_utf8();
+            decoded.push_verbatim(source, i, i + length);
+            i += length;
+        }
+        if expansion_end > i {
+            decoded.push_filler(i, expansion_end);
+            i = expansion_end;
+        }
+    }
+    Some(decoded.finish(to))
 }
 
 /// A C# raw string literal between its `"""` delimiters. One of several lines means what the

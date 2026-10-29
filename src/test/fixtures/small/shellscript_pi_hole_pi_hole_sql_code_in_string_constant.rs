@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-pi-hole-pi-hole-sql-code-in-string-constant",
-        0.4,
+        0.05,
     )
 }
