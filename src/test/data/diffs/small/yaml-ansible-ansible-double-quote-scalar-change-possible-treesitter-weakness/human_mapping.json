@@ -4495,5 +4495,50 @@
         "block_sequence_item:250"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2452,
+              "start_column": 18,
+              "end_row": 2452,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2452,
+              "start_column": 18,
+              "end_row": 2452,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2453,
+              "start_column": 25,
+              "end_row": 2453,
+              "end_column": 45
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2453,
+              "start_column": 25,
+              "end_row": 2453,
+              "end_column": 29
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

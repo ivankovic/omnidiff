@@ -2661,5 +2661,77 @@
         "comment:3"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 15,
+              "start_column": 18,
+              "end_row": 15,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 15,
+              "start_column": 18,
+              "end_row": 15,
+              "end_column": 24
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 47,
+              "start_column": 14,
+              "end_row": 47,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 47,
+              "start_column": 14,
+              "end_row": 47,
+              "end_column": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 15,
+              "start_column": 18,
+              "end_row": 15,
+              "end_column": 19
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 47,
+              "start_column": 14,
+              "end_row": 47,
+              "end_column": 15
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

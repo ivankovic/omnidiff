@@ -685,5 +685,72 @@
         "comment:9"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 252,
+              "start_column": 64,
+              "end_row": 252,
+              "end_column": 65
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 253,
+              "start_column": 12,
+              "end_row": 253,
+              "end_column": 58
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 252,
+              "start_column": 64,
+              "end_row": 252,
+              "end_column": 65
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 253,
+              "start_column": 12,
+              "end_row": 253,
+              "end_column": 58
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 253,
+              "start_column": 0,
+              "end_row": 253,
+              "end_column": 12
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

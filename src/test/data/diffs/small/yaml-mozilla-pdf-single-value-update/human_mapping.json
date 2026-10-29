@@ -1010,5 +1010,31 @@
         "block_sequence_item:4"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 27,
+              "start_column": 32,
+              "end_row": 28,
+              "end_column": 0
+            }
+          ],
+          "after": [
+            {
+              "start_row": 27,
+              "start_column": 32,
+              "end_row": 28,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

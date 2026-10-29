@@ -2462,5 +2462,72 @@
         "end:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 207,
+              "start_column": 10,
+              "end_row": 208,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 208,
+              "start_column": 48,
+              "end_row": 209,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 207,
+              "start_column": 0,
+              "end_row": 208,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 208,
+              "start_column": 48,
+              "end_row": 209,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 208,
+              "start_column": 47,
+              "end_row": 208,
+              "end_column": 48
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
