@@ -4886,5 +4886,50 @@
         "ETag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 86,
+              "start_column": 57,
+              "end_row": 86,
+              "end_column": 102
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 86,
+              "start_column": 57,
+              "end_row": 86,
+              "end_column": 102
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 86,
+              "start_column": 56,
+              "end_row": 86,
+              "end_column": 57
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
