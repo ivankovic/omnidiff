@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -39,15 +39,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 9, both presets and both sides: 14 bytes on before rows 479 and 574 and after rows
-    // 490 and 591 are painted Move where the tree mapping deletes and inserts them. Invariant 11,
-    // both presets: the first `identifier` `pwd` on after row 548 is removed but left unpainted.
-    // Invariant 25, 8 time(s): the deleted `declaration` on before row 479 starts delete but its
-    // `;` is move (both presets); the inserted `declaration` on after row 490 starts insert but
-    // its `;` is move (both presets); the inserted `declaration` on after row 591 starts insert
-    // but its `;` is unpainted (both presets); the inserted `expression_statement` on after row
-    // 548 starts unpainted but its `;` is insert (both presets).
-    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 14)
+    assert_ground_truth_invariants("c-nginx-add-typedef")
 }
 
 #[test]

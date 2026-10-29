@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,11 +40,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 8: 1 byte(s) survive under one preset and do not under the other, on after row 1117 -
-    // the first reads Insert under 'Minimal' and Move under 'Full'. A Move says the code is still
-    // there, so the other preset cannot call it removed or added
-    assert_ground_truth_invariants_with_known_violations(
+    assert_ground_truth_invariants(
         "csharp-jellyfin-jellyfin-extract-multiple-function-calls-to-variable",
-        1,
     )
 }

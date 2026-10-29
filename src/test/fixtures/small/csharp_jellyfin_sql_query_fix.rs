@@ -22,10 +22,11 @@ use anyhow::Result;
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
+    // Re-measured after the ground truth was re-mapped in f3f13bbf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "csharp-jellyfin-sql-query-fix",
-        1,
-        1,
+        2,
+        2,
     )
 }
 

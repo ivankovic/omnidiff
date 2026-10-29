@@ -41,15 +41,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariants 12 and 16: the `layout_node` -> `unsafe_layout_node` rename (before row 1433,
-    // after row 1438) is painted under neither preset (12, twice), not as `unsafe_` under Minimal
-    // and not whole under Full (16, three times). Invariant 16, twice more: the
-    // `svg_roots_to_relayout` <-> `m_svg_roots_needing_relayout` rename (before row 1470, after
-    // row 1637) is not painted as just its differing words under Minimal. Invariant 24, 2 time(s):
-    // the `.` before `layout_node` on before row 1653 is not painted with the member it calls
-    // (both presets).
+    // Invariant 16, twice: the `svg_roots_to_relayout` <-> `m_svg_roots_needing_relayout` rename
+    // (before row 1470, after row 1637) is not painted as just its differing words under Minimal.
     assert_ground_truth_invariants_with_known_violations(
         "cpp-ladybirdbrowser-ladybird-very-interesting-big-change",
-        9,
+        2,
     )
 }

@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -33,9 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 1 time(s): the inserted `expression_statement` on after row 352 starts insert
-    // but its `;` is unpainted ('Minimal').
-    assert_ground_truth_invariants_with_known_violations("c-linux-small-bugfix", 1)
+    assert_ground_truth_invariants("c-linux-small-bugfix")
 }
 
 #[test]

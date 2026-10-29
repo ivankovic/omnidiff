@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,10 +37,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 18: `binary_expression.right` holds `0` on before row 1483 and `null` on after row
-    // 1483. The parents are matched, yet the mapping deletes one and inserts the other.
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-105-foldconstants",
-        1,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-105-foldconstants")
 }

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,10 +37,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 6, once: Minimal paints the leading tab of after row 52
-    // (`\t.monaco-list-row.selected .agent-session-item,`).
-    assert_ground_truth_invariants_with_known_violations(
-        "css-microsoft-vscode-add-with-whitespace-change",
-        1,
-    )
+    assert_ground_truth_invariants("css-microsoft-vscode-add-with-whitespace-change")
 }

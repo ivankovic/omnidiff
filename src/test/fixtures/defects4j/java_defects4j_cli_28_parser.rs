@@ -24,10 +24,11 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 fn mapping() -> Result<()> {
     // `break;` becomes `continue;`. The human pairs the two `;` as surviving; omnidiff deletes the
     // `;` with the statement it ends and inserts the new one's (`solve_stray_terminators`).
+    // Re-measured after the ground truth was re-mapped in f3f13bbf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-28-parser",
-        1,
-        1,
+        3,
+        2,
     )
 }
 

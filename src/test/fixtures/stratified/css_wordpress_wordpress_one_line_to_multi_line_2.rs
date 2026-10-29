@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,10 +40,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 5: the Full painting of after row 19 (`  opacity: 0;`) leaves the space at
-    // columns 10..11 unpainted between two painted regions.
-    assert_ground_truth_invariants_with_known_violations(
-        "css-wordpress-wordpress-one-line-to-multi-line-2",
-        1,
-    )
+    assert_ground_truth_invariants("css-wordpress-wordpress-one-line-to-multi-line-2")
 }

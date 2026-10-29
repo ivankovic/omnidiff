@@ -42,11 +42,9 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 16, four times: `FindByProviderId` <-> `DeleteByProviderId` (row 154) and `Delete`
     // -> `DeleteByProviderId` (before row 158, after row 154) are not painted as their differing
-    // words (`Find`/`Delete`, `ByProviderId`) under Minimal. Invariant 25, 2 time(s): the deleted
-    // `local_declaration_statement` on before row 154 starts delete but its `;` is move (both
-    // presets).
+    // words (`Find`/`Delete`, `ByProviderId`) under Minimal.
     assert_ground_truth_invariants_with_known_violations(
         "csharp-lidarr-lidarr-small-but-complex-mapping",
-        6,
+        4,
     )
 }

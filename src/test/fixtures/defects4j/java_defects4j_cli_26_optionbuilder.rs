@@ -18,16 +18,17 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // One local declaration is removed and another inserted; omnidiff reuses the old one's parts
     // for the new, and pairs a `line_comment` across (`APTED("large_flat_subtree")`).
+    // Re-measured after the ground truth was re-mapped in 1948fa9c.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-26-optionbuilder",
-        6,
-        6,
+        9,
+        7,
     )
 }
 
@@ -38,7 +39,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 2 time(s): the deleted `local_variable_declaration` on before row 349 starts
-    // delete but its `;` is unpainted (both presets).
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-cli-26-optionbuilder", 2)
+    assert_ground_truth_invariants("java-defects4j-cli-26-optionbuilder")
 }
