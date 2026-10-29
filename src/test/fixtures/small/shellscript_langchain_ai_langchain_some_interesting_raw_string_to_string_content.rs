@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -33,5 +34,13 @@ fn mapping() -> Result<()> {
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants(
         "shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content",
+    )
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content",
+        15.92,
     )
 }
