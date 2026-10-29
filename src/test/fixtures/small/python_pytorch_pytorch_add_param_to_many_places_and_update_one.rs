@@ -32,10 +32,12 @@ fn mapping() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     // Invariant 10, both presets: the `,` on before row 299 and after row 301 is painted gone and
-    // new, where the tree mapping calls it the same text.
+    // new, where the tree mapping calls it the same text. Invariant 27, both presets: `None` ->
+    // `block_table` and `# page_table,` -> `# block_table,` on the same rows are painted gone and
+    // new, where the tree mapping pairs them as edits.
     assert_ground_truth_invariants_with_known_violations(
         "python-pytorch-pytorch-add-param-to-many-places-and-update-one",
-        2,
+        4,
     )
 }
 

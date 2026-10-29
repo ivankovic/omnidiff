@@ -32,6 +32,21 @@
 //! every run of entries that is exactly such an expansion, and keeps the entries as they are when
 //! re-expanding would not reproduce them, so the round trip is lossless by construction. Expanding
 //! needs both trees, which is why [`load_with`] takes the parsed pair and [`load`] parses it.
+//!
+//! **Code in a string is a mapping of its own.** [`HumanMapping::embedded`] holds one
+//! [`HumanEmbeddedLayer`] per pair of host strings whose code a human mapped and painted as a file
+//! (TSX in a JSON `"content"`, `diff::embedded`): a whole nested mapping over the decoded text,
+//! stored collapsed against the decoded pair like any file. Grading descends into it - its node
+//! decisions against omnidiff's layer at the same host pair ([`assert_matches_human_mapping`]),
+//! its painting projected into the host files where the string is ([`compare_painting_with_diff`]),
+//! its invariants against the decoded pair - and the host's own painting is not read over a painted
+//! layer's bytes.
+//!
+//! A host with painted layers and no painting of its own is painted empty when its files read the
+//! same outside those layers' strings ([`implied_host_painting`]): every change is then inside a
+//! layer, so nothing is left for the host to paint. Byte equality, not the host's tree mapping,
+//! decides it, so an unfinished mapping cannot imply a painting. Anywhere else no painting still
+//! means unpainted.
 use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -154,6 +169,116 @@ pub struct HumanMapping {
     /// means unpainted; a named painting with no entries means painted and nothing changed.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub text_mappings: Vec<NamedTextMapping>,
+    /// Code of another language in the host's strings, each mapped and painted as a file of its
+    /// own (see [`HumanEmbeddedLayer`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub embedded: Vec<HumanEmbeddedLayer>,
+}
+
+/// The ground truth for one pair of host strings holding code of another language: TSX in a JSON
+/// `"content"`, shell in a YAML `run: |` (`diff::embedded`).
+///
+/// `mapping` is a whole [`HumanMapping`] of the *decoded* code, as if it were its own file:
+/// its paths are into the embedded language's tree, and its paintings are in the decoded text's
+/// rows and columns, escapes resolved and the host's indentation removed, so every invariant
+/// and whitespace rule reads it as it would any file. The host's own entries for the string stay
+/// in the host mapping. [`crate::diff::embedded::layer`] turns the two host paths into the decoded
+/// pair, the same way the diff does.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HumanEmbeddedLayer {
+    /// The host string in the before tree.
+    pub before_path: Vec<String>,
+    /// The host string in the after tree.
+    pub after_path: Vec<String>,
+    /// The embedded language, as [`crate::code::language::stable_name`] spells it.
+    pub language: String,
+    pub mapping: HumanMapping,
+}
+
+impl HumanEmbeddedLayer {
+    /// The decoded pair this layer is about, with an empty diff, resolved in `before`/`after`.
+    pub fn resolve(
+        &self,
+        before: &Code,
+        after: &Code,
+    ) -> Result<crate::diff::embedded::EmbeddedDiff> {
+        let language = crate::code::language::from_stable_name(&self.language)
+            .with_context(|| format!("unknown embedded language {:?}", self.language))?;
+        resolve_layer(before, after, &self.before_path, &self.after_path, language)
+    }
+}
+
+/// The name of [`implied_host_painting`]'s painting.
+pub const IMPLIED_HOST_PAINTING: &str = "Nothing outside the embedded code";
+
+/// The empty painting a host without one has when its painted layers hold every change: `before`
+/// and `after` read the same outside the layers' strings. `None` when the host has a painting, no
+/// layer is painted, a layer does not resolve, or any byte outside them differs.
+pub fn implied_host_painting(
+    mapping: &HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Option<NamedTextMapping> {
+    if !mapping.text_mappings.is_empty() {
+        return None;
+    }
+    let mut strings = Vec::new();
+    for layer in &mapping.embedded {
+        if layer.mapping.text_mappings.is_empty() {
+            continue;
+        }
+        let decoded = layer.resolve(before, after).ok()?;
+        let span = |offsets: &[usize]| offsets[0]..offsets[offsets.len() - 1];
+        strings.push([span(&decoded.before_offsets), span(&decoded.after_offsets)]);
+    }
+    if strings.is_empty() {
+        return None;
+    }
+    strings.sort_by_key(|[before, _]| before.start);
+    // The text between consecutive strings, and around them, must match on both sides.
+    let (mut before_from, mut after_from) = (0, 0);
+    for [before_string, after_string] in &strings {
+        if before_string.start < before_from
+            || after_string.start < after_from
+            || before.contents[before_from..before_string.start]
+                != after.contents[after_from..after_string.start]
+        {
+            return None;
+        }
+        before_from = before_string.end;
+        after_from = after_string.end;
+    }
+    (before.contents[before_from..] == after.contents[after_from..]).then(|| NamedTextMapping {
+        name: IMPLIED_HOST_PAINTING.to_string(),
+        mapping: HumanTextMapping::default(),
+    })
+}
+
+/// Whether `mapping` has a painting to grade: its own, or [`implied_host_painting`]'s.
+pub fn has_painting(mapping: &HumanMapping, before: &Code, after: &Code) -> bool {
+    !mapping.text_mappings.is_empty() || implied_host_painting(mapping, before, after).is_some()
+}
+
+/// The decoded pair at two host paths, parsed as `language`.
+fn resolve_layer(
+    before: &Code,
+    after: &Code,
+    before_path: &[String],
+    after_path: &[String],
+    language: crate::code::Language,
+) -> Result<crate::diff::embedded::EmbeddedDiff> {
+    let (before_tree, after_tree) =
+        trees_of(before, after).context("an embedded layer needs both sides parsed")?;
+    let before_node = super::node_for_path(before_tree.root_node(), &path_refs(before_path))?;
+    let after_node = super::node_for_path(after_tree.root_node(), &path_refs(after_path))?;
+    let host = before.metadata.language.unwrap_or_default();
+    crate::diff::embedded::layer(before, after, before_node, after_node, host, language)
+        .with_context(|| {
+            format!(
+                "the strings at {before_path:?} / {after_path:?} do not decode and parse as {}",
+                crate::code::language::stable_name(language)
+            )
+        })
 }
 
 // ─── Human-painted text ranges ──────────────────────────────────────────────────────────────
@@ -758,7 +883,8 @@ pub fn compare_painting(
 pub enum PaintingDiff<'code> {
     /// The ordinary case: a tree mapping, projected to text by [`crate::diff::text::TextDiff`].
     Ast {
-        ast: crate::diff::ASTDiff,
+        /// Boxed: with its embedded layers it is far larger than the other variant.
+        ast: Box<crate::diff::ASTDiff>,
         node_cache: crate::diff::NodeCache<'code>,
     },
     /// No tree-sitter grammar for the language. Grades against
@@ -790,7 +916,10 @@ pub fn omnidiff_diff_for_painting<'code>(
         .ast
         .context("omnidiff produced no AST diff for a pair that has both trees")?;
     let node_cache = crate::diff::NodeCache::build(before, after);
-    Ok(PaintingDiff::Ast { ast, node_cache })
+    Ok(PaintingDiff::Ast {
+        ast: Box::new(ast),
+        node_cache,
+    })
 }
 
 /// omnidiff's own side of a painting comparison, as per-byte labels, `[before, after]`: the ranges
@@ -835,34 +964,53 @@ pub fn compare_painting_with_diff(
     diff: &PaintingDiff,
 ) -> Result<PaintingComparison> {
     let mapping = load_with(name, before, after)?;
-    let candidates = paintings_for_mode(&mapping, options)?;
+    compare_painting_for_mapping(&mapping, options, before, after, diff)
+}
 
-    let ours = omnidiff_painting_labels(diff, before, after, options);
+/// [`compare_painting_with_diff`] for a mapping already in memory.
+pub fn compare_painting_for_mapping(
+    mapping: &HumanMapping,
+    options: crate::diff::text::RenderOptions,
+    before: &crate::code::Code,
+    after: &crate::code::Code,
+    diff: &PaintingDiff,
+) -> Result<PaintingComparison> {
+    let implied;
+    let mapping = match implied_host_painting(mapping, before, after) {
+        Some(painting) => {
+            implied = HumanMapping {
+                text_mappings: vec![painting],
+                ..mapping.clone()
+            };
+            &implied
+        }
+        None => mapping,
+    };
+    let candidates = paintings_for_mode(mapping, options)?;
+
+    let mut ours = omnidiff_painting_labels(diff, before, after, options);
     let total_bytes = before.contents.len() + after.contents.len();
+    let regions = embedded_regions(mapping, before, after, diff, options)?;
+    for region in &regions {
+        region.write(&mut ours, |region| &region.ours);
+    }
 
     // Several paintings under one preset are alternatives: the closest one is the verdict.
     let mut best: Option<PaintingComparison> = None;
     for painting in candidates {
-        let mut painted: [Vec<(HumanTextSpan, TextLabel)>; 2] = [Vec::new(), Vec::new()];
-        for entry in &painting.mapping.entries {
-            let label = TextLabel::from_verdict(entry.verdict(&before.contents, &after.contents)?);
-            for span in &entry.before {
-                painted[0].push((*span, label));
-            }
-            for span in &entry.after {
-                painted[1].push((*span, label));
-            }
+        let mut theirs = human_painting_labels(painting, &before.contents, &after.contents)?;
+        for region in &regions {
+            region.write(&mut theirs, |region| &region.theirs);
         }
-
-        let mut mismatched_bytes = 0usize;
-        for (side, contents) in [(0usize, &before.contents), (1usize, &after.contents)] {
-            let theirs = label_bytes(contents, &painted[side]);
-            mismatched_bytes += ours[side]
-                .iter()
-                .zip(&theirs)
-                .filter(|(ours, theirs)| ours != theirs)
-                .count();
-        }
+        let mismatched_bytes = (0..2)
+            .map(|side| {
+                ours[side]
+                    .iter()
+                    .zip(&theirs[side])
+                    .filter(|(ours, theirs)| ours != theirs)
+                    .count()
+            })
+            .sum();
 
         let comparison = PaintingComparison {
             options,
@@ -879,6 +1027,142 @@ pub fn compare_painting_with_diff(
     }
 
     best.context("a preset with no candidate paintings should have been rejected above")
+}
+
+/// Per-byte labels of both sides of `painting`.
+fn human_painting_labels(
+    painting: &NamedTextMapping,
+    before: &str,
+    after: &str,
+) -> Result<[Vec<Option<TextLabel>>; 2]> {
+    let mut painted: [Vec<(HumanTextSpan, TextLabel)>; 2] = [Vec::new(), Vec::new()];
+    for entry in &painting.mapping.entries {
+        let label = TextLabel::from_verdict(entry.verdict(before, after)?);
+        for span in &entry.before {
+            painted[0].push((*span, label));
+        }
+        for span in &entry.after {
+            painted[1].push((*span, label));
+        }
+    }
+    Ok([
+        label_bytes(before, &painted[0]),
+        label_bytes(after, &painted[1]),
+    ])
+}
+
+/// One painted embedded layer's stretch of each host file, labelled by both sides: the human's
+/// layer painting and omnidiff's, each built in the decoded text and projected into the host
+/// through the byte map ([`project_labels`]), so the two are judged alike there.
+struct EmbeddedRegion {
+    /// Per side, the host bytes the decoded text spans.
+    spans: [std::ops::Range<usize>; 2],
+    ours: [Vec<Option<TextLabel>>; 2],
+    theirs: [Vec<Option<TextLabel>>; 2],
+}
+
+impl EmbeddedRegion {
+    /// Overwrites the region's bytes of `labels` with `pick(self)`.
+    fn write(
+        &self,
+        labels: &mut [Vec<Option<TextLabel>>; 2],
+        pick: impl Fn(&Self) -> &[Vec<Option<TextLabel>>; 2],
+    ) {
+        for side in 0..2 {
+            labels[side][self.spans[side].clone()].copy_from_slice(&pick(self)[side]);
+        }
+    }
+}
+
+/// The painted embedded layers of `mapping`, graded where the host files hold them.
+///
+/// The human paints a layer in its decoded text; the host's own painting of those bytes is not
+/// read. omnidiff's side is its own layer at the same host pair, labelled the same way; where it
+/// found none, its host labels stand, which is what it renders. Of several paintings a layer has
+/// for `options`, the closest to omnidiff's is the verdict, as for a whole fixture. A layer with
+/// no painting leaves the host's bytes to the host's painting.
+fn embedded_regions(
+    mapping: &HumanMapping,
+    before: &Code,
+    after: &Code,
+    diff: &PaintingDiff,
+    options: crate::diff::text::RenderOptions,
+) -> Result<Vec<EmbeddedRegion>> {
+    let host_labels = omnidiff_painting_labels(diff, before, after, options);
+    let mut regions = Vec::new();
+    for layer in &mapping.embedded {
+        if layer.mapping.text_mappings.is_empty() {
+            continue;
+        }
+        let decoded = layer.resolve(before, after)?;
+        let offsets = [&decoded.before_offsets, &decoded.after_offsets];
+        let spans = [0, 1].map(|side| {
+            offsets[side][0]..*offsets[side].last().expect("a byte map is never empty")
+        });
+        let found = match diff {
+            PaintingDiff::Ast { ast, .. } => ast.embedded.iter().find(|found| {
+                found.before_id == decoded.before_id && found.after_id == decoded.after_id
+            }),
+            PaintingDiff::PlainText { .. } => None,
+        };
+        let ours = match found {
+            Some(found) => {
+                // A plain-text layer is painted as a file without a grammar is.
+                let inner = if found.before.ast.is_none() || found.after.ast.is_none() {
+                    let (before, after) = crate::diff::text::text_layer_diff(
+                        &found.before.contents,
+                        &found.after.contents,
+                    );
+                    PaintingDiff::PlainText { before, after }
+                } else {
+                    PaintingDiff::Ast {
+                        ast: Box::new(found.diff.clone()),
+                        node_cache: crate::diff::NodeCache::build(&found.before, &found.after),
+                    }
+                };
+                let labels = omnidiff_painting_labels(&inner, &found.before, &found.after, options);
+                [0, 1].map(|side| project_labels(&labels[side], offsets[side]))
+            }
+            None => [0, 1].map(|side| host_labels[side][spans[side].clone()].to_vec()),
+        };
+        let mut best: Option<(usize, [Vec<Option<TextLabel>>; 2])> = None;
+        for painting in paintings_for_mode(&layer.mapping, options)? {
+            let labels =
+                human_painting_labels(painting, &decoded.before.contents, &decoded.after.contents)?;
+            let theirs = [0, 1].map(|side| project_labels(&labels[side], offsets[side]));
+            let mismatched = (0..2)
+                .map(|side| {
+                    ours[side]
+                        .iter()
+                        .zip(&theirs[side])
+                        .filter(|(ours, theirs)| ours != theirs)
+                        .count()
+                })
+                .sum();
+            if best.as_ref().is_none_or(|(least, _)| mismatched < *least) {
+                best = Some((mismatched, theirs));
+            }
+        }
+        let (_, theirs) = best.context("a painted layer has a painting for every preset")?;
+        regions.push(EmbeddedRegion {
+            spans,
+            ours,
+            theirs,
+        });
+    }
+    Ok(regions)
+}
+
+/// Decoded-text labels as labels of the host bytes they came from, starting at `offsets[0]`: every
+/// byte of an escape takes the label of the character it spells, and the indentation a YAML block
+/// lost goes with the newline before it, which is never labelled.
+fn project_labels(labels: &[Option<TextLabel>], offsets: &[usize]) -> Vec<Option<TextLabel>> {
+    let start = offsets[0];
+    let mut projected = vec![None; offsets[offsets.len() - 1] - start];
+    for (index, label) in labels.iter().enumerate() {
+        projected[offsets[index] - start..offsets[index + 1] - start].fill(*label);
+    }
+    projected
 }
 
 /// Asserts omnidiff's rendering matches the human painting under **both** presets, within
@@ -957,7 +1241,7 @@ pub fn mapping_path(name: &str) -> PathBuf {
 /// collapsed subtree (see the module doc). [`load_with`] skips that parse.
 pub fn load(name: &str) -> Result<HumanMapping> {
     let stored = read_stored(name)?;
-    if !stored.has_subtrees() {
+    if !stored.needs_code() {
         return stored.expand(None);
     }
     let dir = super::diffs_case_dir(name)
@@ -965,14 +1249,14 @@ pub fn load(name: &str) -> Result<HumanMapping> {
     let (before, after) = super::code_pair_from_dir_without_metadata(&dir)?
         .with_context(|| format!("no before/after pair in {dir:?} to expand its mapping in"))?;
     stored
-        .expand(trees_of(&before, &after))
+        .expand(Some((&before, &after)))
         .with_context(|| format!("expanding the human mapping of '{name}'"))
 }
 
 /// [`load`] against an already-parsed `before`/`after` pair of the fixture.
 pub fn load_with(name: &str, before: &Code, after: &Code) -> Result<HumanMapping> {
     read_stored(name)?
-        .expand(trees_of(before, after))
+        .expand(Some((before, after)))
         .with_context(|| format!("expanding the human mapping of '{name}'"))
 }
 
@@ -994,11 +1278,9 @@ pub fn file_json(name: &str, mapping: &HumanMapping) -> Result<String> {
         Some(dir) => super::code_pair_from_dir_without_metadata(&dir)?,
         None => None,
     };
-    let trees = code
-        .as_ref()
-        .and_then(|(before, after)| trees_of(before, after));
+    let code = code.as_ref().map(|(before, after)| (before, after));
     Ok(serde_json::to_string_pretty(&StoredMapping::collapse(
-        mapping, trees,
+        mapping, code,
     ))?)
 }
 
@@ -1077,6 +1359,17 @@ struct StoredMapping {
     groups: Vec<MultiMapGroup>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     text_mappings: Vec<NamedTextMapping>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    embedded: Vec<StoredLayer>,
+}
+
+/// [`HumanEmbeddedLayer`] as the file holds it: its mapping collapsed against the decoded pair.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct StoredLayer {
+    before_path: Vec<String>,
+    after_path: Vec<String>,
+    language: String,
+    mapping: StoredMapping,
 }
 
 impl StoredMapping {
@@ -1086,8 +1379,40 @@ impl StoredMapping {
             .any(|entry| entry.operation == StoredOperation::IdenticalWithChildren)
     }
 
-    /// The in-memory mapping. `trees` is needed only if [`Self::has_subtrees`].
-    fn expand(self, trees: Option<(&Tree, &Tree)>) -> Result<HumanMapping> {
+    /// Whether expanding needs the code pair: for a collapsed subtree, or to decode an embedded
+    /// layer's strings.
+    fn needs_code(&self) -> bool {
+        self.has_subtrees() || !self.embedded.is_empty()
+    }
+
+    /// The in-memory mapping. `code` is needed only if [`Self::needs_code`].
+    fn expand(self, code: Option<(&Code, &Code)>) -> Result<HumanMapping> {
+        let trees = code.and_then(|(before, after)| trees_of(before, after));
+        let mut embedded = Vec::with_capacity(self.embedded.len());
+        for layer in self.embedded {
+            let (before, after) = code.context("an embedded layer needs the code pair")?;
+            let language = crate::code::language::from_stable_name(&layer.language)
+                .with_context(|| format!("unknown embedded language {:?}", layer.language))?;
+            let decoded = resolve_layer(
+                before,
+                after,
+                &layer.before_path,
+                &layer.after_path,
+                language,
+            )?;
+            let mapping = layer
+                .mapping
+                .expand(Some((&decoded.before, &decoded.after)))
+                .with_context(|| {
+                    format!("expanding the embedded layer at {:?}", layer.before_path)
+                })?;
+            embedded.push(HumanEmbeddedLayer {
+                before_path: layer.before_path,
+                after_path: layer.after_path,
+                language: layer.language,
+                mapping,
+            });
+        }
         let mut entries = Vec::with_capacity(self.entries.len());
         let mut before_cache = PathCache::new();
         let mut after_cache = PathCache::new();
@@ -1122,17 +1447,38 @@ impl StoredMapping {
             entries,
             groups: self.groups,
             text_mappings: self.text_mappings,
+            embedded,
         })
     }
 
     /// The file form of `mapping`: each run of `Identical` entries that is exactly what one entry
     /// would expand into (see [`walk_identical_subtree`]) becomes that one entry. Without trees, or
     /// should the result not expand back to `mapping`'s entries, the entries are kept as they are.
-    fn collapse(mapping: &HumanMapping, trees: Option<(&Tree, &Tree)>) -> Self {
+    fn collapse(mapping: &HumanMapping, code: Option<(&Code, &Code)>) -> Self {
+        let trees = code.and_then(|(before, after)| trees_of(before, after));
+        let embedded: Vec<StoredLayer> = mapping
+            .embedded
+            .iter()
+            .map(|layer| {
+                let decoded = code.and_then(|(before, after)| layer.resolve(before, after).ok());
+                StoredLayer {
+                    before_path: layer.before_path.clone(),
+                    after_path: layer.after_path.clone(),
+                    language: layer.language.clone(),
+                    mapping: Self::collapse(
+                        &layer.mapping,
+                        decoded
+                            .as_ref()
+                            .map(|decoded| (&decoded.before, &decoded.after)),
+                    ),
+                }
+            })
+            .collect();
         let as_is = || Self {
             entries: mapping.entries.iter().map(StoredEntry::from).collect(),
             groups: mapping.groups.clone(),
             text_mappings: mapping.text_mappings.clone(),
+            embedded: embedded.clone(),
         };
         let Some((before_tree, after_tree)) = trees else {
             return as_is();
@@ -1160,10 +1506,11 @@ impl StoredMapping {
             entries: stored,
             groups: mapping.groups.clone(),
             text_mappings: mapping.text_mappings.clone(),
+            embedded: embedded.clone(),
         };
         let round_trips = collapsed
             .clone()
-            .expand(trees)
+            .expand(code)
             .is_ok_and(|expanded| same_entries(&expanded.entries, entries));
         if round_trips { collapsed } else { as_is() }
     }
@@ -2007,6 +2354,19 @@ pub fn as_ast_diff_for_mapping(
             },
         );
     }
+    // In the before host strings' document order, as `diff::embedded::solve` leaves them.
+    let mut layers = Vec::with_capacity(mapping.embedded.len());
+    for layer in &mapping.embedded {
+        let host_start = before_cache
+            .resolve(before_root, &path_refs(&layer.before_path))?
+            .start_byte();
+        let mut decoded = layer.resolve(before, after)?;
+        decoded.diff = as_ast_diff_for_mapping(&layer.mapping, &decoded.before, &decoded.after)
+            .with_context(|| format!("the embedded layer at {:?}", layer.before_path))?;
+        layers.push((host_start, decoded));
+    }
+    layers.sort_by_key(|(host_start, _)| *host_start);
+    diff.embedded = layers.into_iter().map(|(_, decoded)| decoded).collect();
     Ok(diff)
 }
 
@@ -3223,11 +3583,23 @@ fn compute_mismatches_detailed_with_diff(
         });
     }
 
+    mismatches.extend(mapping_mismatches(mapping, before, after, diff_ast)?);
+    Ok(mismatches)
+}
+
+/// Every decision of `mapping` that does not hold in `diff_ast`, its embedded layers included.
+fn mapping_mismatches(
+    mapping: &HumanMapping,
+    before: &crate::code::Code,
+    after: &crate::code::Code,
+    diff_ast: &ASTDiff,
+) -> Result<Vec<Mismatch>> {
     let before_ast = before.ast.as_ref().context("Before code has no AST")?;
     let after_ast = after.ast.as_ref().context("After code has no AST")?;
     let before_root = before_ast.root_node();
     let after_root = after_ast.root_node();
 
+    let mut mismatches = Vec::new();
     let mut before_cache = PathCache::new();
     let mut after_cache = PathCache::new();
     for entry in &mapping.entries {
@@ -3252,8 +3624,73 @@ fn compute_mismatches_detailed_with_diff(
             &mut after_cache,
         )?;
     }
-
+    for layer in &mapping.embedded {
+        let before_host = before_cache.resolve(before_root, &path_refs(&layer.before_path))?;
+        let after_host = after_cache.resolve(after_root, &path_refs(&layer.after_path))?;
+        mismatches.extend(embedded_mismatches(
+            layer,
+            before_host,
+            after_host,
+            diff_ast,
+        )?);
+    }
     Ok(mismatches)
+}
+
+/// The mismatches of one embedded layer, against omnidiff's layer at the same host pair.
+///
+/// Inner node ids mean nothing in the host trees, so each mismatch is re-pointed at the host
+/// string's first leaf when its inner node is visible (a leaf is always visible), and at 0, never
+/// visible, when it is not: the host's visible counts stay its own, and an embedded mistake counts
+/// against the host string it is in. A layer omnidiff did not find is one visible mismatch.
+fn embedded_mismatches(
+    layer: &HumanEmbeddedLayer,
+    before_host: Node,
+    after_host: Node,
+    diff_ast: &ASTDiff,
+) -> Result<Vec<Mismatch>> {
+    let first_leaf = |node: Node| {
+        let mut node = node;
+        while let Some(child) = node.child(0) {
+            node = child;
+        }
+        node.id()
+    };
+    let (before_leaf, after_leaf) = (first_leaf(before_host), first_leaf(after_host));
+    let prefix = format!("[embedded {} at {:?}]", layer.language, layer.before_path);
+    let Some(found) = diff_ast
+        .embedded
+        .iter()
+        .find(|found| found.before_id == before_host.id() && found.after_id == after_host.id())
+    else {
+        return Ok(vec![Mismatch {
+            message: format!(
+                "{prefix} omnidiff did not diff these strings as embedded code, so none of the \
+                 layer's {} entries hold",
+                layer.mapping.entries.len()
+            ),
+            node_id: before_leaf,
+            side: Side::Before,
+        }]);
+    };
+    let before_visible = crate::diff::nodes::structurally_visible_node_ids(&found.before);
+    let after_visible = crate::diff::nodes::structurally_visible_node_ids(&found.after);
+    Ok(
+        mapping_mismatches(&layer.mapping, &found.before, &found.after, &found.diff)?
+            .into_iter()
+            .map(|mismatch| {
+                let (visible, leaf) = match mismatch.side {
+                    Side::Before => (before_visible.contains(&mismatch.node_id), before_leaf),
+                    Side::After => (after_visible.contains(&mismatch.node_id), after_leaf),
+                };
+                Mismatch {
+                    message: format!("{prefix} {}", mismatch.message),
+                    node_id: if visible { leaf } else { 0 },
+                    side: mismatch.side,
+                }
+            })
+            .collect(),
+    )
 }
 
 /// [`compute_mismatches_detailed_for_with_config`]'s mismatches split by whether each one's node
@@ -3635,6 +4072,7 @@ mod tests {
     #[test]
     fn a_mapping_without_a_text_painting_serializes_without_the_key() {
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![HumanMappingEntry {
                 operation: HumanOperation::Identical,
                 before_path: Some(vec!["source_file:1".to_string()]),
@@ -3653,6 +4091,7 @@ mod tests {
 
     fn named(names: &[&str]) -> HumanMapping {
         HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![],
             text_mappings: names
@@ -3720,6 +4159,7 @@ mod tests {
     #[test]
     fn a_named_but_empty_painting_is_distinguishable_from_no_painting_at_all() {
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![],
             text_mappings: vec![NamedTextMapping {
@@ -3845,6 +4285,7 @@ mod tests {
             }
         }
         HumanMapping {
+            embedded: Vec::new(),
             entries,
             groups: vec![],
             text_mappings: vec![],
@@ -3930,13 +4371,13 @@ mod tests {
     fn a_collapsed_mapping_expands_back_to_the_same_entries() -> Result<()> {
         let mapping = load("rust-add-if")?;
         let (before, after) = code_pair("rust-add-if")?;
-        let stored = StoredMapping::collapse(&mapping, trees_of(&before, &after));
+        let stored = StoredMapping::collapse(&mapping, Some((&before, &after)));
         assert!(
             stored.has_subtrees(),
             "rust-add-if keeps whole identical subtrees"
         );
         assert!(stored.entries.len() < mapping.entries.len());
-        let expanded = stored.expand(trees_of(&before, &after))?;
+        let expanded = stored.expand(Some((&before, &after)))?;
         assert_eq!(compact(&expanded), compact(&mapping));
         Ok(())
     }
@@ -3946,7 +4387,7 @@ mod tests {
         let mut mapping = load("rust-add-if")?;
         let (before, after) = code_pair("rust-add-if")?;
         // The first `Identical` pair with children, and a leaf entry somewhere below it.
-        let stored = StoredMapping::collapse(&mapping, trees_of(&before, &after));
+        let stored = StoredMapping::collapse(&mapping, Some((&before, &after)));
         let root = stored
             .entries
             .iter()
@@ -3965,12 +4406,12 @@ mod tests {
             .context("a descendant entry")?;
         mapping.entries[below].operation = HumanOperation::Update;
 
-        let stored = StoredMapping::collapse(&mapping, trees_of(&before, &after));
+        let stored = StoredMapping::collapse(&mapping, Some((&before, &after)));
         assert!(!stored.entries.iter().any(|entry| {
             entry.operation == StoredOperation::IdenticalWithChildren
                 && entry.before_path.as_ref() == Some(&root_path)
         }));
-        let expanded = stored.expand(trees_of(&before, &after))?;
+        let expanded = stored.expand(Some((&before, &after)))?;
         assert_eq!(compact(&expanded), compact(&mapping));
         Ok(())
     }
@@ -4050,6 +4491,7 @@ mod tests {
     #[test]
     fn round_trips_a_multi_map_group_through_json() -> Result<()> {
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: vec![vec!["a:1".to_string()], vec!["a:2".to_string()]],
@@ -5030,6 +5472,7 @@ mod tests {
         let after_foos = function_body_statements(after_root);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5067,6 +5510,7 @@ mod tests {
         assert_eq!(after_foos.len(), 2);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5108,6 +5552,7 @@ mod tests {
         assert_eq!(after_foos.len(), 2);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5152,6 +5597,7 @@ mod tests {
         assert_eq!(after_foos.len(), 2);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5213,6 +5659,7 @@ mod tests {
         let statement_path = path_for_node(function_body_statements(before_root)[0]);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![HumanMappingEntry {
                 before_path: Some(statement_path.clone()),
                 after_path: Some(statement_path),
@@ -5265,6 +5712,7 @@ mod tests {
         let after_foos = function_body_statements(after_root);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5321,6 +5769,7 @@ mod tests {
         assert_eq!(after_foos.len(), 2);
 
         let mapping = HumanMapping {
+            embedded: Vec::new(),
             entries: vec![],
             groups: vec![MultiMapGroup {
                 before_paths: before_foos.iter().map(|n| path_for_node(*n)).collect(),
@@ -5526,5 +5975,6 @@ mod tests {
         Ok(())
     }
 
+    mod embedded;
     mod exploratory;
 }

@@ -442,6 +442,7 @@ pub(crate) fn draw_ui(
             std::str::from_utf8(after_src).unwrap_or(""),
             &app.mapping,
             &app.text_solution,
+            &app.layer_paint,
             app.text_overlay,
             app.algo_text_spans.as_ref(),
             DiffPickerData::from_app(app),
@@ -500,6 +501,7 @@ pub(crate) fn render_modal(
     after_src: &str,
     mapping: &HumanMapping,
     text_solution: &str,
+    layer_paint: &[LayerPaint],
     text_overlay: TextOverlay,
     algo_text_spans: Option<&[Vec<(HumanTextSpan, HumanTextVerdict)>; 2]>,
     diff_data: DiffPickerData<'_>,
@@ -661,6 +663,7 @@ pub(crate) fn render_modal(
                 after_src,
                 mapping,
                 text_solution,
+                layer_paint,
                 text_overlay,
                 algo_text_spans,
                 state,
@@ -1022,6 +1025,7 @@ pub(crate) fn render_text_view_modal(
     after_src: &str,
     mapping: &HumanMapping,
     solution: &str,
+    layer_paint: &[LayerPaint],
     overlay: TextOverlay,
     algo_spans: Option<&[Vec<(HumanTextSpan, HumanTextVerdict)>; 2]>,
     state: &TextPaintState,
@@ -1048,10 +1052,18 @@ pub(crate) fn render_text_view_modal(
     let others = mapping.text_mappings.len().saturating_sub(1);
 
     // The disagreement overlay needs both sides' human and algo spans together.
-    let human_spans = [
+    let mut human_spans = [
         painted_spans(mapping, solution, 0, before_src, after_src),
         painted_spans(mapping, solution, 1, before_src, after_src),
     ];
+    // Each painted layer's painting where its string spells it (see `layers`).
+    for layer in layer_paint {
+        if let Some(spans) = layer.for_solution(solution) {
+            for side in 0..2 {
+                human_spans[side].extend(spans[side].iter().copied());
+            }
+        }
+    }
     let empty = [Vec::new(), Vec::new()];
     let algo = algo_spans.unwrap_or(&empty);
     let shown = match overlay {

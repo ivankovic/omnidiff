@@ -99,40 +99,41 @@ STRATIFIED_PER_CELL = 10
 # Ground-truth corpus size and AST-node accuracy.
 # source: cargo run --release --features test-fixtures --bin benchmark_optimal_solutions -- --csv
 #         (research/data/quality/optimal_solutions_benchmark.csv), totalled over solved fixtures.
-# Measured 2026-10-17, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
+# Measured 2026-10-22, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
 # `defects4j` fixtures. The corpus directory also holds 63 `handmade` fixtures, hand-written
 # minimal examples of one change pattern each; the product benchmark scores them and this paper
 # does not, because no rate over cases written to exercise the matcher estimates anything about
 # real changes.
 #
-# `defects4j` contributes 335 solved Java compilation units (274 at the 2026-09-26 refresh, 113 at
-# 2026-09-16), far longer than the corpus median, which is why it carries so much of NodesTotal.
-# Only solved fixtures count - the other 661 Defects4J directories carry no human_mapping.json and
-# are invisible here.
+# `defects4j` contributes 440 solved Java compilation units (335 at the 2026-10-17 refresh, 274 at
+# 2026-09-26, 113 at 2026-09-16), far longer than the corpus median, which is why it carries so
+# much of NodesTotal. Only solved fixtures count - the other 556 Defects4J directories carry no
+# human_mapping.json and are invisible here.
 #
-# In scope: 1499 fixture directories carrying a human_mapping.json (220 small, 232 full, 712
-# stratified, 335 defects4j).
+# In scope: 1683 fixture directories carrying a human_mapping.json (220 small, 232 full, 791
+# stratified, 440 defects4j).
 # `rust-completely-unrelated-main-files`, which is deliberately ground-truth-free (a
 # pathological-latency case, not an accuracy case, reporting `human_unsolved` in the CSV), is a
 # `handmade` fixture and so is out of scope here rather than being an in-scope exception.
 #
-# NumFixtures is the ground-truth-bearing count, 1499, which is the denominator of the node
-# accuracy below. The per-tool rows are not over it: the 2026-10-17 refresh did not re-run the tool
-# comparison, which stays at the 1217 fixtures of 2026-09-26 (\UnixDiffFixtures; footnote
-# fn:in-progress in main.tex says so). The ablation study is older and names its own corpus state.
+# NumFixtures is the ground-truth-bearing count, 1683, which is the denominator of the node
+# accuracy below. The per-tool rows are not over it: the 2026-10-17 and 2026-10-22 refreshes did not
+# re-run the tool comparison, which stays at the 1217 fixtures of 2026-09-26 (\UnixDiffFixtures;
+# footnote fn:in-progress in main.tex says so). The ablation study is older and names its own
+# corpus state.
 #
-# Refreshed together, from one corpus state, on 2026-10-17. These four move as a set and must be
+# Refreshed together, from one corpus state, on 2026-10-22. These four move as a set and must be
 # refreshed as a set: re-run the benchmark with --csv, re-run `analyze_human_mappings --csv` so the
 # scope artifact agrees with it, then recompute here. Order matters in one direction: human_mapping_analysis.csv carries a
 # `current_mismatches` column read back from optimal_solutions_benchmark.csv, so the benchmark runs
 # first. The check at the bottom of this file compares NumFixtures against the corpus on disk
 # precisely because the previous values silently outlived the corpus they described.
 CORPUS = {
-    "NumFixtures": 1499,
-    "NodesMatched": 16_322_226,
-    "NodesTotal": 16_329_845,
+    "NumFixtures": 1683,
+    "NodesMatched": 18_597_127,
+    "NodesTotal": 18_605_165,
     # Distinct languages across the fixture corpus, from `analyze_human_mappings`' own "By
-    # language" census restricted to these fixtures (24 as of 2026-10-17; `defects4j` is Java only, and the excluded handmade
+    # language" census restricted to these fixtures (24 as of 2026-10-22; `defects4j` is Java only, and the excluded handmade
     # fixtures cover no language the sampled ones lack).
     # Not the same number as the empirical study's \NumLanguages, which counts languages in the
     # 100-repository measure-file-stats corpus.
@@ -144,8 +145,8 @@ CORPUS = {
 # alongside the all-node figure because the all-node denominator includes every ancestor of every
 # change up to the root, so it partly measures how deep a grammar's tree is.
 CORPUS_VISIBLE = {
-    "VisibleNodesMatched": 11_013_577,
-    "VisibleNodesTotal": 11_018_678,
+    "VisibleNodesMatched": 12_569_053,
+    "VisibleNodesTotal": 12_574_430,
 }
 
 # Leave-one-out ablation deltas, in mismatches, against an all-enabled baseline. A positive number

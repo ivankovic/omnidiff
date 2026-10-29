@@ -791,6 +791,7 @@ fn render_modal_prompt_search_shows_the_prefilled_query_and_instructions() {
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -830,6 +831,7 @@ fn render_modal_prompt_promote_name_shows_the_actual_target_dataset_not_a_fixed_
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -3368,6 +3370,7 @@ fn the_text_view_renders_painted_ranges() {
     let mut terminal = Terminal::new(backend).unwrap();
     let area = Rect::new(0, 0, width, 24);
     let mapping = HumanMapping {
+        embedded: Vec::new(),
         entries: vec![],
         groups: vec![],
         text_mappings: vec![NamedTextMapping {
@@ -3396,6 +3399,7 @@ fn the_text_view_renders_painted_ranges() {
                 "fn new_name() {}",
                 &mapping,
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -3458,6 +3462,7 @@ fn render_open_diff_picker_shows_the_unmarked_column_and_the_sort_and_filter_mar
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
@@ -3509,6 +3514,7 @@ fn the_diff_picker_title_keeps_its_filter_list_when_the_terminal_truncates_it() 
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -3542,6 +3548,7 @@ fn text_view_modal_renders_both_sides_content() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -4683,6 +4690,7 @@ fn render_open_diff_picker_shows_a_pictures_verdict_and_dashes_for_what_only_cod
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
@@ -10355,6 +10363,7 @@ fn the_text_view_draws_only_the_focused_side_on_a_narrow_terminal() {
                     "fn new_name() {}",
                     &HumanMapping::default(),
                     "Minimal",
+                    &[],
                     TextOverlay::Human,
                     None,
                     &state,
@@ -11201,6 +11210,7 @@ fn the_text_view_title_shows_the_search_prompt_on_the_focused_side() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &state,
@@ -11554,5 +11564,373 @@ fn the_review_filter_keeps_only_queued_cases() {
             data
         ),
         vec!["clear"]
+    );
+}
+
+/// The shadcn registry fixture, opened as `main` opens a case, with omnidiff's diff in place and
+/// any layer saved in it removed, so painting the fixture does not change what these tests see.
+fn shadcn_app() -> (App, Code, Code) {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (before, after) = load_case(name).expect("fixture loads");
+    let mut mapping = human_mapping::load_with(name, &before, &after).expect("mapping loads");
+    mapping.embedded.clear();
+    let mut app = App::new(
+        name.to_string(),
+        CaseOrigin::Diffs,
+        starting_cursor_id(&before),
+        starting_cursor_id(&after),
+        mapping,
+    );
+    app.algo_diff = diff_code(&before, &after).ast;
+    (app, before, after)
+}
+
+/// The JSON string holding the TSX file, in `code`.
+fn shadcn_host_string(code: &Code) -> Node<'_> {
+    let path = [
+        "object:1", "pair:4", "array:1", "object:1", "pair:2", "string:2",
+    ];
+    node_for_path(code.ast.as_ref().expect("parsed").root_node(), &path).expect("host string")
+}
+
+#[test]
+fn enter_on_a_host_string_opens_its_embedded_layer_and_q_closes_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    assert_eq!(request.language, Language::TSX);
+
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(inner_before.contents.starts_with("import * as React"));
+    assert!(inner_after.contents.contains("phosphor=\"CaretLeftIcon\""));
+    assert!(
+        app.mapping.entries.is_empty(),
+        "a new layer starts unmapped"
+    );
+    assert!(
+        app.algo_diff.is_none(),
+        "omnidiff reruns on the decoded pair"
+    );
+    assert!(
+        app.display_name()
+            .ends_with("> TSX in the string at line 10")
+    );
+
+    // What `s` would save: the host mapping, with this layer's work written into it.
+    app.mapping.text_mappings.push(NamedTextMapping {
+        name: "Minimal".to_string(),
+        mapping: HumanTextMapping::default(),
+    });
+    let whole = app.whole_mapping();
+    assert_eq!(whole.embedded.len(), 1);
+    assert_eq!(whole.embedded[0].mapping.text_mappings.len(), 1);
+    assert!(!whole.entries.is_empty(), "the host's own entries are kept");
+
+    leave_layer(&mut app);
+    assert!(app.layers.is_empty());
+    assert_eq!(
+        app.mapping.embedded.len(),
+        1,
+        "a layer with work in it stays"
+    );
+    assert!(
+        app.algo_diff.is_some(),
+        "the host's omnidiff run comes back"
+    );
+}
+
+#[test]
+fn a_layer_opened_and_left_untouched_is_not_kept() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&before),
+        Side::Before,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    leave_layer(&mut app);
+    assert!(app.mapping.embedded.is_empty());
+}
+
+#[test]
+fn enter_on_a_string_with_no_code_says_why() {
+    let (app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let root = before.ast.as_ref().expect("parsed").root_node();
+    let name_value = node_for_path(root, &["object:1", "pair:2", "string:2"]).expect("name");
+    let reason = layer_request(&app, name_value, Side::Before, &caches, &before, &after)
+        .expect_err("no code in the component's name");
+    assert!(
+        reason.contains("partner") || reason.contains("language"),
+        "{reason}"
+    );
+}
+
+#[test]
+fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_comes_back() {
+    let (mut app, before, after) = shadcn_app();
+    let before_root = before.ast.as_ref().expect("parsed").root_node();
+    let after_root = after.ast.as_ref().expect("parsed").root_node();
+    let caches = rebuild_caches(&app.mapping.entries, before_root, after_root);
+    let before_flat = FlatIndex::new(flatten_visible(before_root, &app.before.collapsed, None));
+    let after_flat = FlatIndex::new(flatten_visible(after_root, &app.after.collapsed, None));
+    let line = after.contents.lines().nth(9).expect("line 10");
+    let column = line.find("import").expect("the TSX starts on line 10");
+    let state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (9, column)],
+        ..Default::default()
+    };
+    app.modal = Some(Modal::TextView {
+        state: state.clone(),
+    });
+
+    let request = match handle_modal_key(
+        &mut app,
+        KeyCode::Enter,
+        &before_flat,
+        &after_flat,
+        Some(before_root),
+        Some(after_root),
+        &caches,
+        before.contents.as_bytes(),
+        after.contents.as_bytes(),
+        &before,
+        &after,
+    ) {
+        Some(OpenTarget::EnterLayer(request)) => request,
+        _ => panic!("Enter should open the layer, status {:?}", app.status),
+    };
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(
+        matches!(&app.modal, Some(Modal::TextView { state }) if *state == TextPaintState::default()),
+        "the layer opens in its own t view"
+    );
+
+    // Esc in the layer's t view goes back the way it came, to the host's t view.
+    let inner_before_root = inner_before.ast.as_ref().expect("parsed").root_node();
+    let inner_after_root = inner_after.ast.as_ref().expect("parsed").root_node();
+    let inner_caches = rebuild_caches(&app.mapping.entries, inner_before_root, inner_after_root);
+    let inner_before_flat = FlatIndex::new(flatten_visible(
+        inner_before_root,
+        &app.before.collapsed,
+        None,
+    ));
+    let inner_after_flat = FlatIndex::new(flatten_visible(
+        inner_after_root,
+        &app.after.collapsed,
+        None,
+    ));
+    let esc = handle_modal_key(
+        &mut app,
+        KeyCode::Esc,
+        &inner_before_flat,
+        &inner_after_flat,
+        Some(inner_before_root),
+        Some(inner_after_root),
+        &inner_caches,
+        inner_before.contents.as_bytes(),
+        inner_after.contents.as_bytes(),
+        &inner_before,
+        &inner_after,
+    );
+    assert!(matches!(esc, Some(OpenTarget::LeaveLayer)));
+    leave_layer(&mut app);
+    assert!(matches!(&app.modal, Some(Modal::TextView { state: back }) if *back == state));
+}
+
+#[test]
+fn a_layers_painting_is_drawn_in_the_host_where_the_string_spells_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    let (_, inner_after) = enter_layer(&mut app, &before, &after, &request).expect("opens");
+    let attribute = "phosphor=\"CaretLeftIcon\"";
+    let (row, line) = inner_after
+        .contents
+        .lines()
+        .enumerate()
+        .find(|(_, line)| line.contains(attribute))
+        .expect("the TSX has the attribute");
+    let column = line.find(attribute).expect("on that line");
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Insert,
+        before: Vec::new(),
+        after: vec![HumanTextSpan {
+            start_row: row,
+            start_column: column,
+            end_row: row,
+            end_column: column + attribute.len(),
+        }],
+    });
+    leave_layer(&mut app);
+
+    let projected = project_layer_paint(&app.mapping, &before, &after);
+    let spans = projected[0].for_solution("Minimal").expect("painted");
+    assert!(spans[0].is_empty());
+    let [(span, verdict)] = spans[1][..] else {
+        panic!("one span, got {:?}", spans[1]);
+    };
+    assert_eq!(verdict, HumanTextVerdict::Insert);
+    let host_line = after.contents.lines().nth(span.start_row).expect("row");
+    assert_eq!(
+        &host_line[span.start_column..span.end_column],
+        r#"phosphor=\"CaretLeftIcon\""#
+    );
+}
+
+#[test]
+fn a_fixture_painted_only_in_its_layer_counts_as_painted_when_saved() {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (mut app, before, after) = shadcn_app();
+    app.mapping.text_mappings.clear();
+    assert!(!is_painted(name, &app.mapping).expect("checks"));
+
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("opens");
+    action_paint_mark_empty(&mut app);
+    leave_layer(&mut app);
+    assert!(app.mapping.text_mappings.is_empty());
+    assert!(
+        is_painted(name, &app.mapping).expect("checks"),
+        "the JSON reads the same outside the string, so its painting is implied"
+    );
+}
+
+/// One `helper()` call extracted out of two places: a 1:2 match, before row 1 against after rows
+/// 0 and 2.
+fn one_to_two_match() -> (App, &'static str, &'static str) {
+    let before = "a\nhelper()\nb\n";
+    let after = "helper()\nx\nhelper()\n";
+    let mut app = test_app();
+    app.text_solution = "Minimal".to_string();
+    let span = |row| HumanTextSpan {
+        start_row: row,
+        start_column: 0,
+        end_row: row,
+        end_column: 8,
+    };
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Match,
+        before: vec![span(1)],
+        after: vec![span(0), span(2)],
+    });
+    (app, before, after)
+}
+
+#[test]
+fn f_walks_the_other_ranges_of_the_match_under_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(1, 3), (1, 0)],
+        ..Default::default()
+    };
+
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0));
+    assert!(
+        app.status.as_deref().unwrap_or("").contains("1 of 2"),
+        "{:?}",
+        app.status
+    );
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (2, 0));
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0), "wrapping");
+    assert_eq!(state.side, 0, "the focus stays, so f walks on");
+    assert_eq!(state.cursor[0], (1, 3));
+
+    // From the other side, its one partner.
+    state.side = 1;
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+}
+
+#[test]
+fn f_scrolls_the_partner_level_with_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (2, 0)],
+        scroll: [0, 1],
+        ..Default::default()
+    };
+    // The cursor sits on screen row 1; its partner, before row 1, is scrolled to show there too.
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+    assert_eq!(state.scroll[0], 0);
+}
+
+#[test]
+fn f_off_a_painted_match_says_so_and_moves_nothing() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(0, 0), (1, 0)],
+        ..Default::default()
+    };
+    let unchanged = state.clone();
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state, unchanged);
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("No painted match"),
+        "{:?}",
+        app.status
     );
 }

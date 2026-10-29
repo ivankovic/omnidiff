@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -48,6 +48,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the rename split is not painted (`num` against `nums`).
-    assert_ground_truth_invariants_with_known_violations("rust-algorithm-change", 1)
+    assert_ground_truth_invariants("rust-algorithm-change")
 }

@@ -168,7 +168,7 @@ CRATES="
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
 	libsqlite3-sys@0.38.2
-	libz-sys@1.1.29
+	libz-sys@1.1.31
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6

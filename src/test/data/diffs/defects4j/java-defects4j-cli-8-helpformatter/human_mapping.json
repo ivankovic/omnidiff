@@ -2412,7 +2412,7 @@
       "name": "Only one solution",
       "entries": [
         {
-          "operation": "Delete",
+          "operation": "Match",
           "before": [
             {
               "start_row": 811,
@@ -2420,10 +2420,7 @@
               "end_row": 811,
               "end_column": 58
             }
-          ]
-        },
-        {
-          "operation": "Insert",
+          ],
           "after": [
             {
               "start_row": 811,

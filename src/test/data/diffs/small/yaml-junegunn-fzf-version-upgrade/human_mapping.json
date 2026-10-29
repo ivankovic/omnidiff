@@ -884,5 +884,31 @@
         "block_mapping_pair:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 14,
+              "start_column": 31,
+              "end_row": 15,
+              "end_column": 0
+            }
+          ],
+          "after": [
+            {
+              "start_row": 14,
+              "start_column": 31,
+              "end_row": 15,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

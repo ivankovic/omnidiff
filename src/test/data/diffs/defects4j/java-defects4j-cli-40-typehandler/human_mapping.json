@@ -1936,6 +1936,28 @@
               "end_column": 76
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 102,
+              "start_column": 76,
+              "end_row": 102,
+              "end_column": 77
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 102,
+              "start_column": 23,
+              "end_row": 102,
+              "end_column": 24
+            }
+          ]
         }
       ]
     },
@@ -1980,6 +2002,28 @@
               "start_column": 0,
               "end_row": 102,
               "end_column": 12
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 102,
+              "start_column": 23,
+              "end_row": 102,
+              "end_column": 24
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 102,
+              "start_column": 76,
+              "end_row": 102,
+              "end_column": 77
             }
           ]
         }

@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-qpdf-qpdf-move-to-assert-from-if-and-throw",
-        14,
-        9,
+        13,
+        8,
     )
 }
 

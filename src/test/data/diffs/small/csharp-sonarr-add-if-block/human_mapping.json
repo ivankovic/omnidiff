@@ -994,5 +994,75 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 96,
+              "start_column": 12,
+              "end_row": 96,
+              "end_column": 49
+            },
+            {
+              "start_row": 97,
+              "start_column": 12,
+              "end_row": 97,
+              "end_column": 13
+            },
+            {
+              "start_row": 98,
+              "start_column": 16,
+              "end_row": 98,
+              "end_column": 28
+            },
+            {
+              "start_row": 99,
+              "start_column": 12,
+              "end_row": 99,
+              "end_column": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 96,
+              "start_column": 0,
+              "end_row": 96,
+              "end_column": 49
+            },
+            {
+              "start_row": 97,
+              "start_column": 0,
+              "end_row": 97,
+              "end_column": 13
+            },
+            {
+              "start_row": 98,
+              "start_column": 0,
+              "end_row": 98,
+              "end_column": 28
+            },
+            {
+              "start_row": 99,
+              "start_column": 0,
+              "end_row": 99,
+              "end_column": 13
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

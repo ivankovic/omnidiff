@@ -172,5 +172,50 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 119,
+              "end_row": 7,
+              "end_column": 125
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 119,
+              "end_row": 7,
+              "end_column": 125
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 118,
+              "end_row": 7,
+              "end_column": 119
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

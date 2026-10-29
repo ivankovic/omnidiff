@@ -18,15 +18,16 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
+    // Re-measured after the ground truth was re-mapped in 0add7891.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-closure-155-referencecollectingcallback",
-        15,
-        11,
+        17,
+        13,
     )
 }
 
@@ -34,23 +35,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-closure-155-referencecollectingcallback",
-        0.23,
+        0.27,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 8: 6 byte(s) survive under one preset and do not under the other, on after rows 125,
-    // 127 - the first reads Insert under 'Minimal' and Move under 'Full'. A Move says the code is
-    // still there, so the other preset cannot call it removed or added
-    // Invariant 22: painting 'Minimal' paints 2 leaf/leaves wholly deleted or inserted that the tree
-    // mapping pairs with an identical leaf, on after rows 125, 127 - the first is `v`
-    // Invariant 25: painting 'Full' after row 125 paints the removed `expression_statement` move at
-    // its start but its `;` insert - the `;` belongs to its statement
-    // Invariant 25: painting 'Full' after row 127 paints the removed `expression_statement` move at
-    // its start but its `;` insert - the `;` belongs to its statement
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-155-referencecollectingcallback",
-        4,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-155-referencecollectingcallback")
 }

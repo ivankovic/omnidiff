@@ -1054,5 +1054,61 @@
         "block_sequence_item:10"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 6,
+              "end_row": 33,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 35,
+              "start_column": 6,
+              "end_row": 36,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 0,
+              "end_row": 33,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 35,
+              "start_column": 0,
+              "end_row": 36,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

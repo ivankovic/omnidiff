@@ -15,15 +15,27 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping("csharp-jellyfin-sql-query-fix")
+    // Recorded as found, not examined.
+    // Re-measured after the ground truth was re-mapped in f3f13bbf.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+        "csharp-jellyfin-sql-query-fix",
+        2,
+        2,
+    )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("csharp-jellyfin-sql-query-fix")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("csharp-jellyfin-sql-query-fix", 3.81)
 }

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,14 +37,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: painting "Minimal" before row 735 paints "findImplicitParamName" against
-    // "paramName" wrongly for a Minimal reading - the differing words are "findImplicitP", and
-    // everything else in the identifier should be left alone
-    // Invariant 16: painting "Minimal" after row 735 paints "paramName" against
-    // "findImplicitParamName" wrongly for a Minimal reading - the differing words are "p", and
-    // everything else in the identifier should be left alone
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-jacksondatabind-96-basicdeserializerfactory",
-        2,
-    )
+    assert_ground_truth_invariants("java-defects4j-jacksondatabind-96-basicdeserializerfactory")
 }

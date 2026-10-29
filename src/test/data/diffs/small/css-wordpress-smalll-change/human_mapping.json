@@ -5773,5 +5773,72 @@
         "rule_set:41"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 299,
+              "start_column": 1,
+              "end_row": 300,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 304,
+              "start_column": 18,
+              "end_row": 304,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 299,
+              "start_column": 0,
+              "end_row": 300,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 304,
+              "start_column": 18,
+              "end_row": 304,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 304,
+              "start_column": 17,
+              "end_row": 304,
+              "end_column": 18
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

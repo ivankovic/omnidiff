@@ -11519,34 +11519,6 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "export_statement:1",
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "arrow_function:1",
-        "statement_block:1",
-        "if_statement:3",
-        "statement_block:1",
-        "if_statement:1",
-        "else_clause:1",
-        "statement_block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "export_statement:1",
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "arrow_function:1",
-        "statement_block:1",
-        "if_statement:3",
-        "statement_block:1",
-        "expression_statement:1",
-        ";:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "export_statement:1",
@@ -11654,6 +11626,37 @@
       "after_path": [
         "export_statement:1",
         "lexical_declaration:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "export_statement:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "arrow_function:1",
+        "statement_block:1",
+        "if_statement:3",
+        "statement_block:1",
+        "if_statement:1",
+        "else_clause:1",
+        "statement_block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "export_statement:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "arrow_function:1",
+        "statement_block:1",
+        "if_statement:3",
+        "statement_block:1",
+        "expression_statement:1",
         ";:1"
       ]
     }

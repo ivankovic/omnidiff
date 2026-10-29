@@ -10763,6 +10763,17 @@
               "end_column": 30
             }
           ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 444,
+              "start_column": 26,
+              "end_row": 444,
+              "end_column": 34
+            }
+          ]
         }
       ]
     },

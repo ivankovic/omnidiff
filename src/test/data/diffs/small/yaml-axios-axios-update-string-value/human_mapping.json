@@ -956,5 +956,31 @@
         "block_sequence_item:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 11,
+              "start_column": 32,
+              "end_row": 12,
+              "end_column": 0
+            }
+          ],
+          "after": [
+            {
+              "start_row": 11,
+              "start_column": 32,
+              "end_row": 12,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

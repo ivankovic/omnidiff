@@ -7344,6 +7344,17 @@
               "end_column": 10
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 351,
+              "start_column": 24,
+              "end_row": 351,
+              "end_column": 25
+            }
+          ]
         }
       ]
     },

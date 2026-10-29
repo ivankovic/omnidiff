@@ -5964,59 +5964,8 @@
         "if_statement:1",
         "test_command:1",
         "binary_expression:1",
-        "string:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "for_statement:1",
-        "do_group:1",
-        "if_statement:1",
-        "test_command:1",
-        "binary_expression:1",
         "string:1",
         "\":1"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "for_statement:1",
-        "do_group:1",
-        "if_statement:1",
-        "test_command:1",
-        "binary_expression:1",
-        "string:1",
-        "string_content:1"
-      ],
-      "after_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "for_statement:1",
-        "do_group:1",
-        "if_statement:1",
-        "test_command:1",
-        "binary_expression:1",
-        "regex:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "for_statement:1",
-        "do_group:1",
-        "if_statement:1",
-        "test_command:1",
-        "binary_expression:1",
-        "string:1",
-        "$:1"
       ]
     },
     {
@@ -6213,6 +6162,137 @@
       ],
       "after_path": [
         "command:4"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_definition:3",
+        "compound_statement:1",
+        "for_statement:1",
+        "do_group:1",
+        "if_statement:1",
+        "test_command:1",
+        "binary_expression:1",
+        "string:1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "function_definition:3",
+          "compound_statement:1",
+          "for_statement:1",
+          "do_group:1",
+          "if_statement:1",
+          "test_command:1",
+          "binary_expression:1",
+          "string:1",
+          "string_content:1"
+        ],
+        [
+          "function_definition:3",
+          "compound_statement:1",
+          "for_statement:1",
+          "do_group:1",
+          "if_statement:1",
+          "test_command:1",
+          "binary_expression:1",
+          "string:1",
+          "$:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "function_definition:3",
+          "compound_statement:1",
+          "for_statement:1",
+          "do_group:1",
+          "if_statement:1",
+          "test_command:1",
+          "binary_expression:1",
+          "regex:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 34,
+              "end_row": 49,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 44,
+              "end_row": 49,
+              "end_column": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 34,
+              "end_row": 49,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 44,
+              "end_row": 49,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 49,
+              "start_column": 35,
+              "end_row": 49,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 34,
+              "end_row": 49,
+              "end_column": 43
+            }
+          ]
+        }
       ]
     }
   ]

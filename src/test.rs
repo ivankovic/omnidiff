@@ -43,7 +43,6 @@ mod tests {
         "python-portagefilelist-client-remove-one-import-and-update-one-const-string",
         "scala-com-lihaoyi-mill-add-a-function-call",
         "scala-com-lihaoyi-mill-small-refactoring",
-        "shellscript-scikit-learn-scikit-learn-string-to-regex",
         "swift-apple-swift-argument-parser-small-change",
         "swift-nextcloud-ios-move-function-and-refactor-logic",
         "swift-nextcloud-ios-refactor-and-change",

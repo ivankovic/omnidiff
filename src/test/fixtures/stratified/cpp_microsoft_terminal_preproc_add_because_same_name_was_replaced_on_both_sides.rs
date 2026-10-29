@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,10 +40,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: `_HAS_CXX23` -> `__cpp_lib_string_resize_and_overwrite` on before row 570 is not
-    // painted as its differing words under Minimal.
-    assert_ground_truth_invariants_with_known_violations(
+    assert_ground_truth_invariants(
         "cpp-microsoft-terminal-preproc-add-because-same-name-was-replaced-on-both-sides",
-        1,
     )
 }

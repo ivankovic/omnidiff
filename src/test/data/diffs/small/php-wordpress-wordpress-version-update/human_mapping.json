@@ -237,5 +237,55 @@
         "expression_statement:6"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 18,
+              "start_column": 29,
+              "end_row": 18,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 29,
+              "end_row": 18,
+              "end_column": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 18,
+              "start_column": 25,
+              "end_row": 18,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 25,
+              "end_row": 18,
+              "end_column": 30
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

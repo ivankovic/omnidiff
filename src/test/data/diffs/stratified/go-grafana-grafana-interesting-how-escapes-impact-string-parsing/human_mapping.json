@@ -9781,6 +9781,17 @@
               "end_column": 143
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1459,
+              "start_column": 936,
+              "end_row": 1459,
+              "end_column": 938
+            }
+          ]
         }
       ]
     }

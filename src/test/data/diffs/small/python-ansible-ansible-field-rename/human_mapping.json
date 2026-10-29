@@ -1579,5 +1579,47 @@
         "return_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1522,
+              "start_column": 48,
+              "end_row": 1522,
+              "end_column": 49
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1522,
+              "start_column": 48,
+              "end_row": 1522,
+              "end_column": 67
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1522,
+              "start_column": 48,
+              "end_row": 1522,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

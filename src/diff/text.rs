@@ -15,6 +15,8 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::collections::HashMap;
+
 use tree_sitter::{Node, Point, Range};
 
 use crate::{
@@ -30,7 +32,8 @@ mod render_options;
 mod summary;
 
 pub use plain_text_diff::{
-    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, whole_file_text_class,
+    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, plain_text_token_diff,
+    text_layer_diff, token_edit_count, whole_file_text_class,
 };
 pub use render_options::{
     RangeMatch, RenderOptions, TextOperation, is_structural_only, ranges_for_options,
@@ -448,11 +451,11 @@ fn intra_node_update_ranges(
     result
 }
 
-/// How one source node renders, decided from its mapping alone. Shared by [`ranges`] (which turns
+/// How one source node renders, decided from its mapping alone. Shared by [`walk_ranges`] (which turns
 /// it into painted ranges) and `summary::scan` (which only asks whether it is a visible change),
 /// so the two cannot disagree about what counts as one.
 pub(crate) enum NodeChange<'c> {
-    /// Mapped `Identical` - the counterpart, when the cache knows it. [`ranges`] still has to
+    /// Mapped `Identical` - the counterpart, when the cache knows it. [`walk_ranges`] still has to
     /// decide whether the node's *position* makes it a `Move`.
     Identical(Option<Node<'c>>),
     /// The whole subtree was deleted or inserted: one range, never descended.
@@ -612,7 +615,7 @@ impl GapStart for (Gap, Gap) {
     }
 }
 
-/// The state of one [`ranges`] traversal.
+/// The state of one [`walk_ranges`] traversal.
 struct RangeWalk<'a> {
     source: &'a Code,
     destination: &'a Code,
@@ -634,10 +637,13 @@ struct RangeWalk<'a> {
     last_non_move_range: TextRange,
     ranges: Vec<RangeMatch>,
     current_range: RangeMatch,
+    /// This side's ranges for each host string holding an embedded layer, keyed by the host node
+    /// id and already in this file's coordinates (see [`embedded_ranges`]).
+    embedded: &'a HashMap<usize, Vec<RangeMatch>>,
 }
 
-/// The ranges of `source`, painted against `destination`, before merging in the other side's
-/// insertions (see [`merge_ranges`]).
+/// [`walk_ranges`] for a diff with no embedded layers.
+#[cfg(test)]
 fn ranges(
     source: &Code,
     destination: &Code,
@@ -645,6 +651,29 @@ fn ranges(
     node_cache: &NodeCache,
     source_is_before: bool,
     options: RenderOptions,
+) -> Vec<RangeMatch> {
+    walk_ranges(
+        source,
+        destination,
+        diff,
+        node_cache,
+        source_is_before,
+        options,
+        &HashMap::new(),
+    )
+}
+
+/// The ranges of `source`, painted against `destination`, before merging in the other side's
+/// insertions (see [`merge_ranges`]). `embedded` holds this side's ranges for each host string
+/// with an embedded layer.
+fn walk_ranges(
+    source: &Code,
+    destination: &Code,
+    diff: &ASTDiff,
+    node_cache: &NodeCache,
+    source_is_before: bool,
+    options: RenderOptions,
+    embedded: &HashMap<usize, Vec<RangeMatch>>,
 ) -> Vec<RangeMatch> {
     let mut walk = RangeWalk {
         source,
@@ -660,6 +689,7 @@ fn ranges(
         last_non_move_range: TextRange::zero(),
         ranges: Vec::new(),
         current_range: RangeMatch::zero(),
+        embedded,
     };
 
     match (&source.ast, &destination.ast) {
@@ -735,6 +765,10 @@ impl RangeWalk<'_> {
 
     /// Paints one node, and says what the traversal visits next.
     fn visit<'t>(&mut self, node: Node<'t>) -> Descent<'t> {
+        if let Some(projected) = self.embedded.get(&node.id()) {
+            self.push_embedded(node, projected);
+            return Descent::No;
+        }
         let Some((mapped_id, mapping)) = self.diff.mapping_for_node(&node.id()) else {
             return Descent::Children;
         };
@@ -783,6 +817,31 @@ impl RangeWalk<'_> {
             Descent::Children
         } else {
             Descent::No
+        }
+    }
+
+    /// A host string's embedded ranges, appended as they are: they are already one walk of a
+    /// finished pair of walks, so merging them with a neighbour would break the matching range
+    /// counts [`merge_ranges`] relies on, as in [`Self::push`]. The host pair is in sequence, so
+    /// its partner becomes the anchor.
+    fn push_embedded(&mut self, node: Node, projected: &[RangeMatch]) {
+        if !self.current_range.is_zero() {
+            let finished = std::mem::replace(&mut self.current_range, RangeMatch::zero());
+            self.ranges.push(finished);
+        }
+        self.ranges.extend(projected.iter().cloned());
+        let destination_nodes = if self.source_is_before {
+            &self.node_cache.after
+        } else {
+            &self.node_cache.before
+        };
+        if let Some((mapped_id, _)) = self.diff.mapping_for_node(&node.id())
+            && let Some(destination_node) = destination_nodes.get(&mapped_id)
+        {
+            self.last_non_move_range = TextRange::from_treesitter_range(
+                destination_node.range(),
+                &self.destination_columns,
+            );
         }
     }
 
@@ -1479,6 +1538,159 @@ fn reconcile_moves(before: &mut [RangeMatch], after: &mut [RangeMatch], options:
     }
 }
 
+/// Both sides' walks, reconciled but not yet merged ([`merge_ranges`]): the form an embedded
+/// layer's ranges are spliced into its host's walks in.
+fn plain_ranges(
+    before: &Code,
+    after: &Code,
+    diff: &ASTDiff,
+    node_cache: &NodeCache,
+    options: RenderOptions,
+) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    let (before_embedded, after_embedded) = embedded_ranges(before, after, diff, options);
+    let mut before_ranges = walk_ranges(
+        before,
+        after,
+        diff,
+        node_cache,
+        true,
+        options,
+        &before_embedded,
+    );
+    let mut after_ranges = walk_ranges(
+        after,
+        before,
+        diff,
+        node_cache,
+        false,
+        options,
+        &after_embedded,
+    );
+    reconcile_moves(&mut before_ranges, &mut after_ranges, options);
+    (before_ranges, after_ranges)
+}
+
+/// Each side's ranges for every embedded layer of `diff` (`diff::embedded`), keyed by host node
+/// id: the layer's own walks, built from its own diff and text, projected into the host files
+/// through the decoded text's byte maps.
+///
+/// A source range loses any newline it ends on before it is projected: the renderer never paints
+/// a line break, and an escaped one (`\n`) would otherwise be painted as two visible characters.
+fn embedded_ranges(
+    before: &Code,
+    after: &Code,
+    diff: &ASTDiff,
+    options: RenderOptions,
+) -> (
+    HashMap<usize, Vec<RangeMatch>>,
+    HashMap<usize, Vec<RangeMatch>>,
+) {
+    let mut before_map = HashMap::new();
+    let mut after_map = HashMap::new();
+    if diff.embedded.is_empty() {
+        return (before_map, after_map);
+    }
+    let before_starts = line_starts(&before.contents);
+    let after_starts = line_starts(&after.contents);
+    for layer in &diff.embedded {
+        // A plain-text layer has no trees: it is painted as a file without a grammar is.
+        let (inner_before, inner_after) = if layer.before.ast.is_none() || layer.after.ast.is_none()
+        {
+            text_layer_diff(&layer.before.contents, &layer.after.contents)
+        } else {
+            let node_cache = NodeCache::build(&layer.before, &layer.after);
+            plain_ranges(
+                &layer.before,
+                &layer.after,
+                &layer.diff,
+                &node_cache,
+                options,
+            )
+        };
+        let before_side = Projection {
+            inner: &layer.before.contents,
+            inner_starts: line_starts(&layer.before.contents),
+            offsets: &layer.before_offsets,
+            outer_starts: &before_starts,
+        };
+        let after_side = Projection {
+            inner: &layer.after.contents,
+            inner_starts: line_starts(&layer.after.contents),
+            offsets: &layer.after_offsets,
+            outer_starts: &after_starts,
+        };
+        let project = |ranges: Vec<RangeMatch>, source: &Projection, destination: &Projection| {
+            ranges
+                .into_iter()
+                .map(|range_match| RangeMatch {
+                    source: source.range(&range_match.source, true),
+                    destination: destination.range(&range_match.destination, false),
+                    operation: range_match.operation,
+                })
+                .collect::<Vec<_>>()
+        };
+        before_map.insert(
+            layer.before_id,
+            project(inner_before, &before_side, &after_side),
+        );
+        after_map.insert(
+            layer.after_id,
+            project(inner_after, &after_side, &before_side),
+        );
+    }
+    (before_map, after_map)
+}
+
+/// Byte offset of each row's first byte.
+fn line_starts(text: &str) -> Vec<usize> {
+    std::iter::once(0)
+        .chain(text.match_indices('\n').map(|(at, _)| at + 1))
+        .collect()
+}
+
+/// One side of an embedded layer: its decoded text and how it maps into the host file.
+struct Projection<'a> {
+    inner: &'a str,
+    inner_starts: Vec<usize>,
+    offsets: &'a [usize],
+    outer_starts: &'a [usize],
+}
+
+impl Projection<'_> {
+    /// `range`, in the decoded text's rows and columns, in the host file's.
+    fn range(&self, range: &TextRange, trim_newline: bool) -> TextRange {
+        let start = self.inner_offset(range.start_row, range.start_column);
+        let mut end = self
+            .inner_offset(range.end_row, range.end_column)
+            .max(start);
+        if trim_newline {
+            let bytes = self.inner.as_bytes();
+            while end > start && matches!(bytes[end - 1], b'\n' | b'\r') {
+                end -= 1;
+            }
+        }
+        let (start_row, start_column) = self.outer_point(start);
+        let (end_row, end_column) = self.outer_point(end);
+        TextRange::new(start_row, start_column, end_row, end_column)
+    }
+
+    fn inner_offset(&self, row: usize, column: usize) -> usize {
+        match self.inner_starts.get(row) {
+            Some(&row_start) => (row_start + column).min(self.inner.len()),
+            None => self.inner.len(),
+        }
+    }
+
+    fn outer_point(&self, inner_offset: usize) -> (usize, usize) {
+        let offset = crate::diff::embedded::project_offset(self.offsets, inner_offset);
+        let row = self
+            .outer_starts
+            .partition_point(|&row_start| row_start <= offset)
+            .saturating_sub(1);
+        (row, offset - self.outer_starts[row])
+    }
+}
+
 impl TextDiff {
     /// [`Self::from_with_options`] under [`RenderOptions::FULL`], for callers with no opinion on
     /// the construction-time options.
@@ -1496,10 +1708,8 @@ impl TextDiff {
         node_cache: &NodeCache,
         options: RenderOptions,
     ) -> Self {
-        let mut before_ranges_plain = ranges(before, after, diff, node_cache, true, options);
-        let mut after_ranges_plain = ranges(after, before, diff, node_cache, false, options);
-
-        reconcile_moves(&mut before_ranges_plain, &mut after_ranges_plain, options);
+        let (before_ranges_plain, after_ranges_plain) =
+            plain_ranges(before, after, diff, node_cache, options);
 
         let before_ranges = merge_ranges(&before_ranges_plain, &after_ranges_plain);
         let after_ranges = merge_ranges(&after_ranges_plain, &before_ranges_plain);

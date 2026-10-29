@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,10 +37,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 2 time(s): the inserted `expression_statement` on after row 180 starts insert
-    // but its `;` is unpainted (both presets).
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-codec-6-base64inputstream",
-        2,
-    )
+    assert_ground_truth_invariants("java-defects4j-codec-6-base64inputstream")
 }

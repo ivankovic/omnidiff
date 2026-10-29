@@ -48431,5 +48431,72 @@
       "operation": "match_but_not_identical",
       "with_children": false
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 360,
+              "start_column": 88,
+              "end_row": 360,
+              "end_column": 107
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 360,
+              "start_column": 107,
+              "end_row": 360,
+              "end_column": 110
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 360,
+              "start_column": 88,
+              "end_row": 360,
+              "end_column": 107
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 360,
+              "start_column": 107,
+              "end_row": 360,
+              "end_column": 110
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 360,
+              "start_column": 87,
+              "end_row": 360,
+              "end_column": 88
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

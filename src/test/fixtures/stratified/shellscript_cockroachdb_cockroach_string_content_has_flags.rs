@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-cockroachdb-cockroach-string-content-has-flags",
-        59.37,
+        57.01,
     )
 }
 

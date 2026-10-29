@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -38,5 +38,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-closure-110-scopedaliases")
+    // Invariant 27, both presets: `parent` (before row 371) is painted deleted and `null` (after
+    // row 373) inserted, where the tree mapping pairs them as one edit.
+    assert_ground_truth_invariants_with_known_violations(
+        "java-defects4j-closure-110-scopedaliases",
+        2,
+    )
 }

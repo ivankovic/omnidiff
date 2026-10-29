@@ -1525,5 +1525,50 @@
         "marker_definition:17"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 239,
+              "start_column": 16,
+              "end_row": 240,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 239,
+              "start_column": 16,
+              "end_row": 240,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 239,
+              "start_column": 14,
+              "end_row": 239,
+              "end_column": 16
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

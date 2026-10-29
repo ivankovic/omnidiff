@@ -106,6 +106,196 @@ pub fn whole_file_text_class(before: &str, after: &str) -> WholeFileClass {
     }
 }
 
+/// The diff of an embedded text layer (`diff::embedded`): [`plain_text_line_diff`] for text of
+/// several lines, [`plain_text_token_diff`] for one line, where a line diff can only paint one span
+/// from the first change to the last.
+pub fn text_layer_diff(before: &str, after: &str) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    if before.contains('\n') || after.contains('\n') {
+        return plain_text_line_diff(before, after);
+    }
+    plain_text_token_diff(before, after).unwrap_or_else(|| plain_text_line_diff(before, after))
+}
+
+/// How many separate edits [`plain_text_token_diff`] finds between two one-line texts: changed
+/// runs with unchanged text between them that holds both whitespace and something else. Changes
+/// with only a word or punctuation between them are one edit to a reader - `3.0.2` -> `4.0.0` is a
+/// version bump, `swc-napi` -> `napi-bindings` one renamed word - and so are changes that keep only
+/// the spaces between them (`Did you mean` -> `The most similar command`), however many tokens
+/// they touch. `None` past `PLAIN_TEXT_MAX_EDIT`.
+pub fn token_edit_count(before: &str, after: &str) -> Option<usize> {
+    token_diff(before, after).map(|(_, edits)| edits)
+}
+
+/// A token diff of two one-line texts: Myers LCS over tokens - a run of letters, digits and `_`, a
+/// run of whitespace, or any other single character - so that two edits far apart in one long line
+/// (`'  no' ... '  yes'` -> `'--no---' ... '--yes--'`) are painted apart, with the text between
+/// them `Identical`. A changed run between kept tokens is one `Update` of the characters that
+/// differ when neither side of it is empty or only whitespace; otherwise its sides are a `Delete`
+/// and an `Insert`, since whitespace replaced by `--` is not that whitespace edited. `None` past
+/// `PLAIN_TEXT_MAX_EDIT`.
+pub fn plain_text_token_diff(
+    before: &str,
+    after: &str,
+) -> Option<(Vec<RangeMatch>, Vec<RangeMatch>)> {
+    token_diff(before, after).map(|(ranges, _)| (ranges.before, ranges.after))
+}
+
+/// [`plain_text_token_diff`]'s ranges, and how many separate edits they hold.
+fn token_diff(before: &str, after: &str) -> Option<(TokenRanges, usize)> {
+    let (before_tokens, after_tokens) = (tokens(before), tokens(after));
+    let hashes = |text: &str, tokens: &[(usize, usize)]| {
+        let spelled: Vec<&str> = tokens.iter().map(|&(from, to)| &text[from..to]).collect();
+        hash_lines(&spelled)
+    };
+    let pairs = crate::diff::apted::myers_lcs(
+        &hashes(before, &before_tokens),
+        &hashes(after, &after_tokens),
+        PLAIN_TEXT_MAX_EDIT,
+    )?;
+    // Runs of kept tokens, `(before index, after index, length)`, then a sentinel at both ends.
+    let mut kept: Vec<(usize, usize, usize)> = Vec::new();
+    for &(b, a) in &pairs {
+        match kept.last_mut() {
+            Some((kb, ka, length)) if *kb + *length == b && *ka + *length == a => *length += 1,
+            _ => kept.push((b, a, 1)),
+        }
+    }
+    kept.push((before_tokens.len(), after_tokens.len(), 0));
+    let byte = |tokens: &[(usize, usize)], index: usize, text: &str| {
+        tokens.get(index).map_or(text.len(), |&(from, _)| from)
+    };
+
+    let mut ranges = TokenRanges::default();
+    // Whether unchanged whitespace has been passed since the last edit counted.
+    let (mut edits, mut apart) = (0, true);
+    let (mut before_at, mut after_at) = (0, 0);
+    for (b, a, length) in kept {
+        let (gap_before, gap_after) = (
+            before_at..byte(&before_tokens, b, before),
+            after_at..byte(&after_tokens, a, after),
+        );
+        let (old, new) = (&before[gap_before.clone()], &after[gap_after.clone()]);
+        if (!old.is_empty() || !new.is_empty()) && apart {
+            edits += 1;
+            apart = false;
+        }
+        if !old.trim().is_empty() && !new.trim().is_empty() {
+            // Only the characters that differ: `21` -> `22` is `1` -> `2`, as a line's update is.
+            let prefix = common_prefix_byte_len(old, new);
+            let suffix = common_suffix_byte_len(&old[prefix..], &new[prefix..]);
+            let (b, a) = (gap_before.start + prefix, gap_after.start + prefix);
+            let (b_end, a_end) = (gap_before.end - suffix, gap_after.end - suffix);
+            if prefix > 0 {
+                ranges.pair(
+                    gap_before.start..b,
+                    gap_after.start..a,
+                    TextOperation::Identical,
+                );
+            }
+            ranges.pair(b..b_end, a..a_end, TextOperation::Update);
+            if suffix > 0 {
+                ranges.pair(
+                    b_end..gap_before.end,
+                    a_end..gap_after.end,
+                    TextOperation::Identical,
+                );
+            }
+        } else {
+            if !old.is_empty() {
+                ranges.before.push(RangeMatch {
+                    source: one_row(gap_before.clone()),
+                    destination: one_row(gap_after.start..gap_after.start),
+                    operation: TextOperation::Delete,
+                });
+            }
+            if !new.is_empty() {
+                ranges.after.push(RangeMatch {
+                    source: one_row(gap_after.clone()),
+                    destination: one_row(gap_before.start..gap_before.start),
+                    operation: TextOperation::Insert,
+                });
+            }
+        }
+        before_at = byte(&before_tokens, b + length, before);
+        after_at = byte(&after_tokens, a + length, after);
+        if length > 0 {
+            let between = &before[gap_before.end..before_at];
+            apart |= between.contains(char::is_whitespace) && !between.trim().is_empty();
+            ranges.pair(
+                gap_before.end..before_at,
+                gap_after.end..after_at,
+                TextOperation::Identical,
+            );
+        }
+    }
+    Some((ranges, edits))
+}
+
+/// Both sides' ranges of [`plain_text_token_diff`], built together.
+#[derive(Default)]
+struct TokenRanges {
+    before: Vec<RangeMatch>,
+    after: Vec<RangeMatch>,
+}
+
+impl TokenRanges {
+    /// One range on each side, each the other's destination.
+    fn pair(
+        &mut self,
+        before: std::ops::Range<usize>,
+        after: std::ops::Range<usize>,
+        operation: TextOperation,
+    ) {
+        self.before.push(RangeMatch {
+            source: one_row(before.clone()),
+            destination: one_row(after.clone()),
+            operation: operation.clone(),
+        });
+        self.after.push(RangeMatch {
+            source: one_row(after),
+            destination: one_row(before),
+            operation,
+        });
+    }
+}
+
+/// Byte columns `columns` of row 0.
+fn one_row(columns: std::ops::Range<usize>) -> TextRange {
+    TextRange::new(0, columns.start, 0, columns.end)
+}
+
+/// `text`'s tokens as byte ranges: runs of letters, digits and `_`, runs of whitespace, and every
+/// other character alone.
+fn tokens(text: &str) -> Vec<(usize, usize)> {
+    #[derive(PartialEq)]
+    enum Class {
+        Word,
+        Space,
+        Other,
+    }
+    let class = |c: char| {
+        if c.is_alphanumeric() || c == '_' {
+            Class::Word
+        } else if c.is_whitespace() {
+            Class::Space
+        } else {
+            Class::Other
+        }
+    };
+    let mut tokens: Vec<(usize, usize)> = Vec::new();
+    let mut previous: Option<Class> = None;
+    for (at, c) in text.char_indices() {
+        let current = class(c);
+        let extends = current != Class::Other && previous.as_ref() == Some(&current);
+        match tokens.last_mut() {
+            Some(last) if extends => last.1 = at + c.len_utf8(),
+            _ => tokens.push((at, at + c.len_utf8())),
+        }
+        previous = Some(current);
+    }
+    tokens
+}
+
 /// Runs `myers_lcs` over hashed lines. `None` when it gave up past `max_edit`, which callers must
 /// not read as "no changes".
 pub fn line_diff_core(before: &str, after: &str, max_edit: usize) -> Option<LineDiffCore> {

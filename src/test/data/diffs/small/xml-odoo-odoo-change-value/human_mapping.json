@@ -1529,5 +1529,47 @@
         "ETag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 18,
+              "end_row": 39,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 18,
+              "end_row": 39,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 39,
+              "start_column": 18,
+              "end_row": 39,
+              "end_column": 21
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

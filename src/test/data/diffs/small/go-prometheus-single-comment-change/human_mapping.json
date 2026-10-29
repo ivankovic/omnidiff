@@ -140,5 +140,50 @@
         "function_declaration:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 0,
+              "start_column": 13,
+              "end_row": 0,
+              "end_column": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 0,
+              "start_column": 13,
+              "end_row": 0,
+              "end_column": 17
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 0,
+              "start_column": 12,
+              "end_row": 0,
+              "end_column": 13
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

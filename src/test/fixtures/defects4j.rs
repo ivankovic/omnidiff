@@ -344,11 +344,15 @@ mod java_defects4j_closure_157_renameprototypes;
 #[cfg(test)]
 mod java_defects4j_closure_15_flowsensitiveinlinevariables;
 #[cfg(test)]
+mod java_defects4j_closure_164_arrowtype;
+#[cfg(test)]
 mod java_defects4j_closure_165_recordtypebuilder;
 #[cfg(test)]
 mod java_defects4j_closure_168_typedscopecreator;
 #[cfg(test)]
 mod java_defects4j_closure_16_scopedaliases;
+#[cfg(test)]
+mod java_defects4j_closure_175_functioninjector;
 #[cfg(test)]
 mod java_defects4j_closure_18_compiler;
 #[cfg(test)]
@@ -592,6 +596,8 @@ mod java_defects4j_jacksondatabind_51_typedeserializerbase;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_52_beandeserializerbase;
 #[cfg(test)]
+mod java_defects4j_jacksondatabind_55_stdkeyserializers;
+#[cfg(test)]
 mod java_defects4j_jacksondatabind_57_objectreader;
 #[cfg(test)]
 mod java_defects4j_jacksondatabind_59_typefactory;
@@ -659,6 +665,8 @@ mod java_defects4j_jsoup_33_htmltreebuilder;
 mod java_defects4j_jsoup_34_characterreader;
 #[cfg(test)]
 mod java_defects4j_jsoup_35_htmltreebuilderstate;
+#[cfg(test)]
+mod java_defects4j_jsoup_36_datautil;
 #[cfg(test)]
 mod java_defects4j_jsoup_37_element;
 #[cfg(test)]
@@ -728,9 +736,13 @@ mod java_defects4j_jsoup_87_tag;
 #[cfg(test)]
 mod java_defects4j_jsoup_88_attribute;
 #[cfg(test)]
+mod java_defects4j_jsoup_90_httpconnection;
+#[cfg(test)]
 mod java_defects4j_jsoup_91_uncheckedioexception;
 #[cfg(test)]
 mod java_defects4j_jsoup_92_parsesettings;
+#[cfg(test)]
+mod java_defects4j_jsoup_92_token;
 #[cfg(test)]
 mod java_defects4j_jsoup_92_xmltreebuilder;
 #[cfg(test)]
@@ -738,9 +750,15 @@ mod java_defects4j_jsoup_93_formelement;
 #[cfg(test)]
 mod java_defects4j_jsoup_9_entities;
 #[cfg(test)]
+mod java_defects4j_jxpath_10_coreoperationrelationalexpression;
+#[cfg(test)]
 mod java_defects4j_jxpath_15_unioncontext;
 #[cfg(test)]
+mod java_defects4j_jxpath_16_jdomnodepointer;
+#[cfg(test)]
 mod java_defects4j_jxpath_18_attributecontext;
+#[cfg(test)]
+mod java_defects4j_jxpath_1_jdomnodepointer;
 #[cfg(test)]
 mod java_defects4j_jxpath_7_coreoperationgreaterthan;
 #[cfg(test)]
@@ -754,11 +772,23 @@ mod java_defects4j_jxpath_7_coreoperationrelationalexpression;
 #[cfg(test)]
 mod java_defects4j_lang_14_stringutils;
 #[cfg(test)]
+mod java_defects4j_lang_16_numberutils;
+#[cfg(test)]
 mod java_defects4j_lang_17_charsequencetranslator;
 #[cfg(test)]
 mod java_defects4j_lang_19_numericentityunescaper;
 #[cfg(test)]
+mod java_defects4j_lang_21_dateutils;
+#[cfg(test)]
+mod java_defects4j_lang_24_numberutils;
+#[cfg(test)]
+mod java_defects4j_lang_26_fastdateformat;
+#[cfg(test)]
 mod java_defects4j_lang_28_numericentityunescaper;
+#[cfg(test)]
+mod java_defects4j_lang_29_systemutils;
+#[cfg(test)]
+mod java_defects4j_lang_33_classutils;
 #[cfg(test)]
 mod java_defects4j_lang_38_fastdateformat;
 #[cfg(test)]
@@ -772,13 +802,27 @@ mod java_defects4j_lang_51_booleanutils;
 #[cfg(test)]
 mod java_defects4j_lang_54_localeutils;
 #[cfg(test)]
+mod java_defects4j_lang_55_stopwatch;
+#[cfg(test)]
+mod java_defects4j_lang_57_localeutils;
+#[cfg(test)]
+mod java_defects4j_lang_59_strbuilder;
+#[cfg(test)]
+mod java_defects4j_lang_61_strbuilder;
+#[cfg(test)]
 mod java_defects4j_lang_64_valuedenum;
 #[cfg(test)]
 mod java_defects4j_lang_6_charsequencetranslator;
 #[cfg(test)]
 mod java_defects4j_math_103_normaldistributionimpl;
 #[cfg(test)]
+mod java_defects4j_math_104_gamma;
+#[cfg(test)]
+mod java_defects4j_math_105_simpleregression;
+#[cfg(test)]
 mod java_defects4j_math_10_dscompiler;
+#[cfg(test)]
+mod java_defects4j_math_11_multivariatenormaldistribution;
 #[cfg(test)]
 mod java_defects4j_math_14_weight;
 #[cfg(test)]
@@ -786,7 +830,27 @@ mod java_defects4j_math_22_fdistribution;
 #[cfg(test)]
 mod java_defects4j_math_22_uniformrealdistribution;
 #[cfg(test)]
+mod java_defects4j_math_27_fraction;
+#[cfg(test)]
+mod java_defects4j_math_2_hypergeometricdistribution;
+#[cfg(test)]
+mod java_defects4j_math_30_mannwhitneyutest;
+#[cfg(test)]
+mod java_defects4j_math_32_polygonsset;
+#[cfg(test)]
+mod java_defects4j_math_33_simplextableau;
+#[cfg(test)]
+mod java_defects4j_math_34_listpopulation;
+#[cfg(test)]
 mod java_defects4j_math_35_elitisticlistpopulation;
+#[cfg(test)]
+mod java_defects4j_math_41_variance;
+#[cfg(test)]
+mod java_defects4j_math_57_kmeansplusplusclusterer;
+#[cfg(test)]
+mod java_defects4j_math_58_gaussianfitter;
+#[cfg(test)]
+mod java_defects4j_math_5_complex;
 #[cfg(test)]
 mod java_defects4j_math_6_baseoptimizer;
 #[cfg(test)]

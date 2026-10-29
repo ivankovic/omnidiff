@@ -7657,5 +7657,61 @@
         "export_statement:6"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 118,
+              "start_column": 4,
+              "end_row": 119,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 239,
+              "start_column": 2,
+              "end_row": 240,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 118,
+              "start_column": 0,
+              "end_row": 119,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 239,
+              "start_column": 0,
+              "end_row": 240,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

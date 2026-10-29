@@ -52,6 +52,7 @@ mod content;
 mod events;
 mod flatten;
 mod keylog;
+mod layers;
 mod navigate;
 mod render;
 mod review;
@@ -61,6 +62,7 @@ use actions::*;
 use events::*;
 use flatten::*;
 use keylog::*;
+use layers::*;
 use navigate::*;
 use render::*;
 use state::*;
@@ -160,6 +162,20 @@ n / N          jump to next / previous mismatch (`*`) vs. omnidiff's verdict
 } / {          open the next / previous case as the o picker lists it - its
                  sort and filters apply, so with Unmarked filtered to yes this
                  walks the unfinished cases; unsaved changes prompt first
+Enter          on a string holding code of another language (TSX in a JSON
+                 string, shell in a YAML run: block, CSS in a styled template):
+                 open that code as a file of its own - escapes resolved, the
+                 host's indentation gone - and map and paint it like any file.
+                 Works where omnidiff found the code, on a layer already
+                 mapped, or on a string you matched whose context names a
+                 language. Enter in the t view opens the string under the text
+                 cursor, straight into the layer's own t view, and Esc there
+                 goes back to the host's t view (enter from the panels to map
+                 the layer's trees). In the panels q or Esc goes back. s saves
+                 the whole fixture. A
+                 painted layer is what grading reads for its string, and the
+                 host's t view shows it, read-only, on the escaped text: paint the
+                 rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the
                  given string (plain substring, no regex)
 
@@ -183,7 +199,8 @@ t              text view: read the source, and paint the human text-range ground
                  Z marks a nothing-to-paint fixture, : jumps to a line number,
                  / searches this side's text (plain substring; Enter jumps to the
                  next match, wrapping; the last query is offered again, so / Enter
-                 repeats it), Esc unselects or closes.
+                 repeats it), Enter opens the code in the string under the
+                 cursor (see Enter above), Esc unselects or closes.
                  In a painting named Minimal, d/i on a multi-row full-line (V)
                  sweep is recorded as one range per row starting at that row's
                  first code character, never through the indentation -- the rule
@@ -224,6 +241,9 @@ t              text view: read the source, and paint the human text-range ground
                  puts the other panel on the same line number as this one and
                  scrolls it to the same place on screen -- the two ways to stop
                  hand-scrolling two independently scrolled panels
+                 f on a painted match puts the other panel's cursor on the range
+                 it is matched with, level with this one; f again walks the
+                 other ranges of an N:M match in turn, wrapping
                  A puts THIS side's AST panel on the leaf under the text cursor,
                  expanding whatever is collapsed over it and focusing that panel,
                  without closing this view -- so a row an invariant names becomes

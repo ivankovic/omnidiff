@@ -3681,3 +3681,288 @@ fn move_cost_model_census() -> Result<()> {
     }
     Ok(())
 }
+
+/// EXPLORATORY: every fixture in which `diff::embedded` finds a layer - a changed pair of host
+/// strings diffed as code of another language - with the language, the decoded sizes, how many
+/// inner nodes changed, and whether the fixture's human mapping has a layer for it yet.
+///
+/// `cargo test --profile ci --lib --features test-fixtures embedded_layer_census -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore]
+fn embedded_layer_census() -> Result<()> {
+    let pairs = crate::test::helper::handmade_test_code_pairs()?;
+    let mut names: Vec<&String> = pairs.keys().collect();
+    names.sort();
+    let mut found = 0;
+    for name in names {
+        let (before, after) = &pairs[name];
+        let Some(ast) = crate::diff::diff_code(before, after).ast else {
+            continue;
+        };
+        if ast.embedded.is_empty() {
+            continue;
+        }
+        let human_layers = load_with(name, before, after)
+            .map(|mapping| mapping.embedded.len())
+            .unwrap_or(0);
+        for layer in &ast.embedded {
+            found += 1;
+            let changed = layer
+                .diff
+                .mapping
+                .values()
+                .filter(|mapping| mapping.operation != ASTMappingOperation::Identical)
+                .count();
+            println!(
+                "{name}\t{}\t{}/{} rows\t{changed} changed\thuman layers: {human_layers}",
+                crate::code::language::stable_name(layer.language),
+                layer.before.contents.lines().count(),
+                layer.after.contents.lines().count(),
+            );
+        }
+    }
+    println!("{found} embedded layers");
+    Ok(())
+}
+
+/// EXPLORATORY: fixtures with code of another language held in a string literal - SQL in a Java
+/// string, shell in a YAML `run:` scalar or a `package.json` script, CSS in an HTML `style`
+/// attribute, a Vim command in a Vimscript string. A grammar parses such a string as one leaf, so a
+/// change inside it is a text change, whatever its structure.
+///
+/// A case is an outermost string node (a kind holding `string`, a YAML scalar, a heredoc, an HTML
+/// or XML attribute value) whose text one of the detectors below recognises, as a language other
+/// than the fixture's own. `changed` means the same text does not occur on the other side.
+///
+/// `cargo test --profile ci --lib --features test-fixtures embedded_language_census -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore]
+fn embedded_language_census() -> Result<()> {
+    use regex::Regex;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    fn is_string(kind: &str) -> bool {
+        // C's `#include <vector>` is a `system_lib_string`, a path rather than a literal.
+        (kind.contains("string") && kind != "system_lib_string")
+            || kind.ends_with("_scalar")
+            || kind.contains("heredoc")
+            || kind == "nowdoc"
+            || kind == "text_block"
+            || kind == "quoted_attribute_value"
+            || kind == "AttValue"
+    }
+    fn strings<'tree>(node: Node<'tree>, out: &mut Vec<Node<'tree>>) {
+        if is_string(node.kind()) {
+            out.push(node);
+            return;
+        }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            strings(child, out);
+        }
+    }
+
+    // First match wins, so the narrower languages come first: awk before js, the C preprocessor
+    // before anything. `own` lists the fixture languages in which the text is not foreign.
+    let detectors: Vec<(&str, &[&str], Regex)> = vec![
+        (
+            "c",
+            &["c", "cpp"],
+            Regex::new(r#"#include\s*[<"][\w./]|\bint\s+main\s*\([^)]*\)\s*\{"#)?,
+        ),
+        (
+            "awk",
+            &[],
+            Regex::new(r"\bBEGIN\s*\{|\bEND\s*\{\s*(print|printf)\b")?,
+        ),
+        (
+            "sql",
+            &[],
+            Regex::new(
+                r"(?s)\bSELECT\b.{1,3000}?\bFROM\s+\w|\bINSERT\s+INTO\s+\w|\bUPDATE\s+\w+\s+SET\s+\w|\bDELETE\s+FROM\s+\w|\bCREATE\s+(TABLE|INDEX|VIEW|UNIQUE\s+INDEX)\b|\bALTER\s+TABLE\s+\w|\bDROP\s+TABLE\b|(?i:\bselect\s+[\w.*, ]+\s+from\s+\w+\s+(where|order\s+by|join|limit|group\s+by)\b)",
+            )?,
+        ),
+        (
+            "html/xml",
+            &["html", "xml"],
+            // A document, or a tag that is not a placeholder (`<unknown>`), a key (`<C-R>`) or a
+            // regex group (`(?<major>`): it has attributes, or the string closes a tag.
+            Regex::new(
+                r#"^\W{0,4}\s*(<\?xml|<!DOCTYPE)|(^|[^?\\])<[a-zA-Z][\w:-]*\s+[\w:-]+=["'{]|(^|[^?\\])<[a-zA-Z][\w:-]*>.*</[a-zA-Z]"#,
+            )?,
+        ),
+        (
+            "css",
+            &["css", "html"],
+            Regex::new(
+                r"(?i)\b(color|background(-color)?|margin(-\w+)?|padding(-\w+)?|font-(size|weight|family)|display|border(-\w+)?|width|height|position|min-height|aspect-ratio)\s*:\s*[^;:{}()]{1,40};",
+            )?,
+        ),
+        (
+            "js",
+            &["javascript", "typescript", "tsx", "html"],
+            Regex::new(
+                r"\bfunction\s*\w*\s*\([^)]*\)\s*\{|\bdocument\.(getElementById|querySelector|createElement|write)\b|\bconsole\.log\s*\(|\bwindow\.(__\w+|location)\b",
+            )?,
+        ),
+        (
+            "js",
+            &["javascript", "typescript", "tsx", "html"],
+            Regex::new(r#"(?m)^\W{0,3}\s*("use client"|import\s+[\w*{][^;\n]*\bfrom\s+\\?["'])"#)?,
+        ),
+        (
+            "shell",
+            &["shellscript", "dockerfile"],
+            Regex::new(
+                r"(?m)(^|&&|;|\|\||\$\()\s*(sudo\s+)?(apt-get|yum|dnf|brew|pip3?|npm|npx|yarn|pnpm|cargo|make|cmake|git|curl|wget|mkdir|rm|cp|mv|chmod|export|echo|tar|docker|node|cross-env)\s+-{0,2}[\w./$\x22']|\benv\s+[A-Z_]+=",
+            )?,
+        ),
+        (
+            "python",
+            &["python"],
+            Regex::new(
+                r"(?m)^\s*(def\s+\w+\s*\(.*\)\s*(->.*)?:\s*$|from\s+[\w.]+\s+import\s+\w|import\s+(sys|os|re|json)\s*$)",
+            )?,
+        ),
+        (
+            "json",
+            &["json", "javascript", "typescript", "tsx"],
+            Regex::new(r#"^\W{0,3}[\[{]\s*"[\w$-]+"\s*:\s*["\[{\dtfn]"#)?,
+        ),
+        (
+            "yaml",
+            &["yaml"],
+            Regex::new(r"(?m)(^[ \t]*(- )?[\w.-]+:[ \t]+\S[^\n]*\n){3,}")?,
+        ),
+        (
+            "vim",
+            &["vimscript"],
+            Regex::new(
+                r#"^.?\s*(:\s*(set|setlocal|let|call|normal|exe|execute|autocmd|syntax|highlight|hi)\b|(setlocal|set)\s+\w+[\^+-]?=|normal!\s|autocmd\s+\w+|[nvxoic](nore)?map\s+<)"#,
+            )?,
+        ),
+    ];
+    // A scalar under one of these keys (a CI `run:`, a `package.json` script) is a command line.
+    const COMMAND_KEYS: [&str; 7] = [
+        "run",
+        "script",
+        "before_script",
+        "after_script",
+        "command",
+        "entrypoint",
+        "cmd",
+    ];
+    fn command_key(node: Node, contents: &str) -> bool {
+        let mut current = node;
+        for _ in 0..4 {
+            let Some(parent) = current.parent() else {
+                return false;
+            };
+            if parent.kind().ends_with("pair") {
+                // The value, not the key: `"build": "tsc"` is a command, `"build"` is not.
+                let in_value = parent
+                    .child_by_field_name("value")
+                    .is_some_and(|value| value.byte_range().contains(&node.start_byte()));
+                // JSON's `pair` names a command only under `scripts` (tsserver's `"command":
+                // "geterr"` is a message name); YAML's pairs under any of COMMAND_KEYS.
+                let yaml = parent.kind() != "pair";
+                return in_value
+                    && parent.child_by_field_name("key").is_some_and(|key| {
+                        let key = contents[key.byte_range()].trim_matches(['"', '\'']);
+                        (yaml && COMMAND_KEYS.contains(&key))
+                            || parent
+                                .parent()
+                                .and_then(|object| object.parent())
+                                .and_then(|pair| pair.child_by_field_name("key"))
+                                .is_some_and(|outer| {
+                                    contents[outer.byte_range()].trim_matches('"') == "scripts"
+                                })
+                    });
+            }
+            current = parent;
+        }
+        false
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    // embedded language -> (cases, changed cases, fixtures)
+    let mut totals: BTreeMap<&str, (usize, usize, BTreeSet<String>)> = BTreeMap::new();
+    // fixture -> embedded language -> (cases, changed, first changed sample)
+    let mut per_fixture: BTreeMap<String, BTreeMap<&str, (usize, usize, String)>> = BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let language = name.split('-').next().unwrap_or("").to_lowercase();
+        let codes = [&before, &after];
+        for (side, code) in codes.iter().enumerate() {
+            let Some(tree) = code.ast.as_ref() else {
+                continue;
+            };
+            let other = &codes[1 - side].contents;
+            let mut found = Vec::new();
+            strings(tree.root_node(), &mut found);
+            for node in found {
+                let text = &code.contents[node.start_byte()..node.end_byte()];
+                if text.len() < 8 {
+                    continue;
+                }
+                let found = detectors
+                    .iter()
+                    .find(|(_, own, regex)| {
+                        !own.contains(&language.as_str()) && regex.is_match(text)
+                    })
+                    .map(|(embedded, _, regex)| (*embedded, regex.find(text)))
+                    .or_else(|| {
+                        (language != "shellscript" && command_key(node, &code.contents))
+                            .then_some(("shell", None))
+                    });
+                let Some((embedded, matched)) = found else {
+                    continue;
+                };
+                let changed = !other.contains(text);
+                let total = totals.entry(embedded).or_default();
+                total.0 += 1;
+                total.1 += usize::from(changed);
+                total.2.insert(name.clone());
+                let entry = per_fixture
+                    .entry(name.clone())
+                    .or_default()
+                    .entry(embedded)
+                    .or_default();
+                entry.0 += 1;
+                entry.1 += usize::from(changed);
+                if entry.2.is_empty() || (changed && entry.1 == 1) {
+                    let from = matched.map_or(0, |m| m.start());
+                    let sample: String = text[from..].chars().take(90).collect();
+                    entry.2 = format!(
+                        "{}:{} {}",
+                        ["before", "after"][side],
+                        node.start_position().row + 1,
+                        sample.replace('\n', "⏎")
+                    );
+                }
+                if detail {
+                    println!("{name} {embedded} changed={changed} {:?}", text);
+                }
+            }
+        }
+    }
+
+    println!("\nembedded language: cases (changed) in fixtures");
+    for (embedded, (cases, changed, fixtures)) in &totals {
+        println!(
+            "{embedded:>10}: {cases:>6} ({changed:>5}) in {:>4}",
+            fixtures.len()
+        );
+    }
+    println!("\nper fixture: language cases/changed  first sample (a changed one if any)");
+    for (name, found) in &per_fixture {
+        for (embedded, (cases, changed, sample)) in found {
+            println!("{name}\t{embedded}\t{cases}/{changed}\t{sample}");
+        }
+    }
+    Ok(())
+}

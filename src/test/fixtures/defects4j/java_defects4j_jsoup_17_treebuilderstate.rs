@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-17-treebuilderstate", 0.02)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-17-treebuilderstate", 0.0)
 }
 
 #[test]

@@ -10896,5 +10896,428 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 320,
+              "start_column": 4,
+              "end_row": 320,
+              "end_column": 99
+            }
+          ],
+          "after": [
+            {
+              "start_row": 338,
+              "start_column": 4,
+              "end_row": 338,
+              "end_column": 99
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 320,
+              "start_column": 99,
+              "end_row": 320,
+              "end_column": 100
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 336,
+              "start_column": 4,
+              "end_row": 336,
+              "end_column": 68
+            },
+            {
+              "start_row": 337,
+              "start_column": 4,
+              "end_row": 337,
+              "end_column": 55
+            },
+            {
+              "start_row": 338,
+              "start_column": 4,
+              "end_row": 338,
+              "end_column": 81
+            },
+            {
+              "start_row": 339,
+              "start_column": 4,
+              "end_row": 339,
+              "end_column": 114
+            },
+            {
+              "start_row": 340,
+              "start_column": 4,
+              "end_row": 340,
+              "end_column": 111
+            },
+            {
+              "start_row": 341,
+              "start_column": 4,
+              "end_row": 341,
+              "end_column": 119
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 345,
+              "start_column": 4,
+              "end_row": 345,
+              "end_column": 39
+            },
+            {
+              "start_row": 346,
+              "start_column": 4,
+              "end_row": 346,
+              "end_column": 36
+            },
+            {
+              "start_row": 347,
+              "start_column": 4,
+              "end_row": 347,
+              "end_column": 120
+            },
+            {
+              "start_row": 348,
+              "start_column": 4,
+              "end_row": 348,
+              "end_column": 20
+            },
+            {
+              "start_row": 349,
+              "start_column": 4,
+              "end_row": 349,
+              "end_column": 48
+            },
+            {
+              "start_row": 350,
+              "start_column": 4,
+              "end_row": 350,
+              "end_column": 51
+            },
+            {
+              "start_row": 351,
+              "start_column": 4,
+              "end_row": 351,
+              "end_column": 59
+            },
+            {
+              "start_row": 352,
+              "start_column": 4,
+              "end_row": 352,
+              "end_column": 67
+            },
+            {
+              "start_row": 353,
+              "start_column": 4,
+              "end_row": 353,
+              "end_column": 28
+            },
+            {
+              "start_row": 354,
+              "start_column": 4,
+              "end_row": 354,
+              "end_column": 31
+            },
+            {
+              "start_row": 355,
+              "start_column": 4,
+              "end_row": 355,
+              "end_column": 34
+            },
+            {
+              "start_row": 356,
+              "start_column": 4,
+              "end_row": 356,
+              "end_column": 42
+            },
+            {
+              "start_row": 357,
+              "start_column": 4,
+              "end_row": 357,
+              "end_column": 46
+            },
+            {
+              "start_row": 358,
+              "start_column": 4,
+              "end_row": 358,
+              "end_column": 51
+            },
+            {
+              "start_row": 359,
+              "start_column": 4,
+              "end_row": 359,
+              "end_column": 66
+            },
+            {
+              "start_row": 360,
+              "start_column": 4,
+              "end_row": 360,
+              "end_column": 23
+            },
+            {
+              "start_row": 361,
+              "start_column": 4,
+              "end_row": 361,
+              "end_column": 54
+            },
+            {
+              "start_row": 362,
+              "start_column": 4,
+              "end_row": 362,
+              "end_column": 43
+            },
+            {
+              "start_row": 363,
+              "start_column": 4,
+              "end_row": 363,
+              "end_column": 44
+            },
+            {
+              "start_row": 364,
+              "start_column": 4,
+              "end_row": 364,
+              "end_column": 133
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 320,
+              "start_column": 4,
+              "end_row": 320,
+              "end_column": 99
+            }
+          ],
+          "after": [
+            {
+              "start_row": 338,
+              "start_column": 4,
+              "end_row": 338,
+              "end_column": 99
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 320,
+              "start_column": 99,
+              "end_row": 320,
+              "end_column": 100
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 336,
+              "start_column": 0,
+              "end_row": 336,
+              "end_column": 68
+            },
+            {
+              "start_row": 337,
+              "start_column": 0,
+              "end_row": 337,
+              "end_column": 55
+            },
+            {
+              "start_row": 338,
+              "start_column": 0,
+              "end_row": 338,
+              "end_column": 81
+            },
+            {
+              "start_row": 339,
+              "start_column": 0,
+              "end_row": 339,
+              "end_column": 114
+            },
+            {
+              "start_row": 340,
+              "start_column": 0,
+              "end_row": 340,
+              "end_column": 111
+            },
+            {
+              "start_row": 341,
+              "start_column": 0,
+              "end_row": 341,
+              "end_column": 119
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 345,
+              "start_column": 0,
+              "end_row": 345,
+              "end_column": 39
+            },
+            {
+              "start_row": 346,
+              "start_column": 0,
+              "end_row": 346,
+              "end_column": 36
+            },
+            {
+              "start_row": 347,
+              "start_column": 0,
+              "end_row": 347,
+              "end_column": 120
+            },
+            {
+              "start_row": 348,
+              "start_column": 0,
+              "end_row": 348,
+              "end_column": 20
+            },
+            {
+              "start_row": 349,
+              "start_column": 0,
+              "end_row": 349,
+              "end_column": 48
+            },
+            {
+              "start_row": 350,
+              "start_column": 0,
+              "end_row": 350,
+              "end_column": 51
+            },
+            {
+              "start_row": 351,
+              "start_column": 0,
+              "end_row": 351,
+              "end_column": 59
+            },
+            {
+              "start_row": 352,
+              "start_column": 0,
+              "end_row": 352,
+              "end_column": 67
+            },
+            {
+              "start_row": 353,
+              "start_column": 0,
+              "end_row": 353,
+              "end_column": 28
+            },
+            {
+              "start_row": 354,
+              "start_column": 0,
+              "end_row": 354,
+              "end_column": 31
+            },
+            {
+              "start_row": 355,
+              "start_column": 0,
+              "end_row": 355,
+              "end_column": 34
+            },
+            {
+              "start_row": 356,
+              "start_column": 0,
+              "end_row": 356,
+              "end_column": 42
+            },
+            {
+              "start_row": 357,
+              "start_column": 0,
+              "end_row": 357,
+              "end_column": 46
+            },
+            {
+              "start_row": 358,
+              "start_column": 0,
+              "end_row": 358,
+              "end_column": 51
+            },
+            {
+              "start_row": 359,
+              "start_column": 0,
+              "end_row": 359,
+              "end_column": 66
+            },
+            {
+              "start_row": 360,
+              "start_column": 0,
+              "end_row": 360,
+              "end_column": 23
+            },
+            {
+              "start_row": 361,
+              "start_column": 0,
+              "end_row": 361,
+              "end_column": 54
+            },
+            {
+              "start_row": 362,
+              "start_column": 0,
+              "end_row": 362,
+              "end_column": 43
+            },
+            {
+              "start_row": 363,
+              "start_column": 0,
+              "end_row": 363,
+              "end_column": 44
+            },
+            {
+              "start_row": 364,
+              "start_column": 0,
+              "end_row": 364,
+              "end_column": 133
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 320,
+              "start_column": 0,
+              "end_row": 320,
+              "end_column": 4
+            }
+          ],
+          "after": [
+            {
+              "start_row": 338,
+              "start_column": 0,
+              "end_row": 338,
+              "end_column": 4
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
