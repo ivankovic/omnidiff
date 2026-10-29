@@ -1592,14 +1592,20 @@ fn embedded_ranges(
     let before_starts = line_starts(&before.contents);
     let after_starts = line_starts(&after.contents);
     for layer in &diff.embedded {
-        let node_cache = NodeCache::build(&layer.before, &layer.after);
-        let (inner_before, inner_after) = plain_ranges(
-            &layer.before,
-            &layer.after,
-            &layer.diff,
-            &node_cache,
-            options,
-        );
+        // A plain-text layer has no trees: it is painted as a file without a grammar is.
+        let (inner_before, inner_after) = if layer.before.ast.is_none() || layer.after.ast.is_none()
+        {
+            plain_text_line_diff(&layer.before.contents, &layer.after.contents)
+        } else {
+            let node_cache = NodeCache::build(&layer.before, &layer.after);
+            plain_ranges(
+                &layer.before,
+                &layer.after,
+                &layer.diff,
+                &node_cache,
+                options,
+            )
+        };
         let before_side = Projection {
             inner: &layer.before.contents,
             inner_starts: line_starts(&layer.before.contents),

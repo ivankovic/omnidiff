@@ -38,6 +38,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-nomad-software-vend-huge-multi-line-strings-updated",
-        5.74,
+        0.35,
     )
 }

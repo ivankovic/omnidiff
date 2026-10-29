@@ -1107,9 +1107,18 @@ fn embedded_regions(
         };
         let ours = match found {
             Some(found) => {
-                let inner = PaintingDiff::Ast {
-                    ast: Box::new(found.diff.clone()),
-                    node_cache: crate::diff::NodeCache::build(&found.before, &found.after),
+                // A plain-text layer is painted as a file without a grammar is.
+                let inner = if found.before.ast.is_none() || found.after.ast.is_none() {
+                    let (before, after) = crate::diff::text::plain_text_line_diff(
+                        &found.before.contents,
+                        &found.after.contents,
+                    );
+                    PaintingDiff::PlainText { before, after }
+                } else {
+                    PaintingDiff::Ast {
+                        ast: Box::new(found.diff.clone()),
+                        node_cache: crate::diff::NodeCache::build(&found.before, &found.after),
+                    }
                 };
                 let labels = omnidiff_painting_labels(&inner, &found.before, &found.after, options);
                 [0, 1].map(|side| project_labels(&labels[side], offsets[side]))

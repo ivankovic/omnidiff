@@ -45,6 +45,12 @@
 //!   consulted only for markup and for C preprocessor text (a shell `'...'` string of `#include`
 //!   lines). A detection that is wrong almost never survives the gate, since both sides must parse
 //!   without an error.
+//! - **Text when nothing names a language.** A changed multi-line string whose language is not
+//!   detected, or does not parse cleanly, is still a layer: plain text ([`Language::Unknown`], no
+//!   tree), diffed line by line as a file without a grammar is
+//!   ([`super::text::plain_text_line_diff`]). An awk program in a shell `'...'` string then paints
+//!   its deleted lines one by one, not one span from its first change to its last. A one-line
+//!   string gains nothing from this and is left to the host.
 //! - **Only changed pairs.** A string inserted or deleted whole is painted whole either way, so it
 //!   gets no embedded layer.
 use tree_sitter::Node;
@@ -190,26 +196,34 @@ fn pair_at(
     if !is_host_string(host, after_node) {
         return None;
     }
-    let language = detect(host, before_node, &ctx.before.contents)
-        .or_else(|| detect(host, after_node, &ctx.after.contents))?;
-    let mut embedded = layer(
-        ctx.before,
-        ctx.after,
-        before_node,
-        after_node,
-        host,
-        language,
-    )?;
+    let at = |language| {
+        layer(
+            ctx.before,
+            ctx.after,
+            before_node,
+            after_node,
+            host,
+            language,
+        )
+    };
+    let mut embedded = detect(host, before_node, &ctx.before.contents)
+        .or_else(|| detect(host, after_node, &ctx.after.contents))
+        .and_then(at)
+        .or_else(|| at(Language::Unknown))?;
     if embedded.before.contents == embedded.after.contents {
         return None;
     }
-    embedded.diff = super::Diff::from_code(&embedded.before, &embedded.after).ast?;
+    if embedded.language != Language::Unknown {
+        embedded.diff = super::Diff::from_code(&embedded.before, &embedded.after).ast?;
+    }
     Some(embedded)
 }
 
 /// Both sides of the embedded layer at a host pair, parsed as `language`, with an empty diff;
-/// `None` if either side does not decode or does not parse cleanly. What [`solve`] diffs, and what
-/// a human mapping's embedded layer is resolved against, so the two always see the same text.
+/// `None` if either side does not decode or does not parse cleanly. [`Language::Unknown`] is a
+/// plain-text layer: never parsed, and only for a string of several lines. What [`solve`] diffs,
+/// and what a human mapping's embedded layer is resolved against, so the two always see the same
+/// text.
 pub fn layer(
     before: &Code,
     after: &Code,
@@ -220,8 +234,21 @@ pub fn layer(
 ) -> Option<EmbeddedDiff> {
     let before_decoded = decode(host, before_node, &before.contents)?;
     let after_decoded = decode(host, after_node, &after.contents)?;
-    let before_code = parsed_cleanly(&before_decoded.text, language)?;
-    let after_code = parsed_cleanly(&after_decoded.text, language)?;
+    let (before_code, after_code) = if language == Language::Unknown {
+        let lines = |text: &str| text.trim_end_matches('\n').contains('\n');
+        if !lines(&before_decoded.text) && !lines(&after_decoded.text) {
+            return None;
+        }
+        (
+            Code::from_string(&before_decoded.text, &language),
+            Code::from_string(&after_decoded.text, &language),
+        )
+    } else {
+        (
+            parsed_cleanly(&before_decoded.text, language)?,
+            parsed_cleanly(&after_decoded.text, language)?,
+        )
+    };
     Some(EmbeddedDiff {
         before_id: before_node.id(),
         after_id: after_node.id(),

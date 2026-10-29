@@ -178,9 +178,14 @@ pub(crate) fn enter_layer(
         app.mapping.embedded.len() - 1
     });
     let inner = app.mapping.embedded[index].mapping.clone();
+    // A plain-text layer (no language detected) has no name to give but that.
+    let what = if request.language == Language::Unknown {
+        "Text".to_string()
+    } else {
+        omnidiff::code::language::human_name(request.language)
+    };
     let label = format!(
-        "{} in the string at line {}",
-        omnidiff::code::language::human_name(request.language),
+        "{what} in the string at line {}",
         before_node.start_position().row + 1
     );
 

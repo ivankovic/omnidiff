@@ -137,18 +137,46 @@ fn a_shell_raw_string_of_preprocessor_lines_is_c() {
     assert_eq!(detect(Language::ShellScript, script, source), None);
 }
 
-/// nomad's `mkerrors.sh` lists each platform's C headers in a shell `'...'` string; the commit
-/// deletes a few. Each changed list is diffed as C, so its painting is the deleted lines alone.
+/// nomad's `mkerrors.sh` lists each platform's C headers in a shell `'...'` string and filters
+/// constants with an awk program in another; the commit deletes a few headers and a few awk
+/// lines. Each changed header list is diffed as C, and the awk program, with no grammar, as text:
+/// either way a deleted line is painted alone.
 #[test]
-fn shell_strings_of_c_headers_are_diffed_as_c() -> Result<()> {
+fn shell_strings_of_c_headers_and_awk_are_diffed_as_c_and_text() -> Result<()> {
     let pair = crate::test::helper::handmade_test_code_pair(
         "shellscript-nomad-software-vend-huge-multi-line-strings-updated",
     )?;
-    let ast = crate::diff::diff_code(&pair.0, &pair.1)
+    let (before, after) = (&pair.0, &pair.1);
+    let ast = crate::diff::diff_code(before, after)
         .ast
         .context("no AST diff")?;
     let languages: Vec<Language> = ast.embedded.iter().map(|layer| layer.language).collect();
-    assert_eq!(languages, [Language::C; 4]);
+    assert_eq!(
+        languages,
+        [
+            Language::C,
+            Language::C,
+            Language::C,
+            Language::C,
+            Language::Unknown
+        ]
+    );
+
+    let node_cache = crate::diff::NodeCache::build(before, after);
+    let deleted: Vec<&str> = TextDiff::from(before, after, &ast, &node_cache)
+        .all(0)
+        .iter()
+        .filter(|range| range.operation == TextOperation::Delete)
+        .filter_map(|range| {
+            let row = before.contents.lines().nth(range.source.start_row)?;
+            (range.source.start_row == range.source.end_row)
+                .then(|| &row[range.source.start_column..range.source.end_column])
+        })
+        .collect();
+    // A text layer's line keeps its indentation, as a file without a grammar paints it.
+    for line in ["#include <sys/disk.h>", "\t\t$2 ~ /^DIOC/ ||"] {
+        assert!(deleted.contains(&line), "{line:?} not in {deleted:#?}");
+    }
     Ok(())
 }
 
