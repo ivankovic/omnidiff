@@ -39,6 +39,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "python-ansible-ansible-ridiculously-long-yaml-in-string-constant-and-actual-code-changes",
-        1.33,
+        0.1,
     )
 }

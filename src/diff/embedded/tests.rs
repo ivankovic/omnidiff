@@ -137,6 +137,59 @@ fn a_shell_raw_string_of_preprocessor_lines_is_c() {
     assert_eq!(detect(Language::ShellScript, script, source), None);
 }
 
+/// Every node of `kind` in `code`, in source order.
+fn all_of_kind<'c>(code: &'c Code, kind: &str) -> Vec<Node<'c>> {
+    let mut found = Vec::new();
+    let mut stack = vec![code.ast.as_ref().unwrap().root_node()];
+    while let Some(node) = stack.pop() {
+        if node.kind() == kind {
+            found.push(node);
+        }
+        let mut cursor = node.walk();
+        stack.extend(node.children(&mut cursor));
+    }
+    found.sort_by_key(|node| node.start_byte());
+    found
+}
+
+#[test]
+fn a_csharp_raw_string_loses_its_closing_indentation() {
+    let indented =
+        "class A { string q = \"\"\"\n        SELECT a\n\n          FROM b\n        \"\"\"; }\n";
+    let flush = "class A { string q = \"\"\"\nSELECT a\n\n  FROM b\n\"\"\"; }\n";
+    let text = |source: &str| {
+        let code = Code::from_string(source, &Language::CSharp);
+        let string = all_of_kind(&code, "raw_string_literal")[0];
+        let decoded = decode(Language::CSharp, string, source).unwrap();
+        assert_offsets_spell(&decoded, source, &[("FROM b", "FROM b")]);
+        decoded.text
+    };
+    assert_eq!(text(indented), "SELECT a\n\n  FROM b");
+    assert_eq!(
+        text(indented),
+        text(flush),
+        "re-indenting the literal changes nothing in it"
+    );
+}
+
+#[test]
+fn python_strings_resolve_escapes_unless_raw_and_ansible_docs_are_yaml() {
+    let source = "DOCUMENTATION = '''\nmodule: x\\tab \\x41\n'''\nRAW = r'a\\n'\nF = f'{x}!'\n";
+    let code = Code::from_string(source, &Language::Python);
+    let strings = all_of_kind(&code, "string");
+    let text = |index: usize| decode(Language::Python, strings[index], source).unwrap();
+    let documentation = text(0);
+    assert_eq!(documentation.text, "\nmodule: x\tab A\n");
+    assert_offsets_spell(&documentation, source, &[("\tab", "\\tab"), ("A", "\\x41")]);
+    assert_eq!(text(1).text, "a\\n");
+    assert_eq!(text(2).text, "___!");
+    assert_eq!(
+        detect(Language::Python, strings[0], source),
+        Some(Language::YAML)
+    );
+    assert_eq!(detect(Language::Python, strings[1], source), None);
+}
+
 /// nomad's `mkerrors.sh` lists each platform's C headers in a shell `'...'` string and filters
 /// constants with an awk program in another; the commit deletes a few headers and a few awk
 /// lines. Each changed header list is diffed as C, and the awk program, with no grammar, as text:

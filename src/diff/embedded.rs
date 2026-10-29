@@ -284,6 +284,8 @@ fn hosts_embedded_code(host: Language) -> bool {
             | Language::TypeScript
             | Language::TSX
             | Language::ShellScript
+            | Language::Python
+            | Language::CSharp
     )
 }
 
@@ -296,6 +298,8 @@ pub fn is_host_string(host: Language, node: Node) -> bool {
             node.kind() == "template_string"
         }
         Language::ShellScript => node.kind() == "raw_string",
+        Language::Python => node.kind() == "string",
+        Language::CSharp => node.kind() == "raw_string_literal",
         _ => false,
     }
 }
@@ -310,6 +314,8 @@ pub fn decode(host: Language, node: Node, source: &str) -> Option<Decoded> {
         Language::JSON => decode_json_string(node, source),
         Language::YAML => decode_yaml_block_scalar(node, source),
         Language::ShellScript => decode_shell_raw_string(node, source),
+        Language::Python => decode_python_string(node, source),
+        Language::CSharp => decode_csharp_raw_string(node, source),
         _ => decode_template_string(node, source),
     }
 }
@@ -495,6 +501,132 @@ fn decode_shell_raw_string(node: Node, source: &str) -> Option<Decoded> {
     Some(decoded.finish(end - 1))
 }
 
+/// A C# raw string literal between its `"""` delimiters. One of several lines means what the
+/// compiler makes of it: the opening and closing lines dropped, and the closing delimiter's
+/// indentation taken off every line - so re-indenting the whole literal changes nothing in it.
+fn decode_csharp_raw_string(node: Node, source: &str) -> Option<Decoded> {
+    let child = |kind: &str| {
+        let mut cursor = node.walk();
+        node.children(&mut cursor)
+            .find(|child| child.kind() == kind)
+    };
+    let (from, to) = (
+        child("raw_string_start")?.end_byte(),
+        child("raw_string_end")?.start_byte(),
+    );
+    let body = source.get(from..to)?;
+    let mut decoded = Decoded::with_capacity(body.len());
+    let (Some(first), Some(last)) = (body.find('\n'), body.rfind('\n')) else {
+        decoded.push_verbatim(source, from, to);
+        return Some(decoded.finish(to));
+    };
+    let (content_start, content_end) = (from + first + 1, from + last);
+    let indent = &source[content_end + 1..to];
+    if !indent.chars().all(char::is_whitespace) || content_start > content_end {
+        return None;
+    }
+    let mut line_start = content_start;
+    loop {
+        let line_end = source[line_start..content_end]
+            .find('\n')
+            .map_or(content_end, |at| line_start + at);
+        let line = &source[line_start..line_end];
+        // A blank line may be shorter than the indentation.
+        let strip = if line.starts_with(indent) {
+            indent.len()
+        } else {
+            line.len() - line.trim_start().len()
+        };
+        decoded.push_verbatim(source, line_start + strip, line_end);
+        if line_end == content_end {
+            break;
+        }
+        decoded.push_verbatim(source, line_end, line_end + 1);
+        line_start = line_end + 1;
+    }
+    Some(decoded.finish(content_end))
+}
+
+/// A Python string between its quotes: escapes resolved unless it is raw (`r'...'`), and each
+/// `{...}` of an f-string as filler. Bytes (`b'...'`) are not text, so not decoded.
+fn decode_python_string(node: Node, source: &str) -> Option<Decoded> {
+    let child = |kind: &str| {
+        let mut cursor = node.walk();
+        node.children(&mut cursor)
+            .find(|child| child.kind() == kind)
+    };
+    let (open, close) = (child("string_start")?, child("string_end")?);
+    let prefix = open.utf8_text(source.as_bytes()).ok()?.to_ascii_lowercase();
+    if prefix.contains('b') {
+        return None;
+    }
+    let raw = prefix.contains('r');
+    let (from, to) = (open.end_byte(), close.start_byte());
+    // The escapes and interpolations, in order: everything between them is the string's own text.
+    let mut special = Vec::new();
+    let mut stack = vec![node];
+    while let Some(current) = stack.pop() {
+        match current.kind() {
+            "escape_sequence" | "escape_interpolation" if !raw => special.push(current),
+            "interpolation" => special.push(current),
+            _ => {
+                let mut cursor = current.walk();
+                stack.extend(current.children(&mut cursor));
+            }
+        }
+    }
+    special.sort_by_key(|node| node.start_byte());
+    let mut decoded = Decoded::with_capacity(to.saturating_sub(from));
+    let mut i = from;
+    for node in special {
+        let (start, end) = (node.start_byte(), node.end_byte());
+        if start < i || end > to {
+            continue;
+        }
+        decoded.push_verbatim(source, i, start);
+        let text = &source[start..end];
+        match node.kind() {
+            "interpolation" => decoded.push_filler(start, end),
+            _ => match python_escape(text) {
+                Some(meant) => decoded.push_from(&meant, start),
+                None => decoded.push_verbatim(source, start, end),
+            },
+        }
+        i = end;
+    }
+    decoded.push_verbatim(source, i, to);
+    Some(decoded.finish(to))
+}
+
+/// What a Python escape sequence (`\n`, `\x41`, `{{` in an f-string) means; `None` for one kept
+/// as written (`\N{...}`, or anything unrecognised).
+fn python_escape(text: &str) -> Option<String> {
+    if text == "{{" || text == "}}" {
+        return Some(text[..1].to_string());
+    }
+    let rest = text.strip_prefix('\\')?;
+    let code = |digits: &str, radix| {
+        u32::from_str_radix(digits, radix)
+            .ok()
+            .and_then(char::from_u32)
+    };
+    let meant = match rest.chars().next()? {
+        '\n' | '\r' => return Some(String::new()),
+        'n' => '\n',
+        't' => '\t',
+        'r' => '\r',
+        'a' => '\x07',
+        'b' => '\x08',
+        'f' => '\x0c',
+        'v' => '\x0b',
+        '\\' | '\'' | '"' => rest.chars().next()?,
+        'x' | 'u' | 'U' => code(&rest[1..], 16)?,
+        '0'..='7' => code(rest, 8)?,
+        _ => return None,
+    };
+    Some(meant.to_string())
+}
+
 /// The language of the code the host string `node` holds, judged from where it sits; see the
 /// module doc. `None` when nothing says.
 pub fn detect(host: Language, node: Node, source: &str) -> Option<Language> {
@@ -505,6 +637,7 @@ pub fn detect(host: Language, node: Node, source: &str) -> Option<Language> {
             detect_in_template(node, source)
         }
         Language::ShellScript => detect_in_shell(node, source),
+        Language::Python => detect_in_python(node, source),
         _ => None,
     }
 }
@@ -605,6 +738,24 @@ fn detect_in_shell(node: Node, source: &str) -> Option<Language> {
         .iter()
         .any(|keyword| directive.starts_with(keyword))
         .then_some(Language::C)
+}
+
+/// The module-level strings an Ansible module documents itself in: YAML by convention.
+const ANSIBLE_DOC_NAMES: &[&str] = &["DOCUMENTATION", "EXAMPLES", "RETURN"];
+
+/// A string assigned to one of [`ANSIBLE_DOC_NAMES`] is YAML.
+fn detect_in_python(node: Node, source: &str) -> Option<Language> {
+    let assignment = node
+        .parent()
+        .filter(|parent| parent.kind() == "assignment")?;
+    if assignment.child_by_field_name("right")?.id() != node.id() {
+        return None;
+    }
+    let name = assignment
+        .child_by_field_name("left")?
+        .utf8_text(source.as_bytes())
+        .ok()?;
+    ANSIBLE_DOC_NAMES.contains(&name).then_some(Language::YAML)
 }
 
 /// The host-file byte offset of decoded byte offset `decoded_offset`, through [`Decoded::offsets`].
