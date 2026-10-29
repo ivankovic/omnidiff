@@ -77,6 +77,8 @@
 //! 26. [`terminators_follow_their_statements`] - the tree mapping pairs a statement's `;` with the
 //!     `;` of the statement it pairs the statement with, and deletes or inserts it with a statement
 //!     it deletes or inserts - unless the `;` goes with a value the statement wraps.
+//! 27. [`updated_leaves_are_not_deleted_and_inserted`] - a leaf the mapping pairs with a leaf
+//!     that reads differently is never painted `Delete` while its partner is painted `Insert`.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -287,6 +289,9 @@ pub fn ground_truth_invariant_violations_for(
         let context = TreeContext::build(mapping, before_tree.root_node(), after_tree.root_node());
         for (name, labels) in &paintings {
             violations.extend(paired_leaves_are_not_deleted_and_inserted(
+                name, labels, &context, before, after,
+            ));
+            violations.extend(updated_leaves_are_not_deleted_and_inserted(
                 name, labels, &context, before, after,
             ));
             violations.extend(removed_leaves_are_painted(
@@ -1699,6 +1704,38 @@ fn paired_leaves_are_not_deleted_and_inserted(
     before: &Code,
     after: &Code,
 ) -> Vec<GroundTruthViolation> {
+    leaf_pairs_painted_deleted_and_inserted(10, painting, painted, context, before, after)
+}
+
+/// Invariant 27: a leaf the mapping pairs with a leaf that reads differently is never painted
+/// `Delete` while that partner is painted `Insert`.
+///
+/// Invariant 10 for an edit: `Update` says this token became that one, where `Delete` and
+/// `Insert` say it left and an unrelated one arrived. `color="inherit"` -> `sx={{ color:
+/// 'inherit' }}` pairs the attribute's `=` with the object's `:`, so painting the `=` deleted and
+/// the `:` inserted contradicts it (`tsx-mui-material-ui-move-colour-to-a-new-attribute`). One of
+/// the two is wrong: the mapping should delete and insert them too, or the painting mark them as
+/// one edit.
+fn updated_leaves_are_not_deleted_and_inserted(
+    painting: &str,
+    painted: &PaintedLabels,
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    leaf_pairs_painted_deleted_and_inserted(27, painting, painted, context, before, after)
+}
+
+/// Invariants 10 (`Same` pairs) and 27 (`Paired` ones): the leaf pairs painted wholly `Delete` on
+/// the before side and wholly `Insert` on the after side, as one violation.
+fn leaf_pairs_painted_deleted_and_inserted(
+    invariant: u8,
+    painting: &str,
+    painted: &PaintedLabels,
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
     let mut count = 0usize;
     let mut first = String::new();
     let mut rows: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
@@ -1707,17 +1744,10 @@ fn paired_leaves_are_not_deleted_and_inserted(
         if !is_visible_leaf(*leaf, &before.contents) {
             continue;
         }
-        let LeafStatus::Paired(partner) = context.status(*leaf, 0) else {
-            continue;
+        let partner = match (invariant, context.status(*leaf, 0)) {
+            (10, LeafStatus::Same(partner)) | (27, LeafStatus::Paired(partner)) => partner,
+            _ => continue,
         };
-        eprintln!(
-            "CENSUS27\t{painting}\tb{}\t`{}` -> `{}`\t{:?}/{:?}",
-            row_of(&before.contents, leaf.start_byte()),
-            leaf_text(*leaf, &before.contents),
-            leaf_text(partner, &after.contents),
-            whole_leaf_label(&painted[0], *leaf),
-            whole_leaf_label(&painted[1], partner)
-        );
         if whole_leaf_label(&painted[0], *leaf) != Some(Some(TextLabel::Delete))
             || whole_leaf_label(&painted[1], partner) != Some(Some(TextLabel::Insert))
         {
@@ -1743,12 +1773,17 @@ fn paired_leaves_are_not_deleted_and_inserted(
     if count == 0 {
         return Vec::new();
     }
+    let mapping_says = if invariant == 10 {
+        "calls the same text"
+    } else {
+        "pairs as one edit"
+    };
     vec![GroundTruthViolation::new(
-        10,
+        invariant,
         Some(painting),
         format!(
             "painting '{painting}' paints {count} leaf pair(s) gone on one side and new on the \
-             other that the tree mapping calls the same text, on {} - the first is `{first}`",
+             other that the tree mapping {mapping_says}, on {} - the first is `{first}`",
             site_rows(&rows),
         ),
         sites,
@@ -4977,6 +5012,33 @@ mod tests {
             found[0].contains("on before row 1 and after row 1 - the first is `x`"),
             "{found:?}"
         );
+    }
+
+    #[test]
+    fn an_updated_leaf_painted_gone_and_new_is_reported() {
+        let (before, after) = (rust("let x = 1;\n"), rust("let y = 1;\n"));
+        let split = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![deleted(4, 1), inserted(4, 1)],
+        );
+        let found = violations_of(27, &split, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains(
+                "that the tree mapping pairs as one edit, on before row 1 and after \
+                 row 1 - the first is `x`"
+            ),
+            "{found:?}"
+        );
+        assert!(violations_of(10, &split, &before, &after).is_empty());
+
+        let one_edit = with_painting(
+            mapping_by_text(&before, &after),
+            "Full",
+            vec![matched((4, 5), (4, 5))],
+        );
+        assert!(violations_of(27, &one_edit, &before, &after).is_empty());
     }
 
     #[test]

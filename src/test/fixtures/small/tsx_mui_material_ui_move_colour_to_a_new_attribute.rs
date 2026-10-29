@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -32,7 +32,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("tsx-mui-material-ui-move-colour-to-a-new-attribute")
+    // Invariant 27, both presets: the attribute's `=` (before row 146) is painted deleted and the
+    // object's `:` (after row 147) inserted, where the tree mapping pairs them as one edit.
+    assert_ground_truth_invariants_with_known_violations(
+        "tsx-mui-material-ui-move-colour-to-a-new-attribute",
+        2,
+    )
 }
 
 #[test]
