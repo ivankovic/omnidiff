@@ -108,6 +108,50 @@ fn a_string_without_context_is_not_embedded_code() {
     assert_eq!(detect(Language::JSON, string, source), None);
 }
 
+#[test]
+fn a_shell_raw_string_of_preprocessor_lines_is_c() {
+    let source = "includes='\n#include <sys/types.h>\n#define X 1\n'\nscript='echo #include'\n";
+    let code = Code::from_string(source, &Language::ShellScript);
+    let root = code.ast.as_ref().unwrap().root_node();
+    let mut strings = Vec::new();
+    let mut stack = vec![root];
+    while let Some(node) = stack.pop() {
+        if node.kind() == "raw_string" {
+            strings.push(node);
+        }
+        let mut cursor = node.walk();
+        stack.extend(node.children(&mut cursor));
+    }
+    strings.sort_by_key(|node| node.start_byte());
+    let [includes, script] = strings[..] else {
+        panic!("two raw strings, got {strings:?}");
+    };
+    let decoded = decode(Language::ShellScript, includes, source).unwrap();
+    assert_eq!(decoded.text, "\n#include <sys/types.h>\n#define X 1\n");
+    assert_offsets_spell(&decoded, source, &[("#define X 1", "#define X 1")]);
+    assert_eq!(
+        detect(Language::ShellScript, includes, source),
+        Some(Language::C)
+    );
+    // A `#` further in is not a directive.
+    assert_eq!(detect(Language::ShellScript, script, source), None);
+}
+
+/// nomad's `mkerrors.sh` lists each platform's C headers in a shell `'...'` string; the commit
+/// deletes a few. Each changed list is diffed as C, so its painting is the deleted lines alone.
+#[test]
+fn shell_strings_of_c_headers_are_diffed_as_c() -> Result<()> {
+    let pair = crate::test::helper::handmade_test_code_pair(
+        "shellscript-nomad-software-vend-huge-multi-line-strings-updated",
+    )?;
+    let ast = crate::diff::diff_code(&pair.0, &pair.1)
+        .ast
+        .context("no AST diff")?;
+    let languages: Vec<Language> = ast.embedded.iter().map(|layer| layer.language).collect();
+    assert_eq!(languages, [Language::C; 4]);
+    Ok(())
+}
+
 /// shadcn's registry stores each component as a JSON string; the commit adds one `phosphor="..."`
 /// attribute in three places. The TSX layer must find exactly those three insertions, and the JSON
 /// file must be painted at each one alone, not from the first change to the last.

@@ -42,8 +42,9 @@
 //!   `_`, the same length, so it parses as a word and maps back one byte to one byte.
 //! - **Context first, and a clean parse as the gate.** The language comes from where the string
 //!   sits ([`detect`]): a sibling `"path"` naming a file, a `run:` key, a `css` tag. Content alone is
-//!   consulted only for markup. A detection that is wrong almost never survives the gate, since
-//!   both sides must parse without an error.
+//!   consulted only for markup and for C preprocessor text (a shell `'...'` string of `#include`
+//!   lines). A detection that is wrong almost never survives the gate, since both sides must parse
+//!   without an error.
 //! - **Only changed pairs.** A string inserted or deleted whole is painted whole either way, so it
 //!   gets no embedded layer.
 use tree_sitter::Node;
@@ -255,6 +256,7 @@ fn hosts_embedded_code(host: Language) -> bool {
             | Language::JavaScript
             | Language::TypeScript
             | Language::TSX
+            | Language::ShellScript
     )
 }
 
@@ -266,6 +268,7 @@ pub fn is_host_string(host: Language, node: Node) -> bool {
         Language::JavaScript | Language::TypeScript | Language::TSX => {
             node.kind() == "template_string"
         }
+        Language::ShellScript => node.kind() == "raw_string",
         _ => false,
     }
 }
@@ -279,6 +282,7 @@ pub fn decode(host: Language, node: Node, source: &str) -> Option<Decoded> {
     match host {
         Language::JSON => decode_json_string(node, source),
         Language::YAML => decode_yaml_block_scalar(node, source),
+        Language::ShellScript => decode_shell_raw_string(node, source),
         _ => decode_template_string(node, source),
     }
 }
@@ -452,6 +456,18 @@ fn decode_template_string(node: Node, source: &str) -> Option<Decoded> {
     Some(decoded.finish(to))
 }
 
+/// A shell `'...'` string between its quotes: nothing in it is special, so it is its own text.
+fn decode_shell_raw_string(node: Node, source: &str) -> Option<Decoded> {
+    let (start, end) = (node.start_byte(), node.end_byte());
+    let raw = source.get(start..end)?;
+    if raw.len() < 2 || !raw.starts_with('\'') || !raw.ends_with('\'') {
+        return None;
+    }
+    let mut decoded = Decoded::with_capacity(raw.len() - 2);
+    decoded.push_verbatim(source, start + 1, end - 1);
+    Some(decoded.finish(end - 1))
+}
+
 /// The language of the code the host string `node` holds, judged from where it sits; see the
 /// module doc. `None` when nothing says.
 pub fn detect(host: Language, node: Node, source: &str) -> Option<Language> {
@@ -461,6 +477,7 @@ pub fn detect(host: Language, node: Node, source: &str) -> Option<Language> {
         Language::JavaScript | Language::TypeScript | Language::TSX => {
             detect_in_template(node, source)
         }
+        Language::ShellScript => detect_in_shell(node, source),
         _ => None,
     }
 }
@@ -544,6 +561,23 @@ fn detect_in_template(node: Node, source: &str) -> Option<Language> {
     let text = node.utf8_text(source.as_bytes()).ok()?;
     let body = text.trim_matches('`').trim();
     (body.starts_with('<') && body.ends_with('>')).then_some(Language::HTML)
+}
+
+/// A shell string whose first line of text is a C preprocessor directive: the header lists a build
+/// script assembles (`includes_Linux='#include <sys/types.h> ...'`). Nothing around such a string
+/// names its language, but no shell text reads this way.
+fn detect_in_shell(node: Node, source: &str) -> Option<Language> {
+    let text = node.utf8_text(source.as_bytes()).ok()?;
+    let first = text
+        .trim_matches('\'')
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())?;
+    let directive = first.strip_prefix('#')?.trim_start();
+    ["include", "define", "if", "undef", "pragma"]
+        .iter()
+        .any(|keyword| directive.starts_with(keyword))
+        .then_some(Language::C)
 }
 
 /// The host-file byte offset of decoded byte offset `decoded_offset`, through [`Decoded::offsets`].

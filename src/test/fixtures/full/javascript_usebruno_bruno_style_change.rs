@@ -36,5 +36,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-usebruno-bruno-style-change", 21.31)
+    assert_matches_human_painting_within_limit("javascript-usebruno-bruno-style-change", 0.0)
 }
