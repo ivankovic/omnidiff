@@ -883,5 +883,87 @@
         "comment:6"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 246,
+              "start_column": 2,
+              "end_row": 246,
+              "end_column": 36
+            },
+            {
+              "start_row": 247,
+              "start_column": 2,
+              "end_row": 247,
+              "end_column": 71
+            },
+            {
+              "start_row": 248,
+              "start_column": 2,
+              "end_row": 248,
+              "end_column": 40
+            },
+            {
+              "start_row": 249,
+              "start_column": 2,
+              "end_row": 249,
+              "end_column": 31
+            },
+            {
+              "start_row": 250,
+              "start_column": 2,
+              "end_row": 250,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 246,
+              "start_column": 0,
+              "end_row": 246,
+              "end_column": 36
+            },
+            {
+              "start_row": 247,
+              "start_column": 0,
+              "end_row": 247,
+              "end_column": 71
+            },
+            {
+              "start_row": 248,
+              "start_column": 0,
+              "end_row": 248,
+              "end_column": 40
+            },
+            {
+              "start_row": 249,
+              "start_column": 0,
+              "end_row": 249,
+              "end_column": 31
+            },
+            {
+              "start_row": 250,
+              "start_column": 0,
+              "end_row": 250,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
