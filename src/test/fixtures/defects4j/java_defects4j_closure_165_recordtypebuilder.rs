@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-closure-165-recordtypebuilder", 0.06)
+    assert_matches_human_painting_within_limit("java-defects4j-closure-165-recordtypebuilder", 0.03)
 }
 
 #[test]

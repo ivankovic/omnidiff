@@ -44,5 +44,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.65)
+    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.51)
 }

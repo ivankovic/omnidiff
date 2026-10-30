@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-jesseduffield-lazygit-many-multi-maps-very-difficult",
-        15.09,
+        15.5,
     )
 }
 

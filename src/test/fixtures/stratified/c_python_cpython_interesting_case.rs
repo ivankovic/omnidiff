@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-python-cpython-interesting-case", 11.28)
+    assert_matches_human_painting_within_limit("c-python-cpython-interesting-case", 10.39)
 }
 
 #[test]

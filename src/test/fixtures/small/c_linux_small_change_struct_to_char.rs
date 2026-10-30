@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-linux-small-change-struct-to-char", 0.22)
+    assert_matches_human_painting_within_limit("c-linux-small-change-struct-to-char", 0.01)
 }

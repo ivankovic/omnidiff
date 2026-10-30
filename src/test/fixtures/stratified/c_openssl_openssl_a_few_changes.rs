@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-openssl-openssl-a-few-changes", 1.85)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-a-few-changes", 1.62)
 }
 
 #[test]

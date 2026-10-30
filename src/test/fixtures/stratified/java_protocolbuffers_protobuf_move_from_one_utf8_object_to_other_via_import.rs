@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-protocolbuffers-protobuf-move-from-one-utf8-object-to-other-via-import",
-        0.02,
+        0.01,
     )
 }
 

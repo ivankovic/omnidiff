@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-mockito-21-constructorinstantiator",
-        3.13,
+        3.03,
     )
 }
 

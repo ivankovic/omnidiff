@@ -37,7 +37,7 @@ fn painting() -> Result<()> {
     // `FULL` sets the limit.
     assert_matches_human_painting_within_limit(
         "html-twbs-bootstrap-not-html-template-extract-two-vars",
-        24.13,
+        23.53,
     )
 }
 

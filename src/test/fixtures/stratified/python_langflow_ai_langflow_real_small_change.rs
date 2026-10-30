@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "python-langflow-ai-langflow-real-small-change",
-        0.48,
+        0.24,
     )
 }
 

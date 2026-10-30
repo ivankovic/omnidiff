@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-mongodb-mongo-add-and-rename", 11.8)
+    assert_matches_human_painting_within_limit("cpp-mongodb-mongo-add-and-rename", 11.48)
 }
 
 #[test]

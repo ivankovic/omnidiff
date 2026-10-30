@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-freeciv-freeciv-null-to-nullptr", 0.3)
+    assert_matches_human_painting_within_limit("c-freeciv-freeciv-null-to-nullptr", 0.24)
 }
 
 #[test]

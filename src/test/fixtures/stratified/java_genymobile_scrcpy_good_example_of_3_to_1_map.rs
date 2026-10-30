@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-genymobile-scrcpy-good-example-of-3-to-1-map",
-        7.82,
+        7.6,
     )
 }
 

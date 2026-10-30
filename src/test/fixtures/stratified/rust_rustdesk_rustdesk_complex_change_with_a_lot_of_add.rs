@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-rustdesk-rustdesk-complex-change-with-a-lot-of-add",
-        0.81,
+        0.66,
     )
 }
 

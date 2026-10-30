@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-torvalds-linux-double-equals-to-equals",
-        0.26,
+        0.25,
     )
 }

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("json-electron-electron-remove-only", 0.05)
+    assert_matches_human_painting_within_limit("json-electron-electron-remove-only", 0.03)
 }
 
 #[test]

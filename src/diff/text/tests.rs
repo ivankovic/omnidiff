@@ -127,48 +127,64 @@ fn minimal_and_full_disagree_on_paint_displaced_moves() {
     const { assert!(RenderOptions::FULL.paint_displaced_moves) };
 }
 
-/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
-/// place beside the one edit on its row, but a line inserted above changes its row index. The
-/// `FULL` half pins that this stays a preset split, not a blanket suppression.
-#[test]
-fn paint_displaced_moves_gates_a_node_pushed_down_by_an_insertion_above_it() {
-    let before = Code::from_string(
-        "fn main() {\n         \x20   let total = compute(first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
-    let after = Code::from_string(
-        "fn main() {\n         \x20   setup();\n         \x20   let total = compute(extra, first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
+/// Whether an `Identical` range covers `before`'s row 1 at `column` under `options`: the displaced
+/// node left unpainted. Asked this way because a node may be painted as part of a larger range
+/// rather than form one of its own.
+fn identical_on_row_one_at(
+    before: &str,
+    after: &str,
+    column: usize,
+    options: RenderOptions,
+) -> bool {
+    let before = Code::from_string(before, &crate::code::Language::Rust);
+    let after = Code::from_string(after, &crate::code::Language::Rust);
     let ast = crate::diff::diff_code(&before, &after);
     let node_cache = crate::diff::NodeCache::build(&before, &after);
+    TextDiff::from_with_options(
+        &before,
+        &after,
+        ast.ast.as_ref().unwrap(),
+        &node_cache,
+        options,
+    )
+    .all(0)
+    .iter()
+    .any(|r| {
+        r.operation == TextOperation::Identical
+            && (r.source.start_row, r.source.start_column) <= (1, column)
+            && (1, column) < (r.source.end_row, r.source.end_column)
+    })
+}
 
-    // The call row's unchanged tail, pushed down by `setup();` and right by `extra, `. Asserted as
-    // "is there an `Identical` range there" because under `FULL` it is swallowed into a larger
-    // multi-row `Move`, not a range of its own.
-    let identical_tail_on_the_call_row = |options| {
-        TextDiff::from_with_options(
-            &before,
-            &after,
-            ast.ast.as_ref().unwrap(),
-            &node_cache,
-            options,
-        )
-        .all(0)
-        .iter()
-        .any(|r| {
-            r.operation == TextOperation::Identical
-                && r.source.start_row == 1
-                && r.source.start_column == 33
-        })
-    };
+/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
+/// place beside the one edit on its row, and a line inserted above changes its row index. The two
+/// rows open on the same statement, so they read as one row pushed down, under both presets.
+#[test]
+fn a_node_pushed_down_beside_an_edit_on_its_row_is_not_moved() {
+    let before = "fn main() {\n    let total = compute(first, second);\n}\n";
+    let after = "fn main() {\n    setup();\n    let total = compute(extra, first, second);\n}\n";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        assert!(
+            identical_on_row_one_at(before, after, 24, options),
+            "{options:?} must leave the displaced `first` unpainted"
+        );
+    }
+}
 
+/// The same tail pushed down into a different statement: the rows share no head, so `FULL` reads
+/// a relocation (`java-defects4j-codec-6-base64inputstream`'s `return f(x);` -> `y = f(x);`),
+/// while `MINIMAL` still leaves the untouched tail alone. That is the preset split
+/// `paint_displaced_moves` makes.
+#[test]
+fn paint_displaced_moves_gates_a_tail_pushed_down_into_another_statement() {
+    let before = "fn main() {\n    foo(compute(first, second));\n}\n";
+    let after = "fn main() {\n    setup();\n    bar(compute(extra, first, second));\n}\n";
     assert!(
-        !identical_tail_on_the_call_row(RenderOptions::FULL),
-        "paint_displaced_moves: true must keep painting the displaced tail Move"
+        !identical_on_row_one_at(before, after, 16, RenderOptions::FULL),
+        "paint_displaced_moves: true must paint the relocated `first` Move"
     );
     assert!(
-        identical_tail_on_the_call_row(RenderOptions::MINIMAL),
+        identical_on_row_one_at(before, after, 16, RenderOptions::MINIMAL),
         "paint_displaced_moves: false must leave the purely displaced tail unpainted"
     );
 }

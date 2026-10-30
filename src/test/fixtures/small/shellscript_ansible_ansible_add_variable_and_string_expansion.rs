@@ -37,6 +37,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-ansible-ansible-add-variable-and-string-expansion",
-        0.03,
+        0.0,
     )
 }
