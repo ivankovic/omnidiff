@@ -14,11 +14,23 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+//! Builds a parsed [`Code`]'s [`ASTMetadata`]: what the diff passes read about every node.
+//!
+//! Every file is built, both sides of every diff, so the build is shaped for speed in three steps.
+//! One cursor walk copies the tree into a table of `NodeRecord`s in preorder, so no later step
+//! touches tree-sitter. The per-node hashes and similarity sketches are then computed into plain
+//! per-index vectors (`hash::compute_node_hashes`): bottom-up, so sequential. Last, the id-keyed
+//! maps are filled from those tables; each map depends only on the tables, never on another map,
+//! so on a big tree (`PARALLEL_METADATA_MIN_NODES`) they are filled on several threads. Each
+//! map is still filled in the same order on whichever thread it lands, which keeps the
+//! `*_hash_to_node` buckets (a tie-break; see `hash::record_hashes`) identical.
+
 use anyhow::{Context, Result};
 
+use crate::code::hash::{self, NodeHashes};
 use crate::code::language;
 use crate::code::tip;
-use crate::code::{ASTMetadata, ASTNodeMetadata, Code, Metadata};
+use crate::code::{ASTMetadata, ASTNodeMetadata, Code, Language, Metadata};
 use crate::diff::nodes;
 
 /// The length of each row of `contents` in **bytes** - the column one past its last character,
@@ -56,6 +68,12 @@ pub fn hermetic_expand(m: &mut Metadata) {
 /// Computes every [`ASTMetadata`] field for `code`. Errors if `code` is unparsed; an unset language
 /// becomes `Language::Unknown`.
 pub fn compute_ast_metadata(code: &Code) -> Result<ASTMetadata> {
+    let parallel = |nodes: usize| nodes >= PARALLEL_METADATA_MIN_NODES;
+    compute_ast_metadata_with(code, parallel)
+}
+
+/// [`compute_ast_metadata`], filling the maps on several threads when `parallel(node_count)`.
+fn compute_ast_metadata_with(code: &Code, parallel: impl Fn(usize) -> bool) -> Result<ASTMetadata> {
     let mut metadata = ASTMetadata::default();
     metadata.language = code.metadata.language.unwrap_or_default();
     let ast = code
@@ -65,12 +83,104 @@ pub fn compute_ast_metadata(code: &Code) -> Result<ASTMetadata> {
     // One walk of the tree-sitter tree serves every step: cursor traffic is expensive.
     let nodes = collect_nodes(ast.root_node());
     let source = code.contents.as_bytes();
-    let owned_text_hashes =
-        crate::code::hash::hash_nodes(&nodes, source, metadata.language, &mut metadata);
-    compute_tree_indexes(&nodes, &mut metadata);
-    compute_node_info(&nodes, source, &owned_text_hashes, &mut metadata);
-    discover_reference_nodes(&nodes, &mut metadata);
+    let language = metadata.language;
+    let NodeHashes {
+        full,
+        structural,
+        kind_and_value,
+        kind_only,
+        sketches,
+        owned_text,
+    } = hash::compute_node_hashes(&nodes, source, language);
+    let sizes = subtree_sizes(&nodes);
+
+    // Every field below is filled from the tables alone, so the fields are filled concurrently.
+    let ASTMetadata {
+        node_to_full_hash,
+        full_hash_to_node,
+        node_to_structural_hash,
+        structural_hash_to_node,
+        node_to_kind_and_value_hash,
+        kind_and_value_hash_to_node,
+        node_to_kind_only_hash,
+        kind_only_hash_to_node,
+        node_to_similarity_sketch,
+        node_to_subtree_size,
+        node_to_widest_subtree_node,
+        node_to_depth,
+        node_to_parent,
+        reference_nodes_ordered,
+        node_info,
+        language: _,
+    } = &mut metadata;
+    let (nodes, sizes) = (&nodes, &sizes);
+    run_tasks(
+        parallel(nodes.len()),
+        vec![
+            Box::new(move || {
+                hash::record_hashes(nodes, &full, node_to_full_hash, full_hash_to_node);
+                hash::record_hashes(
+                    nodes,
+                    &structural,
+                    node_to_structural_hash,
+                    structural_hash_to_node,
+                );
+            }),
+            Box::new(move || {
+                hash::record_hashes(
+                    nodes,
+                    &kind_and_value,
+                    node_to_kind_and_value_hash,
+                    kind_and_value_hash_to_node,
+                );
+                hash::record_hashes(
+                    nodes,
+                    &kind_only,
+                    node_to_kind_only_hash,
+                    kind_only_hash_to_node,
+                );
+            }),
+            Box::new(move || {
+                hash::record_sketches(nodes, sketches, node_to_similarity_sketch);
+            }),
+            Box::new(move || {
+                compute_tree_indexes(
+                    nodes,
+                    sizes,
+                    node_to_subtree_size,
+                    node_to_widest_subtree_node,
+                    node_to_depth,
+                    node_to_parent,
+                );
+                *reference_nodes_ordered = discover_reference_nodes(nodes, sizes, language);
+            }),
+            Box::new(move || compute_node_info(nodes, source, &owned_text, node_info)),
+        ],
+    );
     Ok(metadata)
+}
+
+/// From this many nodes, [`compute_ast_metadata`] fills its maps on several threads. Filling them
+/// costs well under a microsecond a node per map, so below this a thread costs more than it saves.
+const PARALLEL_METADATA_MIN_NODES: usize = 16 * 1024;
+
+/// Runs every task, concurrently when `parallel` (the last on the calling thread), else in order.
+/// A panic in any task reaches the caller.
+fn run_tasks<'a>(parallel: bool, tasks: Vec<Box<dyn FnOnce() + Send + 'a>>) {
+    let mut tasks = tasks.into_iter();
+    if !parallel {
+        tasks.for_each(|task| task());
+        return;
+    }
+    std::thread::scope(|scope| {
+        let last = tasks.next_back();
+        for task in tasks {
+            scope.spawn(task);
+        }
+        if let Some(last) = last {
+            last();
+        }
+    });
 }
 
 /// One node of the parsed tree as captured by [`collect_nodes`]: everything the metadata steps
@@ -140,20 +250,35 @@ pub fn metadata_of(code: &Code) -> std::borrow::Cow<'_, ASTMetadata> {
     }
 }
 
-/// `node_to_subtree_size`, `node_to_widest_subtree_node`, `node_to_depth` and `node_to_parent`,
-/// from one reverse-preorder pass over the table, which visits every child before its parent.
-fn compute_tree_indexes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
+/// Every node's subtree size (itself included), by table index.
+fn subtree_sizes(nodes: &[NodeRecord]) -> Vec<usize> {
+    // Reverse preorder visits every child before its parent.
+    let mut sizes = vec![0usize; nodes.len()];
+    for (index, record) in nodes.iter().enumerate().rev() {
+        sizes[index] = 1 + record.children.iter().map(|&c| sizes[c]).sum::<usize>();
+    }
+    sizes
+}
+
+/// Fills `node_to_subtree_size` (from `sizes`, see [`subtree_sizes`]),
+/// `node_to_widest_subtree_node`, `node_to_depth` and `node_to_parent`, from one reverse-preorder
+/// pass over the table, which visits every child before its parent.
+fn compute_tree_indexes(
+    nodes: &[NodeRecord],
+    sizes: &[usize],
+    node_to_subtree_size: &mut rustc_hash::FxHashMap<usize, usize>,
+    node_to_widest_subtree_node: &mut rustc_hash::FxHashMap<usize, (usize, usize)>,
+    node_to_depth: &mut rustc_hash::FxHashMap<usize, usize>,
+    node_to_parent: &mut rustc_hash::FxHashMap<usize, usize>,
+) {
     let n = nodes.len();
-    metadata.node_to_subtree_size.reserve(n);
-    metadata.node_to_widest_subtree_node.reserve(n);
-    metadata.node_to_depth.reserve(n);
-    metadata.node_to_parent.reserve(n);
-    let mut sizes = vec![0usize; n];
+    node_to_subtree_size.reserve(n);
+    node_to_widest_subtree_node.reserve(n);
+    node_to_depth.reserve(n);
+    node_to_parent.reserve(n);
     let mut widest = vec![(0usize, 0usize); n];
     for (index, record) in nodes.iter().enumerate().rev() {
-        let size = 1 + record.children.iter().map(|&c| sizes[c]).sum::<usize>();
-        sizes[index] = size;
-        metadata.node_to_subtree_size.insert(record.id, size);
+        node_to_subtree_size.insert(record.id, sizes[index]);
 
         // The first child wins a tie, and the node itself wins against an equally wide child.
         let mut best = (record.children.len(), record.id);
@@ -163,11 +288,11 @@ fn compute_tree_indexes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
             }
         }
         widest[index] = best;
-        metadata.node_to_widest_subtree_node.insert(record.id, best);
+        node_to_widest_subtree_node.insert(record.id, best);
 
-        metadata.node_to_depth.insert(record.id, record.depth);
+        node_to_depth.insert(record.id, record.depth);
         if let Some(parent) = record.parent {
-            metadata.node_to_parent.insert(record.id, nodes[parent].id);
+            node_to_parent.insert(record.id, nodes[parent].id);
         }
     }
 }
@@ -177,9 +302,9 @@ fn compute_node_info(
     nodes: &[NodeRecord],
     source: &[u8],
     owned_text_hashes: &[u64],
-    metadata: &mut ASTMetadata,
+    node_info: &mut rustc_hash::FxHashMap<usize, ASTNodeMetadata>,
 ) {
-    metadata.node_info.reserve(nodes.len());
+    node_info.reserve(nodes.len());
     // A kind's cost class depends only on its kind string, and so on its `kind_id`; the string
     // scans behind it run once per kind rather than once per node.
     let mut cost_classes: Vec<Option<crate::code::KindCostClass>> = Vec::new();
@@ -204,7 +329,7 @@ fn compute_node_info(
         };
         let children: Vec<usize> = record.children.iter().map(|&c| nodes[c].id).collect();
 
-        metadata.node_info.insert(
+        node_info.insert(
             record.id,
             ASTNodeMetadata {
                 kind_cost_class,
@@ -223,9 +348,11 @@ fn compute_node_info(
 /// Lists the reference nodes - the units humans think about code in, matched first so diffs make
 /// sense - largest subtree first, so hash descent settles big duplicated subtrees before their
 /// descendants.
-fn discover_reference_nodes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
-    let language = &metadata.language;
-
+fn discover_reference_nodes(
+    nodes: &[NodeRecord],
+    sizes: &[usize],
+    language: Language,
+) -> Vec<usize> {
     // Collected in preorder, children right to left, which is the order the stable sort below
     // breaks size ties in.
     let mut reference_nodes_with_sizes = Vec::new();
@@ -233,21 +360,18 @@ fn discover_reference_nodes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
     while let Some(index) = stack.pop() {
         let record = &nodes[index];
         // See `ASTNodeMetadata::is_named`.
-        if record.is_named
-            && nodes::is_reference(record.kind, language)
-            && let Some(&subtree_size) = metadata.node_to_subtree_size.get(&record.id)
-        {
-            reference_nodes_with_sizes.push((record.id, subtree_size));
+        if record.is_named && nodes::is_reference(record.kind, &language) {
+            reference_nodes_with_sizes.push((record.id, sizes[index]));
         }
         stack.extend(record.children.iter().copied());
     }
 
     reference_nodes_with_sizes.sort_by_key(|&(_, subtree_size)| std::cmp::Reverse(subtree_size));
 
-    metadata.reference_nodes_ordered = reference_nodes_with_sizes
+    reference_nodes_with_sizes
         .into_iter()
         .map(|(node_id, _)| node_id)
-        .collect();
+        .collect()
 }
 
 #[cfg(test)]
@@ -264,6 +388,29 @@ mod tests {
 
         let metadata = compute_ast_metadata(&code).expect("should fail safe, not panic");
         assert_eq!(metadata.language, crate::code::Language::Unknown);
+    }
+
+    #[test]
+    fn metadata_filled_in_parallel_equals_metadata_filled_in_sequence() {
+        let source: String = (0..200)
+            .map(|i| {
+                format!("enum E{i} {{ A, B }}\nfn f{i}(x: u32) -> u32 {{ let y = x + {i}; y }}\n")
+            })
+            .collect();
+        let code = crate::code::Code::from_string(&source, &crate::code::Language::Rust);
+
+        let sequential = compute_ast_metadata_with(&code, |_| false).unwrap();
+        let parallel = compute_ast_metadata_with(&code, |_| true).unwrap();
+
+        assert_eq!(parallel, sequential);
+        // Equal maps can still iterate differently; the reverse buckets' order is a tie-break.
+        for (hash, ids) in &sequential.full_hash_to_node {
+            assert_eq!(&parallel.full_hash_to_node[hash], ids);
+        }
+        assert_eq!(
+            sequential.full_hash_to_node.keys().collect::<Vec<_>>(),
+            parallel.full_hash_to_node.keys().collect::<Vec<_>>()
+        );
     }
 
     #[test]

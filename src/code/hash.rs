@@ -55,46 +55,81 @@ pub fn hash_code(code: &Code, metadata: &mut ASTMetadata) -> Result<()> {
     Ok(())
 }
 
-/// [`hash_code`] over an already collected node table (see `metadata::collect_nodes`). Returns
-/// each node's `ASTNodeMetadata::owned_text_hash`, by table index: it reads the same gaps.
-///
-/// Visits the table in reverse preorder (post-order, children right to left), so each child's
-/// hash is computed once and read by index: linear, not quadratic, on deep trees. That order is
-/// also the order of the `*_hash_to_node` buckets, the last-resort tie-break of
-/// `solve_moved_subtrees` and `hash_tree_matching`, so changing it changes diffs.
-///
-/// Each node's gaps are classified once ([`classify_gaps`]) and every hash reads that, and the
-/// per-node buffers (sorted child hashes, the sketch pool) are reused scratch: this runs on every
-/// node of every file, and per-node allocations and repeated gap scans dominated it.
+/// [`hash_code`] over an already collected node table (see `metadata::collect_nodes`): the hashes
+/// of [`compute_node_hashes`], recorded into `metadata`'s maps. Returns each node's
+/// `ASTNodeMetadata::owned_text_hash`, by table index.
 pub(crate) fn hash_nodes(
     nodes: &[NodeRecord],
     source: &[u8],
     language: Language,
     metadata: &mut ASTMetadata,
 ) -> Vec<u64> {
-    metadata.node_to_full_hash.clear();
-    metadata.full_hash_to_node.clear();
-    metadata.node_to_structural_hash.clear();
-    metadata.structural_hash_to_node.clear();
-    metadata.node_to_kind_and_value_hash.clear();
-    metadata.kind_and_value_hash_to_node.clear();
-    metadata.node_to_kind_only_hash.clear();
-    metadata.kind_only_hash_to_node.clear();
-    metadata.node_to_similarity_sketch.clear();
+    let hashes = compute_node_hashes(nodes, source, language);
+    record_hashes(
+        nodes,
+        &hashes.full,
+        &mut metadata.node_to_full_hash,
+        &mut metadata.full_hash_to_node,
+    );
+    record_hashes(
+        nodes,
+        &hashes.structural,
+        &mut metadata.node_to_structural_hash,
+        &mut metadata.structural_hash_to_node,
+    );
+    record_hashes(
+        nodes,
+        &hashes.kind_and_value,
+        &mut metadata.node_to_kind_and_value_hash,
+        &mut metadata.kind_and_value_hash_to_node,
+    );
+    record_hashes(
+        nodes,
+        &hashes.kind_only,
+        &mut metadata.node_to_kind_only_hash,
+        &mut metadata.kind_only_hash_to_node,
+    );
+    record_sketches(
+        nodes,
+        hashes.sketches,
+        &mut metadata.node_to_similarity_sketch,
+    );
+    hashes.owned_text
+}
 
+/// Every node's hashes, by table index (see `metadata::collect_nodes`), before they are recorded
+/// into [`ASTMetadata`]'s id-keyed maps: computing them is inherently bottom-up and sequential,
+/// while each map can then be filled independently of the others.
+pub(crate) struct NodeHashes {
+    pub(crate) full: Vec<u64>,
+    pub(crate) structural: Vec<u64>,
+    pub(crate) kind_and_value: Vec<u64>,
+    pub(crate) kind_only: Vec<u64>,
+    pub(crate) sketches: Vec<SimilaritySketch>,
+    /// `ASTNodeMetadata::owned_text_hash`, which reads the same gaps as the hashes.
+    pub(crate) owned_text: Vec<u64>,
+}
+
+/// Computes [`NodeHashes`] for every node of the table.
+///
+/// Visits the table in reverse preorder (post-order, children right to left), so each child's
+/// hash is computed once and read by index: linear, not quadratic, on deep trees.
+///
+/// Each node's gaps are classified once ([`classify_gaps`]) and every hash reads that, and the
+/// per-node buffers (sorted child hashes, the sketch pool) are reused scratch: this runs on every
+/// node of every file, and per-node allocations and repeated gap scans dominated it.
+pub(crate) fn compute_node_hashes(
+    nodes: &[NodeRecord],
+    source: &[u8],
+    language: Language,
+) -> NodeHashes {
     let n = nodes.len();
-    metadata.node_to_full_hash.reserve(n);
-    metadata.node_to_structural_hash.reserve(n);
-    metadata.node_to_kind_and_value_hash.reserve(n);
-    metadata.node_to_kind_only_hash.reserve(n);
-    metadata.node_to_similarity_sketch.reserve(n);
-
     let mut full = vec![0u64; n];
     let mut structural = vec![0u64; n];
     let mut kind_and_value = vec![0u64; n];
     let mut kind_only = vec![0u64; n];
     let mut sketches = vec![SimilaritySketch::default(); n];
-    let mut owned_text_hashes = vec![0u64; n];
+    let mut owned_text = vec![0u64; n];
 
     let mut gaps = Vec::new();
     let mut sorted_hashes = Vec::new();
@@ -104,9 +139,9 @@ pub(crate) fn hash_nodes(
         let any_content = classify_gaps(record, source, nodes, &mut gaps);
         let commutative = is_commutative_container(record.kind, &language);
 
-        let full_hash = compute_full_hash(record, source, nodes, &full, &gaps);
-        let structural_hash = compute_structural_hash(record, &structural);
-        let kind_and_value_hash = compute_kind_and_value_hash(
+        full[index] = compute_full_hash(record, source, nodes, &full, &gaps);
+        structural[index] = compute_structural_hash(record, &structural);
+        kind_and_value[index] = compute_kind_and_value_hash(
             record,
             source,
             nodes,
@@ -115,42 +150,13 @@ pub(crate) fn hash_nodes(
             commutative,
             &mut sorted_hashes,
         );
-        let kind_only_hash =
+        kind_only[index] =
             compute_kind_only_hash(record, &kind_only, commutative, &mut sorted_hashes);
-        full[index] = full_hash;
-        structural[index] = structural_hash;
-        kind_and_value[index] = kind_and_value_hash;
-        kind_only[index] = kind_only_hash;
-
-        record_hash(
-            &mut metadata.node_to_full_hash,
-            &mut metadata.full_hash_to_node,
-            record.id,
-            full_hash,
-        );
-        record_hash(
-            &mut metadata.node_to_structural_hash,
-            &mut metadata.structural_hash_to_node,
-            record.id,
-            structural_hash,
-        );
-        record_hash(
-            &mut metadata.node_to_kind_and_value_hash,
-            &mut metadata.kind_and_value_hash_to_node,
-            record.id,
-            kind_and_value_hash,
-        );
-        record_hash(
-            &mut metadata.node_to_kind_only_hash,
-            &mut metadata.kind_only_hash_to_node,
-            record.id,
-            kind_only_hash,
-        );
 
         // Owned gap text counts as a leaf: in tree-sitter-yaml a quoted scalar's leaves are just
         // its quotes, so without it every such string sketches identically.
-        let sketch = if record.children.is_empty() {
-            SimilaritySketch::leaf(full_hash)
+        sketches[index] = if record.children.is_empty() {
+            SimilaritySketch::leaf(full[index])
         } else {
             pool.clear();
             for &child in &record.children {
@@ -159,15 +165,53 @@ pub(crate) fn hash_nodes(
             if any_content {
                 let own_text_hash = compute_owned_text_hash(record, source, nodes, &gaps);
                 pool.extend_from_slice(SimilaritySketch::leaf(own_text_hash).as_slice());
-                owned_text_hashes[index] = owned_text_hash(record, source, nodes, &gaps);
+                owned_text[index] = owned_text_hash(record, source, nodes, &gaps);
             }
             SimilaritySketch::from_pool(&mut pool)
         };
-        sketches[index] = sketch.clone();
-        metadata.node_to_similarity_sketch.insert(record.id, sketch);
     }
 
-    owned_text_hashes
+    NodeHashes {
+        full,
+        structural,
+        kind_and_value,
+        kind_only,
+        sketches,
+        owned_text,
+    }
+}
+
+/// Records each node's hash from `hashes` (by table index) into `forward` and its bucket in
+/// `reverse`, replacing what they held.
+///
+/// In reverse preorder (post-order, children right to left): that is the order of the
+/// `*_hash_to_node` buckets, the last-resort tie-break of `solve_moved_subtrees` and
+/// `hash_tree_matching`, so changing it changes diffs.
+pub(crate) fn record_hashes(
+    nodes: &[NodeRecord],
+    hashes: &[u64],
+    forward: &mut rustc_hash::FxHashMap<usize, u64>,
+    reverse: &mut rustc_hash::FxHashMap<u64, Vec<usize>>,
+) {
+    forward.clear();
+    reverse.clear();
+    forward.reserve(nodes.len());
+    for (record, &hash) in nodes.iter().zip(hashes).rev() {
+        record_hash(forward, reverse, record.id, hash);
+    }
+}
+
+/// Records each node's sketch (by table index) into `map`, replacing what it held.
+pub(crate) fn record_sketches(
+    nodes: &[NodeRecord],
+    sketches: Vec<SimilaritySketch>,
+    map: &mut rustc_hash::FxHashMap<usize, SimilaritySketch>,
+) {
+    map.clear();
+    map.reserve(nodes.len());
+    for (record, sketch) in nodes.iter().zip(sketches).rev() {
+        map.insert(record.id, sketch);
+    }
 }
 
 /// The source range of each gap around `record`'s children, in order: before the first child,
