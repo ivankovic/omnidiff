@@ -101,6 +101,27 @@ fn verify_pure_wrap(
             return false;
         };
 
+        // This level's verdict once its siblings pass; `Some` ends the climb. Decided before the
+        // sibling scan, which can only turn it into `false`, so a level that fails anyway skips
+        // the scan - a full walk of every unmatched sibling's subtree, which in a large flat
+        // container every shifted child would otherwise repeat over all its siblings.
+        let verdict = if let Some(&matched_before_id) = diff.after_node_map.get(&parent.id())
+            && matched_before_id != 0
+        {
+            // `climbed == 0` is a sibling shift at the same level, not a wrap; that is
+            // `column_shift_is_meaningful`'s territory in `ranges()` (typescript-refactor-interface).
+            Some(climbed > 0 && matched_before_id == before_parent_id)
+        } else if !after_parents.contains_key(&parent.id()) {
+            // The after root is never recorded in `ASTDiff`, but the two roots correspond by
+            // construction: success if the node's real parent was the before root.
+            Some(climbed > 0 && !before_parents.contains_key(&before_parent_id))
+        } else {
+            None
+        };
+        if verdict == Some(false) {
+            return false;
+        }
+
         let mut cursor = parent.walk();
         for sibling in parent.children(&mut cursor) {
             if sibling.id() == current.id() {
@@ -111,17 +132,8 @@ fn verify_pure_wrap(
             }
         }
 
-        if let Some(&matched_before_id) = diff.after_node_map.get(&parent.id())
-            && matched_before_id != 0
-        {
-            // `climbed == 0` is a sibling shift at the same level, not a wrap; that is
-            // `column_shift_is_meaningful`'s territory in `ranges()` (typescript-refactor-interface).
-            return climbed > 0 && matched_before_id == before_parent_id;
-        }
-        // The after root is never recorded in `ASTDiff`, but the two roots correspond by
-        // construction: success if the node's real parent was the before root.
-        if !after_parents.contains_key(&parent.id()) {
-            return climbed > 0 && !before_parents.contains_key(&before_parent_id);
+        if let Some(verdict) = verdict {
+            return verdict;
         }
         current = parent;
     }
