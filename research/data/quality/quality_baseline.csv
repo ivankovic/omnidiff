@@ -183,7 +183,7 @@ cpp-qpdf-qpdf-move-to-assert-from-if-and-throw,13,8
 cpp-tensorflow-switch-to-primitive-types,1,1
 cpp-tensorflow-tensorflow-new-to-make-unique,8,6
 cpp-whitespace-only-change,0,0
-csharp-ansible-ansible-complex-change,207,134
+csharp-ansible-ansible-complex-change,21,15
 csharp-cyanfish-naps2-add-condition-to-if,3,0
 csharp-dotnet-script-dotnet-script-remove-two-arguments,0,0
 csharp-glibsharp-gtksharp-formatting-only-change,0,0
@@ -1394,7 +1394,7 @@ rust-tauri-api-build-2,0,0
 rust-tauri-apps-tauri-add-doccomment-empty-line,0,0
 rust-tauri-apps-tauri-add-one-field-with-doccomment,0,0
 rust-tauri-apps-tauri-add-only,0,0
-rust-tauri-apps-tauri-add-only-2,54,42
+rust-tauri-apps-tauri-add-only-2,2,2
 rust-tauri-apps-tauri-add-path-to-const-string,0,0
 rust-tauri-apps-tauri-add-pub-to-mod,0,0
 rust-tauri-apps-tauri-add-to-list,0,0
