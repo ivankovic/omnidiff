@@ -275,3 +275,31 @@ fn no_painting_is_implied_by_an_unpainted_layer_or_beside_the_hosts_own() -> Res
     assert!(implied_host_painting(&mapping, &before, &after).is_none());
     Ok(())
 }
+
+/// A plain-text layer has no trees, so a human's text layer adds no mapping mismatches: only its
+/// painting is graded (`python-thefuck-multiline-string-change`'s docstring).
+#[test]
+fn a_text_layer_adds_no_mapping_mismatches() -> Result<()> {
+    let name = "python-thefuck-multiline-string-change";
+    let (before, after) = code_pair(name)?;
+    let mapping = load_with(name, &before, &after)?;
+    assert!(
+        mapping
+            .embedded
+            .iter()
+            .any(|layer| layer.language == "Unknown"),
+        "the fixture holds a text layer"
+    );
+    let ast = crate::diff::diff_code(&before, &after)
+        .ast
+        .context("no AST diff")?;
+    let mismatches = mapping_mismatches(&mapping, &before, &after, &ast)?;
+    assert!(
+        mismatches
+            .iter()
+            .all(|mismatch| !mismatch.message.starts_with("[embedded")),
+        "{:?}",
+        mismatches.iter().map(|m| &m.message).collect::<Vec<_>>()
+    );
+    Ok(())
+}
