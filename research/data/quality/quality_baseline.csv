@@ -832,7 +832,7 @@ java-defects4j-lang-21-dateutils,0,0
 java-defects4j-lang-24-numberutils,0,0
 java-defects4j-lang-26-fastdateformat,0,0
 java-defects4j-lang-28-numericentityunescaper,0,0
-java-defects4j-lang-29-systemutils,1,1
+java-defects4j-lang-29-systemutils,0,0
 java-defects4j-lang-33-classutils,0,0
 java-defects4j-lang-38-fastdateformat,0,0
 java-defects4j-lang-4-lookuptranslator,0,0
@@ -856,14 +856,14 @@ java-defects4j-math-2-hypergeometricdistribution,2,1
 java-defects4j-math-22-fdistribution,0,0
 java-defects4j-math-22-uniformrealdistribution,0,0
 java-defects4j-math-27-fraction,1,1
-java-defects4j-math-30-mannwhitneyutest,1,1
+java-defects4j-math-30-mannwhitneyutest,0,0
 java-defects4j-math-32-polygonsset,0,0
 java-defects4j-math-33-simplextableau,0,0
 java-defects4j-math-34-listpopulation,0,0
 java-defects4j-math-35-elitisticlistpopulation,0,0
 java-defects4j-math-41-variance,3,3
 java-defects4j-math-5-complex,0,0
-java-defects4j-math-57-kmeansplusplusclusterer,1,1
+java-defects4j-math-57-kmeansplusplusclusterer,0,0
 java-defects4j-math-58-gaussianfitter,0,0
 java-defects4j-math-6-baseoptimizer,0,0
 java-defects4j-math-6-cmaesoptimizer,0,0

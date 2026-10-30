@@ -1503,8 +1503,8 @@ java-defects4j-lang-26-fastdateformat,full,113991,0,0,0,1,0
 java-defects4j-lang-26-fastdateformat,minimal,113991,0,0,0,1,0
 java-defects4j-lang-28-numericentityunescaper,full,4800,78,78,0,2,0
 java-defects4j-lang-28-numericentityunescaper,minimal,4800,46,46,0,2,0
-java-defects4j-lang-29-systemutils,full,120282,8,0,8,1,0
-java-defects4j-lang-29-systemutils,minimal,120282,8,2,8,1,0
+java-defects4j-lang-29-systemutils,full,120282,0,0,0,1,0
+java-defects4j-lang-29-systemutils,minimal,120282,2,2,0,1,0
 java-defects4j-lang-33-classutils,full,84920,39,39,0,2,0
 java-defects4j-lang-33-classutils,minimal,84920,0,0,0,2,0
 java-defects4j-lang-38-fastdateformat,full,113921,0,0,0,2,0
@@ -1551,8 +1551,8 @@ java-defects4j-math-22-uniformrealdistribution,full,12781,0,0,0,1,0
 java-defects4j-math-22-uniformrealdistribution,minimal,12781,0,0,0,1,0
 java-defects4j-math-27-fraction,full,46754,33,28,7,2,0
 java-defects4j-math-27-fraction,minimal,46754,7,0,7,2,0
-java-defects4j-math-30-mannwhitneyutest,full,17635,9,0,9,1,0
-java-defects4j-math-30-mannwhitneyutest,minimal,17635,9,0,9,1,0
+java-defects4j-math-30-mannwhitneyutest,full,17635,0,0,0,1,0
+java-defects4j-math-30-mannwhitneyutest,minimal,17635,0,0,0,1,0
 java-defects4j-math-32-polygonsset,full,39939,1,1,0,2,0
 java-defects4j-math-32-polygonsset,minimal,39939,0,0,0,2,0
 java-defects4j-math-33-simplextableau,full,45982,0,0,0,1,0
@@ -1565,8 +1565,8 @@ java-defects4j-math-41-variance,full,49978,44,25,19,2,0
 java-defects4j-math-41-variance,minimal,49978,25,6,19,2,0
 java-defects4j-math-5-complex,full,82934,0,0,0,1,0
 java-defects4j-math-5-complex,minimal,82934,0,0,0,1,0
-java-defects4j-math-57-kmeansplusplusclusterer,full,25135,9,0,9,1,0
-java-defects4j-math-57-kmeansplusplusclusterer,minimal,25135,9,0,9,1,0
+java-defects4j-math-57-kmeansplusplusclusterer,full,25135,0,0,0,1,0
+java-defects4j-math-57-kmeansplusplusclusterer,minimal,25135,0,0,0,1,0
 java-defects4j-math-58-gaussianfitter,full,27175,1,1,0,2,0
 java-defects4j-math-58-gaussianfitter,minimal,27175,0,0,0,2,0
 java-defects4j-math-6-baseoptimizer,full,15148,0,0,0,1,0
