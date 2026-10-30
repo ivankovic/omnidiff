@@ -18,6 +18,10 @@
 //! tree-sitter AST, the detected [`Language`], and per-node [`ASTMetadata`] (hashes, depths,
 //! parents) that the diff passes read. [`Code::from_string`] parses; [`language`] maps file names
 //! to languages and languages to grammars.
+//!
+//! The two sides of a diff are built independently - nothing in a parse or its metadata reads the
+//! other side - so the product's entry points build them on two threads ([`build_sides`]) once a
+//! pair is big enough to pay for one. The diff itself stays on one thread.
 #[cfg(test)]
 mod gap_survey;
 pub mod hash;
@@ -145,6 +149,25 @@ impl Code {
         code
     }
 
+    /// Like [`from_string`](Self::from_string), but stops after the parse: `ast` is set where the
+    /// language has a grammar and `ast_metadata` is left `None`. For readers of the tree alone,
+    /// such as a hunk's enclosing-declaration breadcrumb; the metadata costs about as much again
+    /// as the parse.
+    pub fn parse_only(contents: &str, language: &Language) -> Self {
+        let mut code = Code {
+            contents: contents.to_string(),
+            metadata: Metadata {
+                path: None,
+                tip: Some(Type::Code("Code".to_string())),
+                language: Some(*language),
+                ast_metadata: None,
+            },
+            ..Default::default()
+        };
+        code.parse(&mut tree_sitter::Parser::new());
+        code
+    }
+
     /// Reads and parses `path`, detecting the language from its path and content (`Unknown` if
     /// unrecognized). Errors if the file cannot be read as text ([`read_text`]).
     pub fn from_file(path: &std::path::Path) -> Result<Self> {
@@ -158,6 +181,47 @@ impl Code {
 
         Ok(code)
     }
+}
+
+/// The smaller side of a pair, in bytes, from which [`build_sides`] builds the two sides on two
+/// threads. Parsing and metadata run at a few megabytes a second, so this much text is a couple of
+/// milliseconds of work per side, well above the tens of microseconds a thread costs.
+pub const PARALLEL_SIDES_MIN_BYTES: usize = 8 * 1024;
+
+/// Stack size of the thread [`build_sides`] spawns. Parsing and metadata are iterative, so this
+/// is headroom (an address-space reservation, committed only as used) for a grammar's external
+/// scanner on deep input, not a measured need.
+const SIDE_THREAD_STACK_SIZE: usize = 64 * 1024 * 1024;
+
+/// Runs `before` and `after` - building the two sides of a diff, which share nothing - and returns
+/// both results: concurrently, `before` on a scoped thread and `after` on the caller's, when
+/// `parallel`; one after the other otherwise, where a thread would cost more than it saves (see
+/// [`PARALLEL_SIDES_MIN_BYTES`]). A panic on either side is re-raised on the caller's thread.
+pub fn build_sides<A: Send, B>(
+    parallel: bool,
+    before: impl FnOnce() -> A + Send,
+    after: impl FnOnce() -> B,
+) -> (A, B) {
+    if !parallel {
+        return (before(), after());
+    }
+    std::thread::scope(|scope| {
+        let handle = std::thread::Builder::new()
+            .name("omnidiff-side".to_string())
+            .stack_size(SIDE_THREAD_STACK_SIZE)
+            .spawn_scoped(scope, before)
+            .expect("failed to spawn a side-building thread");
+        let after = after();
+        let before = handle
+            .join()
+            .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+        (before, after)
+    })
+}
+
+/// Whether a pair of texts is big enough for [`build_sides`] to build in parallel.
+pub fn worth_building_in_parallel(before: &str, after: &str) -> bool {
+    before.len().min(after.len()) >= PARALLEL_SIDES_MIN_BYTES
 }
 
 /// The encodings text is read in besides UTF-8: each announced by its byte order mark, without
@@ -568,6 +632,47 @@ mod tests {
 
         assert!(code.ast.is_none());
         assert!(code.metadata.ast_metadata.is_none());
+    }
+
+    #[test]
+    fn parse_only_sets_the_tree_but_not_the_metadata() {
+        let code = Code::parse_only("fn main() {}", &Language::Rust);
+
+        assert!(code.ast.is_some());
+        assert!(code.metadata.ast_metadata.is_none());
+        assert_eq!(code.metadata.language, Some(Language::Rust));
+    }
+
+    #[test]
+    fn build_sides_returns_both_results_in_order_either_way() {
+        for parallel in [false, true] {
+            let (before, after) = build_sides(
+                parallel,
+                || Code::from_string("fn a() {}", &Language::Rust),
+                || Code::from_string("fn b() {}", &Language::Rust),
+            );
+            assert_eq!(before.contents, "fn a() {}");
+            assert_eq!(after.contents, "fn b() {}");
+            assert!(before.metadata.ast_metadata.is_some());
+            assert!(after.metadata.ast_metadata.is_some());
+        }
+    }
+
+    #[test]
+    fn build_sides_reraises_a_panic_on_the_spawned_side() {
+        let result = std::panic::catch_unwind(|| {
+            build_sides(true, || panic!("before side"), || 1);
+        });
+        let panic = result.expect_err("the before side's panic reaches the caller");
+        assert_eq!(panic.downcast_ref::<&str>(), Some(&"before side"));
+    }
+
+    #[test]
+    fn worth_building_in_parallel_looks_at_the_smaller_side() {
+        let big = "x".repeat(PARALLEL_SIDES_MIN_BYTES);
+        assert!(worth_building_in_parallel(&big, &big));
+        assert!(!worth_building_in_parallel(&big, "x"));
+        assert!(!worth_building_in_parallel("x", &big));
     }
 
     #[test]

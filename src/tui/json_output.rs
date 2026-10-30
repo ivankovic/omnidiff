@@ -181,11 +181,11 @@ struct JsonDiff {
     content: Option<crate::diff::content::ContentDiff>,
 }
 
-/// Re-parses `contents` for `nearest_reference_line`; not on a hot path, so the redundant parse
-/// is fine.
+/// Re-parses `contents` for `nearest_reference_line`, which reads the tree alone, so without
+/// metadata (`Code::parse_only`).
 fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     let language = language_for_path_and_content(path, contents);
-    let parsed = language.map(|lang| Code::from_string(contents, &lang));
+    let parsed = language.map(|lang| Code::parse_only(contents, &lang));
 
     let mut hunks = Vec::new();
     for range_match in ranges {
@@ -226,13 +226,21 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
     )
     .map(JsonDiffSummary::from);
 
+    // Each side re-parses its text, so the two are built concurrently.
+    let (before, after) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(&data.before_contents, &data.after_contents),
+        || {
+            build_side(
+                &data.before_contents,
+                &data.before_path,
+                &data.before_ranges,
+            )
+        },
+        || build_side(&data.after_contents, &data.after_path, &data.after_ranges),
+    );
     JsonDiff {
-        before: build_side(
-            &data.before_contents,
-            &data.before_path,
-            &data.before_ranges,
-        ),
-        after: build_side(&data.after_contents, &data.after_path, &data.after_ranges),
+        before,
+        after,
         large_residual,
         summary,
         binary: false,

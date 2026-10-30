@@ -270,7 +270,7 @@ pub(crate) fn nearest_reference_line(
 /// moved chunk. `side_is_before` only picks the box header's wording (`Moved to`/`Moved from`).
 ///
 /// Re-parses `contents` for the breadcrumb rather than threading the diff's AST through
-/// `DiffSessionData`; headless is not a hot path.
+/// `DiffSessionData`: only the tree (`Code::parse_only`), since the breadcrumb reads no metadata.
 fn render_side(
     contents: &str,
     ranges: &[RangeMatch],
@@ -288,7 +288,7 @@ fn render_side(
     let keep = lines_to_keep(&flags, context);
 
     let language = language_for_path_and_content(path, contents);
-    let parsed = language.map(|lang| Code::from_string(contents, &lang));
+    let parsed = language.map(|lang| Code::parse_only(contents, &lang));
 
     let number_width = lines.len().to_string().len();
 
@@ -407,24 +407,34 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
     if let Some(header) = summary_header(data, use_color) {
         out.push_str(&header);
     }
+    // Each side re-parses its text, so the two render concurrently.
+    let (before, after) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(&data.before_contents, &data.after_contents),
+        || {
+            render_side(
+                &data.before_contents,
+                &data.before_ranges,
+                true,
+                use_color,
+                &data.before_path,
+                context,
+            )
+        },
+        || {
+            render_side(
+                &data.after_contents,
+                &data.after_ranges,
+                false,
+                use_color,
+                &data.after_path,
+                context,
+            )
+        },
+    );
     out.push_str(&format!("=== before: {} ===\n", data.before_path.display()));
-    out.push_str(&render_side(
-        &data.before_contents,
-        &data.before_ranges,
-        true,
-        use_color,
-        &data.before_path,
-        context,
-    ));
+    out.push_str(&before);
     out.push_str(&format!("=== after: {} ===\n", data.after_path.display()));
-    out.push_str(&render_side(
-        &data.after_contents,
-        &data.after_ranges,
-        false,
-        use_color,
-        &data.after_path,
-        context,
-    ));
+    out.push_str(&after);
     out
 }
 

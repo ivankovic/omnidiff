@@ -108,33 +108,47 @@ pub struct NodeCache<'code> {
 }
 
 impl<'code> NodeCache<'code> {
-    /// A side without an AST gets an empty map.
+    /// A side without an AST gets an empty map. The two sides are built concurrently when big
+    /// enough (`code::build_sides`): this runs twice per diff, once for the passes and once for
+    /// the text ranges.
     pub fn build(before: &'code Code, after: &'code Code) -> Self {
+        let (before_cache, after_cache) = crate::code::build_sides(
+            crate::code::worth_building_in_parallel(&before.contents, &after.contents),
+            || Self::cache_for(before),
+            || Self::cache_for(after),
+        );
         NodeCache {
-            before: Self::cache_for(before),
-            after: Self::cache_for(after),
+            before: before_cache,
+            after: after_cache,
         }
     }
 
+    /// Every node of `code`'s tree by id, from one cursor walk (a cursor per node costs more
+    /// than the insert), into a map sized from the metadata's node count when there is one.
     fn cache_for(code: &'code Code) -> rustc_hash::FxHashMap<usize, tree_sitter::Node<'code>> {
-        code.ast
-            .as_ref()
-            .map(|ast| {
-                let mut cache = rustc_hash::FxHashMap::default();
-                let mut stack = vec![ast.root_node()];
-
-                while let Some(node) = stack.pop() {
-                    cache.insert(node.id(), node);
-
-                    let mut cursor = node.walk();
-                    for child in node.children(&mut cursor) {
-                        stack.push(child);
-                    }
+        let Some(ast) = code.ast.as_ref() else {
+            return Default::default();
+        };
+        let mut cache = rustc_hash::FxHashMap::default();
+        if let Some(metadata) = &code.metadata.ast_metadata {
+            cache.reserve(metadata.node_info.len());
+        }
+        let mut cursor = ast.root_node().walk();
+        loop {
+            let node = cursor.node();
+            cache.insert(node.id(), node);
+            if cursor.goto_first_child() {
+                continue;
+            }
+            loop {
+                if cursor.goto_next_sibling() {
+                    break;
                 }
-
-                cache
-            })
-            .unwrap_or_default()
+                if !cursor.goto_parent() {
+                    return cache;
+                }
+            }
+        }
     }
 
     pub fn get_in_any(&self, node_id: &usize) -> Option<&Node<'_>> {

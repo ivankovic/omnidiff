@@ -57,8 +57,11 @@ use crate::{
 
 /// Diffs two programs given as source strings in `language`.
 pub fn diff_strings(before: &str, after: &str, language: &Language) -> Diff {
-    let code_before = Code::from_string(before, language);
-    let code_after = Code::from_string(after, language);
+    let (code_before, code_after) = code::build_sides(
+        code::worth_building_in_parallel(before, after),
+        || Code::from_string(before, language),
+        || Code::from_string(after, language),
+    );
 
     let mut diff = diff_code(&code_before, &code_after);
     diff.language = *language;

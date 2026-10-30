@@ -235,6 +235,8 @@ pub fn layer(
 ) -> Option<EmbeddedDiff> {
     let before_decoded = decode(host, before_node, &before.contents)?;
     let after_decoded = decode(host, after_node, &after.contents)?;
+    let parallel =
+        crate::code::worth_building_in_parallel(&before_decoded.text, &after_decoded.text);
     let (before_code, after_code) = if language == Language::Unknown {
         // One line with a single edit is painted by the host just as well: one changed span.
         let one_line = !before_decoded.text.contains('\n') && !after_decoded.text.contains('\n');
@@ -244,11 +246,20 @@ pub fn layer(
         {
             return None;
         }
-        (
-            Code::from_string(&before_decoded.text, &language),
-            Code::from_string(&after_decoded.text, &language),
+        crate::code::build_sides(
+            parallel,
+            || Code::from_string(&before_decoded.text, &language),
+            || Code::from_string(&after_decoded.text, &language),
         )
+    } else if parallel {
+        let (before_code, after_code) = crate::code::build_sides(
+            true,
+            || parsed_cleanly(&before_decoded.text, language),
+            || parsed_cleanly(&after_decoded.text, language),
+        );
+        (before_code?, after_code?)
     } else {
+        // In sequence, a before side that does not parse cleanly spares the after side's parse.
         (
             parsed_cleanly(&before_decoded.text, language)?,
             parsed_cleanly(&after_decoded.text, language)?,
