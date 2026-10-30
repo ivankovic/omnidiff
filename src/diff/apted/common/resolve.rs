@@ -176,7 +176,10 @@ impl<'a> ContainmentCtx<'a> {
     }
 
     /// `base`, or `FORBIDDEN_RENAME_COST` if pairing `before_id` with `after_id` breaks
-    /// containment or sibling order.
+    /// containment or sibling order. The Zhang-Shasha oracle's entry point, written out
+    /// independently of [`Self::adjust_keyed`], which the engine uses, so the fuzz tests compare
+    /// the two.
+    #[cfg(test)]
     pub(crate) fn adjust(&self, before_id: usize, after_id: usize, base: u64) -> u64 {
         if base >= FORBIDDEN_RENAME_COST {
             return base;
