@@ -138,6 +138,7 @@ mod tests {
                 paint_displaced_moves: false,
                 paint_resized_moves: false,
                 whole_identifier_updates: false,
+                interior_whitespace: false,
             }))
         );
     }
@@ -159,6 +160,7 @@ mod tests {
                 paint_displaced_moves: false,
                 paint_resized_moves: false,
                 whole_identifier_updates: false,
+                interior_whitespace: false,
             }))
         );
     }

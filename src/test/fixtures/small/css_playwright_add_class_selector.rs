@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-playwright-add-class-selector", 1.09)
+    assert_matches_human_painting_within_limit("css-playwright-add-class-selector", 1.06)
 }

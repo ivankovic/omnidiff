@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-to-empty-block", 27.89)
+    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-to-empty-block", 25.97)
 }
 
 #[test]

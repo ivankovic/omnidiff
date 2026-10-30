@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-closure-141-purefunctionidentifier",
-        0.46,
+        0.44,
     )
 }
 

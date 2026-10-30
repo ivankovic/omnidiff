@@ -36,5 +36,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("vimscript-junegunn-fzf-condition-canges", 0.12)
+    assert_matches_human_painting_within_limit("vimscript-junegunn-fzf-condition-canges", 0.13)
 }

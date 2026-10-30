@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-zed-industries-zed-add-and-one-small-delete",
-        0.45,
+        0.46,
     )
 }
 

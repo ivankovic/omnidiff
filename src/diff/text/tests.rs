@@ -35,6 +35,59 @@ fn changed(row: usize, start: usize, end: usize) -> RangeMatch {
     }
 }
 
+/// `args := x` from `var args x`: the blank between the moved `args` and the inserted `:=` takes
+/// the insertion under `FULL`, and stays unpainted under `MINIMAL`.
+#[test]
+fn full_paints_the_blank_between_two_differently_painted_ranges() {
+    let source = "args := x\n";
+    let ranges = vec![
+        RangeMatch {
+            source: text_range_on(0, 0, 4),
+            destination: text_range_on(0, 4, 8),
+            operation: TextOperation::Move,
+        },
+        RangeMatch {
+            source: text_range_on(0, 5, 7),
+            destination: text_range_on(0, 8, 8),
+            operation: TextOperation::Insert,
+        },
+    ];
+    let blank = |options| {
+        ranges_for_options(&ranges, source, options)
+            .into_iter()
+            .find(|range| range.source == text_range_on(0, 4, 5))
+            .map(|range| range.operation)
+    };
+    assert_eq!(blank(RenderOptions::FULL), Some(TextOperation::Insert));
+    assert_eq!(blank(RenderOptions::MINIMAL), None);
+}
+
+/// A blank after a comma stays with the comma, and one beside an `Update` goes to the other side.
+#[test]
+fn the_blank_follows_a_comma_and_avoids_an_update() {
+    let source = "f(a, b) c d\n";
+    let range = |start, end, operation| RangeMatch {
+        source: text_range_on(0, start, end),
+        destination: text_range_on(0, start, end),
+        operation,
+    };
+    let ranges = vec![
+        range(2, 4, TextOperation::Move),
+        range(5, 6, TextOperation::Insert),
+        range(8, 9, TextOperation::Update),
+        range(10, 11, TextOperation::Move),
+    ];
+    let filled = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let blank_at = |start| {
+        filled
+            .iter()
+            .find(|range| range.source == text_range_on(0, start, start + 1))
+            .map(|range| range.operation.clone())
+    };
+    assert_eq!(blank_at(4), Some(TextOperation::Move));
+    assert_eq!(blank_at(9), Some(TextOperation::Move));
+}
+
 /// The corpus was painted narrow under both presets, so `whole_pair_updates` is off in both.
 #[test]
 fn neither_preset_turns_on_whole_pair_updates() {
@@ -348,7 +401,8 @@ fn minimal_and_full_disagree_on_paint_resized_moves() {
     const { assert!(RenderOptions::FULL.paint_resized_moves) };
 }
 
-/// The first two options are post-filters and never need a rebuild; every other one does.
+/// The first two options and `interior_whitespace` are post-filters and never need a rebuild;
+/// every other one does.
 #[test]
 fn only_the_post_filters_skip_a_rebuild() {
     let base = RenderOptions::FULL;
@@ -357,7 +411,7 @@ fn only_the_post_filters_skip_a_rebuild() {
         toggled.toggle(index);
         assert_eq!(
             toggled.needs_rebuild_from(&base),
-            index >= 2,
+            !matches!(index, 0 | 1 | 7),
             "option {index} ({})",
             base.options()[index].0
         );
@@ -635,6 +689,7 @@ fn structural_punctuation_off_alone_still_keeps_leading_whitespace() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -659,6 +714,7 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-junegunn-fzf-real-small-change", 0.7)
+    assert_matches_human_painting_within_limit("go-junegunn-fzf-real-small-change", 1.16)
 }
 
 #[test]

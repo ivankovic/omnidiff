@@ -92,7 +92,7 @@ pub struct StatePayload {
 /// TUI's `M` panel shows. Pinned by a test against the struct's real serialization so a renamed
 /// or reordered field cannot leave the page toggling the wrong row.
 pub fn render_option_rows() -> Vec<RenderOptionRow> {
-    const KEYS: [&str; 7] = [
+    const KEYS: [&str; 8] = [
         "leading_whitespace",
         "structural_punctuation",
         "whole_pair_updates",
@@ -100,6 +100,7 @@ pub fn render_option_rows() -> Vec<RenderOptionRow> {
         "paint_displaced_moves",
         "paint_resized_moves",
         "whole_identifier_updates",
+        "interior_whitespace",
     ];
     KEYS.iter()
         .zip(RenderOptions::FULL.options())

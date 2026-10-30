@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // Includes the `0`/`keyboard` pairing the mapping clamp describes.
-    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-big-change", 39.3)
+    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-big-change", 36.9)
 }
 
 #[test]

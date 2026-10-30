@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // The two disagree about which of two after-`if`s the before one became, so they paint
     // different halves of it.
-    assert_matches_human_painting_within_limit("java-defects4j-cli-20-posixparser", 1.84)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-20-posixparser", 1.82)
 }
 
 #[test]

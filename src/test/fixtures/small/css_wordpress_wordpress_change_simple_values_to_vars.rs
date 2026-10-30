@@ -37,6 +37,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "css-wordpress-wordpress-change-simple-values-to-vars",
-        0.07,
+        0.06,
     )
 }

@@ -156,6 +156,13 @@ pub struct RenderOptions {
     /// narrow reading, because a changed year in a copyright line is still one changed year.
     #[serde(default)]
     pub whole_identifier_updates: bool,
+    /// Whether the blanks between two painted ranges on one row are painted, so a
+    /// highlight never breaks over whitespace (ground-truth invariant 5,
+    /// `no_unpainted_whitespace_between_painted_regions`). On in `FULL` only: `Minimal` paintings
+    /// leave such a blank alone. A display filter like [`Self::leading_whitespace`]; see
+    /// [`fill_whitespace_between_painted`] for which operation the blank takes.
+    #[serde(default)]
+    pub interior_whitespace: bool,
 }
 
 /// [`RenderOptions::paint_reindent_only_moves`]'s serde default.
@@ -183,6 +190,7 @@ impl RenderOptions {
         paint_displaced_moves: false,
         paint_resized_moves: false,
         whole_identifier_updates: false,
+        interior_whitespace: false,
     };
     /// The fullest reading of a diff: every option on except `whole_pair_updates`, which is
     /// outside the preset axis.
@@ -194,11 +202,12 @@ impl RenderOptions {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
 
     /// Every option with its label and value, in settings-UI order. Indexes match
     /// [`Self::toggle`].
-    pub fn options(&self) -> [(&'static str, bool); 7] {
+    pub fn options(&self) -> [(&'static str, bool); 8] {
         [
             ("Leading whitespace", self.leading_whitespace),
             (
@@ -213,6 +222,10 @@ impl RenderOptions {
                 self.paint_resized_moves,
             ),
             ("Whole renamed identifiers", self.whole_identifier_updates),
+            (
+                "Whitespace between differently painted ranges",
+                self.interior_whitespace,
+            ),
         ]
     }
 
@@ -226,6 +239,7 @@ impl RenderOptions {
             4 => self.paint_displaced_moves = !self.paint_displaced_moves,
             5 => self.paint_resized_moves = !self.paint_resized_moves,
             6 => self.whole_identifier_updates = !self.whole_identifier_updates,
+            7 => self.interior_whitespace = !self.interior_whitespace,
             _ => {}
         }
     }
@@ -239,6 +253,7 @@ impl RenderOptions {
         let post_filters_only = Self {
             leading_whitespace: previous.leading_whitespace,
             structural_punctuation: previous.structural_punctuation,
+            interior_whitespace: previous.interior_whitespace,
             ..*self
         };
         post_filters_only != *previous
@@ -276,11 +291,110 @@ pub fn ranges_for_options(
     options: RenderOptions,
 ) -> Vec<RangeMatch> {
     let result = ranges_for_options_impl(ranges, source, options);
-    if options.structural_punctuation {
+    let result = if options.structural_punctuation {
+        result
+    } else {
+        let result = restore_paired_brackets(ranges, source, options, result);
+        restore_statement_terminators(ranges, source, options, result)
+    };
+    fill_whitespace_between_painted(source, options, result)
+}
+
+/// Paints the blanks between two painted ranges on one row under
+/// [`RenderOptions::interior_whitespace`], so one edit does not read as two with a hole between
+/// them. The walk already merges two ranges of one operation over the whitespace between them;
+/// what is left is mostly a blank between two operations, which no node owns.
+///
+/// Which operation the blank takes follows the `Full` paintings, which split close to evenly
+/// between the two sides except in two shapes: beside an `Update` the blank goes to the other side
+/// (the rename is the token, not its spacing), and after a `,` it stays with the comma. Elsewhere
+/// an `Insert` or `Delete` takes it over a `Move`, the side the paintings favour.
+///
+/// The rule trusts both neighbours: beside a range painted wrongly, most often a `Move` the
+/// painting leaves alone, the blank is painted wrongly too. `MINIMAL` does not fill even between
+/// two ranges of one operation: the blanks the walk leaves there are more often unpainted than not
+/// in the `Minimal` paintings.
+pub(crate) fn fill_whitespace_between_painted(
+    source: &str,
+    options: RenderOptions,
+    mut result: Vec<RangeMatch>,
+) -> Vec<RangeMatch> {
+    if !options.interior_whitespace {
         return result;
     }
-    let result = restore_paired_brackets(ranges, source, options, result);
-    restore_statement_terminators(ranges, source, options, result)
+    let text = SourceText::new(source);
+    let byte_range = |range: &TextRange| -> Option<(usize, usize)> {
+        let start = text.byte_index(
+            crate::diff::text_range::SourceRow::from_raw(range.start_row),
+            crate::diff::text_range::SourceColumn::from_raw(range.start_column),
+        )?;
+        let end = text.byte_index(
+            crate::diff::text_range::SourceRow::from_raw(range.end_row),
+            crate::diff::text_range::SourceColumn::from_raw(range.end_column),
+        )?;
+        Some((start.get(), end.get()))
+    };
+    // `(start, end, index)` of every painted range, in byte order.
+    let mut painted: Vec<(usize, usize, usize)> = result
+        .iter()
+        .enumerate()
+        .filter(|(_, range)| {
+            matches!(
+                range.operation,
+                TextOperation::Move
+                    | TextOperation::Update
+                    | TextOperation::Insert
+                    | TextOperation::Delete
+            )
+        })
+        .filter_map(|(index, range)| {
+            let (start, end) = byte_range(&range.source)?;
+            (start < end).then_some((start, end, index))
+        })
+        .collect();
+    painted.sort_unstable();
+
+    let rank = |operation: &TextOperation| match operation {
+        TextOperation::Insert | TextOperation::Delete => 2,
+        TextOperation::Move => 1,
+        _ => 0,
+    };
+    let mut fills = Vec::new();
+    // The end of the painting so far, and the range that reaches it.
+    let mut reach: Option<(usize, usize)> = None;
+    for &(start, end, index) in &painted {
+        if let Some((left_end, left_index)) = reach
+            && start > left_end
+            && source[left_end..start]
+                .bytes()
+                .all(|byte| byte == b' ' || byte == b'\t')
+        {
+            let (left, right) = (&result[left_index], &result[index]);
+            let beside_an_update =
+                left.operation == TextOperation::Update || right.operation == TextOperation::Update;
+            let keeps_left = if beside_an_update {
+                right.operation == TextOperation::Update
+            } else {
+                source[..left_end].ends_with(',') || rank(&left.operation) >= rank(&right.operation)
+            };
+            let chosen = if keeps_left { left } else { right };
+            let row_start = source[..left_end]
+                .rfind('\n')
+                .map_or(0, |newline| newline + 1);
+            // Both ends are on the row of `right`'s start, which `right.source` names.
+            let row = right.source.start_row;
+            fills.push(RangeMatch {
+                source: TextRange::new(row, left_end - row_start, row, start - row_start),
+                destination: chosen.destination.clone(),
+                operation: chosen.operation.clone(),
+            });
+        }
+        if reach.is_none_or(|(left_end, _)| end >= left_end) {
+            reach = Some((end, index));
+        }
+    }
+    result.extend(fills);
+    result
 }
 
 /// Restores a `;` dropped as standalone punctuation when the first visible byte of its row is

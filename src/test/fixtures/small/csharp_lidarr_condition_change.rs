@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-lidarr-condition-change", 0.02)
+    assert_matches_human_painting_within_limit("csharp-lidarr-condition-change", 0.0)
 }

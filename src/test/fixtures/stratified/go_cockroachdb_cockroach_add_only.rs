@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-cockroachdb-cockroach-add-only", 7.22)
+    assert_matches_human_painting_within_limit("go-cockroachdb-cockroach-add-only", 7.24)
 }
 
 #[test]

@@ -34,5 +34,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("shellscript-genymobile-scrcpy-add-two-flags", 0.51)
+    assert_matches_human_painting_within_limit("shellscript-genymobile-scrcpy-add-two-flags", 0.53)
 }

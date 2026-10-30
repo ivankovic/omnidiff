@@ -40,5 +40,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-ladybird-refactor-variables-if-changes", 1.87)
+    assert_matches_human_painting_within_limit("cpp-ladybird-refactor-variables-if-changes", 1.86)
 }
