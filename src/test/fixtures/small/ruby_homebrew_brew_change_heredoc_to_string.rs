@@ -22,11 +22,13 @@ use anyhow::Result;
 #[test]
 fn mapping() -> Result<()> {
     // A heredoc becomes a plain string, represented very differently, so the enclosing
-    // `call`/`argument_list` cannot be matched across the change.
+    // `call`/`argument_list` cannot be matched across the change. Since 1a63e1df the human also
+    // pairs the heredoc's three `heredoc_content` lines with the string's parts, which omnidiff
+    // leaves unmatched.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-homebrew-brew-change-heredoc-to-string",
-        2,
-        0,
+        5,
+        3,
     )
 }
 

@@ -22,11 +22,13 @@ use anyhow::Result;
 #[test]
 fn mapping() -> Result<()> {
     // A `list` wrapped in a new `pipeline` shifts its `&&`. The quoting change (`raw_string` to
-    // `string`) is handled by `SHELL_STRING_BODY_KINDS`.
+    // `string`) is handled by `SHELL_STRING_BODY_KINDS`. Since 18162834 the human also groups the
+    // one `'...'` string with the three `"..."` strings it became, all to all; omnidiff inserts
+    // their quotes (`fast_fallback`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content",
-        1,
-        1,
+        5,
+        5,
     )
 }
 

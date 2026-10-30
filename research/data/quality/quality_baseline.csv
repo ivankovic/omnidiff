@@ -1286,7 +1286,7 @@ r-oracle-dtrace-utils-i-have-no-idea-what-this-change-actually-does,0,0
 ruby-homebrew-add-or-expression,0,0
 ruby-homebrew-brew-actual-logic-change,13,6
 ruby-homebrew-brew-add-extends,0,0
-ruby-homebrew-brew-change-heredoc-to-string,2,0
+ruby-homebrew-brew-change-heredoc-to-string,5,3
 ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,24,17
 ruby-homebrew-brew-enclose-block-in-rescue,0,0
 ruby-homebrew-brew-function-callsite-argument-change,0,0
@@ -1481,7 +1481,7 @@ shellscript-go-delve-delve-add-if,0,0
 shellscript-hgst-libzbc-add-variable,0,0
 shellscript-imapsync-imapsync-add-some-test-cases-and-a-few-other-changes,0,0
 shellscript-jesseduffield-lazygit-version,0,0
-shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,1,1
+shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,5,5
 shellscript-maxsatula-ocp-small-change,0,0
 shellscript-microsoft-playwright-version,0,0
 shellscript-mongodb-mongo-small-change,0,0
