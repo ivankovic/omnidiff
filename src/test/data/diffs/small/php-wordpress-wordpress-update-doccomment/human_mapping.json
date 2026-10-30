@@ -437,5 +437,45 @@
         "function_definition:15"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 31,
+              "start_column": 17,
+              "end_row": 31,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 109,
+              "start_column": 17,
+              "end_row": 109,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 251,
+              "start_column": 17,
+              "end_row": 251,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

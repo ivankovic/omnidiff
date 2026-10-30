@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -31,4 +32,9 @@ fn mapping() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("xml-nextcloud-android-add-few-translations")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("xml-nextcloud-android-add-few-translations", 0.02)
 }

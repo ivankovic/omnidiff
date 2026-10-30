@@ -341,5 +341,45 @@
         "class_declaration:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 29,
+              "end_row": 8,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 9,
+              "start_column": 37,
+              "end_row": 9,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 43,
+              "end_row": 10,
+              "end_column": 46
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
