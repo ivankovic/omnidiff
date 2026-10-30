@@ -98,6 +98,103 @@ impl UnitCostModel {
     }
 }
 
+/// What [`UnitCostModel::ren`] reads of one node, with its kind and leaf text interned by a
+/// [`RenInterner`], so [`UnitCostModel::ren_keyed`] compares integers where `ren` compares strings:
+/// the tree-edit-distance DP prices a pair once per cell.
+#[derive(Clone, Copy)]
+pub(crate) struct RenKey {
+    kind: u32,
+    /// The interned text of a leaf; `u32::MAX` for a node with children, whose text `ren` never
+    /// reads.
+    text: u32,
+    leaf: bool,
+    /// `is_marker_only(text)` for a comment-kind leaf, `None` for anything else.
+    comment_marker: Option<bool>,
+    owned_text_hash: u64,
+    class: crate::code::KindCostClass,
+}
+
+impl RenKey {
+    /// A placeholder for a virtual root, which has no node to key.
+    pub(crate) const VIRTUAL_ROOT: RenKey = RenKey {
+        kind: u32::MAX,
+        text: u32::MAX,
+        leaf: false,
+        comment_marker: None,
+        owned_text_hash: 0,
+        class: crate::code::KindCostClass {
+            identifier_like: false,
+            literal_like: false,
+            operator_families: 0,
+        },
+    };
+}
+
+/// Interns kinds and leaf texts into [`RenKey`]s. Keys compare equal only when made by the same
+/// interner.
+#[derive(Default)]
+pub(crate) struct RenInterner<'a> {
+    kinds: rustc_hash::FxHashMap<&'a str, u32>,
+    texts: rustc_hash::FxHashMap<&'a str, u32>,
+}
+
+impl<'a> RenInterner<'a> {
+    pub(crate) fn key(&mut self, node: &'a ASTNodeMetadata) -> RenKey {
+        let next = self.kinds.len() as u32;
+        let kind = *self.kinds.entry(node.kind.as_str()).or_insert(next);
+        let leaf = node.children.is_empty();
+        let text = if leaf {
+            let next = self.texts.len() as u32;
+            *self.texts.entry(node.text.as_str()).or_insert(next)
+        } else {
+            u32::MAX
+        };
+        RenKey {
+            kind,
+            text,
+            leaf,
+            comment_marker: (leaf && nodes::is_comment(&node.kind))
+                .then(|| is_marker_only(&node.text)),
+            owned_text_hash: node.owned_text_hash,
+            class: node.kind_cost_class,
+        }
+    }
+}
+
+impl UnitCostModel {
+    /// [`Self::ren`] on two [`RenKey`]s from one interner: the same cost, branch for branch.
+    pub(crate) fn ren_keyed(&self, node1: &RenKey, node2: &RenKey) -> u64 {
+        if node1.kind == node2.kind {
+            if node1.leaf && node2.leaf {
+                if node1.text == node2.text {
+                    0
+                } else if let (Some(marker1), Some(marker2)) =
+                    (node1.comment_marker, node2.comment_marker)
+                    && marker1 != marker2
+                {
+                    COST_DELETE + COST_INSERT + 1
+                } else if node1.class.literal_like {
+                    COST_LITERAL_UPDATE
+                } else {
+                    COST_UPDATE
+                }
+            } else if node1.owned_text_hash == node2.owned_text_hash {
+                0
+            } else {
+                COST_UPDATE
+            }
+        } else if nodes::update_allowed_from_masks(
+            &node1.class,
+            &node2.class,
+            self.language_family_mask,
+        ) {
+            COST_UPDATE
+        } else {
+            COST_DELETE + COST_INSERT + 1
+        }
+    }
+}
+
 /// True for comment text with no words, only markers, punctuation and whitespace.
 fn is_marker_only(text: &str) -> bool {
     !text.chars().any(char::is_alphanumeric)

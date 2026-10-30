@@ -29,7 +29,8 @@
 use crate::code::{ASTMetadata, ASTNodeMetadata};
 
 use super::common::{
-    ContainmentCtx, ContainmentKey, DeltaTable, ForestDist, Grid, PostorderIndexer, UnitCostModel,
+    ContainmentCtx, ContainmentKey, DeltaTable, ForestDist, Grid, PostorderIndexer, RenInterner,
+    RenKey, UnitCostModel,
 };
 
 /// Whether `APTED_DEBUG` is set, cached because it is checked on the DP's hot path.
@@ -409,6 +410,10 @@ pub(crate) struct EngineCtx<'a> {
     /// than once per DP cell.
     before_nodes: Vec<Option<&'a ASTNodeMetadata>>,
     after_nodes: Vec<Option<&'a ASTNodeMetadata>>,
+    /// Virtual preorder index -> the node's [`RenKey`], per side, both from one interner; the
+    /// virtual root's entry is a placeholder `ren_adjusted` never reads.
+    before_keys: Vec<RenKey>,
+    after_keys: Vec<RenKey>,
     /// Virtual preorder index -> the node's containment inputs, per side; empty without
     /// `containment`.
     before_containment: Vec<ContainmentKey<'a>>,
@@ -447,13 +452,29 @@ impl<'a> EngineCtx<'a> {
             ),
             None => (Vec::new(), Vec::new()),
         };
+        let before_nodes = nodes(before_idx, before_meta);
+        let after_nodes = nodes(after_idx, after_meta);
+        let mut interner = RenInterner::default();
+        let mut keys_of = |nodes: &[Option<&'a ASTNodeMetadata>]| {
+            nodes
+                .iter()
+                .map(|node| match node {
+                    Some(node) => interner.key(node),
+                    None => RenKey::VIRTUAL_ROOT,
+                })
+                .collect::<Vec<_>>()
+        };
+        let before_keys = keys_of(&before_nodes);
+        let after_keys = keys_of(&after_nodes);
         EngineCtx {
             before_idx,
             after_idx,
             cost_model,
             containment,
-            before_nodes: nodes(before_idx, before_meta),
-            after_nodes: nodes(after_idx, after_meta),
+            before_nodes,
+            after_nodes,
+            before_keys,
+            after_keys,
             before_containment,
             after_containment,
             forestdist_scratch: std::cell::RefCell::new([None, None]),
@@ -482,11 +503,17 @@ impl<'a> EngineCtx<'a> {
     /// `vren` at virtual preorder ids `(before_pre, after_pre)`, with `containment` applied as
     /// `forest_dist` applies it; the virtual root is left unadjusted.
     pub(crate) fn ren_adjusted(&self, before_pre: usize, after_pre: usize) -> u64 {
-        let base = vren(
-            self.cost_model,
-            self.before_nodes[before_pre],
-            self.after_nodes[after_pre],
-        );
+        // `vren`, on the interned keys.
+        let base = match (
+            self.before_nodes[before_pre].is_some(),
+            self.after_nodes[after_pre].is_some(),
+        ) {
+            (true, true) => self
+                .cost_model
+                .ren_keyed(&self.before_keys[before_pre], &self.after_keys[after_pre]),
+            (false, false) => 0,
+            _ => FORBIDDEN_PAIRING_COST,
+        };
         let Some(containment) = self.containment else {
             return base;
         };
