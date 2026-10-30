@@ -42,6 +42,14 @@ pub(crate) struct ContainmentCtx<'a> {
     after_meta: &'a ASTMetadata,
 }
 
+/// One node's share of [`ContainmentCtx::adjust`]'s inputs: its pruned descendants' targets and
+/// its sibling-order rank (`None` when that check does not apply).
+#[derive(Clone, Copy, Default)]
+pub(crate) struct ContainmentKey<'a> {
+    targets: Option<&'a [usize]>,
+    rank: Option<usize>,
+}
+
 /// `source` tags that pre-match in strict positional order and so get `ContainmentCtx`'s
 /// sibling-order check.
 pub(crate) const PREMATCH_SIBLING_ORDER_SOURCES: &[&str] = &[
@@ -102,8 +110,76 @@ impl<'a> ContainmentCtx<'a> {
         }
     }
 
+    /// `before_id`'s inputs to [`Self::adjust_keyed`], looked up once per node rather than once
+    /// per pairing.
+    pub(crate) fn before_key(&self, before_id: usize) -> ContainmentKey<'_> {
+        ContainmentKey {
+            targets: self
+                .before_pruned_targets
+                .get(&before_id)
+                .map(Vec::as_slice),
+            rank: self.anchor_rank(before_id, self.before_meta, &self.before_anchor_preorders),
+        }
+    }
+
+    /// `after_id`'s inputs to [`Self::adjust_keyed`].
+    pub(crate) fn after_key(&self, after_id: usize) -> ContainmentKey<'_> {
+        ContainmentKey {
+            targets: self.after_pruned_targets.get(&after_id).map(Vec::as_slice),
+            rank: self.anchor_rank(after_id, self.after_meta, &self.after_anchor_preorders),
+        }
+    }
+
+    /// The node's rank among its side's trusted anchors; `None` when the sibling-order check is
+    /// off or the node has no metadata, either of which skips that check.
+    fn anchor_rank(&self, id: usize, meta: &ASTMetadata, anchors: &[usize]) -> Option<usize> {
+        if self.before_anchor_preorders.is_empty() && self.after_anchor_preorders.is_empty() {
+            return None;
+        }
+        let pre = meta.node_info.get(&id)?.preorder_index;
+        Some(anchors.partition_point(|&p| p < pre))
+    }
+
+    /// [`Self::adjust`] from the two nodes' precomputed [`ContainmentKey`]s: the same answer
+    /// without its per-call map lookups, for the DP's innermost loops.
+    pub(crate) fn adjust_keyed(
+        &self,
+        before_id: usize,
+        after_id: usize,
+        before_key: &ContainmentKey,
+        after_key: &ContainmentKey,
+        base: u64,
+    ) -> u64 {
+        if base >= FORBIDDEN_RENAME_COST {
+            return base;
+        }
+        if let Some(targets) = before_key.targets
+            && targets
+                .iter()
+                .any(|&t| !is_ancestor_or_self(after_id, t, self.after_parents))
+        {
+            return FORBIDDEN_RENAME_COST;
+        }
+        if let Some(targets) = after_key.targets
+            && targets
+                .iter()
+                .any(|&t| !is_ancestor_or_self(before_id, t, self.before_parents))
+        {
+            return FORBIDDEN_RENAME_COST;
+        }
+        if let (Some(rank_before), Some(rank_after)) = (before_key.rank, after_key.rank)
+            && rank_before != rank_after
+        {
+            return FORBIDDEN_RENAME_COST;
+        }
+        base
+    }
+
     /// `base`, or `FORBIDDEN_RENAME_COST` if pairing `before_id` with `after_id` breaks
-    /// containment or sibling order.
+    /// containment or sibling order. The Zhang-Shasha oracle's entry point, written out
+    /// independently of [`Self::adjust_keyed`], which the engine uses, so the fuzz tests compare
+    /// the two.
+    #[cfg(test)]
     pub(crate) fn adjust(&self, before_id: usize, after_id: usize, base: u64) -> u64 {
         if base >= FORBIDDEN_RENAME_COST {
             return base;

@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use crate::code::metadata::metadata_of;
 use crate::code::{ASTMetadata, Code};
@@ -590,22 +590,24 @@ pub(crate) fn pair_children_for_descent<'a>(
 ) -> (Vec<(tree_sitter::Node<'a>, tree_sitter::Node<'a>)>, bool) {
     let mut before_cursor = before_parent.walk();
     let mut after_cursor = after_parent.walk();
-    let before_children: Vec<_> = before_parent.children(&mut before_cursor).collect();
-    let after_children: Vec<_> = after_parent.children(&mut after_cursor).collect();
 
     let language = before_metadata.language;
     if !crate::diff::nodes::is_commutative_container(before_parent.kind(), &language) {
-        let pairs = before_children
-            .into_iter()
-            .zip(after_children)
+        let pairs = before_parent
+            .children(&mut before_cursor)
+            .zip(after_parent.children(&mut after_cursor))
             .filter(|(b, a)| b.kind() == a.kind())
             .collect();
         return (pairs, false);
     }
+    let before_children: Vec<_> = before_parent.children(&mut before_cursor).collect();
+    let after_children: Vec<_> = after_parent.children(&mut after_cursor).collect();
 
+    // Both only looked up, never iterated, so the hasher cannot affect the pairing.
     let index_by_hash = |children: &[tree_sitter::Node<'a>],
                          hash_map: &rustc_hash::FxHashMap<usize, u64>| {
-        let mut by_hash: HashMap<u64, Vec<(usize, tree_sitter::Node<'a>)>> = HashMap::new();
+        let mut by_hash: rustc_hash::FxHashMap<u64, Vec<(usize, tree_sitter::Node<'a>)>> =
+            rustc_hash::FxHashMap::default();
         for (index, &child) in children.iter().enumerate() {
             let hash = hash_map.get(&child.id()).copied().unwrap_or(0);
             by_hash.entry(hash).or_default().push((index, child));
@@ -615,7 +617,7 @@ pub(crate) fn pair_children_for_descent<'a>(
     let after_by_kv = index_by_hash(&after_children, &after_metadata.node_to_kind_and_value_hash);
     let after_by_ko = index_by_hash(&after_children, &after_metadata.node_to_kind_only_hash);
 
-    let mut used = std::collections::HashSet::new();
+    let mut used = rustc_hash::FxHashSet::default();
     let mut pairs = Vec::new();
     let mut reordered = false;
     let mut unmatched_before: Vec<(usize, tree_sitter::Node<'a>)> = Vec::new();

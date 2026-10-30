@@ -93,16 +93,26 @@ fn atom_text(meta: &ASTMetadata, id: usize) -> String {
         .join("\u{1}")
 }
 
-/// How many wholly unpaired atoms read as each text, on one side.
-fn unpaired_atom_texts(
-    meta: &ASTMetadata,
+/// How many wholly unpaired atoms read as each text, on one side. A leaf, most of them, is
+/// counted under its own text, borrowed: [`atom_text`] of a leaf is that text.
+fn unpaired_atom_texts<'m>(
+    meta: &'m ASTMetadata,
     map: &FxHashMap<usize, usize>,
-) -> FxHashMap<String, usize> {
-    let mut counts: FxHashMap<String, usize> = FxHashMap::default();
-    for &id in meta.node_info.keys() {
-        if is_atom(meta, id) && subtree(meta, id).iter().all(|&id| unpaired(map, id)) {
-            *counts.entry(atom_text(meta, id)).or_default() += 1;
+) -> FxHashMap<std::borrow::Cow<'m, str>, usize> {
+    let mut counts: FxHashMap<std::borrow::Cow<'m, str>, usize> = FxHashMap::default();
+    for (&id, info) in &meta.node_info {
+        // `subtree` starts with `id`, so a paired node fails here before its subtree is listed.
+        if !unpaired(map, id) || !is_atom(meta, id) {
+            continue;
         }
+        let text = if info.children.is_empty() {
+            std::borrow::Cow::Borrowed(info.text.as_str())
+        } else if subtree(meta, id).iter().all(|&id| unpaired(map, id)) {
+            std::borrow::Cow::Owned(atom_text(meta, id))
+        } else {
+            continue;
+        };
+        *counts.entry(text).or_default() += 1;
     }
     counts
 }
@@ -226,8 +236,8 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
             atom_text(after, after_child),
         );
         let same = usize::from(before_text == after_text);
-        if after_texts.get(&before_text).copied().unwrap_or(0) > same
-            || before_texts.get(&after_text).copied().unwrap_or(0) > same
+        if after_texts.get(before_text.as_str()).copied().unwrap_or(0) > same
+            || before_texts.get(after_text.as_str()).copied().unwrap_or(0) > same
         {
             continue;
         }
