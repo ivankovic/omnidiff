@@ -29,7 +29,7 @@
 use crate::code::{ASTMetadata, ASTNodeMetadata};
 
 use super::common::{
-    ContainmentCtx, DeltaTable, ForestDist, Grid, PostorderIndexer, UnitCostModel,
+    ContainmentCtx, ContainmentKey, DeltaTable, ForestDist, Grid, PostorderIndexer, UnitCostModel,
 };
 
 /// Whether `APTED_DEBUG` is set, cached because it is checked on the DP's hot path.
@@ -402,11 +402,17 @@ pub(crate) fn vren(
 pub(crate) struct EngineCtx<'a> {
     pub(crate) before_idx: &'a AptedIndexer,
     pub(crate) after_idx: &'a AptedIndexer,
-    pub(crate) before_meta: &'a ASTMetadata,
-    pub(crate) after_meta: &'a ASTMetadata,
     pub(crate) cost_model: &'a UnitCostModel,
-    /// Applied through `vren_adjusted`; `None` when nothing in the forest is pruned.
+    /// Applied through [`EngineCtx::ren_adjusted`]; `None` when nothing in the forest is pruned.
     pub(crate) containment: Option<&'a ContainmentCtx<'a>>,
+    /// Virtual preorder index -> node metadata, per side: [`vnode`] resolved once per node rather
+    /// than once per DP cell.
+    before_nodes: Vec<Option<&'a ASTNodeMetadata>>,
+    after_nodes: Vec<Option<&'a ASTNodeMetadata>>,
+    /// Virtual preorder index -> the node's containment inputs, per side; empty without
+    /// `containment`.
+    before_containment: Vec<ContainmentKey<'a>>,
+    after_containment: Vec<ContainmentKey<'a>>,
     /// `spf_path`'s `forestdist` table per path orientation (`[0]` path on before, `[1]` on
     /// after), sized by the whole forest and reused by every `spf_path` call: allocating it per
     /// call makes zeroing it dominate the run. Reuse is sound because `sweep_forest_distances`
@@ -423,64 +429,97 @@ impl<'a> EngineCtx<'a> {
         cost_model: &'a UnitCostModel,
         containment: Option<&'a ContainmentCtx<'a>>,
     ) -> Self {
+        let nodes = |idx: &AptedIndexer, meta: &'a ASTMetadata| {
+            (0..idx.size)
+                .map(|pre| vnode(idx, meta, pre))
+                .collect::<Vec<_>>()
+        };
+        let keys = |idx: &AptedIndexer, key: &dyn Fn(usize) -> ContainmentKey<'a>| {
+            idx.pre_to_node_id
+                .iter()
+                .map(|id| id.map(key).unwrap_or_default())
+                .collect::<Vec<_>>()
+        };
+        let (before_containment, after_containment) = match containment {
+            Some(c) => (
+                keys(before_idx, &|id| c.before_key(id)),
+                keys(after_idx, &|id| c.after_key(id)),
+            ),
+            None => (Vec::new(), Vec::new()),
+        };
         EngineCtx {
             before_idx,
             after_idx,
-            before_meta,
-            after_meta,
             cost_model,
             containment,
+            before_nodes: nodes(before_idx, before_meta),
+            after_nodes: nodes(after_idx, after_meta),
+            before_containment,
+            after_containment,
             forestdist_scratch: std::cell::RefCell::new([None, None]),
+        }
+    }
+
+    /// [`vnode`] for the before side's virtual preorder index `pre`.
+    pub(crate) fn before_node(&self, pre: usize) -> Option<&'a ASTNodeMetadata> {
+        self.before_nodes[pre]
+    }
+
+    /// [`vnode`] for the after side's virtual preorder index `pre`.
+    pub(crate) fn after_node(&self, pre: usize) -> Option<&'a ASTNodeMetadata> {
+        self.after_nodes[pre]
+    }
+
+    /// The node at virtual preorder index `pre` on the before side if `before`, else the after.
+    fn node(&self, before: bool, pre: usize) -> Option<&'a ASTNodeMetadata> {
+        if before {
+            self.before_nodes[pre]
+        } else {
+            self.after_nodes[pre]
+        }
+    }
+
+    /// `vren` at virtual preorder ids `(before_pre, after_pre)`, with `containment` applied as
+    /// `forest_dist` applies it; the virtual root is left unadjusted.
+    pub(crate) fn ren_adjusted(&self, before_pre: usize, after_pre: usize) -> u64 {
+        let base = vren(
+            self.cost_model,
+            self.before_nodes[before_pre],
+            self.after_nodes[after_pre],
+        );
+        let Some(containment) = self.containment else {
+            return base;
+        };
+        match (
+            self.before_idx.pre_to_node_id[before_pre],
+            self.after_idx.pre_to_node_id[after_pre],
+        ) {
+            (Some(b), Some(a)) => containment.adjust_keyed(
+                b,
+                a,
+                &self.before_containment[before_pre],
+                &self.after_containment[after_pre],
+                base,
+            ),
+            _ => base,
         }
     }
 
     /// Runs `f` with the `forestdist` scratch table for the given path orientation.
     fn with_forestdist<R>(&self, path_is_before: bool, f: impl FnOnce(&mut ForestDist) -> R) -> R {
-        let (path_idx, other_idx, _, _) = self.sides(path_is_before);
+        let (path_idx, other_idx) = self.sides(path_is_before);
         let mut scratch = self.forestdist_scratch.borrow_mut();
         let table = scratch[usize::from(!path_is_before)]
             .get_or_insert_with(|| ForestDist::new(path_idx.size + 1, other_idx.size + 1, 0));
         f(table)
     }
-    /// `(path_idx, other_idx, path_meta, other_meta)` for the side the path lives on.
-    fn sides(
-        &self,
-        path_is_before: bool,
-    ) -> (
-        &'a AptedIndexer,
-        &'a AptedIndexer,
-        &'a ASTMetadata,
-        &'a ASTMetadata,
-    ) {
+    /// `(path_idx, other_idx)` for the side the path lives on.
+    fn sides(&self, path_is_before: bool) -> (&'a AptedIndexer, &'a AptedIndexer) {
         if path_is_before {
-            (
-                self.before_idx,
-                self.after_idx,
-                self.before_meta,
-                self.after_meta,
-            )
+            (self.before_idx, self.after_idx)
         } else {
-            (
-                self.after_idx,
-                self.before_idx,
-                self.after_meta,
-                self.before_meta,
-            )
+            (self.after_idx, self.before_idx)
         }
-    }
-}
-
-/// Applies `ctx.containment` to a `vren` cost at virtual preorder ids `(before_pre, after_pre)`,
-/// as `forest_dist` does; the virtual root is left unadjusted.
-pub(crate) fn vren_adjusted(ctx: &EngineCtx, before_pre: i64, after_pre: i64, base: u64) -> u64 {
-    let Some(containment) = ctx.containment else {
-        return base;
-    };
-    let before_id = ctx.before_idx.pre_to_node_id[before_pre as usize];
-    let after_id = ctx.after_idx.pre_to_node_id[after_pre as usize];
-    match (before_id, after_id) {
-        (Some(b), Some(a)) => containment.adjust(b, a, base),
-        _ => base,
     }
 }
 
@@ -518,7 +557,7 @@ pub(crate) fn spf_a(
     other_subtree: usize,
     path_id: usize,
 ) -> u64 {
-    let (path_idx, other_idx, path_meta, other_meta) = ctx.sides(path_is_before);
+    let (path_idx, other_idx) = ctx.sides(path_is_before);
     // `delta` is always indexed `(before, after)`.
     let delta_order = |path_pre: i64, other_pre: i64| -> (usize, usize) {
         if path_is_before {
@@ -529,7 +568,7 @@ pub(crate) fn spf_a(
     };
 
     let path_del_cost = |pre: i64| -> i64 {
-        let n = vnode(path_idx, path_meta, pre as usize);
+        let n = ctx.node(path_is_before, pre as usize);
         (if path_is_before {
             vdel(ctx.cost_model, n)
         } else {
@@ -537,7 +576,7 @@ pub(crate) fn spf_a(
         }) as i64
     };
     let other_ins_cost = |pre: i64| -> i64 {
-        let n = vnode(other_idx, other_meta, pre as usize);
+        let n = ctx.node(!path_is_before, pre as usize);
         (if path_is_before {
             vins(ctx.cost_model, n)
         } else {
@@ -545,12 +584,8 @@ pub(crate) fn spf_a(
         }) as i64
     };
     let ren_cost = |path_pre: i64, other_pre: i64| -> i64 {
-        let pn = vnode(path_idx, path_meta, path_pre as usize);
-        let on = vnode(other_idx, other_meta, other_pre as usize);
-        let (b, a) = if path_is_before { (pn, on) } else { (on, pn) };
-        let base = vren(ctx.cost_model, b, a);
         let (before_pre, after_pre) = delta_order(path_pre, other_pre);
-        vren_adjusted(ctx, before_pre as i64, after_pre as i64, base) as i64
+        ctx.ren_adjusted(before_pre, after_pre) as i64
     };
     let path_subtree_del_cost = |pre: i64| -> i64 {
         (if path_is_before {
@@ -1080,8 +1115,8 @@ pub(crate) fn spf_a(
 pub(crate) fn spf1(ctx: &EngineCtx, root1: usize, root2: usize) -> u64 {
     let size1 = ctx.before_idx.sizes[root1];
     let size2 = ctx.after_idx.sizes[root2];
-    let n1 = vnode(ctx.before_idx, ctx.before_meta, root1);
-    let n2 = vnode(ctx.after_idx, ctx.after_meta, root2);
+    let n1 = ctx.before_node(root1);
+    let n2 = ctx.after_node(root2);
 
     if size1 == 1 && size2 == 1 {
         let max_cost = vdel(ctx.cost_model, n1) + vins(ctx.cost_model, n2);
@@ -1093,7 +1128,7 @@ pub(crate) fn spf1(ctx: &EngineCtx, root1: usize, root2: usize) -> u64 {
         let max_cost = cost + vdel(ctx.cost_model, n1);
         let mut min_ren_minus_ins: i64 = cost as i64;
         for pre in root2..root2 + size2 {
-            let n2i = vnode(ctx.after_idx, ctx.after_meta, pre);
+            let n2i = ctx.after_node(pre);
             let delta_v = vren(ctx.cost_model, n1, n2i) as i64 - vins(ctx.cost_model, n2i) as i64;
             min_ren_minus_ins = min_ren_minus_ins.min(delta_v);
         }
@@ -1105,7 +1140,7 @@ pub(crate) fn spf1(ctx: &EngineCtx, root1: usize, root2: usize) -> u64 {
     let max_cost = cost + vins(ctx.cost_model, n2);
     let mut min_ren_minus_del: i64 = cost as i64;
     for pre in root1..root1 + size1 {
-        let n1i = vnode(ctx.before_idx, ctx.before_meta, pre);
+        let n1i = ctx.before_node(pre);
         let delta_v = vren(ctx.cost_model, n1i, n2) as i64 - vdel(ctx.cost_model, n1i) as i64;
         min_ren_minus_del = min_ren_minus_del.min(delta_v);
     }
@@ -1193,7 +1228,7 @@ pub(crate) fn sweep_forest_distances(
     other_subtree: usize,
     forestdist: &mut ForestDist,
 ) {
-    let (path_idx, other_idx, path_meta, other_meta) = ctx.sides(path_is_before);
+    let (path_idx, other_idx) = ctx.sides(path_is_before);
 
     // 1-based boundaries as in `forest_dist`, absolute rather than relative to this subtree, so
     // `lld_i`/`lld_j` (0-based postorder) are also the base-case boundaries.
@@ -1206,25 +1241,25 @@ pub(crate) fn sweep_forest_distances(
     for di in (lld_i + 1)..=i {
         let pre = post_to_pre(path_idx, dir, di - 1);
         let cost = if path_is_before {
-            vdel(ctx.cost_model, vnode(path_idx, path_meta, pre))
+            vdel(ctx.cost_model, ctx.node(true, pre))
         } else {
-            vins(ctx.cost_model, vnode(path_idx, path_meta, pre))
+            vins(ctx.cost_model, ctx.node(false, pre))
         };
         forestdist[(di, lld_j)] = forestdist[(di - 1, lld_j)] + cost;
     }
     for dj in (lld_j + 1)..=j {
         let pre = post_to_pre(other_idx, dir, dj - 1);
         let cost = if path_is_before {
-            vins(ctx.cost_model, vnode(other_idx, other_meta, pre))
+            vins(ctx.cost_model, ctx.node(false, pre))
         } else {
-            vdel(ctx.cost_model, vnode(other_idx, other_meta, pre))
+            vdel(ctx.cost_model, ctx.node(true, pre))
         };
         forestdist[(lld_i, dj)] = forestdist[(lld_i, dj - 1)] + cost;
     }
 
     for di in (lld_i + 1)..=i {
         let path_pre = post_to_pre(path_idx, dir, di - 1);
-        let path_node = vnode(path_idx, path_meta, path_pre);
+        let path_node = ctx.node(path_is_before, path_pre);
         let path_lld = post_to_extreme_leaf_post(path_idx, dir, di - 1);
         let del_cost = if path_is_before {
             vdel(ctx.cost_model, path_node)
@@ -1233,29 +1268,19 @@ pub(crate) fn sweep_forest_distances(
         };
         for dj in (lld_j + 1)..=j {
             let other_pre = post_to_pre(other_idx, dir, dj - 1);
-            let other_node = vnode(other_idx, other_meta, other_pre);
+            let other_node = ctx.node(!path_is_before, other_pre);
             let other_lld = post_to_extreme_leaf_post(other_idx, dir, dj - 1);
             let ins_cost = if path_is_before {
                 vins(ctx.cost_model, other_node)
             } else {
                 vdel(ctx.cost_model, other_node)
             };
-            let (before_node, after_node) = if path_is_before {
-                (path_node, other_node)
-            } else {
-                (other_node, path_node)
-            };
             let (before_pre, after_pre) = if path_is_before {
                 (path_pre, other_pre)
             } else {
                 (other_pre, path_pre)
             };
-            let ren_cost = vren_adjusted(
-                ctx,
-                before_pre as i64,
-                after_pre as i64,
-                vren(ctx.cost_model, before_node, after_node),
-            );
+            let ren_cost = ctx.ren_adjusted(before_pre, after_pre);
 
             let da = forestdist[(di - 1, dj)] + del_cost;
             let db = forestdist[(di, dj - 1)] + ins_cost;
@@ -1285,7 +1310,7 @@ pub(crate) fn spf_path(
     path_subtree: usize,
     other_subtree: usize,
 ) -> u64 {
-    let (path_idx, other_idx, _, _) = ctx.sides(path_is_before);
+    let (path_idx, other_idx) = ctx.sides(path_is_before);
 
     let mut keyroots = Vec::new();
     if other_subtree == 0 {
@@ -1718,10 +1743,10 @@ pub(crate) fn fill_single_node_distances(ctx: &EngineCtx, delta: &mut DeltaTable
             if size_x == 1 && size_y == 1 {
                 delta.set(x, y, 0);
             } else if size_x == 1 {
-                let own_ins = vins(ctx.cost_model, vnode(ctx.after_idx, ctx.after_meta, y));
+                let own_ins = vins(ctx.cost_model, ctx.after_node(y));
                 delta.set(x, y, ctx.after_idx.sum_ins_cost[y] - own_ins);
             } else if size_y == 1 {
-                let own_del = vdel(ctx.cost_model, vnode(ctx.before_idx, ctx.before_meta, x));
+                let own_del = vdel(ctx.cost_model, ctx.before_node(x));
                 delta.set(x, y, ctx.before_idx.sum_del_cost[x] - own_del);
             }
         }
