@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-mongodb-mongo-add-with-a-small-move",
-        95,
-        61,
+        93,
+        60,
     )
 }
 

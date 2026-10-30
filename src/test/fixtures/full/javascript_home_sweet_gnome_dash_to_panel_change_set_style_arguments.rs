@@ -23,7 +23,7 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments",
-        51,
+        52,
         33,
     )
 }

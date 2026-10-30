@@ -237,8 +237,8 @@ cpp-mongodb-mongo-add-and-rename,full,106238,12533,12533,0,2,1
 cpp-mongodb-mongo-add-and-rename,minimal,106238,297,297,0,2,1
 cpp-mongodb-mongo-add-function-and-2-call-sites,full,10746,0,0,0,2,0
 cpp-mongodb-mongo-add-function-and-2-call-sites,minimal,10746,0,0,0,2,0
-cpp-mongodb-mongo-add-with-a-small-move,full,327195,692,28,671,2,0
-cpp-mongodb-mongo-add-with-a-small-move,minimal,327195,628,92,580,2,0
+cpp-mongodb-mongo-add-with-a-small-move,full,327195,692,28,669,2,0
+cpp-mongodb-mongo-add-with-a-small-move,minimal,327195,627,92,579,2,0
 cpp-mongodb-mongo-test-changes,full,31821,1348,389,984,2,0
 cpp-mongodb-mongo-test-changes,minimal,31821,1206,296,912,2,0
 cpp-mongodb-mongo-use-auto,full,17310,0,0,0,1,0
@@ -345,8 +345,8 @@ csharp-jellyfin-jellyfin-interesting-example-of-operator-multi-merge,full,67994,
 csharp-jellyfin-jellyfin-interesting-example-of-operator-multi-merge,minimal,67994,38,13,33,1,0
 csharp-jellyfin-jellyfin-nice-move-example,full,8497,1051,938,151,2,0
 csharp-jellyfin-jellyfin-nice-move-example,minimal,8497,901,817,137,2,0
-csharp-jellyfin-jellyfin-small-add,full,16323,110,109,27,2,0
-csharp-jellyfin-jellyfin-small-add,minimal,16323,15,0,15,2,0
+csharp-jellyfin-jellyfin-small-add,full,16323,109,109,0,2,0
+csharp-jellyfin-jellyfin-small-add,minimal,16323,0,0,0,2,0
 csharp-jellyfin-jellyfin-update-version-string,full,216,0,0,0,1,0
 csharp-jellyfin-jellyfin-update-version-string,minimal,216,0,0,0,1,0
 csharp-jellyfin-sql-query-fix,full,5443,207,211,169,2,0
@@ -599,8 +599,8 @@ go-jesseduffield-lazygit-delete-only,full,11120,0,0,0,2,0
 go-jesseduffield-lazygit-delete-only,minimal,11120,0,0,0,2,0
 go-jesseduffield-lazygit-many-multi-maps-very-difficult,full,3414,515,272,313,2,0
 go-jesseduffield-lazygit-many-multi-maps-very-difficult,minimal,3414,437,197,307,2,0
-go-jesseduffield-lazygit-nice-small-change,full,173298,31,20,29,2,0
-go-jesseduffield-lazygit-nice-small-change,minimal,173298,27,16,26,2,0
+go-jesseduffield-lazygit-nice-small-change,full,173298,26,20,8,2,0
+go-jesseduffield-lazygit-nice-small-change,minimal,173298,22,16,7,2,0
 go-jesseduffield-lazygit-remove-if-that-is-a-version-guard,full,7146,7,7,0,2,0
 go-jesseduffield-lazygit-remove-if-that-is-a-version-guard,minimal,7146,0,0,0,2,0
 go-jesseduffield-lazygit-update-in-ast-delete-in-comment,full,5604,36,36,0,2,0
@@ -1151,8 +1151,8 @@ java-defects4j-codec-3-doublemetaphone,full,77884,0,0,0,1,0
 java-defects4j-codec-3-doublemetaphone,minimal,77884,0,0,0,1,0
 java-defects4j-codec-4-base64,full,81276,0,0,0,1,0
 java-defects4j-codec-4-base64,minimal,81276,0,0,0,1,0
-java-defects4j-codec-6-base64inputstream,full,15037,44,21,27,2,0
-java-defects4j-codec-6-base64inputstream,minimal,15037,83,68,15,2,0
+java-defects4j-codec-6-base64inputstream,full,15037,21,21,0,2,0
+java-defects4j-codec-6-base64inputstream,minimal,15037,68,68,0,2,0
 java-defects4j-codec-7-base64,full,82303,0,0,0,1,0
 java-defects4j-codec-7-base64,minimal,82303,0,0,0,1,0
 java-defects4j-codec-8-base64inputstream,full,14789,0,0,0,2,0
@@ -2115,8 +2115,8 @@ python-nvbn-thefuck-add-three-arguments,full,444,0,0,0,1,0
 python-nvbn-thefuck-add-three-arguments,minimal,444,0,0,0,1,0
 python-nvbn-thefuck-change,full,7388,22,22,0,2,0
 python-nvbn-thefuck-change,minimal,7388,60,60,0,2,0
-python-nvbn-thefuck-extract-function-to-local-var,full,10503,276,264,20,1,0
-python-nvbn-thefuck-extract-function-to-local-var,minimal,10503,80,62,18,1,0
+python-nvbn-thefuck-extract-function-to-local-var,full,10503,264,264,0,1,0
+python-nvbn-thefuck-extract-function-to-local-var,minimal,10503,62,62,0,1,0
 python-nvbn-thefuck-small-change,full,1146,0,0,0,1,0
 python-nvbn-thefuck-small-change,minimal,1146,0,0,0,1,0
 python-nvbn-thefuck-small-change-2,full,700,0,0,0,1,0
