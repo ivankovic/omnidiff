@@ -149,6 +149,25 @@ impl Code {
         code
     }
 
+    /// Like [`from_string`](Self::from_string), but stops after the parse: `ast` is set where the
+    /// language has a grammar and `ast_metadata` is left `None`. For readers of the tree alone,
+    /// such as a hunk's enclosing-declaration breadcrumb; the metadata costs about as much again
+    /// as the parse.
+    pub fn parse_only(contents: &str, language: &Language) -> Self {
+        let mut code = Code {
+            contents: contents.to_string(),
+            metadata: Metadata {
+                path: None,
+                tip: Some(Type::Code("Code".to_string())),
+                language: Some(*language),
+                ast_metadata: None,
+            },
+            ..Default::default()
+        };
+        code.parse(&mut tree_sitter::Parser::new());
+        code
+    }
+
     /// Reads and parses `path`, detecting the language from its path and content (`Unknown` if
     /// unrecognized). Errors if the file cannot be read as text ([`read_text`]).
     pub fn from_file(path: &std::path::Path) -> Result<Self> {
@@ -613,6 +632,15 @@ mod tests {
 
         assert!(code.ast.is_none());
         assert!(code.metadata.ast_metadata.is_none());
+    }
+
+    #[test]
+    fn parse_only_sets_the_tree_but_not_the_metadata() {
+        let code = Code::parse_only("fn main() {}", &Language::Rust);
+
+        assert!(code.ast.is_some());
+        assert!(code.metadata.ast_metadata.is_none());
+        assert_eq!(code.metadata.language, Some(Language::Rust));
     }
 
     #[test]
