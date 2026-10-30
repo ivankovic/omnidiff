@@ -1577,8 +1577,11 @@ fn status_bar_paragraph(summary: DiffSummary) -> Paragraph<'static> {
 /// a plain-text diff: under `GIT_EXTERNAL_DIFF` a non-zero exit for one file aborts the whole
 /// multi-file `git diff`.
 fn parse_before_after(before: &Path, after: &Path) -> Result<(Code, Code)> {
-    let mut before_code = Code::from_file(before)?;
-    let mut after_code = Code::from_file(after)?;
+    // Always in parallel: the sizes are only known once read, and a thread costs a fraction of
+    // a process start.
+    let (before_code, after_code) =
+        crate::code::build_sides(true, || Code::from_file(before), || Code::from_file(after));
+    let (mut before_code, mut after_code) = (before_code?, after_code?);
 
     // git hands over `/dev/null` for the missing side of an added or deleted file. Parsed in the
     // other side's language, it shows as a whole-file insert/delete rather than a plain-text diff.
@@ -1732,8 +1735,11 @@ pub fn compute_diff_of_texts(
         code.metadata.path = Some(path.to_path_buf());
         code
     };
-    let (mut before_code, mut after_code) =
-        (code(before_path, before_text), code(after_path, after_text));
+    let (mut before_code, mut after_code) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(before_text, after_text),
+        || code(before_path, before_text),
+        || code(after_path, after_text),
+    );
     let (before, after) = (before_path.to_path_buf(), after_path.to_path_buf());
     match std::thread::Builder::new()
         .name(DIFF_THREAD_NAME.to_string())
