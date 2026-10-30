@@ -55,18 +55,23 @@ pub fn hash_code(code: &Code, metadata: &mut ASTMetadata) -> Result<()> {
     Ok(())
 }
 
-/// [`hash_code`] over an already collected node table (see `metadata::collect_nodes`).
+/// [`hash_code`] over an already collected node table (see `metadata::collect_nodes`). Returns
+/// each node's `ASTNodeMetadata::owned_text_hash`, by table index: it reads the same gaps.
 ///
 /// Visits the table in reverse preorder (post-order, children right to left), so each child's
 /// hash is computed once and read by index: linear, not quadratic, on deep trees. That order is
 /// also the order of the `*_hash_to_node` buckets, the last-resort tie-break of
 /// `solve_moved_subtrees` and `hash_tree_matching`, so changing it changes diffs.
+///
+/// Each node's gaps are classified once ([`classify_gaps`]) and every hash reads that, and the
+/// per-node buffers (sorted child hashes, the sketch pool) are reused scratch: this runs on every
+/// node of every file, and per-node allocations and repeated gap scans dominated it.
 pub(crate) fn hash_nodes(
     nodes: &[NodeRecord],
     source: &[u8],
     language: Language,
     metadata: &mut ASTMetadata,
-) {
+) -> Vec<u64> {
     metadata.node_to_full_hash.clear();
     metadata.full_hash_to_node.clear();
     metadata.node_to_structural_hash.clear();
@@ -78,30 +83,40 @@ pub(crate) fn hash_nodes(
     metadata.node_to_similarity_sketch.clear();
 
     let n = nodes.len();
+    metadata.node_to_full_hash.reserve(n);
+    metadata.node_to_structural_hash.reserve(n);
+    metadata.node_to_kind_and_value_hash.reserve(n);
+    metadata.node_to_kind_only_hash.reserve(n);
+    metadata.node_to_similarity_sketch.reserve(n);
+
     let mut full = vec![0u64; n];
     let mut structural = vec![0u64; n];
     let mut kind_and_value = vec![0u64; n];
     let mut kind_only = vec![0u64; n];
+    let mut sketches = vec![SimilaritySketch::default(); n];
+    let mut owned_text_hashes = vec![0u64; n];
+
+    let mut gaps = Vec::new();
+    let mut sorted_hashes = Vec::new();
+    let mut pool = Vec::new();
 
     for (index, record) in nodes.iter().enumerate().rev() {
-        let full_child_hashes: Vec<u64> = record.children.iter().map(|&c| full[c]).collect();
-        let structural_child_hashes: Vec<u64> =
-            record.children.iter().map(|&c| structural[c]).collect();
-        let kind_and_value_child_hashes: Vec<u64> =
-            record.children.iter().map(|&c| kind_and_value[c]).collect();
-        let kind_only_child_hashes: Vec<u64> =
-            record.children.iter().map(|&c| kind_only[c]).collect();
+        let any_content = classify_gaps(record, source, nodes, &mut gaps);
+        let commutative = is_commutative_container(record.kind, &language);
 
-        let full_hash = compute_full_hash(record, source, nodes, &full_child_hashes);
-        let structural_hash = compute_structural_hash(record, &structural_child_hashes);
+        let full_hash = compute_full_hash(record, source, nodes, &full, &gaps);
+        let structural_hash = compute_structural_hash(record, &structural);
         let kind_and_value_hash = compute_kind_and_value_hash(
             record,
             source,
             nodes,
-            &kind_and_value_child_hashes,
-            language,
+            &kind_and_value,
+            &gaps,
+            commutative,
+            &mut sorted_hashes,
         );
-        let kind_only_hash = compute_kind_only_hash(record, &kind_only_child_hashes, language);
+        let kind_only_hash =
+            compute_kind_only_hash(record, &kind_only, commutative, &mut sorted_hashes);
         full[index] = full_hash;
         structural[index] = structural_hash;
         kind_and_value[index] = kind_and_value_hash;
@@ -134,27 +149,86 @@ pub(crate) fn hash_nodes(
 
         // Owned gap text counts as a leaf: in tree-sitter-yaml a quoted scalar's leaves are just
         // its quotes, so without it every such string sketches identically.
-        let mut elements = Vec::with_capacity(record.children.len() + 1);
-        if record.children.is_empty() {
-            elements.push(SimilaritySketch::leaf(full_hash));
+        let sketch = if record.children.is_empty() {
+            SimilaritySketch::leaf(full_hash)
         } else {
+            pool.clear();
             for &child in &record.children {
-                if let Some(sketch) = metadata.node_to_similarity_sketch.get(&nodes[child].id) {
-                    elements.push(sketch.clone());
-                }
+                pool.extend_from_slice(sketches[child].as_slice());
             }
-            if let Some(own_text_hash) = compute_owned_text_hash(record, source, nodes) {
-                elements.push(SimilaritySketch::leaf(own_text_hash));
+            if any_content {
+                let own_text_hash = compute_owned_text_hash(record, source, nodes, &gaps);
+                pool.extend_from_slice(SimilaritySketch::leaf(own_text_hash).as_slice());
+                owned_text_hashes[index] = owned_text_hash(record, source, nodes, &gaps);
             }
+            SimilaritySketch::from_pool(&mut pool)
+        };
+        sketches[index] = sketch.clone();
+        metadata.node_to_similarity_sketch.insert(record.id, sketch);
+    }
+
+    owned_text_hashes
+}
+
+/// The source range of each gap around `record`'s children, in order: before the first child,
+/// between each pair, after the last. A leaf has one, its whole span.
+fn gap_ranges<'a>(
+    record: &'a NodeRecord,
+    nodes: &'a [NodeRecord],
+) -> impl Iterator<Item = (usize, usize)> + 'a {
+    let starts = std::iter::once(record.start_byte)
+        .chain(record.children.iter().map(|&child| nodes[child].end_byte));
+    let ends = record
+        .children
+        .iter()
+        .map(|&child| nodes[child].start_byte)
+        .chain(std::iter::once(record.end_byte));
+    starts.zip(ends)
+}
+
+/// Fills `gaps` with whether each of `record`'s gaps ([`gap_ranges`]) holds content - non-empty,
+/// valid UTF-8 and not all whitespace - and returns whether any does. Only content gaps are
+/// hashed: reformatting keeps every hash.
+fn classify_gaps(
+    record: &NodeRecord,
+    source: &[u8],
+    nodes: &[NodeRecord],
+    gaps: &mut Vec<bool>,
+) -> bool {
+    gaps.clear();
+    let mut any_content = false;
+    for (start, end) in gap_ranges(record, nodes) {
+        let content = start < end
+            && std::str::from_utf8(&source[start..end]).is_ok_and(|text| !text.trim().is_empty());
+        any_content |= content;
+        gaps.push(content);
+    }
+    any_content
+}
+
+/// Hashes into `hasher` each content gap of `record` (see [`classify_gaps`]), untrimmed so
+/// embedded whitespace still counts, with `between(hasher, i)` called after gap `i` for every
+/// child `i`.
+fn hash_gaps_around_children(
+    hasher: &mut MetroHash64,
+    record: &NodeRecord,
+    source: &[u8],
+    nodes: &[NodeRecord],
+    gaps: &[bool],
+    mut between: impl FnMut(&mut MetroHash64, usize),
+) {
+    for (i, ((start, end), &content)) in gap_ranges(record, nodes).zip(gaps).enumerate() {
+        if content {
+            hasher.write(&source[start..end]);
         }
-        metadata
-            .node_to_similarity_sketch
-            .insert(record.id, SimilaritySketch::merge(elements));
+        if i < record.children.len() {
+            between(hasher, i);
+        }
     }
 }
 
 /// The full hash: a Merkle hash of kind, child count, each child's hash, and the gap text this node
-/// owns around its children (a leaf's whole span).
+/// owns around its children (a leaf's whole span). `child_hashes` is indexed by table index.
 ///
 /// Gaps rather than the whole span, so reformatting keeps the hash; but a gap can be content
 /// (tree-sitter-r leaves a string's body outside its only child), so only an all-whitespace gap is
@@ -164,76 +238,69 @@ fn compute_full_hash(
     source_code: &[u8],
     nodes: &[NodeRecord],
     child_hashes: &[u64],
+    gaps: &[bool],
 ) -> u64 {
     let mut hasher = MetroHash64::new();
 
     hasher.write(record.kind_id.to_le_bytes().as_slice());
     hasher.write(record.children.len().to_le_bytes().as_slice());
 
-    let mut gap_start = record.start_byte;
-    for (&child, &child_hash) in record.children.iter().zip(child_hashes) {
-        hash_gap(&mut hasher, source_code, gap_start, nodes[child].start_byte);
-        hasher.write(child_hash.to_le_bytes().as_slice());
-        gap_start = nodes[child].end_byte;
-    }
-    hash_gap(&mut hasher, source_code, gap_start, record.end_byte);
+    hash_gaps_around_children(
+        &mut hasher,
+        record,
+        source_code,
+        nodes,
+        gaps,
+        |hasher, i| {
+            hasher.write(child_hashes[record.children[i]].to_le_bytes().as_slice());
+        },
+    );
 
     hasher.finish()
 }
 
-/// A hash of the gap text an internal node owns around its children, or `None` when it is all
-/// whitespace - the gaps alone, so the similarity sketch does not depend on whether a grammar made
-/// a scalar's body a child or gap text.
+/// A hash of the gap text an internal node owns around its children, for its similarity sketch:
+/// the gaps alone, so the sketch does not depend on whether a grammar made a scalar's body a child
+/// or gap text. Only meaningful when some gap holds content.
 fn compute_owned_text_hash(
     record: &NodeRecord,
     source_code: &[u8],
     nodes: &[NodeRecord],
-) -> Option<u64> {
+    gaps: &[bool],
+) -> u64 {
     let mut hasher = MetroHash64::new();
     hasher.write(record.kind_id.to_le_bytes().as_slice());
-
-    let mut any_content = false;
-    let mut hash_if_content = |hasher: &mut MetroHash64, start: usize, end: usize| {
-        if start < end
-            && let Ok(text) = std::str::from_utf8(&source_code[start..end])
-            && !text.trim().is_empty()
-        {
-            hasher.write(text.as_bytes());
-            any_content = true;
-        }
-    };
-
-    let mut gap_start = record.start_byte;
-    for &child in &record.children {
-        hash_if_content(&mut hasher, gap_start, nodes[child].start_byte);
-        gap_start = nodes[child].end_byte;
-    }
-    hash_if_content(&mut hasher, gap_start, record.end_byte);
-
-    any_content.then(|| hasher.finish())
+    hash_gaps_around_children(&mut hasher, record, source_code, nodes, gaps, |_, _| {});
+    hasher.finish()
 }
 
-/// Hashes `source[start..end]` into `hasher` unless it is all whitespace; see `compute_full_hash`.
-fn hash_gap(hasher: &mut MetroHash64, source: &[u8], start: usize, end: usize) {
-    if start >= end {
-        return;
-    }
-    if let Ok(text) = std::str::from_utf8(&source[start..end])
-        && !text.trim().is_empty()
-    {
-        hasher.write(text.as_bytes());
+/// `ASTNodeMetadata::owned_text_hash` of an internal node with a content gap: like
+/// [`compute_owned_text_hash`] without the kind, and never 0, which is reserved for "owns no
+/// text".
+fn owned_text_hash(
+    record: &NodeRecord,
+    source_code: &[u8],
+    nodes: &[NodeRecord],
+    gaps: &[bool],
+) -> u64 {
+    let mut hasher = MetroHash64::new();
+    hash_gaps_around_children(&mut hasher, record, source_code, nodes, gaps, |_, _| {});
+    match hasher.finish() {
+        0 => 1,
+        hash => hash,
     }
 }
 
-/// The structural hash: kinds and child counts only, in order.
+/// The structural hash: kinds and child counts only, in order. `child_hashes` is indexed by table
+/// index.
 fn compute_structural_hash(record: &NodeRecord, child_hashes: &[u64]) -> u64 {
     let mut hasher = MetroHash64::new();
 
     hasher.write(record.kind_id.to_le_bytes().as_slice());
     hasher.write(record.children.len().to_le_bytes().as_slice());
 
-    for &child_hash in child_hashes {
-        hasher.write(child_hash.to_le_bytes().as_slice());
+    for &child in &record.children {
+        hasher.write(child_hashes[child].to_le_bytes().as_slice());
     }
 
     hasher.finish()
@@ -243,51 +310,73 @@ fn compute_structural_hash(record: &NodeRecord, child_hashes: &[u64]) -> u64 {
 /// Children's hashes come from this same function, so the order-independence reaches every
 /// ancestor: the `enum_item` around a reordered `enum_variant_list` keeps its hash. That requires
 /// `hash_tree_matching::pair_children_for_descent` to pair such children by hash, not position.
+/// `sorted` is scratch.
 fn compute_kind_and_value_hash(
     record: &NodeRecord,
     source_code: &[u8],
     nodes: &[NodeRecord],
     child_hashes: &[u64],
-    language: Language,
+    gaps: &[bool],
+    commutative: bool,
+    sorted: &mut Vec<u64>,
 ) -> u64 {
     let mut hasher = MetroHash64::new();
     hasher.write(record.kind_id.to_le_bytes().as_slice());
     hasher.write(record.children.len().to_le_bytes().as_slice());
 
-    if is_commutative_container(record.kind, &language) {
+    if commutative {
         // Gap text is a document-order artifact, so it is dropped here.
-        let mut sorted_hashes: Vec<u64> = child_hashes.to_vec();
-        sorted_hashes.sort_unstable();
-        for hash in sorted_hashes {
-            hasher.write(hash.to_le_bytes().as_slice());
-        }
+        write_sorted_child_hashes(&mut hasher, record, child_hashes, sorted);
     } else {
-        let mut gap_start = record.start_byte;
-        for (&child, &child_hash) in record.children.iter().zip(child_hashes) {
-            hash_gap(&mut hasher, source_code, gap_start, nodes[child].start_byte);
-            hasher.write(child_hash.to_le_bytes().as_slice());
-            gap_start = nodes[child].end_byte;
-        }
-        hash_gap(&mut hasher, source_code, gap_start, record.end_byte);
+        hash_gaps_around_children(
+            &mut hasher,
+            record,
+            source_code,
+            nodes,
+            gaps,
+            |hasher, i| {
+                hasher.write(child_hashes[record.children[i]].to_le_bytes().as_slice());
+            },
+        );
     }
 
     hasher.finish()
 }
 
+/// Writes `record`'s children's hashes into `hasher` in ascending order, through scratch `sorted`.
+fn write_sorted_child_hashes(
+    hasher: &mut MetroHash64,
+    record: &NodeRecord,
+    child_hashes: &[u64],
+    sorted: &mut Vec<u64>,
+) {
+    sorted.clear();
+    sorted.extend(record.children.iter().map(|&child| child_hashes[child]));
+    sorted.sort_unstable();
+    for hash in sorted.iter() {
+        hasher.write(hash.to_le_bytes().as_slice());
+    }
+}
+
 /// Like `compute_structural_hash`, with `compute_kind_and_value_hash`'s order-independence for
 /// commutative containers. The single "same shape, any leaf values" tier: coarser than separate
 /// ignore-identifiers / ignore-literals tiers, a deliberate precision trade.
-fn compute_kind_only_hash(record: &NodeRecord, child_hashes: &[u64], language: Language) -> u64 {
+fn compute_kind_only_hash(
+    record: &NodeRecord,
+    child_hashes: &[u64],
+    commutative: bool,
+    sorted: &mut Vec<u64>,
+) -> u64 {
     let mut hasher = MetroHash64::new();
     hasher.write(record.kind_id.to_le_bytes().as_slice());
     hasher.write(record.children.len().to_le_bytes().as_slice());
 
-    let mut child_hashes = child_hashes.to_vec();
-    if is_commutative_container(record.kind, &language) {
-        child_hashes.sort_unstable();
-    }
-    for hash in child_hashes {
-        hasher.write(hash.to_le_bytes().as_slice());
+    if commutative {
+        write_sorted_child_hashes(&mut hasher, record, child_hashes, sorted);
+    } else {
+        for &child in &record.children {
+            hasher.write(child_hashes[child].to_le_bytes().as_slice());
+        }
     }
 
     hasher.finish()

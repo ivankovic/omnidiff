@@ -69,19 +69,26 @@ impl SimilaritySketch {
         for child in children {
             pool.extend_from_slice(child.as_slice());
         }
+        Self::from_pool(&mut pool)
+    }
+
+    /// [`merge`](Self::merge) of the sketches whose values `pool` holds, concatenated in any
+    /// order. Leaves `pool` sorted and truncated; the caller reuses it as scratch, so building a
+    /// whole tree's sketches allocates no per-node buffer.
+    pub(crate) fn from_pool(pool: &mut Vec<u64>) -> Self {
         pool.sort_unstable();
         pool.dedup();
         pool.truncate(SKETCH_WIDTH);
 
         let mut values = [0u64; SKETCH_WIDTH];
-        values[..pool.len()].copy_from_slice(&pool);
+        values[..pool.len()].copy_from_slice(pool);
         Self {
             values,
             len: pool.len() as u8,
         }
     }
 
-    fn as_slice(&self) -> &[u64] {
+    pub(crate) fn as_slice(&self) -> &[u64] {
         &self.values[..self.len as usize]
     }
 

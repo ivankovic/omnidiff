@@ -65,16 +65,10 @@ pub fn compute_ast_metadata(code: &Code) -> Result<ASTMetadata> {
     // One walk of the tree-sitter tree serves every step: cursor traffic is expensive.
     let nodes = collect_nodes(ast.root_node());
     let source = code.contents.as_bytes();
-    crate::code::hash::hash_nodes(&nodes, source, metadata.language, &mut metadata);
-    compute_subtree_sizes(&nodes, &mut metadata);
-    compute_node_info(&nodes, source, &mut metadata);
-    compute_widest_subtree_node(code, &mut metadata);
-    for record in &nodes {
-        metadata.node_to_depth.insert(record.id, record.depth);
-        if let Some(parent) = record.parent {
-            metadata.node_to_parent.insert(record.id, nodes[parent].id);
-        }
-    }
+    let owned_text_hashes =
+        crate::code::hash::hash_nodes(&nodes, source, metadata.language, &mut metadata);
+    compute_tree_indexes(&nodes, &mut metadata);
+    compute_node_info(&nodes, source, &owned_text_hashes, &mut metadata);
     discover_reference_nodes(&nodes, &mut metadata);
     Ok(metadata)
 }
@@ -146,19 +140,60 @@ pub fn metadata_of(code: &Code) -> std::borrow::Cow<'_, ASTMetadata> {
     }
 }
 
-fn compute_subtree_sizes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
-    // Reverse preorder visits every child before its parent.
-    let mut sizes = vec![0usize; nodes.len()];
+/// `node_to_subtree_size`, `node_to_widest_subtree_node`, `node_to_depth` and `node_to_parent`,
+/// from one reverse-preorder pass over the table, which visits every child before its parent.
+fn compute_tree_indexes(nodes: &[NodeRecord], metadata: &mut ASTMetadata) {
+    let n = nodes.len();
+    metadata.node_to_subtree_size.reserve(n);
+    metadata.node_to_widest_subtree_node.reserve(n);
+    metadata.node_to_depth.reserve(n);
+    metadata.node_to_parent.reserve(n);
+    let mut sizes = vec![0usize; n];
+    let mut widest = vec![(0usize, 0usize); n];
     for (index, record) in nodes.iter().enumerate().rev() {
         let size = 1 + record.children.iter().map(|&c| sizes[c]).sum::<usize>();
         sizes[index] = size;
         metadata.node_to_subtree_size.insert(record.id, size);
+
+        // The first child wins a tie, and the node itself wins against an equally wide child.
+        let mut best = (record.children.len(), record.id);
+        for &child in &record.children {
+            if widest[child].0 > best.0 {
+                best = widest[child];
+            }
+        }
+        widest[index] = best;
+        metadata.node_to_widest_subtree_node.insert(record.id, best);
+
+        metadata.node_to_depth.insert(record.id, record.depth);
+        if let Some(parent) = record.parent {
+            metadata.node_to_parent.insert(record.id, nodes[parent].id);
+        }
     }
 }
 
-fn compute_node_info(nodes: &[NodeRecord], source: &[u8], metadata: &mut ASTMetadata) {
+/// Fills `node_info`; `owned_text_hashes` is `hash::hash_nodes`' result, by table index.
+fn compute_node_info(
+    nodes: &[NodeRecord],
+    source: &[u8],
+    owned_text_hashes: &[u64],
+    metadata: &mut ASTMetadata,
+) {
+    metadata.node_info.reserve(nodes.len());
+    // A kind's cost class depends only on its kind string, and so on its `kind_id`; the string
+    // scans behind it run once per kind rather than once per node.
+    let mut cost_classes: Vec<Option<crate::code::KindCostClass>> = Vec::new();
     for (preorder_index, record) in nodes.iter().enumerate() {
-        let kind = record.kind.to_string();
+        let kind_id = usize::from(record.kind_id);
+        if cost_classes.len() <= kind_id {
+            cost_classes.resize(kind_id + 1, None);
+        }
+        let kind_cost_class =
+            *cost_classes[kind_id].get_or_insert_with(|| crate::code::KindCostClass {
+                identifier_like: nodes::is_identifier_kind(record.kind),
+                literal_like: nodes::is_literal_kind(record.kind),
+                operator_families: nodes::operator_family_mask(record.kind),
+            });
         // Leaves only; see `ASTNodeMetadata::text`.
         let text = if record.children.is_empty() {
             std::str::from_utf8(&source[record.start_byte..record.end_byte])
@@ -167,104 +202,21 @@ fn compute_node_info(nodes: &[NodeRecord], source: &[u8], metadata: &mut ASTMeta
         } else {
             String::new()
         };
-        let owned_text_hash = owned_text_hash_of(record, source, nodes);
         let children: Vec<usize> = record.children.iter().map(|&c| nodes[c].id).collect();
 
         metadata.node_info.insert(
             record.id,
             ASTNodeMetadata {
-                kind_cost_class: crate::code::KindCostClass {
-                    identifier_like: nodes::is_identifier_kind(&kind),
-                    literal_like: nodes::is_literal_kind(&kind),
-                    operator_families: nodes::operator_family_mask(&kind),
-                },
-                kind,
+                kind_cost_class,
+                kind: record.kind.to_string(),
                 text,
-                owned_text_hash,
+                owned_text_hash: owned_text_hashes[preorder_index],
                 children,
                 start_byte: record.start_byte,
                 preorder_index,
                 is_named: record.is_named,
             },
         );
-    }
-}
-
-/// A hash of the text a node owns *directly* - the non-whitespace content in the gaps before,
-/// between and after its children - or 0 when every gap is formatting (the overwhelmingly common
-/// case: a well-behaved internal node's bytes are entirely covered by its children).
-///
-/// Grammars that keep a payload as parent-owned text include XML (`AttValue`, every attribute
-/// value), CSS (`integer_value`, `color_value`), Rust comments and YAML quoted scalars;
-/// `code::gap_survey` measures them. Leaves report 0: their span is already `text`.
-fn owned_text_hash_of(record: &NodeRecord, source: &[u8], nodes: &[NodeRecord]) -> u64 {
-    use std::hash::Hasher;
-    if record.children.is_empty() {
-        return 0;
-    }
-    let mut hasher = metrohash::MetroHash64::new();
-    let mut any_content = false;
-    let mut hash_gap = |hasher: &mut metrohash::MetroHash64, start: usize, end: usize| {
-        if start >= end {
-            return;
-        }
-        if let Ok(text) = std::str::from_utf8(&source[start..end])
-            && !text.trim().is_empty()
-        {
-            hasher.write(text.as_bytes());
-            any_content = true;
-        }
-    };
-    let mut gap_start = record.start_byte;
-    for &child in &record.children {
-        hash_gap(&mut hasher, gap_start, nodes[child].start_byte);
-        gap_start = nodes[child].end_byte;
-    }
-    hash_gap(&mut hasher, gap_start, record.end_byte);
-    if !any_content {
-        return 0;
-    }
-    // 0 is reserved for "owns no text", so nudge a real hash off it.
-    match hasher.finish() {
-        0 => 1,
-        hash => hash,
-    }
-}
-
-/// Computes `ASTMetadata::node_to_widest_subtree_node` bottom-up over `node_info`, which must
-/// already be populated.
-fn compute_widest_subtree_node(code: &Code, metadata: &mut ASTMetadata) {
-    let Some(ast) = code.ast.as_ref() else { return };
-    let root_id = ast.root_node().id();
-
-    let mut stack = vec![(root_id, false)];
-    while let Some((node_id, processed)) = stack.pop() {
-        if processed {
-            let Some(children) = metadata
-                .node_info
-                .get(&node_id)
-                .map(|info| info.children.clone())
-            else {
-                continue;
-            };
-            let mut best = (children.len(), node_id);
-            for &child_id in &children {
-                if let Some(&(child_best_count, child_best_id)) =
-                    metadata.node_to_widest_subtree_node.get(&child_id)
-                    && child_best_count > best.0
-                {
-                    best = (child_best_count, child_best_id);
-                }
-            }
-            metadata.node_to_widest_subtree_node.insert(node_id, best);
-        } else {
-            stack.push((node_id, true));
-            if let Some(info) = metadata.node_info.get(&node_id) {
-                for &child_id in &info.children.clone() {
-                    stack.push((child_id, false));
-                }
-            }
-        }
     }
 }
 
