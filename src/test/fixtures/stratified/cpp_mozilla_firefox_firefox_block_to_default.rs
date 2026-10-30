@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-mozilla-firefox-firefox-block-to-default", 0.07)
+    assert_matches_human_painting_within_limit("cpp-mozilla-firefox-firefox-block-to-default", 0.0)
 }
 
 #[test]

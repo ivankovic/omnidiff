@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("json-nextcloud-server-deleted-pair", 0.03)
+    assert_matches_human_painting_within_limit("json-nextcloud-server-deleted-pair", 0.0)
 }

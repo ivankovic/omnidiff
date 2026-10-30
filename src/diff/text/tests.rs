@@ -645,11 +645,10 @@ fn leading_whitespace_off_does_not_split_a_multiline_update() {
     );
 }
 
-/// The structural-punctuation filter still applies per row after the split - a row that is
-/// nothing but a standalone bracket is dropped under `MINIMAL`'s `structural_punctuation: false`
-/// exactly as a single-row range in the same shape already is.
+/// An inserted block keeps its brace rows after the per-row split: inserted punctuation is the
+/// edit, so `structural_punctuation: false` does not drop it.
 #[test]
-fn leading_whitespace_off_still_drops_a_structural_only_row() {
+fn leading_whitespace_off_keeps_the_brace_rows_of_an_inserted_block() {
     let source = "{\n    body();\n}\n";
     let range = RangeMatch {
         source: TextRange::new(0, 0, 2, 1),
@@ -668,8 +667,8 @@ fn leading_whitespace_off_still_drops_a_structural_only_row() {
             .iter()
             .map(|r| r.source.start_row)
             .collect::<Vec<_>>(),
-        vec![1],
-        "rows 0 ('{{') and 2 ('}}') are standalone punctuation and must be dropped: {result:?}"
+        vec![0, 1, 2],
+        "rows 0 ('{{') and 2 ('}}') are inserted with the body: {result:?}"
     );
 }
 
@@ -727,9 +726,9 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
 }
 
 /// `python-refactoring`, minimized: merging bundles `max_val = max(` into one `Insert` and leaves
-/// `)` alone. The lone `)` is restored so a reader never sees `(` without it.
+/// `)` alone. The lone inserted `)` is kept, so a reader never sees `(` without it.
 #[test]
-fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
+fn minimal_keeps_a_lone_inserted_closing_paren() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -753,13 +752,14 @@ fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
 
     assert!(
         result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "the lone ')' must be restored: {result:?}"
+        "the lone ')' must be kept: {result:?}"
     );
 }
 
-/// A pair whose halves are both standalone stays dropped.
+/// Inserted punctuation is the edit: both halves of an inserted pair around a surviving `x` are
+/// kept under `MINIMAL`.
 #[test]
-fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
+fn minimal_keeps_an_inserted_pair_of_brackets() {
     let source = "(x)";
     let ranges = vec![
         RangeMatch {
@@ -782,16 +782,16 @@ fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
     let result = ranges_for_options(&ranges, source, RenderOptions::MINIMAL);
 
     assert!(
-        !result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
-        "neither half of a wholly standalone pair should be restored: {result:?}"
+        result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
+        "the inserted '(' must be kept: {result:?}"
     );
-    assert!(!result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
+    assert!(result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
 }
 
-/// Restoration is scoped to `Insert`/`Delete`: `javascript-refactor-arrow-func` paints a lone `");"`
-/// `Move` that its ground truth never shows.
+/// Only inserted and deleted punctuation is kept: `javascript-refactor-arrow-func` paints a lone
+/// `");"` `Move` that its ground truth never shows.
 #[test]
-fn a_lone_move_bracket_is_not_restored() {
+fn minimal_drops_a_lone_move_bracket() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -815,7 +815,7 @@ fn a_lone_move_bracket_is_not_restored() {
 
     assert!(
         !result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "a lone Move bracket must not be restored: {result:?}"
+        "a lone Move bracket must be dropped: {result:?}"
     );
 }
 
@@ -2799,12 +2799,6 @@ fn full_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
     ];
     let painted = ranges_for_options(&ranges, source, RenderOptions::FULL);
     assert_eq!(painted[0].source, TextRange::new(0, 4, 0, 9));
-}
-
-#[test]
-fn bracket_pair_partners_skips_a_mismatched_bracket() {
-    assert!(bracket_pair_partners("(]").is_empty());
-    assert_eq!(bracket_pair_partners("[()]").get(&0), Some(&3));
 }
 
 #[test]

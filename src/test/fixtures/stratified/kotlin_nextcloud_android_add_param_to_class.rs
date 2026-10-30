@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("kotlin-nextcloud-android-add-param-to-class", 0.12)
+    assert_matches_human_painting_within_limit("kotlin-nextcloud-android-add-param-to-class", 0.0)
 }
 
 #[test]

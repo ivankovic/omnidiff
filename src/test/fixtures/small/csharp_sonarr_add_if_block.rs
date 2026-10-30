@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-sonarr-add-if-block", 0.01)
+    assert_matches_human_painting_within_limit("csharp-sonarr-add-if-block", 0.0)
 }

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksonxml-5-xmlserializerprovider",
-        0.14,
+        0.13,
     )
 }
 

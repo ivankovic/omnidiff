@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("kotlin-small-api-change", 0.04)
+    assert_matches_human_painting_within_limit("kotlin-small-api-change", 0.0)
 }

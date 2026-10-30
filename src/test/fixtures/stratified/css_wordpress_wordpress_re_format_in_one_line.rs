@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "css-wordpress-wordpress-re-format-in-one-line",
-        84.15,
+        83.74,
     )
 }
 

@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        0.43,
+        0.42,
     )
 }
 
