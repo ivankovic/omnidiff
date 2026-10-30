@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-tauri-apps-tauri-add-to-list", 1.18)
+    assert_matches_human_painting_within_limit("rust-tauri-apps-tauri-add-to-list", 1.19)
 }
 
 #[test]

@@ -137,6 +137,31 @@ fn painting_disagreement_detail() -> Result<()> {
             .map(|(side, contents)| {
                 let ranges =
                     crate::diff::text::ranges_for_options(&text_diff.all(side), contents, options);
+                // `DUMP_RANGES=1` prints every painted range of the side, with its text.
+                if std::env::var("DUMP_RANGES").is_ok() {
+                    for range in &ranges {
+                        let text = byte_offset(
+                            contents,
+                            range.source.start_row,
+                            range.source.start_column,
+                        )
+                        .zip(byte_offset(
+                            contents,
+                            range.source.end_row,
+                            range.source.end_column,
+                        ))
+                        .and_then(|(start, end)| contents.get(start..end))
+                        .unwrap_or("?");
+                        eprintln!(
+                            "    side={side} {:?} {}:{}-{}:{} {text:?}",
+                            range.operation,
+                            range.source.start_row,
+                            range.source.start_column,
+                            range.source.end_row,
+                            range.source.end_column
+                        );
+                    }
+                }
                 label_bytes_from_ranges(contents, &ranges)
             })
             .collect()
@@ -836,7 +861,8 @@ fn cross_fixture_convention_census() -> Result<()> {
 /// repeated mistakes.
 ///
 /// `cargo test --release --lib --features test-fixtures painting_failure_census --
-/// --ignored --nocapture`
+/// --ignored --nocapture`. `PAINTING_RUNS_TSV=<path>` also writes every run, one per row with its
+/// side, first byte and text, for classifying offline.
 #[test]
 #[ignore]
 // `csv` is only linked under `test-fixtures`.
@@ -867,6 +893,10 @@ fn painting_failure_census() -> Result<()> {
         /// otherwise, or when no single range covers the run's first byte.
         geometry: String,
         sample: String,
+        /// 0 = before, 1 = after, and the run's first byte there: `PAINTING_RUNS_TSV` rows.
+        side: usize,
+        start: usize,
+        text: String,
     }
 
     fn label_name(label: Option<TextLabel>) -> &'static str {
@@ -1235,6 +1265,9 @@ fn painting_failure_census() -> Result<()> {
                                 ours_op,
                                 ours_reason,
                                 geometry,
+                                side,
+                                start,
+                                text: text.to_string(),
                                 sample: format!(
                                     "{name} {preset} side={side} row={} {:?}",
                                     contents[side][..start].matches('\n').count() + 1,
@@ -1298,6 +1331,35 @@ fn painting_failure_census() -> Result<()> {
         unpainted += usize::from(census.unpainted);
         no_tree += usize::from(census.no_tree);
         errors.extend(census.error);
+    }
+
+    // Every run, one per row, for offline classification: `PAINTING_RUNS_TSV=<path>`.
+    if let Ok(path) = std::env::var("PAINTING_RUNS_TSV") {
+        let mut out = String::from(
+            "stream\tfixture\tpreset\tside\tstart\tbytes\tours\ttheirs\tclass\tkind\texact\t\
+             human_op\tours_op\tours_reason\tgeometry\ttext\n",
+        );
+        for (stream, run) in &runs {
+            out.push_str(&format!(
+                "{stream}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:?}\n",
+                run.fixture,
+                run.preset,
+                run.side,
+                run.start,
+                run.bytes,
+                label_name(run.ours),
+                label_name(run.theirs),
+                run.class,
+                run.kind,
+                run.exact,
+                run.human_op,
+                run.ours_op,
+                run.ours_reason,
+                run.geometry,
+                run.text,
+            ));
+        }
+        fs::write(&path, out)?;
     }
 
     // ---- the artifact ----------------------------------------------------------------------

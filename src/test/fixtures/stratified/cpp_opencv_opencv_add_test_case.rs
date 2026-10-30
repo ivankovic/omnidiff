@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-opencv-opencv-add-test-case", 0.02)
+    assert_matches_human_painting_within_limit("cpp-opencv-opencv-add-test-case", 0.0)
 }
 
 #[test]

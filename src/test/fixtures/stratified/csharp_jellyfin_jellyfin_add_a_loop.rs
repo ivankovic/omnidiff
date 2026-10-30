@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-jellyfin-jellyfin-add-a-loop", 0.79)
+    assert_matches_human_painting_within_limit("csharp-jellyfin-jellyfin-add-a-loop", 0.78)
 }
 
 #[test]

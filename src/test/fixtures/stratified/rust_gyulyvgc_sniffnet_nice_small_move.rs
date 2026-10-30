@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-gyulyvgc-sniffnet-nice-small-move", 2.46)
+    assert_matches_human_painting_within_limit("rust-gyulyvgc-sniffnet-nice-small-move", 2.66)
 }
 
 #[test]

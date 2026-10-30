@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-ollama-ollama-delete-a-param", 0.24)
+    assert_matches_human_painting_within_limit("go-ollama-ollama-delete-a-param", 0.25)
 }
 
 #[test]

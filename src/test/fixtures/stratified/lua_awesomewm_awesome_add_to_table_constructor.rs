@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "lua-awesomewm-awesome-add-to-table-constructor",
-        1.22,
+        0.0,
     )
 }
 

@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-wordpress-wordpress-minified", 23.27)
+    assert_matches_human_painting_within_limit("css-wordpress-wordpress-minified", 22.7)
 }
 
 #[test]

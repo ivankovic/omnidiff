@@ -43,7 +43,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // `FULL` sets the limit. `displaced_beside_an_edit_on_its_first_row` costs `MINIMAL` two bytes
     // here that the human paints.
-    assert_matches_human_painting_within_limit("rust-algorithm-change", 27.17)
+    assert_matches_human_painting_within_limit("rust-algorithm-change", 26.75)
 }
 
 #[test]

@@ -39,6 +39,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "kotlin-nextcloud-android-extract-argument-into-variable",
-        0.22,
+        0.16,
     )
 }

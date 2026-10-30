@@ -2485,7 +2485,8 @@ mod tests {
 
     #[test]
     fn apply_render_options_reloads_for_every_construction_time_field() -> Result<()> {
-        let construction_time = RenderOptions::default().options().len();
+        // The first two options and the last, `interior_whitespace`, are post-filters.
+        let construction_time = RenderOptions::default().options().len() - 1;
         for index in 2..construction_time {
             let mut app = App::new(4.0, 60.0)?;
             app.before_path = Some(PathBuf::from("before.rs"));
@@ -2519,6 +2520,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         })?;
 
         let queued: Vec<_> = std::iter::from_fn(|| app.action_rx.try_recv().ok()).collect();
@@ -2762,6 +2764,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         });
 
         let backend = ratatui::backend::TestBackend::new(120, 24);

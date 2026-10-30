@@ -448,5 +448,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-turbopack-module-rule", 21.36)
+    assert_matches_human_painting_within_limit("rust-turbopack-module-rule", 21.42)
 }

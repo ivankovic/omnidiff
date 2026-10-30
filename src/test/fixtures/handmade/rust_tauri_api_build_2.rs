@@ -30,7 +30,7 @@ fn painting() -> Result<()> {
     // not a Move) makes Minimal exact and costs Full 33 bytes: this fixture's Full painting calls
     // `|v| v == "true")` a Move, while fixtures with one painting for both modes do not. Both
     // readings cannot be honoured until those get Full paintings of their own.
-    assert_matches_human_painting_within_limit("rust-tauri-api-build-2", 0.93)
+    assert_matches_human_painting_within_limit("rust-tauri-api-build-2", 0.88)
 }
 
 #[test]

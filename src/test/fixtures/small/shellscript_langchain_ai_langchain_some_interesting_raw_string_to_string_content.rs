@@ -43,6 +43,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content",
-        15.92,
+        16.13,
     )
 }

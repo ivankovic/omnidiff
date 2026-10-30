@@ -33,7 +33,7 @@ fn painting() -> Result<()> {
     // space and the command also gains an argument, so the row's single common-prefix/suffix pair
     // finds neither edit and reads the de-indent as a relocation. The one-row-two-edits gap in
     // `node_untouched_on_its_row`; needs a multi-segment row diff.
-    assert_matches_human_painting_within_limit("shellscript-stgpetrovic-stacuist-pure-add", 39.59)
+    assert_matches_human_painting_within_limit("shellscript-stgpetrovic-stacuist-pure-add", 39.34)
 }
 
 #[test]

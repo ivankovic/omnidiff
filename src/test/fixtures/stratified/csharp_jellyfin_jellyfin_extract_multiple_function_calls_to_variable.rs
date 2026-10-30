@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "csharp-jellyfin-jellyfin-extract-multiple-function-calls-to-variable",
-        0.32,
+        0.25,
     )
 }
 

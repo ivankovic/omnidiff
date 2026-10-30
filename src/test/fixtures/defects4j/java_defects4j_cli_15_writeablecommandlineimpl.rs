@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-cli-15-writeablecommandlineimpl",
-        3.58,
+        3.51,
     )
 }
 

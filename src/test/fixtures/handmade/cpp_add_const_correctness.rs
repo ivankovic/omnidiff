@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-add-const-correctness", 0.18)
+    assert_matches_human_painting_within_limit("cpp-add-const-correctness", 0.0)
 }
 
 #[test]

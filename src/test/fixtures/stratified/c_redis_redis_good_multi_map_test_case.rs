@@ -36,7 +36,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-redis-redis-good-multi-map-test-case", 0.49)
+    assert_matches_human_painting_within_limit("c-redis-redis-good-multi-map-test-case", 0.48)
 }
 
 #[test]

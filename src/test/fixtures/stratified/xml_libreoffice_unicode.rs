@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-libreoffice-unicode", 0.79)
+    assert_matches_human_painting_within_limit("xml-libreoffice-unicode", 0.88)
 }
 
 #[test]

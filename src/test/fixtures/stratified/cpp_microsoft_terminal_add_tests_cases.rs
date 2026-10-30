@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-microsoft-terminal-add-tests-cases", 0.26)
+    assert_matches_human_painting_within_limit("cpp-microsoft-terminal-add-tests-cases", 0.21)
 }
 
 #[test]

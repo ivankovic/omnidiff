@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-mockito-31-returnssmartnulls", 0.18)
+    assert_matches_human_painting_within_limit("java-defects4j-mockito-31-returnssmartnulls", 0.15)
 }
 
 #[test]
