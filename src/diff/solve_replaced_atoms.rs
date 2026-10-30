@@ -29,6 +29,11 @@
 //! becoming `argName = null`), a literal extracted into a constant (`3.14159` becoming `PI`), a
 //! field's type made generic (`int` becoming `T`).
 //!
+//! A built-in type's keyword pairs with the keyword of the built-in type its wrapper was paired
+//! with (`float toJavaVersionInt(..)` becoming `int toJavaVersionInt(..)`,
+//! `java-defects4j-lang-29-systemutils`): each Java type keyword is a node kind of its own, so the
+//! tree edit distance pairs the two wrappers and drops both keywords.
+//!
 //! The slot must be unambiguous: under a matched parent pair with as many named children on each
 //! side, exactly one named child per side is wholly unpaired, at the same index. Both must be
 //! atoms - a leaf, or a literal whose children are all leaves - and neither a comment. Neither
@@ -195,6 +200,96 @@ fn is_value_slot(meta: &ASTMetadata, id: usize) -> bool {
     }
 }
 
+/// A built-in type that wraps its keyword: Java's `integral_type`, `floating_point_type` and
+/// `boolean_type`.
+fn is_builtin_type_wrapper(meta: &ASTMetadata, id: usize) -> bool {
+    meta.node_info.get(&id).is_some_and(|info| {
+        matches!(
+            info.kind.as_str(),
+            "integral_type" | "floating_point_type" | "boolean_type"
+        ) && info.children.len() == 1
+    })
+}
+
+/// The name `parent` declares: its own `identifier` child, or its declarator's
+/// (`int n = 1;`).
+fn declared_name(meta: &ASTMetadata, parent: usize) -> Option<usize> {
+    let children = &meta.node_info.get(&parent)?.children;
+    let first_identifier = |ids: &[usize]| {
+        ids.iter().copied().find(|id| {
+            meta.node_info
+                .get(id)
+                .is_some_and(|i| i.kind == "identifier")
+        })
+    };
+    first_identifier(children).or_else(|| {
+        let declarator = children.iter().copied().find(|id| {
+            meta.node_info
+                .get(id)
+                .is_some_and(|i| i.kind.ends_with("declarator"))
+        })?;
+        first_identifier(&meta.node_info.get(&declarator)?.children)
+    })
+}
+
+/// Pairs the keywords of a built-in type the tree edit distance paired with another, which it
+/// cannot relabel because each keyword is a kind of its own (`float` becoming `int`). Only when
+/// the declaration the type belongs to keeps its name: a declaration replaced by another
+/// (`long id = ..` by `byte[] idBuffer = ..`, `java-genymobile-scrcpy-add-delete`) reads as
+/// removed and added, types and all.
+fn pair_builtin_type_keywords(before: &ASTMetadata, after: &ASTMetadata, diff: &mut ASTDiff) {
+    let keeps_name = |b: usize, a: usize, diff: &ASTDiff| {
+        let (Some(&before_parent), Some(&after_parent)) =
+            (before.node_to_parent.get(&b), after.node_to_parent.get(&a))
+        else {
+            return false;
+        };
+        match (
+            declared_name(before, before_parent),
+            declared_name(after, after_parent),
+        ) {
+            (Some(before_name), Some(after_name)) => {
+                diff.before_node_map.get(&before_name) == Some(&after_name)
+                    && before.node_info[&before_name].text == after.node_info[&after_name].text
+            }
+            _ => false,
+        }
+    };
+    let mut pairs: Vec<(usize, usize)> = diff
+        .before_node_map
+        .iter()
+        .filter(|&(&b, &a)| {
+            b != 0
+                && a != 0
+                && is_builtin_type_wrapper(before, b)
+                && is_builtin_type_wrapper(after, a)
+                && keeps_name(b, a, diff)
+        })
+        .map(|(&b, &a)| {
+            (
+                before.node_info[&b].children[0],
+                after.node_info[&a].children[0],
+            )
+        })
+        .filter(|&(b, a)| unpaired(&diff.before_node_map, b) && unpaired(&diff.after_node_map, a))
+        .collect();
+    // Sorted so `mapping`'s history is reproducible run to run.
+    pairs.sort_unstable();
+    for (b, a) in pairs {
+        diff.remove_delete_mapping(b);
+        diff.remove_insert_mapping(a);
+        diff.add_mapping(
+            b,
+            a,
+            ASTMapping {
+                cost: 0,
+                operation: ASTMappingOperation::MatchButNotIdentical,
+                reason: ASTMappingReason::ReplacedAtom,
+            },
+        );
+    }
+}
+
 pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
     let (before, after) = (ctx.before_metadata(), ctx.after_metadata());
     let mut parents: Vec<(usize, usize)> = diff
@@ -205,6 +300,7 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         .collect();
     // Sorted so the pairing order, and so `mapping`'s history, is reproducible run to run.
     parents.sort_unstable();
+    pair_builtin_type_keywords(before, after, diff);
     let before_texts = unpaired_atom_texts(before, &diff.before_node_map);
     let after_texts = unpaired_atom_texts(after, &diff.after_node_map);
     for (before_parent, after_parent) in parents {
@@ -300,6 +396,18 @@ mod tests {
                 "int f() { return g(a, FLAG); }",
                 "int f() { return g(a, 0); }",
                 Language::C,
+            ),
+            1
+        );
+    }
+
+    #[test]
+    fn a_built_in_return_type_replaced_pairs_its_keyword() {
+        assert_eq!(
+            replaced(
+                "class C { static float f(String v) { return 1; } }",
+                "class C { static int f(String v) { return 1; } }",
+                Language::Java,
             ),
             1
         );

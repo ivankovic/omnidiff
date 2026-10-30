@@ -212,7 +212,7 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
 /// Shell's `if` holds its commands with no block between (`shellscript-openlightingproject-ola-real-small-change`). Such a
 /// statement is too large to read a moved leaf's role from: the `b` of `i < b.N` is not the `b` of
 /// `b.Loop()` in the same `for` (`go-gohugoio-hugo-for-loop-change`).
-fn has_body(meta: &ASTMetadata, id: usize) -> bool {
+pub(crate) fn has_body(meta: &ASTMetadata, id: usize) -> bool {
     let mut stack: Vec<usize> = meta
         .node_info
         .get(&id)

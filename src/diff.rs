@@ -70,6 +70,7 @@ pub(crate) mod solve_nested_condition_collapse;
 pub(crate) mod solve_orphaned_leaves;
 pub(crate) mod solve_renamed_twins;
 pub(crate) mod solve_replaced_atoms;
+pub(crate) mod solve_statement_shells;
 pub(crate) mod solve_stray_renames;
 pub(crate) mod solve_stray_terminators;
 pub(crate) mod solve_syntax_aware_matching;
@@ -413,6 +414,9 @@ impl<'code> PendingDiff<'code> {
         solve_renamed_twins::solve(&ctx, &mut ast_diff);
         // After the leaf re-pairings, so a slot it reads as wholly unpaired really is.
         solve_replaced_atoms::solve(&ctx, &mut ast_diff);
+        // After every pass that can pair a leaf, so a statement it reads as removed is gone, and
+        // the moved value it takes as evidence is final.
+        solve_statement_shells::solve(&ctx, &mut ast_diff);
 
         // Phase 9c: after every matching pass, so "unpaired" means gone and a twin's parent that
         // a late pass pairs (an `if` that grew an `else`) is not mistaken for a displaced one.
@@ -878,6 +882,9 @@ pub enum ASTMappingReason {
     /// A value replaced by another in the same slot of a matched construct, paired or grouped.
     /// See `solve_replaced_atoms`.
     ReplacedAtom,
+    /// A statement whose value moved out of it, paired with the one of its kind that took its
+    /// place, with the keywords and punctuation they share. See `solve_statement_shells`.
+    StatementShell,
 }
 
 impl ASTMappingReason {
@@ -908,6 +915,7 @@ impl ASTMappingReason {
             ASTMappingReason::MultiMap => "MultiMap",
             ASTMappingReason::RenamedTwin => "RenamedTwin",
             ASTMappingReason::ReplacedAtom => "ReplacedAtom",
+            ASTMappingReason::StatementShell => "StatementShell",
         }
     }
 }

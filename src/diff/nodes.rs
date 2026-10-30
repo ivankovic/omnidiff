@@ -307,10 +307,30 @@ pub(crate) fn has_local_identity_coverage(language: &Language) -> bool {
     )
 }
 
+/// `kind` as the `'static` label [`member_identity_name`] keys on.
+fn member_kind_label(kind: &str) -> &'static str {
+    match kind {
+        "function_item" => "function_item",
+        "mod_item" => "mod_item",
+        "macro_definition" => "macro_definition",
+        "struct_item" => "struct_item",
+        "enum_item" => "enum_item",
+        "trait_item" => "trait_item",
+        "function_declaration" => "function_declaration",
+        "function_definition" => "function_definition",
+        "class_definition" => "class_definition",
+        "class_declaration" => "class_declaration",
+        "method_declaration" => "method_declaration",
+        "constructor_declaration" => "constructor_declaration",
+        _ => "member",
+    }
+}
+
 /// The `(kind, name)` of a container member, for anchoring members whose bodies changed: a Java
 /// method, constructor or field; a C/C++ field, function definition or `#define`; a JS/TS class
 /// method or field; a JSON object's pair (by key); a Vim `hi` statement (by group); a Rust
-/// `const`. Overloads are not a concern: the caller pairs only equal holder counts.
+/// `const`, function, type or module; a function, method or class in Go, Python, Kotlin, JS/TS,
+/// Scala, PHP and C#. Overloads are not a concern: the caller pairs only equal holder counts.
 pub(crate) fn member_identity_name(
     node_id: usize,
     meta: &ASTMetadata,
@@ -443,6 +463,52 @@ pub(crate) fn member_identity_name(
             "const_item",
             text_of(first_child_of_kind(node_id, "identifier")?)?,
         )),
+        // Every type in these signatures is a `type_identifier`, so the first `identifier` child
+        // is the name.
+        (Language::Rust, "function_item" | "mod_item" | "macro_definition")
+        | (Language::Go, "function_declaration")
+        | (Language::Python, "function_definition" | "class_definition")
+        | (Language::Kotlin, "function_declaration" | "class_declaration")
+        | (
+            Language::JavaScript | Language::TypeScript | Language::TSX,
+            "function_declaration" | "class_declaration",
+        )
+        | (Language::Scala, "function_definition") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
+        )),
+        (Language::Rust, "struct_item" | "enum_item" | "trait_item") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "type_identifier")?)?,
+        )),
+        (Language::Go, "method_declaration") => Some((
+            "method_declaration",
+            text_of(first_child_of_kind(node_id, "field_identifier")?)?,
+        )),
+        (Language::PHP, "method_declaration" | "function_definition") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "name")?)?,
+        )),
+        // A return type can be a bare `identifier` too; the name is the one right before the
+        // parameters (or their type parameters).
+        (Language::CSharp, "method_declaration" | "constructor_declaration") => {
+            let children = &info.children;
+            let at = children.iter().position(|&c| {
+                meta.node_info
+                    .get(&c)
+                    .is_some_and(|i| i.kind == "parameter_list" || i.kind == "type_parameter_list")
+            })?;
+            let name = *children.get(at.checked_sub(1)?)?;
+            let name_info = meta.node_info.get(&name)?;
+            (name_info.kind == "identifier")
+                .then(|| (member_kind_label(&info.kind), name_info.text.clone()))
+        }
+        // A decorator does not change which definition it is.
+        (Language::Python, "decorated_definition") => info
+            .children
+            .iter()
+            .rev()
+            .find_map(|&c| member_identity_name(c, meta, language)),
         _ => None,
     }
 }
