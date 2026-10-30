@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "python-nvbn-thefuck-extract-function-to-local-var",
-        2.65,
+        2.46,
     )
 }
 
