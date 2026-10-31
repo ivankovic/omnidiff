@@ -14,7 +14,7 @@ Fast, robust, accurate content-aware diffing.
 
 | Content | Fast: under 100ms | Accurate: perfect | Accurate: near-perfect |
 |---|---|---|---|
-| Code | 97% | 67% | 90% |
+| Code | 98% | 70% | 92% |
 | Pictures | 96% | 69% | 91% |
 | Cursors | 100% | 85% | 100% |
 | Fonts | 95% | 82% | 100% |
@@ -349,9 +349,9 @@ OmniDiff's goal is:
 * **A median diff in 100ms or less.**
 * **A 99th-percentile diff in 1000ms or less.**
 
-Both are met. Over the 2,223 fixtures in `src/test/data/diffs/`, measured 2026-10-17 on a laptop,
+Both are met. Over the 2,302 fixtures in `src/test/data/diffs/`, measured 2026-10-31 on a laptop,
 an Intel Core i7-1370P (6 performance and 8 efficiency cores, 20 threads) with 32 GB RAM: **p50
-4.2ms, p90 39.4ms, p99 199ms**, slowest 644ms. **100ms is the 96.6th percentile** — 75 fixtures
+4.2ms, p90 35.1ms, p99 177ms**, slowest 482ms. **100ms is the 97.6th percentile** — 55 fixtures
 take longer than that, and none takes longer than a second.
 
 Times belong to the machine that measured them, so each machine keeps its own (see
@@ -408,20 +408,20 @@ ground-truth mappings in `src/test/data/diffs/`:
 * **90% of test cases with zero mismatched bytes.**
 * **99% of test cases with at most 1% of bytes mismatched.**
 
-Neither is met yet. 1,141 of the 2,223 fixtures carry a hand-painted ground truth - every byte of
+Neither is met yet. 1,419 of the 2,302 fixtures carry a hand-painted ground truth - every byte of
 both files labelled with what a human says happened to it - and OmniDiff's own highlighting is
 compared against it byte by byte, under each of its two highlighting presets (`--full`, which keeps
 brackets, separators and leading whitespace, and `--minimal`, which drops them):
 
 | preset | zero mismatched bytes | at most 1% mismatched | mismatched bytes, whole corpus |
 |---|---|---|---|
-| `--full` | **701 (61.4%)** | **981 (86.0%)** | 91,169 of 57.0M (0.16%) |
-| `--minimal` | **769 (67.4%)** | **1,028 (90.1%)** | 47,088 of 57.0M (0.08%) |
+| `--full` | **851 (60.0%)** | **1,241 (87.5%)** | 99,157 of 73.3M (0.14%) |
+| `--minimal` | **987 (69.6%)** | **1,299 (91.5%)** | 51,740 of 73.3M (0.07%) |
 
 The whole-corpus rate is far below 1% because most of each file is unchanged and nobody gets that
 wrong; the per-test-case numbers are the ones that count, since a reader meets the mistakes one
 diff at a time. Most of what is left is not in the matching: rendering the human's own node
-mapping still disagrees with the painting on 80% of the `--full` bytes and 67% of the `--minimal`
+mapping still disagrees with the painting on 91% of the `--full` bytes and 91% of the `--minimal`
 ones, so the highlighting rules own the gap more than the matcher does.
 
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
