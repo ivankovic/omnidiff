@@ -1109,10 +1109,7 @@ fn embedded_regions(
             Some(found) => {
                 // A plain-text layer is painted as a file without a grammar is.
                 let inner = if found.before.ast.is_none() || found.after.ast.is_none() {
-                    let (before, after) = crate::diff::text::text_layer_diff(
-                        &found.before.contents,
-                        &found.after.contents,
-                    );
+                    let (before, after) = crate::diff::text::text_layer_ranges(found, options);
                     PaintingDiff::PlainText { before, after }
                 } else {
                     PaintingDiff::Ast {

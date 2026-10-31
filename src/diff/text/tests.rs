@@ -3026,3 +3026,44 @@ fn edits_count_apart_only_across_unchanged_words_and_spaces() {
     );
     assert_eq!(token_edit_count("a b c d", "x b c y"), Some(2));
 }
+
+#[test]
+fn a_class_list_is_diffed_class_by_class() {
+    let before = "border-input text-primary dark:bg-input/30 flex";
+    let after = "border-input dark:bg-input/30 data-checked:bg-primary flex";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (before_ranges, after_ranges) = class_list_diff(before, after, options).unwrap();
+        let changed = |ranges: &[RangeMatch], text: &'static str| {
+            changed_spans(ranges, text)
+                .into_iter()
+                .filter(|(operation, _)| *operation != TextOperation::Move)
+                .collect::<Vec<_>>()
+        };
+        // Never a piece of a class: `text-primary` goes whole, `data-checked:bg-primary` comes whole.
+        assert_eq!(
+            changed(&before_ranges, before),
+            [(TextOperation::Delete, "text-primary")]
+        );
+        assert_eq!(
+            changed(&after_ranges, after),
+            [(TextOperation::Insert, "data-checked:bg-primary")]
+        );
+    }
+}
+
+#[test]
+fn a_reordered_class_moves_under_full_only() {
+    let (before, after) = ("a b c d", "a c b d e");
+    let moved = |options| {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        changed_spans(&ranges, before)
+            .into_iter()
+            .filter(|(operation, _)| *operation == TextOperation::Move)
+            .map(|(_, text)| text)
+            .collect::<Vec<_>>()
+    };
+    // Order means nothing to CSS: Minimal leaves the reordered class alone.
+    assert!(moved(RenderOptions::MINIMAL).is_empty());
+    // Full shows it, and the kept class inside the edited stretch with it.
+    assert!(!moved(RenderOptions::FULL).is_empty());
+}

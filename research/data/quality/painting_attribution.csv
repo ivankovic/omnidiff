@@ -1751,6 +1751,8 @@ javascript-microsoft-typescript-add-use-strict-2,full,295,0,0,0,1,0
 javascript-microsoft-typescript-add-use-strict-2,minimal,295,0,0,0,1,0
 javascript-microsoft-typescript-another-test-case-marked-with-strict,full,1645,0,0,0,1,0
 javascript-microsoft-typescript-another-test-case-marked-with-strict,minimal,1645,0,0,0,1,0
+javascript-microsoft-typescript-broken-js-remove-string-fragment,full,81615,6,6,0,1,0
+javascript-microsoft-typescript-broken-js-remove-string-fragment,minimal,81615,0,0,0,1,0
 javascript-microsoft-typescript-concat-to-template,full,562,6,6,0,2,0
 javascript-microsoft-typescript-concat-to-template,minimal,562,0,0,0,2,0
 javascript-microsoft-typescript-errors,full,46268,10,10,0,1,0
@@ -2537,6 +2539,10 @@ shellscript-vercel-next-change-command-params,full,437,0,0,0,1,0
 shellscript-vercel-next-change-command-params,minimal,437,0,0,0,1,0
 swift-logseq-logseq-insertions-only,full,6903,0,0,0,2,0
 swift-logseq-logseq-insertions-only,minimal,6903,0,0,0,2,0
+swift-nextcloud-ios-actual-control-flow-change,full,37167,36,36,36,2,0
+swift-nextcloud-ios-actual-control-flow-change,minimal,37167,12,12,12,2,0
+swift-nextcloud-ios-add-4-functions,full,53415,0,0,0,2,0
+swift-nextcloud-ios-add-4-functions,minimal,53415,0,0,0,2,0
 swift-nextcloud-ios-add-one-log-line,full,37041,0,0,0,2,0
 swift-nextcloud-ios-add-one-log-line,minimal,37041,0,0,0,2,0
 swift-nextcloud-ios-call-different-function,full,3457,0,0,0,2,0
@@ -2633,10 +2639,12 @@ tsx-mui-material-ui-remove-one-import,full,2910,0,0,0,1,0
 tsx-mui-material-ui-remove-one-import,minimal,2910,0,0,0,1,0
 tsx-shadcn-ui-ui-add-attribute,full,2742,1,1,0,2,0
 tsx-shadcn-ui-ui-add-attribute,minimal,2742,0,0,0,2,0
-tsx-shadcn-ui-ui-move-class-around-in-string,full,1942,300,300,0,2,0
-tsx-shadcn-ui-ui-move-class-around-in-string,minimal,1942,300,300,0,2,0
-tsx-shadcn-ui-ui-order-of-class-names,full,1116,36,36,0,2,0
-tsx-shadcn-ui-ui-order-of-class-names,minimal,1116,36,36,0,2,0
+tsx-shadcn-ui-ui-move-class-around-in-string,full,1942,51,300,301,2,0
+tsx-shadcn-ui-ui-move-class-around-in-string,minimal,1942,36,300,300,2,0
+tsx-shadcn-ui-ui-order-of-class-names,full,1116,18,36,36,2,0
+tsx-shadcn-ui-ui-order-of-class-names,minimal,1116,34,36,36,2,0
+tsx-shadcn-ui-ui-real-small-change,full,3278,14,708,700,2,0
+tsx-shadcn-ui-ui-real-small-change,minimal,3278,23,720,699,2,0
 tsx-shadcn-ui-ui-update-release-announcement,full,849,131,131,0,1,0
 tsx-shadcn-ui-ui-update-release-announcement,minimal,849,93,93,0,1,0
 typescript-add-error-handling,full,410,8,8,0,2,0
@@ -2737,6 +2745,8 @@ vimscript-neovim-neovim-date-update-plus-bugfix,full,1280,0,0,0,1,0
 vimscript-neovim-neovim-date-update-plus-bugfix,minimal,1280,0,0,0,1,0
 vimscript-neovim-neovim-expand-author-comment,full,636,0,0,0,1,0
 vimscript-neovim-neovim-expand-author-comment,minimal,636,0,0,0,1,0
+vimscript-neovim-neovim-i-have-no-idea-what-this-diff-does,full,48527,11,11,0,2,0
+vimscript-neovim-neovim-i-have-no-idea-what-this-diff-does,minimal,48527,3,3,0,2,0
 vimscript-neovim-neovim-insert-only,full,1926,0,0,0,1,0
 vimscript-neovim-neovim-insert-only,minimal,1926,0,0,0,1,0
 vimscript-neovim-neovim-insert-only-3,full,1414,2,2,0,2,0

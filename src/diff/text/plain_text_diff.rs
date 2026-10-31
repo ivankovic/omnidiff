@@ -296,6 +296,155 @@ fn tokens(text: &str) -> Vec<(usize, usize)> {
     tokens
 }
 
+/// The diff of a CSS class list (`diff::embedded::TextTokens::Classes`), on one row: each
+/// whitespace-separated class is one token, never cut at its `:`, `-` or `/`
+/// (`data-checked:bg-primary` is added or not, whole). Classes kept in order (Myers LCS over the
+/// names) are `Identical`; a class on both sides but out of that order was reordered; the rest were
+/// removed or added, `Delete` and `Insert`.
+///
+/// Order means nothing to CSS, so under [`RenderOptions::MINIMAL`] a reordered class is left
+/// unpainted like a kept one. Under `paint_displaced_moves` (`FULL`) it is a `Move`, and so is every
+/// kept class that sits inside the edited stretch of either side - between that side's first and
+/// last changed class - as the `Full` paintings mark a rearranged run
+/// (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
+pub fn class_list_diff(
+    before: &str,
+    after: &str,
+    options: super::RenderOptions,
+) -> Option<(Vec<RangeMatch>, Vec<RangeMatch>)> {
+    let words = |text: &str| -> Vec<(usize, usize)> {
+        let mut words = Vec::new();
+        let mut start = None;
+        for (at, c) in text.char_indices() {
+            match (c.is_whitespace(), start) {
+                (true, Some(from)) => {
+                    words.push((from, at));
+                    start = None;
+                }
+                (false, None) => start = Some(at),
+                _ => {}
+            }
+        }
+        if let Some(from) = start {
+            words.push((from, text.len()));
+        }
+        words
+    };
+    let (before_words, after_words) = (words(before), words(after));
+    let spelled = |text: &'_ str, words: &[(usize, usize)]| -> Vec<u64> {
+        let names: Vec<&str> = words.iter().map(|&(from, to)| &text[from..to]).collect();
+        hash_lines(&names)
+    };
+    let kept = crate::diff::apted::myers_lcs(
+        &spelled(before, &before_words),
+        &spelled(after, &after_words),
+        PLAIN_TEXT_MAX_EDIT,
+    )?;
+    let mut before_kept = vec![false; before_words.len()];
+    let mut after_kept = vec![false; after_words.len()];
+    for &(b, a) in &kept {
+        before_kept[b] = true;
+        after_kept[a] = true;
+    }
+    // A class left over on both sides was reordered: pair each with the first unused one of its name.
+    let name = |text: &'_ str, word: (usize, usize)| text[word.0..word.1].to_string();
+    let mut reordered = Vec::new();
+    let mut after_used = after_kept.clone();
+    for b in (0..before_words.len()).filter(|&b| !before_kept[b]) {
+        let wanted = name(before, before_words[b]);
+        if let Some(a) = (0..after_words.len())
+            .find(|&a| !after_used[a] && name(after, after_words[a]) == wanted)
+        {
+            after_used[a] = true;
+            reordered.push((b, a));
+        }
+    }
+    let before_moved: Vec<bool> = (0..before_words.len())
+        .map(|b| reordered.iter().any(|&(rb, _)| rb == b))
+        .collect();
+    let after_moved: Vec<bool> = (0..after_words.len())
+        .map(|a| reordered.iter().any(|&(_, ra)| ra == a))
+        .collect();
+    // Each side's edited stretch: from its first changed class to its last.
+    let stretch = |kept: &[bool]| {
+        let changed: Vec<usize> = (0..kept.len()).filter(|&i| !kept[i]).collect();
+        changed.first().copied().zip(changed.last().copied())
+    };
+    let (before_stretch, after_stretch) = (stretch(&before_kept), stretch(&after_kept));
+    let inside = |stretch: Option<(usize, usize)>, i: usize| {
+        stretch.is_some_and(|(first, last)| first < i && i < last)
+    };
+
+    let span = |word: (usize, usize)| TextRange::new(0, word.0, 0, word.1);
+    let point = |at: usize| TextRange::new(0, at, 0, at);
+    let displaced = options.paint_displaced_moves;
+    let mut before_ranges = Vec::new();
+    let mut after_ranges = Vec::new();
+    let mut pair = |b: usize, a: usize, operation: TextOperation| {
+        before_ranges.push(RangeMatch {
+            source: span(before_words[b]),
+            destination: span(after_words[a]),
+            operation: operation.clone(),
+        });
+        after_ranges.push(RangeMatch {
+            source: span(after_words[a]),
+            destination: span(before_words[b]),
+            operation,
+        });
+    };
+    for &(b, a) in &kept {
+        let shifted = inside(before_stretch, b) || inside(after_stretch, a);
+        let operation = if displaced && shifted {
+            TextOperation::Move
+        } else {
+            TextOperation::Identical
+        };
+        pair(b, a, operation);
+    }
+    for &(b, a) in &reordered {
+        let operation = if displaced {
+            TextOperation::Move
+        } else {
+            TextOperation::Identical
+        };
+        pair(b, a, operation);
+    }
+    // A removed or added class points at where the other side's list continues.
+    let continues_at = |kept_pairs: &[(usize, usize)], i: usize, mine_before: bool| {
+        let other_words = if mine_before {
+            &after_words
+        } else {
+            &before_words
+        };
+        let other_text = if mine_before { after } else { before };
+        kept_pairs
+            .iter()
+            .filter(|&&(b, a)| if mine_before { b < i } else { a < i })
+            .map(|&(b, a)| if mine_before { a } else { b })
+            .max()
+            .map_or(0, |o| other_words[o].1)
+            .min(other_text.len())
+    };
+    for b in (0..before_words.len()).filter(|&b| !before_kept[b] && !before_moved[b]) {
+        before_ranges.push(RangeMatch {
+            source: span(before_words[b]),
+            destination: point(continues_at(&kept, b, true)),
+            operation: TextOperation::Delete,
+        });
+    }
+    for a in (0..after_words.len()).filter(|&a| !after_kept[a] && !after_moved[a]) {
+        after_ranges.push(RangeMatch {
+            source: span(after_words[a]),
+            destination: point(continues_at(&kept, a, false)),
+            operation: TextOperation::Insert,
+        });
+    }
+    let by_start = |range: &RangeMatch| (range.source.start_row, range.source.start_column);
+    before_ranges.sort_by_key(by_start);
+    after_ranges.sort_by_key(by_start);
+    Some((before_ranges, after_ranges))
+}
+
 /// Runs `myers_lcs` over hashed lines. `None` when it gave up past `max_edit`, which callers must
 /// not read as "no changes".
 pub fn line_diff_core(before: &str, after: &str, max_edit: usize) -> Option<LineDiffCore> {
