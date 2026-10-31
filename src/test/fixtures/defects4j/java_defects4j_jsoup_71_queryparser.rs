@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-71-queryparser", 0.09)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-71-queryparser", 0.08)
 }
 
 #[test]

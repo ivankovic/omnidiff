@@ -1286,4 +1286,41 @@ fn member_identity_name_keys_members_by_their_declared_name() {
         key_of("const MAX: usize = 4;\n", Language::Rust, "const_item", 0),
         Some(("const_item", "MAX".to_string()))
     );
+    assert_eq!(
+        key_of(
+            "impl A {\n    fn with_config(c: &Config) -> Self { todo!() }\n}\n",
+            Language::Rust,
+            "function_item",
+            0
+        ),
+        Some(("function_item", "with_config".to_string()))
+    );
+    assert_eq!(
+        key_of(
+            "func (s *S) Run() error { return nil }\n",
+            Language::Go,
+            "method_declaration",
+            0
+        ),
+        Some(("method_declaration", "Run".to_string()))
+    );
+    assert_eq!(
+        key_of(
+            "class A:\n    @property\n    def x(self):\n        return 1\n",
+            Language::Python,
+            "decorated_definition",
+            0
+        ),
+        Some(("function_definition", "x".to_string()))
+    );
+    // The return type `Foo` is an `identifier` too; the name is the one before the parameters.
+    assert_eq!(
+        key_of(
+            "class A { Foo Bar(int x) { return null; } }\n",
+            Language::CSharp,
+            "method_declaration",
+            0
+        ),
+        Some(("method_declaration", "Bar".to_string()))
+    );
 }

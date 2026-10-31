@@ -37,5 +37,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-jellyfin-sql-query-fix", 3.81)
+    assert_matches_human_painting_within_limit("csharp-jellyfin-sql-query-fix", 3.29)
 }

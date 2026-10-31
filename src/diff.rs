@@ -70,6 +70,7 @@ pub(crate) mod solve_nested_condition_collapse;
 pub(crate) mod solve_orphaned_leaves;
 pub(crate) mod solve_renamed_twins;
 pub(crate) mod solve_replaced_atoms;
+pub(crate) mod solve_statement_shells;
 pub(crate) mod solve_stray_renames;
 pub(crate) mod solve_stray_terminators;
 pub(crate) mod solve_syntax_aware_matching;
@@ -108,33 +109,47 @@ pub struct NodeCache<'code> {
 }
 
 impl<'code> NodeCache<'code> {
-    /// A side without an AST gets an empty map.
+    /// A side without an AST gets an empty map. The two sides are built concurrently when big
+    /// enough (`code::build_sides`): this runs twice per diff, once for the passes and once for
+    /// the text ranges.
     pub fn build(before: &'code Code, after: &'code Code) -> Self {
+        let (before_cache, after_cache) = crate::code::build_sides(
+            crate::code::worth_building_in_parallel(&before.contents, &after.contents),
+            || Self::cache_for(before),
+            || Self::cache_for(after),
+        );
         NodeCache {
-            before: Self::cache_for(before),
-            after: Self::cache_for(after),
+            before: before_cache,
+            after: after_cache,
         }
     }
 
+    /// Every node of `code`'s tree by id, from one cursor walk (a cursor per node costs more
+    /// than the insert), into a map sized from the metadata's node count when there is one.
     fn cache_for(code: &'code Code) -> rustc_hash::FxHashMap<usize, tree_sitter::Node<'code>> {
-        code.ast
-            .as_ref()
-            .map(|ast| {
-                let mut cache = rustc_hash::FxHashMap::default();
-                let mut stack = vec![ast.root_node()];
-
-                while let Some(node) = stack.pop() {
-                    cache.insert(node.id(), node);
-
-                    let mut cursor = node.walk();
-                    for child in node.children(&mut cursor) {
-                        stack.push(child);
-                    }
+        let Some(ast) = code.ast.as_ref() else {
+            return Default::default();
+        };
+        let mut cache = rustc_hash::FxHashMap::default();
+        if let Some(metadata) = &code.metadata.ast_metadata {
+            cache.reserve(metadata.node_info.len());
+        }
+        let mut cursor = ast.root_node().walk();
+        loop {
+            let node = cursor.node();
+            cache.insert(node.id(), node);
+            if cursor.goto_first_child() {
+                continue;
+            }
+            loop {
+                if cursor.goto_next_sibling() {
+                    break;
                 }
-
-                cache
-            })
-            .unwrap_or_default()
+                if !cursor.goto_parent() {
+                    return cache;
+                }
+            }
+        }
     }
 
     pub fn get_in_any(&self, node_id: &usize) -> Option<&Node<'_>> {
@@ -399,6 +414,9 @@ impl<'code> PendingDiff<'code> {
         solve_renamed_twins::solve(&ctx, &mut ast_diff);
         // After the leaf re-pairings, so a slot it reads as wholly unpaired really is.
         solve_replaced_atoms::solve(&ctx, &mut ast_diff);
+        // After every pass that can pair a leaf, so a statement it reads as removed is gone, and
+        // the moved value it takes as evidence is final.
+        solve_statement_shells::solve(&ctx, &mut ast_diff);
 
         // Phase 9c: after every matching pass, so "unpaired" means gone and a twin's parent that
         // a late pass pairs (an `if` that grew an `else`) is not mistaken for a displaced one.
@@ -864,6 +882,9 @@ pub enum ASTMappingReason {
     /// A value replaced by another in the same slot of a matched construct, paired or grouped.
     /// See `solve_replaced_atoms`.
     ReplacedAtom,
+    /// A statement whose value moved out of it, paired with the one of its kind that took its
+    /// place, with the keywords and punctuation they share. See `solve_statement_shells`.
+    StatementShell,
 }
 
 impl ASTMappingReason {
@@ -894,6 +915,7 @@ impl ASTMappingReason {
             ASTMappingReason::MultiMap => "MultiMap",
             ASTMappingReason::RenamedTwin => "RenamedTwin",
             ASTMappingReason::ReplacedAtom => "ReplacedAtom",
+            ASTMappingReason::StatementShell => "StatementShell",
         }
     }
 }

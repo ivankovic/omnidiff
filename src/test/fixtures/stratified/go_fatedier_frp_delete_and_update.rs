@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-fatedier-frp-delete-and-update", 10.52)
+    assert_matches_human_painting_within_limit("go-fatedier-frp-delete-and-update", 3.16)
 }
 
 #[test]

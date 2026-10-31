@@ -5973,5 +5973,449 @@
         "comment:53"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 54,
+              "start_column": 11,
+              "end_row": 54,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 11,
+              "end_row": 54,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 15,
+              "end_row": 54,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 21,
+              "end_row": 54,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 11,
+              "end_row": 66,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 11,
+              "end_row": 66,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 15,
+              "end_row": 66,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 21,
+              "end_row": 66,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 21,
+              "end_row": 77,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 15,
+              "end_row": 77,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 11,
+              "end_row": 77,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 11,
+              "end_row": 77,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 11,
+              "end_row": 95,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 11,
+              "end_row": 95,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 98,
+              "start_column": 0,
+              "end_row": 98,
+              "end_column": 44
+            },
+            {
+              "start_row": 99,
+              "start_column": 0,
+              "end_row": 99,
+              "end_column": 46
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 54,
+              "start_column": 11,
+              "end_row": 54,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 11,
+              "end_row": 54,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 15,
+              "end_row": 54,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 21,
+              "end_row": 54,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 11,
+              "end_row": 66,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 11,
+              "end_row": 66,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 15,
+              "end_row": 66,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 21,
+              "end_row": 66,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 21,
+              "end_row": 77,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 15,
+              "end_row": 77,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 11,
+              "end_row": 77,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 11,
+              "end_row": 77,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 11,
+              "end_row": 95,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 11,
+              "end_row": 95,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 98,
+              "start_column": 0,
+              "end_row": 98,
+              "end_column": 44
+            },
+            {
+              "start_row": 99,
+              "start_column": 0,
+              "end_row": 99,
+              "end_column": 46
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 54,
+              "start_column": 19,
+              "end_row": 54,
+              "end_column": 24
+            }
+          ],
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 16,
+              "end_row": 54,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 54,
+              "start_column": 18,
+              "end_row": 54,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 14,
+              "end_row": 54,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 18,
+              "end_row": 66,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 14,
+              "end_row": 66,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 66,
+              "start_column": 19,
+              "end_row": 66,
+              "end_column": 24
+            }
+          ],
+          "after": [
+            {
+              "start_row": 66,
+              "start_column": 16,
+              "end_row": 66,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 19,
+              "end_row": 77,
+              "end_column": 24
+            }
+          ],
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 16,
+              "end_row": 77,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 18,
+              "end_row": 77,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 14,
+              "end_row": 77,
+              "end_column": 15
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

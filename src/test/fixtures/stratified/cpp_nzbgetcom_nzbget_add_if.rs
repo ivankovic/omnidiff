@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-nzbgetcom-nzbget-add-if", 0.01)
+    assert_matches_human_painting_within_limit("cpp-nzbgetcom-nzbget-add-if", 0.0)
 }
 
 #[test]

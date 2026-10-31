@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-microsoft-terminal-insert-only", 0.06)
+    assert_matches_human_painting_within_limit("cpp-microsoft-terminal-insert-only", 0.0)
 }
 
 #[test]

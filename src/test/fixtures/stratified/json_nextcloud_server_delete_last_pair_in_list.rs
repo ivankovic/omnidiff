@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "json-nextcloud-server-delete-last-pair-in-list",
-        0.01,
+        0.0,
     )
 }
 

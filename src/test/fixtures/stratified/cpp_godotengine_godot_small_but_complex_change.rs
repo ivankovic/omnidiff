@@ -39,7 +39,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-godotengine-godot-small-but-complex-change",
-        3.47,
+        3.44,
     )
 }
 

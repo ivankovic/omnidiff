@@ -2946,5 +2946,99 @@
         "uninterpreted:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2695,
+              "start_column": 2,
+              "end_row": 2695,
+              "end_column": 64
+            },
+            {
+              "start_row": 2696,
+              "start_column": 4,
+              "end_row": 2696,
+              "end_column": 159
+            },
+            {
+              "start_row": 2697,
+              "start_column": 4,
+              "end_row": 2697,
+              "end_column": 57
+            },
+            {
+              "start_row": 2698,
+              "start_column": 4,
+              "end_row": 2698,
+              "end_column": 25
+            },
+            {
+              "start_row": 2699,
+              "start_column": 4,
+              "end_row": 2699,
+              "end_column": 61
+            },
+            {
+              "start_row": 2700,
+              "start_column": 2,
+              "end_row": 2700,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2695,
+              "start_column": 0,
+              "end_row": 2695,
+              "end_column": 64
+            },
+            {
+              "start_row": 2696,
+              "start_column": 0,
+              "end_row": 2696,
+              "end_column": 159
+            },
+            {
+              "start_row": 2697,
+              "start_column": 0,
+              "end_row": 2697,
+              "end_column": 57
+            },
+            {
+              "start_row": 2698,
+              "start_column": 0,
+              "end_row": 2698,
+              "end_column": 25
+            },
+            {
+              "start_row": 2699,
+              "start_column": 0,
+              "end_row": 2699,
+              "end_column": 61
+            },
+            {
+              "start_row": 2700,
+              "start_column": 0,
+              "end_row": 2700,
+              "end_column": 5
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

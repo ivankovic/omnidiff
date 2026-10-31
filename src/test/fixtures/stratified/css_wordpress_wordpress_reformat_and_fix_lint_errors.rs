@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "css-wordpress-wordpress-reformat-and-fix-lint-errors",
-        64.4,
+        63.64,
     )
 }
 

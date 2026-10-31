@@ -29,7 +29,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-update-release-announcement", 15.2)
+    assert_matches_human_painting_within_limit(
+        "tsx-shadcn-ui-ui-update-release-announcement",
+        15.43,
+    )
 }
 
 #[test]

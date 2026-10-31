@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-genymobile-scrcpy-add-and-modify", 1.64)
+    assert_matches_human_painting_within_limit("java-genymobile-scrcpy-add-and-modify", 0.89)
 }
 
 #[test]

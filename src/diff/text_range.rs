@@ -302,6 +302,16 @@ impl<'a> SourceText<'a> {
         self.text
     }
 
+    /// Row `row` without its newline, `None` past the last row.
+    pub fn row(&self, row: usize) -> Option<&'a str> {
+        let &start = self.row_starts.get(row)?;
+        let end = self
+            .row_starts
+            .get(row + 1)
+            .map_or(self.text.len(), |next| next - 1);
+        self.text.get(start..end)
+    }
+
     /// Byte offset of a (row, byte column) position. `None` for a column past the row's end or
     /// inside a multi-byte character, which callers rely on so slicing cannot panic. The
     /// end-of-file position `(row_count, 0)` is valid.

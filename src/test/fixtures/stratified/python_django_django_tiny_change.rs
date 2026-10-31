@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-django-django-tiny-change", 0.35)
+    assert_matches_human_painting_within_limit("python-django-django-tiny-change", 0.36)
 }
 
 #[test]

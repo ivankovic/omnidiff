@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "typescript-microsoft-playwright-add-two-test-cases",
-        0.04,
+        0.0,
     )
 }

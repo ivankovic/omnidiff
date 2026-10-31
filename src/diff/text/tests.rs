@@ -35,6 +35,59 @@ fn changed(row: usize, start: usize, end: usize) -> RangeMatch {
     }
 }
 
+/// `args := x` from `var args x`: the blank between the moved `args` and the inserted `:=` takes
+/// the insertion under `FULL`, and stays unpainted under `MINIMAL`.
+#[test]
+fn full_paints_the_blank_between_two_differently_painted_ranges() {
+    let source = "args := x\n";
+    let ranges = vec![
+        RangeMatch {
+            source: text_range_on(0, 0, 4),
+            destination: text_range_on(0, 4, 8),
+            operation: TextOperation::Move,
+        },
+        RangeMatch {
+            source: text_range_on(0, 5, 7),
+            destination: text_range_on(0, 8, 8),
+            operation: TextOperation::Insert,
+        },
+    ];
+    let blank = |options| {
+        ranges_for_options(&ranges, source, options)
+            .into_iter()
+            .find(|range| range.source == text_range_on(0, 4, 5))
+            .map(|range| range.operation)
+    };
+    assert_eq!(blank(RenderOptions::FULL), Some(TextOperation::Insert));
+    assert_eq!(blank(RenderOptions::MINIMAL), None);
+}
+
+/// A blank after a comma stays with the comma, and one beside an `Update` goes to the other side.
+#[test]
+fn the_blank_follows_a_comma_and_avoids_an_update() {
+    let source = "f(a, b) c d\n";
+    let range = |start, end, operation| RangeMatch {
+        source: text_range_on(0, start, end),
+        destination: text_range_on(0, start, end),
+        operation,
+    };
+    let ranges = vec![
+        range(2, 4, TextOperation::Move),
+        range(5, 6, TextOperation::Insert),
+        range(8, 9, TextOperation::Update),
+        range(10, 11, TextOperation::Move),
+    ];
+    let filled = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let blank_at = |start| {
+        filled
+            .iter()
+            .find(|range| range.source == text_range_on(0, start, start + 1))
+            .map(|range| range.operation.clone())
+    };
+    assert_eq!(blank_at(4), Some(TextOperation::Move));
+    assert_eq!(blank_at(9), Some(TextOperation::Move));
+}
+
 /// The corpus was painted narrow under both presets, so `whole_pair_updates` is off in both.
 #[test]
 fn neither_preset_turns_on_whole_pair_updates() {
@@ -127,48 +180,64 @@ fn minimal_and_full_disagree_on_paint_displaced_moves() {
     const { assert!(RenderOptions::FULL.paint_displaced_moves) };
 }
 
-/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
-/// place beside the one edit on its row, but a line inserted above changes its row index. The
-/// `FULL` half pins that this stays a preset split, not a blanket suppression.
-#[test]
-fn paint_displaced_moves_gates_a_node_pushed_down_by_an_insertion_above_it() {
-    let before = Code::from_string(
-        "fn main() {\n         \x20   let total = compute(first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
-    let after = Code::from_string(
-        "fn main() {\n         \x20   setup();\n         \x20   let total = compute(extra, first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
+/// Whether an `Identical` range covers `before`'s row 1 at `column` under `options`: the displaced
+/// node left unpainted. Asked this way because a node may be painted as part of a larger range
+/// rather than form one of its own.
+fn identical_on_row_one_at(
+    before: &str,
+    after: &str,
+    column: usize,
+    options: RenderOptions,
+) -> bool {
+    let before = Code::from_string(before, &crate::code::Language::Rust);
+    let after = Code::from_string(after, &crate::code::Language::Rust);
     let ast = crate::diff::diff_code(&before, &after);
     let node_cache = crate::diff::NodeCache::build(&before, &after);
+    TextDiff::from_with_options(
+        &before,
+        &after,
+        ast.ast.as_ref().unwrap(),
+        &node_cache,
+        options,
+    )
+    .all(0)
+    .iter()
+    .any(|r| {
+        r.operation == TextOperation::Identical
+            && (r.source.start_row, r.source.start_column) <= (1, column)
+            && (1, column) < (r.source.end_row, r.source.end_column)
+    })
+}
 
-    // The call row's unchanged tail, pushed down by `setup();` and right by `extra, `. Asserted as
-    // "is there an `Identical` range there" because under `FULL` it is swallowed into a larger
-    // multi-row `Move`, not a range of its own.
-    let identical_tail_on_the_call_row = |options| {
-        TextDiff::from_with_options(
-            &before,
-            &after,
-            ast.ast.as_ref().unwrap(),
-            &node_cache,
-            options,
-        )
-        .all(0)
-        .iter()
-        .any(|r| {
-            r.operation == TextOperation::Identical
-                && r.source.start_row == 1
-                && r.source.start_column == 33
-        })
-    };
+/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
+/// place beside the one edit on its row, and a line inserted above changes its row index. The two
+/// rows open on the same statement, so they read as one row pushed down, under both presets.
+#[test]
+fn a_node_pushed_down_beside_an_edit_on_its_row_is_not_moved() {
+    let before = "fn main() {\n    let total = compute(first, second);\n}\n";
+    let after = "fn main() {\n    setup();\n    let total = compute(extra, first, second);\n}\n";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        assert!(
+            identical_on_row_one_at(before, after, 24, options),
+            "{options:?} must leave the displaced `first` unpainted"
+        );
+    }
+}
 
+/// The same tail pushed down into a different statement: the rows share no head, so `FULL` reads
+/// a relocation (`java-defects4j-codec-6-base64inputstream`'s `return f(x);` -> `y = f(x);`),
+/// while `MINIMAL` still leaves the untouched tail alone. That is the preset split
+/// `paint_displaced_moves` makes.
+#[test]
+fn paint_displaced_moves_gates_a_tail_pushed_down_into_another_statement() {
+    let before = "fn main() {\n    foo(compute(first, second));\n}\n";
+    let after = "fn main() {\n    setup();\n    bar(compute(extra, first, second));\n}\n";
     assert!(
-        !identical_tail_on_the_call_row(RenderOptions::FULL),
-        "paint_displaced_moves: true must keep painting the displaced tail Move"
+        !identical_on_row_one_at(before, after, 16, RenderOptions::FULL),
+        "paint_displaced_moves: true must paint the relocated `first` Move"
     );
     assert!(
-        identical_tail_on_the_call_row(RenderOptions::MINIMAL),
+        identical_on_row_one_at(before, after, 16, RenderOptions::MINIMAL),
         "paint_displaced_moves: false must leave the purely displaced tail unpainted"
     );
 }
@@ -332,7 +401,8 @@ fn minimal_and_full_disagree_on_paint_resized_moves() {
     const { assert!(RenderOptions::FULL.paint_resized_moves) };
 }
 
-/// The first two options are post-filters and never need a rebuild; every other one does.
+/// The first two options and `interior_whitespace` are post-filters and never need a rebuild;
+/// every other one does.
 #[test]
 fn only_the_post_filters_skip_a_rebuild() {
     let base = RenderOptions::FULL;
@@ -341,7 +411,7 @@ fn only_the_post_filters_skip_a_rebuild() {
         toggled.toggle(index);
         assert_eq!(
             toggled.needs_rebuild_from(&base),
-            index >= 2,
+            !matches!(index, 0 | 1 | 7),
             "option {index} ({})",
             base.options()[index].0
         );
@@ -575,11 +645,10 @@ fn leading_whitespace_off_does_not_split_a_multiline_update() {
     );
 }
 
-/// The structural-punctuation filter still applies per row after the split - a row that is
-/// nothing but a standalone bracket is dropped under `MINIMAL`'s `structural_punctuation: false`
-/// exactly as a single-row range in the same shape already is.
+/// An inserted block keeps its brace rows after the per-row split: inserted punctuation is the
+/// edit, so `structural_punctuation: false` does not drop it.
 #[test]
-fn leading_whitespace_off_still_drops_a_structural_only_row() {
+fn leading_whitespace_off_keeps_the_brace_rows_of_an_inserted_block() {
     let source = "{\n    body();\n}\n";
     let range = RangeMatch {
         source: TextRange::new(0, 0, 2, 1),
@@ -598,8 +667,8 @@ fn leading_whitespace_off_still_drops_a_structural_only_row() {
             .iter()
             .map(|r| r.source.start_row)
             .collect::<Vec<_>>(),
-        vec![1],
-        "rows 0 ('{{') and 2 ('}}') are standalone punctuation and must be dropped: {result:?}"
+        vec![0, 1, 2],
+        "rows 0 ('{{') and 2 ('}}') are inserted with the body: {result:?}"
     );
 }
 
@@ -619,6 +688,7 @@ fn structural_punctuation_off_alone_still_keeps_leading_whitespace() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -643,6 +713,7 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -655,9 +726,9 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
 }
 
 /// `python-refactoring`, minimized: merging bundles `max_val = max(` into one `Insert` and leaves
-/// `)` alone. The lone `)` is restored so a reader never sees `(` without it.
+/// `)` alone. The lone inserted `)` is kept, so a reader never sees `(` without it.
 #[test]
-fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
+fn minimal_keeps_a_lone_inserted_closing_paren() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -681,13 +752,14 @@ fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
 
     assert!(
         result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "the lone ')' must be restored: {result:?}"
+        "the lone ')' must be kept: {result:?}"
     );
 }
 
-/// A pair whose halves are both standalone stays dropped.
+/// Inserted punctuation is the edit: both halves of an inserted pair around a surviving `x` are
+/// kept under `MINIMAL`.
 #[test]
-fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
+fn minimal_keeps_an_inserted_pair_of_brackets() {
     let source = "(x)";
     let ranges = vec![
         RangeMatch {
@@ -710,16 +782,16 @@ fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
     let result = ranges_for_options(&ranges, source, RenderOptions::MINIMAL);
 
     assert!(
-        !result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
-        "neither half of a wholly standalone pair should be restored: {result:?}"
+        result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
+        "the inserted '(' must be kept: {result:?}"
     );
-    assert!(!result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
+    assert!(result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
 }
 
-/// Restoration is scoped to `Insert`/`Delete`: `javascript-refactor-arrow-func` paints a lone `");"`
-/// `Move` that its ground truth never shows.
+/// Only inserted and deleted punctuation is kept: `javascript-refactor-arrow-func` paints a lone
+/// `");"` `Move` that its ground truth never shows.
 #[test]
-fn a_lone_move_bracket_is_not_restored() {
+fn minimal_drops_a_lone_move_bracket() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -743,7 +815,7 @@ fn a_lone_move_bracket_is_not_restored() {
 
     assert!(
         !result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "a lone Move bracket must not be restored: {result:?}"
+        "a lone Move bracket must be dropped: {result:?}"
     );
 }
 
@@ -2727,12 +2799,6 @@ fn full_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
     ];
     let painted = ranges_for_options(&ranges, source, RenderOptions::FULL);
     assert_eq!(painted[0].source, TextRange::new(0, 4, 0, 9));
-}
-
-#[test]
-fn bracket_pair_partners_skips_a_mismatched_bracket() {
-    assert!(bracket_pair_partners("(]").is_empty());
-    assert_eq!(bracket_pair_partners("[()]").get(&0), Some(&3));
 }
 
 #[test]

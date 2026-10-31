@@ -98,6 +98,103 @@ impl UnitCostModel {
     }
 }
 
+/// What [`UnitCostModel::ren`] reads of one node, with its kind and leaf text interned by a
+/// [`RenInterner`], so [`UnitCostModel::ren_keyed`] compares integers where `ren` compares strings:
+/// the tree-edit-distance DP prices a pair once per cell.
+#[derive(Clone, Copy)]
+pub(crate) struct RenKey {
+    kind: u32,
+    /// The interned text of a leaf; `u32::MAX` for a node with children, whose text `ren` never
+    /// reads.
+    text: u32,
+    leaf: bool,
+    /// `is_marker_only(text)` for a comment-kind leaf, `None` for anything else.
+    comment_marker: Option<bool>,
+    owned_text_hash: u64,
+    class: crate::code::KindCostClass,
+}
+
+impl RenKey {
+    /// A placeholder for a virtual root, which has no node to key.
+    pub(crate) const VIRTUAL_ROOT: RenKey = RenKey {
+        kind: u32::MAX,
+        text: u32::MAX,
+        leaf: false,
+        comment_marker: None,
+        owned_text_hash: 0,
+        class: crate::code::KindCostClass {
+            identifier_like: false,
+            literal_like: false,
+            operator_families: 0,
+        },
+    };
+}
+
+/// Interns kinds and leaf texts into [`RenKey`]s. Keys compare equal only when made by the same
+/// interner.
+#[derive(Default)]
+pub(crate) struct RenInterner<'a> {
+    kinds: rustc_hash::FxHashMap<&'a str, u32>,
+    texts: rustc_hash::FxHashMap<&'a str, u32>,
+}
+
+impl<'a> RenInterner<'a> {
+    pub(crate) fn key(&mut self, node: &'a ASTNodeMetadata) -> RenKey {
+        let next = self.kinds.len() as u32;
+        let kind = *self.kinds.entry(node.kind.as_str()).or_insert(next);
+        let leaf = node.children.is_empty();
+        let text = if leaf {
+            let next = self.texts.len() as u32;
+            *self.texts.entry(node.text.as_str()).or_insert(next)
+        } else {
+            u32::MAX
+        };
+        RenKey {
+            kind,
+            text,
+            leaf,
+            comment_marker: (leaf && nodes::is_comment(&node.kind))
+                .then(|| is_marker_only(&node.text)),
+            owned_text_hash: node.owned_text_hash,
+            class: node.kind_cost_class,
+        }
+    }
+}
+
+impl UnitCostModel {
+    /// [`Self::ren`] on two [`RenKey`]s from one interner: the same cost, branch for branch.
+    pub(crate) fn ren_keyed(&self, node1: &RenKey, node2: &RenKey) -> u64 {
+        if node1.kind == node2.kind {
+            if node1.leaf && node2.leaf {
+                if node1.text == node2.text {
+                    0
+                } else if let (Some(marker1), Some(marker2)) =
+                    (node1.comment_marker, node2.comment_marker)
+                    && marker1 != marker2
+                {
+                    COST_DELETE + COST_INSERT + 1
+                } else if node1.class.literal_like {
+                    COST_LITERAL_UPDATE
+                } else {
+                    COST_UPDATE
+                }
+            } else if node1.owned_text_hash == node2.owned_text_hash {
+                0
+            } else {
+                COST_UPDATE
+            }
+        } else if nodes::update_allowed_from_masks(
+            &node1.class,
+            &node2.class,
+            self.language_family_mask,
+        ) {
+            COST_UPDATE
+        } else {
+            COST_DELETE + COST_INSERT + 1
+        }
+    }
+}
+
 /// True for comment text with no words, only markers, punctuation and whitespace.
 fn is_marker_only(text: &str) -> bool {
     !text.chars().any(char::is_alphanumeric)
@@ -331,6 +428,7 @@ impl DeltaTable {
 /// oracle sets it: it builds `delta` from scratch and relies on those interior writes, since many
 /// pairs it later looks up are never keyroot pairs. APTED must not set it, or this call's local
 /// values clobber the ones spfL/spfR/spfA already wrote.
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn forest_dist(
     before: &PostorderIndexer,
@@ -345,13 +443,20 @@ pub(crate) fn forest_dist(
     forestdist: &mut ForestDist,
     write_delta_on_aligned: bool,
 ) {
+    let ren = |di: usize, dj: usize, node1: &ASTNodeMetadata, node2: &ASTNodeMetadata| {
+        let cost_ren = cost_model.ren(node1, node2);
+        match containment {
+            Some(ctx) => ctx.adjust(before.node_id_at(di), after.node_id_at(dj), cost_ren),
+            None => cost_ren,
+        }
+    };
     forest_dist_from(
         before,
         after,
         before_meta,
         after_meta,
         cost_model,
-        containment,
+        &ren,
         delta,
         (before.post_to_lld[i - 1], after.post_to_lld[j - 1]),
         (i, j),
@@ -361,7 +466,8 @@ pub(crate) fn forest_dist(
 }
 
 /// [`forest_dist`] over the forests between boundaries `(lld_i, lld_j)` and `(i, j)`, which need
-/// not be one subtree each: from `(0, 0)` it is the distance between two whole forests.
+/// not be one subtree each: from `(0, 0)` it is the distance between two whole forests. `ren`
+/// prices the pair at boundaries `(di, dj)`, containment applied.
 #[allow(clippy::too_many_arguments)]
 fn forest_dist_from(
     before: &PostorderIndexer,
@@ -369,7 +475,7 @@ fn forest_dist_from(
     before_meta: &ASTMetadata,
     after_meta: &ASTMetadata,
     cost_model: &UnitCostModel,
-    containment: Option<&ContainmentCtx>,
+    ren: &impl Fn(usize, usize, &ASTNodeMetadata, &ASTNodeMetadata) -> u64,
     delta: &mut DeltaTable,
     (lld_i, lld_j): (usize, usize),
     (i, j): (usize, usize),
@@ -378,19 +484,13 @@ fn forest_dist_from(
 ) {
     forestdist[(lld_i, lld_j)] = 0;
 
-    let dj_info: Vec<(usize, &ASTNodeMetadata, usize, usize)> = ((lld_j + 1)..=j)
+    let dj_info: Vec<(&ASTNodeMetadata, usize, usize)> = ((lld_j + 1)..=j)
         .map(|dj| {
-            let after_id = after.node_id_at(dj);
             let node2 = after_meta
                 .node_info
-                .get(&after_id)
+                .get(&after.node_id_at(dj))
                 .expect("indexed node must have metadata");
-            (
-                after_id,
-                node2,
-                after.post_to_lld[dj - 1],
-                after.post_to_pre[dj - 1],
-            )
+            (node2, after.post_to_lld[dj - 1], after.post_to_pre[dj - 1])
         })
         .collect();
 
@@ -404,13 +504,10 @@ fn forest_dist_from(
         let lld_di = before.post_to_lld[di - 1];
         let pre_di = before.post_to_pre[di - 1];
 
-        for (dj, &(after_id, node2, lld_dj, pre_dj)) in ((lld_j + 1)..=j).zip(dj_info.iter()) {
+        for (dj, &(node2, lld_dj, pre_dj)) in ((lld_j + 1)..=j).zip(dj_info.iter()) {
             forestdist[(lld_i, dj)] = forestdist[(lld_i, dj - 1)] + cost_model.ins(node2);
 
-            let mut cost_ren = cost_model.ren(node1, node2);
-            if let Some(ctx) = containment {
-                cost_ren = ctx.adjust(before_id, after_id, cost_ren);
-            }
+            let cost_ren = ren(di, dj, node1, node2);
 
             if lld_di == lld_i && lld_dj == lld_j {
                 forestdist[(di, dj)] = (forestdist[(di - 1, dj)] + cost_model.del(node1))
@@ -471,6 +568,50 @@ pub(crate) fn compute_edit_mapping(
     // The first pass spans the whole forests, from boundary 0: starting from the last root's
     // leftmost leaf, as for one tree, would leave every earlier root of a multi-root forest
     // without a decision, and an undecided node reads as deleted.
+    // `ren` + containment on interned keys, looked up once per node: every `forest_dist_from`
+    // below prices a pair per cell.
+    fn ren_keys<'m>(
+        indexer: &PostorderIndexer,
+        meta: &'m ASTMetadata,
+        interner: &mut RenInterner<'m>,
+    ) -> Vec<RenKey> {
+        (1..=indexer.size)
+            .map(|boundary| {
+                interner.key(
+                    meta.node_info
+                        .get(&indexer.node_id_at(boundary))
+                        .expect("indexed node must have metadata"),
+                )
+            })
+            .collect()
+    }
+    let mut interner = RenInterner::default();
+    let before_keys = ren_keys(before, before_meta, &mut interner);
+    let after_keys = ren_keys(after, after_meta, &mut interner);
+    let containment_keys = containment.map(|ctx| {
+        (
+            (1..=size1)
+                .map(|boundary| ctx.before_key(before.node_id_at(boundary)))
+                .collect::<Vec<_>>(),
+            (1..=size2)
+                .map(|boundary| ctx.after_key(after.node_id_at(boundary)))
+                .collect::<Vec<_>>(),
+        )
+    });
+    let ren = |di: usize, dj: usize, _: &ASTNodeMetadata, _: &ASTNodeMetadata| {
+        let cost_ren = cost_model.ren_keyed(&before_keys[di - 1], &after_keys[dj - 1]);
+        match (containment, &containment_keys) {
+            (Some(ctx), Some((before_containment, after_containment))) => ctx.adjust_keyed(
+                before.node_id_at(di),
+                after.node_id_at(dj),
+                &before_containment[di - 1],
+                &after_containment[dj - 1],
+                cost_ren,
+            ),
+            _ => cost_ren,
+        }
+    };
+
     let mut forestdist = ForestDist::new(size1 + 1, size2 + 1, 0);
     forest_dist_from(
         before,
@@ -478,7 +619,7 @@ pub(crate) fn compute_edit_mapping(
         before_meta,
         after_meta,
         cost_model,
-        containment,
+        &ren,
         delta,
         (0, 0),
         (size1, size2),
@@ -499,16 +640,16 @@ pub(crate) fn compute_edit_mapping(
             )
         };
         if !root_node_pair {
-            forest_dist(
+            forest_dist_from(
                 before,
                 after,
                 before_meta,
                 after_meta,
                 cost_model,
-                containment,
+                &ren,
                 delta,
-                last_row,
-                last_col,
+                (first_row, first_col),
+                (last_row, last_col),
                 &mut forestdist,
                 false,
             );

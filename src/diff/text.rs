@@ -640,6 +640,9 @@ struct RangeWalk<'a> {
     /// This side's ranges for each host string holding an embedded layer, keyed by the host node
     /// id and already in this file's coordinates (see [`embedded_ranges`]).
     embedded: &'a HashMap<usize, Vec<RangeMatch>>,
+    /// Every node [`RangeWalk::identical_or_move`] painted `Move`, so a closing bracket can follow
+    /// its opening one.
+    moved: std::collections::HashSet<usize>,
 }
 
 /// [`walk_ranges`] for a diff with no embedded layers.
@@ -690,6 +693,7 @@ fn walk_ranges(
         ranges: Vec::new(),
         current_range: RangeMatch::zero(),
         embedded,
+        moved: std::collections::HashSet::new(),
     };
 
     match (&source.ast, &destination.ast) {
@@ -1023,9 +1027,22 @@ impl RangeWalk<'_> {
         // `process(int x)` -> `process(const int x)`). A node inside the rewritten part of the row
         // keeps `Move` (`function fetchData(` in `typescript-async-await`). Reindented nodes are
         // excluded so they still reach `paint_reindent_only_moves`. Under `MINIMAL` the row index
-        // may differ, since `node_untouched_on_its_row` compares the rows' content.
+        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under `FULL` it
+        // may differ when the two rows also open on the same text past their indentation, so they
+        // read as one row an edit above pushed down: without that head, a shared tail is a call
+        // relocated into another statement (`return f(x);` -> `y = f(x);`,
+        // `java-defects4j-codec-6-base64inputstream`), which the `Full` paintings mark moved.
+        //
+        // Under `FULL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares its
+        // fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` -> `shape.area()`
+        // leaves the `)` in an untouched tail although its call moved (`kotlin-refactor-function`).
         let shifted_by_an_edit_beside_it = s.end_row == s.start_row
-            && (s.start_row == d.start_row || !self.options.paint_displaced_moves)
+            && (s.start_row == d.start_row
+                || !self.options.paint_displaced_moves
+                || rows_share_a_head(
+                    self.source_text.row(s.start_row).unwrap_or_default(),
+                    self.destination_text.row(d.start_row).unwrap_or_default(),
+                ))
             && node_untouched_on_its_row(
                 &self.source.contents,
                 &self.destination.contents,
@@ -1035,7 +1052,8 @@ impl RangeWalk<'_> {
             );
         let column_shift_is_meaningful = s.start_column != d.start_column
             && !shifted_within_its_own_line
-            && !shifted_by_an_edit_beside_it;
+            && (!shifted_by_an_edit_beside_it
+                || (self.options.paint_displaced_moves && self.opening_bracket_moved(node)));
         // These reasons are verified pure reindents (see their solvers). Trusted by reason only:
         // position alone cannot tell a reindent from a relocation (`rust-add-if`).
         let known_pure_reindent = !self.options.paint_reindent_only_moves
@@ -1053,6 +1071,7 @@ impl RangeWalk<'_> {
             self.last_non_move_range = d.clone();
             TextOperation::Identical
         } else {
+            self.moved.insert(node.id());
             TextOperation::Move
         };
         RangeMatch {
@@ -1060,6 +1079,26 @@ impl RangeWalk<'_> {
             destination: d,
             operation,
         }
+    }
+
+    /// Whether `node` is a closing bracket whose opening bracket, the nearest earlier sibling of
+    /// the matching kind, was painted `Move`: a pair shares its fate, so the closing half moved
+    /// too however untouched its row reads.
+    fn opening_bracket_moved(&self, node: Node) -> bool {
+        let opener = match node.kind() {
+            ")" => "(",
+            "]" => "[",
+            "}" => "{",
+            _ => return false,
+        };
+        let mut sibling = node.prev_sibling();
+        while let Some(candidate) = sibling {
+            if candidate.kind() == opener {
+                return self.moved.contains(&candidate.id());
+            }
+            sibling = candidate.prev_sibling();
+        }
+        false
     }
 
     /// An `Update` node, split by [`intra_node_update_ranges`].
@@ -1263,6 +1302,17 @@ fn node_untouched_on_its_row(
             && s.start_row == d.start_row
             && row_was_edited_rather_than_rewritten(&source_row, &destination_row, prefix, suffix)
             && node_uniquely_placed_on_its_row(&source_row, &destination_row, s, d))
+}
+
+/// True if two rows open on the same text past their indentation.
+fn rows_share_a_head(source_row: &str, destination_row: &str) -> bool {
+    let prefix = source_row
+        .bytes()
+        .zip(destination_row.bytes())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let indentation = |row: &str| row.len() - row.trim_start().len();
+    prefix > indentation(source_row).max(indentation(destination_row))
 }
 
 /// True if the two rows read as one edited row rather than one row replaced by another: the

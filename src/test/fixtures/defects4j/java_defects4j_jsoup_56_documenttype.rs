@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-56-documenttype", 1.68)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-56-documenttype", 0.07)
 }
 
 #[test]

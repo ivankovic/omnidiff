@@ -2431,3 +2431,44 @@ fn residual_pair_keeps_identical_data_literal_elements() {
         Some(&0)
     );
 }
+
+/// `ren_keyed` is `ren` on interned keys: every node pair of two real trees, comments (worded and
+/// bare markers), literals, operators and identifiers included, prices the same both ways.
+#[test]
+fn ren_keyed_agrees_with_ren_on_every_pair() {
+    let before = Code::from_string(
+        "// Sum.\n//\nfn f(a: u32) -> u32 {\n    let x = a + 1; // add\n    if x < 2 { \"s\" } else { 'c' }\n}\n",
+        &Language::Rust,
+    );
+    let after = Code::from_string(
+        "// Sum it.\n// \nfn g(b: u64) -> u32 {\n    let y = b - 2; //\n    if y <= 3 { \"t\" } else { 'c' }\n}\n",
+        &Language::Rust,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    let cost_model = UnitCostModel::new(Language::Rust);
+    let mut interner = RenInterner::default();
+    let before_nodes: Vec<_> = before_meta.node_info.values().collect();
+    let after_nodes: Vec<_> = after_meta.node_info.values().collect();
+    let before_keys: Vec<_> = before_nodes.iter().map(|n| interner.key(n)).collect();
+    let after_keys: Vec<_> = after_nodes.iter().map(|n| interner.key(n)).collect();
+    let mut costs = std::collections::BTreeSet::new();
+    for (b, bk) in before_nodes.iter().zip(&before_keys) {
+        for (a, ak) in after_nodes.iter().zip(&after_keys) {
+            let cost = cost_model.ren(b, a);
+            assert_eq!(
+                cost_model.ren_keyed(bk, ak),
+                cost,
+                "{} vs {}",
+                b.kind,
+                a.kind
+            );
+            costs.insert(cost);
+        }
+    }
+    assert_eq!(
+        costs.into_iter().collect::<Vec<_>>(),
+        vec![0, COST_UPDATE, COST_DELETE + COST_INSERT + 1],
+        "the snippets exercise every cost tier"
+    );
+}

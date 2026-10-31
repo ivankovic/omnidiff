@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // The `Full` painting pairs the shared `\t\t\t` indentation of a deleted and an inserted row in
     // a `Match`, the case invariant 4 allows.
-    assert_matches_human_painting_within_limit("go-lazygit-switch-to-strings", 4.09)
+    assert_matches_human_painting_within_limit("go-lazygit-switch-to-strings", 3.82)
 }
 
 #[test]

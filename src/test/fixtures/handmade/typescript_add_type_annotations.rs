@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("typescript-add-type-annotations", 49.78)
+    assert_matches_human_painting_within_limit("typescript-add-type-annotations", 40.53)
 }
 
 #[test]

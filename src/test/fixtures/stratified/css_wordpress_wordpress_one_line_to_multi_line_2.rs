@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "css-wordpress-wordpress-one-line-to-multi-line-2",
-        26.04,
+        25.7,
     )
 }
 

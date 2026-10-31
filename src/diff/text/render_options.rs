@@ -102,8 +102,11 @@ pub struct RenderOptions {
     /// `Move`/`Update` ranges are never split: their destinations are real positions, and a
     /// per-row split would need a matching split on the other side.
     pub leading_whitespace: bool,
-    /// Whether a range of nothing but `STRUCTURAL_PUNCTUATION` is kept. Off in `MINIMAL`: the
-    /// painted corpus drops lone brackets and separators.
+    /// Whether a `Move` or `Update` range of nothing but `STRUCTURAL_PUNCTUATION` is kept. Off in
+    /// `MINIMAL`: the `Minimal` paintings leave a bracket or separator that merely shifted or sits
+    /// in a changed pair alone. An inserted or deleted one is kept under every preset, because it
+    /// is the edit (`type, subclass` gaining its `,`), and a bracket or `;` that enters or leaves
+    /// goes with the code around it, as both halves of a pair do.
     pub structural_punctuation: bool,
     /// Whether every updated matched pair is highlighted whole (`argument` -> `i_am_an_argument`
     /// entirely marked) instead of narrowed to the differing middle. Off in both presets, because
@@ -156,6 +159,13 @@ pub struct RenderOptions {
     /// narrow reading, because a changed year in a copyright line is still one changed year.
     #[serde(default)]
     pub whole_identifier_updates: bool,
+    /// Whether the blanks between two painted ranges on one row are painted, so a
+    /// highlight never breaks over whitespace (ground-truth invariant 5,
+    /// `no_unpainted_whitespace_between_painted_regions`). On in `FULL` only: `Minimal` paintings
+    /// leave such a blank alone. A display filter like [`Self::leading_whitespace`]; see
+    /// [`fill_whitespace_between_painted`] for which operation the blank takes.
+    #[serde(default)]
+    pub interior_whitespace: bool,
 }
 
 /// [`RenderOptions::paint_reindent_only_moves`]'s serde default.
@@ -183,6 +193,7 @@ impl RenderOptions {
         paint_displaced_moves: false,
         paint_resized_moves: false,
         whole_identifier_updates: false,
+        interior_whitespace: false,
     };
     /// The fullest reading of a diff: every option on except `whole_pair_updates`, which is
     /// outside the preset axis.
@@ -194,11 +205,12 @@ impl RenderOptions {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
 
     /// Every option with its label and value, in settings-UI order. Indexes match
     /// [`Self::toggle`].
-    pub fn options(&self) -> [(&'static str, bool); 7] {
+    pub fn options(&self) -> [(&'static str, bool); 8] {
         [
             ("Leading whitespace", self.leading_whitespace),
             (
@@ -213,6 +225,10 @@ impl RenderOptions {
                 self.paint_resized_moves,
             ),
             ("Whole renamed identifiers", self.whole_identifier_updates),
+            (
+                "Whitespace between differently painted ranges",
+                self.interior_whitespace,
+            ),
         ]
     }
 
@@ -226,6 +242,7 @@ impl RenderOptions {
             4 => self.paint_displaced_moves = !self.paint_displaced_moves,
             5 => self.paint_resized_moves = !self.paint_resized_moves,
             6 => self.whole_identifier_updates = !self.whole_identifier_updates,
+            7 => self.interior_whitespace = !self.interior_whitespace,
             _ => {}
         }
     }
@@ -239,6 +256,7 @@ impl RenderOptions {
         let post_filters_only = Self {
             leading_whitespace: previous.leading_whitespace,
             structural_punctuation: previous.structural_punctuation,
+            interior_whitespace: previous.interior_whitespace,
             ..*self
         };
         post_filters_only != *previous
@@ -276,49 +294,31 @@ pub fn ranges_for_options(
     options: RenderOptions,
 ) -> Vec<RangeMatch> {
     let result = ranges_for_options_impl(ranges, source, options);
-    if options.structural_punctuation {
-        return result;
-    }
-    let result = restore_paired_brackets(ranges, source, options, result);
-    restore_statement_terminators(ranges, source, options, result)
+    fill_whitespace_between_painted(source, options, result)
 }
 
-/// Restores a `;` dropped as standalone punctuation when the first visible byte of its row is
-/// painted with the same `Insert`/`Delete`: a statement that enters or leaves takes its `;` along,
-/// as every hand painting has it. Without this, `foo(x);` inserted around a surviving `x` paints
-/// `foo(` and `)` but leaves the `;` looking as if it survived from somewhere else.
+/// Paints the blanks between two painted ranges on one row under
+/// [`RenderOptions::interior_whitespace`], so one edit does not read as two with a hole between
+/// them. The walk already merges two ranges of one operation over the whitespace between them;
+/// what is left is mostly a blank between two operations, which no node owns.
 ///
-/// Read off the text, like the bracket restore: a row that opens on a word painted `Insert` is the
-/// row of an inserted statement in all but the rare row that opens with an inserted prefix and
-/// ends on a `;` that is itself inserted, which this paints the same way.
-pub(crate) fn restore_statement_terminators(
-    ranges: &[RangeMatch],
+/// Which operation the blank takes follows the `Full` paintings, which split close to evenly
+/// between the two sides except in two shapes: beside an `Update` the blank goes to the other side
+/// (the rename is the token, not its spacing), and after a `,` it stays with the comma. Elsewhere
+/// an `Insert` or `Delete` takes it over a `Move`, the side the paintings favour.
+///
+/// The rule trusts both neighbours: beside a range painted wrongly, most often a `Move` the
+/// painting leaves alone, the blank is painted wrongly too. `MINIMAL` does not fill even between
+/// two ranges of one operation: the blanks the walk leaves there are more often unpainted than not
+/// in the `Minimal` paintings.
+pub(crate) fn fill_whitespace_between_painted(
     source: &str,
     options: RenderOptions,
     mut result: Vec<RangeMatch>,
 ) -> Vec<RangeMatch> {
-    let with_structural_kept = ranges_for_options_impl(
-        ranges,
-        source,
-        RenderOptions {
-            structural_punctuation: true,
-            ..options
-        },
-    );
-    let dropped: Vec<&RangeMatch> = with_structural_kept
-        .iter()
-        .filter(|candidate| {
-            !result.contains(candidate)
-                && matches!(
-                    candidate.operation,
-                    TextOperation::Insert | TextOperation::Delete
-                )
-        })
-        .collect();
-    if dropped.is_empty() {
+    if !options.interior_whitespace {
         return result;
     }
-
     let text = SourceText::new(source);
     let byte_range = |range: &TextRange| -> Option<(usize, usize)> {
         let start = text.byte_index(
@@ -331,39 +331,66 @@ pub(crate) fn restore_statement_terminators(
         )?;
         Some((start.get(), end.get()))
     };
-    let painted_as = |byte: usize, operation: &TextOperation| {
-        result.iter().any(|kept| {
-            kept.operation == *operation
-                && byte_range(&kept.source).is_some_and(|(s, e)| s <= byte && byte < e)
+    // `(start, end, index)` of every painted range, in byte order.
+    let mut painted: Vec<(usize, usize, usize)> = result
+        .iter()
+        .enumerate()
+        .filter(|(_, range)| {
+            matches!(
+                range.operation,
+                TextOperation::Move
+                    | TextOperation::Update
+                    | TextOperation::Insert
+                    | TextOperation::Delete
+            )
         })
-    };
+        .filter_map(|(index, range)| {
+            let (start, end) = byte_range(&range.source)?;
+            (start < end).then_some((start, end, index))
+        })
+        .collect();
+    painted.sort_unstable();
 
-    let mut restored = Vec::new();
-    for candidate in dropped {
-        let Some((start, end)) = byte_range(&candidate.source) else {
-            continue;
-        };
-        let Some(semicolon) = source.get(start..end).and_then(|text| text.rfind(';')) else {
-            continue;
-        };
-        let semicolon = start + semicolon;
-        let row_start = source[..semicolon]
-            .rfind('\n')
-            .map_or(0, |newline| newline + 1);
-        let row = &source[row_start..semicolon];
-        let Some(first) = row.find(|c: char| !c.is_whitespace()) else {
-            continue;
-        };
-        // A row opening on punctuation - `.shadow(x);` in a builder chain, `) && y;` - continues a
-        // statement begun on an earlier row; its first byte says nothing about the `;`.
-        if !row[first..].starts_with(|c: char| c.is_alphanumeric() || c == '_')
-            || !painted_as(row_start + first, &candidate.operation)
+    let rank = |operation: &TextOperation| match operation {
+        TextOperation::Insert | TextOperation::Delete => 2,
+        TextOperation::Move => 1,
+        _ => 0,
+    };
+    let mut fills = Vec::new();
+    // The end of the painting so far, and the range that reaches it.
+    let mut reach: Option<(usize, usize)> = None;
+    for &(start, end, index) in &painted {
+        if let Some((left_end, left_index)) = reach
+            && start > left_end
+            && source[left_end..start]
+                .bytes()
+                .all(|byte| byte == b' ' || byte == b'\t')
         {
-            continue;
+            let (left, right) = (&result[left_index], &result[index]);
+            let beside_an_update =
+                left.operation == TextOperation::Update || right.operation == TextOperation::Update;
+            let keeps_left = if beside_an_update {
+                right.operation == TextOperation::Update
+            } else {
+                source[..left_end].ends_with(',') || rank(&left.operation) >= rank(&right.operation)
+            };
+            let chosen = if keeps_left { left } else { right };
+            let row_start = source[..left_end]
+                .rfind('\n')
+                .map_or(0, |newline| newline + 1);
+            // Both ends are on the row of `right`'s start, which `right.source` names.
+            let row = right.source.start_row;
+            fills.push(RangeMatch {
+                source: TextRange::new(row, left_end - row_start, row, start - row_start),
+                destination: chosen.destination.clone(),
+                operation: chosen.operation.clone(),
+            });
         }
-        restored.push((*candidate).clone());
+        if reach.is_none_or(|(left_end, _)| end >= left_end) {
+            reach = Some((end, index));
+        }
     }
-    result.extend(restored);
+    result.extend(fills);
     result
 }
 
@@ -413,13 +440,7 @@ pub(crate) fn ranges_for_options_impl(
             {
                 // Skips `narrow_one_range`, whose leading-whitespace extension would grow a piece
                 // back over the indentation this split drops.
-                return split_into_per_row_pieces(&lines, range_match)
-                    .into_iter()
-                    .filter(|piece| {
-                        options.structural_punctuation
-                            || range_is_structural_only(&lines, &piece.source) != Some(true)
-                    })
-                    .collect();
+                return split_into_per_row_pieces(&lines, range_match);
             }
 
             narrow_one_range(&lines, &matched_rows, options, range_match)
@@ -427,106 +448,6 @@ pub(crate) fn ranges_for_options_impl(
                 .collect()
         })
         .collect()
-}
-
-/// Restores a range dropped as standalone punctuation when its bracket's partner was painted, so
-/// a reader never sees half a pair. Merging can bundle `(` into `max_val = max(` while `)` lands
-/// alone (`python-refactoring`); a pair whose halves were both dropped stays dropped.
-///
-/// Brackets pair by a plain nesting scan, not a lexer, so a bracket inside a string or comment can
-/// misalign the rest of the file. Accepted for a rendering-only heuristic.
-pub(crate) fn restore_paired_brackets(
-    ranges: &[RangeMatch],
-    source: &str,
-    options: RenderOptions,
-    mut result: Vec<RangeMatch>,
-) -> Vec<RangeMatch> {
-    let with_structural_kept = ranges_for_options_impl(
-        ranges,
-        source,
-        RenderOptions {
-            structural_punctuation: true,
-            ..options
-        },
-    );
-    let dropped: Vec<&RangeMatch> = with_structural_kept
-        .iter()
-        .filter(|candidate| {
-            !result.contains(candidate)
-                // A lone `Move`/`Update` bracket is column-shift noise, not a pairing question
-                // (`javascript-refactor-arrow-func`).
-                && matches!(candidate.operation, TextOperation::Insert | TextOperation::Delete)
-        })
-        .collect();
-    if dropped.is_empty() {
-        return result;
-    }
-
-    let text = SourceText::new(source);
-    // `None` for an unaddressable position, so such a range covers nothing.
-    let byte_range = |range: &TextRange| -> Option<(usize, usize)> {
-        let start = text.byte_index(
-            crate::diff::text_range::SourceRow::from_raw(range.start_row),
-            crate::diff::text_range::SourceColumn::from_raw(range.start_column),
-        )?;
-        let end = text.byte_index(
-            crate::diff::text_range::SourceRow::from_raw(range.end_row),
-            crate::diff::text_range::SourceColumn::from_raw(range.end_column),
-        )?;
-        Some((start.get(), end.get()))
-    };
-    let partners = bracket_pair_partners(source);
-    let covered = |byte: usize| {
-        result
-            .iter()
-            .any(|kept| byte_range(&kept.source).is_some_and(|(s, e)| s <= byte && byte < e))
-    };
-
-    let mut restored = Vec::new();
-    for candidate in dropped {
-        let Some((start, end)) = byte_range(&candidate.source) else {
-            continue;
-        };
-        let Some(text) = source.get(start..end) else {
-            continue;
-        };
-        let has_a_surviving_partner = text
-            .char_indices()
-            .filter(|&(_, c)| matches!(c, '(' | ')' | '[' | ']' | '{' | '}'))
-            .any(|(i, _)| {
-                partners
-                    .get(&(start + i))
-                    .is_some_and(|&partner_byte| covered(partner_byte))
-            });
-        if has_a_surviving_partner {
-            restored.push((*candidate).clone());
-        }
-    }
-    result.extend(restored);
-    result
-}
-
-/// Each bracket's byte position mapped to its partner's, by a plain nesting scan (see
-/// [`restore_paired_brackets`]). A mismatched or unbalanced bracket gets no entry.
-pub(crate) fn bracket_pair_partners(source: &str) -> std::collections::HashMap<usize, usize> {
-    let mut partners = std::collections::HashMap::new();
-    let mut stack: Vec<(char, usize)> = Vec::new();
-    for (byte, ch) in source.char_indices() {
-        match ch {
-            '(' | '[' | '{' => stack.push((ch, byte)),
-            ')' | ']' | '}' => {
-                if let Some(&(open_ch, open_byte)) = stack.last()
-                    && matches!((open_ch, ch), ('(', ')') | ('[', ']') | ('{', '}'))
-                {
-                    stack.pop();
-                    partners.insert(open_byte, byte);
-                    partners.insert(byte, open_byte);
-                }
-            }
-            _ => {}
-        }
-    }
-    partners
 }
 
 /// One range under `options`, except the per-row split: the structural-punctuation filter, the
@@ -537,7 +458,12 @@ pub(crate) fn narrow_one_range(
     options: RenderOptions,
     range_match: &RangeMatch,
 ) -> Option<RangeMatch> {
-    if !options.structural_punctuation {
+    if !options.structural_punctuation
+        && !matches!(
+            range_match.operation,
+            TextOperation::Insert | TextOperation::Delete
+        )
+    {
         match range_is_structural_only(lines, &range_match.source) {
             Some(true) => return None,
             Some(false) => {}

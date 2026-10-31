@@ -1082,5 +1082,53 @@
         "done:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 0,
+              "end_row": 10,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 87,
+              "start_column": 111,
+              "end_row": 87,
+              "end_column": 136
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 14,
+              "end_row": 10,
+              "end_column": 15
+            }
+          ],
+          "after": [
+            {
+              "start_row": 11,
+              "start_column": 14,
+              "end_row": 11,
+              "end_column": 15
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

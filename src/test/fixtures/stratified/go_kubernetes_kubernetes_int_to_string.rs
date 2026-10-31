@@ -35,7 +35,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-kubernetes-kubernetes-int-to-string", 0.02)
+    assert_matches_human_painting_within_limit("go-kubernetes-kubernetes-int-to-string", 0.01)
 }
 
 #[test]

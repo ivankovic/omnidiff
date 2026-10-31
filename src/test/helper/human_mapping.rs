@@ -3642,7 +3642,8 @@ fn mapping_mismatches(
 /// Inner node ids mean nothing in the host trees, so each mismatch is re-pointed at the host
 /// string's first leaf when its inner node is visible (a leaf is always visible), and at 0, never
 /// visible, when it is not: the host's visible counts stay its own, and an embedded mistake counts
-/// against the host string it is in. A layer omnidiff did not find is one visible mismatch.
+/// against the host string it is in. A layer omnidiff did not find is one visible mismatch; a
+/// plain-text layer (no trees) has none.
 fn embedded_mismatches(
     layer: &HumanEmbeddedLayer,
     before_host: Node,
@@ -3673,6 +3674,10 @@ fn embedded_mismatches(
             side: Side::Before,
         }]);
     };
+    // A plain-text layer has no trees, so no node decisions to hold: its painting is all it says.
+    if found.before.ast.is_none() || found.after.ast.is_none() {
+        return Ok(Vec::new());
+    }
     let before_visible = crate::diff::nodes::structurally_visible_node_ids(&found.before);
     let after_visible = crate::diff::nodes::structurally_visible_node_ids(&found.after);
     Ok(

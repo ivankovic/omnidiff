@@ -141,7 +141,7 @@ cpp-microsoft-terminal-small-change,0,0
 cpp-mikepopoloski-slang-remove-if-condition-and-brackets,0,0
 cpp-mongodb-mongo-add-and-rename,0,0
 cpp-mongodb-mongo-add-function-and-2-call-sites,0,0
-cpp-mongodb-mongo-add-with-a-small-move,95,61
+cpp-mongodb-mongo-add-with-a-small-move,93,60
 cpp-mongodb-mongo-test-changes,290,187
 cpp-mongodb-mongo-use-auto,0,0
 cpp-mozilla-firefox-firefox-block-to-default,0,0
@@ -183,7 +183,7 @@ cpp-qpdf-qpdf-move-to-assert-from-if-and-throw,13,8
 cpp-tensorflow-switch-to-primitive-types,1,1
 cpp-tensorflow-tensorflow-new-to-make-unique,8,6
 cpp-whitespace-only-change,0,0
-csharp-ansible-ansible-complex-change,207,134
+csharp-ansible-ansible-complex-change,21,15
 csharp-cyanfish-naps2-add-condition-to-if,3,0
 csharp-dotnet-script-dotnet-script-remove-two-arguments,0,0
 csharp-glibsharp-gtksharp-formatting-only-change,0,0
@@ -208,7 +208,7 @@ csharp-jellyfin-jellyfin-delete-only,10,10
 csharp-jellyfin-jellyfin-extract-multiple-function-calls-to-variable,20,11
 csharp-jellyfin-jellyfin-interesting-example-of-operator-multi-merge,9,7
 csharp-jellyfin-jellyfin-nice-move-example,27,15
-csharp-jellyfin-jellyfin-small-add,3,2
+csharp-jellyfin-jellyfin-small-add,0,0
 csharp-jellyfin-jellyfin-update-version-string,0,0
 csharp-jellyfin-sql-query-fix,2,2
 csharp-lidarr-add-function,0,0
@@ -360,7 +360,7 @@ go-jesseduffield-lazygit-add-two-lines,0,0
 go-jesseduffield-lazygit-change-undo-key,0,0
 go-jesseduffield-lazygit-delete-only,0,0
 go-jesseduffield-lazygit-many-multi-maps-very-difficult,76,55
-go-jesseduffield-lazygit-nice-small-change,12,7
+go-jesseduffield-lazygit-nice-small-change,5,3
 go-jesseduffield-lazygit-remove-if-that-is-a-version-guard,0,0
 go-jesseduffield-lazygit-update-in-ast-delete-in-comment,0,0
 go-junegunn-fzf-real-small-change,0,0
@@ -656,7 +656,7 @@ java-defects4j-codec-17-stringutils,2,2
 java-defects4j-codec-2-base64,0,0
 java-defects4j-codec-3-doublemetaphone,0,0
 java-defects4j-codec-4-base64,0,0
-java-defects4j-codec-6-base64inputstream,3,2
+java-defects4j-codec-6-base64inputstream,0,0
 java-defects4j-codec-7-base64,0,0
 java-defects4j-codec-8-base64inputstream,0,0
 java-defects4j-codec-9-base64,0,0
@@ -832,7 +832,7 @@ java-defects4j-lang-21-dateutils,0,0
 java-defects4j-lang-24-numberutils,0,0
 java-defects4j-lang-26-fastdateformat,0,0
 java-defects4j-lang-28-numericentityunescaper,0,0
-java-defects4j-lang-29-systemutils,1,1
+java-defects4j-lang-29-systemutils,0,0
 java-defects4j-lang-33-classutils,0,0
 java-defects4j-lang-38-fastdateformat,0,0
 java-defects4j-lang-4-lookuptranslator,0,0
@@ -856,14 +856,14 @@ java-defects4j-math-2-hypergeometricdistribution,2,1
 java-defects4j-math-22-fdistribution,0,0
 java-defects4j-math-22-uniformrealdistribution,0,0
 java-defects4j-math-27-fraction,1,1
-java-defects4j-math-30-mannwhitneyutest,1,1
+java-defects4j-math-30-mannwhitneyutest,0,0
 java-defects4j-math-32-polygonsset,0,0
 java-defects4j-math-33-simplextableau,0,0
 java-defects4j-math-34-listpopulation,0,0
 java-defects4j-math-35-elitisticlistpopulation,0,0
 java-defects4j-math-41-variance,3,3
 java-defects4j-math-5-complex,0,0
-java-defects4j-math-57-kmeansplusplusclusterer,1,1
+java-defects4j-math-57-kmeansplusplusclusterer,0,0
 java-defects4j-math-58-gaussianfitter,0,0
 java-defects4j-math-6-baseoptimizer,0,0
 java-defects4j-math-6-cmaesoptimizer,0,0
@@ -971,7 +971,7 @@ javascript-facebook-react-delete-one-line,0,0
 javascript-facebook-react-update-comment-only,0,0
 javascript-fix-promises,0,0
 javascript-grobian-carbonapi-web-add-binary-expression-to-existing-assignment,0,0
-javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments,51,33
+javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments,52,33
 javascript-jquery-ui-rails-jquery-ui-rails-add-strict-and-move-function-call-parenthesis,3,1
 javascript-jquery-ui-rails-jquery-ui-rails-update-text-in-string,0,0
 javascript-jquery-ui-rails-jquery-ui-rails-update-text-in-string-2,0,0
@@ -1152,7 +1152,7 @@ lua-luals-lua-language-server-add-two-translations,0,0
 lua-luaposix-luaposix-copyright-year-change,0,0
 lua-neovim-neovim-add-if-around-one-line,2,0
 lua-neovim-neovim-add-leading-comment,0,0
-lua-neovim-neovim-add-new-logic,10,5
+lua-neovim-neovim-add-new-logic,0,0
 lua-neovim-neovim-add-only,0,0
 lua-neovim-neovim-constant-changes,0,0
 lua-neovim-neovim-if-flips-two-branches,4,3
@@ -1235,7 +1235,7 @@ python-langflow-ai-langflow-real-small-change,0,0
 python-langflow-ai-langflow-small-but-a-lot,11,11
 python-nvbn-thefuck-add-three-arguments,0,0
 python-nvbn-thefuck-change,0,0
-python-nvbn-thefuck-extract-function-to-local-var,4,2
+python-nvbn-thefuck-extract-function-to-local-var,0,0
 python-nvbn-thefuck-small-change,0,0
 python-nvbn-thefuck-small-change-2,0,0
 python-nvbn-thefuck-small-change-3,0,0
@@ -1286,7 +1286,7 @@ r-oracle-dtrace-utils-i-have-no-idea-what-this-change-actually-does,0,0
 ruby-homebrew-add-or-expression,0,0
 ruby-homebrew-brew-actual-logic-change,13,6
 ruby-homebrew-brew-add-extends,0,0
-ruby-homebrew-brew-change-heredoc-to-string,2,0
+ruby-homebrew-brew-change-heredoc-to-string,5,3
 ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,24,17
 ruby-homebrew-brew-enclose-block-in-rescue,0,0
 ruby-homebrew-brew-function-callsite-argument-change,0,0
@@ -1394,7 +1394,7 @@ rust-tauri-api-build-2,0,0
 rust-tauri-apps-tauri-add-doccomment-empty-line,0,0
 rust-tauri-apps-tauri-add-one-field-with-doccomment,0,0
 rust-tauri-apps-tauri-add-only,0,0
-rust-tauri-apps-tauri-add-only-2,54,42
+rust-tauri-apps-tauri-add-only-2,2,2
 rust-tauri-apps-tauri-add-path-to-const-string,0,0
 rust-tauri-apps-tauri-add-pub-to-mod,0,0
 rust-tauri-apps-tauri-add-to-list,0,0
@@ -1481,7 +1481,7 @@ shellscript-go-delve-delve-add-if,0,0
 shellscript-hgst-libzbc-add-variable,0,0
 shellscript-imapsync-imapsync-add-some-test-cases-and-a-few-other-changes,0,0
 shellscript-jesseduffield-lazygit-version,0,0
-shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,1,1
+shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,5,5
 shellscript-maxsatula-ocp-small-change,0,0
 shellscript-microsoft-playwright-version,0,0
 shellscript-mongodb-mongo-small-change,0,0

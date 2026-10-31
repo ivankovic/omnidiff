@@ -1577,8 +1577,11 @@ fn status_bar_paragraph(summary: DiffSummary) -> Paragraph<'static> {
 /// a plain-text diff: under `GIT_EXTERNAL_DIFF` a non-zero exit for one file aborts the whole
 /// multi-file `git diff`.
 fn parse_before_after(before: &Path, after: &Path) -> Result<(Code, Code)> {
-    let mut before_code = Code::from_file(before)?;
-    let mut after_code = Code::from_file(after)?;
+    // Always in parallel: the sizes are only known once read, and a thread costs a fraction of
+    // a process start.
+    let (before_code, after_code) =
+        crate::code::build_sides(true, || Code::from_file(before), || Code::from_file(after));
+    let (mut before_code, mut after_code) = (before_code?, after_code?);
 
     // git hands over `/dev/null` for the missing side of an added or deleted file. Parsed in the
     // other side's language, it shows as a whole-file insert/delete rather than a plain-text diff.
@@ -1732,8 +1735,11 @@ pub fn compute_diff_of_texts(
         code.metadata.path = Some(path.to_path_buf());
         code
     };
-    let (mut before_code, mut after_code) =
-        (code(before_path, before_text), code(after_path, after_text));
+    let (mut before_code, mut after_code) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(before_text, after_text),
+        || code(before_path, before_text),
+        || code(after_path, after_text),
+    );
     let (before, after) = (before_path.to_path_buf(), after_path.to_path_buf());
     match std::thread::Builder::new()
         .name(DIFF_THREAD_NAME.to_string())
@@ -2479,7 +2485,8 @@ mod tests {
 
     #[test]
     fn apply_render_options_reloads_for_every_construction_time_field() -> Result<()> {
-        let construction_time = RenderOptions::default().options().len();
+        // The first two options and the last, `interior_whitespace`, are post-filters.
+        let construction_time = RenderOptions::default().options().len() - 1;
         for index in 2..construction_time {
             let mut app = App::new(4.0, 60.0)?;
             app.before_path = Some(PathBuf::from("before.rs"));
@@ -2513,6 +2520,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         })?;
 
         let queued: Vec<_> = std::iter::from_fn(|| app.action_rx.try_recv().ok()).collect();
@@ -2756,6 +2764,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         });
 
         let backend = ratatui::backend::TestBackend::new(120, 24);

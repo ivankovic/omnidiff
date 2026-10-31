@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-name-to-pair", 8.15)
+    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-name-to-pair", 8.04)
 }
 
 #[test]

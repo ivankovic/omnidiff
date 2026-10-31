@@ -44,5 +44,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 18.55)
+    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 18.45)
 }

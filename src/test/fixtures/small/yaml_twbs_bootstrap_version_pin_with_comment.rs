@@ -33,5 +33,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("yaml-twbs-bootstrap-version-pin-with-comment", 0.13)
+    assert_matches_human_painting_within_limit("yaml-twbs-bootstrap-version-pin-with-comment", 0.0)
 }

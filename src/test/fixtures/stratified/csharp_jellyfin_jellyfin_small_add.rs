@@ -22,17 +22,12 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "csharp-jellyfin-jellyfin-small-add",
-        3,
-        2,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("csharp-jellyfin-jellyfin-small-add")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-jellyfin-jellyfin-small-add", 0.69)
+    assert_matches_human_painting_within_limit("csharp-jellyfin-jellyfin-small-add", 0.67)
 }
 
 #[test]

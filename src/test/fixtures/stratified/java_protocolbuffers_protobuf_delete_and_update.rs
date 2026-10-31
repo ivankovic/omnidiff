@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-protocolbuffers-protobuf-delete-and-update",
-        3.49,
+        2.59,
     )
 }
 
