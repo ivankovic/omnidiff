@@ -2358,8 +2358,11 @@ pub fn as_ast_diff_for_mapping(
             .resolve(before_root, &path_refs(&layer.before_path))?
             .start_byte();
         let mut decoded = layer.resolve(before, after)?;
-        decoded.diff = as_ast_diff_for_mapping(&layer.mapping, &decoded.before, &decoded.after)
-            .with_context(|| format!("the embedded layer at {:?}", layer.before_path))?;
+        // A plain-text layer has no trees and so no node decisions: its diff stays empty.
+        if decoded.before.ast.is_some() && decoded.after.ast.is_some() {
+            decoded.diff = as_ast_diff_for_mapping(&layer.mapping, &decoded.before, &decoded.after)
+                .with_context(|| format!("the embedded layer at {:?}", layer.before_path))?;
+        }
         layers.push((host_start, decoded));
     }
     layers.sort_by_key(|(host_start, _)| *host_start);

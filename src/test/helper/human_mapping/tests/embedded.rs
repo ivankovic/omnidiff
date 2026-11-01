@@ -303,3 +303,16 @@ fn a_text_layer_adds_no_mapping_mismatches() -> Result<()> {
     );
     Ok(())
 }
+
+/// A human's plain-text layer becomes a layer of the synthetic diff with no node decisions, as the
+/// mapping site builds it, instead of failing for want of trees.
+#[test]
+fn a_text_layer_carries_into_the_synthetic_diff() -> Result<()> {
+    let name = "python-thefuck-multiline-string-change";
+    let (before, after) = code_pair(name)?;
+    let mapping = load_with(name, &before, &after)?;
+    let diff = as_ast_diff_for_mapping(&mapping, &before, &after)?;
+    assert_eq!(diff.embedded.len(), 1);
+    assert!(diff.embedded[0].diff.mapping.is_empty());
+    Ok(())
+}
