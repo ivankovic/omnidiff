@@ -1196,6 +1196,25 @@
               "end_column": 87
             }
           ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 37,
+              "end_row": 10,
+              "end_column": 60
+            }
+          ],
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 88,
+              "end_row": 10,
+              "end_column": 111
+            }
+          ]
         }
       ]
     },
@@ -1274,13 +1293,21 @@
           ]
         },
         {
-          "operation": "Delete",
+          "operation": "Match",
           "before": [
             {
               "start_row": 10,
               "start_column": 36,
               "end_row": 10,
-              "end_column": 37
+              "end_column": 60
+            }
+          ],
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 87,
+              "end_row": 10,
+              "end_column": 111
             }
           ]
         }
