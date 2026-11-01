@@ -12603,5 +12603,56 @@
         "ETag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1419,
+              "start_column": 47,
+              "end_row": 1419,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1414,
+              "start_column": 47,
+              "end_row": 1414,
+              "end_column": 75
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1414,
+              "start_column": 75,
+              "end_row": 1414,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1419,
+              "start_column": 76,
+              "end_row": 1419,
+              "end_column": 77
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

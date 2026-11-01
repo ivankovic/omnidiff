@@ -1160,5 +1160,100 @@
         "):1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 248,
+              "start_column": 0,
+              "end_row": 248,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 258,
+              "start_column": 0,
+              "end_row": 258,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 257,
+              "start_column": 6,
+              "end_row": 257,
+              "end_column": 10
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 257,
+              "start_column": 63,
+              "end_row": 257,
+              "end_column": 64
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 257,
+              "start_column": 0,
+              "end_row": 257,
+              "end_column": 6
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 257,
+              "start_column": 10,
+              "end_row": 257,
+              "end_column": 63
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 257,
+              "start_column": 64,
+              "end_row": 257,
+              "end_column": 65
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 247,
+              "start_column": 0,
+              "end_row": 247,
+              "end_column": 65
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

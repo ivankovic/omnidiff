@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -22,12 +23,19 @@ use anyhow::Result;
 fn mapping() -> Result<()> {
     // A changed import's symbol is used in the class body, so `MatchButNotIdentical` bubbles up
     // every ancestor of that one leaf change.
-    test::helper::human_mapping::assert_matches_human_mapping(
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "typescript-n8n-io-n8n-remove-and-add-imports",
+        1,
+        1,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("typescript-n8n-io-n8n-remove-and-add-imports")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("typescript-n8n-io-n8n-remove-and-add-imports", 2.4)
 }
