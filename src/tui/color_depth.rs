@@ -59,16 +59,16 @@ impl ColorDepth {
             || colorterm.eq_ignore_ascii_case("24bit")
             || direct_term
         {
-            ColorDepth::TrueColor
+            Self::TrueColor
         } else {
-            ColorDepth::Indexed256
+            Self::Indexed256
         }
     }
 
     /// Rewrite every cell of a finished frame to colors this depth can show. `palette` is the
     /// overlay on screen; its backgrounds are fitted together, so no two land on one index.
     pub fn fit(self, buffer: &mut Buffer, palette: &OverlayPalette) {
-        if self == ColorDepth::TrueColor {
+        if self == Self::TrueColor {
             return;
         }
         // A frame holds a few dozen distinct colors, and matching one scores the whole cube.

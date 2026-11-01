@@ -202,8 +202,8 @@ impl OverlayTheme {
     /// Solarized variants were hand-blended by the same recipe.
     pub fn palette(self) -> OverlayPalette {
         match self {
-            OverlayTheme::Custom => custom_palette().to_palette(),
-            OverlayTheme::Dark => OverlayPalette {
+            Self::Custom => custom_palette().to_palette(),
+            Self::Dark => OverlayPalette {
                 insert_bg: Color::Rgb(20, 60, 20),
                 delete_bg: Color::Rgb(70, 20, 20),
                 move_bg: Color::Rgb(47, 47, 47), // grey at the purple's own weight
@@ -214,7 +214,7 @@ impl OverlayTheme {
                 before_title_fg: PRESET_BEFORE_TITLE_FG,
                 after_title_fg: PRESET_AFTER_TITLE_FG,
             },
-            OverlayTheme::SolarizedDark => OverlayPalette {
+            Self::SolarizedDark => OverlayPalette {
                 insert_bg: Color::Rgb(53, 87, 32),
                 delete_bg: Color::Rgb(88, 46, 51),
                 move_bg: Color::Rgb(72, 72, 72), // grey at the purple's own weight
@@ -226,7 +226,7 @@ impl OverlayTheme {
                 before_title_fg: PRESET_BEFORE_TITLE_FG,
                 after_title_fg: PRESET_AFTER_TITLE_FG,
             },
-            OverlayTheme::SolarizedLight => OverlayPalette {
+            Self::SolarizedLight => OverlayPalette {
                 insert_bg: Color::Rgb(205, 209, 136),
                 delete_bg: Color::Rgb(240, 168, 155),
                 move_bg: Color::Rgb(198, 198, 198), // grey at the pink's own weight
@@ -238,7 +238,7 @@ impl OverlayTheme {
                 before_title_fg: PRESET_BEFORE_TITLE_FG,
                 after_title_fg: PRESET_AFTER_TITLE_FG,
             },
-            OverlayTheme::Dracula => {
+            Self::Dracula => {
                 // https://draculatheme.com/spec
                 let bg = (40, 42, 54);
                 OverlayPalette {
@@ -255,7 +255,7 @@ impl OverlayTheme {
                     after_title_fg: PRESET_AFTER_TITLE_FG,
                 }
             }
-            OverlayTheme::Nord => {
+            Self::Nord => {
                 // https://www.nordtheme.com/docs/colors-and-palettes - nord0 (bg), nord6
                 // (brightest snow storm, fg), nord11/13/14/15 (aurora accents), nord9 (frost blue)
                 let bg = (46, 52, 64);
@@ -271,7 +271,7 @@ impl OverlayTheme {
                     after_title_fg: PRESET_AFTER_TITLE_FG,
                 }
             }
-            OverlayTheme::GruvboxDark => {
+            Self::GruvboxDark => {
                 // https://github.com/morhetz/gruvbox - bg0, fg1, and the "bright" accent row
                 let bg = (40, 40, 40);
                 OverlayPalette {
@@ -286,7 +286,7 @@ impl OverlayTheme {
                     after_title_fg: PRESET_AFTER_TITLE_FG,
                 }
             }
-            OverlayTheme::Monokai => {
+            Self::Monokai => {
                 // Canonical Sublime Text "Monokai" (monokai.tmTheme) accents and background.
                 let bg = (39, 40, 34);
                 OverlayPalette {
@@ -301,7 +301,7 @@ impl OverlayTheme {
                     after_title_fg: PRESET_AFTER_TITLE_FG,
                 }
             }
-            OverlayTheme::OneDark => {
+            Self::OneDark => {
                 // Atom's "One Dark" (atom-one-dark-syntax) accents and background - one of the
                 // most widely ported editor themes, independent of the Atom editor itself.
                 let bg = (40, 44, 52);
@@ -349,18 +349,18 @@ impl PanelLayout {
     /// The next mode in the `v` key's `Auto -> Dual -> Single -> Auto` cycle.
     pub fn next(self) -> Self {
         match self {
-            PanelLayout::Auto => PanelLayout::Dual,
-            PanelLayout::Dual => PanelLayout::Single,
-            PanelLayout::Single => PanelLayout::Auto,
+            Self::Auto => Self::Dual,
+            Self::Dual => Self::Single,
+            Self::Single => Self::Auto,
         }
     }
 
     /// Short label for the footer/title, e.g. `[layout: dual]`.
     pub fn label(self) -> &'static str {
         match self {
-            PanelLayout::Auto => "auto",
-            PanelLayout::Dual => "dual",
-            PanelLayout::Single => "single",
+            Self::Auto => "auto",
+            Self::Dual => "dual",
+            Self::Single => "single",
         }
     }
 }

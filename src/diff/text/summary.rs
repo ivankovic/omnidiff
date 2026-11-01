@@ -128,12 +128,12 @@ impl DiffSummary {
     /// A short human-readable label.
     pub fn label(self) -> &'static str {
         match self {
-            DiffSummary::NoChanges => "No changes - files are identical",
-            DiffSummary::NewFile => "New file - everything inserted",
-            DiffSummary::DeletedFile => "Deleted file - everything removed",
-            DiffSummary::WhitespaceOnly => "Whitespace changes only",
-            DiffSummary::CommentOnly => "Comment changes only",
-            DiffSummary::RefactorMovedOnly => "Refactor - code moved, no content changes",
+            Self::NoChanges => "No changes - files are identical",
+            Self::NewFile => "New file - everything inserted",
+            Self::DeletedFile => "Deleted file - everything removed",
+            Self::WhitespaceOnly => "Whitespace changes only",
+            Self::CommentOnly => "Comment changes only",
+            Self::RefactorMovedOnly => "Refactor - code moved, no content changes",
         }
     }
 }

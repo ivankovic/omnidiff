@@ -37,15 +37,15 @@ impl Scope {
     /// (global-inherited) value, so `existing_value_note` would report a global value as local.
     fn flag(self) -> &'static str {
         match self {
-            Scope::Global => "--global",
-            Scope::Local => "--local",
+            Self::Global => "--global",
+            Self::Local => "--local",
         }
     }
 
     fn label(self) -> &'static str {
         match self {
-            Scope::Global => "globally, for every repository",
-            Scope::Local => "for this repository only",
+            Self::Global => "globally, for every repository",
+            Self::Local => "for this repository only",
         }
     }
 }

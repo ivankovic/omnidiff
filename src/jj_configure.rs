@@ -58,15 +58,15 @@ enum Scope {
 impl Scope {
     fn flag(self) -> &'static str {
         match self {
-            Scope::User => "--user",
-            Scope::Repo => "--repo",
+            Self::User => "--user",
+            Self::Repo => "--repo",
         }
     }
 
     fn label(self) -> &'static str {
         match self {
-            Scope::User => "for your user, in every repository",
-            Scope::Repo => "for this repository only",
+            Self::User => "for your user, in every repository",
+            Self::Repo => "for this repository only",
         }
     }
 }

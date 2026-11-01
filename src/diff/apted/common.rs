@@ -45,7 +45,7 @@ pub(crate) struct UnitCostModel {
 
 impl UnitCostModel {
     pub(crate) fn new(language: Language) -> Self {
-        UnitCostModel {
+        Self {
             language_family_mask: nodes::language_operator_family_mask(&language),
         }
     }
@@ -116,7 +116,7 @@ pub(crate) struct RenKey {
 
 impl RenKey {
     /// A placeholder for a virtual root, which has no node to key.
-    pub(crate) const VIRTUAL_ROOT: RenKey = RenKey {
+    pub(crate) const VIRTUAL_ROOT: Self = Self {
         kind: u32::MAX,
         text: u32::MAX,
         leaf: false,
@@ -332,7 +332,7 @@ impl PostorderIndexer {
         let post_to_node_id: Vec<usize> =
             post_to_pre.iter().map(|&pre| pre_to_node_id[pre]).collect();
 
-        PostorderIndexer {
+        Self {
             size,
             post_to_node_id,
             post_to_pre,
@@ -359,7 +359,7 @@ pub(crate) struct Grid<T> {
 
 impl<T: Clone> Grid<T> {
     pub(crate) fn new(rows: usize, cols: usize, fill: T) -> Self {
-        Grid {
+        Self {
             cols,
             data: vec![fill; rows * cols],
         }
@@ -405,7 +405,7 @@ impl DeltaTable {
     const UNSET: u64 = u64::MAX;
 
     pub(crate) fn new(rows: usize, cols: usize) -> Self {
-        DeltaTable {
+        Self {
             grid: Grid::new(rows, cols, Self::UNSET),
         }
     }
@@ -754,8 +754,8 @@ impl Side {
     /// The `(before, after)` mapping key pairing this side's `own` node with `partner`.
     pub(crate) fn pair(self, own: usize, partner: usize) -> (usize, usize) {
         match self {
-            Side::Before => (own, partner),
-            Side::After => (partner, own),
+            Self::Before => (own, partner),
+            Self::After => (partner, own),
         }
     }
 
@@ -767,23 +767,23 @@ impl Side {
     /// The operation and unit cost that pruning one node on this side records.
     pub(crate) fn prune_operation(self) -> (ASTMappingOperation, u64) {
         match self {
-            Side::Before => (ASTMappingOperation::Delete, COST_DELETE),
-            Side::After => (ASTMappingOperation::Insert, COST_INSERT),
+            Self::Before => (ASTMappingOperation::Delete, COST_DELETE),
+            Self::After => (ASTMappingOperation::Insert, COST_INSERT),
         }
     }
 
     pub(crate) fn node_map(self, diff: &ASTDiff) -> &rustc_hash::FxHashMap<usize, usize> {
         match self {
-            Side::Before => &diff.before_node_map,
-            Side::After => &diff.after_node_map,
+            Self::Before => &diff.before_node_map,
+            Self::After => &diff.after_node_map,
         }
     }
 
     /// The cost of pruning one node on this side under `cost_model`.
     pub(crate) fn node_cost(self, cost_model: &UnitCostModel, info: &ASTNodeMetadata) -> u64 {
         match self {
-            Side::Before => cost_model.del(info),
-            Side::After => cost_model.ins(info),
+            Self::Before => cost_model.del(info),
+            Self::After => cost_model.ins(info),
         }
     }
 }

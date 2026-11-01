@@ -30,7 +30,7 @@ pub struct RangeMatch {
 
 impl RangeMatch {
     pub fn zero() -> Self {
-        RangeMatch {
+        Self {
             source: TextRange::zero(),
             destination: TextRange::zero(),
             operation: TextOperation::NotYetSet,
@@ -48,7 +48,7 @@ impl RangeMatch {
     /// offsets by walking the file dominates on large files.
     pub fn extends(
         &self,
-        other: &RangeMatch,
+        other: &Self,
         source_code: &SourceText,
         dest_code: &SourceText,
     ) -> bool {
@@ -62,7 +62,7 @@ impl RangeMatch {
                 .can_extend_with_whitespace(&other.destination, dest_code)
     }
 
-    pub fn extend_into(&mut self, other: &RangeMatch) {
+    pub fn extend_into(&mut self, other: &Self) {
         self.source.extend_to_end(&other.source);
         self.destination.extend_to_end(&other.destination);
     }
