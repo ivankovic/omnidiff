@@ -3052,8 +3052,9 @@ fn a_class_list_is_diffed_class_by_class() {
 }
 
 #[test]
-fn a_reordered_class_moves_under_full_only() {
-    let (before, after) = ("a b c d", "a c b d e");
+fn a_reordered_class_moves_and_full_also_moves_the_displaced_ones() {
+    // `b` jumps over two classes: only it moved, not a swap.
+    let (before, after) = ("a b c d e", "a c d b e f");
     let moved = |options| {
         let (ranges, _) = class_list_diff(before, after, options).unwrap();
         changed_spans(&ranges, before)
@@ -3062,8 +3063,25 @@ fn a_reordered_class_moves_under_full_only() {
             .map(|(_, text)| text)
             .collect::<Vec<_>>()
     };
-    // Order means nothing to CSS: Minimal leaves the reordered class alone.
-    assert!(moved(RenderOptions::MINIMAL).is_empty());
-    // Full shows it, and the kept class inside the edited stretch with it.
-    assert!(!moved(RenderOptions::FULL).is_empty());
+    // Both presets show the reordered class; Full also the kept class inside the edited stretch.
+    let (minimal, full) = (moved(RenderOptions::MINIMAL), moved(RenderOptions::FULL));
+    assert_eq!(minimal.len(), 1, "{minimal:?}");
+    assert!(full.len() > minimal.len(), "{full:?}");
+}
+
+#[test]
+fn two_swapped_classes_both_move() {
+    let (before, after) = ("x bg-border shrink-0 y", "x shrink-0 bg-border y");
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        let mut moved: Vec<&str> = changed_spans(&ranges, before)
+            .into_iter()
+            .map(|(operation, text)| {
+                assert_eq!(operation, TextOperation::Move);
+                text
+            })
+            .collect();
+        moved.sort();
+        assert_eq!(moved, ["bg-border", "shrink-0"]);
+    }
 }

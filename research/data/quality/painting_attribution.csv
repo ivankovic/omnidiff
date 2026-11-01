@@ -2639,10 +2639,10 @@ tsx-mui-material-ui-remove-one-import,full,2910,0,0,0,1,0
 tsx-mui-material-ui-remove-one-import,minimal,2910,0,0,0,1,0
 tsx-shadcn-ui-ui-add-attribute,full,2742,1,1,0,2,0
 tsx-shadcn-ui-ui-add-attribute,minimal,2742,0,0,0,2,0
-tsx-shadcn-ui-ui-move-class-around-in-string,full,1942,51,300,301,2,0
-tsx-shadcn-ui-ui-move-class-around-in-string,minimal,1942,36,300,300,2,0
-tsx-shadcn-ui-ui-order-of-class-names,full,1116,18,36,36,2,0
-tsx-shadcn-ui-ui-order-of-class-names,minimal,1116,34,36,36,2,0
+tsx-shadcn-ui-ui-move-class-around-in-string,full,1942,3,301,301,2,0
+tsx-shadcn-ui-ui-move-class-around-in-string,minimal,1942,0,301,301,2,0
+tsx-shadcn-ui-ui-order-of-class-names,full,1116,0,36,36,2,0
+tsx-shadcn-ui-ui-order-of-class-names,minimal,1116,0,36,36,2,0
 tsx-shadcn-ui-ui-real-small-change,full,3278,14,708,700,2,0
 tsx-shadcn-ui-ui-real-small-change,minimal,3278,23,720,699,2,0
 tsx-shadcn-ui-ui-update-release-announcement,full,849,131,131,0,1,0

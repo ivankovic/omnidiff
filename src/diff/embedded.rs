@@ -85,8 +85,8 @@ pub enum TextTokens {
     /// Lines, or words and punctuation within one line ([`super::text::text_layer_diff`]).
     #[default]
     Lines,
-    /// A list of CSS class names ([`is_class_list`]): each whitespace-separated name is one token,
-    /// and their order means nothing ([`super::text::class_list_diff`]).
+    /// A list of CSS class names ([`is_class_list`]): each whitespace-separated name is one token
+    /// ([`super::text::class_list_diff`]).
     Classes,
 }
 

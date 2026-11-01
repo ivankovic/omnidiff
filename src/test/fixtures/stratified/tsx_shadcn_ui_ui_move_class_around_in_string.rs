@@ -30,7 +30,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-move-class-around-in-string", 4.23)
+    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-move-class-around-in-string", 0.16)
 }
 
 #[test]

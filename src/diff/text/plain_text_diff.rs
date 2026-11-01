@@ -302,11 +302,12 @@ fn tokens(text: &str) -> Vec<(usize, usize)> {
 /// names) are `Identical`; a class on both sides but out of that order was reordered; the rest were
 /// removed or added, `Delete` and `Insert`.
 ///
-/// Order means nothing to CSS, so under [`RenderOptions::MINIMAL`] a reordered class is left
-/// unpainted like a kept one. Under `paint_displaced_moves` (`FULL`) it is a `Move`, and so is every
-/// kept class that sits inside the edited stretch of either side - between that side's first and
-/// last changed class - as the `Full` paintings mark a rearranged run
-/// (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
+/// A reordered class is a `Move` under both presets: the paintings show a class taken out of its
+/// place even though order means nothing to CSS. One that crossed a single kept class swapped with
+/// it, and that class moved too (`tsx-shadcn-ui-ui-order-of-class-names`). Under
+/// `paint_displaced_moves` (`FULL`) so is every kept class that sits inside the edited stretch of
+/// either side - between that side's first and last changed class - as the `Full` paintings mark a
+/// rearranged run (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
 pub fn class_list_diff(
     before: &str,
     after: &str,
@@ -392,9 +393,18 @@ pub fn class_list_diff(
             operation,
         });
     };
+    // A reordered class that crossed exactly one kept class swapped places with it: neither stayed.
+    let swapped: Vec<(usize, usize)> = reordered
+        .iter()
+        .filter_map(|&(b, a)| {
+            let mut crossed = kept.iter().filter(|&&(kb, ka)| (kb < b) != (ka < a));
+            let only = crossed.next().copied();
+            crossed.next().is_none().then_some(only).flatten()
+        })
+        .collect();
     for &(b, a) in &kept {
         let shifted = inside(before_stretch, b) || inside(after_stretch, a);
-        let operation = if displaced && shifted {
+        let operation = if swapped.contains(&(b, a)) || (displaced && shifted) {
             TextOperation::Move
         } else {
             TextOperation::Identical
@@ -402,12 +412,7 @@ pub fn class_list_diff(
         pair(b, a, operation);
     }
     for &(b, a) in &reordered {
-        let operation = if displaced {
-            TextOperation::Move
-        } else {
-            TextOperation::Identical
-        };
-        pair(b, a, operation);
+        pair(b, a, TextOperation::Move);
     }
     // A removed or added class points at where the other side's list continues.
     let continues_at = |kept_pairs: &[(usize, usize)], i: usize, mine_before: bool| {
