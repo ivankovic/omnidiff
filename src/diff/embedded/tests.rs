@@ -295,3 +295,31 @@ fn shadcn_tsx_in_a_json_string_is_diffed_as_tsx() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn class_lists_are_found_by_attribute_and_helper() {
+    let source = "const A = () => <div className=\"a b\" title=\"c d\" class={`e f`}>{cn(\"g h\", x)}{f(\"i j\")}</div>;\n";
+    let code = Code::from_string(source, &Language::TSX);
+    let found: Vec<(bool, String)> = all_of_kind(&code, "string")
+        .into_iter()
+        .chain(all_of_kind(&code, "template_string"))
+        .map(|node| {
+            (
+                is_class_list(Language::TSX, node, source),
+                source[node.byte_range()].to_string(),
+            )
+        })
+        .collect();
+    for (expected, text) in [
+        (true, "\"a b\""),
+        (false, "\"c d\""),
+        (true, "`e f`"),
+        (true, "\"g h\""),
+        (false, "\"i j\""),
+    ] {
+        assert!(
+            found.contains(&(expected, text.to_string())),
+            "{text}: {found:?}"
+        );
+    }
+}

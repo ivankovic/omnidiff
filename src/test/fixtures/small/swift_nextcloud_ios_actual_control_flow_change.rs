@@ -15,20 +15,31 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
     // One `directive` inside a lambda is `MatchButNotIdentical` instead of `Identical`: isolated.
+    // Since 11b65fc9 the human also takes the second `directive` as new and pairs its `#endif`
+    // elsewhere; omnidiff keeps the directive.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "swift-nextcloud-ios-actual-control-flow-change",
-        2,
-        0,
+        3,
+        1,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("swift-nextcloud-ios-actual-control-flow-change")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "swift-nextcloud-ios-actual-control-flow-change",
+        0.1,
+    )
 }

@@ -74,6 +74,20 @@ pub struct EmbeddedDiff {
     /// [`Decoded::offsets`] of `after`, into the host after file.
     pub after_offsets: Vec<usize>,
     pub diff: ASTDiff,
+    /// How a plain-text layer ([`Language::Unknown`]) is cut into tokens; ignored for a language
+    /// with a grammar.
+    pub tokens: TextTokens,
+}
+
+/// The units a plain-text layer is diffed in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TextTokens {
+    /// Lines, or words and punctuation within one line ([`super::text::text_layer_diff`]).
+    #[default]
+    Lines,
+    /// A list of CSS class names ([`is_class_list`]): each whitespace-separated name is one token
+    /// ([`super::text::class_list_diff`]).
+    Classes,
 }
 
 /// The text a host string holds, and where each of its bytes came from.
@@ -233,14 +247,25 @@ pub fn layer(
     host: Language,
     language: Language,
 ) -> Option<EmbeddedDiff> {
+    // Both sides: a class list paired with some other string is a pairing to distrust, not a list
+    // to diff class by class.
+    let classes = language == Language::Unknown
+        && is_class_list(host, before_node, &before.contents)
+        && is_class_list(host, after_node, &after.contents);
+    // A JS string outside a class list is no host: a quoted word is not a file of anything.
+    if !classes && is_js_string(host, before_node) {
+        return None;
+    }
     let before_decoded = decode(host, before_node, &before.contents)?;
     let after_decoded = decode(host, after_node, &after.contents)?;
     let parallel =
         crate::code::worth_building_in_parallel(&before_decoded.text, &after_decoded.text);
     let (before_code, after_code) = if language == Language::Unknown {
-        // One line with a single edit is painted by the host just as well: one changed span.
+        // One line with a single edit is painted by the host just as well: one changed span. A
+        // class list is not: its unit is the whole class, never part of one.
         let one_line = !before_decoded.text.contains('\n') && !after_decoded.text.contains('\n');
-        if one_line
+        if !classes
+            && one_line
             && crate::diff::text::token_edit_count(&before_decoded.text, &after_decoded.text)
                 .is_none_or(|edits| edits < 2)
         {
@@ -274,6 +299,11 @@ pub fn layer(
         before_offsets: before_decoded.offsets,
         after_offsets: after_decoded.offsets,
         diff: ASTDiff::default(),
+        tokens: if classes {
+            TextTokens::Classes
+        } else {
+            TextTokens::Lines
+        },
     })
 }
 
@@ -311,7 +341,7 @@ pub fn is_host_string(host: Language, node: Node) -> bool {
         Language::JSON => node.kind() == "string",
         Language::YAML => node.kind() == "block_scalar",
         Language::JavaScript | Language::TypeScript | Language::TSX => {
-            node.kind() == "template_string"
+            matches!(node.kind(), "template_string" | "string")
         }
         Language::ShellScript => matches!(node.kind(), "raw_string" | "string"),
         Language::Python => node.kind() == "string",
@@ -333,6 +363,7 @@ pub fn decode(host: Language, node: Node, source: &str) -> Option<Decoded> {
         Language::ShellScript => decode_shell_raw_string(node, source),
         Language::Python => decode_python_string(node, source),
         Language::CSharp => decode_csharp_raw_string(node, source),
+        _ if node.kind() == "string" => decode_js_string(node, source),
         _ => decode_template_string(node, source),
     }
 }
@@ -558,6 +589,127 @@ fn decode_shell_string(node: Node, source: &str) -> Option<Decoded> {
         }
     }
     Some(decoded.finish(to))
+}
+
+/// Whether `node` is a JS `'...'`/`"..."` string, which hosts nothing but a class list.
+fn is_js_string(host: Language, node: Node) -> bool {
+    matches!(
+        host,
+        Language::JavaScript | Language::TypeScript | Language::TSX
+    ) && node.kind() == "string"
+}
+
+/// The functions whose string arguments are CSS class lists: Tailwind's and the class-joining
+/// helpers around it.
+const CLASS_HELPERS: &[&str] = &[
+    "cn",
+    "clsx",
+    "classnames",
+    "classNames",
+    "cx",
+    "twMerge",
+    "twJoin",
+    "cva",
+    "tw",
+];
+
+/// Whether the JS string or template `node` is a list of CSS class names: the value of a JSX
+/// `className`/`class` attribute (directly or as `{`...`}`), or a direct argument of a
+/// [`CLASS_HELPERS`] call (`cn("flex gap-2", className)`). Context alone decides; a class list is
+/// any text.
+pub fn is_class_list(host: Language, node: Node, source: &str) -> bool {
+    if !matches!(
+        host,
+        Language::JavaScript | Language::TypeScript | Language::TSX
+    ) || !matches!(node.kind(), "string" | "template_string")
+    {
+        return false;
+    }
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    let attribute = match parent.kind() {
+        "jsx_attribute" => Some(parent),
+        "jsx_expression" => parent
+            .parent()
+            .filter(|grand| grand.kind() == "jsx_attribute"),
+        _ => None,
+    };
+    if let Some(attribute) = attribute {
+        let mut cursor = attribute.walk();
+        return attribute
+            .named_children(&mut cursor)
+            .next()
+            .and_then(|name| name.utf8_text(source.as_bytes()).ok())
+            .is_some_and(|name| matches!(name, "className" | "class"));
+    }
+    parent.kind() == "arguments"
+        && parent
+            .parent()
+            .filter(|call| call.kind() == "call_expression")
+            .and_then(|call| call.child_by_field_name("function"))
+            .and_then(|function| function.utf8_text(source.as_bytes()).ok())
+            .is_some_and(|function| CLASS_HELPERS.contains(&function))
+}
+
+/// A JS `'...'`/`"..."` string between its quotes, its escapes resolved. A JSX attribute value is
+/// the same node and has no escapes to resolve.
+fn decode_js_string(node: Node, source: &str) -> Option<Decoded> {
+    let (start, end) = (node.start_byte(), node.end_byte());
+    let raw = source.get(start..end)?;
+    let quote = raw.chars().next()?;
+    if raw.len() < 2 || !matches!(quote, '"' | '\'') || !raw.ends_with(quote) {
+        return None;
+    }
+    let (from, to) = (start + 1, end - 1);
+    let mut escapes = Vec::new();
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if child.kind() == "escape_sequence" {
+            escapes.push(child);
+        }
+    }
+    let mut decoded = Decoded::with_capacity(to - from);
+    let mut i = from;
+    for escape in escapes {
+        let (escape_start, escape_end) = (escape.start_byte(), escape.end_byte());
+        if escape_start < i || escape_end > to {
+            continue;
+        }
+        decoded.push_verbatim(source, i, escape_start);
+        match js_escape(&source[escape_start..escape_end]) {
+            Some(meant) => decoded.push_from(&meant, escape_start),
+            None => decoded.push_verbatim(source, escape_start, escape_end),
+        }
+        i = escape_end;
+    }
+    decoded.push_verbatim(source, i, to);
+    Some(decoded.finish(to))
+}
+
+/// What a JS escape sequence means; `None` for one kept as written.
+fn js_escape(text: &str) -> Option<String> {
+    let rest = text.strip_prefix('\\')?;
+    let code = |digits: &str| {
+        u32::from_str_radix(digits, 16)
+            .ok()
+            .and_then(char::from_u32)
+    };
+    let meant = match rest.chars().next()? {
+        '\n' | '\r' | '\u{2028}' | '\u{2029}' => return Some(String::new()),
+        'n' => '\n',
+        't' => '\t',
+        'r' => '\r',
+        'b' => '\x08',
+        'f' => '\x0c',
+        'v' => '\x0b',
+        '0' if rest.len() == 1 => '\0',
+        'x' => code(&rest[1..])?,
+        'u' => code(rest[1..].trim_start_matches('{').trim_end_matches('}'))?,
+        other if !other.is_ascii_alphanumeric() => other,
+        _ => return None,
+    };
+    Some(meant.to_string())
 }
 
 /// A C# raw string literal between its `"""` delimiters. One of several lines means what the

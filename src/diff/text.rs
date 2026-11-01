@@ -32,8 +32,8 @@ mod render_options;
 mod summary;
 
 pub use plain_text_diff::{
-    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, plain_text_token_diff,
-    text_layer_diff, token_edit_count, whole_file_text_class,
+    LineDiffCore, WholeFileClass, class_list_diff, line_diff_core, plain_text_line_diff,
+    plain_text_token_diff, text_layer_diff, token_edit_count, whole_file_text_class,
 };
 pub use render_options::{
     RangeMatch, RenderOptions, TextOperation, is_structural_only, ranges_for_options,
@@ -1646,7 +1646,7 @@ fn embedded_ranges(
         // A plain-text layer has no trees: it is painted as a file without a grammar is.
         let (inner_before, inner_after) = if layer.before.ast.is_none() || layer.after.ast.is_none()
         {
-            text_layer_diff(&layer.before.contents, &layer.after.contents)
+            text_layer_ranges(layer, options)
         } else {
             let node_cache = NodeCache::build(&layer.before, &layer.after);
             plain_ranges(
@@ -1689,6 +1689,20 @@ fn embedded_ranges(
         );
     }
     (before_map, after_map)
+}
+
+/// A plain-text layer's ranges, by its tokens: a class list class by class, other text by
+/// [`text_layer_diff`].
+pub fn text_layer_ranges(
+    layer: &crate::diff::embedded::EmbeddedDiff,
+    options: RenderOptions,
+) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    let (before, after) = (&layer.before.contents, &layer.after.contents);
+    match layer.tokens {
+        crate::diff::embedded::TextTokens::Classes => class_list_diff(before, after, options)
+            .unwrap_or_else(|| text_layer_diff(before, after)),
+        crate::diff::embedded::TextTokens::Lines => text_layer_diff(before, after),
+    }
 }
 
 /// Byte offset of each row's first byte.

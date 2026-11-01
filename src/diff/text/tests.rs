@@ -3026,3 +3026,62 @@ fn edits_count_apart_only_across_unchanged_words_and_spaces() {
     );
     assert_eq!(token_edit_count("a b c d", "x b c y"), Some(2));
 }
+
+#[test]
+fn a_class_list_is_diffed_class_by_class() {
+    let before = "border-input text-primary dark:bg-input/30 flex";
+    let after = "border-input dark:bg-input/30 data-checked:bg-primary flex";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (before_ranges, after_ranges) = class_list_diff(before, after, options).unwrap();
+        let changed = |ranges: &[RangeMatch], text: &'static str| {
+            changed_spans(ranges, text)
+                .into_iter()
+                .filter(|(operation, _)| *operation != TextOperation::Move)
+                .collect::<Vec<_>>()
+        };
+        // Never a piece of a class: `text-primary` goes whole, `data-checked:bg-primary` comes whole.
+        assert_eq!(
+            changed(&before_ranges, before),
+            [(TextOperation::Delete, "text-primary")]
+        );
+        assert_eq!(
+            changed(&after_ranges, after),
+            [(TextOperation::Insert, "data-checked:bg-primary")]
+        );
+    }
+}
+
+#[test]
+fn a_reordered_class_moves_and_full_also_moves_the_displaced_ones() {
+    // `b` jumps over two classes: only it moved, not a swap.
+    let (before, after) = ("a b c d e", "a c d b e f");
+    let moved = |options| {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        changed_spans(&ranges, before)
+            .into_iter()
+            .filter(|(operation, _)| *operation == TextOperation::Move)
+            .map(|(_, text)| text)
+            .collect::<Vec<_>>()
+    };
+    // Both presets show the reordered class; Full also the kept class inside the edited stretch.
+    let (minimal, full) = (moved(RenderOptions::MINIMAL), moved(RenderOptions::FULL));
+    assert_eq!(minimal.len(), 1, "{minimal:?}");
+    assert!(full.len() > minimal.len(), "{full:?}");
+}
+
+#[test]
+fn two_swapped_classes_both_move() {
+    let (before, after) = ("x bg-border shrink-0 y", "x shrink-0 bg-border y");
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        let mut moved: Vec<&str> = changed_spans(&ranges, before)
+            .into_iter()
+            .map(|(operation, text)| {
+                assert_eq!(operation, TextOperation::Move);
+                text
+            })
+            .collect();
+        moved.sort();
+        assert_eq!(moved, ["bg-border", "shrink-0"]);
+    }
+}
