@@ -51,9 +51,10 @@ fn run(repo: &Path, args: &[&str]) -> Output {
 /// `git diff ARGS` with omnidiff as the external diff; its stdout.
 fn external_diff(repo: &Path, args: &[&str]) -> String {
     let mut command = git(repo, &["diff"]);
+    // git runs this through `sh`, which would eat the backslashes of a Windows path unquoted.
     command.args(args).env(
         "GIT_EXTERNAL_DIFF",
-        format!("{} --headless", env!("CARGO_BIN_EXE_omnidiff")),
+        format!("'{}' --headless", env!("CARGO_BIN_EXE_omnidiff")),
     );
     let output = command.output().expect("git diff runs");
     assert!(
