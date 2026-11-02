@@ -18,7 +18,7 @@
 //! Non-interactive counterpart to the TUI: prints a diff as text, for when stdout is not a
 //! terminal (git's pager, pipes, CI) or `--headless` is given.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
@@ -439,7 +439,8 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
 }
 
 /// Computes the diff exactly as the TUI does and prints it to stdout. Returns whether the files'
-/// bytes differ, for a `diff`-style exit code.
+/// bytes differ, for a `diff`-style exit code. `titles` names the two sides in place of the files
+/// read (see [`crate::tui::positional::display_names`]).
 ///
 /// A large unmatched residual is reported with `eprintln!`, not `tracing`: headless mode installs
 /// no subscriber.
@@ -449,8 +450,13 @@ pub fn run(
     use_color: bool,
     context: usize,
     render_options: RenderOptions,
+    titles: Option<(PathBuf, PathBuf)>,
 ) -> Result<bool> {
     let (mut data, large_residual) = compute_diff_with_options(before, after, render_options)?;
+    if let Some((before_title, after_title)) = titles {
+        data.before_path = before_title;
+        data.after_path = after_title;
+    }
     // A presentation filter over a finished diff, so not part of `compute_diff`.
     data.before_ranges =
         ranges_for_options(&data.before_ranges, &data.before_contents, render_options);
@@ -1121,7 +1127,8 @@ mod tests {
             &after_path,
             false,
             CONTEXT_LINES,
-            RenderOptions::FULL
+            RenderOptions::FULL,
+            None
         )?);
         Ok(())
     }

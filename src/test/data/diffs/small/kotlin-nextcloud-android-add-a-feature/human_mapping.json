@@ -1562,5 +1562,177 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 173,
+              "start_column": 8,
+              "end_row": 173,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 181,
+              "start_column": 12,
+              "end_row": 181,
+              "end_column": 66
+            },
+            {
+              "start_row": 182,
+              "start_column": 16,
+              "end_row": 182,
+              "end_column": 90
+            },
+            {
+              "start_row": 183,
+              "start_column": 16,
+              "end_row": 183,
+              "end_column": 51
+            },
+            {
+              "start_row": 184,
+              "start_column": 16,
+              "end_row": 184,
+              "end_column": 24
+            },
+            {
+              "start_row": 185,
+              "start_column": 12,
+              "end_row": 185,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 224,
+              "start_column": 8,
+              "end_row": 224,
+              "end_column": 43
+            },
+            {
+              "start_row": 225,
+              "start_column": 12,
+              "end_row": 225,
+              "end_column": 92
+            },
+            {
+              "start_row": 226,
+              "start_column": 8,
+              "end_row": 226,
+              "end_column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 173,
+              "start_column": 0,
+              "end_row": 173,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 181,
+              "start_column": 0,
+              "end_row": 181,
+              "end_column": 66
+            },
+            {
+              "start_row": 182,
+              "start_column": 0,
+              "end_row": 182,
+              "end_column": 90
+            },
+            {
+              "start_row": 183,
+              "start_column": 0,
+              "end_row": 183,
+              "end_column": 51
+            },
+            {
+              "start_row": 184,
+              "start_column": 0,
+              "end_row": 184,
+              "end_column": 24
+            },
+            {
+              "start_row": 185,
+              "start_column": 0,
+              "end_row": 185,
+              "end_column": 13
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 224,
+              "start_column": 0,
+              "end_row": 224,
+              "end_column": 43
+            },
+            {
+              "start_row": 225,
+              "start_column": 0,
+              "end_row": 225,
+              "end_column": 92
+            },
+            {
+              "start_row": 226,
+              "start_column": 0,
+              "end_row": 226,
+              "end_column": 9
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

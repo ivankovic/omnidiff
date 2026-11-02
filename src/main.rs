@@ -23,7 +23,8 @@ use clap::{Parser, Subcommand};
 
 use omnidiff::tui;
 use omnidiff::tui::positional::{
-    binary_notice, content_notice, invoked_as_git_external_diff, resolve_before_after,
+    binary_notice, content_notice, display_names, invoked_as_git_external_diff,
+    resolve_before_after,
 };
 
 mod configure_prompt;
@@ -467,6 +468,7 @@ async fn run() -> Result<i32> {
             use_color(args.color),
             args.context,
             render_options(&args),
+            display_names(&args.paths),
         )?;
         return Ok(exit_code_for(
             differed,
@@ -541,6 +543,89 @@ mod tests {
             ))
         );
         assert!(invoked_as_git_external_diff(&paths));
+    }
+
+    /// git's temp files go in a new random directory each run (issue #59), so the titles name
+    /// the path being diffed instead: argument 1 for both sides.
+    #[test]
+    fn display_names_under_git_external_diff_are_the_path_being_diffed() {
+        let paths = vec![
+            PathBuf::from("src/foo.rs"),
+            PathBuf::from("/tmp/git-blob-AAAA/foo.rs"),
+            PathBuf::from("abc123"),
+            PathBuf::from("100644"),
+            PathBuf::from("/tmp/git-blob-BBBB/foo.rs"),
+            PathBuf::from("def456"),
+            PathBuf::from("100644"),
+        ];
+        assert_eq!(
+            display_names(&paths),
+            Some((PathBuf::from("src/foo.rs"), PathBuf::from("src/foo.rs")))
+        );
+    }
+
+    /// A rename or copy names the old path before and argument 8, the new path, after.
+    #[test]
+    fn display_names_of_a_rename_are_the_old_and_the_new_path() {
+        let paths = vec![
+            PathBuf::from("README.md"),
+            PathBuf::from("/tmp/git-blob-AAAA/README.md"),
+            PathBuf::from("abc123"),
+            PathBuf::from("100644"),
+            PathBuf::from("/tmp/git-blob-BBBB/README_tmp.md"),
+            PathBuf::from("abc123"),
+            PathBuf::from("100644"),
+            PathBuf::from("README_tmp.md"),
+            PathBuf::from("similarity index 100%"),
+        ];
+        assert_eq!(
+            display_names(&paths),
+            Some((PathBuf::from("README.md"), PathBuf::from("README_tmp.md")))
+        );
+    }
+
+    /// An added file's missing side is named `/dev/null`, as `git diff` labels it.
+    #[test]
+    fn display_names_keep_dev_null_for_an_added_file() {
+        let paths = vec![
+            PathBuf::from("src/foo.rs"),
+            PathBuf::from("/dev/null"),
+            PathBuf::from("."),
+            PathBuf::from("."),
+            PathBuf::from("src/foo.rs"),
+            PathBuf::from("def456"),
+            PathBuf::from("100644"),
+        ];
+        assert_eq!(
+            display_names(&paths),
+            Some((PathBuf::from("/dev/null"), PathBuf::from("src/foo.rs")))
+        );
+    }
+
+    /// Git for Windows hands a missing side over as `nul`, still marked by its `.` hash and
+    /// mode; the title is `/dev/null` all the same.
+    #[test]
+    fn display_names_name_a_deleted_files_nul_side_dev_null() {
+        let paths = vec![
+            PathBuf::from("src/foo.rs"),
+            PathBuf::from("C:/Temp/git-blob-AAAA/foo.rs"),
+            PathBuf::from("abc123"),
+            PathBuf::from("100644"),
+            PathBuf::from("nul"),
+            PathBuf::from("."),
+            PathBuf::from("."),
+        ];
+        assert_eq!(
+            display_names(&paths),
+            Some((PathBuf::from("src/foo.rs"), PathBuf::from("/dev/null")))
+        );
+    }
+
+    /// `BEFORE AFTER` already names the files the user gave.
+    #[test]
+    fn display_names_of_two_paths_are_the_paths_themselves() {
+        let paths = vec![PathBuf::from("before.rs"), PathBuf::from("after.rs")];
+        assert_eq!(display_names(&paths), None);
     }
 
     #[test]

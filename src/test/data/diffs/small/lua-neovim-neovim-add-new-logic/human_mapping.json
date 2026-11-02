@@ -6165,5 +6165,130 @@
         "end:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1798,
+              "start_column": 6,
+              "end_row": 1798,
+              "end_column": 24
+            },
+            {
+              "start_row": 1799,
+              "start_column": 8,
+              "end_row": 1799,
+              "end_column": 40
+            },
+            {
+              "start_row": 1800,
+              "start_column": 6,
+              "end_row": 1800,
+              "end_column": 10
+            },
+            {
+              "start_row": 1801,
+              "start_column": 8,
+              "end_row": 1801,
+              "end_column": 20
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1805,
+              "start_column": 6,
+              "end_row": 1805,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1797,
+              "start_column": 41,
+              "end_row": 1797,
+              "end_column": 43
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1798,
+              "start_column": 0,
+              "end_row": 1798,
+              "end_column": 24
+            },
+            {
+              "start_row": 1799,
+              "start_column": 0,
+              "end_row": 1799,
+              "end_column": 40
+            },
+            {
+              "start_row": 1800,
+              "start_column": 0,
+              "end_row": 1800,
+              "end_column": 10
+            },
+            {
+              "start_row": 1801,
+              "start_column": 8,
+              "end_row": 1801,
+              "end_column": 20
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1805,
+              "start_column": 0,
+              "end_row": 1805,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1797,
+              "start_column": 41,
+              "end_row": 1797,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1801,
+              "start_column": 0,
+              "end_row": 1801,
+              "end_column": 8
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

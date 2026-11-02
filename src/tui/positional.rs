@@ -26,8 +26,8 @@ use anyhow::Result;
 ///
 /// * **2**: `BEFORE AFTER` (plain CLI and `git difftool`).
 /// * **7**: git's `GIT_EXTERNAL_DIFF` form, `path old-file old-hex old-mode new-file new-hex
-///   new-mode`; only `old-file` and `new-file` are used, since they keep the real extension. An
-///   add/delete arrives as `/dev/null` and is passed through for `compute_diff` to handle.
+///   new-mode`; only `old-file` and `new-file` are read, since they keep the real extension
+///   (`path` is the name shown, see [`display_names`]). An add/delete arrives as `/dev/null` and is passed through for `compute_diff` to handle.
 /// * **9**: the same form for a rename or copy, with two extra trailing arguments that are ignored.
 ///
 /// Any other count is an error rather than a guess.
@@ -41,6 +41,28 @@ pub fn resolve_before_after(paths: &[PathBuf]) -> Result<Option<(PathBuf, PathBu
             (GIT_EXTERNAL_DIFF's `path old-file old-hex old-mode new-file new-hex new-mode`, \
             or 9 with git's two extra rename/copy arguments), got {n}"
         ),
+    }
+}
+
+/// The names to show for the two sides, where they differ from the files read: under
+/// `GIT_EXTERNAL_DIFF` the files are git's temporaries (`/tmp/git-blob-XXXX/foo.rs`, a new random
+/// directory every run), and the path being diffed is argument 1 - or, for a rename or copy,
+/// argument 1 before and argument 8 after. A side git has no version of (an added or deleted file)
+/// is named `/dev/null`, as `git diff` labels it. git marks that side with `.` for its hash and
+/// mode; the file is the platform's null device, `nul` under Git for Windows, so the mark is what
+/// is read. `None` for the two-argument form, whose paths are the names.
+pub fn display_names(paths: &[PathBuf]) -> Option<(PathBuf, PathBuf)> {
+    let name = |hex: &PathBuf, path: &PathBuf| {
+        if hex.as_os_str() == "." {
+            PathBuf::from("/dev/null")
+        } else {
+            path.clone()
+        }
+    };
+    match paths.len() {
+        7 => Some((name(&paths[2], &paths[0]), name(&paths[5], &paths[0]))),
+        9 => Some((name(&paths[2], &paths[0]), name(&paths[5], &paths[7]))),
+        _ => None,
     }
 }
 
