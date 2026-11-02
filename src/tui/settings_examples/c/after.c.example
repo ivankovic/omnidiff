@@ -1,0 +1,45 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+struct person { const char *name; int age; };
+
+struct person *make_person(const char *name, int age)
+{
+    return person_new(name, age);
+}
+
+struct rect { int width, height; };
+
+static int area(const struct rect *r)
+{
+    return r->width * r->height;
+}
+
+static int perimeter(const struct rect *r)
+{
+    return 2 * (r->width + r->height);
+}
+
+static void describe(const struct rect *r,
+                     const char *label)
+{
+    int total_area = area(r);
+    printf("%s: %d square metres\n", label, total_area);
+}
+
+int main(void)
+{
+    int size[] = {3, 4};
+    struct rect shapes[] = {
+        {1, 1},
+        {size[0], size[1]},
+        {5, 2},
+        {0, 0},
+    };
+    if (getenv("DEBUG")) {
+        for (int i = 0; shapes[i].width; i++)
+            describe(&shapes[i], "box");
+    }
+    long front = area(&shapes[0]);
+    printf("first: %ld\n", front);
+}

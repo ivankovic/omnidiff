@@ -82,6 +82,12 @@ pub const EXAMPLES: &[SettingsExample] = &[
     example!("xml", "xml", Language::XML, MARKUP_NO_EFFECT),
     example!("json", "json", Language::JSON, &[(6, JSON_NO_NAMES)]),
     example!("yaml", "yaml", Language::YAML, &[]),
+    example!("c", "c", Language::C, &[]),
+    example!("cpp", "cpp", Language::CPP, &[]),
+    example!("csharp", "cs", Language::CSharp, &[]),
+    example!("java", "java", Language::Java, &[]),
+    example!("kotlin", "kt", Language::Kotlin, &[]),
+    example!("scala", "scala", Language::Scala, &[]),
     example!("text", "txt", Language::Unknown, PLAIN_TEXT_NO_EFFECT),
 ];
 
