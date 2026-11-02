@@ -1,0 +1,33 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid #d0d4da;
+  border-radius: 12px;
+  background-image: linear-gradient(#ffffff, #f4f6f8);
+  font-family: system-ui, Inter, Arial, sans-serif;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: bolder;
+}
+
+.card-body {
+  color: #333;
+  line-height: 1.5;
+}
+
+@media (min-width: 600px) {
+  .card-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+
+.card:hover {
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
