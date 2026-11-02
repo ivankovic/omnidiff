@@ -88,6 +88,12 @@ pub const EXAMPLES: &[SettingsExample] = &[
     example!("java", "java", Language::Java, &[]),
     example!("kotlin", "kt", Language::Kotlin, &[]),
     example!("scala", "scala", Language::Scala, &[]),
+    example!("go", "go", Language::Go, &[]),
+    example!("swift", "swift", Language::Swift, &[]),
+    example!("python", "py", Language::Python, &[]),
+    example!("ruby", "rb", Language::Ruby, &[]),
+    example!("php", "php", Language::PHP, &[]),
+    example!("perl", "pl", Language::Perl, &[]),
     example!("text", "txt", Language::Unknown, PLAIN_TEXT_NO_EFFECT),
 ];
 
