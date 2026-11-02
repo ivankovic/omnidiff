@@ -167,7 +167,7 @@ jobs:
         with:
           key: quality
 
-      # `test-fixtures`, not the Makefile's default `stats`: the gate needs no git2/rusqlite, and
+      # `test-fixtures`, not the Makefile's default `stats`: the gate needs no gix/rusqlite, and
       # keeping them out of this job's cache is worth the one override.
       - run: make check-quality FEATURES=test-fixtures
 

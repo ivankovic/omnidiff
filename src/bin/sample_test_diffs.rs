@@ -30,7 +30,7 @@
 //! --max-commits-per-repo 50 --total 250 --seed 20261002`, then `materialize_test_diffs`.
 use anyhow::{Result, bail};
 use clap::Parser;
-use git2::Delta;
+use gix::{bstr::ByteSlice as _, diff::tree_with_rewrites::Change};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
@@ -323,9 +323,9 @@ const ENCODINGS_DATASET: &str = "encodings";
 
 /// The line count of a blob in the size limits that is text in UTF-16 or UTF-32, by its byte
 /// order mark; `None` for UTF-8 and for anything that does not decode.
-fn encoded_loc(repo: &git2::Repository, oid: git2::Oid) -> Option<usize> {
+fn encoded_loc(repo: &gix::Repository, oid: gix::ObjectId) -> Option<usize> {
     let blob = repo.find_blob(oid).ok()?;
-    let bytes = blob.content();
+    let bytes = &blob.data;
     if bytes.len() < MIN_BYTES || bytes.len() > MAX_BYTES || Encoding::of(bytes) == Encoding::Utf8 {
         return None;
     }
@@ -358,15 +358,21 @@ fn sample_repository(
     walk_single_parent_commit_diffs(repo_path, max_commits, false, |repo, id, delta| {
         // The schema locates both blobs by one `path`, so only in-place edits qualify (rename
         // detection is off).
-        if delta.status() != Delta::Modified {
+        let Change::Modification {
+            location,
+            previous_id: old_id,
+            id: new_id,
+            ..
+        } = delta
+        else {
             return Ok(());
-        }
+        };
         // A mode-only change.
-        if delta.old_file().id() == delta.new_file().id() {
+        if old_id == new_id {
             return Ok(());
         }
 
-        let Some(path) = delta.new_file().path() else {
+        let Ok(path) = gix::path::from_byte_slice(location) else {
             return Ok(());
         };
         if anomalous_paths::is_anomalous(path) {
@@ -376,10 +382,9 @@ fn sample_repository(
         let language = language_for_path(path);
         // Text in another encoding is sampled grammar or not: without one, it is painted.
         if encodings {
-            let (Some(before_loc), Some(after_loc)) = (
-                encoded_loc(repo, delta.old_file().id()),
-                encoded_loc(repo, delta.new_file().id()),
-            ) else {
+            let (Some(before_loc), Some(after_loc)) =
+                (encoded_loc(repo, *old_id), encoded_loc(repo, *new_id))
+            else {
                 return Ok(());
             };
             let language = language.map_or("Text".to_string(), |language| language.to_string());
@@ -416,8 +421,8 @@ fn sample_repository(
         // Only `.ts` needs content to disambiguate (Qt Linguist vs. TypeScript); gating on it
         // avoids a blob read for every other file.
         if language == Language::TypeScript
-            && let Ok(blob) = repo.find_blob(delta.new_file().id())
-            && let Ok(text) = std::str::from_utf8(blob.content())
+            && let Ok(blob) = repo.find_blob(*new_id)
+            && let Ok(text) = blob.data.to_str()
             && let Some(refined) = language_for_path_and_content(path, text)
         {
             language = refined;
@@ -439,14 +444,10 @@ fn sample_repository(
         }
 
         // The larger side decides the bucket, as in `sample_code_pairs`.
-        let Some(before_loc) =
-            text_loc_if_in_range(repo, delta.old_file().id(), MIN_BYTES, MAX_BYTES)
-        else {
+        let Some(before_loc) = text_loc_if_in_range(repo, *old_id, MIN_BYTES, MAX_BYTES) else {
             return Ok(());
         };
-        let Some(after_loc) =
-            text_loc_if_in_range(repo, delta.new_file().id(), MIN_BYTES, MAX_BYTES)
-        else {
+        let Some(after_loc) = text_loc_if_in_range(repo, *new_id, MIN_BYTES, MAX_BYTES) else {
             return Ok(());
         };
         let bucket = stratified.then(|| loc_bucket(before_loc.max(after_loc)));
@@ -556,9 +557,9 @@ fn may_be(family: Family, path: &Path) -> bool {
 
 /// A side the sample can hold: content of one of `families` by its bytes (which also drops Git
 /// LFS pointers, text files named `.png`), within its family's size limit, probed from its header.
-fn content_side(repo: &git2::Repository, oid: git2::Oid, families: &[Family]) -> Option<Probe> {
+fn content_side(repo: &gix::Repository, oid: gix::ObjectId, families: &[Family]) -> Option<Probe> {
     let blob = repo.find_blob(oid).ok()?;
-    let bytes = blob.content();
+    let bytes = &blob.data;
     let family = content::sniff(bytes)?.family();
     if !families.contains(&family) || bytes.len() < MIN_BYTES || bytes.len() > max_bytes(family) {
         return None;
@@ -602,7 +603,7 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
         None => StdRng::from_rng(&mut rand::rng()),
     };
 
-    let mut seen_pairs: HashSet<(git2::Oid, git2::Oid)> = HashSet::new();
+    let mut seen_pairs: HashSet<(gix::ObjectId, gix::ObjectId)> = HashSet::new();
     let mut strata: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
     let mut stratum_family: HashMap<CapacityKey, Family> = HashMap::new();
     for_each_repository(&repo_paths, |repo_path, repository_name| {
@@ -612,12 +613,19 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
             args.max_commits_per_repo,
             false,
             |repo, id, delta| {
-                if delta.status() != Delta::Modified
-                    || delta.old_file().id() == delta.new_file().id()
-                {
+                let Change::Modification {
+                    location,
+                    previous_id: old_id,
+                    id: new_id,
+                    ..
+                } = delta
+                else {
+                    return Ok(());
+                };
+                if old_id == new_id {
                     return Ok(());
                 }
-                let Some(path) = delta.new_file().path() else {
+                let Ok(path) = gix::path::from_byte_slice(location) else {
                     return Ok(());
                 };
                 if anomalous_paths::is_anomalous(path)
@@ -634,8 +642,8 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                     return Ok(());
                 }
                 let (Some(before), Some(after)) = (
-                    content_side(repo, delta.old_file().id(), families),
-                    content_side(repo, delta.new_file().id(), families),
+                    content_side(repo, *old_id, families),
+                    content_side(repo, *new_id, families),
                 ) else {
                     return Ok(());
                 };
@@ -643,7 +651,7 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                 if before.format.family() != family {
                     return Ok(());
                 }
-                if !seen_pairs.insert((delta.old_file().id(), delta.new_file().id())) {
+                if !seen_pairs.insert((*old_id, *new_id)) {
                     return Ok(());
                 }
                 let bucket = format!(
@@ -806,7 +814,7 @@ mod tests {
     fn several_families_share_one_walk() -> Result<()> {
         let root = tempfile::tempdir()?;
         let dir = root.path().join("repo");
-        let repo = git2::Repository::init(&dir)?;
+        let repo = gix::init(&dir)?;
         let png = |pixel: u8| {
             let mut bytes = Vec::new();
             image::RgbaImage::from_pixel(4, 4, image::Rgba([pixel, 0, 0, 255]))
@@ -827,26 +835,29 @@ mod tests {
             writer.finish().unwrap();
             bytes
         };
-        let mut parent: Option<git2::Oid> = None;
+        let mut parent: Option<gix::ObjectId> = None;
         for (pixel, text) in [(0u8, "one"), (255, "two")] {
-            let mut builder = repo.treebuilder(None)?;
+            let mut builder = repo.empty_tree().edit()?;
             for (name, bytes) in [
                 ("logo.png", png(pixel)),
                 ("bundle.zip", zip(text)),
                 ("notes.txt", text.as_bytes().to_vec()),
             ] {
-                builder.insert(name, repo.blob(&bytes)?, 0o100644)?;
+                builder.upsert(
+                    name,
+                    gix::object::tree::EntryKind::Blob,
+                    repo.write_blob(&bytes)?,
+                )?;
             }
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let signature = gix::actor::SignatureRef {
+                name: "t".into(),
+                email: "t@example.com".into(),
+                time: "1 +0000",
+            };
+            parent = Some(
+                repo.commit_as(signature, signature, "HEAD", "c", builder.write()?, parent)?
+                    .detach(),
+            );
         }
 
         let output = root.path().join("sample.csv");
@@ -883,7 +894,7 @@ mod tests {
     #[test]
     fn encodings_take_utf16_and_utf32_text_and_nothing_else() {
         let dir = tempfile::tempdir().unwrap();
-        let repo = git2::Repository::init(dir.path()).unwrap();
+        let repo = gix::init(dir.path()).unwrap();
         let utf16: Vec<u8> = "\u{feff}a\nb\n"
             .encode_utf16()
             .flat_map(u16::to_le_bytes)
@@ -892,7 +903,7 @@ mod tests {
             .chars()
             .flat_map(|c| (c as u32).to_be_bytes())
             .collect();
-        let blob = |bytes: &[u8]| repo.blob(bytes).unwrap();
+        let blob = |bytes: &[u8]| repo.write_blob(bytes).unwrap().detach();
         assert_eq!(encoded_loc(&repo, blob(&utf16)), Some(2));
         assert_eq!(encoded_loc(&repo, blob(&utf32)), Some(1));
         assert_eq!(encoded_loc(&repo, blob(b"a\nb\n")), None, "UTF-8");
@@ -908,7 +919,7 @@ mod tests {
     fn a_repository_gives_at_most_four_pairs_a_family() -> Result<()> {
         let root = tempfile::tempdir()?;
         let dir = root.path().join("repo");
-        let repo = git2::Repository::init(&dir)?;
+        let repo = gix::init(&dir)?;
         use image::ImageFormat::*;
         let formats = [
             (Png, "png"),
@@ -918,26 +929,29 @@ mod tests {
             (Ico, "ico"),
             (Jpeg, "jpg"),
         ];
-        let mut parent: Option<git2::Oid> = None;
+        let mut parent: Option<gix::ObjectId> = None;
         for pixel in [0u8, 255] {
-            let mut builder = repo.treebuilder(None)?;
+            let mut builder = repo.empty_tree().edit()?;
             for (format, ext) in formats {
                 let mut bytes = Vec::new();
                 image::RgbImage::from_pixel(8, 8, image::Rgb([pixel, 0, 0]))
                     .write_to(&mut std::io::Cursor::new(&mut bytes), format)
                     .unwrap();
-                builder.insert(format!("picture.{ext}"), repo.blob(&bytes)?, 0o100644)?;
+                builder.upsert(
+                    format!("picture.{ext}"),
+                    gix::object::tree::EntryKind::Blob,
+                    repo.write_blob(&bytes)?,
+                )?;
             }
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let signature = gix::actor::SignatureRef {
+                name: "t".into(),
+                email: "t@example.com".into(),
+                time: "1 +0000",
+            };
+            parent = Some(
+                repo.commit_as(signature, signature, "HEAD", "c", builder.write()?, parent)?
+                    .detach(),
+            );
         }
         let output = root.path().join("sample.csv");
         let mut args = args(root.path().to_str().unwrap(), None, false);
@@ -956,25 +970,28 @@ mod tests {
     #[test]
     fn encodings_take_at_most_two_a_repository() -> Result<()> {
         let dir = tempfile::tempdir()?;
-        let repo = git2::Repository::init(dir.path())?;
-        let mut parent: Option<git2::Oid> = None;
+        let repo = gix::init(dir.path())?;
+        let mut parent: Option<gix::ObjectId> = None;
         for round in 0..6 {
             let text: Vec<u8> = format!("\u{feff}\"key\" = \"{round}\";\n")
                 .encode_utf16()
                 .flat_map(u16::to_le_bytes)
                 .collect();
-            let mut builder = repo.treebuilder(None)?;
-            builder.insert("Localizable.strings", repo.blob(&text)?, 0o100644)?;
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let mut builder = repo.empty_tree().edit()?;
+            builder.upsert(
+                "Localizable.strings",
+                gix::object::tree::EntryKind::Blob,
+                repo.write_blob(&text)?,
+            )?;
+            let signature = gix::actor::SignatureRef {
+                name: "t".into(),
+                email: "t@example.com".into(),
+                time: "1 +0000",
+            };
+            parent = Some(
+                repo.commit_as(signature, signature, "HEAD", "c", builder.write()?, parent)?
+                    .detach(),
+            );
         }
         let mut reservoirs: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
         let mut capacities: HashMap<CapacityKey, usize> = HashMap::new();

@@ -34,7 +34,7 @@ build() {
 	export RUSTUP_TOOLCHAIN=stable
 	export CARGO_TARGET_DIR=target
 	# Default features only (`tui`) - the product binary. `stats`/`test-fixtures` gate
-	# dataset-analysis dev tools that pull in git2 and a bundled SQLite and are not shipped.
+	# dataset-analysis dev tools that pull in gix and a bundled SQLite and are not shipped.
 	#
 	# Note: upstream's release profile sets `lto = "fat"` and `codegen-units = 1`, and every
 	# tree-sitter grammar is compiled from C. This build takes minutes, not seconds.

@@ -17,7 +17,7 @@
 version: 2
 updates:
   # Rust dependencies (Cargo.toml/Cargo.lock) - a large tree (tree-sitter grammars, ratatui,
-  # tokio, git2, ...), so keeping it current matters for security patches in particular.
+  # tokio, gix, ...), so keeping it current matters for security patches in particular.
   - package-ecosystem: "cargo"
     directory: "/"
     schedule:

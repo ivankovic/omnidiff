@@ -11,5 +11,5 @@
   `apted/common` submodules take it through `use super::*`; the engine's other maps are Fx.
 - `ASTMappingReason::OptimalIDU` is never produced by a pass; drop it with the next benchmark CSV
   regeneration.
-- No tests: `bin/benchmark_other/{bdiff,git,nvim}.rs`, `stats/git.rs`, `tui/events.rs`,
+- No tests: `bin/benchmark_other/{bdiff,git,nvim}.rs`, `tui/events.rs`,
   `tui/actions.rs`.
