@@ -47,20 +47,21 @@ pub fn resolve_before_after(paths: &[PathBuf]) -> Result<Option<(PathBuf, PathBu
 /// The names to show for the two sides, where they differ from the files read: under
 /// `GIT_EXTERNAL_DIFF` the files are git's temporaries (`/tmp/git-blob-XXXX/foo.rs`, a new random
 /// directory every run), and the path being diffed is argument 1 - or, for a rename or copy,
-/// argument 1 before and argument 8 after. A side git hands over as `/dev/null` (an added or
-/// deleted file) keeps that name, as `git diff` labels it. `None` for the two-argument form, whose
-/// paths are the names.
+/// argument 1 before and argument 8 after. A side git has no version of (an added or deleted file)
+/// is named `/dev/null`, as `git diff` labels it. git marks that side with `.` for its hash and
+/// mode; the file is the platform's null device, `nul` under Git for Windows, so the mark is what
+/// is read. `None` for the two-argument form, whose paths are the names.
 pub fn display_names(paths: &[PathBuf]) -> Option<(PathBuf, PathBuf)> {
-    let name = |file: &PathBuf, path: &PathBuf| {
-        if file.as_os_str() == "/dev/null" {
-            file.clone()
+    let name = |hex: &PathBuf, path: &PathBuf| {
+        if hex.as_os_str() == "." {
+            PathBuf::from("/dev/null")
         } else {
             path.clone()
         }
     };
     match paths.len() {
-        7 => Some((name(&paths[1], &paths[0]), name(&paths[4], &paths[0]))),
-        9 => Some((name(&paths[1], &paths[0]), name(&paths[4], &paths[7]))),
+        7 => Some((name(&paths[2], &paths[0]), name(&paths[5], &paths[0]))),
+        9 => Some((name(&paths[2], &paths[0]), name(&paths[5], &paths[7]))),
         _ => None,
     }
 }

@@ -584,7 +584,7 @@ mod tests {
         );
     }
 
-    /// An added file's missing side stays `/dev/null`, as `git diff` labels it.
+    /// An added file's missing side is named `/dev/null`, as `git diff` labels it.
     #[test]
     fn display_names_keep_dev_null_for_an_added_file() {
         let paths = vec![
@@ -599,6 +599,25 @@ mod tests {
         assert_eq!(
             display_names(&paths),
             Some((PathBuf::from("/dev/null"), PathBuf::from("src/foo.rs")))
+        );
+    }
+
+    /// Git for Windows hands a missing side over as `nul`, still marked by its `.` hash and
+    /// mode; the title is `/dev/null` all the same.
+    #[test]
+    fn display_names_name_a_deleted_files_nul_side_dev_null() {
+        let paths = vec![
+            PathBuf::from("src/foo.rs"),
+            PathBuf::from("C:/Temp/git-blob-AAAA/foo.rs"),
+            PathBuf::from("abc123"),
+            PathBuf::from("100644"),
+            PathBuf::from("nul"),
+            PathBuf::from("."),
+            PathBuf::from("."),
+        ];
+        assert_eq!(
+            display_names(&paths),
+            Some((PathBuf::from("src/foo.rs"), PathBuf::from("/dev/null")))
         );
     }
 
