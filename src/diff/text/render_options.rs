@@ -217,11 +217,12 @@ pub const OPTION_INFO: [OptionInfo; 8] = [
             plain and only the edit beside it is highlighted.",
     },
     OptionInfo {
-        name: "Show a move on both sides when they measure it differently",
-        short: "resized moves",
-        description: "When code moved and the two sides describe the moved stretch over different \
-            extents, on highlights it on both sides. Off keeps only the smaller account, so a \
-            move is highlighted once.",
+        name: "Show moves in reshaped code on both sides",
+        short: "reshaped moves",
+        description: "When code is reshaped, the two sides can measure a piece that moved through \
+            it differently, such as `age` going from a multi-line call into `Person(name, age)`. \
+            On, that move is highlighted on both sides. Off, only the smaller account is kept, so \
+            it may show on one side or not at all.",
     },
     OptionInfo {
         name: "Highlight a renamed name whole",
