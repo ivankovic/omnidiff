@@ -70,6 +70,12 @@ macro_rules! example {
 /// Every example, one per language with a grammar, then plain text.
 pub const EXAMPLES: &[SettingsExample] = &[
     example!("rust", "rs", Language::Rust, &[]),
+    example!("go", "go", Language::Go, &[]),
+    example!("swift", "swift", Language::Swift, &[]),
+    example!("python", "py", Language::Python, &[]),
+    example!("ruby", "rb", Language::Ruby, &[]),
+    example!("php", "php", Language::PHP, &[]),
+    example!("perl", "pl", Language::Perl, &[]),
     example!("text", "txt", Language::Unknown, PLAIN_TEXT_NO_EFFECT),
 ];
 

@@ -1,0 +1,42 @@
+package main
+
+import (
+	"fmt"
+	"slices"
+)
+
+type Shelf struct {
+	label string
+	items []int
+}
+
+func (s Shelf) Label() string {
+	return "shelf " + s.label
+}
+
+func (s Shelf) Weight() int {
+	total := 0
+	for _, grams := range s.items {
+		total += grams
+	}
+	return total
+}
+
+func (s Shelf) Describe(unit string) string {
+	total := s.Weight()
+	return fmt.Sprintf("%s: %d %s in stock",
+		s.Label(), total, unit)
+}
+
+func main() {
+	pair := [2]int{3, 4}
+	shelves := []Shelf{
+		{"tools", pair[:]},
+		{"spare parts", []int{5, 2}},
+	}
+	for _, shelf := range shelves {
+		fmt.Println(shelf.Describe("grams"))
+	}
+	largest := slices.Max(pair[:])
+	fmt.Println(largest)
+}

@@ -1,0 +1,45 @@
+require "date"
+
+Order = Struct.new(:customer, :amount, :due) do
+  def overdue? = due < Date.today
+end
+
+def build_order(name, total, date)
+  Order.new(name, total, date)
+end
+
+class Ledger
+  attr_reader :owner, :entries
+
+  def initialize(owner, entries)
+    @owner = owner
+    @entries = entries
+  end
+
+  def balance
+    entries.sum
+  end
+
+  def report(currency)
+    total_due = balance
+    "#{owner}: #{total_due} #{currency} still unpaid"
+  end
+end
+
+def print_reports
+  limits = [40, 15].freeze
+  ledgers = [
+    Ledger.new("Eva", []),
+    Ledger.new("Ana", limits.dup),
+    Ledger.new("Ivo", [7, 3]),
+  ]
+  if $VERBOSE
+    ledgers.each do |ledger|
+      puts ledger.report("EUR")
+    end
+  end
+  richest = ledgers.max_by(&:balance)
+  puts richest.owner
+end
+
+print_reports
