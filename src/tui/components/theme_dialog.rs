@@ -391,7 +391,7 @@ mod tests {
     #[test]
     fn accepting_a_preset_keeps_the_saved_custom_palette() {
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(crate::tui::theme::CONFIG_ENV, config.path()) };
+        let _config = crate::tui::theme::use_config_for_this_thread(config.path());
         let edited = CustomPalette {
             insert_bg: "#010203".to_string(),
             ..CustomPalette::default()
@@ -402,7 +402,6 @@ mod tests {
         let action = dialog.commit_dialog();
         let saved = crate::tui::theme::load_custom_palette();
         let syntax = crate::tui::theme::load_syntax_theme();
-        unsafe { std::env::remove_var(crate::tui::theme::CONFIG_ENV) };
 
         assert_eq!(action, Action::ThemeSelected(OverlayTheme::Nord));
         assert_eq!(saved, edited);

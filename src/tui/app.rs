@@ -2441,7 +2441,7 @@ mod tests {
         // `apply_render_options` persists, so redirect the write - see the note on
         // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
+        let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
         app.diff_viewer.set_render_options(RenderOptions::FULL);
@@ -2464,8 +2464,6 @@ mod tests {
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert_eq!(theme::load_render_options(), RenderOptions::MINIMAL);
         assert!(app.render_options_dialog.is_none());
-
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
         Ok(())
     }
 
@@ -2676,7 +2674,7 @@ mod tests {
         // `apply_render_options` persists, so redirect the write - see the note on
         // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
+        let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0)?;
         app.diff_viewer.set_render_options(RenderOptions::FULL);
@@ -2689,17 +2687,15 @@ mod tests {
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert!(app.render_options_dialog.is_none());
         assert_eq!(app.screen, AppScreen::Viewer);
-
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
         Ok(())
     }
 
-    /// The saved theme would otherwise land in the developer's own config, so `$OMNIDIFF_CONFIG`
-    /// points at a temp file. Safe under nextest, which runs each test in its own process.
+    /// The saved theme would otherwise land in the developer's own config, so this test thread's
+    /// config points at a temp file (`theme::use_config_for_this_thread`).
     #[test]
     fn apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen() {
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
+        let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
         app.screen = AppScreen::SelectTheme;
@@ -2710,8 +2706,6 @@ mod tests {
         assert_eq!(app.current_theme, OverlayTheme::SolarizedLight);
         assert_eq!(app.screen, AppScreen::Viewer);
         assert!(app.theme_dialog.is_none());
-
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
     }
 
     fn rendered_text(terminal: &ratatui::Terminal<ratatui::backend::TestBackend>) -> String {
