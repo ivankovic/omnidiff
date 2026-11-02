@@ -108,12 +108,14 @@ Appearance
   H                Toggle the node highlight (off by default): the range under the
                    cursor, and its match on the other panel, highlight when part of a
                    real change. Unchanged content is never highlighted either way.
-  M                Open the render-options panel: independent checkboxes for which
-                   parts of the diff get painted (leading whitespace, standalone
-                   punctuation), plus 1/2 shortcuts for the Minimal/Full presets.
-                   Every choice is applied and saved to the config the moment it
-                   is pressed. Trailing whitespace is never painted, regardless of
-                   any option. Up/Down moves, Space toggles, Enter or Esc closes;
+  M                Open the highlighting settings: a checkbox per setting, an
+                   example diff in the open file's language (Rust when none is
+                   open) painted as you choose, and the selected setting's effect
+                   on it underlined and marked with a diamond in the gutter, plus
+                   1/2 shortcuts for the Minimal/Full presets. Every choice is
+                   applied and saved to the config the moment it is pressed.
+                   Trailing whitespace is never painted, regardless of any
+                   setting. Up/Down moves, Space toggles, Enter or Esc closes;
                    nothing is undone on the way out.
 
 Other

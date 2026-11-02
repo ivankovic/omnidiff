@@ -36,7 +36,8 @@ pub use plain_text_diff::{
     plain_text_token_diff, text_layer_diff, token_edit_count, whole_file_text_class,
 };
 pub use render_options::{
-    RangeMatch, RenderOptions, TextOperation, is_structural_only, ranges_for_options,
+    OPTION_INFO, OptionInfo, RangeMatch, RenderOptions, TextOperation, is_structural_only,
+    ranges_for_options,
 };
 pub use summary::{
     ChangeCounts, DiffSummary, change_counts, is_comment_only_diff, line_operations,

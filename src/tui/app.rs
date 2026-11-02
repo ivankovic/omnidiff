@@ -44,7 +44,7 @@ use crate::tui::components::{
     help_modal::HelpModal,
     line_prompt::LinePrompt,
     picture_viewer::PictureColors,
-    render_options_dialog::RenderOptionsDialog,
+    render_options_dialog::{PageContent, RenderOptionsDialog},
     review_dialog::ReviewDialog,
     search_modal::SearchModal,
     theme_dialog::ThemeDialog,
@@ -517,8 +517,18 @@ impl App {
                     globally_handled = true;
                 }
                 KeyCode::Char('M') if self.screen == AppScreen::Viewer => {
-                    self.render_options_dialog =
-                        Some(RenderOptionsDialog::new(self.diff_viewer.render_options()));
+                    let content = if self.content_viewer.is_some() {
+                        PageContent::NonCode
+                    } else {
+                        PageContent::Example(crate::tui::settings_examples::example_for(
+                            self.diff_viewer.example_language(),
+                        ))
+                    };
+                    self.render_options_dialog = Some(RenderOptionsDialog::for_content(
+                        self.diff_viewer.render_options(),
+                        content,
+                        self.diff_viewer.overlay_theme(),
+                    ));
                     self.screen = AppScreen::RenderOptions;
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
@@ -1399,14 +1409,14 @@ impl App {
     }
 
     /// Over the viewer, so the diff repaints live as options toggle.
+    /// Full screen: the page shows its own example, not the diff.
     fn draw_render_options_dialog(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
-        self.draw_viewer(frame, area)?;
         let Some(dialog) = self.render_options_dialog.as_mut() else {
-            return Ok(());
+            return self.draw_viewer(frame, area);
         };
-        let popup = dialog.popup_area(area);
-        frame.render_widget(Clear, popup);
-        dialog.draw(frame, popup)
+        let page = dialog.popup_area(area);
+        frame.render_widget(Clear, page);
+        dialog.draw(frame, page)
     }
 
     fn draw_line_prompt(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
@@ -1480,8 +1490,9 @@ fn render_options_badge(options: RenderOptions) -> Option<String> {
             .options()
             .into_iter()
             .zip(full)
-            .filter(|((_, on), (_, on_in_full))| on != on_in_full && *on == state)
-            .map(|((label, _), _)| label)
+            .zip(crate::diff::text::OPTION_INFO)
+            .filter(|(((_, on), (_, on_in_full)), _)| on != on_in_full && *on == state)
+            .map(|(_, info)| info.short)
             .collect()
     };
     let (off, on) = (differing(false), differing(true));
@@ -2776,7 +2787,7 @@ mod tests {
 
         let text = rendered_text(&terminal);
         assert!(!text.contains("[minimal]"), "got: {text}");
-        assert!(text.contains("Leading whitespace"), "got: {text}");
+        assert!(text.contains("indentation"), "got: {text}");
         Ok(())
     }
 
@@ -3073,7 +3084,7 @@ mod tests {
         };
         assert_eq!(
             render_options_badge(no_leading_whitespace).as_deref(),
-            Some("[Leading whitespace off]")
+            Some("[indentation off]")
         );
         // Turning on the one option FULL leaves off is a difference too.
         let whole_pairs = RenderOptions {
@@ -3082,7 +3093,7 @@ mod tests {
         };
         assert_eq!(
             render_options_badge(whole_pairs).as_deref(),
-            Some("[Whole-pair updates on]")
+            Some("[whole updates on]")
         );
         assert_eq!(
             render_options_badge(RenderOptions {
@@ -3090,7 +3101,7 @@ mod tests {
                 ..no_leading_whitespace
             })
             .as_deref(),
-            Some("[Leading whitespace off; Whole-pair updates on]")
+            Some("[indentation off; whole updates on]")
         );
     }
 
