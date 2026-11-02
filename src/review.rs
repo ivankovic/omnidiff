@@ -18,8 +18,8 @@
 //! and how to turn any one of those changes into the two files on disk the diff engine reads.
 //! The TUI's review picker (`tui::components::review_dialog`) is its caller.
 //!
-//! Talks to the `git` binary, not `git2`, whose OpenSSL/libssh2 build `cargo install omnidiff`
-//! should not pay for; anyone reviewing has `git` on `PATH`.
+//! Talks to the `git` binary so the product needs no Git library dependency; anyone reviewing
+//! has `git` on `PATH`.
 //!
 //! A side is materialized at `<workspace>/<revision>/<path>`: the basename picks the grammar, and
 //! the revision directory keeps same-named files apart. The working tree's file is diffed in place,

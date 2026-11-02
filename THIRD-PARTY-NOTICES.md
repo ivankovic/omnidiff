@@ -6515,7 +6515,7 @@ Used by:
 - serde_json 1.0.151 (https://github.com/serde-rs/json)
 - siphasher 1.0.3 (https://github.com/jedisct1/rust-siphash)
 - syn 2.0.119 (https://github.com/dtolnay/syn)
-- syn 3.0.6 (https://github.com/dtolnay/syn)
+- syn 3.0.10 (https://github.com/dtolnay/syn)
 - thiserror-impl 1.0.69 (https://github.com/dtolnay/thiserror)
 - thiserror-impl 2.0.21 (https://github.com/dtolnay/thiserror)
 - thiserror 1.0.69 (https://github.com/dtolnay/thiserror)

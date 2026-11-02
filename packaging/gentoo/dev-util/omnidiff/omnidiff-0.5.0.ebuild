@@ -5,6 +5,7 @@ EAPI=8
 
 CRATES="
 	adler2@2.0.1
+	adler32furious@0.1.1
 	aho-corasick@1.1.5
 	alloc-no-stdlib@2.0.4
 	alloc-stdlib@0.2.4
@@ -16,6 +17,7 @@ CRATES="
 	anstyle@1.0.14
 	anyhow@1.0.104
 	approx@0.5.1
+	arc-swap@1.9.5
 	arrayref@0.3.9
 	arrayvec@0.7.8
 	atomic@0.6.1
@@ -35,6 +37,7 @@ CRATES="
 	block-buffer@0.12.1
 	brotli-decompressor@5.0.3
 	brotli@8.0.4
+	bstr@1.14.0
 	bumpalo@3.20.3
 	by_address@1.2.1
 	bytemuck@1.25.2
@@ -53,6 +56,7 @@ CRATES="
 	clap_derive@4.6.7
 	clap_lex@1.1.1
 	clap_mangen@0.3.3
+	clru@0.6.3
 	color@0.3.3
 	color_quant@1.1.0
 	colorchoice@1.0.5
@@ -66,6 +70,8 @@ CRATES="
 	crc32fast@1.5.2
 	critical-section@1.2.0
 	crossbeam-channel@0.5.17
+	crossbeam-deque@0.8.8
+	crossbeam-epoch@0.9.21
 	crossbeam-utils@0.8.23
 	crossterm@0.28.1
 	crossterm@0.29.0
@@ -79,7 +85,12 @@ CRATES="
 	darling@0.24.1
 	darling_core@0.24.1
 	darling_macro@0.24.1
+	dashmap@6.2.1
 	data-url@0.3.2
+	defmt-macros@1.2.0
+	defmt-parser@1.1.0
+	defmt@0.3.101
+	defmt@1.2.0
 	deltae@0.3.2
 	deranged@0.5.8
 	derive_more-impl@2.1.1
@@ -87,6 +98,7 @@ CRATES="
 	digest@0.10.7
 	digest@0.11.3
 	document-features@0.2.12
+	dunce@1.0.5
 	either@1.18.0
 	equivalent@1.0.2
 	errno@0.3.14
@@ -96,6 +108,7 @@ CRATES="
 	fallible-streaming-iterator@0.1.9
 	fancy-regex@0.11.0
 	fancy-regex@0.16.2
+	faster-hex@2.0.0
 	fastrand@2.5.0
 	fax@0.2.7
 	fdeflate@0.3.7
@@ -126,10 +139,61 @@ CRATES="
 	getrandom@0.3.4
 	getrandom@0.4.3
 	gif@0.14.2
-	git2@0.21.0
+	gix-actor@0.45.0
+	gix-attributes@0.38.0
+	gix-bitmap@0.6.2
+	gix-chunk@0.10.2
+	gix-command@0.12.2
+	gix-commitgraph@0.43.0
+	gix-config-value@0.21.2
+	gix-config@0.63.0
+	gix-date@0.19.0
+	gix-diff@0.71.0
+	gix-discover@0.58.0
+	gix-encoding@0.1.0
+	gix-error@0.5.3
+	gix-filter@0.37.0
+	gix-fs@1.0.0
+	gix-glob@0.30.0
+	gix-hash@0.29.0
+	gix-hashtable@0.19.0
+	gix-ignore@0.25.0
+	gix-imara-diff@0.3.4
+	gix-index@0.59.0
+	gix-lock@27.0.0
+	gix-macros@0.2.2
+	gix-note@0.4.0
+	gix-object@0.67.0
+	gix-odb@0.88.0
+	gix-pack@0.78.0
+	gix-packetline@0.24.2
+	gix-parallel@0.50.2
+	gix-path@0.14.2
+	gix-pathspec@0.23.0
+	gix-protocol@0.69.0
+	gix-quote@0.10.2
+	gix-ref@0.70.0
+	gix-refspec@0.48.0
+	gix-revision@0.53.0
+	gix-revwalk@0.39.0
+	gix-sec@0.17.0
+	gix-shallow@0.16.0
+	gix-submodule@0.37.0
+	gix-tempfile@27.0.0
+	gix-trace@0.3.2
+	gix-transport@0.63.0
+	gix-traverse@0.65.0
+	gix-url@0.41.0
+	gix-utils@0.5.3
+	gix-validate@0.13.2
+	gix-worktree-stream@0.40.0
+	gix-worktree@0.60.0
+	gix-zlib@0.4.1
+	gix@0.91.0
 	glifo@0.4.0
 	guillotiere@0.7.0
 	half@2.7.1
+	hashbrown@0.14.5
 	hashbrown@0.16.1
 	hashbrown@0.17.1
 	hashlink@0.12.2
@@ -157,7 +221,11 @@ CRATES="
 	is_terminal_polyfill@1.70.2
 	itertools@0.14.0
 	itoa@1.0.18
-	jobserver@0.1.35
+	jiff-core@1.0.1
+	jiff-static@1.0.2
+	jiff-tzdb-platform@1.0.0
+	jiff-tzdb@1.0.0
+	jiff@1.0.2
 	js-sys@0.3.105
 	kasuari@0.4.12
 	kurbo@0.13.1
@@ -165,11 +233,9 @@ CRATES="
 	lazy_static@1.5.0
 	libbz2-rs-sys@0.2.5
 	libc@0.2.191
-	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
 	libsqlite3-sys@0.39.1
-	libz-sys@1.1.33
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6
@@ -177,12 +243,14 @@ CRATES="
 	linux-raw-sys@0.4.15
 	litrs@1.0.0
 	lock_api@0.4.14
+	lock_api@0.5.0
 	log@0.4.34
 	lru@0.18.5
 	lzma-rust2@0.21.0
 	mac_address@1.1.8
 	matchers@0.2.0
 	memchr@2.8.3
+	memmap2@0.9.12
 	memmem@0.1.1
 	memoffset@0.9.1
 	metrohash@1.0.7
@@ -195,6 +263,7 @@ CRATES="
 	nix@0.29.0
 	nix@0.31.3
 	nom@7.1.3
+	nonempty@0.12.0
 	nu-ansi-term@0.50.3
 	num-conv@0.2.2
 	num-derive@0.4.2
@@ -213,8 +282,11 @@ CRATES="
 	palette_derive@0.7.7
 	palette_math@0.7.7
 	parking_lot@0.12.5
+	parking_lot@0.13.0
+	parking_lot_core@0.10.0
 	parking_lot_core@0.9.12
 	peniko@0.6.1
+	percent-encoding@2.3.2
 	pest@2.9.2
 	pest_derive@2.9.2
 	pest_generator@2.9.2
@@ -235,10 +307,12 @@ CRATES="
 	plist@1.10.1
 	png@0.18.1
 	polycool@0.4.0
+	portable-atomic-util@0.2.8
 	portable-atomic@1.15.0
 	powerfmt@0.2.0
 	ppv-lite86@0.2.21
 	proc-macro2@1.0.107
+	prodash@31.0.1
 	pxfm@0.1.30
 	quantette@0.6.0
 	quick-error@2.0.1
@@ -266,6 +340,7 @@ CRATES="
 	read-fonts@0.43.3
 	read-fonts@0.45.0
 	redox_syscall@0.5.18
+	redox_syscall@0.9.5
 	ref-cast-impl@1.0.27
 	ref-cast@1.0.27
 	regex-automata@0.4.18
@@ -293,6 +368,7 @@ CRATES="
 	serde_derive@1.0.229
 	serde_json@1.0.151
 	serde_spanned@1.1.1
+	sha1dc@0.1.5
 	sha2@0.10.9
 	sha2@0.11.0
 	sharded-slab@0.1.7
@@ -303,6 +379,7 @@ CRATES="
 	simd-adler32@0.3.10
 	simplecss@0.2.2
 	siphasher@1.0.3
+	sirocco@0.3.1
 	skrifa@0.44.0
 	skrifa@0.46.2
 	skrifa@0.48.0
@@ -320,7 +397,7 @@ CRATES="
 	svgtypes@0.16.1
 	syn@1.0.109
 	syn@2.0.119
-	syn@3.0.6
+	syn@3.0.10
 	synstructure@0.14.0
 	syntect@5.3.0
 	tap@1.0.1
@@ -342,6 +419,7 @@ CRATES="
 	time@0.3.55
 	tiny-skia-path@0.12.0
 	tiny-skia@0.12.0
+	tinyvec@1.13.3
 	tokio-macros@2.7.2
 	tokio@1.54.1
 	toml@0.9.12+spec-1.1.0
@@ -385,7 +463,10 @@ CRATES="
 	typed-path@0.13.0
 	typenum@1.20.1
 	ucd-trie@0.1.7
+	uluru@3.1.0
+	unicode-bom@2.0.3
 	unicode-ident@1.0.26
+	unicode-normalization@0.1.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
 	unicode-width@0.2.3
@@ -438,6 +519,7 @@ CRATES="
 	windows_x86_64_msvc@0.52.6
 	winnow@0.7.15
 	winnow@1.0.4
+	winreg@0.56.0
 	wit-bindgen@0.57.1
 	wuff@0.2.9
 	wyz@0.5.1
@@ -484,7 +566,7 @@ KEYWORDS="~amd64 ~arm64"
 # Rust build and why the build takes noticeably longer than the crate count alone suggests.
 
 # Built with the default `tui` feature only - the product binary. The `stats` and `test-fixtures`
-# features gate dataset-analysis dev tools that need git2 (OpenSSL, libssh2) and a bundled SQLite;
+# features gate dataset-analysis dev tools that need gix and a bundled SQLite;
 # they are not part of the shipped product, so there is no USE flag for them.
 
 # `lto = "fat"` plus `codegen-units = 1` in the release profile (see Cargo.toml) makes this a slow

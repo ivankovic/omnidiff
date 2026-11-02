@@ -17,6 +17,8 @@
 use anyhow::Result;
 use clap::Parser;
 use crossbeam_channel::{Receiver, Sender, bounded};
+use gix::bstr::ByteSlice;
+use gix::diff::tree_with_rewrites::Change;
 use omnidiff::anomalous_paths;
 use omnidiff::code::{Code, Language};
 use omnidiff::stats::DiffStats;
@@ -145,7 +147,7 @@ fn repository_stats(
     n_threads: usize,
     queue_capacity: usize,
 ) -> Result<HashMap<(String, String), DiffStats>> {
-    let repo = git2::Repository::open(repository_path)?;
+    let repo = gix::open(repository_path)?;
 
     let (delta_tx, delta_rx) = bounded::<(DiffStats, String, String)>(queue_capacity);
     let (stats_tx, stats_rx) = bounded::<DiffStats>(queue_capacity);
@@ -182,90 +184,77 @@ fn repository_stats(
     Ok(stats)
 }
 
-fn path_from_delta(delta: &git2::DiffDelta) -> String {
-    match delta.old_file().path() {
-        Some(path) => String::from(path.to_string_lossy()),
-        None => match delta.new_file().path() {
-            Some(path) => String::from(path.to_string_lossy()),
-            None => String::from(""),
-        },
-    }
-}
-
 fn detect_language_from_path(path: &str) -> Language {
     let path_buf = PathBuf::from(path);
     omnidiff::code::language::language_for_path(&path_buf).unwrap_or(Language::Unknown)
 }
 
 fn process_repository(
-    repo: &git2::Repository,
+    repo: &gix::Repository,
     delta_tx: Sender<(DiffStats, String, String)>,
 ) -> Result<()> {
-    let mut walk = repo.revwalk()?;
     // No sorting: every commit is visited and recorded independently, so order is irrelevant.
-    walk.push_head()?;
+    let walk = repo.rev_walk([repo.head_id()?]).all()?;
 
-    for id in walk {
-        let id = id?;
-        let commit = repo.find_commit(id)?;
-
-        let before_tree = if commit.parents().len() > 0 {
-            let parent = commit.parent(0)?;
-            Some(parent.tree()?)
-        } else {
-            None
-        };
+    for info in walk {
+        let info = info?;
+        let commit = info.object()?;
+        let before_tree = info
+            .parent_ids()
+            .next()
+            .map(|id| repo.find_commit(id)?.tree())
+            .transpose()?;
         let after_tree = commit.tree()?;
-
-        let mut diff_options = git2::DiffOptions::new();
-
-        let diff = repo.diff_tree_to_tree(
+        let diff = omnidiff::stats::git::file_changes(
+            repo,
             before_tree.as_ref(),
-            Some(&after_tree),
-            Some(&mut diff_options),
+            &after_tree,
+            gix::diff::Options::default(),
         )?;
 
-        for delta in diff.deltas() {
+        for delta in diff {
             let mut result = DiffStats {
-                commit_id: id.to_string(),
-                relative_file_path: path_from_delta(&delta),
+                commit_id: info.id.to_string(),
+                relative_file_path: delta.location().to_str_lossy().into_owned(),
                 ..Default::default()
             };
 
             let before: String;
             let after: String;
 
-            match delta.status() {
-                git2::Delta::Added => {
+            match delta {
+                Change::Addition { id, .. } => {
                     result.git_reported_status = String::from("Added");
 
                     before = String::from("");
 
-                    let after_blob = repo.find_blob(delta.new_file().id())?;
-                    after = String::from_utf8(after_blob.content().to_vec())?;
+                    let after_blob = repo.find_blob(id)?;
+                    after = after_blob.data.to_str()?.to_owned();
 
                     let language = detect_language_from_path(&result.relative_file_path);
                     result.after = Some(Code::from_string(&after, &language));
                 }
-                git2::Delta::Deleted => {
+                Change::Deletion { id, .. } => {
                     result.git_reported_status = String::from("Deleted");
 
-                    let before_blob = repo.find_blob(delta.old_file().id())?;
-                    before = String::from_utf8(before_blob.content().to_vec())?;
+                    let before_blob = repo.find_blob(id)?;
+                    before = before_blob.data.to_str()?.to_owned();
 
                     let language = detect_language_from_path(&result.relative_file_path);
                     result.before = Some(Code::from_string(&before, &language));
 
                     after = String::from("");
                 }
-                git2::Delta::Modified => {
+                Change::Modification {
+                    previous_id, id, ..
+                } => {
                     result.git_reported_status = String::from("Modified");
 
-                    let before_blob = repo.find_blob(delta.old_file().id())?;
-                    before = String::from_utf8(before_blob.content().to_vec())?;
+                    let before_blob = repo.find_blob(previous_id)?;
+                    before = before_blob.data.to_str()?.to_owned();
 
-                    let after_blob = repo.find_blob(delta.new_file().id())?;
-                    after = String::from_utf8(after_blob.content().to_vec())?;
+                    let after_blob = repo.find_blob(id)?;
+                    after = after_blob.data.to_str()?.to_owned();
 
                     let language = detect_language_from_path(&result.relative_file_path);
                     result.before = Some(Code::from_string(&before, &language));

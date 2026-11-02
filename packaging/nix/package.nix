@@ -53,7 +53,7 @@ rustPlatform.buildRustPackage {
   # (see Cargo.toml). Expect minutes.
 
   # Default features only (`tui`), the product binary. `stats`/`test-fixtures` gate
-  # dataset-analysis dev tools needing git2 (OpenSSL, libssh2) and a bundled SQLite; they are not
+  # dataset-analysis dev tools needing gix and a bundled SQLite; they are not
   # part of the shipped product, so they are deliberately not exposed as a Nix option.
   cargoBuildFlags = [ "--bin" "omnidiff" ];
 
