@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+sub name { my ($track) = @_; return $track->{title} }
+
+sub total_length {
+    my (@tracks) = @_;
+    my $sum = 0;
+    $sum += $_->{seconds} for @tracks;
+    return $sum;
+}
+
+sub average_length {
+    my (@tracks) = @_;
+    return total_length(@tracks) / scalar @tracks;
+}
+
+sub describe {
+    my ($name, @tracks) = @_;
+    my $total_secs = total_length(@tracks);
+    return "$name: $total_secs seconds of silence";
+}
+
+my $lengths = [180, 240];
+my @album = (
+    { title => 'Outro', seconds => 90 },
+    { title => 'Intro', seconds => $lengths->[0] },
+    { title => 'Rain', seconds => $lengths->[1] },
+);
+if (-t STDOUT) {
+    foreach my $track (@album) {
+        print "$track->{title}\n";
+    }
+}
+print describe('Demo', @album), "\n";
+print name($album[0]), "\n";
+my $longest = (sort { $b <=> $a } @$lengths)[0];
+print "$longest\n";

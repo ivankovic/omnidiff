@@ -322,6 +322,15 @@ impl CodeViewer {
         self.widget.language_name()
     }
 
+    /// See [`crate::tui::widgets::code_viewer::CodeViewerWidget::language`].
+    pub fn language(&self) -> Option<crate::code::Language> {
+        self.widget.language()
+    }
+
+    pub fn has_file(&self) -> bool {
+        self.widget.has_file()
+    }
+
     pub fn scroll_to_show_row(&mut self, row: usize) {
         let row = row.min(self.line_count().saturating_sub(1));
         if row < self.state.scroll {

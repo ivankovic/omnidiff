@@ -529,6 +529,18 @@ impl DiffViewer {
         }
     }
 
+    /// The language the settings page shows its example in: the focused panel's, plain text
+    /// (`Unknown`) for a file without a grammar, `None` when no file is open.
+    pub fn example_language(&self) -> Option<crate::code::Language> {
+        let viewer = match self.active_panel() {
+            Panel::Before => &self.left_viewer,
+            Panel::After => &self.right_viewer,
+        };
+        viewer
+            .has_file()
+            .then(|| viewer.language().unwrap_or(crate::code::Language::Unknown))
+    }
+
     fn active_language(&self) -> String {
         match self.active_panel {
             Panel::Before => self.left_viewer.language_name(),

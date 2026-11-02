@@ -590,7 +590,7 @@ mod tests {
         }
     }
 
-    /// Without any render flag the saved `M` panel setting applies untouched, "Whole-pair updates"
+    /// Without any render flag the saved `M` panel setting applies untouched, "whole updates"
     /// included.
     #[test]
     fn no_render_flag_leaves_the_saved_setting_alone() {

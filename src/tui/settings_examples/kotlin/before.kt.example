@@ -1,0 +1,28 @@
+import kotlin.math.max
+
+fun createPerson(name: String, age: Int) = mapOf(
+    "name" to name,
+    "age" to age
+)
+
+class Rectangle(val width: Int, val height: Int) {
+    fun area() = width * height
+
+    fun describe(label: String): String {
+        val total = area()
+        return "$label: $total square units"
+    }
+}
+
+fun main() {
+    val size = Pair(3, 4)
+    val shapes = listOf(
+        Rectangle(size.first, size.second),
+        Rectangle(5, 2),
+    )
+    for (shape in shapes) {
+        println(shape.describe("box"))
+    }
+    val largest = shapes.maxOf { it.area() }
+    println(largest)
+}

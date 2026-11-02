@@ -1,0 +1,44 @@
+<?php
+
+class Table
+{
+    private const MAX_SEATS = 8;
+
+    public function __construct(
+        public readonly string $label,
+        private array $guests,
+    ) {
+    }
+
+    public function name(): string { return $this->label; }
+
+    public function seats(): int
+    {
+        return array_sum($this->guests);
+    }
+
+    public function isFull(): bool
+    {
+        return $this->seats() >= self::MAX_SEATS;
+    }
+
+    public function describe(): string
+    {
+        $totalSeats = $this->seats();
+        return "{$this->name()}: {$totalSeats} chairs";
+    }
+}
+
+$sizes = [4, 2];
+$tables = [
+    new Table('bar', []),
+    new Table('window', $sizes),
+    new Table('terrace', [6, 1]),
+];
+if (getenv('DEBUG')) {
+    foreach ($tables as $table) {
+        echo $table->describe(), PHP_EOL;
+    }
+}
+$largest = max(array_map(fn ($t) => $t->seats(), $tables));
+echo count($tables), ' ', $largest, PHP_EOL;

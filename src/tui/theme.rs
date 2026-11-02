@@ -432,8 +432,18 @@ const LEGACY_CONFIG_DIR: &str = "codediff";
 ///
 /// Each layer also accepts its pre-rename name (see [`LEGACY_CONFIG_ENV`]).
 pub(crate) fn config_path() -> PathBuf {
+    #[cfg(test)]
+    if let Some(path) = TEST_CONFIG.with(|path| path.borrow().clone()) {
+        return path;
+    }
+    config_path_from(|variable| std::env::var(variable).ok())
+}
+
+/// [`config_path`] with the environment read through `lookup`, so the order can be tested without
+/// setting a process-wide variable under threads that read it.
+fn config_path_from(lookup: impl Fn(&str) -> Option<String>) -> PathBuf {
     for variable in [CONFIG_ENV, LEGACY_CONFIG_ENV] {
-        if let Ok(explicit) = std::env::var(variable)
+        if let Some(explicit) = lookup(variable)
             && !explicit.is_empty()
         {
             return PathBuf::from(explicit);
@@ -477,10 +487,42 @@ fn adopt_legacy_user_config(path: &Path) {
 /// A throwaway config for the test build. Many tests reach the persisting setters incidentally,
 /// so redirecting here is the only way no test writes a developer's real settings. Done in code
 /// because nextest ignores an `[env]` table and a Makefile variable misses a bare `cargo test`;
-/// keyed by process id so threaded `cargo test` runs do not share a file.
+/// keyed by process and thread, since `cargo test` runs tests as threads of one process and one
+/// test's saved setting must not be read back by another.
 #[cfg(test)]
 fn test_config_path() -> PathBuf {
-    std::env::temp_dir().join(format!("omnidiff-test-config-{}.toml", std::process::id()))
+    let thread = format!("{:?}", std::thread::current().id());
+    let thread: String = thread.chars().filter(char::is_ascii_digit).collect();
+    std::env::temp_dir().join(format!(
+        "omnidiff-test-config-{}-{thread}.toml",
+        std::process::id()
+    ))
+}
+
+#[cfg(test)]
+thread_local! {
+    /// The config this test thread reads and writes, set by [`use_config_for_this_thread`].
+    static TEST_CONFIG: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Points this test thread's config at `path` until the guard drops. Per thread rather than
+/// through `$OMNIDIFF_CONFIG`: setting a process-wide variable races every test running beside it
+/// under `cargo test`, which runs tests as threads of one process.
+#[cfg(test)]
+pub(crate) fn use_config_for_this_thread(path: &Path) -> TestConfigGuard {
+    TEST_CONFIG.with(|config| *config.borrow_mut() = Some(path.to_path_buf()));
+    TestConfigGuard
+}
+
+/// Restores [`use_config_for_this_thread`]'s default when dropped.
+#[cfg(test)]
+pub(crate) struct TestConfigGuard;
+
+#[cfg(test)]
+impl Drop for TestConfigGuard {
+    fn drop(&mut self) {
+        TEST_CONFIG.with(|config| *config.borrow_mut() = None);
+    }
 }
 
 /// The nearest existing `.omnidiff.toml` at or above the current directory. Unreachable in the
@@ -716,13 +758,19 @@ mod tests {
         );
     }
 
-    /// Tests rely on this to stay off a real user's settings.
+    /// A user, or a script, relies on this to point omnidiff at a config of their choosing.
     #[test]
     fn the_environment_override_wins_over_every_other_layer() {
         let file = tempfile::NamedTempFile::new().expect("temp file");
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        assert_eq!(config_path(), file.path());
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let path = file.path().to_string_lossy().into_owned();
+        let lookup = |variable: &str| (variable == CONFIG_ENV).then(|| path.clone());
+        assert_eq!(config_path_from(lookup), file.path());
+        let empty = |variable: &str| (variable == CONFIG_ENV).then(String::new);
+        assert_ne!(
+            config_path_from(empty),
+            PathBuf::new(),
+            "an empty value is not a path"
+        );
     }
 
     #[test]
@@ -743,9 +791,10 @@ mod tests {
             },
         );
 
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        let pairs = load_recent_pairs();
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let pairs = {
+            let _config = use_config_for_this_thread(file.path());
+            load_recent_pairs()
+        };
 
         assert_eq!(pairs.len(), 1);
         assert_eq!(pairs[0].0, alive.path());

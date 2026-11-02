@@ -161,7 +161,11 @@ mod tests {
         let serialized: Vec<&str> = text.split('"').skip(1).step_by(2).collect();
         let rows: Vec<&str> = render_option_rows().iter().map(|row| row.key).collect();
         assert_eq!(rows, serialized);
-        assert!(render_option_rows()[1].label.starts_with("Structural"));
+        assert!(
+            render_option_rows()[1]
+                .label
+                .starts_with("Highlight brackets")
+        );
     }
 
     #[test]

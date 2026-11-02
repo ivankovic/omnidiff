@@ -1,0 +1,37 @@
+library(stats)
+library(utils)
+
+item <- function(...) {
+  structure(list(...), class = "item")
+}
+
+make_item <- function(name, count) {
+  item(name, count)
+}
+
+area <- function(box) {
+  box$width * box$depth
+}
+
+perimeter <- function(box) {
+  2 * (box$width + box$depth)
+}
+
+describe <- function(box, label) {
+  total_area <- area(box)
+  paste0(label, ": ", total_area, " square metres")
+}
+
+size <- c(w = 3, d = 4)
+boxes <- list(
+  list(width = 1, depth = 1),
+  list(width = size[["w"]], depth = size[["d"]]),
+  list(width = 5, depth = 2)
+)
+if (interactive()) {
+  for (box in boxes) {
+    print(describe(box, "crate"))
+  }
+}
+biggest <- max(sapply(boxes, area), na.rm = TRUE)
+print(c(length(boxes), biggest))

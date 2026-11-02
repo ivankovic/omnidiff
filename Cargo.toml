@@ -37,6 +37,8 @@ include = [
     "/src/**/*.rs",
     # The JSON output's format, which the README links to.
     "/src/tui/json_output.schema.json",
+    # The settings page's examples (`tui::settings_examples`), compiled in with `include_str!`.
+    "/src/tui/settings_examples/**/*.example",
     "!/src/bin/**",
     "!/src/test/data/**",
     # One stub per fixture, compiled only under `cfg(test)` and useless without src/test/data.
