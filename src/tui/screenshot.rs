@@ -239,7 +239,7 @@ mod tests {
     fn render_fills_every_cell_and_paints_the_change() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let config = dir.path().join("config.toml");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, &config) };
+        let _config = theme::use_config_for_this_thread(&config);
         let (before, after) = pair(dir.path());
 
         let shot = render(
@@ -269,7 +269,6 @@ mod tests {
                 .any(|run| run.bg.as_deref() == Some(delete_bg.as_str())),
             "the removed loop is painted with the theme's delete colour"
         );
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
         Ok(())
     }
 

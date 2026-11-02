@@ -1,0 +1,33 @@
+library(stats)
+library(utils)
+
+record <- function(...) {
+  list(...)
+}
+
+make_item <- function(name, count) {
+  record(
+    name = name,
+    count = count
+  )
+}
+
+area <- function(box) {
+  box$width * box$depth
+}
+
+describe <- function(box, label) {
+  total <- area(box)
+  paste0(label, ": ", total, " square units")
+}
+
+size <- list(w = 3, d = 4)
+boxes <- list(
+  list(width = size$w, depth = size$d),
+  list(width = 5, depth = 2)
+)
+for (box in boxes) {
+  print(describe(box, "crate"))
+}
+largest <- max(sapply(boxes, area))
+print(largest)

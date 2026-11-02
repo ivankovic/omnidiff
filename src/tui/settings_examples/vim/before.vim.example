@@ -1,0 +1,30 @@
+" Settings for writing notes in Markdown
+set number
+set tabstop=4 shiftwidth=4 expandtab
+
+let g:notes_dir = '~/notes'
+let g:notes_tags = ['todo', 'idea']
+
+function! NewNote(title) abort
+  let name = substitute(a:title, ' ', '-', 'g')
+  let path = g:notes_dir . '/' . name . '.md'
+  let header = s:Pairs(
+        \ 'title', a:title,
+        \ 'date', strftime('%F'))
+  execute 'edit ' . path
+  call setline(1, header)
+endfunction
+
+function! WordCount() abort
+  let words = wordcount().words
+  echo words . ' words'
+endfunction
+
+augroup notes
+  autocmd!
+  autocmd FileType markdown setlocal spell
+  autocmd FileType markdown setlocal wrap
+augroup END
+
+command! -nargs=1 Note call NewNote(<q-args>)
+nnoremap <leader>w :call WordCount()<CR>

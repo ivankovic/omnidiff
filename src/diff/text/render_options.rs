@@ -168,6 +168,77 @@ pub struct RenderOptions {
     pub interior_whitespace: bool,
 }
 
+/// How the settings page and the status bar name an option, and what the page says it does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OptionInfo {
+    /// The settings page's name for it, in plain words.
+    pub name: &'static str,
+    /// A few words for the status bar's badge.
+    pub short: &'static str,
+    /// What it changes, for the settings page.
+    pub description: &'static str,
+}
+
+/// [`RenderOptions::options`]'s names and descriptions, in the same order.
+pub const OPTION_INFO: [OptionInfo; 8] = [
+    OptionInfo {
+        name: "Highlight the indentation of added and removed lines",
+        short: "indentation",
+        description: "On, a line that was added or removed is highlighted from the left margin, its \
+            indentation included, so a new block reads as one bar. Off, only its code is \
+            highlighted and the indentation stays plain.",
+    },
+    OptionInfo {
+        name: "Highlight brackets and separators that only shifted",
+        short: "punctuation",
+        description: "On, a bracket, comma or semicolon that only shifted, or sits in a changed \
+            pair, is highlighted with the code around it. Off, it stays plain. Punctuation that \
+            was added or removed is highlighted either way: then it is the edit.",
+    },
+    OptionInfo {
+        name: "Highlight changed text whole, not only the part that differs",
+        short: "whole updates",
+        description: "On, a changed word, string or number is highlighted entirely. Off, only the \
+            part that differs is, so a version bump shows just the digits that changed. Off in \
+            both presets.",
+    },
+    OptionInfo {
+        name: "Show code that was only re-indented as moved",
+        short: "re-indented moves",
+        description: "On, code that kept its text but moved in or out by indentation - wrapped in a \
+            new block, or taken out of one - is highlighted as moved. Off, it stays plain and only \
+            the block around it is highlighted.",
+    },
+    OptionInfo {
+        name: "Show code pushed along by an edit beside it as moved",
+        short: "displaced moves",
+        description: "On, code that kept its text and its place, and shifted only because \
+            something was added or removed before it, is highlighted as moved. Off, it stays \
+            plain and only the edit beside it is highlighted.",
+    },
+    OptionInfo {
+        name: "Show moves in reshaped code on both sides",
+        short: "reshaped moves",
+        description: "When code is reshaped, the two sides can measure a piece that moved through \
+            it differently, such as `age` going from a multi-line call into `Person(name, age)`. \
+            On, that move is highlighted on both sides. Off, only the smaller account is kept, so \
+            it may show on one side or not at all.",
+    },
+    OptionInfo {
+        name: "Highlight a renamed name whole",
+        short: "whole names",
+        description: "On, a renamed variable, function or type is highlighted entirely on both \
+            sides: it is a different name. Off, only the letters that differ are. Comments, \
+            strings and other text keep the narrow highlight either way.",
+    },
+    OptionInfo {
+        name: "Highlight the space between two highlighted pieces on a row",
+        short: "spaces between",
+        description: "On, the blank between two highlighted pieces on one row is highlighted too, \
+            so one edit does not read as two with a gap. Off, such blanks stay plain.",
+    },
+];
+
 /// [`RenderOptions::paint_reindent_only_moves`]'s serde default.
 pub(crate) fn paint_reindent_only_moves_default() -> bool {
     true
@@ -208,28 +279,20 @@ impl RenderOptions {
         interior_whitespace: true,
     };
 
-    /// Every option with its label and value, in settings-UI order. Indexes match
-    /// [`Self::toggle`].
+    /// Every option with its name and value, in settings-UI order. Indexes match [`Self::toggle`]
+    /// and [`OPTION_INFO`].
     pub fn options(&self) -> [(&'static str, bool); 8] {
-        [
-            ("Leading whitespace", self.leading_whitespace),
-            (
-                "Structural punctuation (brackets, separators)",
-                self.structural_punctuation,
-            ),
-            ("Whole-pair updates", self.whole_pair_updates),
-            ("Paint reindent-only moves", self.paint_reindent_only_moves),
-            ("Paint displaced moves", self.paint_displaced_moves),
-            (
-                "Paint moves the two sides size differently",
-                self.paint_resized_moves,
-            ),
-            ("Whole renamed identifiers", self.whole_identifier_updates),
-            (
-                "Whitespace between differently painted ranges",
-                self.interior_whitespace,
-            ),
-        ]
+        let values = [
+            self.leading_whitespace,
+            self.structural_punctuation,
+            self.whole_pair_updates,
+            self.paint_reindent_only_moves,
+            self.paint_displaced_moves,
+            self.paint_resized_moves,
+            self.whole_identifier_updates,
+            self.interior_whitespace,
+        ];
+        std::array::from_fn(|i| (OPTION_INFO[i].name, values[i]))
     }
 
     /// Flips the option at [`Self::options`]'s index `i`; out of range is a no-op, not a panic.

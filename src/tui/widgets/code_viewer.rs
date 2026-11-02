@@ -680,6 +680,11 @@ impl CodeViewerWidget {
             .unwrap_or_else(|| "Untitled".to_string())
     }
 
+    /// The language the file is diffed as; `None` for plain text or no file.
+    pub fn language(&self) -> Option<crate::code::Language> {
+        self.language
+    }
+
     /// As a person writes it (`C++`, not the variant's `CPP`), for the panel title.
     pub fn language_name(&self) -> String {
         self.language
