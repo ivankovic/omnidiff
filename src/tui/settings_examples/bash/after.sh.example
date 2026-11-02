@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+item() {
+  echo "item: $(printf '%s=%s\n' "$@")"
+}
+
+make_record() {
+  item "$1" "$2"
+}
+
+area() {
+  echo $(( $1 * $2 ))
+}
+
+perimeter() {
+  echo $(( 2 * ($1 + $2) ))
+}
+
+describe() {
+  local label=$1 total_area
+  total_area=$(area "$2" "$3")
+  echo "$label: $total_area square metres"
+}
+
+main() {
+  if [[ $# -gt 0 ]]; then
+    cd "$1"
+  fi
+  local boxes=("1 1" "3 4" "5 2")
+  if [[ -n ${VERBOSE:-} ]]; then
+    for box in "${boxes[@]}"; do
+      describe crate $box
+    done
+  fi
+  local -i biggest
+  biggest=$(area 5 2)
+  echo "${#boxes[@]} $biggest"
+}
+
+main "$@"
