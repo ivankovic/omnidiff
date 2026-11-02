@@ -27,7 +27,7 @@
 
 # One feature set for every local release-binary target, so alternating targets does not re-link
 # the fat-LTO binary (cargo fingerprints by feature set; `stats` is a superset of `test-fixtures`).
-# CI's quality job overrides it with the smaller set to keep git2/rusqlite out of its cache.
+# CI's quality job overrides it with the smaller set to keep gix/rusqlite out of its cache.
 FEATURES ?= stats
 
 # Usage: make benchmark-ablation [OUT_DIR=path]

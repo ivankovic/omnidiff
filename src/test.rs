@@ -272,13 +272,8 @@ mod tests {
         let git_dir = test_git_repo_path.join(".git");
         assert!(git_dir.is_dir());
 
-        let repo = git2::Repository::open(&test_git_repo_path)?;
-        let head = repo.head()?;
-        let commit = head.peel_to_commit()?;
-
-        let mut revwalk = repo.revwalk()?;
-        revwalk.push(commit.id())?;
-        let commit_count = revwalk.count();
+        let repo = gix::open(&test_git_repo_path)?;
+        let commit_count = repo.head_id()?.ancestors().all()?.count();
         assert!(
             commit_count >= 2,
             "Expected at least 2 commits, found {}",

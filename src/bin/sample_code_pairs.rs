@@ -16,7 +16,7 @@
  */
 use anyhow::Result;
 use clap::Parser;
-use git2::Delta;
+use gix::{bstr::ByteSlice as _, diff::tree_with_rewrites::Change};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::HashMap;
@@ -130,18 +130,34 @@ fn sample_repository(
     rng: &mut StdRng,
 ) -> Result<()> {
     walk_single_parent_commit_diffs(repo_path, max_commits, true, |repo, id, delta| {
-        if !matches!(delta.status(), Delta::Modified | Delta::Renamed) {
-            return Ok(());
-        }
+        let (old_path, path, old_id, new_id) = match delta {
+            Change::Modification {
+                location,
+                previous_id,
+                id,
+                ..
+            } => (location, location, *previous_id, *id),
+            Change::Rewrite {
+                source_location,
+                location,
+                source_id,
+                id,
+                copy: false,
+                ..
+            } => (source_location, location, *source_id, *id),
+            _ => return Ok(()),
+        };
         // A pure rename is a trivial diff pair.
-        if delta.old_file().id() == delta.new_file().id() {
+        if old_id == new_id {
             return Ok(());
         }
 
-        let Some(path) = delta.new_file().path() else {
+        let (Ok(old_path), Ok(path)) = (
+            gix::path::from_byte_slice(old_path),
+            gix::path::from_byte_slice(path),
+        ) else {
             return Ok(());
         };
-        let old_path = delta.old_file().path().unwrap_or(path);
         if anomalous_paths::is_anomalous(path) || anomalous_paths::is_anomalous(old_path) {
             return Ok(());
         }
@@ -152,8 +168,8 @@ fn sample_repository(
         // Only `.ts` needs content to disambiguate (Qt Linguist vs. TypeScript); gating on it
         // avoids a blob read for every other file.
         if language == Language::TypeScript
-            && let Ok(blob) = repo.find_blob(delta.new_file().id())
-            && let Ok(text) = std::str::from_utf8(blob.content())
+            && let Ok(blob) = repo.find_blob(new_id)
+            && let Ok(text) = blob.data.to_str()
             && let Some(refined) = language_for_path_and_content(path, text)
         {
             language = refined;
@@ -168,13 +184,8 @@ fn sample_repository(
         }
 
         // The larger side decides the bucket; a binary or out-of-range side skips the pair.
-        let loc = text_loc_if_in_range(repo, delta.old_file().id(), MIN_BYTES, MAX_BYTES)
-            .zip(text_loc_if_in_range(
-                repo,
-                delta.new_file().id(),
-                MIN_BYTES,
-                MAX_BYTES,
-            ))
+        let loc = text_loc_if_in_range(repo, old_id, MIN_BYTES, MAX_BYTES)
+            .zip(text_loc_if_in_range(repo, new_id, MIN_BYTES, MAX_BYTES))
             .map(|(before_loc, after_loc)| before_loc.max(after_loc));
         let Some(loc) = loc else {
             return Ok(());

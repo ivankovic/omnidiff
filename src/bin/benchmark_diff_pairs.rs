@@ -16,7 +16,7 @@
  */
 use anyhow::{Result, anyhow};
 use clap::Parser;
-use git2::Repository;
+use gix::{Repository, bstr::ByteVec as _};
 use serde::Deserialize;
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
@@ -168,13 +168,13 @@ fn open_repo<'a>(
         if repos.len() >= OPEN_REPOS_MAX {
             repos.clear();
         }
-        repos.insert(name.to_string(), Repository::open(repo_root.join(name))?);
+        repos.insert(name.to_string(), gix::open(repo_root.join(name))?);
     }
     Ok(repos.get(name).unwrap())
 }
 
 fn blob_content(repo: &Repository, treeish: &str, path: &str) -> Result<Vec<u8>> {
-    let tree = repo.revparse_single(treeish)?.peel_to_tree()?;
+    let tree = repo.rev_parse_single(treeish)?.object()?.peel_to_tree()?;
     omnidiff::stats::git::blob_bytes(repo, &tree, Path::new(path))
 }
 
@@ -206,12 +206,9 @@ fn measure_pair(
 ) -> Result<Row> {
     let repo = open_repo(repos, repo_root, &pair.repository)?;
 
-    let before_text = String::from_utf8(blob_content(
-        repo,
-        &format!("{}^", pair.commit),
-        &pair.old_path,
-    )?)?;
-    let after_text = String::from_utf8(blob_content(repo, &pair.commit, &pair.path)?)?;
+    let before_text =
+        blob_content(repo, &format!("{}^", pair.commit), &pair.old_path)?.into_string()?;
+    let after_text = blob_content(repo, &pair.commit, &pair.path)?.into_string()?;
 
     let language = language_for_path(Path::new(&pair.path))
         .ok_or_else(|| anyhow!("no language detected for {}", pair.path))?;
@@ -589,16 +586,14 @@ mod tests {
             .to_string_lossy()
             .into_owned();
 
-        let repo = Repository::open(&repo_path)?;
-        let mut walk = repo.revwalk()?;
-        walk.push_head()?;
+        let repo = gix::open(&repo_path)?;
+        let walk = repo.head_id()?.ancestors().all()?;
 
         let mut commit_with_parent = None;
         for id in walk {
-            let id = id?;
-            let commit = repo.find_commit(id)?;
-            if commit.parents().len() == 1 {
-                commit_with_parent = Some(id.to_string());
+            let info = id?;
+            if info.parent_ids.len() == 1 {
+                commit_with_parent = Some(info.id.to_string());
                 break;
             }
         }
@@ -636,17 +631,13 @@ mod tests {
             .to_string_lossy()
             .into_owned();
 
-        let repo = Repository::open(&repo_path)?;
-        let mut walk = repo.revwalk()?;
-        walk.push_head()?;
+        let repo = gix::open(&repo_path)?;
+        let walk = repo.head_id()?.ancestors().all()?;
         let commit = walk
             .filter_map(Result::ok)
-            .find(|id| {
-                repo.find_commit(*id)
-                    .map(|c| c.parents().len() == 1)
-                    .unwrap_or(false)
-            })
+            .find(|info| info.parent_ids.len() == 1)
             .unwrap()
+            .id
             .to_string();
 
         let pair = SampledPair {

@@ -19,7 +19,7 @@
 //! commit-pinned link to the license file plus a best-effort label, not the license text. See
 //! `README.md`'s "Third-party test fixtures".
 
-use git2::{Repository, Tree};
+use gix::{Repository, Tree, bstr::ByteSlice as _};
 use std::fmt::Write as _;
 
 /// A license/notice file in a sampled repository at the sampled commit (not HEAD), so it is what
@@ -42,26 +42,25 @@ const LICENSE_DIRECTORY_NAMES: &[&str] = &["license", "licenses", "licence", "li
 /// Every license blob at `tree`'s root or directly inside a `LICENSE_DIRECTORY_NAMES` directory,
 /// sorted by path. Read as lossy UTF-8, so one bad byte does not lose the rest. Empty means none
 /// was found, which `render_readme` reports explicitly.
-pub fn find_license_files(repo: &Repository, tree: &Tree) -> Vec<LicenseFile> {
+pub fn find_license_files(repo: &Repository, tree: &Tree<'_>) -> Vec<LicenseFile> {
     let mut found = Vec::new();
     collect_license_files_in(repo, tree, "", &mut found);
-    for entry in tree.iter() {
-        if entry.kind() != Some(git2::ObjectType::Tree) {
+    for entry in tree.iter().flatten() {
+        if !entry.mode().is_tree() {
             continue;
         }
-        let Ok(name) = entry.name() else { continue };
+        let Ok(name) = entry.filename().to_str() else {
+            continue;
+        };
         if !LICENSE_DIRECTORY_NAMES.contains(&name.to_lowercase().as_str()) {
             continue;
         }
-        let Ok(object) = entry.to_object(repo) else {
+        let Ok(subtree) = repo.find_tree(entry.object_id()) else {
             continue;
         };
-        let Some(subtree) = object.as_tree() else {
-            continue;
-        };
-        collect_license_files_in(repo, subtree, name, &mut found);
+        collect_license_files_in(repo, &subtree, name, &mut found);
     }
-    // Explicit, rather than relying on git2's iteration order.
+    // Sort across both the root and license directories.
     found.sort_by(|a, b| a.filename.cmp(&b.filename));
     found
 }
@@ -69,12 +68,14 @@ pub fn find_license_files(repo: &Repository, tree: &Tree) -> Vec<LicenseFile> {
 /// Appends `tree`'s direct license blobs to `found`, named with `dir_prefix` (`""` for the root).
 fn collect_license_files_in(
     repo: &Repository,
-    tree: &Tree,
+    tree: &Tree<'_>,
     dir_prefix: &str,
     found: &mut Vec<LicenseFile>,
 ) {
-    for entry in tree.iter() {
-        let Ok(name) = entry.name() else { continue };
+    for entry in tree.iter().flatten() {
+        let Ok(name) = entry.filename().to_str() else {
+            continue;
+        };
         let lower = name.to_lowercase();
         if !LICENSE_FILENAME_PREFIXES
             .iter()
@@ -82,13 +83,10 @@ fn collect_license_files_in(
         {
             continue;
         }
-        let Ok(object) = entry.to_object(repo) else {
+        let Ok(blob) = repo.find_blob(entry.object_id()) else {
             continue;
         };
-        let Some(blob) = object.as_blob() else {
-            continue;
-        };
-        let text = String::from_utf8_lossy(blob.content()).into_owned();
+        let text = blob.data.to_str_lossy().into_owned();
         let label = classify_license(&text);
         let filename = if dir_prefix.is_empty() {
             name.to_string()
@@ -152,9 +150,9 @@ fn classify_license(text: &str) -> &'static str {
 
 /// The `origin` remote's URL, if configured: the upstream, not the local checkout.
 pub fn origin_remote_url(repo: &Repository) -> Option<String> {
-    repo.find_remote("origin")
-        .ok()
-        .and_then(|remote| remote.url().ok().map(str::to_string))
+    let remote = repo.find_remote("origin").ok()?;
+    let url = remote.url(gix::remote::Direction::Fetch)?;
+    url.to_bstring().to_str().ok().map(str::to_owned)
 }
 
 /// A link to `path` in `repo_url` pinned to `commit`, so it survives upstream edits. Only the
@@ -279,6 +277,69 @@ pub fn render_readme(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn finds_licenses_in_the_selected_tree_and_license_directories() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let mut repo = gix::init(dir.path())?;
+        let mut tree = repo.empty_tree().edit()?;
+        for (path, text) in [
+            ("NOTICE", "a notice"),
+            (
+                "licenses/LICENSE-MIT",
+                "Permission is hereby granted, free of charge",
+            ),
+            ("src/LICENSE", "not at the root or in a license directory"),
+        ] {
+            tree.upsert(
+                path,
+                gix::object::tree::EntryKind::Blob,
+                repo.write_blob(text)?,
+            )?;
+        }
+        let tree_id = tree.write()?.detach();
+        drop(tree);
+        let tree = repo.find_tree(tree_id)?;
+        let found = find_license_files(&repo, &tree);
+        assert_eq!(
+            found
+                .iter()
+                .map(|file| file.filename.as_str())
+                .collect::<Vec<_>>(),
+            ["NOTICE", "licenses/LICENSE-MIT"]
+        );
+        assert_eq!(found[1].label, "MIT License");
+        assert_eq!(
+            origin_remote_url(&repo),
+            None,
+            "a new repository has no origin, so provenance must leave the upstream URL unknown"
+        );
+        drop(tree);
+        let mut config = repo.config_snapshot_mut();
+        config.append_config(
+            ["remote.origin.url=https://github.com/example/repo.git"],
+            gix::config::Source::Api,
+        )?;
+        config.commit()?;
+        assert_eq!(
+            origin_remote_url(&repo).as_deref(),
+            Some("https://github.com/example/repo.git"),
+            "committing the configuration snapshot must make origin's URL available for provenance"
+        );
+        let mut config = repo.config_snapshot_mut();
+        config.append_config(
+            ["url.https://gitlab.com/.insteadOf=https://github.com/"],
+            gix::config::Source::Api,
+        )?;
+        config.commit()?;
+        assert_eq!(
+            origin_remote_url(&repo).as_deref(),
+            Some("https://gitlab.com/example/repo.git"),
+            "provenance must use Git's effective fetch URL after insteadOf rewriting, \
+             not the literal origin URL"
+        );
+        Ok(())
+    }
 
     #[test]
     fn classifies_common_license_texts() {

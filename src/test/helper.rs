@@ -20,7 +20,7 @@ pub mod json_schema;
 
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "stats")]
-use git2::{Repository, Signature};
+use gix::Repository;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -947,7 +947,7 @@ fn initialize_repository() -> Result<(PathBuf, Repository)> {
     let temp_dir = tempdir().expect("Failed to create temporary directory");
     let repo_path = temp_dir.path().to_path_buf();
 
-    let repo = Repository::init(repo_path.clone()).expect("Failed to initialize git repository");
+    let repo = gix::init(&repo_path).expect("Failed to initialize git repository");
     let _ = temp_dir.keep();
 
     Ok((repo_path, repo))
@@ -982,12 +982,9 @@ fn read_fake_git_repo_testdata() -> Result<Vec<(u32, PathBuf)>> {
 
 #[cfg(feature = "stats")]
 fn add_commits(repo: &Repository, repo_path: &Path, dirs: Vec<(u32, PathBuf)>) -> Result<()> {
-    let signature =
-        Signature::now("Test Author", "test@example.com").expect("Failed to create signature");
-
     for (commit_num, dir_path) in dirs {
         copy_test_files_to_repo(&dir_path, commit_num, repo_path)?;
-        create_commit(repo, &signature, commit_num)?;
+        create_commit(repo, commit_num)?;
     }
     Ok(())
 }
@@ -1037,50 +1034,46 @@ fn path_in_repo(file_path: &Path, commit_num: u32, repo_path: &Path) -> PathBuf 
 }
 
 #[cfg(feature = "stats")]
-fn create_commit(repo: &Repository, signature: &Signature, commit_num: u32) -> Result<()> {
-    let commit_message = format!("Commit {}", commit_num);
-
-    let mut index = repo.index().expect("Failed to open index");
-    index
-        .add_all(["*"], git2::IndexAddOption::DEFAULT, None)
-        .expect("Failed to add files to index");
-    index.write().expect("Failed to write index");
-
-    let tree_id = index.write_tree().expect("Failed to write tree");
-    let tree = repo.find_tree(tree_id).expect("Failed to find tree");
-
-    let parent_commit = if commit_num > 1 {
-        let obj = repo
-            .head()
-            .expect("Failed to get HEAD")
-            .resolve()
-            .expect("Failed to resolve HEAD");
-        Some(obj.peel_to_commit().expect("Failed to peel to commit"))
+fn create_commit(repo: &Repository, commit_num: u32) -> Result<()> {
+    let work_dir = repo
+        .workdir()
+        .context("test repository has no working tree")?;
+    let mut tree = repo.empty_tree().edit()?;
+    for entry in walkdir::WalkDir::new(work_dir)
+        .into_iter()
+        .filter_entry(|entry| entry.file_name() != ".git")
+    {
+        let entry = entry?;
+        if entry.file_type().is_file() {
+            let path = gix::path::into_bstr(entry.path().strip_prefix(work_dir)?)?;
+            let path = gix::path::to_unix_separators_on_windows(path);
+            tree.upsert(
+                path.as_ref(),
+                gix::object::tree::EntryKind::Blob,
+                repo.write_blob(fs::read(entry.path())?)?,
+            )?;
+        }
+    }
+    let parent = if commit_num > 1 {
+        Some(repo.head_id()?)
     } else {
         None
     };
-
-    if let Some(parent) = parent_commit {
-        repo.commit(
-            Some("HEAD"),
-            signature,
-            signature,
-            &commit_message,
-            &tree,
-            &[&parent],
-        )
-        .expect("Failed to create commit");
-    } else {
-        repo.commit(
-            Some("HEAD"),
-            signature,
-            signature,
-            &commit_message,
-            &tree,
-            &[],
-        )
-        .expect("Failed to create initial commit");
-    }
+    let signature = gix::actor::Signature {
+        name: "Test Author".into(),
+        email: "test@example.com".into(),
+        time: gix::date::Time::new(946684800 + i64::from(commit_num), 0),
+    };
+    let mut time_buf = Default::default();
+    let signature_ref = signature.to_ref(&mut time_buf);
+    repo.commit_as(
+        signature_ref,
+        signature_ref,
+        "HEAD",
+        format!("Commit {commit_num}"),
+        tree.write()?,
+        parent,
+    )?;
 
     Ok(())
 }

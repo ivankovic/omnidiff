@@ -5,6 +5,7 @@ EAPI=8
 
 CRATES="
 	adler2@2.0.1
+	adler32furious@0.1.1
 	aho-corasick@1.1.5
 	alloc-no-stdlib@2.0.4
 	alloc-stdlib@0.2.4
@@ -16,6 +17,7 @@ CRATES="
 	anstyle@1.0.14
 	anyhow@1.0.104
 	approx@0.5.1
+	arc-swap@1.9.3
 	arrayref@0.3.9
 	arrayvec@0.7.8
 	atomic@0.6.1
@@ -35,11 +37,13 @@ CRATES="
 	block-buffer@0.12.1
 	brotli-decompressor@5.0.3
 	brotli@8.0.4
+	bstr@1.13.1
 	bumpalo@3.20.3
 	by_address@1.2.1
 	bytemuck@1.25.2
 	bytemuck_derive@1.12.1
 	byteorder-lite@0.1.0
+	byteorder@1.5.0
 	bytes@1.12.1
 	bzip2@0.6.1
 	castaway@0.2.4
@@ -53,6 +57,7 @@ CRATES="
 	clap_derive@4.6.7
 	clap_lex@1.1.1
 	clap_mangen@0.3.3
+	clru@0.6.3
 	color@0.3.3
 	color_quant@1.1.0
 	colorchoice@1.0.5
@@ -60,11 +65,14 @@ CRATES="
 	confy@2.0.0
 	const-oid@0.10.2
 	convert_case@0.10.0
+	core_detect@1.0.0
 	cpufeatures@0.2.17
 	cpufeatures@0.3.1
 	crc32fast@1.5.2
 	critical-section@1.2.0
 	crossbeam-channel@0.5.17
+	crossbeam-deque@0.8.8
+	crossbeam-epoch@0.9.21
 	crossbeam-utils@0.8.23
 	crossterm@0.28.1
 	crossterm@0.29.0
@@ -78,7 +86,12 @@ CRATES="
 	darling@0.24.1
 	darling_core@0.24.1
 	darling_macro@0.24.1
+	dashmap@6.2.1
 	data-url@0.3.2
+	defmt-macros@1.2.0
+	defmt-parser@1.1.0
+	defmt@0.3.101
+	defmt@1.2.0
 	deltae@0.3.2
 	deranged@0.5.8
 	derive_more-impl@2.1.1
@@ -86,7 +99,9 @@ CRATES="
 	digest@0.10.7
 	digest@0.11.3
 	document-features@0.2.12
+	dunce@1.0.5
 	either@1.18.0
+	encoding_rs@0.8.44
 	equivalent@1.0.2
 	errno@0.3.14
 	etcetera@0.10.0
@@ -95,6 +110,7 @@ CRATES="
 	fallible-streaming-iterator@0.1.9
 	fancy-regex@0.11.0
 	fancy-regex@0.16.2
+	faster-hex@0.10.1
 	fastrand@2.5.0
 	fax@0.2.7
 	fdeflate@0.3.7
@@ -125,10 +141,11 @@ CRATES="
 	getrandom@0.3.4
 	getrandom@0.4.3
 	gif@0.14.2
-	git2@0.21.0
 	glifo@0.1.1
 	guillotiere@0.7.0
 	half@2.7.1
+	hash32@0.3.1
+	hashbrown@0.14.5
 	hashbrown@0.16.1
 	hashbrown@0.17.1
 	hashlink@0.12.2
@@ -140,6 +157,7 @@ CRATES="
 	hayro-postscript@0.1.0
 	hayro-syntax@0.7.2
 	hayro@0.7.1
+	heapless@0.8.0
 	heck@0.5.0
 	hermit-abi@0.5.3
 	hex@0.4.3
@@ -156,7 +174,11 @@ CRATES="
 	is_terminal_polyfill@1.70.2
 	itertools@0.14.0
 	itoa@1.0.18
-	jobserver@0.1.35
+	jiff-core@0.1.1
+	jiff-static@0.2.38
+	jiff-tzdb-platform@0.1.3
+	jiff-tzdb@0.1.9
+	jiff@0.2.38
 	js-sys@0.3.105
 	kasuari@0.4.12
 	kurbo@0.13.1
@@ -164,11 +186,9 @@ CRATES="
 	lazy_static@1.5.0
 	libbz2-rs-sys@0.2.5
 	libc@0.2.189
-	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
 	libsqlite3-sys@0.38.2
-	libz-sys@1.1.31
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6
@@ -182,6 +202,7 @@ CRATES="
 	mac_address@1.1.8
 	matchers@0.2.0
 	memchr@2.8.3
+	memmap2@0.9.12
 	memmem@0.1.1
 	memoffset@0.9.1
 	metrohash@1.0.7
@@ -191,9 +212,11 @@ CRATES="
 	miniz_oxide@0.9.1
 	mio@1.2.3
 	moxcms@0.8.1
+	multiversion_no_op@1.0.0
 	nix@0.29.0
 	nix@0.31.3
 	nom@7.1.3
+	nonempty@0.12.0
 	nu-ansi-term@0.50.3
 	num-conv@0.2.2
 	num-derive@0.4.2
@@ -214,6 +237,7 @@ CRATES="
 	parking_lot@0.12.5
 	parking_lot_core@0.9.12
 	peniko@0.6.1
+	percent-encoding@2.3.2
 	pest@2.9.2
 	pest_derive@2.9.2
 	pest_generator@2.9.2
@@ -234,10 +258,12 @@ CRATES="
 	plist@1.10.1
 	png@0.18.1
 	polycool@0.4.0
+	portable-atomic-util@0.2.8
 	portable-atomic@1.15.0
 	powerfmt@0.2.0
 	ppv-lite86@0.2.21
 	proc-macro2@1.0.107
+	prodash@31.0.1
 	pxfm@0.1.30
 	quantette@0.6.0
 	quick-error@2.0.1
@@ -291,6 +317,7 @@ CRATES="
 	serde_derive@1.0.229
 	serde_json@1.0.151
 	serde_spanned@1.1.1
+	sha1dc@0.1.5
 	sha2@0.10.9
 	sha2@0.11.0
 	sharded-slab@0.1.7
@@ -299,8 +326,10 @@ CRATES="
 	signal-hook-registry@1.4.8
 	signal-hook@0.3.18
 	simd-adler32@0.3.10
+	simdutf8@0.1.5
 	simplecss@0.2.2
 	siphasher@1.0.3
+	sirocco@0.3.1
 	skrifa@0.42.1
 	skrifa@0.48.0
 	slab@0.4.12
@@ -339,6 +368,7 @@ CRATES="
 	time@0.3.55
 	tiny-skia-path@0.12.0
 	tiny-skia@0.12.0
+	tinyvec@1.13.3
 	tokio-macros@2.7.2
 	tokio@1.53.1
 	toml@0.9.12+spec-1.1.0
@@ -381,7 +411,10 @@ CRATES="
 	typed-path@0.12.3
 	typenum@1.20.1
 	ucd-trie@0.1.7
+	uluru@3.1.0
+	unicode-bom@2.0.3
 	unicode-ident@1.0.26
+	unicode-normalization@0.1.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
 	unicode-width@0.2.2
@@ -435,6 +468,7 @@ CRATES="
 	windows_x86_64_msvc@0.52.6
 	winnow@0.7.15
 	winnow@1.0.4
+	winreg@0.56.0
 	wit-bindgen@0.57.1
 	wuff@0.2.9
 	wyz@0.5.1
@@ -451,6 +485,59 @@ CRATES="
 	zune-core@0.5.3
 	zune-jpeg@0.5.15
 "
+
+declare -A GIT_CRATES=(
+	[gix]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix"
+	[gix-actor]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-actor"
+	[gix-attributes]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-attributes"
+	[gix-bitmap]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-bitmap"
+	[gix-chunk]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-chunk"
+	[gix-command]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-command"
+	[gix-commitgraph]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-commitgraph"
+	[gix-config]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-config"
+	[gix-config-value]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-config-value"
+	[gix-date]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-date"
+	[gix-diff]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-diff"
+	[gix-discover]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-discover"
+	[gix-error]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-error"
+	[gix-filter]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-filter"
+	[gix-fs]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-fs"
+	[gix-glob]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-glob"
+	[gix-hash]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-hash"
+	[gix-hashtable]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-hashtable"
+	[gix-ignore]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-ignore"
+	[gix-imara-diff]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-imara-diff"
+	[gix-index]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-index"
+	[gix-lock]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-lock"
+	[gix-macros]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-macros"
+	[gix-note]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-note"
+	[gix-object]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-object"
+	[gix-odb]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-odb"
+	[gix-pack]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-pack"
+	[gix-packetline]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-packetline"
+	[gix-parallel]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-parallel"
+	[gix-path]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-path"
+	[gix-pathspec]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-pathspec"
+	[gix-protocol]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-protocol"
+	[gix-quote]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-quote"
+	[gix-ref]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-ref"
+	[gix-refspec]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-refspec"
+	[gix-revision]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-revision"
+	[gix-revwalk]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-revwalk"
+	[gix-sec]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-sec"
+	[gix-shallow]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-shallow"
+	[gix-submodule]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-submodule"
+	[gix-tempfile]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-tempfile"
+	[gix-trace]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-trace"
+	[gix-transport]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-transport"
+	[gix-traverse]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-traverse"
+	[gix-url]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-url"
+	[gix-utils]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-utils"
+	[gix-validate]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-validate"
+	[gix-worktree]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-worktree"
+	[gix-worktree-stream]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-worktree-stream"
+	[gix-zlib]="https://github.com/GitoxideLabs/gitoxide;9dd78c800d554c18fc99816bf922c93d71402881;gitoxide-%commit%/gix-zlib"
+)
 
 RUST_MIN_VER="1.88.0"
 
@@ -479,7 +566,7 @@ KEYWORDS="~amd64 ~arm64"
 # Rust build and why the build takes noticeably longer than the crate count alone suggests.
 
 # Built with the default `tui` feature only - the product binary. The `stats` and `test-fixtures`
-# features gate dataset-analysis dev tools that need git2 (OpenSSL, libssh2) and a bundled SQLite;
+# features gate dataset-analysis dev tools that need gix and a bundled SQLite;
 # they are not part of the shipped product, so there is no USE flag for them.
 
 # `lto = "fat"` plus `codegen-units = 1` in the release profile (see Cargo.toml) makes this a slow
