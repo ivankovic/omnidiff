@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Garden Club</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header>
+      <img src="logo.png" alt="Garden Club logo">
+      <h1>Garden Club</h1>
+      <p id="when" class="tagline">Meetings every Sunday</p>
+    </header>
+    <main>
+      <section id="next" class="event">
+        <h3>Next meeting</h3>
+        <p>Planting tomatoes and peppers.</p>
+        <ul>
+          <li>Bring water</li>
+          <li>Bring gloves</li>
+          <li>Bring seeds</li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <p>Contact: hello@garden.example</p>
+    </footer>
+  </body>
+</html>

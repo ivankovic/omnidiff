@@ -70,6 +70,12 @@ macro_rules! example {
 /// Every example, one per language with a grammar, then plain text.
 pub const EXAMPLES: &[SettingsExample] = &[
     example!("rust", "rs", Language::Rust, &[]),
+    example!("vim", "vim", Language::Vimscript, &[]),
+    example!("css", "css", Language::CSS, &[]),
+    example!("html", "html", Language::HTML, MARKUP_NO_EFFECT),
+    example!("xml", "xml", Language::XML, MARKUP_NO_EFFECT),
+    example!("json", "json", Language::JSON, &[(6, JSON_NO_NAMES)]),
+    example!("yaml", "yaml", Language::YAML, &[]),
     example!("text", "txt", Language::Unknown, PLAIN_TEXT_NO_EFFECT),
 ];
 
@@ -88,6 +94,25 @@ const PLAIN_TEXT_NO_EFFECT: &[(usize, &str)] = &[
 /// Why an option has nothing to show in a file without a grammar.
 const NO_SYNTAX: &str = "Text without a grammar is compared line by line, with no names, brackets \
     or moves to tell apart, so this setting changes nothing in it.";
+
+/// What HTML and XML cannot show: their structure is tags and attributes, not punctuation, and no
+/// edit we tried had the two sides measure a moved tag or attribute differently.
+const MARKUP_NO_EFFECT: &[(usize, &str)] = &[
+    (
+        1,
+        "Markup is built from angle brackets, quotes and equals signs, not the brackets, \
+        commas, colons and semicolons this setting covers, so it has nothing to show here.",
+    ),
+    (
+        5,
+        "Both sides measure a moved tag or attribute the same way, so there is no second, \
+        larger account of a move to show.",
+    ),
+];
+
+/// Why JSON has no renamed name to show: every key is a string.
+const JSON_NO_NAMES: &str = "JSON has no names, only strings: a changed key or value shows the \
+    letters that differ whichever way this is set.";
 
 /// The example in `language`: its own, plain text for a language without one, Rust for none.
 pub fn example_for(language: Option<Language>) -> &'static SettingsExample {

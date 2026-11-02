@@ -1,0 +1,25 @@
+{
+  "name": "weather-station",
+  "version": "1.4.2",
+  "window": [
+    "width", 800,
+    "height", 480
+  ],
+  "sensors": [
+    { "id": "temp", "unit": "celsius", "every": 60 },
+    { "id": "humidity", "unit": "percent", "every": 120 }
+  ],
+  "display": {
+    "theme": "dark",
+    "refresh": 30,
+    "showClock": true
+  },
+  "network": {
+    "host": "192.168.1.20",
+    "port": 8080,
+    "retries": 3,
+    "dns": ["1.1.1.1", "8.8.8.8"]
+  },
+  "logLevel": "info",
+  "logFile": "/var/log/station.log"
+}
