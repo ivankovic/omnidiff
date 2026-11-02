@@ -1,0 +1,38 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+function makeItem(name, count) {
+  return toRecord(
+    "name", name,
+    "count", count
+  );
+}
+
+class Shelf {
+  constructor(width, depth) {
+    this.width = width;
+    this.depth = depth;
+  }
+
+  area() {
+    return this.width * this.depth;
+  }
+
+  describe(label) {
+    const total = this.area();
+    return `${label}: ${total} square units`;
+  }
+}
+
+function main() {
+  const size = { w: 3, d: 4 };
+  const shelves = [
+    new Shelf(size.w, size.d),
+    new Shelf(5, 2),
+  ];
+  for (const shelf of shelves) {
+    console.log(shelf.describe("rack"));
+  }
+  const largest = shelves.map((s) => s.area());
+  console.log(largest);
+}
