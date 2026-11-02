@@ -1,0 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+static class Program
+{
+    static object CreatePerson(string name, int age)
+    {
+        return Tuple.Create(
+            "name", name,
+            "age", age
+        );
+    }
+
+    static void Main()
+    {
+        var size = (3, 4);
+        var shapes = new List<Rectangle>
+        {
+            new(size.Item1, size.Item2),
+            new(5, 2),
+        };
+        foreach (var shape in shapes)
+            Console.WriteLine(shape.Describe("box"));
+        var largest = shapes.Max(s => s.Area());
+        Console.WriteLine(largest);
+    }
+}
+
+record Rectangle(int Width, int Height)
+{
+    public int Area() => Width * Height;
+
+    public string Describe(string label)
+    {
+        int total = Area();
+        return $"{label}: {total} square units";
+    }
+}

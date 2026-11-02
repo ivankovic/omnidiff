@@ -1,0 +1,34 @@
+import scala.collection.mutable
+
+object Shapes {
+  case class Person(name: String, age: Int)
+
+  def makePerson(name: String, age: Int) = Person(name, age)
+
+  case class Rectangle(width: Int, height: Int) {
+    def area: Int = width * height
+
+    def perimeter: Int = 2 * (width + height)
+
+    def describe(label: String): String = {
+      var totalArea = area
+      s"$label: $totalArea square metres"
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    val size = Vector(3, 4)
+    val shapes = List(
+      Rectangle(1, 1),
+      Rectangle(size(0), size(1)),
+      Rectangle(5, 2)
+    )
+    if (sys.props.contains("debug")) {
+      for (shape <- shapes) {
+        println(shape.describe("box"))
+      }
+    }
+    val biggest = shapes.map(_.area).max
+    println((shapes.size, biggest))
+  }
+}

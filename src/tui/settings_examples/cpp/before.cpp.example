@@ -1,0 +1,41 @@
+#include <algorithm>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+auto make_person(const std::string &name, int age)
+{
+    return make_fields(
+        "name", name,
+        "age", age
+    );
+}
+
+struct Rectangle {
+    int width, height;
+
+    int area() const { return width * height; }
+
+    std::string describe(const std::string &label) const
+    {
+        int total = area();
+        return label + ": " + std::to_string(total) +
+               " square units";
+    }
+};
+
+int main()
+{
+    auto size = std::make_pair(3, 4);
+    std::vector<Rectangle> shapes{
+        {size.first, size.second},
+        {5, 2},
+    };
+    for (const auto &shape : shapes)
+        std::cout << shape.describe("box") << '\n';
+    int largest = 0;
+    for (const auto &shape : shapes)
+        largest = std::max(largest, shape.area());
+    std::cout << largest << '\n';
+}
