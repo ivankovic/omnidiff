@@ -42,7 +42,7 @@ pub enum PageContent {
 
 /// The `M` key's settings page, full screen: one checkbox row per [`RenderOptions`] field, an
 /// example diff in the open diff's language painted under the current settings, and what the
-/// selected setting does - with the bytes it changes in the example underlined and marked in the
+/// selected setting does - with the bytes it changes in the example in bold and marked in the
 /// gutter, so a setting is seen rather than described.
 ///
 /// Every toggle applies and persists the moment it is pressed, and the diff behind the page shows
@@ -219,7 +219,7 @@ fn preset_name(options: RenderOptions) -> &'static str {
 }
 
 /// One side of the example as lines: each byte styled by the operation painting it, the bytes
-/// the selected setting changes underlined, and a `◆` in the gutter of every row holding one.
+/// the selected setting changes in bold, and a `◆` in the gutter of every row holding one.
 fn example_lines(
     text: &str,
     painted: &[Option<TextOperation>],
@@ -242,7 +242,7 @@ fn example_lines(
             _ => Style::new(),
         };
         if mark {
-            style = style.add_modifier(Modifier::UNDERLINED | Modifier::BOLD);
+            style = style.add_modifier(Modifier::BOLD);
         }
         style
     };
@@ -409,7 +409,7 @@ impl Component for RenderOptionsDialog {
         ];
         text.push(match note {
             Some(note) => Line::from(note).italic(),
-            None => Line::from("◆ Underlined: what this setting changes in the example.").dim(),
+            None => Line::from("◆ marks the rows this setting changes in the example.").dim(),
         });
         frame.render_widget(
             Paragraph::new(text)

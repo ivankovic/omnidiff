@@ -111,7 +111,7 @@ Appearance
   M                Open the highlighting settings: a checkbox per setting, an
                    example diff in the open file's language (Rust when none is
                    open) painted as you choose, and the selected setting's effect
-                   on it underlined and marked with a diamond in the gutter, plus
+                   on it in bold and marked with a diamond in the gutter, plus
                    1/2 shortcuts for the Minimal/Full presets. Every choice is
                    applied and saved to the config the moment it is pressed.
                    Trailing whitespace is never painted, regardless of any
