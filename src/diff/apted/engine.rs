@@ -50,7 +50,7 @@ pub(crate) struct StrategyTable {
 
 impl StrategyTable {
     pub(crate) fn new(rows: usize, cols: usize) -> Self {
-        StrategyTable {
+        Self {
             grid: Grid::new(rows, cols, 0i64),
         }
     }
@@ -299,7 +299,7 @@ impl AptedIndexer {
             }
         }
 
-        AptedIndexer {
+        Self {
             size,
             pre_to_node_id,
             parents,

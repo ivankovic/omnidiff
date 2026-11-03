@@ -530,19 +530,19 @@ pub enum TextLabel {
 impl TextLabel {
     fn from_verdict(verdict: HumanTextVerdict) -> Self {
         match verdict {
-            HumanTextVerdict::Move => TextLabel::Move,
-            HumanTextVerdict::Update => TextLabel::Update,
-            HumanTextVerdict::Delete => TextLabel::Delete,
-            HumanTextVerdict::Insert => TextLabel::Insert,
+            HumanTextVerdict::Move => Self::Move,
+            HumanTextVerdict::Update => Self::Update,
+            HumanTextVerdict::Delete => Self::Delete,
+            HumanTextVerdict::Insert => Self::Insert,
         }
     }
 
     fn from_text_operation(operation: &crate::diff::text::TextOperation) -> Option<Self> {
         match operation {
-            crate::diff::text::TextOperation::Move => Some(TextLabel::Move),
-            crate::diff::text::TextOperation::Update => Some(TextLabel::Update),
-            crate::diff::text::TextOperation::Delete => Some(TextLabel::Delete),
-            crate::diff::text::TextOperation::Insert => Some(TextLabel::Insert),
+            crate::diff::text::TextOperation::Move => Some(Self::Move),
+            crate::diff::text::TextOperation::Update => Some(Self::Update),
+            crate::diff::text::TextOperation::Delete => Some(Self::Delete),
+            crate::diff::text::TextOperation::Insert => Some(Self::Insert),
             crate::diff::text::TextOperation::Identical
             | crate::diff::text::TextOperation::NotYetSet => None,
         }
@@ -550,10 +550,10 @@ impl TextLabel {
 
     pub fn name(self) -> &'static str {
         match self {
-            TextLabel::Move => "move",
-            TextLabel::Update => "update",
-            TextLabel::Delete => "delete",
-            TextLabel::Insert => "insert",
+            Self::Move => "move",
+            Self::Update => "update",
+            Self::Delete => "delete",
+            Self::Insert => "insert",
         }
     }
 }

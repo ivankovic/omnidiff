@@ -184,7 +184,7 @@ impl TextRange {
     }
 
     /// Whether the two right-open ranges overlap. Two empty ranges at the same point intersect.
-    pub fn intersects(&self, other: &TextRange) -> bool {
+    pub fn intersects(&self, other: &Self) -> bool {
         let self_start = (self.start_row, self.start_column);
         let self_end = (self.end_row, self.end_column);
         let other_start = (other.start_row, other.start_column);
@@ -195,18 +195,18 @@ impl TextRange {
     }
 
     /// Whether this range starts exactly where `other` ends.
-    pub fn extends(&self, other: &TextRange) -> bool {
+    pub fn extends(&self, other: &Self) -> bool {
         self.start_row == other.end_row && self.start_column == other.end_column
     }
 
-    pub fn extend_to_end(&mut self, other: &TextRange) {
+    pub fn extend_to_end(&mut self, other: &Self) {
         self.end_row = other.end_row;
         self.end_column = other.end_column;
     }
 
     /// Whether the two ranges, in either order, touch or are separated only by whitespace. False
     /// for overlapping ranges and for positions that do not exist in `code`.
-    pub fn can_extend_with_whitespace(&self, other: &TextRange, code: &SourceText) -> bool {
+    pub fn can_extend_with_whitespace(&self, other: &Self, code: &SourceText) -> bool {
         is_whitespace_between(self, other, code)
     }
 

@@ -64,7 +64,7 @@ struct JsonRange {
 
 impl From<&TextRange> for JsonRange {
     fn from(r: &TextRange) -> Self {
-        JsonRange {
+        Self {
             start_row: r.start_row,
             start_column: r.start_column,
             end_row: r.end_row,
@@ -86,10 +86,10 @@ enum JsonOperation {
 impl JsonOperation {
     fn from_text_operation(op: &TextOperation) -> Option<Self> {
         match op {
-            TextOperation::Insert => Some(JsonOperation::Insert),
-            TextOperation::Delete => Some(JsonOperation::Delete),
-            TextOperation::Update => Some(JsonOperation::Update),
-            TextOperation::Move => Some(JsonOperation::Move),
+            TextOperation::Insert => Some(Self::Insert),
+            TextOperation::Delete => Some(Self::Delete),
+            TextOperation::Update => Some(Self::Update),
+            TextOperation::Move => Some(Self::Move),
             TextOperation::Identical | TextOperation::NotYetSet => None,
         }
     }
@@ -110,12 +110,12 @@ enum JsonDiffSummary {
 impl From<DiffSummary> for JsonDiffSummary {
     fn from(summary: DiffSummary) -> Self {
         match summary {
-            DiffSummary::NoChanges => JsonDiffSummary::NoChanges,
-            DiffSummary::NewFile => JsonDiffSummary::NewFile,
-            DiffSummary::DeletedFile => JsonDiffSummary::DeletedFile,
-            DiffSummary::WhitespaceOnly => JsonDiffSummary::WhitespaceOnly,
-            DiffSummary::CommentOnly => JsonDiffSummary::CommentOnly,
-            DiffSummary::RefactorMovedOnly => JsonDiffSummary::RefactorMovedOnly,
+            DiffSummary::NoChanges => Self::NoChanges,
+            DiffSummary::NewFile => Self::NewFile,
+            DiffSummary::DeletedFile => Self::DeletedFile,
+            DiffSummary::WhitespaceOnly => Self::WhitespaceOnly,
+            DiffSummary::CommentOnly => Self::CommentOnly,
+            DiffSummary::RefactorMovedOnly => Self::RefactorMovedOnly,
         }
     }
 }

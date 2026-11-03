@@ -61,19 +61,19 @@ impl PaintingState {
     fn of(names: &[String]) -> Self {
         let has = |wanted: &str| names.iter().any(|name| name == wanted);
         match names.len() {
-            0 => PaintingState::None,
-            1 => PaintingState::Single,
-            2 if has("Minimal") && has("Full") => PaintingState::MinimalAndFull,
-            _ => PaintingState::Other,
+            0 => Self::None,
+            1 => Self::Single,
+            2 if has("Minimal") && has("Full") => Self::MinimalAndFull,
+            _ => Self::Other,
         }
     }
 
     fn name(self) -> &'static str {
         match self {
-            PaintingState::None => "none",
-            PaintingState::Single => "single",
-            PaintingState::MinimalAndFull => "minimal+full",
-            PaintingState::Other => "other",
+            Self::None => "none",
+            Self::Single => "single",
+            Self::MinimalAndFull => "minimal+full",
+            Self::Other => "other",
         }
     }
 }
