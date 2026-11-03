@@ -230,7 +230,7 @@ jobs:
       - name: The toolchain below is Cargo.toml's rust-version
         run: grep -q '^rust-version = "1.92"$' Cargo.toml
 
-      - uses: dtolnay/rust-toolchain@1.92
+      - uses: dtolnay/rust-toolchain@1.120
 
       - uses: Swatinem/rust-cache@v2
         with:
