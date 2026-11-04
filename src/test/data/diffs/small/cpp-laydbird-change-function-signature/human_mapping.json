@@ -19182,46 +19182,6 @@
       ]
     },
     {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "null:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "null:1",
-        "nullptr:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "::1"
-      ]
-    },
-    {
       "operation": "match_but_not_identical",
       "before_path": [
         "namespace_definition:1",
@@ -19414,91 +19374,6 @@
         "conditional_expression:1",
         "call_expression:2",
         "argument_list:1",
-        "lambda_expression:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "lambda_capture_specifier:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "lambda_capture_specifier:1"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
         "lambda_expression:1",
         "abstract_function_declarator:1",
         "parameter_list:1"
@@ -19516,39 +19391,6 @@
         "lambda_expression:1",
         "abstract_function_declarator:1",
         "parameter_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "(:1"
       ]
     },
     {
@@ -19945,215 +19787,6 @@
       ]
     },
     {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "parameter_declaration:1",
-        "reference_declarator:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "parameter_declaration:1",
-        "reference_declarator:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "lambda_capture_specifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "lambda_capture_specifier:1",
-        "[:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "lambda_capture_specifier:1",
-        "]:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1"
-      ]
-    },
-    {
       "operation": "insert",
       "after_path": [
         "namespace_definition:1",
@@ -20168,24 +19801,6 @@
         "lambda_expression:2",
         "abstract_function_declarator:1",
         "parameter_list:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "(:1"
       ]
     },
     {
@@ -20539,659 +20154,7 @@
         "conditional_expression:1",
         "call_expression:2",
         "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "parameter_declaration:1",
-        "reference_declarator:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "parameter_declaration:1",
-        "reference_declarator:1",
-        "&:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "parameter_declaration:1",
-        "reference_declarator:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "->:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "namespace_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        ":::1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "<:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "namespace_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        ":::1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        ">:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "{:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1",
-        "return:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1",
-        "pointer_expression:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1",
-        "pointer_expression:1",
-        "*:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1",
-        "pointer_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "return_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:2",
-        "compound_statement:1",
-        "}:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
         ",:2"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "lambda_capture_specifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "lambda_capture_specifier:1",
-        "[:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "lambda_capture_specifier:1",
-        "]:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1"
       ]
     },
     {
@@ -21209,24 +20172,6 @@
         "lambda_expression:3",
         "abstract_function_declarator:1",
         "parameter_list:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "(:1"
       ]
     },
     {
@@ -21279,392 +20224,6 @@
         "call_expression:2",
         "argument_list:1",
         "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "parameter_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "->:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "namespace_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        ":::1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "<:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "namespace_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        ":::1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "abstract_function_declarator:1",
-        "trailing_return_type:1",
-        "type_descriptor:1",
-        "qualified_identifier:1",
-        "template_type:1",
-        "template_argument_list:1",
-        ">:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "compound_statement:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "compound_statement:1",
-        "{:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
         "compound_statement:1",
         "return_statement:1"
       ]
@@ -21688,47 +20247,6 @@
       ]
     },
     {
-      "operation": "delete",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "::1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "null:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "compound_statement:1",
-        "return_statement:1",
-        "null:1"
-      ]
-    },
-    {
       "operation": "insert",
       "after_path": [
         "namespace_definition:1",
@@ -21744,23 +20262,6 @@
         "compound_statement:1",
         "return_statement:1",
         ";:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:2",
-        "compound_statement:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "conditional_expression:1",
-        "call_expression:2",
-        "argument_list:1",
-        "lambda_expression:3",
-        "compound_statement:1",
-        "}:1"
       ]
     },
     {
@@ -33879,6 +32380,3835 @@
         "call_expression:2",
         "argument_list:1",
         ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:2",
+        "compound_statement:1",
+        "expression_statement:1",
+        "assignment_expression:1",
+        "conditional_expression:1",
+        "::1"
+      ],
+      "after_path": [
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:2",
+        "compound_statement:1",
+        "expression_statement:1",
+        "assignment_expression:1",
+        "conditional_expression:1",
+        "::1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "null:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "null:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "compound_statement:1",
+          "return_statement:1",
+          "null:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "null:1",
+          "nullptr:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "null:1",
+          "nullptr:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "compound_statement:1",
+          "return_statement:1",
+          "null:1",
+          "nullptr:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1",
+          "[:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1",
+          "[:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "lambda_capture_specifier:1",
+          "[:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "lambda_capture_specifier:1",
+          "[:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1",
+          "]:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1",
+          "]:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "lambda_capture_specifier:1",
+          "]:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "lambda_capture_specifier:1",
+          "]:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "(:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "(:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "(:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "(:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "):1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "):1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "):1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "):1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "->:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "->:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "->:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "->:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "type_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "type_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "type_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "<:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "<:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "<:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "<:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "namespace_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          ":::1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "type_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "type_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "type_identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          ">:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          ">:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          ">:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "abstract_function_declarator:1",
+          "trailing_return_type:1",
+          "type_descriptor:1",
+          "qualified_identifier:1",
+          "template_type:1",
+          "template_argument_list:1",
+          ">:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "&:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "&:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "&:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "abstract_function_declarator:1",
+          "parameter_list:1",
+          "parameter_declaration:1",
+          "reference_declarator:1",
+          "identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "return:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "return:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1",
+          "return:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "*:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "*:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "*:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "identifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1",
+          "pointer_expression:1",
+          "identifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          ";:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "return_statement:1",
+          ";:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "return_statement:1",
+          ";:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "{:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "{:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "{:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "compound_statement:1",
+          "{:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "}:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1",
+          "}:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1",
+          "}:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "compound_statement:1",
+          "}:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "lambda_capture_specifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "lambda_capture_specifier:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "lambda_capture_specifier:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1",
+          "compound_statement:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2",
+          "compound_statement:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3",
+          "compound_statement:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:1"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:2"
+        ],
+        [
+          "namespace_definition:1",
+          "declaration_list:1",
+          "function_definition:2",
+          "compound_statement:1",
+          "expression_statement:1",
+          "assignment_expression:1",
+          "conditional_expression:1",
+          "call_expression:2",
+          "argument_list:1",
+          "lambda_expression:3"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 193,
+              "start_column": 0,
+              "end_row": 193,
+              "end_column": 63
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 193,
+              "start_column": 0,
+              "end_row": 193,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 86,
+              "start_column": 101,
+              "end_row": 86,
+              "end_column": 167
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 86,
+              "start_column": 101,
+              "end_row": 86,
+              "end_column": 133
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 21,
+              "end_row": 95,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 21,
+              "end_row": 95,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 222,
+              "end_row": 95,
+              "end_column": 227
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 84,
+              "end_row": 95,
+              "end_column": 98
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 118,
+              "end_row": 95,
+              "end_column": 132
+            },
+            {
+              "start_row": 95,
+              "start_column": 201,
+              "end_row": 95,
+              "end_column": 215
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 253,
+              "end_row": 95,
+              "end_column": 259
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 104,
+              "end_row": 95,
+              "end_column": 111
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 33,
+              "end_row": 95,
+              "end_column": 40
+            },
+            {
+              "start_row": 95,
+              "start_column": 260,
+              "end_row": 95,
+              "end_column": 267
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 267,
+              "end_row": 95,
+              "end_column": 268
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 63,
+              "end_row": 95,
+              "end_column": 81
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 180,
+              "end_row": 95,
+              "end_column": 198
+            },
+            {
+              "start_row": 95,
+              "start_column": 97,
+              "end_row": 95,
+              "end_column": 115
+            },
+            {
+              "start_row": 95,
+              "start_column": 232,
+              "end_row": 95,
+              "end_column": 250
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 60,
+              "end_row": 95,
+              "end_column": 62
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 229,
+              "end_row": 95,
+              "end_column": 231
+            },
+            {
+              "start_row": 95,
+              "start_column": 177,
+              "end_row": 95,
+              "end_column": 179
+            },
+            {
+              "start_row": 95,
+              "start_column": 94,
+              "end_row": 95,
+              "end_column": 96
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 44,
+              "end_row": 95,
+              "end_column": 47
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 54,
+              "end_row": 95,
+              "end_column": 57
+            },
+            {
+              "start_row": 95,
+              "start_column": 136,
+              "end_row": 95,
+              "end_column": 139
+            },
+            {
+              "start_row": 95,
+              "start_column": 219,
+              "end_row": 95,
+              "end_column": 222
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 58,
+              "end_row": 95,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 227,
+              "end_row": 95,
+              "end_column": 228
+            },
+            {
+              "start_row": 95,
+              "start_column": 175,
+              "end_row": 95,
+              "end_column": 176
+            },
+            {
+              "start_row": 95,
+              "start_column": 92,
+              "end_row": 95,
+              "end_column": 93
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 53,
+              "end_row": 95,
+              "end_column": 58
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 170,
+              "end_row": 95,
+              "end_column": 175
+            },
+            {
+              "start_row": 95,
+              "start_column": 87,
+              "end_row": 95,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 82,
+              "end_row": 95,
+              "end_column": 83
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 116,
+              "end_row": 95,
+              "end_column": 117
+            },
+            {
+              "start_row": 95,
+              "start_column": 199,
+              "end_row": 95,
+              "end_column": 200
+            },
+            {
+              "start_row": 95,
+              "start_column": 251,
+              "end_row": 95,
+              "end_column": 252
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 99,
+              "end_row": 95,
+              "end_column": 100
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 269,
+              "end_row": 95,
+              "end_column": 270
+            },
+            {
+              "start_row": 95,
+              "start_column": 216,
+              "end_row": 95,
+              "end_column": 217
+            },
+            {
+              "start_row": 95,
+              "start_column": 133,
+              "end_row": 95,
+              "end_column": 134
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 134,
+              "end_row": 95,
+              "end_column": 135
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 217,
+              "end_row": 95,
+              "end_column": 218
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 47,
+              "end_row": 95,
+              "end_column": 51
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 139,
+              "end_row": 95,
+              "end_column": 168
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 57,
+              "end_row": 95,
+              "end_column": 85
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 51,
+              "end_row": 95,
+              "end_column": 52
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 85,
+              "end_row": 95,
+              "end_column": 86
+            },
+            {
+              "start_row": 95,
+              "start_column": 168,
+              "end_row": 95,
+              "end_column": 169
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 36,
+              "end_row": 95,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 47,
+              "end_row": 95,
+              "end_column": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 193,
+              "start_column": 0,
+              "end_row": 193,
+              "end_column": 63
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 193,
+              "start_column": 0,
+              "end_row": 193,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 86,
+              "start_column": 101,
+              "end_row": 86,
+              "end_column": 167
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 86,
+              "start_column": 101,
+              "end_row": 86,
+              "end_column": 133
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 21,
+              "end_row": 95,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 222,
+              "end_row": 95,
+              "end_column": 227
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 84,
+              "end_row": 95,
+              "end_column": 98
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 118,
+              "end_row": 95,
+              "end_column": 132
+            },
+            {
+              "start_row": 95,
+              "start_column": 201,
+              "end_row": 95,
+              "end_column": 215
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 253,
+              "end_row": 95,
+              "end_column": 259
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 104,
+              "end_row": 95,
+              "end_column": 111
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 33,
+              "end_row": 95,
+              "end_column": 40
+            },
+            {
+              "start_row": 95,
+              "start_column": 260,
+              "end_row": 95,
+              "end_column": 267
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 267,
+              "end_row": 95,
+              "end_column": 268
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 63,
+              "end_row": 95,
+              "end_column": 81
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 180,
+              "end_row": 95,
+              "end_column": 198
+            },
+            {
+              "start_row": 95,
+              "start_column": 97,
+              "end_row": 95,
+              "end_column": 115
+            },
+            {
+              "start_row": 95,
+              "start_column": 232,
+              "end_row": 95,
+              "end_column": 250
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 60,
+              "end_row": 95,
+              "end_column": 62
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 229,
+              "end_row": 95,
+              "end_column": 231
+            },
+            {
+              "start_row": 95,
+              "start_column": 177,
+              "end_row": 95,
+              "end_column": 179
+            },
+            {
+              "start_row": 95,
+              "start_column": 94,
+              "end_row": 95,
+              "end_column": 96
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 44,
+              "end_row": 95,
+              "end_column": 47
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 54,
+              "end_row": 95,
+              "end_column": 57
+            },
+            {
+              "start_row": 95,
+              "start_column": 136,
+              "end_row": 95,
+              "end_column": 139
+            },
+            {
+              "start_row": 95,
+              "start_column": 219,
+              "end_row": 95,
+              "end_column": 222
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 58,
+              "end_row": 95,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 227,
+              "end_row": 95,
+              "end_column": 228
+            },
+            {
+              "start_row": 95,
+              "start_column": 175,
+              "end_row": 95,
+              "end_column": 176
+            },
+            {
+              "start_row": 95,
+              "start_column": 92,
+              "end_row": 95,
+              "end_column": 93
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 53,
+              "end_row": 95,
+              "end_column": 58
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 170,
+              "end_row": 95,
+              "end_column": 175
+            },
+            {
+              "start_row": 95,
+              "start_column": 87,
+              "end_row": 95,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 82,
+              "end_row": 95,
+              "end_column": 83
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 116,
+              "end_row": 95,
+              "end_column": 117
+            },
+            {
+              "start_row": 95,
+              "start_column": 199,
+              "end_row": 95,
+              "end_column": 200
+            },
+            {
+              "start_row": 95,
+              "start_column": 251,
+              "end_row": 95,
+              "end_column": 252
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 99,
+              "end_row": 95,
+              "end_column": 100
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 269,
+              "end_row": 95,
+              "end_column": 270
+            },
+            {
+              "start_row": 95,
+              "start_column": 216,
+              "end_row": 95,
+              "end_column": 217
+            },
+            {
+              "start_row": 95,
+              "start_column": 133,
+              "end_row": 95,
+              "end_column": 134
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 134,
+              "end_row": 95,
+              "end_column": 135
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 217,
+              "end_row": 95,
+              "end_column": 218
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 47,
+              "end_row": 95,
+              "end_column": 51
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 139,
+              "end_row": 95,
+              "end_column": 168
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 57,
+              "end_row": 95,
+              "end_column": 85
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 51,
+              "end_row": 95,
+              "end_column": 52
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 85,
+              "end_row": 95,
+              "end_column": 86
+            },
+            {
+              "start_row": 95,
+              "start_column": 168,
+              "end_row": 95,
+              "end_column": 169
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 36,
+              "end_row": 95,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 47,
+              "end_row": 95,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 38,
+              "end_row": 95,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 48,
+              "end_row": 95,
+              "end_column": 54
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 31,
+              "end_row": 95,
+              "end_column": 36
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 42,
+              "end_row": 95,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 29,
+              "end_row": 95,
+              "end_column": 31
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 30,
+              "end_row": 95,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 27,
+              "end_row": 95,
+              "end_column": 29
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 28,
+              "end_row": 95,
+              "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 17,
+              "end_row": 95,
+              "end_column": 27
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 17,
+              "end_row": 95,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 103,
+              "end_row": 95,
+              "end_column": 104
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 32,
+              "end_row": 95,
+              "end_column": 33
+            },
+            {
+              "start_row": 95,
+              "start_column": 259,
+              "end_row": 95,
+              "end_column": 260
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 252,
+              "end_row": 95,
+              "end_column": 253
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 101,
+              "end_row": 95,
+              "end_column": 103
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 40,
+              "end_row": 95,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 83,
+              "end_row": 95,
+              "end_column": 84
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 200,
+              "end_row": 95,
+              "end_column": 201
+            },
+            {
+              "start_row": 95,
+              "start_column": 117,
+              "end_row": 95,
+              "end_column": 118
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 98,
+              "end_row": 95,
+              "end_column": 99
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 132,
+              "end_row": 95,
+              "end_column": 133
+            },
+            {
+              "start_row": 95,
+              "start_column": 215,
+              "end_row": 95,
+              "end_column": 216
+            },
+            {
+              "start_row": 95,
+              "start_column": 268,
+              "end_row": 95,
+              "end_column": 269
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 81,
+              "end_row": 95,
+              "end_column": 82
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 250,
+              "end_row": 95,
+              "end_column": 251
+            },
+            {
+              "start_row": 95,
+              "start_column": 198,
+              "end_row": 95,
+              "end_column": 199
+            },
+            {
+              "start_row": 95,
+              "start_column": 115,
+              "end_row": 95,
+              "end_column": 116
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 62,
+              "end_row": 95,
+              "end_column": 63
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 179,
+              "end_row": 95,
+              "end_column": 180
+            },
+            {
+              "start_row": 95,
+              "start_column": 231,
+              "end_row": 95,
+              "end_column": 232
+            },
+            {
+              "start_row": 95,
+              "start_column": 96,
+              "end_row": 95,
+              "end_column": 97
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 59,
+              "end_row": 95,
+              "end_column": 60
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 93,
+              "end_row": 95,
+              "end_column": 94
+            },
+            {
+              "start_row": 95,
+              "start_column": 176,
+              "end_row": 95,
+              "end_column": 177
+            },
+            {
+              "start_row": 95,
+              "start_column": 228,
+              "end_row": 95,
+              "end_column": 229
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 52,
+              "end_row": 95,
+              "end_column": 53
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 169,
+              "end_row": 95,
+              "end_column": 170
+            },
+            {
+              "start_row": 95,
+              "start_column": 86,
+              "end_row": 95,
+              "end_column": 87
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 135,
+              "end_row": 95,
+              "end_column": 136
+            },
+            {
+              "start_row": 95,
+              "start_column": 218,
+              "end_row": 95,
+              "end_column": 219
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 95,
+              "start_column": 100,
+              "end_row": 95,
+              "end_column": 101
+            }
+          ],
+          "after": [
+            {
+              "start_row": 95,
+              "start_column": 270,
+              "end_row": 95,
+              "end_column": 271
+            }
+          ]
+        }
       ]
     }
   ]

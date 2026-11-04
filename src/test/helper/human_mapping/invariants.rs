@@ -79,6 +79,8 @@
 //!     it deletes or inserts - unless the `;` goes with a value the statement wraps.
 //! 27. [`updated_leaves_are_not_deleted_and_inserted`] - a leaf the mapping pairs with a leaf
 //!     that reads differently is never painted `Delete` while its partner is painted `Insert`.
+//! 28. [`removed_nodes_are_not_made_of_kept_ones`] - a node the mapping deletes or inserts is not
+//!     made of exactly the children of one node of its own kind on the other side.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -92,7 +94,7 @@
 //! while its `{` stays) and "a matched pair lands in one painting entry" (a rename is ordinarily
 //! painted as a `Delete` plus an `Insert`).
 //!
-//! **All twenty-five are intra-fixture**; `cross_fixture_convention_census`
+//! **All of them are intra-fixture**; `cross_fixture_convention_census`
 //! (`tests/exploratory.rs`) covers the cross-fixture axis. They run as each fixture stub's
 //! `invariants()` test, so a fixture records its own known violations beside its other clamps
 //! rather than in a corpus-wide exemption list.
@@ -125,9 +127,9 @@ pub struct ViolationSite {
 /// look. The sites let a tool (`human_solver`'s `V` popup) jump to each location.
 #[derive(Debug, Clone)]
 pub struct GroundTruthViolation {
-    /// Which of the twenty-five rules, numbered as the module doc lists them.
+    /// Which of the rules, numbered as the module doc lists them.
     pub invariant: u8,
-    /// The painting this is about, or `None` for the three rules that read only the tree mapping.
+    /// The painting this is about, or `None` for a rule that reads only the tree mapping.
     pub painting: Option<String>,
     /// The human-readable line - what a test failure prints and what the popup lists.
     pub message: String,
@@ -341,6 +343,9 @@ pub fn ground_truth_invariant_violations_for(
             ));
         }
         violations.extend(terminators_follow_their_statements(&context, before, after));
+        violations.extend(removed_nodes_are_not_made_of_kept_ones(
+            &context, before, after,
+        ));
         violations.extend(boolean_flips_are_one_edit(
             &paintings, &context, before, after,
         ));
@@ -1615,6 +1620,26 @@ impl<'tree> TreeContext<'tree> {
             &self.caches.after_group
         };
         groups.contains_key(&node.id())
+    }
+
+    /// Every node `node` may correspond to on the other side: its one partner, or, for a member of
+    /// a multi-map group, every member of that group on the other side.
+    pub(crate) fn partners(&self, node: Node<'tree>, side: usize) -> Vec<Node<'tree>> {
+        let (mine, theirs) = if side == 0 {
+            (&self.caches.before_group, &self.caches.after_group)
+        } else {
+            (&self.caches.after_group, &self.caches.before_group)
+        };
+        if let Some(&group) = mine.get(&node.id()) {
+            let mut members: Vec<Node<'tree>> = theirs
+                .iter()
+                .filter(|&(_, &index)| index == group)
+                .filter_map(|(id, _)| self.ids[1 - side].get(id).copied())
+                .collect();
+            members.sort_by_key(|member| member.start_byte());
+            return members;
+        }
+        self.partner(node, side).into_iter().collect()
     }
 
     /// The node `node` is matched with on the other side, or `None` when the mapping pairs it with
@@ -3562,6 +3587,135 @@ fn terminators_follow_their_statements(
     violations
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 28: a removed node is not made of another node's children
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// The node on the other side that removed `node` is made of, if there is one: every child of
+/// `node` survives (paired, or in a multi-map group), all their partners have one parent of
+/// `node`'s kind, and every child of that parent has its partner among `node`'s children. `None`
+/// for a leaf, a node the mapping keeps, or a group member, whose group decides its pairing.
+pub(crate) fn removed_node_made_of<'tree>(
+    node: Node<'tree>,
+    side: usize,
+    context: &TreeContext<'tree>,
+) -> Option<Node<'tree>> {
+    if node.child_count() == 0 || !context.removed(node, side) || context.in_group(node, side) {
+        return None;
+    }
+    let mut cursor = node.walk();
+    let children: Vec<Node> = node.children(&mut cursor).collect();
+    let mut common: Option<Vec<Node>> = None;
+    for child in &children {
+        let parents: Vec<Node> = context
+            .partners(*child, side)
+            .iter()
+            .filter_map(|partner| partner.parent())
+            .filter(|parent| parent.kind() == node.kind())
+            .collect();
+        let shared: Vec<Node> = match common {
+            None => parents,
+            Some(so_far) => so_far
+                .into_iter()
+                .filter(|kept| parents.iter().any(|parent| parent.id() == kept.id()))
+                .collect(),
+        };
+        if shared.is_empty() {
+            return None;
+        }
+        common = Some(shared);
+    }
+    common?.into_iter().find(|parent| {
+        let mut cursor = parent.walk();
+        parent.children(&mut cursor).all(|theirs| {
+            context
+                .partners(theirs, 1 - side)
+                .iter()
+                .any(|partner| children.iter().any(|child| child.id() == partner.id()))
+        })
+    })
+}
+
+/// **Invariant 28.** A node the tree mapping deletes or inserts is not made of exactly the
+/// children of one node of its own kind on the other side. When every child survives into that
+/// node and that node has nothing else, the two are the same node, and the mapping says both
+/// that it stays (its children) and that it does not (itself).
+///
+/// The shapes it catches: two copies of a node in a multi-map group by their children but not
+/// by themselves (`[` and `]` of one `[]` grouped with three new lambdas' `[]`, which are
+/// inserted - `cpp-laydbird-change-function-signature`); one node deleted and inserted while its
+/// children pair across; and wrapped code paired with its new wrapper (`a` with `a || b`) while
+/// `a`'s children go to the new inner `a`, which `solve_wrap_growth` pairs with the old `a`.
+///
+/// Held to the same kind on purpose: a node that changes kind (`T v = x;` -> `v = x;`, a
+/// `start_tag` -> `self_closing_tag`) is a legitimate delete beside an insert, whatever its
+/// children do. And to *all* of the other node's children: a new block that takes some of an old
+/// block's statements, the rest staying, is a container extracted, not the old one again. A node
+/// deleted on one side and inserted on the other is one fact, reported from the before side.
+fn removed_nodes_are_not_made_of_kept_ones(
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    let codes = [before, after];
+    let roots = [before.ast.as_ref(), after.ast.as_ref()];
+    let mut violations = Vec::new();
+    for side in 0..2 {
+        let Some(tree) = roots[side] else { continue };
+        let mut stack = vec![tree.root_node()];
+        while let Some(node) = stack.pop() {
+            let mut cursor = node.walk();
+            stack.extend(node.children(&mut cursor));
+            let Some(kept) = removed_node_made_of(node, side, context) else {
+                continue;
+            };
+            if side == 1
+                && removed_node_made_of(kept, 0, context).is_some_and(|back| back.id() == node.id())
+            {
+                continue;
+            }
+            let instead = if context.removed(kept, 1 - side) {
+                format!(
+                    "is itself {}",
+                    if side == 0 { "inserted" } else { "deleted" }
+                )
+            } else if context.in_group(kept, 1 - side) {
+                "is in a multi-map group without it".to_string()
+            } else {
+                "is paired elsewhere".to_string()
+            };
+            let message = format!(
+                "the `{}` on {} row {} is {}, but every child of it is paired with a child of the \
+                 `{}` on {} row {}, and that is all that node holds - which {instead}: the two are \
+                 one node",
+                node.kind(),
+                side_name(side),
+                row_of(&codes[side].contents, node.start_byte()),
+                if side == 0 { "deleted" } else { "inserted" },
+                kept.kind(),
+                side_name(1 - side),
+                row_of(&codes[1 - side].contents, kept.start_byte()),
+            );
+            violations.push(GroundTruthViolation::new(
+                28,
+                None,
+                message,
+                vec![
+                    ViolationSite {
+                        side,
+                        span: span_of_node(node),
+                    },
+                    ViolationSite {
+                        side: 1 - side,
+                        span: span_of_node(kept),
+                    },
+                ],
+            ));
+        }
+    }
+    violations
+}
+
 fn first_leaf(node: Node) -> Option<Node> {
     let mut node = node;
     while node.child_count() > 0 {
@@ -5470,5 +5624,155 @@ mod tests {
             vec![matched((8, 9), (8, 9))],
         );
         assert!(numbered(&agreeing, &source, &source, 23).is_empty());
+    }
+
+    // ── Invariant 28 ────────────────────────────────────────────────────────────────────────
+
+    /// `mapping_by_text` of `before`/`after` with every entry inside a `binary_expression` taken
+    /// out, for a test to say what happens there.
+    fn without_binary_expressions(before: &Code, after: &Code) -> HumanMapping {
+        let mut mapping = mapping_by_text(before, after);
+        let inside = |path: &Option<Vec<String>>| {
+            path.as_ref().is_some_and(|path| {
+                path.iter()
+                    .any(|step| step.starts_with("binary_expression:"))
+            })
+        };
+        mapping
+            .entries
+            .retain(|entry| !inside(&entry.before_path) && !inside(&entry.after_path));
+        mapping
+    }
+
+    fn children_of(node: Node) -> Vec<Node> {
+        let mut cursor = node.walk();
+        node.children(&mut cursor).collect()
+    }
+
+    /// `a + b` grown into `a + b + c`, the old `a + b` paired with the new outer expression while
+    /// its three children go to the new inner one: the inner one is the old one again.
+    #[test]
+    fn grown_code_paired_with_its_wrapper_while_its_children_stay_is_reported() {
+        let (before, after) = (rust("f(a + b);\n"), rust("f(a + b + c);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let outer =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let [inner, plus, c] = children_of(outer)[..] else {
+            panic!("`a + b + c` is `(a + b) + c`");
+        };
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping.entries.push(entry(
+            HumanOperation::MatchButNotIdentical,
+            Some(old),
+            Some(outer),
+        ));
+        for (theirs, ours) in children_of(old).into_iter().zip(children_of(inner)) {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Identical, Some(theirs), Some(ours)));
+        }
+        for added in [inner, plus, c] {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Insert, None, Some(added)));
+        }
+        assert_eq!(
+            violations_of(28, &mapping, &before, &after),
+            [
+                "the `binary_expression` on after row 1 is inserted, but every child of it is \
+                 paired with a child of the `binary_expression` on before row 1, and that is all \
+                 that node holds - which is paired elsewhere: the two are one node"
+            ]
+        );
+
+        // The old `a + b` paired with the inner one instead, the wrapper new: nothing to report.
+        let mut wrapped = without_binary_expressions(&before, &after);
+        wrapped
+            .entries
+            .push(entry(HumanOperation::Identical, Some(old), Some(inner)));
+        for added in [outer, plus, c] {
+            wrapped
+                .entries
+                .push(entry(HumanOperation::Insert, None, Some(added)));
+        }
+        assert!(violations_of(28, &wrapped, &before, &after).is_empty());
+    }
+
+    /// One node deleted and inserted while its children pair across is one contradiction,
+    /// reported once.
+    #[test]
+    fn a_node_deleted_and_inserted_around_paired_children_is_reported_once() {
+        let (before, after) = (rust("f(a + b);\n"), rust("g(a + b);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let new =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(old), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(new)));
+        for (theirs, ours) in children_of(old).into_iter().zip(children_of(new)) {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Identical, Some(theirs), Some(ours)));
+        }
+        assert_eq!(
+            violations_of(28, &mapping, &before, &after),
+            [
+                "the `binary_expression` on before row 1 is deleted, but every child of it is \
+                 paired with a child of the `binary_expression` on after row 1, and that is all \
+                 that node holds - which is itself inserted: the two are one node"
+            ]
+        );
+    }
+
+    /// A removed node with a child of its own that does not survive (`a + b` -> `a + c`, `b`
+    /// deleted and `c` inserted) is a real edit, not a node kept twice.
+    #[test]
+    fn a_removed_node_with_a_new_child_is_not_reported() {
+        let (before, after) = (rust("f(a + b);\n"), rust("f(a + c);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let new =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let [a, plus, b] = children_of(old)[..] else {
+            panic!("`a + b` has three children");
+        };
+        let [new_a, new_plus, c] = children_of(new)[..] else {
+            panic!("`a + c` has three children");
+        };
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(old), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(new)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Identical, Some(a), Some(new_a)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Identical, Some(plus), Some(new_plus)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(b), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(c)));
+        assert!(violations_of(28, &mapping, &before, &after).is_empty());
     }
 }

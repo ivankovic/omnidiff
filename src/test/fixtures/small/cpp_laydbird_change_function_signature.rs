@@ -15,7 +15,8 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -30,5 +31,16 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-laydbird-change-function-signature")
+    // Invariant 28, three times, on row 96: the `[]` of the second and third new lambdas and the
+    // third's `{ return *value; }` are inserted, but their children are in 1:3 groups with the old
+    // lambda's, whose own `[]` and body are paired with the first new lambda's only.
+    assert_ground_truth_invariants_with_known_violations(
+        "cpp-laydbird-change-function-signature",
+        3,
+    )
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("cpp-laydbird-change-function-signature", 0.66)
 }
