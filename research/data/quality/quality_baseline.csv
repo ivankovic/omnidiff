@@ -117,7 +117,7 @@ cpp-ladybirdbrowser-ladybird-add-static-to-identifier-name,0,0
 cpp-ladybirdbrowser-ladybird-change-inherited-class-name,0,0
 cpp-ladybirdbrowser-ladybird-very-interesting-big-change,48,33
 cpp-lancos-ponyprog-remove-a-few-lines,0,0
-cpp-laydbird-change-function-signature,54,33
+cpp-laydbird-change-function-signature,120,72
 cpp-libreoffice-add-const,0,0
 cpp-libreoffice-add-const-2,0,0
 cpp-libreoffice-add-imports-and-function-param,0,0
@@ -931,7 +931,7 @@ java-junit-pioneer-junit-pioneer-add-block-comment,0,0
 java-nextcloud-android-add,0,0
 java-nextcloud-android-add-2,0,0
 java-nextcloud-android-add-and-delete,18,12
-java-nextcloud-android-add-if-branch-with-reused-return,54,38
+java-nextcloud-android-add-if-branch-with-reused-return,0,0
 java-nextcloud-android-add-one-line,0,0
 java-nextcloud-android-add-two-function-calls,0,0
 java-nextcloud-android-public-private,0,0
@@ -1224,7 +1224,7 @@ python-cloudflare-cloudflare-python-comment-only-changes,0,0
 python-django-django-add-test,0,0
 python-django-django-identifier-update,0,0
 python-django-django-tiny-change,1,1
-python-django-django-update-unit-tests-actual-logic-change,0,0
+python-django-django-update-unit-tests-actual-logic-change,6,4
 python-espressomd-espresso-fix-comment-typo,0,0
 python-fuzzyray-esearch-whitespace-only-change,0,0
 python-kovidgoyal-calibre-add-a-parameter,0,0
