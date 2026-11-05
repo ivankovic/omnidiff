@@ -184,13 +184,16 @@ pub(crate) fn action_save_solution_as(
     // `Minimal` forbids a wholly-changed line's indentation and `Full` requires it, so a branch
     // between those two presets converts (see `expand_leading_whitespace_for_full`). A free-form
     // name states no preset, so nothing is converted.
-    let extended = if copy
+    let (extended, reached_back) = if copy
         && human_mapping::invariants::designates_minimal(&app.text_solution)
         && human_mapping::invariants::designates_full(target)
     {
-        expand_leading_whitespace_for_full(&mut entries, before_src, after_src)
+        (
+            expand_leading_whitespace_for_full(&mut entries, before_src, after_src),
+            expand_whitespace_before_removals_for_full(&mut entries, before_src, after_src),
+        )
     } else {
-        0
+        (0, 0)
     };
     app.mapping.text_mappings.push(NamedTextMapping {
         name: target.to_string(),
@@ -199,11 +202,18 @@ pub(crate) fn action_save_solution_as(
     app.text_solution = target.to_string();
     app.mark_dirty();
     app.status = Some(if copy {
-        let widened = match extended {
+        let mut widened = match extended {
             0 => String::new(),
             1 => ", 1 line widened to its indentation".to_string(),
             rows => format!(", {rows} lines widened to their indentation"),
         };
+        match reached_back {
+            0 => {}
+            1 => widened.push_str(", 1 range widened over the whitespace before it"),
+            ranges => widened.push_str(&format!(
+                ", {ranges} ranges widened over the whitespace before them"
+            )),
+        }
         format!(
             "Started '{target}' as a copy of the previous painting ({count} range(s)){widened} - {} now on file",
             app.mapping.text_mappings.len()
@@ -1243,6 +1253,75 @@ pub(crate) fn expand_leading_whitespace_for_full(
         }
     }
     extended
+}
+
+/// The other half of branching `Minimal` to `Full`: a `Delete` or `Insert` range that starts
+/// mid-row is widened leftwards over the unpainted whitespace before it, so `,    gone` reads as
+/// one removal from just after the `,` (a list element and its separating blank go together).
+/// `Full` paintings on file do this about four times in five; the rest leave a single blank after
+/// `=`, `return` or `&&` unpainted, which is then corrected by hand.
+///
+/// Only within the range's first row, and only over whitespace that code precedes: a run that
+/// reaches column 0 is indentation, which [`expand_leading_whitespace_for_full`] widens for a
+/// wholly changed line and a partly changed line keeps. Whitespace any range already paints is
+/// left alone, so nothing overlaps: the range widens up to it, closing the gap. Returns how many
+/// ranges it widened.
+pub(crate) fn expand_whitespace_before_removals_for_full(
+    entries: &mut [HumanTextEntry],
+    before_src: &str,
+    after_src: &str,
+) -> usize {
+    let mut widened = 0;
+    for (side, source) in [(0usize, before_src), (1usize, after_src)] {
+        let spans_of = |entry: &HumanTextEntry| {
+            if side == 0 {
+                entry.before.clone()
+            } else {
+                entry.after.clone()
+            }
+        };
+        let placed: Vec<HumanTextSpan> = entries.iter().flat_map(spans_of).collect();
+        for entry in entries.iter_mut() {
+            if !matches!(
+                entry.operation,
+                HumanTextOperation::Delete | HumanTextOperation::Insert
+            ) {
+                continue;
+            }
+            let spans = if side == 0 {
+                &mut entry.before
+            } else {
+                &mut entry.after
+            };
+            for span in spans.iter_mut() {
+                let row = span.start_row;
+                let line = TextPaintState::row_text(source, row);
+                let Some(head) = line.get(..span.start_column) else {
+                    continue;
+                };
+                // Back over the blanks before the range, stopping at one another range paints.
+                let mut start = span.start_column;
+                for c in head.chars().rev() {
+                    let column = start - c.len_utf8();
+                    if !c.is_whitespace()
+                        || placed
+                            .iter()
+                            .any(|other| span_covers(*other, row, column, line.len()))
+                    {
+                        break;
+                    }
+                    start = column;
+                }
+                // Blanks back to column 0 are indentation.
+                if start == span.start_column || line[..start].trim().is_empty() {
+                    continue;
+                }
+                span.start_column = start;
+                widened += 1;
+            }
+        }
+    }
+    widened
 }
 
 /// `n` / `p`: moves *both* sides' cursors to the next/previous hunk, wrapping. Both, because the

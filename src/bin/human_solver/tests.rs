@@ -1604,9 +1604,10 @@ fn the_two_branched_paintings_satisfy_their_own_preset_rules() {
     );
 }
 
-/// A partly changed line's indentation stays unpainted under both presets.
+/// A partly changed line's indentation stays unpainted under both presets; only the blank between
+/// the surviving `let` and the deletion is taken.
 #[test]
-fn branching_leaves_a_partly_changed_line_alone() {
+fn branching_leaves_a_partly_changed_lines_indentation_alone() {
     let source = indented_block();
     // `a = 1` out of `    let a = 1;`.
     let state = TextPaintState {
@@ -1620,8 +1621,97 @@ fn branching_leaves_a_partly_changed_line_alone() {
 
     assert_eq!(
         painted_entries(&app).remove(0).1[0].start_column,
+        7,
+        "the blank after `let` joins the deletion, `let` and the indentation survive"
+    );
+}
+
+/// `,    gone`: a deleted list element takes the blanks between it and the surviving `,`, and an
+/// inserted one does the same on its side.
+#[test]
+fn branching_widens_a_removal_over_the_blanks_before_it() {
+    let (before_src, after_src) = ("f(a,    gone);\n", "f(a,  new);\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 8,
+                end_row: 0,
+                end_column: 12,
+            }],
+            after: vec![],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Insert,
+            before: vec![],
+            after: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 6,
+                end_row: 0,
+                end_column: 9,
+            }],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 4,
+        "from the blank after `,`"
+    );
+    assert_eq!(full[1].after[0].start_column, 4, "on the after side too");
+    assert_eq!(
+        solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
         8,
-        "`let` and the indentation before it both survive, so nothing widens"
+        "the Minimal painting is untouched"
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .contains("2 ranges widened over the whitespace before them"),
+        "got {:?}",
+        app.status
+    );
+}
+
+/// Whitespace another range already paints, and a `Match`, are left as they are.
+#[test]
+fn branching_does_not_widen_over_painted_whitespace_or_a_match() {
+    let source = "f(a,    b);\n";
+    let span = |start_column, end_column| HumanTextSpan {
+        start_row: 0,
+        start_column,
+        end_row: 0,
+        end_column,
+    };
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Match,
+            before: vec![span(3, 6)],
+            after: vec![span(3, 6)],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![span(8, 9)],
+            after: vec![],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, source, source);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 3,
+        "a match keeps its columns"
+    );
+    assert_eq!(
+        full[1].before[0].start_column, 6,
+        "the deletion stops where the match's range ends"
     );
 }
 
