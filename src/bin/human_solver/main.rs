@@ -218,9 +218,12 @@ t              text view: read the source, and paint the human text-range ground
                  Full painting. A delete or insert that starts mid-line is also
                  widened left over the unpainted blanks before it (`,    gone`
                  becomes one range from the blank after the comma), never into a
-                 line's indentation. Nothing else changes -- a matched
-                 (move/update) range and a branch to any other name are copied
-                 unchanged, and the Minimal painting itself never moves.
+                 line's indentation. An update (a match whose sides read
+                 differently) that paints part of an identifier is widened to the
+                 whole identifier on both sides, with a member's dot in front
+                 (`.minIndex` / `.maxIndex`). Nothing else changes -- a move, a
+                 range that would run into another, and a branch to any other name
+                 are copied unchanged, and the Minimal painting itself never moves.
                  A range that overlaps one already painted is refused at the
                  keystroke (u removes the old one first): the renderer resolves
                  an overlap by highest verdict and the scorer by list order, so

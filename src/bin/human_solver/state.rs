@@ -184,16 +184,17 @@ pub(crate) fn action_save_solution_as(
     // `Minimal` forbids a wholly-changed line's indentation and `Full` requires it, so a branch
     // between those two presets converts (see `expand_leading_whitespace_for_full`). A free-form
     // name states no preset, so nothing is converted.
-    let (extended, reached_back) = if copy
+    let (extended, reached_back, identifiers) = if copy
         && human_mapping::invariants::designates_minimal(&app.text_solution)
         && human_mapping::invariants::designates_full(target)
     {
         (
             expand_leading_whitespace_for_full(&mut entries, before_src, after_src),
             expand_whitespace_before_removals_for_full(&mut entries, before_src, after_src),
+            expand_updated_identifiers_for_full(&mut entries, before_src, after_src),
         )
     } else {
-        (0, 0)
+        (0, 0, 0)
     };
     app.mapping.text_mappings.push(NamedTextMapping {
         name: target.to_string(),
@@ -212,6 +213,13 @@ pub(crate) fn action_save_solution_as(
             1 => widened.push_str(", 1 range widened over the whitespace before it"),
             ranges => widened.push_str(&format!(
                 ", {ranges} ranges widened over the whitespace before them"
+            )),
+        }
+        match identifiers {
+            0 => {}
+            1 => widened.push_str(", 1 update widened to whole identifiers"),
+            ranges => widened.push_str(&format!(
+                ", {ranges} update ranges widened to whole identifiers"
             )),
         }
         format!(
@@ -1317,6 +1325,135 @@ pub(crate) fn expand_whitespace_before_removals_for_full(
                     continue;
                 }
                 span.start_column = start;
+                widened += 1;
+            }
+        }
+    }
+    widened
+}
+
+/// A character an identifier is made of, judged by text as invariant 16 judges one.
+fn is_identifier_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '$'
+}
+
+/// The third part of branching `Minimal` to `Full`: an updated `Match` (its sides read
+/// differently) that paints part of an identifier is widened to the whole identifier, on every
+/// span of both sides - `Minimal` marks only the differing words of a rename, `Full` the name
+/// entire (invariant 16). A member's `.` goes with it: `.minIndex` -> `.maxIndex` is painted from
+/// the dot, as every `Full` painting made since 2026-10-21 does (the bulk paintings of 2026-10-02
+/// left it out).
+///
+/// A span is widened at its start back to where the identifier it starts in begins, then over a
+/// `.` right before that, and at its end on to where the identifier it ends in ends. A span whose
+/// ends are not in an identifier is left as it is, as is a `Move` (identical text) and every
+/// one-sided range. Judged by text alone, so a word inside a string is widened like a name. The
+/// widening never takes a byte another range paints: a span that would is left as it was. Returns
+/// how many spans it widened.
+pub(crate) fn expand_updated_identifiers_for_full(
+    entries: &mut [HumanTextEntry],
+    before_src: &str,
+    after_src: &str,
+) -> usize {
+    let sources = [before_src, after_src];
+    let mut widened = 0;
+    for index in 0..entries.len() {
+        if entries[index].operation != HumanTextOperation::Match {
+            continue;
+        }
+        let texts: Vec<&str> = [0usize, 1]
+            .into_iter()
+            .flat_map(|side| {
+                let spans = if side == 0 {
+                    &entries[index].before
+                } else {
+                    &entries[index].after
+                };
+                spans
+                    .iter()
+                    .filter_map(move |span| human_mapping::span_text(sources[side], *span))
+            })
+            .collect();
+        if texts.windows(2).all(|pair| pair[0] == pair[1]) {
+            continue;
+        }
+        for (side, &source) in sources.iter().enumerate() {
+            let others: Vec<HumanTextSpan> = entries
+                .iter()
+                .enumerate()
+                .filter(|(other, _)| *other != index)
+                .flat_map(|(_, entry)| {
+                    if side == 0 {
+                        entry.before.clone()
+                    } else {
+                        entry.after.clone()
+                    }
+                })
+                .collect();
+            let spans = if side == 0 {
+                &mut entries[index].before
+            } else {
+                &mut entries[index].after
+            };
+            for span in spans.iter_mut() {
+                let first = TextPaintState::row_text(source, span.start_row);
+                let last = TextPaintState::row_text(source, span.end_row);
+                let (Some(head), Some(tail)) = (
+                    first.get(..span.start_column),
+                    last.get(span.end_column.min(last.len())..),
+                ) else {
+                    continue;
+                };
+                let inside_start = first[span.start_column..]
+                    .chars()
+                    .next()
+                    .is_some_and(is_identifier_char);
+                let inside_end = last[..span.end_column.min(last.len())]
+                    .chars()
+                    .next_back()
+                    .is_some_and(is_identifier_char);
+                let mut start = span.start_column;
+                if inside_start {
+                    start -= head
+                        .chars()
+                        .rev()
+                        .take_while(|&c| is_identifier_char(c))
+                        .map(char::len_utf8)
+                        .sum::<usize>();
+                    // A member's dot, not a number's (`1.5`): only before what can start a name.
+                    let starts_a_name = first[start..]
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_alphabetic() || c == '_' || c == '$');
+                    if starts_a_name && first[..start].ends_with('.') {
+                        start -= 1;
+                    }
+                }
+                let mut end = span.end_column;
+                if inside_end {
+                    end += tail
+                        .chars()
+                        .take_while(|&c| is_identifier_char(c))
+                        .map(char::len_utf8)
+                        .sum::<usize>();
+                }
+                if start == span.start_column && end == span.end_column {
+                    continue;
+                }
+                let taken = |row: usize, columns: std::ops::Range<usize>, line: &str| {
+                    columns.into_iter().any(|column| {
+                        others
+                            .iter()
+                            .any(|other| span_covers(*other, row, column, line.len()))
+                    })
+                };
+                if taken(span.start_row, start..span.start_column, first)
+                    || taken(span.end_row, span.end_column..end, last)
+                {
+                    continue;
+                }
+                span.start_column = start;
+                span.end_column = end;
                 widened += 1;
             }
         }
