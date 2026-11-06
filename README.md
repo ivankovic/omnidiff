@@ -5,6 +5,7 @@
 [![docs.rs](https://docs.rs/omnidiff/badge.svg)](https://docs.rs/omnidiff)
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ivankovic/omnidiff/main/research/data/coverage/badge.json)](CONTRIBUTING.md#coverage)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+[![Hacker News](https://hackergit.org/badge/ivankovic/omnidiff.svg)](https://news.ycombinator.com/item?id=50325253)
 
 Fast, robust, accurate content-aware diffing.
 
