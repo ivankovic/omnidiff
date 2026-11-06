@@ -678,5 +678,97 @@
         "function_declaration:15"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 294,
+              "start_column": 1,
+              "end_row": 294,
+              "end_column": 65
+            },
+            {
+              "start_row": 295,
+              "start_column": 1,
+              "end_row": 295,
+              "end_column": 53
+            },
+            {
+              "start_row": 296,
+              "start_column": 2,
+              "end_row": 296,
+              "end_column": 86
+            },
+            {
+              "start_row": 297,
+              "start_column": 1,
+              "end_row": 297,
+              "end_column": 5
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 306,
+              "start_column": 1,
+              "end_row": 306,
+              "end_column": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 294,
+              "start_column": 0,
+              "end_row": 294,
+              "end_column": 65
+            },
+            {
+              "start_row": 295,
+              "start_column": 0,
+              "end_row": 295,
+              "end_column": 53
+            },
+            {
+              "start_row": 296,
+              "start_column": 0,
+              "end_row": 296,
+              "end_column": 86
+            },
+            {
+              "start_row": 297,
+              "start_column": 0,
+              "end_row": 297,
+              "end_column": 5
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 306,
+              "start_column": 0,
+              "end_row": 306,
+              "end_column": 2
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -73,6 +73,8 @@ mod csharp_icsharpcode_avaloniailspy_a_few_formatting_changes_and_use_a_struct_i
 #[cfg(test)]
 mod csharp_valvesoftware_openvr_add_many_constants_and_fields;
 #[cfg(test)]
+mod csharp_waf_csharprepl_update_string_URL;
+#[cfg(test)]
 mod csharp_waf_csharprepl_update_string_url;
 #[cfg(test)]
 mod css_fortawesome_font_awesome_update_version_comment_2;
