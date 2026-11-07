@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -30,7 +30,11 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants(
+    // Invariant 28, once: the `binary_expression` on after row 1122 is inserted, but it is made of
+    // the children of the `binary_expression` on before row 1117, which is paired with the code
+    // around this one instead: the two should pair, and the code around be new.
+    assert_ground_truth_invariants_with_known_violations(
         "javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments",
+        1,
     )
 }

@@ -33,5 +33,9 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 25, 2 time(s): the inserted `expression_statement` on after row 1 starts insert
     // but its `;` is unpainted (both presets).
-    assert_ground_truth_invariants_with_known_violations("rust-data-structure", 2)
+    // Invariant 30, 3 time(s): the space before an edit (awaiting a repaint):
+    //   before row 8: the space before the delete `{ x: 1, y: 2 }` is not painted with it
+    //   before row 9: the space before the delete `{ x: 3, y: 4 }` is not painted with it
+    //   before row 10: the space before the delete `{ x: 5, y: 6 }` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("rust-data-structure", 5)
 }

@@ -1,14 +1,6 @@
 {
   "entries": [
     {
-      "operation": "insert_with_children",
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1"
-      ]
-    },
-    {
       "operation": "match_but_not_identical",
       "before_path": [],
       "after_path": []
@@ -53,79 +45,6 @@
       "after_path": [
         "if_statement:1",
         "body:1"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1"
-      ],
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1",
-        "autocmd:1"
-      ],
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:2",
-        "autocmd:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1",
-        "au_event_list:1"
-      ],
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:2",
-        "au_event_list:1"
-      ]
-    },
-    {
-      "operation": "update",
-      "before_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1",
-        "pattern:1"
-      ],
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:2",
-        "pattern:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:1",
-        "set_statement:1"
-      ],
-      "after_path": [
-        "if_statement:1",
-        "body:1",
-        "autocmd_statement:2",
-        "set_statement:1"
       ]
     },
     {
@@ -176,6 +95,263 @@
       "after_path": [
         "if_statement:1",
         "endif:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "autocmd:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "autocmd:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        "au_event:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        "au_event:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        "au_event:2"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1",
+        "au_event:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "au_event_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "pattern:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "pattern:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "option_name:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "option_name:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "=:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "set_value:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1",
+        "set_value:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1",
+        "set_item:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1"
+      ],
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:1",
+        "set_statement:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "if_statement:1",
+        "body:1",
+        "autocmd_statement:2"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 2,
+              "end_row": 3,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 0,
+              "end_row": 3,
+              "end_column": 0
+            }
+          ]
+        }
       ]
     }
   ]

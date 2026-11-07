@@ -1604,9 +1604,10 @@ fn the_two_branched_paintings_satisfy_their_own_preset_rules() {
     );
 }
 
-/// A partly changed line's indentation stays unpainted under both presets.
+/// A partly changed line's indentation stays unpainted under both presets; only the blank between
+/// the surviving `let` and the deletion is taken.
 #[test]
-fn branching_leaves_a_partly_changed_line_alone() {
+fn branching_leaves_a_partly_changed_lines_indentation_alone() {
     let source = indented_block();
     // `a = 1` out of `    let a = 1;`.
     let state = TextPaintState {
@@ -1620,8 +1621,208 @@ fn branching_leaves_a_partly_changed_line_alone() {
 
     assert_eq!(
         painted_entries(&app).remove(0).1[0].start_column,
+        7,
+        "the blank after `let` joins the deletion, `let` and the indentation survive"
+    );
+}
+
+/// `,    gone`: a deleted list element takes the blanks between it and the surviving `,`, and an
+/// inserted one does the same on its side.
+#[test]
+fn branching_widens_a_removal_over_the_blanks_before_it() {
+    let (before_src, after_src) = ("f(a,    gone);\n", "f(a,  new);\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 8,
+                end_row: 0,
+                end_column: 12,
+            }],
+            after: vec![],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Insert,
+            before: vec![],
+            after: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 6,
+                end_row: 0,
+                end_column: 9,
+            }],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 4,
+        "from the blank after `,`"
+    );
+    assert_eq!(full[1].after[0].start_column, 4, "on the after side too");
+    assert_eq!(
+        solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
         8,
-        "`let` and the indentation before it both survive, so nothing widens"
+        "the Minimal painting is untouched"
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .contains("2 ranges widened over the whitespace before them"),
+        "got {:?}",
+        app.status
+    );
+}
+
+/// Whitespace another range already paints, and a `Match`, are left as they are.
+#[test]
+fn branching_does_not_widen_over_painted_whitespace_or_a_match() {
+    let source = "f(a,    b);\n";
+    let span = |start_column, end_column| HumanTextSpan {
+        start_row: 0,
+        start_column,
+        end_row: 0,
+        end_column,
+    };
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Match,
+            before: vec![span(3, 6)],
+            after: vec![span(3, 6)],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![span(8, 9)],
+            after: vec![],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, source, source);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 3,
+        "a match keeps its columns"
+    );
+    assert_eq!(
+        full[1].before[0].start_column, 6,
+        "the deletion stops where the match's range ends"
+    );
+}
+
+/// One painting entry with a span per side on row 0.
+fn one_row_entry(
+    operation: HumanTextOperation,
+    before: Option<(usize, usize)>,
+    after: Option<(usize, usize)>,
+) -> HumanTextEntry {
+    let span = |(start_column, end_column)| HumanTextSpan {
+        start_row: 0,
+        start_column,
+        end_row: 0,
+        end_column,
+    };
+    HumanTextEntry {
+        operation,
+        before: before.map(span).into_iter().collect(),
+        after: after.map(span).into_iter().collect(),
+    }
+}
+
+/// `Minimal` marks the differing word of a renamed member, `Full` the member entire with its dot.
+#[test]
+fn branching_widens_an_updated_identifier_whole_with_its_dot() {
+    let (before_src, after_src) = ("f(this.minIndex);\n", "f(this.maxIndex);\n");
+    let mut app = test_app();
+    // `min` -> `max`, columns 7..10 on both sides.
+    solution_entries_mut(&mut app.mapping, "Minimal").push(one_row_entry(
+        HumanTextOperation::Match,
+        Some((7, 10)),
+        Some((7, 10)),
+    ));
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = &solution_entries(&app.mapping, "Full")[0];
+    assert_eq!(
+        (full.before[0].start_column, full.before[0].end_column),
+        (6, 15),
+        "`.minIndex`"
+    );
+    assert_eq!(
+        (full.after[0].start_column, full.after[0].end_column),
+        (6, 15),
+        "`.maxIndex`"
+    );
+    assert_eq!(
+        solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
+        7,
+        "the Minimal painting is untouched"
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .contains("2 update ranges widened to whole identifiers"),
+        "got {:?}",
+        app.status
+    );
+}
+
+/// Without a dot the identifier alone is taken; a number's `.` is not a member's.
+#[test]
+fn branching_widens_a_plain_identifier_and_leaves_a_numbers_dot() {
+    let (before_src, after_src) = ("x = fooBar + 1.5;\n", "x = fooBaz + 1.6;\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        // `r` -> `z`.
+        one_row_entry(HumanTextOperation::Match, Some((9, 10)), Some((9, 10))),
+        // `5` -> `6`.
+        one_row_entry(HumanTextOperation::Match, Some((15, 16)), Some((15, 16))),
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        (full[0].before[0].start_column, full[0].before[0].end_column),
+        (4, 10),
+        "`fooBar`, no dot to take"
+    );
+    assert_eq!(
+        (full[1].before[0].start_column, full[1].before[0].end_column),
+        (15, 16),
+        "`5` stays: `1.5`'s dot belongs to the number"
+    );
+}
+
+/// A move (identical text) and a widening onto another range's bytes are left as they are.
+#[test]
+fn branching_leaves_a_moved_or_crowded_identifier_alone() {
+    let (before_src, after_src) = ("a.fooBar;\n", "a.fooBaz;\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        // `foo` stays where it is but is painted as a move.
+        one_row_entry(HumanTextOperation::Match, Some((2, 5)), Some((2, 5))),
+        // `Bar` -> `Baz`, which would widen onto the move's `foo`.
+        one_row_entry(HumanTextOperation::Match, Some((5, 8)), Some((5, 8))),
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 2,
+        "a move keeps its columns"
+    );
+    assert_eq!(
+        full[1].before[0].start_column, 5,
+        "the update stops short of the move's bytes"
     );
 }
 

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,7 +40,12 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants(
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   after row 216: the indentation before `pluginsWaitTime,` is painted, though it did not
+    //     change
+    //   after row 219: the indentation before `} else` is painted, though it did not change
+    assert_ground_truth_invariants_with_known_violations(
         "go-kubernetes-kubernetes-small-but-interesting-change-with-condition-moves",
+        2,
     )
 }

@@ -1502,5 +1502,47 @@
         "#endif:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 345,
+              "start_column": 10,
+              "end_row": 345,
+              "end_column": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 345,
+              "start_column": 10,
+              "end_row": 345,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 345,
+              "start_column": 10,
+              "end_row": 345,
+              "end_column": 32
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

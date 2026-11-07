@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -31,5 +31,11 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("swift-swiftlang-swift-actual-logic-change")
+    // Invariant 28, once: the `statements` on after row 94 is inserted, but it is made of the
+    // children of the `statements` on before row 94, which is paired with the code around this one
+    // instead: the two should pair, and the code around be new.
+    assert_ground_truth_invariants_with_known_violations(
+        "swift-swiftlang-swift-actual-logic-change",
+        1,
+    )
 }

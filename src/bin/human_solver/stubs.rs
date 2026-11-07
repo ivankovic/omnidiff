@@ -44,13 +44,14 @@ pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the OmniDiff c
  */
 ";
 
-/// A fixture's stub module: its name with every character a Rust identifier cannot hold (`-`,
-/// and the `@` of `logo@2x`) as `_`.
+/// A fixture's stub module: its name lowercased (rustc's `non_snake_case` lint rejects the `URL`
+/// of `csharp-waf-csharprepl-update-string-URL`), with every character a Rust identifier cannot
+/// hold (`-`, and the `@` of `logo@2x`) as `_`.
 pub(crate) fn module_name(name: &str) -> String {
     name.chars()
         .map(|c| {
             if c.is_ascii_alphanumeric() || c == '_' {
-                c
+                c.to_ascii_lowercase()
             } else {
                 '_'
             }

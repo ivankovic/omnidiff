@@ -1538,23 +1538,6 @@
       ]
     },
     {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:4",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:4",
-        "throws:1",
-        "type_identifier:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "class_declaration:1",
@@ -1562,16 +1545,6 @@
         "method_declaration:4",
         "throws:1",
         ",:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:4",
-        "throws:1",
-        "type_identifier:2"
       ]
     },
     {
@@ -1695,23 +1668,6 @@
       ]
     },
     {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:5",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:5",
-        "throws:1",
-        "type_identifier:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "class_declaration:1",
@@ -1719,16 +1675,6 @@
         "method_declaration:5",
         "throws:1",
         ",:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:5",
-        "throws:1",
-        "type_identifier:2"
       ]
     },
     {
@@ -2009,31 +1955,6 @@
         "catch_clause:1",
         "catch_formal_parameter:1",
         "catch_type:1"
-      ]
-    },
-    {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:6",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:6",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -2061,35 +1982,7 @@
         "catch_clause:1",
         "catch_formal_parameter:1",
         "catch_type:1",
-        "type_identifier:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:6",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
         "|:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:6",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:3"
       ]
     },
     {
@@ -2440,31 +2333,6 @@
       ]
     },
     {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "class_declaration:1",
@@ -2489,38 +2357,10 @@
         "catch_clause:1",
         "catch_formal_parameter:1",
         "catch_type:1",
-        "type_identifier:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
         "|:2"
       ]
     },
     {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:3"
-      ]
-    },
-    {
       "operation": "identical",
       "before_path": [
         "class_declaration:1",
@@ -2705,23 +2545,6 @@
         "method_declaration:8",
         "throws:1",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -2735,16 +2558,6 @@
       ]
     },
     {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "type_identifier:2"
-      ]
-    },
-    {
       "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
@@ -3035,31 +2848,6 @@
         "catch_clause:1",
         "catch_formal_parameter:1",
         "catch_type:1"
-      ]
-    },
-    {
-      "operation": "update",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -3087,35 +2875,7 @@
         "catch_clause:1",
         "catch_formal_parameter:1",
         "catch_type:1",
-        "type_identifier:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
         "|:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "try_statement:1",
-        "catch_clause:1",
-        "catch_formal_parameter:1",
-        "catch_type:1",
-        "type_identifier:3"
       ]
     },
     {
@@ -3211,6 +2971,891 @@
         "class_declaration:1",
         "class_body:1",
         "}:1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:4",
+          "throws:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:4",
+          "throws:1",
+          "type_identifier:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:4",
+          "throws:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:5",
+          "throws:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:5",
+          "throws:1",
+          "type_identifier:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:5",
+          "throws:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:10",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:10",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:2"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:10",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:3"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:10",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:8",
+          "throws:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:8",
+          "throws:1",
+          "type_identifier:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:8",
+          "throws:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:7",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:7",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:2"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:7",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:3"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:7",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:6",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:6",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:2"
+        ],
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:6",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:3"
+        ]
+      ],
+      "after_paths": [
+        [
+          "class_declaration:1",
+          "class_body:1",
+          "method_declaration:6",
+          "block:1",
+          "try_statement:1",
+          "catch_clause:1",
+          "catch_formal_parameter:1",
+          "catch_type:1",
+          "type_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 0,
+              "end_row": 10,
+              "end_column": 51
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 101,
+              "start_column": 44,
+              "end_row": 101,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 124,
+              "start_column": 44,
+              "end_row": 124,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 68,
+              "end_row": 151,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 43,
+              "end_row": 151,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 68,
+              "end_row": 163,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 43,
+              "end_row": 163,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 170,
+              "start_column": 44,
+              "end_row": 170,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 68,
+              "end_row": 222,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 43,
+              "end_row": 222,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 101,
+              "start_column": 19,
+              "end_row": 101,
+              "end_column": 35
+            },
+            {
+              "start_row": 101,
+              "start_column": 46,
+              "end_row": 101,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 99,
+              "start_column": 104,
+              "end_row": 99,
+              "end_column": 123
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 124,
+              "start_column": 46,
+              "end_row": 124,
+              "end_column": 59
+            },
+            {
+              "start_row": 124,
+              "start_column": 19,
+              "end_row": 124,
+              "end_column": 35
+            }
+          ],
+          "after": [
+            {
+              "start_row": 121,
+              "start_column": 119,
+              "end_row": 121,
+              "end_column": 138
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 17,
+              "end_row": 151,
+              "end_column": 33
+            },
+            {
+              "start_row": 151,
+              "start_column": 45,
+              "end_row": 151,
+              "end_column": 58
+            },
+            {
+              "start_row": 151,
+              "start_column": 70,
+              "end_row": 151,
+              "end_column": 82
+            }
+          ],
+          "after": [
+            {
+              "start_row": 148,
+              "start_column": 17,
+              "end_row": 148,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 17,
+              "end_row": 163,
+              "end_column": 33
+            },
+            {
+              "start_row": 163,
+              "start_column": 45,
+              "end_row": 163,
+              "end_column": 58
+            },
+            {
+              "start_row": 163,
+              "start_column": 70,
+              "end_row": 163,
+              "end_column": 82
+            }
+          ],
+          "after": [
+            {
+              "start_row": 160,
+              "start_column": 17,
+              "end_row": 160,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 170,
+              "start_column": 19,
+              "end_row": 170,
+              "end_column": 35
+            },
+            {
+              "start_row": 170,
+              "start_column": 46,
+              "end_row": 170,
+              "end_column": 59
+            }
+          ],
+          "after": [
+            {
+              "start_row": 167,
+              "start_column": 19,
+              "end_row": 167,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 17,
+              "end_row": 222,
+              "end_column": 33
+            },
+            {
+              "start_row": 222,
+              "start_column": 45,
+              "end_row": 222,
+              "end_column": 58
+            },
+            {
+              "start_row": 222,
+              "start_column": 70,
+              "end_row": 222,
+              "end_column": 82
+            }
+          ],
+          "after": [
+            {
+              "start_row": 219,
+              "start_column": 17,
+              "end_row": 219,
+              "end_column": 36
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 0,
+              "end_row": 10,
+              "end_column": 51
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 101,
+              "start_column": 44,
+              "end_row": 101,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 124,
+              "start_column": 44,
+              "end_row": 124,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 68,
+              "end_row": 151,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 43,
+              "end_row": 151,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 68,
+              "end_row": 163,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 43,
+              "end_row": 163,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 170,
+              "start_column": 44,
+              "end_row": 170,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 68,
+              "end_row": 222,
+              "end_column": 69
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 43,
+              "end_row": 222,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 101,
+              "start_column": 18,
+              "end_row": 101,
+              "end_column": 44
+            },
+            {
+              "start_row": 101,
+              "start_column": 45,
+              "end_row": 101,
+              "end_column": 68
+            }
+          ],
+          "after": [
+            {
+              "start_row": 99,
+              "start_column": 103,
+              "end_row": 99,
+              "end_column": 132
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 124,
+              "start_column": 45,
+              "end_row": 124,
+              "end_column": 68
+            },
+            {
+              "start_row": 124,
+              "start_column": 18,
+              "end_row": 124,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 121,
+              "start_column": 118,
+              "end_row": 121,
+              "end_column": 147
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 42,
+              "end_row": 151,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 67,
+              "end_row": 151,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 44,
+              "end_row": 151,
+              "end_column": 67
+            },
+            {
+              "start_row": 151,
+              "start_column": 17,
+              "end_row": 151,
+              "end_column": 42
+            },
+            {
+              "start_row": 151,
+              "start_column": 69,
+              "end_row": 151,
+              "end_column": 91
+            }
+          ],
+          "after": [
+            {
+              "start_row": 148,
+              "start_column": 17,
+              "end_row": 148,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 69,
+              "end_row": 163,
+              "end_column": 91
+            },
+            {
+              "start_row": 163,
+              "start_column": 44,
+              "end_row": 163,
+              "end_column": 67
+            },
+            {
+              "start_row": 163,
+              "start_column": 17,
+              "end_row": 163,
+              "end_column": 42
+            }
+          ],
+          "after": [
+            {
+              "start_row": 160,
+              "start_column": 17,
+              "end_row": 160,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 42,
+              "end_row": 163,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 163,
+              "start_column": 67,
+              "end_row": 163,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 170,
+              "start_column": 45,
+              "end_row": 170,
+              "end_column": 68
+            },
+            {
+              "start_row": 170,
+              "start_column": 18,
+              "end_row": 170,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 167,
+              "start_column": 18,
+              "end_row": 167,
+              "end_column": 47
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 17,
+              "end_row": 222,
+              "end_column": 42
+            },
+            {
+              "start_row": 222,
+              "start_column": 44,
+              "end_row": 222,
+              "end_column": 67
+            },
+            {
+              "start_row": 222,
+              "start_column": 69,
+              "end_row": 222,
+              "end_column": 91
+            }
+          ],
+          "after": [
+            {
+              "start_row": 219,
+              "start_column": 17,
+              "end_row": 219,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 67,
+              "end_row": 222,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 222,
+              "start_column": 42,
+              "end_row": 222,
+              "end_column": 43
+            }
+          ]
+        }
       ]
     }
   ]

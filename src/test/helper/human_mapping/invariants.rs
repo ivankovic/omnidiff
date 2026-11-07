@@ -79,6 +79,18 @@
 //!     it deletes or inserts - unless the `;` goes with a value the statement wraps.
 //! 27. [`updated_leaves_are_not_deleted_and_inserted`] - a leaf the mapping pairs with a leaf
 //!     that reads differently is never painted `Delete` while its partner is painted `Insert`.
+//! 28. [`removed_nodes_are_not_made_of_kept_ones`] - a node the mapping deletes or inserts is not
+//!     made of exactly the children of one node of its own kind on the other side.
+//! 29. [`whitespace_only_changes_split_by_preset`] - when the two files differ only in whitespace,
+//!     `Minimal` paints nothing and `Full` paints the whitespace that changed.
+//! 30. [`spaces_before_edits_follow_their_count`] - in a `Full` painting, the space before an edit
+//!     inside a line goes with the edit exactly when the edit changed how many spaces are there;
+//!     at a line's start, a change of indentation is painted from column 0.
+//! 31. [`changed_parts_are_painted_whole`] - in a `Full` painting, a number, version part or word
+//!     of a comment or string that changed is painted whole and no further: a separator beside it
+//!     stays unpainted, except between two changed parts, where it goes with the right-hand one; an
+//!     inserted or deleted part takes the separator on its left (on its right at a sequence's
+//!     start).
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -92,7 +104,7 @@
 //! while its `{` stays) and "a matched pair lands in one painting entry" (a rename is ordinarily
 //! painted as a `Delete` plus an `Insert`).
 //!
-//! **All twenty-five are intra-fixture**; `cross_fixture_convention_census`
+//! **All of them are intra-fixture**; `cross_fixture_convention_census`
 //! (`tests/exploratory.rs`) covers the cross-fixture axis. They run as each fixture stub's
 //! `invariants()` test, so a fixture records its own known violations beside its other clamps
 //! rather than in a corpus-wide exemption list.
@@ -125,9 +137,9 @@ pub struct ViolationSite {
 /// look. The sites let a tool (`human_solver`'s `V` popup) jump to each location.
 #[derive(Debug, Clone)]
 pub struct GroundTruthViolation {
-    /// Which of the twenty-five rules, numbered as the module doc lists them.
+    /// Which of the rules, numbered as the module doc lists them.
     pub invariant: u8,
-    /// The painting this is about, or `None` for the three rules that read only the tree mapping.
+    /// The painting this is about, or `None` for a rule that reads only the tree mapping.
     pub painting: Option<String>,
     /// The human-readable line - what a test failure prints and what the popup lists.
     pub message: String,
@@ -341,6 +353,9 @@ pub fn ground_truth_invariant_violations_for(
             ));
         }
         violations.extend(terminators_follow_their_statements(&context, before, after));
+        violations.extend(removed_nodes_are_not_made_of_kept_ones(
+            &context, before, after,
+        ));
         violations.extend(boolean_flips_are_one_edit(
             &paintings, &context, before, after,
         ));
@@ -359,6 +374,13 @@ pub fn ground_truth_invariant_violations_for(
     violations.extend(leading);
     violations.extend(interior);
     violations.extend(minimal_indentation);
+    violations.extend(whitespace_only_changes_split_by_preset(
+        mapping, before, after,
+    )?);
+    violations.extend(spaces_before_edits_follow_their_count(
+        mapping, before, after,
+    )?);
+    violations.extend(changed_parts_are_painted_whole(mapping, before, after)?);
 
     // An embedded layer is a file of its own: every rule reads it against its decoded pair. Its
     // sites are in the decoded text, which the host's rows do not show, so they are dropped here;
@@ -1615,6 +1637,26 @@ impl<'tree> TreeContext<'tree> {
             &self.caches.after_group
         };
         groups.contains_key(&node.id())
+    }
+
+    /// Every node `node` may correspond to on the other side: its one partner, or, for a member of
+    /// a multi-map group, every member of that group on the other side.
+    pub(crate) fn partners(&self, node: Node<'tree>, side: usize) -> Vec<Node<'tree>> {
+        let (mine, theirs) = if side == 0 {
+            (&self.caches.before_group, &self.caches.after_group)
+        } else {
+            (&self.caches.after_group, &self.caches.before_group)
+        };
+        if let Some(&group) = mine.get(&node.id()) {
+            let mut members: Vec<Node<'tree>> = theirs
+                .iter()
+                .filter(|&(_, &index)| index == group)
+                .filter_map(|(id, _)| self.ids[1 - side].get(id).copied())
+                .collect();
+            members.sort_by_key(|member| member.start_byte());
+            return members;
+        }
+        self.partner(node, side).into_iter().collect()
     }
 
     /// The node `node` is matched with on the other side, or `None` when the mapping pairs it with
@@ -3562,6 +3604,1137 @@ fn terminators_follow_their_statements(
     violations
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 28: a removed node is not made of another node's children
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// The node on the other side that removed `node` is made of, if there is one: every child of
+/// `node` survives (paired, or in a multi-map group), all their partners have one parent of
+/// `node`'s kind, and every child of that parent has its partner among `node`'s children. `None`
+/// for a leaf, a node the mapping keeps, or a group member, whose group decides its pairing.
+pub(crate) fn removed_node_made_of<'tree>(
+    node: Node<'tree>,
+    side: usize,
+    context: &TreeContext<'tree>,
+) -> Option<Node<'tree>> {
+    if node.child_count() == 0 || !context.removed(node, side) || context.in_group(node, side) {
+        return None;
+    }
+    let mut cursor = node.walk();
+    let children: Vec<Node> = node.children(&mut cursor).collect();
+    let mut common: Option<Vec<Node>> = None;
+    for child in &children {
+        let parents: Vec<Node> = context
+            .partners(*child, side)
+            .iter()
+            .filter_map(|partner| partner.parent())
+            .filter(|parent| parent.kind() == node.kind())
+            .collect();
+        let shared: Vec<Node> = match common {
+            None => parents,
+            Some(so_far) => so_far
+                .into_iter()
+                .filter(|kept| parents.iter().any(|parent| parent.id() == kept.id()))
+                .collect(),
+        };
+        if shared.is_empty() {
+            return None;
+        }
+        common = Some(shared);
+    }
+    common?.into_iter().find(|parent| {
+        let mut cursor = parent.walk();
+        parent.children(&mut cursor).all(|theirs| {
+            context
+                .partners(theirs, 1 - side)
+                .iter()
+                .any(|partner| children.iter().any(|child| child.id() == partner.id()))
+        })
+    })
+}
+
+/// **Invariant 28.** A node the tree mapping deletes or inserts is not made of exactly the
+/// children of one node of its own kind on the other side. When every child survives into that
+/// node and that node has nothing else, the two are the same node, and the mapping says both
+/// that it stays (its children) and that it does not (itself).
+///
+/// The shapes it catches: two copies of a node in a multi-map group by their children but not
+/// by themselves (`[` and `]` of one `[]` grouped with three new lambdas' `[]`, which are
+/// inserted - `cpp-laydbird-change-function-signature`); one node deleted and inserted while its
+/// children pair across; and wrapped code paired with its new wrapper (`a` with `a || b`) while
+/// `a`'s children go to the new inner `a`, which `solve_wrap_growth` pairs with the old `a`.
+///
+/// Held to the same kind on purpose: a node that changes kind (`T v = x;` -> `v = x;`, a
+/// `start_tag` -> `self_closing_tag`) is a legitimate delete beside an insert, whatever its
+/// children do. And to *all* of the other node's children: a new block that takes some of an old
+/// block's statements, the rest staying, is a container extracted, not the old one again. A node
+/// deleted on one side and inserted on the other is one fact, reported from the before side.
+fn removed_nodes_are_not_made_of_kept_ones(
+    context: &TreeContext,
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
+    let codes = [before, after];
+    let roots = [before.ast.as_ref(), after.ast.as_ref()];
+    let mut violations = Vec::new();
+    for side in 0..2 {
+        let Some(tree) = roots[side] else { continue };
+        let mut stack = vec![tree.root_node()];
+        while let Some(node) = stack.pop() {
+            let mut cursor = node.walk();
+            stack.extend(node.children(&mut cursor));
+            let Some(kept) = removed_node_made_of(node, side, context) else {
+                continue;
+            };
+            if side == 1
+                && removed_node_made_of(kept, 0, context).is_some_and(|back| back.id() == node.id())
+            {
+                continue;
+            }
+            let instead = if context.removed(kept, 1 - side) {
+                format!(
+                    "is itself {}",
+                    if side == 0 { "inserted" } else { "deleted" }
+                )
+            } else if context.in_group(kept, 1 - side) {
+                "is in a multi-map group without it".to_string()
+            } else {
+                "is paired elsewhere".to_string()
+            };
+            let message = format!(
+                "the `{}` on {} row {} is {}, but every child of it is paired with a child of the \
+                 `{}` on {} row {}, and that is all that node holds - which {instead}: the two are \
+                 one node",
+                node.kind(),
+                side_name(side),
+                row_of(&codes[side].contents, node.start_byte()),
+                if side == 0 { "deleted" } else { "inserted" },
+                kept.kind(),
+                side_name(1 - side),
+                row_of(&codes[1 - side].contents, kept.start_byte()),
+            );
+            violations.push(GroundTruthViolation::new(
+                28,
+                None,
+                message,
+                vec![
+                    ViolationSite {
+                        side,
+                        span: span_of_node(node),
+                    },
+                    ViolationSite {
+                        side: 1 - side,
+                        span: span_of_node(kept),
+                    },
+                ],
+            ));
+        }
+    }
+    violations
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 29: a whitespace-only change is empty under Minimal and painted under Full
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// Whether the two files differ only in whitespace: the same visible characters, split into the
+/// same tokens. Token boundaries matter because whitespace can be one: `new String` ->
+/// `newString` is a different program with the same visible characters. Inside a token,
+/// whitespace counts as whitespace (`Team.  All` -> `Team. All` in a comment). Without a grammar,
+/// the whitespace-separated words stand in for the tokens.
+fn is_whitespace_only_change(before: &Code, after: &Code) -> bool {
+    if before.contents == after.contents
+        || without_whitespace(&before.contents) != without_whitespace(&after.contents)
+    {
+        return false;
+    }
+    let tokens = |code: &Code, root: Node| -> Vec<String> {
+        index_tree(root)
+            .1
+            .into_iter()
+            .map(|leaf| without_whitespace(&code.contents[leaf.byte_range()]))
+            .filter(|text| !text.is_empty())
+            .collect()
+    };
+    match (before.ast.as_ref(), after.ast.as_ref()) {
+        (Some(before_tree), Some(after_tree)) => {
+            tokens(before, before_tree.root_node()) == tokens(after, after_tree.root_node())
+        }
+        _ => before
+            .contents
+            .split_whitespace()
+            .eq(after.contents.split_whitespace()),
+    }
+}
+
+/// The byte range of each whitespace run in `contents`: the run before each visible character,
+/// then the one after the last. Two files with the same visible characters have as many runs, and
+/// the `k`th of one corresponds to the `k`th of the other.
+fn whitespace_runs(contents: &str) -> Vec<std::ops::Range<usize>> {
+    let mut runs = Vec::new();
+    let mut start = 0usize;
+    for (offset, character) in contents.char_indices() {
+        if !character.is_whitespace() {
+            runs.push(start..offset);
+            start = offset + character.len_utf8();
+        }
+    }
+    runs.push(start..contents.len());
+    runs
+}
+
+/// How many bytes of `run` its counterpart `other` lacks, once their common start and end are set
+/// aside, counting only bytes a painting can colour: never a line break, which `label_bytes`
+/// leaves unlabelled. `"  "` against `" "` lacks one; four spaces against a tab lack four.
+fn unshared_paintable_bytes(run: &str, other: &str) -> usize {
+    let prefix: usize = run
+        .chars()
+        .zip(other.chars())
+        .take_while(|(ours, theirs)| ours == theirs)
+        .map(|(ours, _)| ours.len_utf8())
+        .sum();
+    let suffix: usize = run[prefix..]
+        .chars()
+        .rev()
+        .zip(other[prefix.min(other.len())..].chars().rev())
+        .take_while(|(ours, theirs)| ours == theirs)
+        .map(|(ours, _)| ours.len_utf8())
+        .sum();
+    run[prefix..run.len() - suffix]
+        .bytes()
+        .filter(|byte| !matches!(byte, b'\n' | b'\r'))
+        .count()
+}
+
+/// For one painting `Full` answers to, every changed whitespace run it under-paints: `(side, run,
+/// painted, needed)`.
+fn full_whitespace_shortfalls(
+    labels: &PaintedLabels,
+    contents: [&str; 2],
+    runs: &[Vec<std::ops::Range<usize>>; 2],
+) -> Vec<(usize, std::ops::Range<usize>, usize, usize)> {
+    let mut shortfalls = Vec::new();
+    for (ours, theirs) in runs[0].iter().zip(&runs[1]) {
+        let texts = [&contents[0][ours.clone()], &contents[1][theirs.clone()]];
+        if texts[0] == texts[1] {
+            continue;
+        }
+        for (side, run) in [(0usize, ours), (1usize, theirs)] {
+            let needed = unshared_paintable_bytes(texts[side], texts[1 - side]);
+            let painted = labels[side][run.clone()]
+                .iter()
+                .filter(|label| label.is_some())
+                .count();
+            if painted < needed {
+                // Line breaks are never painted, so the site starts and ends on what can be.
+                let paintable =
+                    |offset: &usize| !matches!(contents[side].as_bytes()[*offset], b'\n' | b'\r');
+                let start = run.clone().find(paintable).unwrap_or(run.start);
+                let end = run
+                    .clone()
+                    .rev()
+                    .find(paintable)
+                    .map_or(run.end, |last| last + 1);
+                shortfalls.push((side, start..end, painted, needed));
+            }
+        }
+    }
+    shortfalls
+}
+
+/// **Invariant 29.** When the two files differ only in whitespace (see
+/// [`is_whitespace_only_change`]), the presets split: `Minimal` paints nothing, which
+/// `human_solver`'s `Z` records, and `Full` paints the whitespace that changed.
+///
+/// "Paints the whitespace" is counted, not placed: in each run of whitespace that changed, `Full`
+/// paints at least as many bytes as the run has that its counterpart lacks. Removing 22 of 34
+/// spaces of indentation paints 22 of the 34, whichever 22 the painter picked, with any label.
+/// Line breaks are never painted, so a change made only of them (a blank line added, `\r\n` ->
+/// `\n`) asks nothing of `Full`.
+///
+/// A lone painting answers for both presets and cannot be empty and painted at once, so it is one
+/// violation: the fixture needs a `Minimal` and a `Full` painting. Unless nothing changed that a
+/// painting could show, in which case an empty lone painting passes.
+fn whitespace_only_changes_split_by_preset(
+    mapping: &super::HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Result<Vec<GroundTruthViolation>> {
+    if mapping.text_mappings.is_empty() || !is_whitespace_only_change(before, after) {
+        return Ok(Vec::new());
+    }
+    let contents = [before.contents.as_str(), after.contents.as_str()];
+    let runs = [whitespace_runs(contents[0]), whitespace_runs(contents[1])];
+    let painted_offsets = |labels: &PaintedLabels, side: usize| -> Vec<usize> {
+        (0..labels[side].len())
+            .filter(|&offset| labels[side][offset].is_some())
+            .collect()
+    };
+    let painted_sites = |labels: &PaintedLabels| -> Vec<ViolationSite> {
+        let mut sites = sites_from_offsets(0, contents[0], &painted_offsets(labels, 0));
+        sites.extend(sites_from_offsets(
+            1,
+            contents[1],
+            &painted_offsets(labels, 1),
+        ));
+        sites.truncate(MAX_SITES);
+        sites
+    };
+    let shortfall_sites =
+        |shortfalls: &[(usize, std::ops::Range<usize>, usize, usize)]| -> Vec<ViolationSite> {
+            shortfalls
+                .iter()
+                .take(MAX_SITES)
+                .map(|(side, run, _, _)| ViolationSite {
+                    side: *side,
+                    span: span_of_bytes(contents[*side], run.start, run.end),
+                })
+                .collect()
+        };
+    let shortfall_summary = |shortfalls: &[(usize, std::ops::Range<usize>, usize, usize)]| {
+        let (side, run, painted, needed) = &shortfalls[0];
+        format!(
+            "{} changed whitespace run(s) under-painted, the first on {} row {} ({painted} of the \
+             {needed} byte(s) it changed painted)",
+            shortfalls.len(),
+            side_name(*side),
+            row_of(contents[*side], run.start),
+        )
+    };
+
+    let mut violations = Vec::new();
+    if let [lone] = &mapping.text_mappings[..] {
+        let labels = painted_labels(lone, before, after)?;
+        let name = lone.name.as_str();
+        let painted = painted_offsets(&labels, 0).len() + painted_offsets(&labels, 1).len();
+        let shortfalls = full_whitespace_shortfalls(&labels, contents, &runs);
+        if painted > 0 {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and lone painting '{name}' paints \
+                     {painted} byte(s) - it answers for Minimal too, which paints nothing here: \
+                     keep it as 'Full' and add an empty 'Minimal' (Z)"
+                ),
+                painted_sites(&labels),
+            ));
+        } else if !shortfalls.is_empty() {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and lone painting '{name}' is empty - it \
+                     answers for Full too, which paints the whitespace that changed: {}; add a \
+                     'Full' painting",
+                    shortfall_summary(&shortfalls)
+                ),
+                shortfall_sites(&shortfalls),
+            ));
+        }
+        return Ok(violations);
+    }
+
+    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::MINIMAL)? {
+        let painted = painted_offsets(&labels, 0).len() + painted_offsets(&labels, 1).len();
+        if painted > 0 {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and Minimal painting '{name}' paints \
+                     {painted} byte(s) - Minimal paints nothing here: remove them and mark it \
+                     empty (Z)"
+                ),
+                painted_sites(&labels),
+            ));
+        }
+    }
+    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::FULL)? {
+        let shortfalls = full_whitespace_shortfalls(&labels, contents, &runs);
+        if !shortfalls.is_empty() {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and Full painting '{name}' leaves some \
+                     of it unpainted: {}",
+                    shortfall_summary(&shortfalls)
+                ),
+                shortfall_sites(&shortfalls),
+            ));
+        }
+    }
+    Ok(violations)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 30: the space before an edit goes with it when the edit changed the spaces
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// A byte of a row's spacing: what this rule counts. Line breaks never reach it (rows are split
+/// on them, and a CRLF row's `\r` is dropped).
+fn is_spacing(byte: u8) -> bool {
+    byte == b' ' || byte == b'\t'
+}
+
+/// The line diff's edit budget for lining rows up, the plain-text diff's own; past it a fixture
+/// is not judged.
+const ROW_LINE_UP_MAX_EDIT: usize = 10_000;
+
+/// One row of one side: its text without a trailing `\r`, and where it starts in the file.
+#[derive(Clone, Copy)]
+struct Row<'a> {
+    index: usize,
+    start: usize,
+    text: &'a [u8],
+}
+
+fn rows_without_cr(contents: &str) -> Vec<Row<'_>> {
+    rows_of(contents)
+        .map(|(index, start, line)| Row {
+            index,
+            start,
+            text: line.strip_suffix('\r').unwrap_or(line).as_bytes(),
+        })
+        .collect()
+}
+
+/// The columns of `row` that survive in place: visible and unpainted.
+fn surviving_columns(row: Row, labels: &[Option<TextLabel>]) -> Vec<usize> {
+    (0..row.text.len())
+        .filter(|&column| !is_spacing(row.text[column]) && labels[row.start + column].is_none())
+        .collect()
+}
+
+/// Changed rows paired across the two sides by what survives on them: within each stretch the line
+/// diff leaves unmatched, a before row pairs with the next after row whose surviving characters
+/// read the same. A row where nothing visible survives (a line rewritten whole, invariant 4's
+/// business) pairs with nothing, and neither does one whose survivors differ: the rule needs the
+/// two rows lined up character by character.
+fn rows_lined_up_by_survivors<'a>(
+    rows: &[Vec<Row<'a>>; 2],
+    labels: &PaintedLabels,
+    matched: &[(usize, usize)],
+) -> Vec<([Row<'a>; 2], [Vec<usize>; 2])> {
+    rows_lined_up_by(rows, labels, matched, |_| true)
+}
+
+/// [`rows_lined_up_by_survivors`] comparing only the surviving bytes `counts` keeps.
+fn rows_lined_up_by<'a>(
+    rows: &[Vec<Row<'a>>; 2],
+    labels: &PaintedLabels,
+    matched: &[(usize, usize)],
+    counts: impl Fn(u8) -> bool,
+) -> Vec<([Row<'a>; 2], [Vec<usize>; 2])> {
+    let mut paired = Vec::new();
+    let mut previous = (0usize, 0usize);
+    let ends = matched
+        .iter()
+        .copied()
+        .chain(std::iter::once((rows[0].len(), rows[1].len())));
+    for (before_end, after_end) in ends {
+        let mut next_after = previous.1;
+        for before_row in &rows[0][previous.0..before_end] {
+            let survivors = surviving_columns(*before_row, &labels[0]);
+            if survivors.is_empty() {
+                continue;
+            }
+            let text: Vec<u8> = survivors
+                .iter()
+                .map(|&c| before_row.text[c])
+                .filter(|&byte| counts(byte))
+                .collect();
+            for (offset, after_row) in rows[1][next_after..after_end].iter().enumerate() {
+                let theirs = surviving_columns(*after_row, &labels[1]);
+                if theirs
+                    .iter()
+                    .map(|&c| after_row.text[c])
+                    .filter(|&byte| counts(byte))
+                    .eq(text.iter().copied())
+                {
+                    paired.push(([*before_row, *after_row], [survivors, theirs]));
+                    next_after += offset + 1;
+                    break;
+                }
+            }
+        }
+        previous = (before_end + 1, after_end + 1);
+    }
+    paired
+}
+
+/// **Invariant 30.** In a painting named for `Full`, the spacing right before an edit inside a line
+/// goes with the edit exactly when the edit changed how much spacing is there.
+///
+/// The rows are lined up by what survives on them (see [`rows_lined_up_by_survivors`]), and each
+/// stretch between two surviving characters is compared with the same stretch on the other side.
+/// Where one side's stretch holds an edit (something painted and visible):
+///
+/// * **Nothing visible on the other side** - an insertion, a deletion, or where a moved token
+///   lands: the edit changed the spacing if the two stretches hold different amounts of it.
+///   `pub fn` -> `pub async fn` goes from one space to two, so ` async` is painted, its space
+///   included; `foo(a)` -> `foo(a, b)` has no space before `,` to paint.
+/// * **An edit on both sides** - a replacement or an update: only the spacing right before each
+///   edit is compared. `= foo` -> `= bar` keeps its one space, which stays unpainted.
+/// * **At the start of the row**: the indentation is compared, and a change is painted from column
+///   0 (`Delete` before, `Insert` after) rather than next to the token. Unchanged indentation stays
+///   unpainted, however the row's first token changed.
+///
+/// A change of `n` spaces paints the `n` next to the edit, with the edit's own label; the rest of
+/// the spacing stays unpainted. A moved token may take its space along whether or not the spacing
+/// changed: the space can travel with it.
+///
+/// Only paintings named for `Full`: a lone painting asserts its rendering is unambiguous, not
+/// that it follows `Full`'s conventions (as for invariant 5).
+fn spaces_before_edits_follow_their_count(
+    mapping: &super::HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Result<Vec<GroundTruthViolation>> {
+    if mapping.text_mappings.len() < 2 {
+        return Ok(Vec::new());
+    }
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::FULL)?;
+    if paintings.is_empty() {
+        return Ok(Vec::new());
+    }
+    let Some(core) =
+        crate::diff::text::line_diff_core(&before.contents, &after.contents, ROW_LINE_UP_MAX_EDIT)
+    else {
+        return Ok(Vec::new());
+    };
+    let rows = [
+        rows_without_cr(&before.contents),
+        rows_without_cr(&after.contents),
+    ];
+    let label_name = |label: TextLabel| label_word(Some(label));
+
+    let mut violations = Vec::new();
+    for (name, labels) in &paintings {
+        for (pair, survivors) in rows_lined_up_by_survivors(&rows, labels, &core.pairs) {
+            // Each side's stretches: before the first survivor, between survivors, after the last.
+            let stretches = |side: usize| -> Vec<(usize, usize)> {
+                let columns = &survivors[side];
+                std::iter::once(0)
+                    .chain(columns.iter().map(|&c| c + 1))
+                    .zip(
+                        columns
+                            .iter()
+                            .copied()
+                            .chain(std::iter::once(pair[side].text.len())),
+                    )
+                    .collect()
+            };
+            let stretches = [stretches(0), stretches(1)];
+            for (index, (ours_before, ours_after)) in
+                stretches[0].iter().zip(&stretches[1]).enumerate()
+            {
+                let both = [*ours_before, *ours_after];
+                for side in 0..2 {
+                    let row = pair[side];
+                    let other = pair[1 - side];
+                    let (start, end) = both[side];
+                    let (other_start, other_end) = both[1 - side];
+                    let Some(edit) = (start..end).find(|&c| !is_spacing(row.text[c])) else {
+                        continue;
+                    };
+                    let Some(label) = labels[side][row.start + edit] else {
+                        continue;
+                    };
+                    let leading =
+                        |row: Row| row.text.iter().take_while(|&&b| is_spacing(b)).count();
+                    let at_row_start = index == 0;
+                    let (ours, theirs, wanted, wanted_label) = if at_row_start {
+                        let (ours, theirs) = (leading(row), leading(other));
+                        let changed = ours.saturating_sub(theirs);
+                        let removed = if side == 0 {
+                            TextLabel::Delete
+                        } else {
+                            TextLabel::Insert
+                        };
+                        (ours, theirs, 0..changed, removed)
+                    } else {
+                        let other_edit =
+                            (other_start..other_end).find(|&c| !is_spacing(other.text[c]));
+                        let (ours, theirs) = match other_edit {
+                            Some(other_edit) => (edit - start, other_edit - other_start),
+                            None => (
+                                (start..end).filter(|&c| is_spacing(row.text[c])).count(),
+                                other_end - other_start,
+                            ),
+                        };
+                        let changed = ours.saturating_sub(theirs).min(edit - start);
+                        (ours, theirs, edit - changed..edit, label)
+                    };
+                    let wrong: Vec<usize> = (start..edit)
+                        .filter(|&c| {
+                            let painted = labels[side][row.start + c];
+                            if wanted.contains(&c) {
+                                painted != Some(wanted_label)
+                            } else {
+                                painted.is_some()
+                                    && !(label == TextLabel::Move
+                                        && painted == Some(TextLabel::Move))
+                            }
+                        })
+                        .collect();
+                    let (Some(&first), Some(&last)) = (wrong.first(), wrong.last()) else {
+                        continue;
+                    };
+                    let text: String = String::from_utf8_lossy(&row.text[edit..end])
+                        .trim_end()
+                        .chars()
+                        .take(40)
+                        .collect();
+                    let expected = if wanted.is_empty() {
+                        "its spacing stays unpainted".to_string()
+                    } else if at_row_start {
+                        format!(
+                            "the first {} byte(s) of the row are painted {}",
+                            wanted.len(),
+                            label_name(wanted_label)
+                        )
+                    } else {
+                        format!(
+                            "the {} byte(s) of spacing next to it are painted {}",
+                            wanted.len(),
+                            label_name(wanted_label)
+                        )
+                    };
+                    let place = if at_row_start { "starts with" } else { "holds" };
+                    let what = if at_row_start {
+                        "indentation"
+                    } else {
+                        "spacing at that point"
+                    };
+                    // Counted before -> after, whichever side the edit is on.
+                    let (from, to) = if side == 0 {
+                        (ours, theirs)
+                    } else {
+                        (theirs, ours)
+                    };
+                    violations.push(GroundTruthViolation::new(
+                        30,
+                        Some(name),
+                        format!(
+                            "painting '{name}' {} row {} {place} the {} `{text}`, and the {what} \
+                             went from {from} to {to}, so {expected} - {} byte(s) of it are \
+                             not",
+                            side_name(side),
+                            row.index + 1,
+                            label_name(label),
+                            wrong.len(),
+                        ),
+                        vec![site_on_row(side, row.index, first, last + 1)],
+                    ));
+                }
+            }
+        }
+    }
+    Ok(violations)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 31: a changed part is painted whole, and no further than its separator
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// What a row is made of, for invariant 31: parts (letters, digits, `_`, any non-ASCII byte, and
+/// escape sequences, which belong to the word they sit in), runs of spacing, and every other byte
+/// on its own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PieceKind {
+    Part,
+    Spacing,
+    Other,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Piece {
+    start: usize,
+    end: usize,
+    kind: PieceKind,
+}
+
+fn pieces_of(text: &[u8]) -> Vec<Piece> {
+    let is_part = is_part_byte;
+    let mut pieces = Vec::new();
+    let mut at = 0usize;
+    while at < text.len() {
+        let start = at;
+        let kind = if is_part(text[at]) || (text[at] == b'\\' && at + 1 < text.len()) {
+            while at < text.len() {
+                if text[at] == b'\\' && at + 1 < text.len() {
+                    at += 2;
+                } else if is_part(text[at]) {
+                    at += 1;
+                } else {
+                    break;
+                }
+            }
+            PieceKind::Part
+        } else if is_spacing(text[at]) {
+            while at < text.len() && is_spacing(text[at]) {
+                at += 1;
+            }
+            PieceKind::Spacing
+        } else {
+            at += 1;
+            PieceKind::Other
+        };
+        pieces.push(Piece {
+            start,
+            end: at,
+            kind,
+        });
+    }
+    pieces
+}
+
+fn is_part_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || byte == b'_' || byte >= 0x80
+}
+
+/// The longest common subsequence of two rows' surviving characters, as the columns that pair up:
+/// what survives on both sides. `None` for rows too long to compare that way.
+fn survivors_in_common(pair: [Row; 2], survivors: &[Vec<usize>; 2]) -> Option<[Vec<usize>; 2]> {
+    let (ours, theirs) = (&survivors[0], &survivors[1]);
+    let bytes = |side: usize, columns: &[usize], i: usize| pair[side].text[columns[i]];
+    if ours.len() == theirs.len()
+        && (0..ours.len()).all(|i| bytes(0, ours, i) == bytes(1, theirs, i))
+    {
+        return Some(survivors.clone());
+    }
+    if ours.len().saturating_mul(theirs.len()) > 4_000_000 {
+        return None;
+    }
+    let width = theirs.len() + 1;
+    let mut longest = vec![0u32; (ours.len() + 1) * width];
+    for i in (0..ours.len()).rev() {
+        for j in (0..theirs.len()).rev() {
+            longest[i * width + j] = if bytes(0, ours, i) == bytes(1, theirs, j) {
+                longest[(i + 1) * width + j + 1] + 1
+            } else {
+                longest[(i + 1) * width + j].max(longest[i * width + j + 1])
+            };
+        }
+    }
+    let (mut i, mut j) = (0usize, 0usize);
+    let mut common = [Vec::new(), Vec::new()];
+    while i < ours.len() && j < theirs.len() {
+        if bytes(0, ours, i) == bytes(1, theirs, j) {
+            common[0].push(ours[i]);
+            common[1].push(theirs[j]);
+            (i, j) = (i + 1, j + 1);
+        } else if longest[(i + 1) * width + j] >= longest[i * width + j + 1] {
+            i += 1;
+        } else {
+            j += 1;
+        }
+    }
+    Some(common)
+}
+
+/// A quote or bracket: the end of a sequence, never a separator inside one.
+fn ends_a_sequence(byte: u8) -> bool {
+    b"\"'`()[]{}<>".contains(&byte)
+}
+
+/// Whether the part at `offset` is one invariant 31 judges: inside a comment or a string, or a
+/// number. Code identifiers are invariant 16's. Without a grammar everything is text, so it is.
+fn part_in_scope(code: &Code, offset: usize, text: &[u8]) -> bool {
+    let Some(tree) = code.ast.as_ref() else {
+        return true;
+    };
+    if text.iter().all(u8::is_ascii_digit) {
+        return true;
+    }
+    let mut node = tree
+        .root_node()
+        .descendant_for_byte_range(offset, offset + 1);
+    while let Some(current) = node {
+        let kind = current.kind();
+        if [
+            "comment", "string", "heredoc", "number", "integer", "float", "decimal",
+        ]
+        .iter()
+        .any(|word| kind.contains(word))
+        {
+            return true;
+        }
+        node = current.parent();
+    }
+    false
+}
+
+/// **Invariant 31.** In a painting named for `Full`, a number, a version part, or a word of a
+/// comment or string that changed is painted whole, and no further than the separator beside it:
+/// `7.0-alpha-61516` -> `…61517` paints `61516`, not `6`, and not `-61516`.
+///
+/// * **A part replaced in place** has every byte painted.
+/// * **An unchanged separator beside it** (any byte that is not a part, spacing, a quote or a
+///   bracket) stays unpainted - unless it sits between two changed parts, where it goes with the
+///   one on its right: `1.0.2` -> `1.1.3` paints `0` and `.2`. A separator painted `Move` beside a
+///   single change is the move's, not the edit's, and passes.
+/// * **A part inserted or deleted inside a sequence** (a stretch without spacing) takes the
+///   separator on its left - `1.2` -> `1.2.3` inserts `.3` - or, at the very start of the
+///   sequence, the one on its right: `2.3` -> `1.2.3` inserts `1.`.
+///
+/// The parts are lined up across the two rows by what the painting leaves in place, as for
+/// invariant 30 ([`rows_lined_up_by_survivors`]); a painted stretch is widened to whole parts, and
+/// within it the two sides are compared piece by piece once their common start and end are set
+/// aside. Stretches that do not compare that simply (a rewrite) are not judged. Only paintings
+/// named for `Full`, as for invariant 30.
+fn changed_parts_are_painted_whole(
+    mapping: &super::HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Result<Vec<GroundTruthViolation>> {
+    if mapping.text_mappings.len() < 2 {
+        return Ok(Vec::new());
+    }
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::FULL)?;
+    if paintings.is_empty() {
+        return Ok(Vec::new());
+    }
+    let Some(core) =
+        crate::diff::text::line_diff_core(&before.contents, &after.contents, ROW_LINE_UP_MAX_EDIT)
+    else {
+        return Ok(Vec::new());
+    };
+    let rows = [
+        rows_without_cr(&before.contents),
+        rows_without_cr(&after.contents),
+    ];
+    let codes = [before, after];
+    let mut violations = Vec::new();
+    for (name, labels) in &paintings {
+        // Rows pair by their surviving parts: a separator the painting leaves unpainted where it
+        // was inserted or deleted survives on one side only, which is what this rule judges.
+        let lined_up = rows_lined_up_by(&rows, labels, &core.pairs, is_part_byte);
+        for (pair, all_survivors) in lined_up {
+            let Some(survivors) = survivors_in_common(pair, &all_survivors) else {
+                continue;
+            };
+            let pieces = [pieces_of(pair[0].text), pieces_of(pair[1].text)];
+            let label_at = |side: usize, column: usize| labels[side][pair[side].start + column];
+            let count = survivors[0].len();
+            // The bytes of gaps `low..=high` and the survivors between them, on one side.
+            let extent = |side: usize, low: usize, high: usize| -> (usize, usize) {
+                let start = if low == 0 {
+                    0
+                } else {
+                    survivors[side][low - 1] + 1
+                };
+                let end = if high == count {
+                    pair[side].text.len()
+                } else {
+                    survivors[side][high]
+                };
+                (start, end)
+            };
+            // The gap a column falls in, or the survivor it is (`Err`).
+            let gap_of = |side: usize, column: usize| -> Result<usize, usize> {
+                survivors[side].binary_search(&column)
+            };
+            let painted_gap = |gap: usize| {
+                (0..2).any(|side| {
+                    let (start, end) = extent(side, gap, gap);
+                    (start..end)
+                        .any(|c| !is_spacing(pair[side].text[c]) && label_at(side, c).is_some())
+                })
+            };
+
+            // Units: runs of gaps widened until each side's stretch holds whole parts.
+            let mut units: Vec<(usize, usize)> = Vec::new();
+            let mut gap = 0usize;
+            while gap <= count {
+                if !painted_gap(gap) {
+                    gap += 1;
+                    continue;
+                }
+                let (mut low, mut high) = (gap, gap);
+                loop {
+                    let (mut new_low, mut new_high) = (low, high);
+                    for (side, side_pieces) in pieces.iter().enumerate() {
+                        let (start, end) = extent(side, low, high);
+                        for piece in side_pieces.iter().filter(|piece| {
+                            piece.kind == PieceKind::Part
+                                && piece.start <= end
+                                && start <= piece.end
+                                && (piece.start < end || start < piece.end || start == end)
+                        }) {
+                            for column in [piece.start, piece.end - 1] {
+                                let gap = match gap_of(side, column) {
+                                    Ok(survivor) if column == piece.start => survivor,
+                                    Ok(survivor) => survivor + 1,
+                                    Err(gap) => gap,
+                                };
+                                new_low = new_low.min(gap);
+                                new_high = new_high.max(gap);
+                            }
+                        }
+                    }
+                    if (new_low, new_high) == (low, high) {
+                        break;
+                    }
+                    (low, high) = (new_low, new_high);
+                }
+                match units.last_mut() {
+                    Some(last) if last.1 >= low => last.1 = last.1.max(high),
+                    _ => units.push((low, high)),
+                }
+                gap = high + 1;
+            }
+
+            // What changed, as piece indices per side.
+            let mut replaced: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
+            let mut removed: [Vec<(usize, usize)>; 2] = [Vec::new(), Vec::new()];
+            for &(low, high) in &units {
+                let within: [Vec<usize>; 2] = std::array::from_fn(|side| {
+                    let (start, end) = extent(side, low, high);
+                    (0..pieces[side].len())
+                        .filter(|&i| pieces[side][i].start >= start && pieces[side][i].end <= end)
+                        .collect()
+                });
+                let text = |side: usize, i: usize| {
+                    &pair[side].text[pieces[side][i].start..pieces[side][i].end]
+                };
+                let (mut head, mut tail) = (0usize, 0usize);
+                while head < within[0].len().min(within[1].len())
+                    && text(0, within[0][head]) == text(1, within[1][head])
+                {
+                    head += 1;
+                }
+                while tail < within[0].len().min(within[1].len()) - head
+                    && text(0, within[0][within[0].len() - 1 - tail])
+                        == text(1, within[1][within[1].len() - 1 - tail])
+                {
+                    tail += 1;
+                }
+                let middle: [&[usize]; 2] =
+                    std::array::from_fn(|side| &within[side][head..within[side].len() - tail]);
+                let same_shape = middle[0].len() == middle[1].len()
+                    && middle[0].iter().zip(middle[1]).all(|(&ours, &theirs)| {
+                        let (a, b) = (pieces[0][ours], pieces[1][theirs]);
+                        a.kind == b.kind
+                            && (a.kind == PieceKind::Part || text(0, ours) == text(1, theirs))
+                    });
+                if same_shape {
+                    for (&ours, &theirs) in middle[0].iter().zip(middle[1]) {
+                        if pieces[0][ours].kind == PieceKind::Part
+                            && text(0, ours) != text(1, theirs)
+                        {
+                            replaced[0].push(ours);
+                            replaced[1].push(theirs);
+                        }
+                    }
+                } else {
+                    for side in 0..2 {
+                        let run = middle[side];
+                        let whole_run = !run.is_empty()
+                            && middle[1 - side].is_empty()
+                            && run.windows(2).all(|w| w[1] == w[0] + 1)
+                            && run
+                                .iter()
+                                .all(|&i| pieces[side][i].kind != PieceKind::Spacing)
+                            && run.iter().any(|&i| pieces[side][i].kind == PieceKind::Part);
+                        if whole_run {
+                            removed[side].push((run[0], run[run.len() - 1] + 1));
+                        }
+                    }
+                }
+            }
+
+            let piece_text = |side: usize, i: usize| {
+                String::from_utf8_lossy(
+                    &pair[side].text[pieces[side][i].start..pieces[side][i].end],
+                )
+                .chars()
+                .take(40)
+                .collect::<String>()
+            };
+            let mut report = |side: usize, start: usize, end: usize, message: String| {
+                violations.push(GroundTruthViolation::new(
+                    31,
+                    Some(name),
+                    format!(
+                        "painting '{name}' {} row {} {message}",
+                        side_name(side),
+                        pair[side].index + 1
+                    ),
+                    vec![site_on_row(side, pair[side].index, start, end)],
+                ));
+            };
+            for side in 0..2 {
+                let in_scope = |i: usize| {
+                    let piece = pieces[side][i];
+                    part_in_scope(
+                        codes[side],
+                        pair[side].start + piece.start,
+                        &pair[side].text[piece.start..piece.end],
+                    )
+                };
+                for (index, &i) in replaced[side].iter().enumerate() {
+                    if !in_scope(i) {
+                        continue;
+                    }
+                    let piece = pieces[side][i];
+                    let unpainted = (piece.start..piece.end)
+                        .filter(|&c| label_at(side, c).is_none())
+                        .count();
+                    if unpainted > 0 {
+                        report(
+                            side,
+                            piece.start,
+                            piece.end,
+                            format!(
+                                "leaves {unpainted} of the {} byte(s) of `{}` unpainted, which \
+                                 becomes `{}` - Full paints a changed part whole",
+                                piece.end - piece.start,
+                                piece_text(side, i),
+                                piece_text(1 - side, replaced[1 - side][index]),
+                            ),
+                        );
+                    }
+                    let changed = |j: usize| replaced[side].contains(&j);
+                    for neighbour in [i.checked_sub(1), Some(i + 1)].into_iter().flatten() {
+                        let Some(separator) = pieces[side].get(neighbour) else {
+                            continue;
+                        };
+                        if separator.kind != PieceKind::Other
+                            || ends_a_sequence(pair[side].text[separator.start])
+                        {
+                            continue;
+                        }
+                        let between =
+                            neighbour > 0 && changed(neighbour - 1) && changed(neighbour + 1);
+                        // Between two changed parts, judged once, from the right-hand one.
+                        if between && neighbour == i + 1 {
+                            continue;
+                        }
+                        let got = label_at(side, separator.start);
+                        let wanted = if between {
+                            label_at(side, pieces[side][neighbour + 1].start)
+                        } else {
+                            None
+                        };
+                        if got == wanted || (!between && got == Some(TextLabel::Move)) {
+                            continue;
+                        }
+                        let shown = char::from(pair[side].text[separator.start]);
+                        let message = if between {
+                            format!(
+                                "paints the `{shown}` between the changed `{}` and `{}` {}, but a \
+                                 separator between two changed parts goes with the one on its \
+                                 right ({})",
+                                piece_text(side, neighbour - 1),
+                                piece_text(side, neighbour + 1),
+                                label_word(got),
+                                label_word(wanted),
+                            )
+                        } else {
+                            format!(
+                                "paints the unchanged `{shown}` beside the changed `{}` {} - Full \
+                                 stops at the separator",
+                                piece_text(side, i),
+                                label_word(got),
+                            )
+                        };
+                        report(side, separator.start, separator.end, message);
+                    }
+                }
+                for &(first, end) in &removed[side] {
+                    let Some(part) =
+                        (first..end).find(|&i| pieces[side][i].kind == PieceKind::Part)
+                    else {
+                        continue;
+                    };
+                    if !in_scope(part) {
+                        continue;
+                    }
+                    let text = pair[side].text;
+                    let separator = |byte: u8| {
+                        !is_part_byte(byte) && !is_spacing(byte) && !ends_a_sequence(byte)
+                    };
+                    let at_start = |start: usize| {
+                        start == 0
+                            || is_spacing(text[start - 1])
+                            || ends_a_sequence(text[start - 1])
+                    };
+                    // Every place the same run could sit: the line diff picked one, but `json.h`
+                    // -> `json/json.h` is `json/` at the start as much as `/json` after `json`.
+                    let found = (pieces[side][first].start, pieces[side][end - 1].end);
+                    let mut placements = vec![found];
+                    let (mut low, mut high) = found;
+                    while low > 0 && text[low - 1] == text[high - 1] {
+                        (low, high) = (low - 1, high - 1);
+                        placements.push((low, high));
+                    }
+                    let (mut low, mut high) = found;
+                    while high < text.len() && text[high] == text[low] {
+                        (low, high) = (low + 1, high + 1);
+                        placements.push((low, high));
+                    }
+                    // The rule's placements: the separator on the left, or on the right at the
+                    // very start of a sequence. It only chooses between places the run can sit:
+                    // `,progress:` and `"-DEV"` have one, whatever separators they carry.
+                    let preferred: Vec<(usize, usize)> = placements
+                        .iter()
+                        .copied()
+                        .filter(|&(start, stop)| {
+                            if at_start(start) {
+                                !separator(text[start])
+                            } else {
+                                !separator(text[stop - 1])
+                            }
+                        })
+                        .collect();
+                    let allowed = if preferred.is_empty() {
+                        placements
+                    } else {
+                        preferred
+                    };
+                    let wanted = if side == 0 {
+                        TextLabel::Delete
+                    } else {
+                        TextLabel::Insert
+                    };
+                    let painted_as = |(start, stop): (usize, usize)| {
+                        (start..stop).all(|c| label_at(side, c) == Some(wanted))
+                            && ![start.checked_sub(1), Some(stop)]
+                                .into_iter()
+                                .flatten()
+                                .filter(|&c| c < text.len() && separator(text[c]))
+                                .any(|c| label_at(side, c) == Some(wanted))
+                    };
+                    if allowed.iter().any(|&placement| painted_as(placement)) {
+                        continue;
+                    }
+                    let (start, stop) = allowed.first().copied().unwrap_or(found);
+                    let side_of = if at_start(start) { "right" } else { "left" };
+                    let shown = String::from_utf8_lossy(&text[start..stop])
+                        .chars()
+                        .take(40)
+                        .collect::<String>();
+                    report(
+                        side,
+                        start,
+                        stop,
+                        format!(
+                            "{} `{shown}` inside a sequence, painted otherwise - an {} part takes \
+                             the separator on its {side_of}",
+                            if side == 0 { "deletes" } else { "inserts" },
+                            if side == 0 { "deleted" } else { "inserted" },
+                        ),
+                    );
+                }
+            }
+        }
+    }
+    Ok(violations)
+}
+
 fn first_leaf(node: Node) -> Option<Node> {
     let mut node = node;
     while node.child_count() > 0 {
@@ -3982,8 +5155,9 @@ mod tests {
         // Just the two trailing spaces: trailing, but with nothing visible inside the run.
         let mapping = painted(vec![("Only one solution", vec![deleted(10, 2)])]);
 
+        // Rule 1 only: a lone painting of a whitespace-only change breaks rule 29.
         assert!(
-            violations(&mapping, &before, &after).is_empty(),
+            violations_of(1, &mapping, &before, &after).is_empty(),
             "a run that is all whitespace has no visible character it could end on"
         );
     }
@@ -4002,7 +5176,8 @@ mod tests {
             }],
         )]);
 
-        assert!(violations(&mapping, &before, &after).is_empty());
+        // Rule 1 only: a lone painting of a whitespace-only change breaks rule 29.
+        assert!(violations_of(1, &mapping, &before, &after).is_empty());
     }
 
     // ── Invariant 2 ─────────────────────────────────────────────────────────────────────────
@@ -5470,5 +6645,511 @@ mod tests {
             vec![matched((8, 9), (8, 9))],
         );
         assert!(numbered(&agreeing, &source, &source, 23).is_empty());
+    }
+
+    // ── Invariant 28 ────────────────────────────────────────────────────────────────────────
+
+    /// `mapping_by_text` of `before`/`after` with every entry inside a `binary_expression` taken
+    /// out, for a test to say what happens there.
+    fn without_binary_expressions(before: &Code, after: &Code) -> HumanMapping {
+        let mut mapping = mapping_by_text(before, after);
+        let inside = |path: &Option<Vec<String>>| {
+            path.as_ref().is_some_and(|path| {
+                path.iter()
+                    .any(|step| step.starts_with("binary_expression:"))
+            })
+        };
+        mapping
+            .entries
+            .retain(|entry| !inside(&entry.before_path) && !inside(&entry.after_path));
+        mapping
+    }
+
+    fn children_of(node: Node) -> Vec<Node> {
+        let mut cursor = node.walk();
+        node.children(&mut cursor).collect()
+    }
+
+    /// `a + b` grown into `a + b + c`, the old `a + b` paired with the new outer expression while
+    /// its three children go to the new inner one: the inner one is the old one again.
+    #[test]
+    fn grown_code_paired_with_its_wrapper_while_its_children_stay_is_reported() {
+        let (before, after) = (rust("f(a + b);\n"), rust("f(a + b + c);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let outer =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let [inner, plus, c] = children_of(outer)[..] else {
+            panic!("`a + b + c` is `(a + b) + c`");
+        };
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping.entries.push(entry(
+            HumanOperation::MatchButNotIdentical,
+            Some(old),
+            Some(outer),
+        ));
+        for (theirs, ours) in children_of(old).into_iter().zip(children_of(inner)) {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Identical, Some(theirs), Some(ours)));
+        }
+        for added in [inner, plus, c] {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Insert, None, Some(added)));
+        }
+        assert_eq!(
+            violations_of(28, &mapping, &before, &after),
+            [
+                "the `binary_expression` on after row 1 is inserted, but every child of it is \
+                 paired with a child of the `binary_expression` on before row 1, and that is all \
+                 that node holds - which is paired elsewhere: the two are one node"
+            ]
+        );
+
+        // The old `a + b` paired with the inner one instead, the wrapper new: nothing to report.
+        let mut wrapped = without_binary_expressions(&before, &after);
+        wrapped
+            .entries
+            .push(entry(HumanOperation::Identical, Some(old), Some(inner)));
+        for added in [outer, plus, c] {
+            wrapped
+                .entries
+                .push(entry(HumanOperation::Insert, None, Some(added)));
+        }
+        assert!(violations_of(28, &wrapped, &before, &after).is_empty());
+    }
+
+    /// One node deleted and inserted while its children pair across is one contradiction,
+    /// reported once.
+    #[test]
+    fn a_node_deleted_and_inserted_around_paired_children_is_reported_once() {
+        let (before, after) = (rust("f(a + b);\n"), rust("g(a + b);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let new =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(old), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(new)));
+        for (theirs, ours) in children_of(old).into_iter().zip(children_of(new)) {
+            mapping
+                .entries
+                .push(entry(HumanOperation::Identical, Some(theirs), Some(ours)));
+        }
+        assert_eq!(
+            violations_of(28, &mapping, &before, &after),
+            [
+                "the `binary_expression` on before row 1 is deleted, but every child of it is \
+                 paired with a child of the `binary_expression` on after row 1, and that is all \
+                 that node holds - which is itself inserted: the two are one node"
+            ]
+        );
+    }
+
+    /// A removed node with a child of its own that does not survive (`a + b` -> `a + c`, `b`
+    /// deleted and `c` inserted) is a real edit, not a node kept twice.
+    #[test]
+    fn a_removed_node_with_a_new_child_is_not_reported() {
+        let (before, after) = (rust("f(a + b);\n"), rust("f(a + c);\n"));
+        let old = first_of_kind(
+            before.ast.as_ref().unwrap().root_node(),
+            "binary_expression",
+        )
+        .unwrap();
+        let new =
+            first_of_kind(after.ast.as_ref().unwrap().root_node(), "binary_expression").unwrap();
+        let [a, plus, b] = children_of(old)[..] else {
+            panic!("`a + b` has three children");
+        };
+        let [new_a, new_plus, c] = children_of(new)[..] else {
+            panic!("`a + c` has three children");
+        };
+        let mut mapping = without_binary_expressions(&before, &after);
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(old), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(new)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Identical, Some(a), Some(new_a)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Identical, Some(plus), Some(new_plus)));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Delete, Some(b), None));
+        mapping
+            .entries
+            .push(entry(HumanOperation::Insert, None, Some(c)));
+        assert!(violations_of(28, &mapping, &before, &after).is_empty());
+    }
+
+    // ── Invariant 29 ────────────────────────────────────────────────────────────────────────
+
+    /// `let v = a;` with its space before `a` doubled: columns 7..8 on the before side, 7..9
+    /// after.
+    fn widened_space() -> (Code, Code) {
+        (rust("let v = a;\n"), rust("let v =  a;\n"))
+    }
+
+    #[test]
+    fn whitespace_only_changes_are_told_from_token_changes() {
+        let (before, after) = widened_space();
+        assert!(is_whitespace_only_change(&before, &after));
+        // Indentation and a comment's own spacing are whitespace too.
+        assert!(is_whitespace_only_change(
+            &rust("fn f() {\n    g();\n}\n"),
+            &rust("fn f() {\n\tg();\n}\n")
+        ));
+        assert!(is_whitespace_only_change(
+            &rust("// a  b\n"),
+            &rust("// a b\n")
+        ));
+        // The same visible characters in different tokens is an edit.
+        assert!(!is_whitespace_only_change(
+            &rust("let v = new String;\n"),
+            &rust("let v = newString;\n")
+        ));
+        assert!(!is_whitespace_only_change(&before, &before));
+        assert!(!is_whitespace_only_change(
+            &rust("let v = a;\n"),
+            &rust("let v = b;\n")
+        ));
+        // Without a grammar, words stand in for tokens.
+        let text = |source: &str| Code::from_string(source, &Language::Unknown);
+        assert!(is_whitespace_only_change(&text("a  b\n"), &text("a b\n")));
+        assert!(!is_whitespace_only_change(&text("a b\n"), &text("ab\n")));
+    }
+
+    #[test]
+    fn a_whitespace_only_change_painted_empty_and_full_passes() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![("Minimal", vec![]), ("Full", vec![inserted(8, 1)])]);
+        assert!(violations_of(29, &mapping, &before, &after).is_empty());
+        // Any placement and any label: the added space painted as part of a `Move` of both.
+        let moved_pair = painted(vec![
+            ("Minimal", vec![]),
+            ("Full", vec![matched((7, 8), (7, 9))]),
+        ]);
+        assert!(violations_of(29, &moved_pair, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_minimal_painting_of_a_whitespace_only_change_is_reported() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![
+            ("Minimal", vec![inserted(8, 1)]),
+            ("Full", vec![inserted(8, 1)]),
+        ]);
+        assert_eq!(
+            violations_of(29, &mapping, &before, &after),
+            [
+                "the files differ only in whitespace, and Minimal painting 'Minimal' paints 1 \
+                 byte(s) - Minimal paints nothing here: remove them and mark it empty (Z)"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_full_painting_leaving_changed_whitespace_unpainted_is_reported() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![("Minimal", vec![]), ("Full", vec![])]);
+        assert_eq!(
+            violations_of(29, &mapping, &before, &after),
+            [
+                "the files differ only in whitespace, and Full painting 'Full' leaves some of it \
+                 unpainted: 1 changed whitespace run(s) under-painted, the first on after row 1 \
+                 (0 of the 1 byte(s) it changed painted)"
+            ]
+        );
+    }
+
+    #[test]
+    fn spaces_turned_into_a_tab_are_painted_on_both_sides() {
+        let (before, after) = (
+            rust("fn f() {\n    g();\n}\n"),
+            rust("fn f() {\n\tg();\n}\n"),
+        );
+        let row_one = |side: usize, end: usize| HumanTextEntry {
+            operation: if side == 0 {
+                HumanTextOperation::Delete
+            } else {
+                HumanTextOperation::Insert
+            },
+            before: if side == 0 {
+                vec![span(1, 0, 1, end)]
+            } else {
+                Vec::new()
+            },
+            after: if side == 1 {
+                vec![span(1, 0, 1, end)]
+            } else {
+                Vec::new()
+            },
+        };
+        let both = painted(vec![
+            ("Minimal", vec![]),
+            ("Full", vec![row_one(0, 4), row_one(1, 1)]),
+        ]);
+        assert!(violations_of(29, &both, &before, &after).is_empty());
+        let only_the_spaces = painted(vec![("Minimal", vec![]), ("Full", vec![row_one(0, 4)])]);
+        assert_eq!(
+            violations_of(29, &only_the_spaces, &before, &after).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_lone_painting_of_a_whitespace_only_change_is_one_violation() {
+        let (before, after) = widened_space();
+        let painted_lone = painted(vec![("Only one solution", vec![inserted(8, 1)])]);
+        let found = violations_of(29, &painted_lone, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(found[0].contains("add an empty 'Minimal' (Z)"), "{found:?}");
+
+        let empty_lone = painted(vec![("Only one solution", vec![])]);
+        let found = violations_of(29, &empty_lone, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(found[0].contains("add a 'Full' painting"), "{found:?}");
+    }
+
+    /// A blank line added changes only line breaks, which no painting can colour.
+    #[test]
+    fn a_change_of_line_breaks_alone_asks_nothing_of_full() {
+        let (before, after) = (rust("a();\nb();\n"), rust("a();\n\nb();\n"));
+        let empty_lone = painted(vec![("Only one solution", vec![])]);
+        assert!(violations_of(29, &empty_lone, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_change_to_a_token_is_not_judged() {
+        let (before, after) = (rust("let v = a;\n"), rust("let v = b;\n"));
+        let mapping = painted(vec![
+            ("Minimal", vec![matched((8, 9), (8, 9))]),
+            ("Full", vec![]),
+        ]);
+        assert!(violations_of(29, &mapping, &before, &after).is_empty());
+    }
+
+    // ── Invariant 30 ────────────────────────────────────────────────────────────────────────
+
+    /// A `Full` painting beside an empty `Minimal`: rule 30 judges only paintings named `Full`.
+    fn full_only(entries: Vec<HumanTextEntry>) -> HumanMapping {
+        painted(vec![("Minimal", vec![]), ("Full", entries)])
+    }
+
+    #[test]
+    fn an_inserted_word_between_two_takes_the_space_before_it() {
+        let (before, after) = (rust("pub fn f() {}\n"), rust("pub async fn f() {}\n"));
+        // ` async`: the space before it, not the one after.
+        assert!(violations_of(30, &full_only(vec![inserted(3, 6)]), &before, &after).is_empty());
+        assert_eq!(
+            violations_of(30, &full_only(vec![inserted(4, 5)]), &before, &after),
+            [
+                "painting 'Full' after row 1 holds the insert `async`, and the spacing at that point \
+                 went from 1 to 2, so the 1 byte(s) of spacing next to it are painted insert - 1 \
+                 byte(s) of it are not"
+            ]
+        );
+        assert_eq!(
+            violations_of(30, &full_only(vec![inserted(4, 6)]), &before, &after).len(),
+            1,
+            "`async ` takes the space after it, not the one before"
+        );
+    }
+
+    #[test]
+    fn a_deleted_tail_takes_the_space_before_it() {
+        let (before, after) = (rust("if (a && b) {}\n"), rust("if (a) {}\n"));
+        assert!(violations_of(30, &full_only(vec![deleted(5, 5)]), &before, &after).is_empty());
+        assert_eq!(
+            violations_of(30, &full_only(vec![deleted(6, 4)]), &before, &after).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_replacement_leaves_the_unchanged_space_alone() {
+        let (before, after) = (rust("let v = a;\n"), rust("let v = b;\n"));
+        let replaced =
+            |from: usize, count: usize| vec![deleted(from, count), inserted(from, count)];
+        assert!(violations_of(30, &full_only(replaced(8, 1)), &before, &after).is_empty());
+        let found = violations_of(30, &full_only(replaced(7, 2)), &before, &after);
+        assert_eq!(found.len(), 2, "one per side: {found:?}");
+        assert!(
+            found[0].contains("so its spacing stays unpainted"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_moved_token_may_take_its_space_along() {
+        let (before, after) = (rust("let v = a + b;\n"), rust("let v = b + a;\n"));
+        let moved_pair = |from: (usize, usize), to: (usize, usize)| matched(from, to);
+        // `a` and `b` trade places; with or without the space before each, both pass.
+        let bare = full_only(vec![
+            moved_pair((8, 9), (12, 13)),
+            moved_pair((12, 13), (8, 9)),
+        ]);
+        assert!(violations_of(30, &bare, &before, &after).is_empty());
+        let with_spaces = full_only(vec![
+            moved_pair((7, 9), (11, 13)),
+            moved_pair((11, 13), (7, 9)),
+        ]);
+        assert!(violations_of(30, &with_spaces, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn unchanged_indentation_before_a_new_first_token_stays_unpainted() {
+        let (before, after) = (rust("    f();\n"), rust("    await f();\n"));
+        assert!(violations_of(30, &full_only(vec![inserted(4, 6)]), &before, &after).is_empty());
+        assert_eq!(
+            violations_of(30, &full_only(vec![inserted(0, 10)]), &before, &after),
+            [
+                "painting 'Full' after row 1 starts with the insert `await`, and the indentation \
+                 went from 4 to 4, so its spacing stays unpainted - 4 byte(s) of it are not"
+            ]
+        );
+    }
+
+    #[test]
+    fn grown_indentation_is_painted_from_the_start_of_the_row() {
+        let (before, after) = (rust("  f();\n"), rust("    await f();\n"));
+        let at_the_start = full_only(vec![inserted(0, 2), inserted(4, 6)]);
+        assert!(violations_of(30, &at_the_start, &before, &after).is_empty());
+        let next_to_the_token = full_only(vec![inserted(2, 8)]);
+        assert_eq!(
+            violations_of(30, &next_to_the_token, &before, &after).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_lone_painting_is_not_held_to_the_rule() {
+        let (before, after) = (rust("pub fn f() {}\n"), rust("pub async fn f() {}\n"));
+        let lone = painted(vec![("Only one solution", vec![inserted(4, 5)])]);
+        assert!(violations_of(30, &lone, &before, &after).is_empty());
+    }
+
+    // ── Invariant 31 ────────────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn a_changed_version_part_is_painted_whole_and_no_further() {
+        // `61516` is columns 13..18 on both sides.
+        let (before, after) = (rust("// 7.0-alpha-61516\n"), rust("// 7.0-alpha-61517\n"));
+        let whole = full_only(vec![matched((13, 18), (13, 18))]);
+        assert!(violations_of(31, &whole, &before, &after).is_empty());
+        assert_eq!(
+            violations_of(
+                31,
+                &full_only(vec![matched((17, 18), (17, 18))]),
+                &before,
+                &after
+            ),
+            [
+                "painting 'Full' before row 1 leaves 4 of the 5 byte(s) of `61516` unpainted, \
+                 which becomes `61517` - Full paints a changed part whole",
+                "painting 'Full' after row 1 leaves 4 of the 5 byte(s) of `61517` unpainted, \
+                 which becomes `61516` - Full paints a changed part whole",
+            ]
+        );
+        let found = violations_of(
+            31,
+            &full_only(vec![matched((12, 18), (12, 18))]),
+            &before,
+            &after,
+        );
+        assert_eq!(found.len(), 2, "{found:?}");
+        assert!(
+            found[0].contains("paints the unchanged `-` beside the changed `61516` update"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_separator_between_two_changed_parts_goes_with_the_right_hand_one() {
+        // `1.0.2` -> `1.1.3`: `0` at 5, the dot at 6, `2` at 7.
+        let (before, after) = (rust("// 1.0.2\n"), rust("// 1.1.3\n"));
+        let right = full_only(vec![matched((5, 6), (5, 6)), matched((6, 8), (6, 8))]);
+        assert!(violations_of(31, &right, &before, &after).is_empty());
+        let one_update = full_only(vec![matched((5, 8), (5, 8))]);
+        assert!(violations_of(31, &one_update, &before, &after).is_empty());
+        let unpainted = full_only(vec![matched((5, 6), (5, 6)), matched((7, 8), (7, 8))]);
+        let found = violations_of(31, &unpainted, &before, &after);
+        assert_eq!(found.len(), 2, "{found:?}");
+        assert!(
+            found[0].contains("between the changed `0` and `2` unpainted"),
+            "{found:?}"
+        );
+        let moved_dot = full_only(vec![
+            matched((5, 6), (5, 6)),
+            matched((6, 7), (6, 7)),
+            matched((7, 8), (7, 8)),
+        ]);
+        assert_eq!(violations_of(31, &moved_dot, &before, &after).len(), 2);
+    }
+
+    #[test]
+    fn an_inserted_part_takes_the_separator_on_its_left() {
+        let (before, after) = (rust("// 1.2\n"), rust("// 1.2.3\n"));
+        assert!(violations_of(31, &full_only(vec![inserted(6, 2)]), &before, &after).is_empty());
+        let found = violations_of(31, &full_only(vec![inserted(7, 1)]), &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains("takes the separator on its left"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn a_part_inserted_at_the_start_takes_the_separator_on_its_right() {
+        let (before, after) = (rust("// 2.3\n"), rust("// 1.2.3\n"));
+        assert!(violations_of(31, &full_only(vec![inserted(3, 2)]), &before, &after).is_empty());
+        let found = violations_of(31, &full_only(vec![inserted(3, 1)]), &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].contains("takes the separator on its right"),
+            "{found:?}"
+        );
+    }
+
+    #[test]
+    fn an_escape_sequence_is_part_of_its_word() {
+        // `\\0` is columns 9..12, `\\000` 9..14.
+        let (before, after) = (rust("let s = \"\\\\0\";\n"), rust("let s = \"\\\\000\";\n"));
+        let whole = full_only(vec![matched((9, 12), (9, 14))]);
+        assert!(violations_of(31, &whole, &before, &after).is_empty());
+        let digits_only = full_only(vec![matched((11, 12), (11, 14))]);
+        assert_eq!(violations_of(31, &digits_only, &before, &after).len(), 2);
+    }
+
+    #[test]
+    fn a_code_identifier_is_left_to_invariant_16() {
+        let (before, after) = (rust("let v = alpha;\n"), rust("let v = alphb;\n"));
+        let one_letter = full_only(vec![matched((12, 13), (12, 13))]);
+        assert!(violations_of(31, &one_letter, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_lone_painting_is_not_held_to_whole_parts() {
+        let (before, after) = (rust("// 7.0-alpha-61516\n"), rust("// 7.0-alpha-61517\n"));
+        let lone = painted(vec![(
+            "Only one solution",
+            vec![matched((17, 18), (17, 18))],
+        )]);
+        assert!(violations_of(31, &lone, &before, &after).is_empty());
     }
 }

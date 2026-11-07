@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -34,5 +34,15 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("tsx-excalidraw-excalidraw-huge-file-with-real-logic-change")
+    // Invariant 28, twice:
+    // - the `member_expression` on after row 7758 is inserted, but it is made of the children of
+    //   the `member_expression` on before row 7700, which is in a multi-map group this one is left
+    //   out of.
+    // - the `member_expression` on after row 7757 is inserted, but it is made of the children of
+    //   the `member_expression` on before row 7698, which is in a multi-map group this one is left
+    //   out of.
+    assert_ground_truth_invariants_with_known_violations(
+        "tsx-excalidraw-excalidraw-huge-file-with-real-logic-change",
+        2,
+    )
 }

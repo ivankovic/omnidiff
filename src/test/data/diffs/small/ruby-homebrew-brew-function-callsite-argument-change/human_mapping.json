@@ -2697,5 +2697,134 @@
         "end:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 631,
+              "start_column": 12,
+              "end_row": 631,
+              "end_column": 49
+            },
+            {
+              "start_row": 632,
+              "start_column": 12,
+              "end_row": 632,
+              "end_column": 30
+            },
+            {
+              "start_row": 633,
+              "start_column": 12,
+              "end_row": 633,
+              "end_column": 85
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 630,
+              "start_column": 49,
+              "end_row": 630,
+              "end_column": 94
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 636,
+              "start_column": 37,
+              "end_row": 636,
+              "end_column": 93
+            }
+          ],
+          "after": [
+            {
+              "start_row": 632,
+              "start_column": 37,
+              "end_row": 632,
+              "end_column": 62
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 631,
+              "start_column": 0,
+              "end_row": 631,
+              "end_column": 49
+            },
+            {
+              "start_row": 632,
+              "start_column": 0,
+              "end_row": 632,
+              "end_column": 30
+            },
+            {
+              "start_row": 633,
+              "start_column": 0,
+              "end_row": 633,
+              "end_column": 85
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 630,
+              "start_column": 49,
+              "end_row": 630,
+              "end_column": 94
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 636,
+              "start_column": 37,
+              "end_row": 636,
+              "end_column": 93
+            }
+          ],
+          "after": [
+            {
+              "start_row": 632,
+              "start_column": 37,
+              "end_row": 632,
+              "end_column": 62
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 638,
+              "start_column": 0,
+              "end_row": 638,
+              "end_column": 10
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

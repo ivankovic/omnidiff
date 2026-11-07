@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -22,14 +23,20 @@ use anyhow::Result;
 fn mapping() -> Result<()> {
     // The new `if (file == null) { Log_OC.e(...) }` resembles surrounding code closely enough that
     // the large-flat-subtree matcher pairs it with the wrong sibling: a near-duplicate gap.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "java-nextcloud-android-add-if-branch-with-reused-return",
-        54,
-        38,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("java-nextcloud-android-add-if-branch-with-reused-return")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "java-nextcloud-android-add-if-branch-with-reused-return",
+        0.01,
+    )
 }
