@@ -81,6 +81,8 @@
 //!     that reads differently is never painted `Delete` while its partner is painted `Insert`.
 //! 28. [`removed_nodes_are_not_made_of_kept_ones`] - a node the mapping deletes or inserts is not
 //!     made of exactly the children of one node of its own kind on the other side.
+//! 29. [`whitespace_only_changes_split_by_preset`] - when the two files differ only in whitespace,
+//!     `Minimal` paints nothing and `Full` paints the whitespace that changed.
 //!
 //! 4 and 5 read only the paintings `FULL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -364,6 +366,9 @@ pub fn ground_truth_invariant_violations_for(
     violations.extend(leading);
     violations.extend(interior);
     violations.extend(minimal_indentation);
+    violations.extend(whitespace_only_changes_split_by_preset(
+        mapping, before, after,
+    )?);
 
     // An embedded layer is a file of its own: every rule reads it against its decoded pair. Its
     // sites are in the decoded text, which the host's rows do not show, so they are dropped here;
@@ -3716,6 +3721,232 @@ fn removed_nodes_are_not_made_of_kept_ones(
     violations
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 29: a whitespace-only change is empty under Minimal and painted under Full
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// Whether the two files differ only in whitespace: the same visible characters, split into the
+/// same tokens. Token boundaries matter because whitespace can be one: `new String` ->
+/// `newString` is a different program with the same visible characters. Inside a token,
+/// whitespace counts as whitespace (`Team.  All` -> `Team. All` in a comment). Without a grammar,
+/// the whitespace-separated words stand in for the tokens.
+fn is_whitespace_only_change(before: &Code, after: &Code) -> bool {
+    if before.contents == after.contents
+        || without_whitespace(&before.contents) != without_whitespace(&after.contents)
+    {
+        return false;
+    }
+    let tokens = |code: &Code, root: Node| -> Vec<String> {
+        index_tree(root)
+            .1
+            .into_iter()
+            .map(|leaf| without_whitespace(&code.contents[leaf.byte_range()]))
+            .filter(|text| !text.is_empty())
+            .collect()
+    };
+    match (before.ast.as_ref(), after.ast.as_ref()) {
+        (Some(before_tree), Some(after_tree)) => {
+            tokens(before, before_tree.root_node()) == tokens(after, after_tree.root_node())
+        }
+        _ => before
+            .contents
+            .split_whitespace()
+            .eq(after.contents.split_whitespace()),
+    }
+}
+
+/// The byte range of each whitespace run in `contents`: the run before each visible character,
+/// then the one after the last. Two files with the same visible characters have as many runs, and
+/// the `k`th of one corresponds to the `k`th of the other.
+fn whitespace_runs(contents: &str) -> Vec<std::ops::Range<usize>> {
+    let mut runs = Vec::new();
+    let mut start = 0usize;
+    for (offset, character) in contents.char_indices() {
+        if !character.is_whitespace() {
+            runs.push(start..offset);
+            start = offset + character.len_utf8();
+        }
+    }
+    runs.push(start..contents.len());
+    runs
+}
+
+/// How many bytes of `run` its counterpart `other` lacks, once their common start and end are set
+/// aside, counting only bytes a painting can colour: never a line break, which `label_bytes`
+/// leaves unlabelled. `"  "` against `" "` lacks one; four spaces against a tab lack four.
+fn unshared_paintable_bytes(run: &str, other: &str) -> usize {
+    let prefix: usize = run
+        .chars()
+        .zip(other.chars())
+        .take_while(|(ours, theirs)| ours == theirs)
+        .map(|(ours, _)| ours.len_utf8())
+        .sum();
+    let suffix: usize = run[prefix..]
+        .chars()
+        .rev()
+        .zip(other[prefix.min(other.len())..].chars().rev())
+        .take_while(|(ours, theirs)| ours == theirs)
+        .map(|(ours, _)| ours.len_utf8())
+        .sum();
+    run[prefix..run.len() - suffix]
+        .bytes()
+        .filter(|byte| !matches!(byte, b'\n' | b'\r'))
+        .count()
+}
+
+/// For one painting `Full` answers to, every changed whitespace run it under-paints: `(side, run,
+/// painted, needed)`.
+fn full_whitespace_shortfalls(
+    labels: &PaintedLabels,
+    contents: [&str; 2],
+    runs: &[Vec<std::ops::Range<usize>>; 2],
+) -> Vec<(usize, std::ops::Range<usize>, usize, usize)> {
+    let mut shortfalls = Vec::new();
+    for (ours, theirs) in runs[0].iter().zip(&runs[1]) {
+        let texts = [&contents[0][ours.clone()], &contents[1][theirs.clone()]];
+        if texts[0] == texts[1] {
+            continue;
+        }
+        for (side, run) in [(0usize, ours), (1usize, theirs)] {
+            let needed = unshared_paintable_bytes(texts[side], texts[1 - side]);
+            let painted = labels[side][run.clone()]
+                .iter()
+                .filter(|label| label.is_some())
+                .count();
+            if painted < needed {
+                shortfalls.push((side, run.clone(), painted, needed));
+            }
+        }
+    }
+    shortfalls
+}
+
+/// **Invariant 29.** When the two files differ only in whitespace (see
+/// [`is_whitespace_only_change`]), the presets split: `Minimal` paints nothing, which
+/// `human_solver`'s `Z` records, and `Full` paints the whitespace that changed.
+///
+/// "Paints the whitespace" is counted, not placed: in each run of whitespace that changed, `Full`
+/// paints at least as many bytes as the run has that its counterpart lacks. Removing 22 of 34
+/// spaces of indentation paints 22 of the 34, whichever 22 the painter picked, with any label.
+/// Line breaks are never painted, so a change made only of them (a blank line added, `\r\n` ->
+/// `\n`) asks nothing of `Full`.
+///
+/// A lone painting answers for both presets and cannot be empty and painted at once, so it is one
+/// violation: the fixture needs a `Minimal` and a `Full` painting. Unless nothing changed that a
+/// painting could show, in which case an empty lone painting passes.
+fn whitespace_only_changes_split_by_preset(
+    mapping: &super::HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Result<Vec<GroundTruthViolation>> {
+    if mapping.text_mappings.is_empty() || !is_whitespace_only_change(before, after) {
+        return Ok(Vec::new());
+    }
+    let contents = [before.contents.as_str(), after.contents.as_str()];
+    let runs = [whitespace_runs(contents[0]), whitespace_runs(contents[1])];
+    let painted_offsets = |labels: &PaintedLabels, side: usize| -> Vec<usize> {
+        (0..labels[side].len())
+            .filter(|&offset| labels[side][offset].is_some())
+            .collect()
+    };
+    let painted_sites = |labels: &PaintedLabels| -> Vec<ViolationSite> {
+        let mut sites = sites_from_offsets(0, contents[0], &painted_offsets(labels, 0));
+        sites.extend(sites_from_offsets(
+            1,
+            contents[1],
+            &painted_offsets(labels, 1),
+        ));
+        sites.truncate(MAX_SITES);
+        sites
+    };
+    let shortfall_sites =
+        |shortfalls: &[(usize, std::ops::Range<usize>, usize, usize)]| -> Vec<ViolationSite> {
+            shortfalls
+                .iter()
+                .take(MAX_SITES)
+                .map(|(side, run, _, _)| ViolationSite {
+                    side: *side,
+                    span: span_of_bytes(contents[*side], run.start, run.end),
+                })
+                .collect()
+        };
+    let shortfall_summary = |shortfalls: &[(usize, std::ops::Range<usize>, usize, usize)]| {
+        let (side, run, painted, needed) = &shortfalls[0];
+        format!(
+            "{} changed whitespace run(s) under-painted, the first on {} row {} ({painted} of the \
+             {needed} byte(s) it changed painted)",
+            shortfalls.len(),
+            side_name(*side),
+            row_of(contents[*side], run.start),
+        )
+    };
+
+    let mut violations = Vec::new();
+    if let [lone] = &mapping.text_mappings[..] {
+        let labels = painted_labels(lone, before, after)?;
+        let name = lone.name.as_str();
+        let painted = painted_offsets(&labels, 0).len() + painted_offsets(&labels, 1).len();
+        let shortfalls = full_whitespace_shortfalls(&labels, contents, &runs);
+        if painted > 0 {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and lone painting '{name}' paints \
+                     {painted} byte(s) - it answers for Minimal too, which paints nothing here: \
+                     keep it as 'Full' and add an empty 'Minimal' (Z)"
+                ),
+                painted_sites(&labels),
+            ));
+        } else if !shortfalls.is_empty() {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and lone painting '{name}' is empty - it \
+                     answers for Full too, which paints the whitespace that changed: {}; add a \
+                     'Full' painting",
+                    shortfall_summary(&shortfalls)
+                ),
+                shortfall_sites(&shortfalls),
+            ));
+        }
+        return Ok(violations);
+    }
+
+    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::MINIMAL)? {
+        let painted = painted_offsets(&labels, 0).len() + painted_offsets(&labels, 1).len();
+        if painted > 0 {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and Minimal painting '{name}' paints \
+                     {painted} byte(s) - Minimal paints nothing here: remove them and mark it \
+                     empty (Z)"
+                ),
+                painted_sites(&labels),
+            ));
+        }
+    }
+    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::FULL)? {
+        let shortfalls = full_whitespace_shortfalls(&labels, contents, &runs);
+        if !shortfalls.is_empty() {
+            violations.push(GroundTruthViolation::new(
+                29,
+                Some(name),
+                format!(
+                    "the files differ only in whitespace, and Full painting '{name}' leaves some \
+                     of it unpainted: {}",
+                    shortfall_summary(&shortfalls)
+                ),
+                shortfall_sites(&shortfalls),
+            ));
+        }
+    }
+    Ok(violations)
+}
+
 fn first_leaf(node: Node) -> Option<Node> {
     let mut node = node;
     while node.child_count() > 0 {
@@ -4136,8 +4367,9 @@ mod tests {
         // Just the two trailing spaces: trailing, but with nothing visible inside the run.
         let mapping = painted(vec![("Only one solution", vec![deleted(10, 2)])]);
 
+        // Rule 1 only: a lone painting of a whitespace-only change breaks rule 29.
         assert!(
-            violations(&mapping, &before, &after).is_empty(),
+            violations_of(1, &mapping, &before, &after).is_empty(),
             "a run that is all whitespace has no visible character it could end on"
         );
     }
@@ -4156,7 +4388,8 @@ mod tests {
             }],
         )]);
 
-        assert!(violations(&mapping, &before, &after).is_empty());
+        // Rule 1 only: a lone painting of a whitespace-only change breaks rule 29.
+        assert!(violations_of(1, &mapping, &before, &after).is_empty());
     }
 
     // ── Invariant 2 ─────────────────────────────────────────────────────────────────────────
@@ -5774,5 +6007,152 @@ mod tests {
             .entries
             .push(entry(HumanOperation::Insert, None, Some(c)));
         assert!(violations_of(28, &mapping, &before, &after).is_empty());
+    }
+
+    // ── Invariant 29 ────────────────────────────────────────────────────────────────────────
+
+    /// `let v = a;` with its space before `a` doubled: columns 7..8 on the before side, 7..9
+    /// after.
+    fn widened_space() -> (Code, Code) {
+        (rust("let v = a;\n"), rust("let v =  a;\n"))
+    }
+
+    #[test]
+    fn whitespace_only_changes_are_told_from_token_changes() {
+        let (before, after) = widened_space();
+        assert!(is_whitespace_only_change(&before, &after));
+        // Indentation and a comment's own spacing are whitespace too.
+        assert!(is_whitespace_only_change(
+            &rust("fn f() {\n    g();\n}\n"),
+            &rust("fn f() {\n\tg();\n}\n")
+        ));
+        assert!(is_whitespace_only_change(
+            &rust("// a  b\n"),
+            &rust("// a b\n")
+        ));
+        // The same visible characters in different tokens is an edit.
+        assert!(!is_whitespace_only_change(
+            &rust("let v = new String;\n"),
+            &rust("let v = newString;\n")
+        ));
+        assert!(!is_whitespace_only_change(&before, &before));
+        assert!(!is_whitespace_only_change(
+            &rust("let v = a;\n"),
+            &rust("let v = b;\n")
+        ));
+        // Without a grammar, words stand in for tokens.
+        let text = |source: &str| Code::from_string(source, &Language::Unknown);
+        assert!(is_whitespace_only_change(&text("a  b\n"), &text("a b\n")));
+        assert!(!is_whitespace_only_change(&text("a b\n"), &text("ab\n")));
+    }
+
+    #[test]
+    fn a_whitespace_only_change_painted_empty_and_full_passes() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![("Minimal", vec![]), ("Full", vec![inserted(8, 1)])]);
+        assert!(violations_of(29, &mapping, &before, &after).is_empty());
+        // Any placement and any label: the added space painted as part of a `Move` of both.
+        let moved_pair = painted(vec![
+            ("Minimal", vec![]),
+            ("Full", vec![matched((7, 8), (7, 9))]),
+        ]);
+        assert!(violations_of(29, &moved_pair, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_minimal_painting_of_a_whitespace_only_change_is_reported() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![
+            ("Minimal", vec![inserted(8, 1)]),
+            ("Full", vec![inserted(8, 1)]),
+        ]);
+        assert_eq!(
+            violations_of(29, &mapping, &before, &after),
+            [
+                "the files differ only in whitespace, and Minimal painting 'Minimal' paints 1 \
+                 byte(s) - Minimal paints nothing here: remove them and mark it empty (Z)"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_full_painting_leaving_changed_whitespace_unpainted_is_reported() {
+        let (before, after) = widened_space();
+        let mapping = painted(vec![("Minimal", vec![]), ("Full", vec![])]);
+        assert_eq!(
+            violations_of(29, &mapping, &before, &after),
+            [
+                "the files differ only in whitespace, and Full painting 'Full' leaves some of it \
+                 unpainted: 1 changed whitespace run(s) under-painted, the first on after row 1 \
+                 (0 of the 1 byte(s) it changed painted)"
+            ]
+        );
+    }
+
+    #[test]
+    fn spaces_turned_into_a_tab_are_painted_on_both_sides() {
+        let (before, after) = (
+            rust("fn f() {\n    g();\n}\n"),
+            rust("fn f() {\n\tg();\n}\n"),
+        );
+        let row_one = |side: usize, end: usize| HumanTextEntry {
+            operation: if side == 0 {
+                HumanTextOperation::Delete
+            } else {
+                HumanTextOperation::Insert
+            },
+            before: if side == 0 {
+                vec![span(1, 0, 1, end)]
+            } else {
+                Vec::new()
+            },
+            after: if side == 1 {
+                vec![span(1, 0, 1, end)]
+            } else {
+                Vec::new()
+            },
+        };
+        let both = painted(vec![
+            ("Minimal", vec![]),
+            ("Full", vec![row_one(0, 4), row_one(1, 1)]),
+        ]);
+        assert!(violations_of(29, &both, &before, &after).is_empty());
+        let only_the_spaces = painted(vec![("Minimal", vec![]), ("Full", vec![row_one(0, 4)])]);
+        assert_eq!(
+            violations_of(29, &only_the_spaces, &before, &after).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn a_lone_painting_of_a_whitespace_only_change_is_one_violation() {
+        let (before, after) = widened_space();
+        let painted_lone = painted(vec![("Only one solution", vec![inserted(8, 1)])]);
+        let found = violations_of(29, &painted_lone, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(found[0].contains("add an empty 'Minimal' (Z)"), "{found:?}");
+
+        let empty_lone = painted(vec![("Only one solution", vec![])]);
+        let found = violations_of(29, &empty_lone, &before, &after);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(found[0].contains("add a 'Full' painting"), "{found:?}");
+    }
+
+    /// A blank line added changes only line breaks, which no painting can colour.
+    #[test]
+    fn a_change_of_line_breaks_alone_asks_nothing_of_full() {
+        let (before, after) = (rust("a();\nb();\n"), rust("a();\n\nb();\n"));
+        let empty_lone = painted(vec![("Only one solution", vec![])]);
+        assert!(violations_of(29, &empty_lone, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_change_to_a_token_is_not_judged() {
+        let (before, after) = (rust("let v = a;\n"), rust("let v = b;\n"));
+        let mapping = painted(vec![
+            ("Minimal", vec![matched((8, 9), (8, 9))]),
+            ("Full", vec![]),
+        ]);
+        assert!(violations_of(29, &mapping, &before, &after).is_empty());
     }
 }

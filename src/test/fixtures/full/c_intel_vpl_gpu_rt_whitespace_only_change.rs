@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -28,7 +28,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("c-intel-vpl-gpu-rt-whitespace-only-change")
+    // Invariant 29: the files differ only in whitespace (trailing spaces removed on before row 403),
+    // and the lone painting is empty, so Full paints nothing; awaiting a `Full` painting.
+    assert_ground_truth_invariants_with_known_violations(
+        "c-intel-vpl-gpu-rt-whitespace-only-change",
+        1,
+    )
 }
 
 #[test]
