@@ -211,7 +211,7 @@ csharp-jellyfin-jellyfin-nice-move-example,27,15
 csharp-jellyfin-jellyfin-small-add,0,0
 csharp-jellyfin-jellyfin-update-version-string,0,0
 csharp-jellyfin-sql-query-fix,2,2
-csharp-lidarr-add-function,0,0
+csharp-lidarr-add-function,2,2
 csharp-lidarr-call-different-function,0,0
 csharp-lidarr-condition-change,0,0
 csharp-lidarr-lidarr-add-catch-clause-only,0,0
@@ -918,7 +918,7 @@ java-genymobile-scrcpy-only-add-2,0,0
 java-genymobile-scrcpy-only-insert,0,0
 java-genymobile-scrcpy-refactor-for-loop-in-a-function,46,32
 java-genymobile-scrcpy-small-but-many-operations,0,0
-java-genymobile-scrcpy-switch-from-three-exceptions-to-one,0,0
+java-genymobile-scrcpy-switch-from-three-exceptions-to-one,9,9
 java-genymobile-scrcpy-whitespace-only,0,0
 java-genymobile-scrcpy-whitespace-only-2,0,0
 java-genymobile-scrcpy-whitespace-only-3,0,0
@@ -1284,7 +1284,7 @@ r-hroptatyr-dateutils-real-changes-to-an-r-script,0,0
 r-mtytel-helm-dummy-file,0,0
 r-oracle-dtrace-utils-i-have-no-idea-what-this-change-actually-does,0,0
 ruby-homebrew-add-or-expression,0,0
-ruby-homebrew-brew-actual-logic-change,13,6
+ruby-homebrew-brew-actual-logic-change,21,12
 ruby-homebrew-brew-add-extends,0,0
 ruby-homebrew-brew-change-heredoc-to-string,5,3
 ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,24,17
@@ -1638,7 +1638,7 @@ typescript-typescript-add-target-comment,0,0
 typescript-typescript-add-target-comment-2,0,0
 typescript-typescript-add-target-comment-3,0,0
 typescript-vercel-next-whitespace-only,0,0
-vimscript-chikamichi-mediawiki-add-one-autocmd,26,18
+vimscript-chikamichi-mediawiki-add-one-autocmd,0,0
 vimscript-chikamichi-mediawiki-remove-3-lines,0,0
 vimscript-fedorenchik-qt-support-add-two-lines,0,0
 vimscript-fholgado-minibufexpl-massive-comment-reduction,6,6

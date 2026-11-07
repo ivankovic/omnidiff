@@ -23,10 +23,13 @@ use anyhow::Result;
 fn mapping() -> Result<()> {
     // An `if` modifier moves to a later assignment; omnidiff deletes and inserts most of it, and
     // does not realize two multi-map group pairings.
+    // Re-measured against the repainted ground truth (219793df), which deletes the old `if`
+    // modifier and inserts the new one where omnidiff keeps it Identical, and pairs the two
+    // `chained_string`s omnidiff deletes and inserts: 13/6 -> 21/12.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-homebrew-brew-actual-logic-change",
-        13,
-        6,
+        21,
+        12,
     )
 }
 

@@ -44,7 +44,7 @@ c-mozilla-firefox-firefox-remove-two-comments,stratified,C,25,23,892,770,79,77,t
 c-neovim-neovim-add-an-include,stratified,C,5,6,109,166,17,24,true,16,0,1,0,0,0,1,32,0,2,0,0,0,7,0,17,17,0,0,0,0,0,0,0,0
 c-neovim-neovim-less-polite-error-messages,stratified,C,3715,3715,124194,124180,27031,27031,true,27006,2,23,0,0,0,0,54012,4,46,0,0,0,0,0,27031,27031,0,0,0,0,0,0,0,0
 c-neovim-neovim-small-change,stratified,C,8,8,144,164,32,36,true,27,0,5,0,0,4,0,54,0,10,0,0,4,0,0,32,30,2,0,0,0,0,0,0,0
-c-nginx-add-typedef,small,C,901,924,20848,21370,5506,5635,true,5445,0,51,10,0,82,8,10890,0,102,10,0,82,57,0,5496,5480,14,2,0,1,0,0,0,50
+c-nginx-add-typedef,small,C,901,924,20848,21370,5506,5635,true,5451,0,50,5,0,83,7,10902,0,100,5,0,83,51,0,5501,5486,13,2,0,1,0,0,0,46
 c-nginx-nginx-add-preproc-two-lines,stratified,C,284,287,5931,6019,584,588,true,581,0,3,0,0,1,1,1162,0,6,0,0,1,3,0,584,584,0,0,0,0,0,0,0,0
 c-nginx-nginx-enclose-function-call-in-if-return-value-check,stratified,C,5388,5394,131896,132105,32261,32319,true,32256,0,3,2,0,8,1,64512,0,6,2,0,8,52,0,32259,32248,0,11,0,0,0,0,0,0
 c-ollama-ollama-change-imports,stratified,C,21,21,749,701,215,207,true,197,0,1,1,3,0,3,394,0,2,1,16,0,9,0,198,198,0,0,0,0,0,0,0,8
@@ -118,7 +118,7 @@ cpp-ladybirdbrowser-ladybird-add-static-to-identifier-name,stratified,CPP,1596,1
 cpp-ladybirdbrowser-ladybird-change-inherited-class-name,stratified,CPP,28,28,681,665,152,152,true,145,1,6,0,0,0,0,290,2,12,0,0,0,0,0,152,152,0,0,0,0,0,0,0,0
 cpp-ladybirdbrowser-ladybird-very-interesting-big-change,stratified,CPP,7944,7993,353205,355150,62637,62906,true,62290,29,233,40,6,47,17,124589,58,466,40,39,47,304,9,62552,62493,53,4,2,0,3,0,0,48
 cpp-lancos-ponyprog-remove-a-few-lines,full,CPP,774,769,16352,16228,3216,3174,true,3167,0,7,0,1,0,0,6334,0,14,0,42,0,0,0,3174,3174,0,0,0,0,0,0,0,0
-cpp-laydbird-change-function-signature,small,CPP,387,387,18051,18146,3544,3577,true,3442,1,22,51,2,112,0,6884,2,44,51,28,112,0,0,3465,3462,1,0,2,0,0,0,0,54
+cpp-laydbird-change-function-signature,small,CPP,387,387,18051,18146,3544,3577,true,3408,1,20,50,2,48,0,6953,2,40,50,28,48,0,137,3429,3428,1,0,0,0,37,0,37,120
 cpp-libreoffice-add-const,small,CPP,883,883,25531,25537,6011,6013,true,5998,0,13,0,0,2,0,11996,0,26,0,0,2,0,0,6011,6011,0,0,0,0,0,0,0,0
 cpp-libreoffice-add-const-2,stratified,CPP,20,20,618,624,34,36,true,27,0,7,0,0,2,0,54,0,14,0,0,2,0,0,34,34,0,0,0,0,0,0,0,0
 cpp-libreoffice-add-imports-and-function-param,stratified,CPP,40,44,1564,1722,126,149,true,120,0,6,0,0,0,4,240,0,12,0,0,0,23,0,126,126,0,0,0,0,0,0,0,0
@@ -142,7 +142,7 @@ cpp-microsoft-terminal-small-change,stratified,CPP,480,480,17509,17512,2906,2908
 cpp-mikepopoloski-slang-remove-if-condition-and-brackets,full,CPP,722,719,30533,30391,6842,6818,true,6809,2,7,9,1,0,0,13618,4,14,9,15,0,0,0,6818,6792,13,13,0,0,0,0,0,0
 cpp-mongodb-mongo-add-and-rename,stratified,CPP,1088,1219,50240,55998,7782,8894,true,7749,7,26,0,0,0,13,15498,14,52,0,0,0,1112,0,7782,7782,0,0,0,0,0,0,0,0
 cpp-mongodb-mongo-add-function-and-2-call-sites,stratified,CPP,125,131,5273,5473,929,967,true,922,0,7,0,0,0,3,1844,0,14,0,0,0,38,0,929,929,0,0,0,0,0,0,0,0
-cpp-mongodb-mongo-add-with-a-small-move,stratified,CPP,3189,3229,162428,164767,26411,26728,true,26383,0,28,0,0,28,5,52766,0,56,0,0,28,289,0,26411,26395,16,0,0,0,0,0,0,95
+cpp-mongodb-mongo-add-with-a-small-move,stratified,CPP,3189,3229,162428,164767,26411,26728,true,26383,0,28,0,0,28,5,52766,0,56,0,0,28,289,0,26411,26395,16,0,0,0,0,0,0,93
 cpp-mongodb-mongo-test-changes,stratified,CPP,356,323,16677,15144,4329,3998,true,3746,6,37,22,14,10,11,7566,12,74,22,470,10,173,74,3789,3765,0,2,22,0,20,0,19,290
 cpp-mongodb-mongo-use-auto,stratified,CPP,222,222,8650,8660,1548,1523,true,1513,0,8,27,0,2,0,3026,0,16,27,0,2,0,0,1521,1521,0,0,0,0,0,0,0,0
 cpp-mozilla-firefox-firefox-block-to-default,stratified,CPP,337,341,9874,9938,2136,2142,true,2111,0,7,18,0,24,0,4222,0,14,18,0,24,0,0,2118,2118,0,0,0,0,0,0,0,0
@@ -180,11 +180,11 @@ cpp-protocolbuffers-protobuf-add-tests,stratified,CPP,1801,1873,58475,60287,2157
 cpp-protocolbuffers-protobuf-one-line-insert,stratified,CPP,277,278,9570,9600,2029,2037,true,2018,0,11,0,0,0,1,4036,0,22,0,0,0,8,0,2029,2029,0,0,0,0,0,0,0,0
 cpp-protocolbuffers-protobuf-small-change,stratified,CPP,62,64,2041,2095,568,584,true,551,2,15,0,0,16,0,1102,4,30,0,0,16,0,0,568,528,0,40,0,0,0,0,0,0
 cpp-pytorch-pytorch-two-inserted-lines,stratified,CPP,2300,2302,77631,77708,18834,18861,true,18827,0,7,0,0,0,2,37654,0,14,0,0,0,27,0,18834,18834,0,0,0,0,0,0,0,0
-cpp-qpdf-qpdf-move-to-assert-from-if-and-throw,full,CPP,182,184,7289,7258,1292,1277,true,1252,2,7,10,1,5,2,2513,4,14,10,15,5,8,9,1261,1228,0,31,2,0,3,0,0,14
+cpp-qpdf-qpdf-move-to-assert-from-if-and-throw,full,CPP,182,184,7289,7258,1292,1277,true,1251,2,7,11,1,6,2,2511,4,14,11,15,6,8,9,1260,1228,0,30,2,0,3,0,0,13
 cpp-tensorflow-switch-to-primitive-types,small,CPP,274,275,9311,9379,2294,2309,true,2236,0,58,0,0,15,0,4472,0,116,0,0,15,0,0,2294,2289,5,0,0,0,0,0,0,1
 cpp-tensorflow-tensorflow-new-to-make-unique,stratified,CPP,31,31,1129,1146,111,120,true,100,0,5,6,0,15,0,200,0,10,6,0,15,0,0,105,105,0,0,0,0,0,0,0,8
 cpp-whitespace-only-change,small,CPP,82,82,2602,2603,928,928,true,928,0,0,0,0,0,0,1856,0,0,0,0,0,0,0,928,928,0,0,0,0,0,0,0,0
-csharp-ansible-ansible-complex-change,stratified,CSharp,1783,1841,79235,81506,17265,17786,true,17122,9,89,38,1,10,9,34254,18,178,38,4,10,549,10,17220,17187,7,26,0,0,3,0,0,207
+csharp-ansible-ansible-complex-change,stratified,CSharp,1783,1841,79235,81506,17265,17786,true,17122,9,89,38,1,10,9,34254,18,178,38,4,10,549,10,17220,17187,7,26,0,0,3,0,0,21
 csharp-cyanfish-naps2-add-condition-to-if,full,CSharp,640,641,25640,25703,5608,5627,true,5600,0,8,0,0,1,2,11200,0,16,0,0,1,18,0,5608,5549,59,0,0,0,0,0,0,3
 csharp-dotnet-script-dotnet-script-remove-two-arguments,full,CSharp,553,553,21000,20946,4979,4967,true,4948,0,19,2,2,0,0,9896,0,38,2,10,0,0,0,4967,4967,0,0,0,0,0,0,0,0
 csharp-glibsharp-gtksharp-formatting-only-change,full,CSharp,101,99,3501,3467,860,860,true,860,0,0,0,0,0,0,1720,0,0,0,0,0,0,0,860,860,0,0,0,0,0,0,0,0
@@ -209,10 +209,10 @@ csharp-jellyfin-jellyfin-delete-only,stratified,CSharp,1206,1199,57845,57600,936
 csharp-jellyfin-jellyfin-extract-multiple-function-calls-to-variable,stratified,CSharp,3290,3294,118962,119067,23496,23517,true,23458,0,23,0,0,13,2,46936,0,46,0,0,13,18,20,23481,23478,3,0,0,0,5,0,5,20
 csharp-jellyfin-jellyfin-interesting-example-of-operator-multi-merge,stratified,CSharp,1011,1010,33980,34014,7785,7788,true,7743,0,23,13,0,19,0,15495,0,46,13,0,19,0,9,7766,7726,40,0,0,0,3,0,3,9
 csharp-jellyfin-jellyfin-nice-move-example,stratified,CSharp,96,140,3354,5143,699,875,true,684,2,13,0,0,67,14,1368,4,26,0,0,67,109,0,699,687,0,0,12,0,0,0,0,27
-csharp-jellyfin-jellyfin-small-add,stratified,CSharp,274,276,8117,8206,1816,1839,true,1807,0,9,0,0,14,1,3614,0,18,0,0,14,9,0,1816,1806,0,10,0,0,0,0,0,3
+csharp-jellyfin-jellyfin-small-add,stratified,CSharp,274,276,8117,8206,1816,1839,true,1807,0,9,0,0,14,1,3614,0,18,0,0,14,9,0,1816,1806,0,10,0,0,0,0,0,0
 csharp-jellyfin-jellyfin-update-version-string,stratified,CSharp,4,4,108,108,38,38,true,25,2,11,0,0,0,0,50,4,22,0,0,0,0,0,38,38,0,0,0,0,0,0,0,0
-csharp-jellyfin-sql-query-fix,small,CSharp,73,74,2614,2829,609,640,true,583,2,15,8,0,13,2,1170,4,30,8,0,13,24,4,600,578,0,0,22,0,1,0,0,0
-csharp-lidarr-add-function,small,CSharp,314,326,13525,13916,2480,2609,true,2461,1,14,4,0,0,4,4922,2,28,4,0,0,133,0,2476,2476,0,0,0,0,0,0,0,0
+csharp-jellyfin-sql-query-fix,small,CSharp,73,74,2614,2829,609,640,true,584,1,16,7,0,12,2,1172,2,32,7,0,12,24,4,601,577,0,0,24,0,1,0,0,2
+csharp-lidarr-add-function,small,CSharp,314,326,13525,13916,2480,2609,true,2461,0,14,2,0,0,4,4926,0,28,2,0,0,133,4,2475,2475,0,0,0,0,1,0,1,2
 csharp-lidarr-call-different-function,small,CSharp,552,552,20091,20125,4028,4028,true,3995,2,18,2,2,0,1,7993,4,36,2,10,0,11,3,4015,4015,0,0,0,0,1,0,0,0
 csharp-lidarr-condition-change,small,CSharp,79,79,3525,3503,678,669,true,659,0,9,4,1,0,0,1321,0,18,4,4,0,0,3,668,664,0,4,0,0,1,0,0,0
 csharp-lidarr-lidarr-add-catch-clause-only,stratified,CSharp,371,375,14164,14338,2976,3010,true,2966,0,10,0,0,0,1,5932,0,20,0,0,0,34,0,2976,2976,0,0,0,0,0,0,0,0
@@ -361,7 +361,7 @@ go-jesseduffield-lazygit-add-two-lines,stratified,Go,75,77,1524,1601,655,675,tru
 go-jesseduffield-lazygit-change-undo-key,stratified,Go,1031,1031,52920,52916,6051,6051,true,6030,1,20,0,0,0,0,12060,2,40,0,0,0,0,0,6051,6051,0,0,0,0,0,0,0,0
 go-jesseduffield-lazygit-delete-only,stratified,Go,234,210,5751,5369,1881,1755,true,1736,0,19,0,6,0,0,3472,0,38,0,126,0,0,0,1755,1755,0,0,0,0,0,0,0,0
 go-jesseduffield-lazygit-many-multi-maps-very-difficult,stratified,Go,57,60,1619,1795,534,616,true,369,0,27,6,1,28,1,933,0,54,6,62,28,67,195,396,209,0,30,157,0,53,0,48,76
-go-jesseduffield-lazygit-nice-small-change,stratified,Go,1932,1934,86531,86767,13478,13481,true,13463,0,9,6,0,9,0,26926,0,18,6,0,9,0,0,13472,13451,17,4,0,0,0,0,0,12
+go-jesseduffield-lazygit-nice-small-change,stratified,Go,1932,1934,86531,86767,13478,13481,true,13463,0,9,6,0,9,0,26926,0,18,6,0,9,0,0,13472,13451,17,4,0,0,0,0,0,5
 go-jesseduffield-lazygit-remove-if-that-is-a-version-guard,stratified,Go,133,129,3636,3510,1307,1237,true,1220,0,17,23,3,0,0,2440,0,34,23,47,0,0,0,1237,1204,0,0,33,0,0,0,0,0
 go-jesseduffield-lazygit-update-in-ast-delete-in-comment,stratified,Go,81,81,2815,2789,665,665,true,607,17,41,0,0,0,0,1214,34,82,0,0,0,0,0,665,665,0,0,0,0,0,0,0,0
 go-junegunn-fzf-real-small-change,stratified,Go,14,21,164,269,53,95,true,46,0,7,0,0,13,1,92,0,14,0,0,13,29,0,53,42,5,6,0,0,0,0,0,0
@@ -501,9 +501,9 @@ java-defects4j-cli-22-posixparser,defects4j,Java,272,276,9366,9609,917,980,true,
 java-defects4j-cli-23-helpformatter,defects4j,Java,974,975,29776,29712,3844,3854,true,3804,0,11,1,2,16,2,7621,0,22,1,24,16,14,13,3815,3807,8,0,0,0,4,0,1,5
 java-defects4j-cli-24-helpformatter,defects4j,Java,985,984,30147,29998,3878,3868,true,3852,0,7,19,0,9,0,7704,0,14,19,0,9,0,0,3859,3859,0,0,0,0,0,0,0,2
 java-defects4j-cli-25-helpformatter,defects4j,Java,984,984,29998,29990,3868,3865,true,3856,0,9,3,0,0,0,7712,0,18,3,0,0,0,0,3865,3864,1,0,0,0,0,0,0,0
-java-defects4j-cli-26-optionbuilder,defects4j,Java,365,369,9972,10043,882,898,true,874,0,5,3,0,12,1,1748,0,10,3,0,12,7,0,879,785,0,84,10,0,0,0,0,6
+java-defects4j-cli-26-optionbuilder,defects4j,Java,365,369,9972,10043,882,898,true,872,0,7,0,0,13,0,1753,0,14,0,0,13,0,9,879,788,0,81,10,0,3,0,3,9
 java-defects4j-cli-27-optiongroup,defects4j,Java,175,175,4572,4572,607,607,true,590,2,15,0,0,0,0,1180,4,30,0,0,0,0,0,607,607,0,0,0,0,0,0,0,0
-java-defects4j-cli-28-parser,defects4j,Java,410,410,13034,13037,1680,1680,true,1666,0,12,0,0,0,0,3336,0,24,0,0,0,0,4,1678,1678,0,0,0,0,0,0,0,1
+java-defects4j-cli-28-parser,defects4j,Java,410,410,13034,13037,1680,1680,true,1666,0,14,0,0,0,0,3332,0,28,0,0,0,0,0,1680,1680,0,0,0,0,0,0,0,3
 java-defects4j-cli-29-util,defects4j,Java,77,73,2277,2262,244,250,true,202,1,12,5,1,10,1,404,2,24,5,24,10,25,0,215,193,0,11,11,0,0,0,0,0
 java-defects4j-cli-3-typehandler,defects4j,Java,255,264,6747,6938,843,872,true,806,0,7,3,1,43,0,1636,0,14,3,19,43,0,24,813,813,0,0,0,0,8,0,8,14
 java-defects4j-cli-30-defaultparser,defects4j,Java,683,689,20261,20561,3055,3123,true,3045,0,10,0,0,5,3,6090,0,20,0,0,5,63,0,3055,3030,10,15,0,0,0,0,0,46
@@ -535,7 +535,7 @@ java-defects4j-closure-102-normalize,defects4j,Java,529,529,17898,17898,3236,323
 java-defects4j-closure-103-controlflowanalysis,defects4j,Java,995,996,33056,33085,6595,6603,true,6587,0,8,0,0,8,0,13174,0,16,0,0,8,0,0,6595,6595,0,0,0,0,0,0,0,16
 java-defects4j-closure-103-disambiguateproperties,defects4j,Java,984,991,34206,34471,6890,6953,true,6883,0,7,0,0,12,2,13766,0,14,0,0,12,51,0,6890,6887,0,3,0,0,0,0,0,0
 java-defects4j-closure-104-uniontype,defects4j,Java,498,498,14307,14311,2455,2460,true,2445,0,7,3,0,8,0,4890,0,14,3,0,8,0,0,2452,2451,1,0,0,0,0,0,0,0
-java-defects4j-closure-105-foldconstants,defects4j,Java,2023,2025,63247,63255,14669,14656,true,14612,0,22,2,4,14,2,29224,0,44,2,33,14,8,0,14634,14634,0,0,0,0,0,0,0,24
+java-defects4j-closure-105-foldconstants,defects4j,Java,2023,2025,63247,63255,14669,14656,true,14615,0,30,18,1,11,0,29230,0,60,18,6,11,0,0,14645,14642,3,0,0,0,0,0,0,17
 java-defects4j-closure-106-globalnamespace,defects4j,Java,1064,1068,33067,33187,5992,6024,true,5985,0,7,0,0,0,2,11970,0,14,0,0,0,32,0,5992,5992,0,0,0,0,0,0,0,0
 java-defects4j-closure-106-jsdocinfobuilder,defects4j,Java,769,767,21529,21493,3056,3047,true,3042,0,5,9,0,0,0,6084,0,10,9,0,0,0,0,3047,3041,0,6,0,0,0,0,0,0
 java-defects4j-closure-107-commandlinerunner,defects4j,Java,999,1000,37065,37146,6879,6897,true,6871,0,8,0,0,0,1,13742,0,16,0,0,0,18,0,6879,6879,0,0,0,0,0,0,0,0
@@ -610,7 +610,7 @@ java-defects4j-closure-152-functiontype,defects4j,Java,934,937,30171,30274,5500,
 java-defects4j-closure-154-typecheck,defects4j,Java,1810,1792,62087,61220,11780,11634,true,11621,0,13,2,2,0,0,23242,0,26,2,144,0,0,0,11634,11634,0,0,0,0,0,0,0,0
 java-defects4j-closure-154-typevalidator,defects4j,Java,770,795,27921,29014,4747,4964,true,4736,0,11,0,0,25,7,9472,0,22,0,0,25,192,0,4747,4746,0,1,0,0,0,0,0,2
 java-defects4j-closure-155-inlinevariables,defects4j,Java,693,722,24649,25815,4356,4663,true,4333,0,21,0,0,37,13,8671,0,42,0,0,37,269,5,4354,4342,10,0,2,0,1,0,0,0
-java-defects4j-closure-155-referencecollectingcallback,defects4j,Java,613,618,17981,18106,3249,3300,true,3231,0,9,0,0,24,1,6490,0,18,0,0,24,17,28,3240,3227,0,13,0,0,9,0,9,15
+java-defects4j-closure-155-referencecollectingcallback,defects4j,Java,613,618,17981,18106,3249,3300,true,3230,0,9,0,0,22,1,6492,0,18,0,0,22,17,32,3239,3226,0,13,0,0,10,0,10,17
 java-defects4j-closure-155-scope,defects4j,Java,501,533,13038,13910,2212,2414,true,2209,0,3,0,0,94,8,4418,0,6,0,0,94,108,0,2212,2211,0,0,1,0,0,0,0,0
 java-defects4j-closure-156-collapseproperties,defects4j,Java,900,912,32762,33138,5351,5409,true,5311,0,37,3,0,24,5,10622,0,74,3,0,24,37,0,5348,5293,7,48,0,0,0,0,0,0
 java-defects4j-closure-157-codegenerator,defects4j,Java,1165,1196,36518,37334,8572,8834,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -758,7 +758,7 @@ java-defects4j-codec-2-base64,defects4j,Java,896,896,34587,34598,4731,4737,true,
 java-defects4j-codec-3-doublemetaphone,defects4j,Java,1105,1105,38942,38942,9147,9147,true,9129,1,17,0,0,0,0,18258,2,34,0,0,0,0,0,9147,9147,0,0,0,0,0,0,0,0
 java-defects4j-codec-4-base64,defects4j,Java,1055,1055,40640,40636,5050,5050,true,5042,0,8,0,0,0,0,10084,0,16,0,0,0,0,0,5050,5050,0,0,0,0,0,0,0,0
 java-defects4j-codec-5-base64,defects4j,Java,1068,1071,41035,41151,5064,5095,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-java-defects4j-codec-6-base64inputstream,defects4j,Java,190,194,7462,7575,647,673,true,636,0,11,0,0,18,1,1272,0,22,0,0,18,8,0,647,501,0,134,12,0,0,0,0,3
+java-defects4j-codec-6-base64inputstream,defects4j,Java,190,194,7462,7575,647,673,true,636,0,11,0,0,18,1,1272,0,22,0,0,18,8,0,647,501,0,134,12,0,0,0,0,0
 java-defects4j-codec-7-base64,defects4j,Java,1071,1071,41151,41152,5095,5095,true,5084,0,11,0,0,0,0,10168,0,22,0,0,0,0,0,5095,5095,0,0,0,0,0,0,0,0
 java-defects4j-codec-8-base64,defects4j,Java,1032,1025,39485,39268,4923,4857,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-codec-8-base64inputstream,defects4j,Java,192,189,7464,7325,671,636,true,622,0,14,0,1,0,0,1244,0,28,0,35,0,0,0,636,636,0,0,0,0,0,0,0,0
@@ -1043,7 +1043,7 @@ java-defects4j-jacksondatabind-94-subtypevalidator,defects4j,Java,112,117,4962,5
 java-defects4j-jacksondatabind-95-typefactory,defects4j,Java,1437,1437,57337,57319,8095,8083,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jacksondatabind-95-typeparser,defects4j,Java,137,137,4390,4414,1003,1009,true,994,0,8,1,0,0,1,1988,0,16,1,0,0,7,0,1002,1002,0,0,0,0,0,0,0,0
 java-defects4j-jacksondatabind-96-basicdeserializerfactory,defects4j,Java,2177,2177,99497,99485,15062,15062,true,15051,1,10,0,0,0,0,30102,2,20,0,0,0,0,0,15062,15062,0,0,0,0,0,0,0,0
-java-defects4j-jacksondatabind-97-pojonode,defects4j,Java,172,172,4810,4826,905,907,true,891,0,10,4,0,6,0,1782,0,20,4,0,6,0,0,901,900,1,0,0,0,0,0,0,8
+java-defects4j-jacksondatabind-97-pojonode,defects4j,Java,172,172,4810,4826,905,907,true,890,0,10,5,0,7,0,1780,0,20,5,0,7,0,0,900,899,1,0,0,0,0,0,0,10
 java-defects4j-jacksondatabind-98-externaltypehandler,defects4j,Java,486,495,19131,19578,3420,3523,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jacksondatabind-99-referencetype,defects4j,Java,280,281,8911,8935,1435,1445,true,1430,0,5,0,0,0,1,2860,0,10,0,0,0,10,0,1435,1435,0,0,0,0,0,0,0,0
 java-defects4j-jacksonxml-1-fromxmlparser,defects4j,Java,956,960,32008,32260,4368,4428,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1060,7 +1060,7 @@ java-defects4j-jsoup-13-node,defects4j,Java,554,559,18105,18338,3169,3253,false,
 java-defects4j-jsoup-14-tokeniser,defects4j,Java,232,235,7784,7864,1681,1697,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jsoup-14-tokeniserstate,defects4j,Java,1782,1787,61030,61324,13016,13109,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jsoup-15-treebuilderstate,defects4j,Java,1482,1482,68086,68096,17603,17608,true,17588,0,15,0,0,1,1,35176,0,30,0,0,1,4,0,17603,17603,0,0,0,0,0,0,0,0
-java-defects4j-jsoup-16-documenttype,defects4j,Java,44,46,1255,1341,329,371,true,310,1,16,1,0,19,2,623,2,32,1,0,19,23,3,327,317,10,0,0,0,1,0,0,10
+java-defects4j-jsoup-16-documenttype,defects4j,Java,44,46,1255,1341,329,371,true,310,1,16,0,0,14,2,629,2,32,0,0,14,23,9,327,317,10,0,0,0,2,0,1,4
 java-defects4j-jsoup-17-treebuilderstate,defects4j,Java,1482,1482,68096,68098,17608,17608,true,17599,0,9,0,0,0,0,35198,0,18,0,0,0,0,0,17608,17608,0,0,0,0,0,0,0,0
 java-defects4j-jsoup-18-characterreader,defects4j,Java,209,210,4789,4876,1452,1473,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jsoup-19-whitelist,defects4j,Java,442,444,16344,16490,3131,3159,true,3126,0,5,0,0,1,1,6252,0,10,0,0,1,27,0,3131,3131,0,0,0,0,0,0,0,0
@@ -1085,7 +1085,7 @@ java-defects4j-jsoup-31-xmltreebuilder,defects4j,Java,112,119,3480,3914,803,922,
 java-defects4j-jsoup-33-htmltreebuilder,defects4j,Java,704,705,24415,24541,6068,6082,true,6061,0,7,0,0,1,1,12122,0,14,0,0,1,13,0,6068,6068,0,0,0,0,0,0,0,0
 java-defects4j-jsoup-34-characterreader,defects4j,Java,284,284,7296,7314,2007,2013,true,1997,0,9,0,0,5,0,3997,0,18,0,0,5,0,3,2006,2003,3,0,0,0,1,0,0,0
 java-defects4j-jsoup-35-htmltreebuilderstate,defects4j,Java,1485,1486,68483,68563,17582,17604,true,17558,0,24,0,0,0,1,35116,0,48,0,0,0,22,0,17582,17582,0,0,0,0,0,0,0,0
-java-defects4j-jsoup-36-datautil,defects4j,Java,170,187,7249,8052,1215,1401,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+java-defects4j-jsoup-36-datautil,defects4j,Java,170,187,7249,8052,1215,1401,true,1189,4,22,0,0,20,5,2378,8,44,0,0,20,166,0,1215,1164,0,50,1,0,0,0,0,0
 java-defects4j-jsoup-37-element,defects4j,Java,1144,1144,40789,40844,5551,5572,true,5545,0,6,0,0,21,0,11090,0,12,0,0,21,0,0,5551,5538,13,0,0,0,0,0,0,0
 java-defects4j-jsoup-38-htmltreebuilderstate,defects4j,Java,1501,1504,70232,70370,17946,17976,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-jsoup-39-datautil,defects4j,Java,188,189,8126,8150,1444,1450,true,1437,0,7,0,0,0,1,2874,0,14,0,0,0,6,0,1444,1444,0,0,0,0,0,0,0,0
@@ -1210,7 +1210,7 @@ java-defects4j-lang-24-numberutils,defects4j,Java,1423,1423,47953,47969,6188,619
 java-defects4j-lang-26-fastdateformat,defects4j,Java,1757,1757,56991,57000,8145,8147,true,8136,0,9,0,0,2,0,16272,0,18,0,0,2,0,0,8145,8145,0,0,0,0,0,0,0,0
 java-defects4j-lang-27-numberutils,defects4j,Java,1420,1423,47762,47936,6142,6188,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-lang-28-numericentityunescaper,defects4j,Java,68,74,2296,2504,354,417,true,347,0,7,0,0,13,1,694,0,14,0,0,13,50,0,354,344,0,10,0,0,0,0,0,0
-java-defects4j-lang-29-systemutils,defects4j,Java,1824,1824,60142,60140,2962,2962,true,2956,0,6,0,0,0,0,5912,0,12,0,0,0,0,0,2962,2962,0,0,0,0,0,0,0,1
+java-defects4j-lang-29-systemutils,defects4j,Java,1824,1824,60142,60140,2962,2962,true,2956,0,6,0,0,0,0,5912,0,12,0,0,0,0,0,2962,2962,0,0,0,0,0,0,0,0
 java-defects4j-lang-3-numberutils,defects4j,Java,1423,1427,48785,49045,6334,6360,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-lang-30-stringutils,defects4j,Java,6152,6190,244454,245948,19485,19840,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-lang-31-stringutils,defects4j,Java,6134,6142,243427,243731,19326,19421,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1284,7 +1284,7 @@ java-defects4j-math-27-fraction,defects4j,Java,666,666,23381,23373,3134,3130,tru
 java-defects4j-math-28-simplexsolver,defects4j,Java,232,236,9400,9547,1315,1356,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-29-openmaprealvector,defects4j,Java,833,844,25807,26219,5125,5272,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-3-matharrays,defects4j,Java,1422,1425,55228,55294,8593,8620,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-java-defects4j-math-30-mannwhitneyutest,defects4j,Java,234,234,8816,8819,966,966,true,958,0,8,0,0,0,0,1916,0,16,0,0,0,0,0,966,966,0,0,0,0,0,0,0,1
+java-defects4j-math-30-mannwhitneyutest,defects4j,Java,234,234,8816,8819,966,966,true,958,0,8,0,0,0,0,1916,0,16,0,0,0,0,0,966,966,0,0,0,0,0,0,0,0
 java-defects4j-math-31-continuedfraction,defects4j,Java,201,181,7379,6314,939,677,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-32-polygonsset,defects4j,Java,474,474,19957,19982,3460,3472,true,3451,0,9,0,0,12,0,6902,0,18,0,0,12,0,0,3460,3449,11,0,0,0,0,0,0,0
 java-defects4j-math-33-simplextableau,defects4j,Java,623,623,22991,22991,3847,3847,true,3834,1,12,0,0,0,0,7668,2,24,0,0,0,0,0,3847,3847,0,0,0,0,0,0,0,0
@@ -1306,7 +1306,7 @@ java-defects4j-math-46-complex,defects4j,Java,1185,1185,40172,40142,3560,3550,fa
 java-defects4j-math-47-complex,defects4j,Java,1181,1183,39979,40056,3542,3558,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-48-basesecantsolver,defects4j,Java,269,272,9973,10088,1235,1256,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-49-openmaprealvector,defects4j,Java,925,925,28284,28268,6112,6100,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-java-defects4j-math-5-complex,defects4j,Java,1231,1231,41467,41467,3916,3916,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+java-defects4j-math-5-complex,defects4j,Java,1231,1231,41467,41467,3916,3916,true,3907,1,8,0,0,0,0,7814,2,16,0,0,0,0,0,3916,3916,0,0,0,0,0,0,0,0
 java-defects4j-math-50-basesecantsolver,defects4j,Java,271,267,9986,9781,1275,1215,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-51-basesecantsolver,defects4j,Java,265,274,9759,10187,1199,1286,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-52-rotation,defects4j,Java,1031,1032,41775,41909,7824,7870,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1314,8 +1314,8 @@ java-defects4j-math-53-complex,defects4j,Java,1020,1023,36272,36340,3149,3168,fa
 java-defects4j-math-54-dfp,defects4j,Java,2400,2406,73586,73801,15642,15710,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-55-vector3d,defects4j,Java,545,562,18358,19206,3061,3367,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-56-multidimensionalcounter,defects4j,Java,303,297,8886,8773,1268,1235,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-java-defects4j-math-57-kmeansplusplusclusterer,defects4j,Java,333,333,12566,12569,2050,2050,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-java-defects4j-math-58-gaussianfitter,defects4j,Java,336,336,13601,13574,2049,2039,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+java-defects4j-math-57-kmeansplusplusclusterer,defects4j,Java,333,333,12566,12569,2050,2050,true,2040,0,10,0,0,0,0,4080,0,20,0,0,0,0,0,2050,2050,0,0,0,0,0,0,0,0
+java-defects4j-math-58-gaussianfitter,defects4j,Java,336,336,13601,13574,2049,2039,true,2031,0,8,1,1,0,0,4062,0,16,1,9,0,0,0,2039,2039,0,0,0,0,0,0,0,0
 java-defects4j-math-59-fastmath,defects4j,Java,3494,3494,103525,103525,24181,24181,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-6-baseoptimizer,defects4j,Java,231,231,7566,7582,610,613,true,600,0,9,1,0,4,0,1200,0,18,1,0,4,0,0,609,609,0,0,0,0,0,0,0,0
 java-defects4j-math-6-cmaesoptimizer,defects4j,Java,1317,1318,50763,50802,9925,9932,true,9917,0,8,0,0,0,1,19834,0,16,0,0,0,7,0,9925,9925,0,0,0,0,0,0,0,0
@@ -1471,7 +1471,7 @@ java-genymobile-scrcpy-only-add-2,stratified,Java,47,48,1037,1100,274,291,true,2
 java-genymobile-scrcpy-only-insert,stratified,Java,7,16,148,446,43,63,true,38,0,5,0,0,0,2,76,0,10,0,0,0,20,0,43,43,0,0,0,0,0,0,0,0
 java-genymobile-scrcpy-refactor-for-loop-in-a-function,small,Java,126,144,5575,6519,1399,1644,true,1377,2,20,0,0,50,3,2754,4,40,0,0,50,195,0,1399,1357,0,0,42,0,0,0,0,46
 java-genymobile-scrcpy-small-but-many-operations,stratified,Java,53,52,1373,1360,315,302,true,292,2,7,2,1,0,0,587,4,14,2,10,0,0,3,301,298,3,0,0,0,1,0,0,0
-java-genymobile-scrcpy-switch-from-three-exceptions-to-one,small,Java,228,225,10771,10494,2204,2173,true,2140,6,27,18,1,0,0,4280,12,54,18,13,0,0,0,2173,2173,0,0,0,0,0,0,0,0
+java-genymobile-scrcpy-switch-from-three-exceptions-to-one,small,Java,228,225,10771,10494,2204,2173,true,2140,0,27,9,1,0,0,4301,0,54,9,13,0,0,21,2167,2167,0,0,0,0,6,0,6,9
 java-genymobile-scrcpy-whitespace-only,stratified,Java,16,18,446,448,63,63,true,63,0,0,0,0,0,0,126,0,0,0,0,0,0,0,63,63,0,0,0,0,0,0,0,0
 java-genymobile-scrcpy-whitespace-only-2,stratified,Java,82,82,3418,3417,750,750,true,750,0,0,0,0,0,0,1500,0,0,0,0,0,0,0,750,750,0,0,0,0,0,0,0,0
 java-genymobile-scrcpy-whitespace-only-3,stratified,Java,207,208,9619,9660,2021,2021,true,2021,0,0,0,0,0,0,4042,0,0,0,0,0,0,0,2021,2021,0,0,0,0,0,0,0,0
@@ -1484,14 +1484,14 @@ java-junit-pioneer-junit-pioneer-add-block-comment,full,Java,82,89,2721,2955,640
 java-nextcloud-android-add,stratified,Java,864,868,37184,37348,6555,6591,true,6550,0,5,0,0,0,2,13100,0,10,0,0,0,36,0,6555,6555,0,0,0,0,0,0,0,0
 java-nextcloud-android-add-2,stratified,Java,2795,2806,129693,129965,26524,26586,true,26521,0,3,0,0,0,1,53042,0,6,0,0,0,62,0,26524,26524,0,0,0,0,0,0,0,0
 java-nextcloud-android-add-and-delete,stratified,Java,1505,1504,60182,60266,12138,12134,true,12094,0,12,0,2,2,2,24188,0,24,0,32,2,26,0,12106,12106,0,0,0,0,0,0,0,18
-java-nextcloud-android-add-if-branch-with-reused-return,small,Java,2303,2312,90755,91179,17922,18005,true,17884,3,35,0,0,11,3,35768,6,70,0,0,11,72,0,17922,17921,1,0,0,0,0,0,0,54
+java-nextcloud-android-add-if-branch-with-reused-return,small,Java,2303,2312,90755,91179,17922,18005,true,17885,2,35,0,0,6,2,35770,4,70,0,0,6,77,0,17922,17921,1,0,0,0,0,0,0,0
 java-nextcloud-android-add-one-line,stratified,Java,2294,2295,90820,90869,17833,17847,true,17828,0,5,0,0,0,1,35656,0,10,0,0,0,14,0,17833,17833,0,0,0,0,0,0,0,0
 java-nextcloud-android-add-two-function-calls,small,Java,1772,1778,76277,76503,14331,14357,true,14318,0,13,0,0,2,2,28636,0,26,0,0,2,24,0,14331,14331,0,0,0,0,0,0,0,0
 java-nextcloud-android-public-private,stratified,Java,1178,1178,34968,34958,7221,7221,true,7188,0,33,0,0,0,0,14376,0,66,0,0,0,0,0,7221,7221,0,0,0,0,0,0,0,0
 java-paddlepaddle-paddleocr-whitespace-only,stratified,Java,26,26,768,769,168,168,true,168,0,0,0,0,0,0,336,0,0,0,0,0,0,0,168,168,0,0,0,0,0,0,0,0
 java-paddlepaddle-paddleocr-whitespace-only-2,stratified,Java,17,17,391,392,80,80,true,80,0,0,0,0,0,0,160,0,0,0,0,0,0,0,80,80,0,0,0,0,0,0,0,0
 java-pdftk-java-pdftk-license-comment-change,full,Java,174,179,6930,7425,1291,1291,true,1289,1,1,0,0,0,0,2578,2,2,0,0,0,0,0,1291,1291,0,0,0,0,0,0,0,0
-java-pdftk-java-pdftk-real-change-all-across-the-file,full,Java,722,697,22295,22709,4423,4564,true,3747,58,243,191,16,234,19,7519,116,486,191,174,234,267,25,4048,3672,253,93,30,11,5,0,0,349
+java-pdftk-java-pdftk-real-change-all-across-the-file,full,Java,722,697,22295,22709,4423,4564,true,3743,58,243,195,16,238,19,7511,116,486,195,174,238,267,25,4044,3670,253,91,30,11,5,0,0,345
 java-protobuf-add-two-annotations,small,Java,703,705,24419,24467,4067,4073,true,4060,0,7,0,0,0,2,8120,0,14,0,0,0,6,0,4067,4067,0,0,0,0,0,0,0,0
 java-protocolbuffers-protobuf-add-a-method,small,Java,704,717,24425,24896,4054,4084,true,4051,0,3,0,0,1,1,8102,0,6,0,0,1,29,0,4054,4054,0,0,0,0,0,0,0,0
 java-protocolbuffers-protobuf-add-and-update,stratified,Java,3764,3765,131868,131934,24163,24176,true,24125,3,35,0,0,0,1,48250,6,70,0,0,0,13,0,24163,24163,0,0,0,0,0,0,0,0
@@ -1524,7 +1524,7 @@ javascript-facebook-react-delete-one-line,stratified,JavaScript,95,94,3659,3604,
 javascript-facebook-react-update-comment-only,stratified,JavaScript,7,7,146,165,35,35,true,33,1,1,0,0,0,0,66,2,2,0,0,0,0,0,35,35,0,0,0,0,0,0,0,0
 javascript-fix-promises,handmade,JavaScript,11,19,202,391,90,145,true,72,0,15,0,0,53,0,152,0,30,0,0,53,0,8,87,47,0,40,0,0,2,0,0,0
 javascript-grobian-carbonapi-web-add-binary-expression-to-existing-assignment,full,JavaScript,262,262,8367,8373,2013,2019,true,2006,0,3,0,0,1,1,4021,0,6,0,0,1,4,9,2009,1989,20,0,0,0,1,0,0,0
-javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments,full,JavaScript,1632,1639,52223,52608,13018,13119,true,12981,4,20,5,1,61,5,25962,8,40,5,8,61,53,0,13005,12965,17,23,0,0,0,0,0,51
+javascript-home-sweet-gnome-dash-to-panel-change-set-style-arguments,full,JavaScript,1632,1639,52223,52608,13018,13119,true,12981,4,20,5,1,61,5,25962,8,40,5,8,61,53,0,13005,12965,17,23,0,0,0,0,0,52
 javascript-jquery-ui-rails-jquery-ui-rails-add-strict-and-move-function-call-parenthesis,full,JavaScript,42,46,1015,1045,200,212,true,191,0,9,0,0,0,2,382,0,18,0,0,0,12,0,200,72,128,0,0,0,0,0,0,3
 javascript-jquery-ui-rails-jquery-ui-rails-update-text-in-string,full,JavaScript,41,41,1239,1227,476,476,true,461,2,13,0,0,0,0,922,4,26,0,0,0,0,0,476,476,0,0,0,0,0,0,0,0
 javascript-jquery-ui-rails-jquery-ui-rails-update-text-in-string-2,full,JavaScript,40,40,1199,1205,476,476,true,461,2,13,0,0,0,0,922,4,26,0,0,0,0,0,476,476,0,0,0,0,0,0,0,0
@@ -1561,7 +1561,7 @@ javascript-typescript-interesting-small-edit-refactor,small,JavaScript,7,7,213,1
 javascript-typescript-use-strict-2,small,JavaScript,29,30,815,830,196,202,true,195,0,1,0,0,0,1,390,0,2,0,0,0,6,0,196,196,0,0,0,0,0,0,0,0
 javascript-typescript-very-interesting-brokn-code,small,JavaScript,8,9,258,273,44,44,true,40,1,3,0,0,0,0,80,2,6,0,0,0,0,0,44,44,0,0,0,0,0,0,0,0
 javascript-usebruno-bruno-add-class-to-classname-attribute,full,JavaScript,214,214,8034,8028,1923,1923,true,1901,1,21,0,0,0,0,3802,2,42,0,0,0,0,0,1923,1923,0,0,0,0,0,0,0,0
-javascript-usebruno-bruno-style-change,full,JavaScript,29,29,579,613,94,117,true,88,1,5,0,0,1,1,176,2,10,0,0,1,22,0,94,94,0,0,0,0,0,0,0,0
+javascript-usebruno-bruno-style-change,full,JavaScript,29,29,579,613,94,117,true,88,0,5,0,0,0,1,179,0,10,0,0,0,22,3,93,93,0,0,0,0,1,0,1,1
 javascript-vercel-next-add-doccomment,stratified,JavaScript,5,5,248,278,65,66,true,54,0,11,0,0,0,1,108,0,22,0,0,0,1,0,65,65,0,0,0,0,0,0,0,0
 javascript-wordpress-wordpress-add-update-all-in-one-line,stratified,JavaScript,1,1,171,242,85,114,true,66,2,17,0,0,8,1,132,4,34,0,0,8,21,0,85,81,4,0,0,0,0,0,0,0
 javascript-xpra-org-xpra-html5-small-change,full,JavaScript,4974,4974,164068,164064,45435,45427,true,45402,2,19,4,0,0,0,90816,4,38,4,0,0,0,12,45423,45421,0,0,2,0,4,0,0,3
@@ -1705,7 +1705,7 @@ lua-luals-lua-language-server-add-two-translations,full,LUA,1310,1314,35940,3605
 lua-luaposix-luaposix-copyright-year-change,full,LUA,486,486,15500,15500,3713,3713,true,3710,1,2,0,0,0,0,7420,2,4,0,0,0,0,0,3713,3713,0,0,0,0,0,0,0,0
 lua-neovim-neovim-add-if-around-one-line,small,LUA,1074,1076,30273,30304,7839,7845,true,7836,0,3,0,0,6,0,15672,0,6,0,0,6,0,0,7839,7826,0,13,0,0,0,0,0,2
 lua-neovim-neovim-add-leading-comment,stratified,LUA,96,97,2449,2484,860,863,true,859,0,1,0,0,0,1,1718,0,2,0,0,0,3,0,860,860,0,0,0,0,0,0,0,0
-lua-neovim-neovim-add-new-logic,small,LUA,2098,2103,59887,59998,16255,16285,true,16240,0,13,2,0,13,3,32480,0,26,2,0,13,19,0,16253,16212,4,0,37,0,0,0,0,10
+lua-neovim-neovim-add-new-logic,small,LUA,2098,2103,59887,59998,16255,16285,true,16240,0,13,2,0,13,3,32480,0,26,2,0,13,19,0,16253,16212,4,0,37,0,0,0,0,0
 lua-neovim-neovim-add-only,stratified,LUA,309,396,9574,12592,2373,2983,true,2372,0,1,0,0,0,1,4744,0,2,0,0,0,610,0,2373,2373,0,0,0,0,0,0,0,0
 lua-neovim-neovim-constant-changes,small,LUA,264,264,11178,11170,1054,1054,true,1037,2,15,0,0,0,0,2074,4,30,0,0,0,0,0,1054,1054,0,0,0,0,0,0,0,0
 lua-neovim-neovim-if-flips-two-branches,small,LUA,1521,1521,51759,51759,11903,11903,true,11891,0,12,0,0,0,0,23782,0,24,0,0,0,0,0,11903,11828,75,0,0,0,0,0,0,4
@@ -1734,7 +1734,7 @@ php-nextcloud-server-real-small-change,stratified,PHP,25,23,652,571,158,139,true
 php-nextcloud-server-variable-to-null,stratified,PHP,204,204,6188,6185,2378,2376,true,2365,0,10,0,0,0,0,4734,0,20,0,0,0,0,4,2375,2375,0,0,0,0,1,0,1,4
 php-nextcloud-server-whitespace-and-added-declaration,small,PHP,39,40,819,844,251,260,true,250,0,1,0,0,0,1,500,0,2,0,0,0,9,0,251,251,0,0,0,0,0,0,0,0
 php-php-fig-log-deleted-a-class,full,PHP,146,138,4743,4649,1287,1263,true,1262,0,1,0,1,0,0,2524,0,2,0,24,0,0,0,1263,1263,0,0,0,0,0,0,0,0
-php-rk4an-phpsysinfo-actual-logic-change,full,PHP,957,963,35026,35381,10299,10386,true,10275,1,20,2,0,25,4,20553,2,40,2,0,25,63,3,10296,10257,14,0,25,0,1,0,0,3
+php-rk4an-phpsysinfo-actual-logic-change,full,PHP,957,963,35026,35381,10299,10386,true,10274,1,20,3,0,26,4,20551,2,40,3,0,26,63,3,10295,10256,14,0,25,0,1,0,0,2
 php-smarty-php-smarty-change-version-string,full,PHP,2239,2239,56570,56570,11816,11816,true,11809,1,6,0,0,0,0,23618,2,12,0,0,0,0,0,11816,11816,0,0,0,0,0,0,0,0
 php-symfony-finder-move-elseif-block-to-else,full,PHP,856,852,24386,24157,4258,4224,true,4213,1,7,2,2,0,0,8435,2,14,2,29,0,0,9,4221,4221,0,0,0,0,3,0,0,1
 php-theseer-directoryscanner-add-two-test-cases-and-reformat-file,full,PHP,181,198,6163,7094,1101,1181,true,1067,15,19,0,0,2,2,2134,30,38,0,0,2,78,0,1101,1101,0,0,0,0,0,0,0,2
@@ -1777,7 +1777,7 @@ python-cloudflare-cloudflare-python-comment-only-changes,full,Python,44,48,1544,
 python-django-django-add-test,stratified,Python,65,70,2419,2660,639,701,true,635,0,4,0,0,0,1,1270,0,8,0,0,0,62,0,639,639,0,0,0,0,0,0,0,0
 python-django-django-identifier-update,stratified,Python,765,765,34539,34544,7673,7673,true,7662,1,10,0,0,0,0,15324,2,20,0,0,0,0,0,7673,7673,0,0,0,0,0,0,0,0
 python-django-django-tiny-change,stratified,Python,485,484,19484,19497,2843,2839,true,2829,1,6,3,1,3,0,5658,2,12,3,4,3,0,0,2836,2835,1,0,0,0,0,0,0,1
-python-django-django-update-unit-tests-actual-logic-change,small,Python,490,603,17532,21539,3485,4207,true,3152,0,82,73,2,0,7,6304,0,164,73,178,0,973,0,3234,3231,3,0,0,0,0,0,0,0
+python-django-django-update-unit-tests-actual-logic-change,small,Python,490,603,17532,21539,3485,4207,true,3150,0,81,67,2,0,7,6312,0,162,67,178,0,973,12,3231,3231,0,0,0,0,3,0,3,6
 python-espressomd-espresso-fix-comment-typo,full,Python,335,335,14094,14095,3650,3650,true,3646,1,3,0,0,0,0,7292,2,6,0,0,0,0,0,3650,3650,0,0,0,0,0,0,0,0
 python-fuzzyray-esearch-whitespace-only-change,full,Python,86,86,2236,2542,773,773,true,773,0,0,0,0,0,0,1546,0,0,0,0,0,0,0,773,773,0,0,0,0,0,0,0,0
 python-kovidgoyal-calibre-add-a-parameter,stratified,Python,398,398,13633,13664,3724,3731,true,3710,0,14,0,0,7,0,7420,0,28,0,0,7,0,0,3724,3724,0,0,0,0,0,0,0,0
@@ -1788,7 +1788,7 @@ python-langflow-ai-langflow-real-small-change,stratified,Python,14,14,402,437,88
 python-langflow-ai-langflow-small-but-a-lot,stratified,Python,54,49,2044,1960,581,543,true,513,2,14,37,2,14,0,1026,4,28,37,15,14,0,0,529,515,4,8,2,0,0,0,0,11
 python-nvbn-thefuck-add-three-arguments,stratified,Python,9,9,207,237,66,72,true,52,0,14,0,0,6,0,104,0,28,0,0,6,0,0,66,66,0,0,0,0,0,0,0,0
 python-nvbn-thefuck-change,stratified,Python,82,82,3711,3677,929,943,true,818,2,73,36,0,26,12,1636,4,146,36,0,26,24,0,893,847,46,0,0,0,0,0,0,0
-python-nvbn-thefuck-extract-function-to-local-var,stratified,Python,119,120,5241,5262,1489,1499,true,1480,0,9,0,0,10,0,2960,0,18,0,0,10,0,0,1489,1489,0,0,0,0,0,0,0,4
+python-nvbn-thefuck-extract-function-to-local-var,stratified,Python,119,120,5241,5262,1489,1499,true,1480,0,9,0,0,10,0,2960,0,18,0,0,10,0,0,1489,1489,0,0,0,0,0,0,0,0
 python-nvbn-thefuck-small-change,stratified,Python,17,17,553,593,131,136,true,114,1,16,0,0,1,1,228,2,32,0,0,1,4,0,131,131,0,0,0,0,0,0,0,0
 python-nvbn-thefuck-small-change-2,stratified,Python,12,12,360,340,96,92,true,86,0,6,4,0,0,0,172,0,12,4,0,0,0,0,92,92,0,0,0,0,0,0,0,0
 python-nvbn-thefuck-small-change-3,stratified,Python,21,21,657,637,205,201,true,194,0,7,4,0,0,0,388,0,14,4,0,0,0,0,201,201,0,0,0,0,0,0,0,0
@@ -1837,9 +1837,9 @@ r-hroptatyr-dateutils-real-changes-to-an-r-script,full,R,107,111,2783,2885,1035,
 r-mtytel-helm-dummy-file,full,R,7,7,209,209,34,34,true,32,1,1,0,0,0,0,64,2,2,0,0,0,0,0,34,34,0,0,0,0,0,0,0,0
 r-oracle-dtrace-utils-i-have-no-idea-what-this-change-actually-does,full,R,13,13,443,623,316,388,true,279,0,1,0,0,60,0,642,0,2,0,0,60,0,84,280,268,12,0,0,0,12,0,0,0
 ruby-homebrew-add-or-expression,small,Ruby,299,300,10991,11110,3070,3076,true,3058,0,12,0,0,5,1,6116,0,24,0,0,5,1,0,3070,3049,21,0,0,0,0,0,0,0
-ruby-homebrew-brew-actual-logic-change,small,Ruby,623,633,25328,25781,4728,4848,true,4690,0,26,5,1,13,9,9389,0,52,5,4,13,113,9,4716,4698,14,0,4,0,2,0,0,13
+ruby-homebrew-brew-actual-logic-change,small,Ruby,623,633,25328,25781,4728,4848,true,4686,0,26,9,1,17,9,9381,0,52,9,4,17,113,9,4712,4698,14,0,0,0,2,0,0,21
 ruby-homebrew-brew-add-extends,stratified,Ruby,168,169,6580,6609,1194,1198,true,1185,0,9,0,0,4,0,2370,0,18,0,0,4,0,0,1194,1194,0,0,0,0,0,0,0,0
-ruby-homebrew-brew-change-heredoc-to-string,small,Ruby,297,295,9978,9956,2101,2106,true,2084,0,10,7,0,12,0,4168,0,20,7,0,12,0,0,2094,2069,0,25,0,0,0,0,0,2
+ruby-homebrew-brew-change-heredoc-to-string,small,Ruby,297,295,9978,9956,2101,2106,true,2084,0,13,4,0,9,0,4168,0,26,4,0,9,0,0,2097,2069,0,28,0,0,0,0,0,5
 ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,small,Ruby,384,434,14602,16831,2777,3452,true,2670,8,58,21,5,18,17,5340,16,116,21,20,18,698,0,2736,2728,1,0,7,0,0,0,0,24
 ruby-homebrew-brew-enclose-block-in-rescue,small,Ruby,225,229,9402,9494,1427,1440,true,1416,0,11,0,0,3,1,2832,0,22,0,0,3,10,0,1427,1357,70,0,0,0,0,0,0,0
 ruby-homebrew-brew-function-callsite-argument-change,small,Ruby,695,690,24802,24627,5148,5125,true,5090,1,25,3,3,0,1,10180,2,50,3,29,0,9,0,5116,5116,0,0,0,0,0,0,0,0
@@ -1948,7 +1948,7 @@ rust-tauri-api-build-2,handmade,Rust,52,52,1777,1773,456,453,true,445,1,7,3,0,0,
 rust-tauri-apps-tauri-add-doccomment-empty-line,stratified,Rust,3189,3189,115160,115165,26081,26086,true,26078,0,3,0,0,0,1,52156,0,6,0,0,0,5,0,26081,26081,0,0,0,0,0,0,0,0
 rust-tauri-apps-tauri-add-one-field-with-doccomment,stratified,Rust,1138,1147,39247,39957,8302,8357,true,8299,0,3,0,0,1,9,16598,0,6,0,0,1,54,0,8302,8302,0,0,0,0,0,0,0,0
 rust-tauri-apps-tauri-add-only,stratified,Rust,5175,5186,158215,158625,46566,46663,true,46561,0,5,0,0,0,5,93122,0,10,0,0,0,97,0,46566,46566,0,0,0,0,0,0,0,0
-rust-tauri-apps-tauri-add-only-2,stratified,Rust,5155,5172,157672,158156,46410,46554,true,46348,0,26,0,0,6,5,92770,0,52,0,0,6,136,74,46374,46333,0,41,0,0,2,0,0,54
+rust-tauri-apps-tauri-add-only-2,stratified,Rust,5155,5172,157672,158156,46410,46554,true,46348,0,26,0,0,6,5,92770,0,52,0,0,6,136,74,46374,46333,0,41,0,0,2,0,0,2
 rust-tauri-apps-tauri-add-path-to-const-string,stratified,Rust,265,265,8720,8736,2671,2671,true,2663,1,7,0,0,0,0,5326,2,14,0,0,0,0,0,2671,2671,0,0,0,0,0,0,0,0
 rust-tauri-apps-tauri-add-pub-to-mod,stratified,Rust,341,341,7781,7785,2595,2597,true,2593,0,2,0,0,2,0,5186,0,4,0,0,2,0,0,2595,2595,0,0,0,0,0,0,0,0
 rust-tauri-apps-tauri-add-to-list,stratified,Rust,249,249,7979,7992,2093,2095,true,2087,0,6,0,0,2,0,4174,0,12,0,0,2,0,0,2093,2093,0,0,0,0,0,0,0,0
@@ -2035,7 +2035,7 @@ shellscript-go-delve-delve-add-if,full,ShellScript,89,94,2157,2234,668,698,true,
 shellscript-hgst-libzbc-add-variable,full,ShellScript,13,15,335,354,27,34,true,26,0,1,0,0,0,1,52,0,2,0,0,0,7,0,27,27,0,0,0,0,0,0,0,0
 shellscript-imapsync-imapsync-add-some-test-cases-and-a-few-other-changes,full,ShellScript,7685,7733,239783,241564,25012,25227,true,25003,1,7,1,0,1,4,50006,2,14,1,0,1,215,0,25011,25011,0,0,0,0,0,0,0,0
 shellscript-jesseduffield-lazygit-version,stratified,ShellScript,8,8,183,183,31,31,true,27,1,3,0,0,0,0,54,2,6,0,0,0,0,0,31,31,0,0,0,0,0,0,0,0
-shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,small,ShellScript,17,18,399,531,78,105,true,71,0,6,1,0,10,1,142,0,12,1,0,10,18,0,77,64,13,0,0,0,0,0,0,1
+shellscript-langchain-ai-langchain-some-interesting-raw-string-to-string-content,small,ShellScript,17,18,399,531,78,105,true,71,0,4,1,0,6,1,150,0,8,1,0,6,18,8,75,64,11,0,0,0,2,0,2,5
 shellscript-maxsatula-ocp-small-change,full,ShellScript,12,12,379,383,68,68,true,65,1,2,0,0,0,0,130,2,4,0,0,0,0,0,68,68,0,0,0,0,0,0,0,0
 shellscript-microsoft-playwright-version,stratified,ShellScript,3,3,126,126,22,22,true,18,1,3,0,0,0,0,36,2,6,0,0,0,0,0,22,22,0,0,0,0,0,0,0,0
 shellscript-mongodb-mongo-small-change,stratified,ShellScript,22,19,446,368,86,79,true,74,1,3,1,2,1,0,148,2,6,1,7,1,0,0,78,78,0,0,0,0,0,0,0,0
@@ -2061,7 +2061,7 @@ shellscript-pi-hole-pi-hole-add-comment,stratified,ShellScript,12,13,289,331,56,
 shellscript-pi-hole-pi-hole-sql-code-in-string-constant,small,ShellScript,1325,1325,53640,53658,8880,8880,true,8860,5,15,0,0,0,0,17720,10,30,0,0,0,0,0,8880,8880,0,0,0,0,0,0,0,0
 shellscript-pytorch-pytorch-change-invocation-string,small,ShellScript,319,319,12524,12524,1988,1988,true,1983,1,4,0,0,0,0,3966,2,8,0,0,0,0,0,1988,1988,0,0,0,0,0,0,0,0
 shellscript-ropery-ffcast-comment-only-change,full,ShellScript,196,196,6633,6669,1584,1584,true,1581,2,1,0,0,0,0,3162,4,2,0,0,0,0,0,1584,1584,0,0,0,0,0,0,0,0
-shellscript-scikit-learn-scikit-learn-string-to-regex,small,ShellScript,138,138,5249,5247,756,752,true,743,0,9,4,0,0,0,1486,0,18,4,0,0,0,0,752,751,1,0,0,0,0,0,0,0
+shellscript-scikit-learn-scikit-learn-string-to-regex,small,ShellScript,138,138,5249,5247,756,752,true,743,0,8,3,0,0,0,1489,0,16,3,0,0,0,3,751,751,0,0,0,0,1,0,1,1
 shellscript-scikit-learn-scikit-learn-version,stratified,ShellScript,24,24,584,584,134,134,true,130,1,3,0,0,0,0,260,2,6,0,0,0,0,0,134,134,0,0,0,0,0,0,0,0
 shellscript-stgpetrovic-stacuist-pure-add,stratified,ShellScript,4,6,148,241,24,30,true,22,0,2,0,0,0,2,44,0,4,0,0,0,6,0,24,24,0,0,0,0,0,0,0,0
 shellscript-stgpetrovic-stacuist-pure-add-2,stratified,ShellScript,6,8,241,370,30,40,true,29,0,1,0,0,0,2,58,0,2,0,0,0,10,0,30,30,0,0,0,0,0,0,0,0
@@ -2074,7 +2074,7 @@ swift-apple-swift-argument-parser-simplify-code,full,Swift,218,212,6737,6433,196
 swift-apple-swift-argument-parser-small-change,full,Swift,111,110,3760,3743,955,952,true,919,0,6,0,4,0,2,1838,0,12,0,30,0,27,0,925,925,0,0,0,0,0,0,0,18
 swift-logseq-logseq-add-real-feature-keypress-tracking,full,Swift,461,483,16545,17186,3663,3847,true,3652,1,10,0,0,0,3,7304,2,20,0,0,0,184,0,3663,3663,0,0,0,0,0,0,0,0
 swift-logseq-logseq-insertions-only,full,Swift,82,142,2375,4528,728,1054,true,722,0,6,0,0,0,7,1444,0,12,0,0,0,326,0,728,728,0,0,0,0,0,0,0,0
-swift-nextcloud-ios-actual-control-flow-change,small,Swift,326,326,18552,18615,3700,3701,true,3684,1,11,4,0,3,1,7368,2,22,4,0,3,2,0,3696,3696,0,0,0,0,0,0,0,2
+swift-nextcloud-ios-actual-control-flow-change,small,Swift,326,326,18552,18615,3700,3701,true,3686,1,11,2,0,3,0,7372,2,22,2,0,3,0,0,3698,3698,0,0,0,0,0,0,0,3
 swift-nextcloud-ios-actual-logic-added,small,Swift,171,189,8278,9102,1522,1707,true,1492,0,24,6,0,7,3,2984,0,48,6,0,7,184,0,1516,1516,0,0,0,0,0,0,0,0
 swift-nextcloud-ios-add-4-functions,small,Swift,535,646,24623,28792,6382,7083,true,6379,0,3,0,0,4,24,12758,0,6,0,0,4,697,0,6382,6382,0,0,0,0,0,0,0,0
 swift-nextcloud-ios-add-one-log-line,stratified,Swift,325,326,18489,18552,3683,3700,true,3671,0,12,0,0,0,1,7342,0,24,0,0,0,17,0,3683,3683,0,0,0,0,0,0,0,0
@@ -2118,7 +2118,7 @@ tsx-greenbone-gsa-add-import-and-use-it,full,TSX,308,311,9176,9234,2999,3003,tru
 tsx-keybase-client-change-from-one-import-and-call-to-another,full,TSX,178,178,6213,6189,1874,1870,true,1853,2,15,4,0,0,0,3706,4,30,4,0,0,0,0,1870,1869,1,0,0,0,0,0,0,1
 tsx-keybase-client-emoji-to-native,full,TSX,237,237,9062,9068,2366,2366,true,2348,1,17,0,0,0,0,4696,2,34,0,0,0,0,0,2366,2366,0,0,0,0,0,0,0,0
 tsx-kong-insomnia-classname-strings-changed,full,TSX,100,100,4321,4321,1293,1293,true,1270,2,21,0,0,0,0,2540,4,42,0,0,0,0,0,1293,1293,0,0,0,0,0,0,0,0
-tsx-kong-insomnia-if-to-ternary-operator,full,TSX,639,637,26602,26525,6643,6627,true,6569,2,29,38,0,20,0,13150,4,58,38,0,20,0,12,6600,6452,147,0,1,0,2,0,0,5
+tsx-kong-insomnia-if-to-ternary-operator,full,TSX,639,637,26602,26525,6643,6627,true,6568,2,29,39,0,21,0,13148,4,58,39,0,21,0,12,6599,6452,147,0,0,0,2,0,0,4
 tsx-kong-insomnia-rewrite-if-using-ternary-twice,full,TSX,574,570,26777,26667,4225,4189,true,4150,0,17,27,0,6,0,8347,0,34,27,0,6,0,47,4167,4115,20,32,0,0,16,0,0,14
 tsx-langflow-ai-langflow-add-type-to-import,stratified,TSX,6,6,233,238,58,59,true,56,0,2,0,0,1,0,112,0,4,0,0,1,0,0,58,58,0,0,0,0,0,0,0,0
 tsx-langflow-ai-langflow-insert-only,stratified,TSX,9,21,264,476,99,151,true,90,0,9,0,0,52,0,180,0,18,0,0,52,0,0,99,82,0,17,0,0,0,0,0,0
@@ -2185,14 +2185,14 @@ typescript-microsoft-typescript-expand-target,stratified,TypeScript,14,14,247,25
 typescript-microsoft-typescript-expand-target-2,stratified,TypeScript,18,18,300,308,81,81,true,79,1,1,0,0,0,0,158,2,2,0,0,0,0,0,81,81,0,0,0,0,0,0,0,0
 typescript-microsoft-typescript-expand-target-3,stratified,TypeScript,14,14,260,268,43,43,true,41,1,1,0,0,0,0,82,2,2,0,0,0,0,0,43,43,0,0,0,0,0,0,0,0
 typescript-microsoft-typescript-extend-target-comment,stratified,TypeScript,11,11,202,210,50,50,true,48,1,1,0,0,0,0,96,2,2,0,0,0,0,0,50,50,0,0,0,0,0,0,0,0
-typescript-n8n-io-n8n-remove-and-add-imports,small,TypeScript,112,114,3101,3066,802,792,true,784,0,4,0,1,4,0,1568,0,8,0,14,4,0,0,788,788,0,0,0,0,0,0,0,0
+typescript-n8n-io-n8n-remove-and-add-imports,small,TypeScript,112,114,3101,3066,802,792,true,785,0,4,13,0,3,0,1570,0,8,13,0,3,0,0,789,789,0,0,0,0,0,0,0,1
 typescript-refactor-interface,handmade,TypeScript,23,30,404,546,139,187,true,136,0,3,0,0,8,1,272,0,6,0,0,8,40,0,139,139,0,0,0,0,0,0,0,0
 typescript-th-ch-youtube-music-add-a-function-and-some-small-changes,full,TypeScript,861,877,24522,24911,6817,6979,true,6794,0,15,1,1,1,2,13588,0,30,1,7,1,169,0,6809,6809,0,0,0,0,0,0,0,0
 typescript-typescript-add-target-comment,small,TypeScript,10,11,389,408,135,136,true,134,0,1,0,0,1,0,268,0,2,0,0,1,0,0,135,135,0,0,0,0,0,0,0,0
 typescript-typescript-add-target-comment-2,small,TypeScript,10,11,175,194,96,97,true,95,0,1,0,0,1,0,190,0,2,0,0,1,0,0,96,96,0,0,0,0,0,0,0,0
 typescript-typescript-add-target-comment-3,small,TypeScript,11,12,174,193,33,34,true,32,0,1,0,0,1,0,64,0,2,0,0,1,0,0,33,33,0,0,0,0,0,0,0,0
 typescript-vercel-next-whitespace-only,stratified,TypeScript,1998,1999,76071,76072,8836,8836,true,8836,0,0,0,0,0,0,17672,0,0,0,0,0,0,0,8836,8836,0,0,0,0,0,0,0,0
-vimscript-chikamichi-mediawiki-add-one-autocmd,full,Vimscript,6,7,280,344,62,75,true,57,1,4,0,0,0,1,114,2,8,0,0,0,13,0,62,62,0,0,0,0,0,0,0,26
+vimscript-chikamichi-mediawiki-add-one-autocmd,full,Vimscript,6,7,280,344,62,75,true,59,0,3,0,0,0,1,118,0,6,0,0,0,13,0,62,62,0,0,0,0,0,0,0,0
 vimscript-chikamichi-mediawiki-remove-3-lines,full,Vimscript,188,185,6342,6223,981,964,true,957,0,7,0,3,0,0,1914,0,14,0,17,0,0,0,964,964,0,0,0,0,0,0,0,0
 vimscript-fedorenchik-qt-support-add-two-lines,full,Vimscript,1402,1404,50955,51060,6899,6910,true,6898,0,1,0,0,0,2,13796,0,2,0,0,0,11,0,6899,6899,0,0,0,0,0,0,0,0
 vimscript-fholgado-minibufexpl-massive-comment-reduction,full,Vimscript,2338,1801,89330,57769,9995,9459,true,9441,15,1,538,0,2,0,18882,30,2,538,0,2,0,0,9457,9457,0,0,0,0,0,0,0,6

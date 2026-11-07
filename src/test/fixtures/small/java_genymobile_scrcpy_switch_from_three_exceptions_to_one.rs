@@ -21,11 +21,13 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // The repainted ground truth (0f39de8d) groups the three caught exception types with the one
+    // `ReflectiveOperationException` that replaces them, all-to-all; omnidiff deletes the old
+    // `type_identifier`s instead, 9 times over the file's catch clauses (2/2 before).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-genymobile-scrcpy-switch-from-three-exceptions-to-one",
-        2,
-        2,
+        9,
+        9,
     )
 }
 
