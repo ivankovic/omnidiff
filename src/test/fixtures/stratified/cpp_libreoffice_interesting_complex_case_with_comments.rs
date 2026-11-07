@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,5 +40,16 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-libreoffice-interesting-complex-case-with-comments")
+    // Invariant 31, 16 time(s): a changed part not painted whole, or past its
+    // separator (awaiting a repaint):
+    //   before row 118 leaves 1 of the 2 byte(s) of `46` unpainted, which becomes `45`
+    //   after row 119 leaves 1 of the 2 byte(s) of `45` unpainted, which becomes `46`
+    //   before row 119 leaves 1 of the 2 byte(s) of `40` unpainted, which becomes `41`
+    //   after row 121 leaves 1 of the 2 byte(s) of `41` unpainted, which becomes `40`
+    //   before row 120 leaves 1 of the 2 byte(s) of `41` unpainted, which becomes `42`
+    //   ... and 11 more
+    assert_ground_truth_invariants_with_known_violations(
+        "cpp-libreoffice-interesting-complex-case-with-comments",
+        16,
+    )
 }

@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -34,7 +34,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("tsx-apache-superset-error-handling-change")
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 367: the indentation change before `:` is not painted from column 0
+    assert_ground_truth_invariants_with_known_violations(
+        "tsx-apache-superset-error-handling-change",
+        1,
+    )
 }
 
 #[test]

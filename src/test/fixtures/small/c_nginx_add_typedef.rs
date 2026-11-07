@@ -42,7 +42,10 @@ fn invariants() -> Result<()> {
     // Invariant 28, once: the `binary_expression` on after row 241 is inserted, but it is made of
     // the children of the `binary_expression` on before row 232, which is paired with the code
     // around this one instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 1)
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 241: the space before the insert `|| data == NGX_SSL_CACHE_DI...` is not painted
+    //     with it
+    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 2)
 }
 
 #[test]

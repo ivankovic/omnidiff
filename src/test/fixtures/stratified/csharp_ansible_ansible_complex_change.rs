@@ -45,8 +45,11 @@ fn invariants() -> Result<()> {
     // the `.` before `SetAccessControl` on before row 167 is not painted with the member it calls
     // (both presets); the `.` before `SetAccessControl` on before row 198 is not painted with the
     // member it calls (both presets).
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 654: the space before the insert `|| valueType == typeof(long)` is not painted
+    //     with it
     assert_ground_truth_invariants_with_known_violations(
         "csharp-ansible-ansible-complex-change",
-        15,
+        16,
     )
 }

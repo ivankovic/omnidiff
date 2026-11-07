@@ -43,8 +43,14 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 16, twice: the `svg_roots_to_relayout` <-> `m_svg_roots_needing_relayout` rename
     // (before row 1470, after row 1637) is not painted as just its differing words under Minimal.
+    // Invariant 30, 5 time(s): the space before an edit (awaiting a repaint):
+    //   before row 1652: the space before the delete `&& node.layout_node()` is not painted with it
+    //   before row 1652: the space before the delete `{` is not painted with it
+    //   before row 2755: the indentation change before `paintable()->` is not painted from column 0
+    //   before row 2805: the indentation change before `paintable()->` is not painted from column 0
+    //   before row 2837: the indentation change before `paintable()->` is not painted from column 0
     assert_ground_truth_invariants_with_known_violations(
         "cpp-ladybirdbrowser-ladybird-very-interesting-big-change",
-        2,
+        7,
     )
 }

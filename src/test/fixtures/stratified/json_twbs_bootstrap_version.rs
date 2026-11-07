@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,5 +32,13 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("json-twbs-bootstrap-version")
+    // Invariant 31, 4 time(s): a changed part not painted whole, or past its
+    // separator (awaiting a repaint):
+    //   before row 148 leaves 1 of the 2 byte(s) of `20` unpainted, which becomes `21`
+    //   before row 148 paints the `.` between the changed `20` and `0` move (it goes with the right-
+    //     hand part: update)
+    //   after row 148 leaves 1 of the 2 byte(s) of `21` unpainted, which becomes `20`
+    //   after row 148 paints the `.` between the changed `21` and `1` move (it goes with the right-
+    //     hand part: update)
+    assert_ground_truth_invariants_with_known_violations("json-twbs-bootstrap-version", 4)
 }

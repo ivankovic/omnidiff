@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -37,5 +37,8 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("rust-next-font-imports-generator")
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   before row 97: the space before the delete `{` is not painted with it
+    //   before row 160: the space before the delete `{` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("rust-next-font-imports-generator", 2)
 }

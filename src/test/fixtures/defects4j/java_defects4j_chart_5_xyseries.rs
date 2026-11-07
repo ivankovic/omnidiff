@@ -35,5 +35,8 @@ fn invariants() -> Result<()> {
     // Invariant 28, once: the `binary_expression` on before row 548 is deleted, but it is made of
     // the children of the `binary_expression` on after row 552, which is paired with the code
     // around this one instead: the two should pair, and the code around be removed.
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-chart-5-xyseries", 1)
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   before row 548: the space before the delete `&& !this.allowDuplicateXValues` is not painted
+    //     with it
+    assert_ground_truth_invariants_with_known_violations("java-defects4j-chart-5-xyseries", 2)
 }
