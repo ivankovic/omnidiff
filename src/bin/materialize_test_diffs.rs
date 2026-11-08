@@ -28,9 +28,9 @@
 //! AGPL-3.0.
 //!
 //! Safe to re-run: byte-identical content is left alone and a missing README.md is backfilled.
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
-use git2::{Oid, Repository, Tree};
+use gix::{ObjectId, Repository, Tree, bstr::ByteVec as _};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -219,9 +219,7 @@ fn find_repo_path(roots: &[PathBuf], repository: &str) -> Option<PathBuf> {
 }
 
 fn blob_text(repo: &Repository, tree: &Tree, path: &Path) -> Result<String> {
-    Ok(String::from_utf8(omnidiff::stats::git::blob_bytes(
-        repo, tree, path,
-    )?)?)
+    Ok(omnidiff::stats::git::blob_bytes(repo, tree, path)?.into_string()?)
 }
 
 /// Directory name: `<language>-x-<repository>-<commit>-<filename>`, all lowercase, with the
@@ -297,14 +295,14 @@ fn backfill_promoted_readme(row: &Row, repo_roots: &[PathBuf]) -> Result<Resolut
     // Best-effort: a commit that has aged out of a shallow clone still gets a README.md, with
     // `unverifiable_reason` saying why, rather than one claiming "no license". `repo_url` is
     // resolved outside the fallible closure because the repository usually outlives the commit.
-    let repo = find_repo_path(repo_roots, &row.repository).and_then(|p| Repository::open(p).ok());
+    let repo = find_repo_path(repo_roots, &row.repository).and_then(|p| gix::open(p).ok());
     let repo_url = repo.as_ref().and_then(license::origin_remote_url);
 
     let lookup: Result<Vec<license::LicenseFile>> = (|| {
         let repo = repo.as_ref().ok_or_else(|| {
             anyhow::anyhow!("repository {} not found in any root", row.repository)
         })?;
-        let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
+        let commit = repo.find_commit(ObjectId::from_hex(row.commit.as_bytes())?)?;
         let tree = commit.tree()?;
         Ok(license::find_license_files(repo, &tree))
     })();
@@ -339,13 +337,18 @@ fn backfill_promoted_readme(row: &Row, repo_roots: &[PathBuf]) -> Result<Resolut
 fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Result<Resolution> {
     let repo_path = find_repo_path(repo_roots, &row.repository)
         .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
-    let repo = Repository::open(&repo_path)?;
+    let repo = gix::open(&repo_path)?;
 
-    let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
-    if commit.parents().len() != 1 {
+    let info = repo
+        .rev_walk([ObjectId::from_hex(row.commit.as_bytes())?])
+        .all()?
+        .next()
+        .context("commit not found")??;
+    if info.parent_ids.len() != 1 {
         bail!("commit {} does not have exactly one parent", row.commit);
     }
-    let parent_tree = commit.parent(0)?.tree()?;
+    let commit = info.object()?;
+    let parent_tree = repo.find_commit(info.parent_ids[0])?.tree()?;
     let tree = commit.tree()?;
 
     let path = Path::new(&row.path);
@@ -417,37 +420,32 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use git2::Sort;
     use omnidiff::test::helper;
     use tempfile::tempdir;
 
     /// Finds the first single-parent commit in `repo_path` and the path of a file it modified.
     fn find_a_modified_file(repo_path: &Path) -> (String, String) {
-        let repo = Repository::open(repo_path).unwrap();
-        let mut walk = repo.revwalk().unwrap();
-        walk.set_sorting(Sort::TIME).unwrap();
-        walk.push_head().unwrap();
-
-        for id in walk {
-            let id = id.unwrap();
-            let commit = repo.find_commit(id).unwrap();
-            if commit.parents().len() != 1 {
-                continue;
-            }
-            let parent_tree = commit.parent(0).unwrap().tree().unwrap();
-            let tree = commit.tree().unwrap();
-            let diff = repo
-                .diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
-                .unwrap();
-            for delta in diff.deltas() {
-                if delta.status() == git2::Delta::Modified
-                    && let Some(path) = delta.new_file().path()
+        let mut found = None;
+        omnidiff::stats::git::walk_single_parent_commit_diffs(
+            repo_path,
+            usize::MAX,
+            false,
+            |_, id, change| {
+                if found.is_none()
+                    && let gix::diff::tree_with_rewrites::Change::Modification {
+                        location,
+                        entry_mode,
+                        ..
+                    } = change
+                    && entry_mode.is_blob()
                 {
-                    return (id.to_string(), path.to_string_lossy().into_owned());
+                    found = Some((id.to_string(), location.to_string()));
                 }
-            }
-        }
-        panic!("handmade repository has no single-parent modified-file commit");
+                Ok(())
+            },
+        )
+        .unwrap();
+        found.expect("handmade repository has no single-parent modified-file commit")
     }
 
     fn row_for(repo_path: &Path, commit: String, path: String) -> Row {
@@ -521,32 +519,35 @@ mod tests {
     fn a_move_to_another_language_takes_each_side_from_its_own_path() -> Result<()> {
         let root = tempdir()?;
         let repo_path = root.path().join("example-repo");
-        let repo = Repository::init(&repo_path)?;
-        let signature = git2::Signature::now("test", "test@example.com")?;
+        let repo = gix::init(&repo_path)?;
+        let signature = gix::actor::SignatureRef {
+            name: "test".into(),
+            email: "test@example.com".into(),
+            time: "0 +0000",
+        };
         // A one-file tree: a commit that deletes the parent's file and adds `file` in its place.
-        let commit_tree = |file: &str, content: &str| -> Result<Oid> {
-            let mut builder = repo.treebuilder(None)?;
-            builder.insert(file, repo.blob(content.as_bytes())?, 0o100644)?;
-            Ok(builder.write()?)
+        let commit_tree = |file: &str, content: &str| -> Result<ObjectId> {
+            Ok(repo
+                .write_object(&gix::objs::Tree {
+                    entries: vec![gix::objs::tree::Entry {
+                        mode: gix::objs::tree::EntryKind::Blob.into(),
+                        filename: file.into(),
+                        oid: repo.write_blob(content)?.detach(),
+                    }],
+                })?
+                .detach())
         };
         let java = commit_tree("Greeter.java", "class Greeter {}\n")?;
-        let parent = repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
+        let parent = repo.commit_as(
+            signature,
+            signature,
+            "HEAD",
             "Java",
-            &repo.find_tree(java)?,
-            &[],
+            java,
+            std::iter::empty::<ObjectId>(),
         )?;
         let kotlin = commit_tree("Greeter.kt", "class Greeter\n")?;
-        let commit = repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            "Kotlin",
-            &repo.find_tree(kotlin)?,
-            &[&repo.find_commit(parent)?],
-        )?;
+        let commit = repo.commit_as(signature, signature, "HEAD", "Kotlin", kotlin, [parent])?;
 
         let mut row = row_for(&repo_path, commit.to_string(), "Greeter.kt".to_string());
         row.language = "Java-Kotlin".to_string();
