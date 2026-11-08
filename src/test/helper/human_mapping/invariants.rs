@@ -293,24 +293,34 @@ pub fn ground_truth_invariant_violations_for(
     }
     violations.extend(full_painting_covers_minimal(mapping, before, after)?);
     violations.extend(presets_agree_on_what_survives(mapping, before, after)?);
+    // Built once: resolving the mapping's paths into `Caches` is most of what a tree-reading rule
+    // costs on a large fixture, and 3 and 9 read the same caches the context holds.
+    let context = match (before.ast.as_ref(), after.ast.as_ref()) {
+        (Some(before_tree), Some(after_tree)) => Some(TreeContext::build(
+            mapping,
+            before_tree.root_node(),
+            after_tree.root_node(),
+        )),
+        _ => None,
+    };
+    let caches = context.as_ref().map(|context| &context.caches);
     violations.extend(mapping_and_painting_agree_on_what_survives(
-        mapping, before, after,
+        mapping, &paintings, caches, before, after,
     )?);
-    violations.extend(delimiter_pairs_agree(mapping, before, after));
-    if let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref()) {
-        let context = TreeContext::build(mapping, before_tree.root_node(), after_tree.root_node());
+    violations.extend(delimiter_pairs_agree(mapping, caches, before, after));
+    if let Some(context) = &context {
         for (name, labels) in &paintings {
             violations.extend(paired_leaves_are_not_deleted_and_inserted(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(updated_leaves_are_not_deleted_and_inserted(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(removed_leaves_are_painted(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(edited_leaves_are_painted(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
         }
         for named in &mapping.text_mappings {
@@ -325,48 +335,48 @@ pub fn ground_truth_invariant_violations_for(
                 .expect("one labelling per painting")
                 .1;
             violations.extend(painted_updates_are_not_removed(
-                named, labels, &context, before, after,
+                named, labels, context, before, after,
             ));
             violations.extend(identical_pairs_are_not_painted_removed(
                 &named.name,
                 labels,
-                &context,
+                context,
                 before,
                 after,
             ));
             violations.extend(painted_matches_hold_the_mapping_partner(
-                named, &context, before, after,
+                named, context, before, after,
             ));
         }
         for (name, labels) in &paintings {
             violations.extend(identifier_updates_are_painted_by_preset(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(tokens_are_painted_whole(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(call_dots_go_with_their_member(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
             violations.extend(removed_statements_take_their_terminator(
-                name, labels, &context, before, after,
+                name, labels, context, before, after,
             ));
         }
-        violations.extend(terminators_follow_their_statements(&context, before, after));
+        violations.extend(terminators_follow_their_statements(context, before, after));
         violations.extend(removed_nodes_are_not_made_of_kept_ones(
-            &context, before, after,
+            context, before, after,
         ));
         violations.extend(boolean_flips_are_one_edit(
-            &paintings, &context, before, after,
+            &paintings, context, before, after,
         ));
         violations.extend(identical_entries_are_token_identical(
-            &context, before, after,
+            context, before, after,
         ));
         violations.extend(match_but_not_identical_entries_differ(
-            &context, before, after,
+            context, before, after,
         ));
-        violations.extend(single_valued_fields_hold_a_pair(&context, before, after));
-        violations.extend(wrapped_tokens_are_paired(&context, before, after));
+        violations.extend(single_valued_fields_hold_a_pair(context, before, after));
+        violations.extend(wrapped_tokens_are_paired(context, before, after));
     }
     // Invariants 4 and 5 read only the paintings `FULL` answers to.
     let (leading, interior, minimal_indentation) =
@@ -1086,8 +1096,13 @@ fn painted_ranges_do_not_overlap(
 /// a matched leaf (`rust-rust-lang-rust-update-comment`).
 ///
 /// Every painting is checked, not the best one: each claims to be a correct rendering.
+/// `paintings` is every painting's labels in `mapping.text_mappings` order, and `caches` the
+/// mapping's [`rebuild_caches_for_mapping`], `None` without both trees - the driver's, so neither
+/// is built twice.
 fn mapping_and_painting_agree_on_what_survives(
     mapping: &super::HumanMapping,
+    paintings: &[(&str, PaintedLabels)],
+    caches: Option<&Caches>,
     before: &Code,
     after: &Code,
 ) -> Result<Vec<GroundTruthViolation>> {
@@ -1097,7 +1112,9 @@ fn mapping_and_painting_agree_on_what_survives(
     let Ok(ast_diff) = super::as_ast_diff_for_mapping(mapping, before, after) else {
         return Ok(Vec::new());
     };
-    let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+    let (Some(before_tree), Some(after_tree), Some(caches)) =
+        (before.ast.as_ref(), after.ast.as_ref(), caches)
+    else {
         return Ok(Vec::new());
     };
     let node_cache = crate::diff::NodeCache::build(before, after);
@@ -1106,35 +1123,27 @@ fn mapping_and_painting_agree_on_what_survives(
         super::label_bytes_from_ranges(&before.contents, &text_diff.all(0)),
         super::label_bytes_from_ranges(&after.contents, &text_diff.all(1)),
     ];
-    let caches =
-        rebuild_caches_for_mapping(mapping, before_tree.root_node(), after_tree.root_node());
     let unmatched = [
         unmatched_bytes(
             before_tree.root_node(),
             before.contents.len(),
             0,
             &mapping.groups,
-            &caches,
+            caches,
         ),
         unmatched_bytes(
             after_tree.root_node(),
             after.contents.len(),
             1,
             &mapping.groups,
-            &caches,
+            caches,
         ),
     ];
 
     let mut violations = Vec::new();
-    for named in &mapping.text_mappings {
-        let painted = painted_labels(named, before, after)?;
+    for (name, painted) in paintings {
         violations.extend(move_against_unmatched(
-            &named.name,
-            &painted,
-            &tree,
-            &unmatched,
-            before,
-            after,
+            name, painted, &tree, &unmatched, before, after,
         ));
     }
     Ok(violations)
@@ -1148,6 +1157,12 @@ fn mapping_and_painting_agree_on_what_survives(
 /// (`java-defects4j-chart-9-timeseries`). Painted in preorder so a child overwrites its parent,
 /// and whitespace between children keeps the parent's answer - what `descendant_for_byte_range`
 /// would say per byte, in one walk.
+///
+/// Linear in the tree, not in bytes times depth: the walk carries down whether an ancestor is
+/// removed with its children (what [`status_before`]'s `is_inherited_removed` climbs up for, per
+/// node) and the parent's answer, and a node that agrees with its parent writes nothing, since the
+/// parent already wrote that answer over the node's bytes. That relies on siblings not
+/// overlapping, which tree-sitter guarantees.
 fn unmatched_bytes(
     root: Node,
     len: usize,
@@ -1155,21 +1170,29 @@ fn unmatched_bytes(
     groups: &[super::MultiMapGroup],
     caches: &Caches,
 ) -> Vec<bool> {
+    let (matched, removed) = if side == 0 {
+        (&caches.before_match, &caches.before_removed)
+    } else {
+        (&caches.after_match, &caches.after_removed)
+    };
     let mut mask = vec![false; len];
-    let mut stack = vec![root];
-    while let Some(node) = stack.pop() {
-        let status = if side == 0 {
-            status_before(node, caches)
-        } else {
-            status_after(node, caches)
-        };
-        let unmatched = matches!(status, NodeStatus::Marked { .. })
-            && !group_leaves_status_open(node, side, groups, caches);
-        let (start, end) = (node.start_byte().min(len), node.end_byte().min(len));
-        mask[start..end].fill(unmatched);
+    // (node, whether a strict ancestor is removed with its children, the parent's answer). The
+    // root's "parent" answers `false`, as the mask starts.
+    let mut stack = vec![(root, false, false)];
+    while let Some((node, inherited, parent_unmatched)) = stack.pop() {
+        let own = removed.get(&node.id()).copied();
+        // `NodeStatus::Marked` from `status_before`/`status_after`: not matched, and removed
+        // itself or under an ancestor removed with its children.
+        let marked = !matched.contains_key(&node.id()) && (own.is_some() || inherited);
+        let unmatched = marked && !group_leaves_status_open(node, side, groups, caches);
+        if unmatched != parent_unmatched {
+            let (start, end) = (node.start_byte().min(len), node.end_byte().min(len));
+            mask[start..end].fill(unmatched);
+        }
+        let inherited = inherited || own == Some(true);
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            stack.push(child);
+            stack.push((child, inherited, unmatched));
         }
     }
     mask
@@ -1283,16 +1306,19 @@ fn is_closer(kind: &str) -> bool {
 ///
 /// Compares **status only** (deleted, inserted, matched), not the derived move flag, which is a
 /// numbering consequence. An `Unmarked` half makes no claim, so the pair is not counted.
+///
+/// `caches` is the mapping's [`rebuild_caches_for_mapping`], `None` without both trees.
 fn delimiter_pairs_agree(
     mapping: &super::HumanMapping,
+    caches: Option<&Caches>,
     before: &Code,
     after: &Code,
 ) -> Vec<GroundTruthViolation> {
-    let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+    let (Some(before_tree), Some(after_tree), Some(caches)) =
+        (before.ast.as_ref(), after.ast.as_ref(), caches)
+    else {
         return Vec::new();
     };
-    let caches =
-        rebuild_caches_for_mapping(mapping, before_tree.root_node(), after_tree.root_node());
 
     let mut violations = Vec::new();
     for (side, code, root) in [
@@ -1307,8 +1333,8 @@ fn delimiter_pairs_agree(
             }
 
             let (opened, closed) = (
-                mark_of(open, side, &mapping.groups, &caches),
-                mark_of(close, side, &mapping.groups, &caches),
+                mark_of(open, side, &mapping.groups, caches),
+                mark_of(close, side, &mapping.groups, caches),
             );
             if let (Some(opened), Some(closed)) = (opened, closed)
                 && opened != closed
