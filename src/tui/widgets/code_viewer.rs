@@ -113,6 +113,60 @@ fn build_range_order(ranges: &[RangeMatch]) -> Vec<usize> {
     order
 }
 
+/// `ranges` looked up two ways, both rebuilt together whenever they change: by position
+/// (`order`, see `build_range_order`) and by row. A frame paints each visible row from the ranges
+/// on that row rather than from every range of the file, which made an idle frame's cost grow with
+/// the file (issue #72).
+#[derive(Default, Clone)]
+struct RangeIndex {
+    order: Vec<usize>,
+    /// Compressed rows: the ranges touching row `r` are `on_rows[row_starts[r]..row_starts[r + 1]]`,
+    /// in index order - the order the overlay paints them in, which decides who wins a cell two
+    /// ranges share.
+    row_starts: Vec<usize>,
+    on_rows: Vec<usize>,
+}
+
+impl RangeIndex {
+    fn build(ranges: &[RangeMatch]) -> Self {
+        let rows = ranges
+            .iter()
+            .map(|range_match| range_match.source.end_row + 1)
+            .max()
+            .unwrap_or(0);
+        let mut row_starts = vec![0usize; rows + 1];
+        for range_match in ranges {
+            for row in range_match.source.start_row..=range_match.source.end_row {
+                row_starts[row + 1] += 1;
+            }
+        }
+        for row in 0..rows {
+            row_starts[row + 1] += row_starts[row];
+        }
+        let mut next = row_starts.clone();
+        let mut on_rows = vec![0usize; row_starts[rows]];
+        for (index, range_match) in ranges.iter().enumerate() {
+            for row in range_match.source.start_row..=range_match.source.end_row {
+                on_rows[next[row]] = index;
+                next[row] += 1;
+            }
+        }
+        Self {
+            order: build_range_order(ranges),
+            row_starts,
+            on_rows,
+        }
+    }
+
+    /// The indices of the ranges touching `row`, ascending.
+    fn on_row(&self, row: usize) -> &[usize] {
+        match (self.row_starts.get(row), self.row_starts.get(row + 1)) {
+            (Some(&start), Some(&end)) => &self.on_rows[start..end],
+            _ => &[],
+        }
+    }
+}
+
 /// The range whose source covers `(row, col)`. Relies on one side's ranges never overlapping;
 /// zero-width ranges never match.
 fn range_at(ranges: &[RangeMatch], order: &[usize], row: usize, col: usize) -> Option<usize> {
@@ -235,8 +289,8 @@ pub struct CodeViewerState {
     /// only place the width is known; 0 until the first frame means "unknown, don't scroll".
     pub viewport_width: usize,
     pub ranges: Vec<RangeMatch>,
-    /// See `build_range_order`; must be rebuilt whenever `ranges` changes.
-    range_order: Vec<usize>,
+    /// Must be rebuilt whenever `ranges` changes.
+    range_index: RangeIndex,
     pub cursor_row: usize,
     /// In bytes, the unit of every range and search hit it is compared with. `CodeViewer`
     /// converts it to a display column for the screen.
@@ -260,9 +314,10 @@ impl CodeViewerState {
     /// cross-highlight and search.
     pub fn load_ranges(&mut self, ranges: Vec<RangeMatch>) {
         self.ranges = ranges;
-        self.range_order = build_range_order(&self.ranges);
+        self.range_index = RangeIndex::build(&self.ranges);
         let first_navigable = self
-            .range_order
+            .range_index
+            .order
             .iter()
             .map(|&i| &self.ranges[i])
             .find(|range_match| !range_match.source.is_empty());
@@ -284,7 +339,7 @@ impl CodeViewerState {
     /// `load_ranges` would send back to the first change.
     pub fn replace_ranges(&mut self, ranges: Vec<RangeMatch>, line_count: usize) {
         self.ranges = ranges;
-        self.range_order = build_range_order(&self.ranges);
+        self.range_index = RangeIndex::build(&self.ranges);
         self.cursor_row = self.cursor_row.min(line_count.saturating_sub(1));
         // Search hits index text, not ranges, so they stay valid.
         self.highlight_destination = None;
@@ -326,7 +381,7 @@ impl CodeViewerState {
     fn range_at_cursor(&self) -> Option<usize> {
         range_at(
             &self.ranges,
-            &self.range_order,
+            &self.range_index.order,
             self.cursor_row,
             self.cursor_col,
         )
@@ -588,12 +643,13 @@ impl CodeViewerWidget {
         let row_len = trailing_whitespace_trimmed_len(&line);
         let cursor_range = range_at(
             &state.ranges,
-            &state.range_order,
+            &state.range_index.order,
             state.cursor_row,
             state.cursor_col,
         );
 
-        for (index, range_match) in state.ranges.iter().enumerate() {
+        for &index in state.range_index.on_row(row) {
+            let range_match = &state.ranges[index];
             let Some((start_col, end_col)) = range_match.source.columns_on_row(row, row_len) else {
                 continue;
             };
@@ -961,10 +1017,10 @@ mod tests {
     fn diff_overlay_pairs_explicit_foreground_with_background() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 99,
             viewport_height: 1,
@@ -991,10 +1047,10 @@ mod tests {
             destination: TextRange::zero(),
             operation: TextOperation::Move,
         }];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 99,
             viewport_height: 2,
@@ -1025,10 +1081,10 @@ mod tests {
     fn node_highlight_is_off_until_enabled() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let mut focused_state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 0,
             viewport_height: 1,
@@ -1057,10 +1113,10 @@ mod tests {
     fn cross_highlight_is_suppressed_for_an_identical_match() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Identical, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 0,
             viewport_height: 1,
@@ -1079,10 +1135,10 @@ mod tests {
     fn cursor_overlay_uses_bright_blue_with_explicit_foreground() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 0,
             viewport_height: 1,
@@ -1104,10 +1160,10 @@ mod tests {
     fn unfocused_panel_does_not_highlight_its_own_cursor_range() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 0,
             viewport_height: 1,
@@ -1145,10 +1201,10 @@ mod tests {
     fn node_highlight_off_leaves_the_cursor_range_showing_its_diff_color() {
         let widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 0,
             viewport_height: 1,
@@ -1207,6 +1263,31 @@ mod tests {
         assert_eq!(range_at(&ranges, &order, 0, 6), Some(2));
         assert_eq!(range_at(&ranges, &order, 0, 7), None);
         assert_eq!(range_at(&ranges, &order, 1, 0), None);
+    }
+
+    #[test]
+    fn the_row_index_lists_every_range_touching_a_row_in_index_order() {
+        let spanning = |start_row, end_row| RangeMatch {
+            source: TextRange::new(start_row, 0, end_row, 1),
+            destination: TextRange::zero(),
+            operation: TextOperation::Update,
+        };
+        let ranges = vec![spanning(0, 0), spanning(0, 3), spanning(2, 2)];
+        let index = RangeIndex::build(&ranges);
+        assert_eq!(index.on_row(0), [0, 1]);
+        assert_eq!(
+            index.on_row(1),
+            [1],
+            "a middle row of a range spanning rows"
+        );
+        assert_eq!(
+            index.on_row(2),
+            [1, 2],
+            "index order, the order the overlay paints in"
+        );
+        assert_eq!(index.on_row(3), [1]);
+        assert!(index.on_row(4).is_empty(), "past the last range");
+        assert!(RangeIndex::default().on_row(0).is_empty());
     }
 
     #[test]
@@ -1387,10 +1468,10 @@ mod tests {
     fn set_overlay_theme_changes_painted_colors() {
         let mut widget = widget_with_line("hello world");
         let ranges = vec![range_match(TextOperation::Insert, 0, 5)];
-        let range_order = build_range_order(&ranges);
+        let range_index = RangeIndex::build(&ranges);
         let state = CodeViewerState {
             ranges,
-            range_order,
+            range_index,
             cursor_row: 0,
             cursor_col: 99,
             viewport_height: 1,

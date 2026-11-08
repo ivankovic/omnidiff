@@ -167,6 +167,13 @@ pub struct App {
     /// difftool the first keystroke is usually `n` or `q`, and swallowing it would trade a missed
     /// notification for a stolen one, so any key clears the toast and still does its own job.
     summary_toast_ticks: u8,
+    /// Whether the screen may differ from the last frame drawn. The frame clock fires 60 times a
+    /// second, and an idle viewer redrawn on every one costs CPU in proportion to its size and its
+    /// file, and a terminal that repaints on every synchronized update costs more (issue #72). So a
+    /// frame is drawn only when this is set - by input, by any action other than the clock's own
+    /// ticks, and by a tick that changes what is shown - or when something animates on its own
+    /// (see [`App::frame_needed`]). Cleared by [`App::render`].
+    needs_redraw: bool,
     /// Read at draw time, so the counter's resolution is the frame rate rather than the 4Hz tick -
     /// which is what makes tenths of a second worth showing.
     diff_started_at: Option<std::time::Instant>,
@@ -272,6 +279,7 @@ impl App {
             review_workspace: None,
             review_position: None,
             summary_toast_ticks: 0,
+            needs_redraw: true,
             diff_started_at: None,
             line_prompt: None,
             action_tx,
@@ -353,9 +361,12 @@ impl App {
             self.handle_actions(&mut ui)?;
             if let Some((path, line)) = self.pending_editor.take() {
                 self.run_editor(&mut ui, &path, line)?;
+                // The terminal was handed over and cleared; nothing on it is ours any more.
+                self.needs_redraw = true;
             }
             if std::mem::take(&mut self.pending_suspend) {
                 self.suspend(&mut ui)?;
+                self.needs_redraw = true;
             }
             if self.should_exit {
                 break;
@@ -381,6 +392,12 @@ impl App {
         // A keystroke that opened a screen must not also reach it: `?` is also HelpModal's close
         // key, and `/` would seed SearchModal's query.
         let mut globally_handled = false;
+
+        // Input may change anything on screen, whether or not it turns into an action: a
+        // component that handles a key itself only mutates its own state.
+        if matches!(event, Event::Key(_) | Event::Mouse(_) | Event::Resize(..)) {
+            self.needs_redraw = true;
+        }
 
         // Before dispatch, so the same key still does its own job (see `summary_toast_ticks`).
         if matches!(event, Event::Key(_)) {
@@ -566,7 +583,8 @@ impl App {
 
         match event {
             Event::Tick => action_tx.send(Action::Tick)?,
-            Event::Render => action_tx.send(Action::Render)?,
+            Event::Render if self.frame_needed() => action_tx.send(Action::Render)?,
+            Event::Render => {}
             Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
             Event::Key(_) | Event::Mouse(_) => {}
         }
@@ -759,6 +777,7 @@ impl App {
             if action != Action::Tick && action != Action::Render {
                 debug!("{action:?}");
             }
+            self.note_action_for_redraw(&action);
             match &action {
                 Action::Tick => self.tick_summary_toast(),
                 Action::Quit => self.should_exit = true,
@@ -1165,6 +1184,8 @@ impl App {
     }
 
     fn render(&mut self, ui: &mut UI) -> Result<()> {
+        // Before drawing: a draw that reports an error sends an action, which sets it again.
+        self.needs_redraw = false;
         let palette = self.diff_viewer.overlay_theme().palette();
         ui.draw(&palette, |frame| {
             let area = frame.area();
@@ -1302,7 +1323,32 @@ impl App {
     }
 
     fn tick_summary_toast(&mut self) {
+        let was_up = self.summary_toast_ticks > 0;
         self.summary_toast_ticks = self.summary_toast_ticks.saturating_sub(1);
+        // The toast fading is the only thing a tick changes on screen.
+        if was_up && self.summary_toast_ticks == 0 {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Any action may change what is shown; the clock's own ticks and frames do not, except where
+    /// a tick fades the toast (`tick_summary_toast`). An explicit `Action::Render` draws at once.
+    fn note_action_for_redraw(&mut self, action: &Action) {
+        if !matches!(action, Action::Tick | Action::Render) {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Whether the frame clock's next frame should be drawn: the screen changed since the last
+    /// one, or something on it changes by itself - the "Diffing…" counter, which reads the clock at
+    /// draw time, and a playing animation, which advances when drawn.
+    fn frame_needed(&self) -> bool {
+        self.needs_redraw
+            || self.screen == AppScreen::Diffing
+            || self
+                .content_viewer
+                .as_ref()
+                .is_some_and(|viewer| viewer.is_playing())
     }
 
     fn dismiss_summary_toast(&mut self) {
@@ -3468,5 +3514,147 @@ mod tests {
     fn display_safe_keeps_a_crlf_terminator_and_substitutes_a_lone_carriage_return() {
         assert_eq!(display_safe("a\r\nb\rc\n"), "a\r\nb c\n");
         assert_eq!(display_safe("trailing\r"), "trailing ");
+    }
+
+    // ── Drawing only what changed (issue #72) ──────────────────────────────────────────────
+
+    /// The `Action::Render` the frame clock's tick queued, if any.
+    fn frame_drawn(app: &mut App) -> Result<bool> {
+        app.handle_event(Event::Render, Rect::new(0, 0, 80, 24))?;
+        let mut drawn = false;
+        while let Ok(action) = app.action_rx.try_recv() {
+            drawn |= action == Action::Render;
+        }
+        Ok(drawn)
+    }
+
+    #[test]
+    fn the_first_frame_is_drawn_and_an_idle_one_is_not() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(frame_drawn(&mut app)?, "nothing has been drawn yet");
+        // What `render` does after drawing.
+        app.needs_redraw = false;
+        assert!(
+            !frame_drawn(&mut app)?,
+            "an idle frame redraws an unchanged screen"
+        );
+        assert!(!frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn input_makes_the_next_frame_draw() -> Result<()> {
+        let area = Rect::new(0, 0, 80, 24);
+        let inputs = [
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('j'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            Event::Mouse(crossterm::event::MouseEvent {
+                kind: crossterm::event::MouseEventKind::ScrollDown,
+                column: 1,
+                row: 1,
+                modifiers: crossterm::event::KeyModifiers::NONE,
+            }),
+            Event::Resize(100, 30),
+        ];
+        for input in inputs {
+            let mut app = App::new(4.0, 60.0)?;
+            app.needs_redraw = false;
+            app.handle_event(input.clone(), area)?;
+            assert!(
+                frame_drawn(&mut app)?,
+                "{input:?} left the screen as it was"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn every_action_but_the_clocks_own_marks_the_screen_changed() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        for clock in [Action::Tick, Action::Render] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&clock);
+            assert!(
+                !app.needs_redraw,
+                "{clock:?} alone changes nothing on screen"
+            );
+        }
+        for action in [
+            Action::Error("boom".to_string()),
+            Action::Resize(80, 24),
+            Action::RenderOptionsAccepted,
+            Action::DialogCancelled,
+        ] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&action);
+            assert!(
+                app.needs_redraw,
+                "{action:?} did not mark the screen changed"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn only_the_tick_that_fades_the_toast_redraws() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.summary_toast_ticks = 2;
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "the toast is still up and unchanged");
+        app.tick_summary_toast();
+        assert!(
+            app.needs_redraw,
+            "the toast faded and must disappear from the screen"
+        );
+
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "no toast, nothing to fade");
+        Ok(())
+    }
+
+    #[test]
+    fn the_diffing_counter_keeps_frames_coming() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.needs_redraw = false;
+        app.screen = AppScreen::Diffing;
+        assert!(
+            frame_drawn(&mut app)?,
+            "the counter reads the clock at draw time"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn a_playing_animation_keeps_frames_coming() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let gif = |frames: &[u32]| {
+            crate::diff::picture::test_gif(
+                &frames
+                    .iter()
+                    .map(|&k| (crate::diff::picture::test_frame(k), 100))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let (before, after) = (dir.path().join("a.gif"), dir.path().join("b.gif"));
+        std::fs::write(&before, gif(&[0, 1, 2]))?;
+        std::fs::write(&after, gif(&[0, 5, 1, 2]))?;
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(app.open_content_pair(&before, &after), "a picture pair");
+        app.needs_redraw = false;
+        assert!(!frame_drawn(&mut app)?, "a paused animation is a still");
+
+        assert!(app.content_key(KeyCode::Char(' ')), "space plays");
+        app.needs_redraw = false;
+        assert!(
+            frame_drawn(&mut app)?,
+            "a playing animation advances when drawn"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
     }
 }
