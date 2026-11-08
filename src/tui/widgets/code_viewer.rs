@@ -307,6 +307,8 @@ pub struct CodeViewerState {
     /// move and covers the diff color, so on by default reads as interference. Gates painting
     /// only, never cursor following.
     pub node_highlight: bool,
+    /// Text selected by dragging the mouse (issue #71), painted reversed over the diff colors.
+    pub selection: Option<TextRange>,
 }
 
 impl CodeViewerState {
@@ -691,6 +693,20 @@ impl CodeViewerWidget {
                     Style::new().fg(palette.overlay_fg).bg(palette.search_bg),
                 );
             }
+        }
+
+        // Reversed rather than a color of the theme's: it must read over every diff color.
+        if let Some((start_col, end_col)) = state
+            .selection
+            .as_ref()
+            .and_then(|selection| selection.columns_on_row(row, row_len))
+        {
+            line = paint_columns(
+                &line,
+                start_col,
+                end_col,
+                Style::new().add_modifier(ratatui::style::Modifier::REVERSED),
+            );
         }
 
         // Unfocused side only, so focus never shows both blues. `Identical` is already filtered

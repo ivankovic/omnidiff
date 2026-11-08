@@ -64,6 +64,8 @@ pub enum Action {
     Suspend,
     /// A recoverable failure, shown in the one-line `App::last_error` banner.
     Error(String),
+    /// Text selected with the mouse, to put on the clipboard (`clipboard::osc52`).
+    CopyToClipboard(String),
     /// A directory listing for the file dialog finished loading.
     DirectoryListed(PathBuf, Vec<DirEntryInfo>),
     /// The user confirmed a file selection in the file dialog.

@@ -51,7 +51,9 @@ Navigation
   Ctrl-e/Ctrl-y    Scroll the view one line without moving the cursor
   Page Up/Down     Scroll by a page
   Home/End         Jump to the top/bottom of the file
-  Mouse            Wheel scrolls; a click places the cursor and focuses that panel
+  Mouse            Wheel scrolls; a click places the cursor and focuses that panel.
+                   A drag selects text in one panel and copies it on release (OSC 52;
+                   in tmux, set-clipboard on). Shift-drag uses the terminal's own selection
 
 Files and diffing
   o                Open a file selector for the active panel

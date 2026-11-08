@@ -434,6 +434,40 @@ impl DiffViewer {
         }
     }
 
+    /// The panel a left drag started in, with its content rect from the last `draw`.
+    fn selecting_panel(&self) -> Option<(Panel, Rect)> {
+        [
+            (Panel::Before, &self.left_viewer, self.last_before_content),
+            (Panel::After, &self.right_viewer, self.last_after_content),
+        ]
+        .into_iter()
+        .find_map(|(panel, viewer, rect)| viewer.is_selecting().then_some((panel, rect?)))
+    }
+
+    /// Extend the selection under way to the pointer, held inside its panel.
+    fn drag_selection(&mut self, mouse: crossterm::event::MouseEvent) -> Option<Action> {
+        let (panel, rect) = self.selecting_panel()?;
+        let bottom = rect.y + rect.height.max(1) - 1;
+        let viewer = self.viewer_for(panel);
+        if mouse.row < rect.y {
+            viewer.scroll_up();
+        } else if mouse.row > bottom {
+            viewer.scroll_down();
+        }
+        let column = mouse.column.clamp(rect.x, rect.x + rect.width.max(1) - 1);
+        let position = viewer.text_position_at(rect, column, mouse.row.clamp(rect.y, bottom));
+        viewer.extend_selection(position);
+        Some(Action::Render)
+    }
+
+    /// End a drag: copy what it selected, if anything.
+    fn finish_selection(&mut self) -> Option<Action> {
+        let (panel, _) = self.selecting_panel()?;
+        let viewer = self.viewer_for(panel);
+        viewer.finish_selection();
+        viewer.selection_text().map(Action::CopyToClipboard)
+    }
+
     /// The panel and content rect under screen position `(column, row)`, per the last `draw`.
     fn panel_at(&self, column: u16, row: u16) -> Option<(Panel, Rect)> {
         let hit = |rect: Option<Rect>| {
@@ -741,11 +775,20 @@ impl Component for DiffViewer {
 
     /// The wheel scrolls the panel under the pointer 3 lines a notch; a left click focuses it and
     /// puts the cursor on the clicked character. Hit-tests against the rects `draw` recorded.
+    ///
+    /// A left drag selects text in the panel it started in and copies it on release (see
+    /// `clipboard`). Past the panel's edge it stays clamped to the panel, and above or below it
+    /// scrolls a row per event, so a selection can run beyond the screen.
     fn handle_mouse_event(
         &mut self,
         mouse: crossterm::event::MouseEvent,
     ) -> Result<Option<Action>> {
         use crossterm::event::{MouseButton, MouseEventKind};
+        match mouse.kind {
+            MouseEventKind::Drag(MouseButton::Left) => return Ok(self.drag_selection(mouse)),
+            MouseEventKind::Up(MouseButton::Left) => return Ok(self.finish_selection()),
+            _ => {}
+        }
         let Some((panel, rect)) = self.panel_at(mouse.column, mouse.row) else {
             return Ok(None);
         };
@@ -772,6 +815,13 @@ impl Component for DiffViewer {
                 let display_col =
                     viewer.state().scroll_col + clicked_col.saturating_sub(viewer.gutter_width());
                 viewer.set_cursor_at_display_col(row, display_col);
+                let position = viewer.text_position_at(rect, mouse.column, mouse.row);
+                viewer.start_selection(position);
+                let other = match panel {
+                    Panel::Before => Panel::After,
+                    Panel::After => Panel::Before,
+                };
+                self.viewer_for(other).clear_selection();
                 self.sync_cross_highlight();
                 self.sync_scroll();
                 Ok(Some(Action::Render))
@@ -1891,6 +1941,149 @@ mod tests {
             viewer.right_viewer.state().cursor_col,
             4,
             "the other panel follows to `ab`"
+        );
+    }
+
+    /// Both panels showing `contents`, drawn once so the mouse has rects to hit.
+    fn drawn_with(contents: &str) -> DiffViewer {
+        let mut viewer = DiffViewer::new();
+        viewer.load_diff(&DiffSessionData {
+            before_contents: contents.to_string(),
+            after_contents: contents.to_string(),
+            before_ranges: Vec::new(),
+            after_ranges: Vec::new(),
+            ..sample_diff_data()
+        });
+        draw_viewer(&mut viewer, 240, 12);
+        viewer
+    }
+
+    fn draw_viewer(viewer: &mut DiffViewer, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| viewer.draw(frame, frame.area()).unwrap())
+            .unwrap();
+        terminal.backend().buffer().clone()
+    }
+
+    fn mouse(
+        viewer: &mut DiffViewer,
+        kind: crossterm::event::MouseEventKind,
+        (column, row): (u16, u16),
+    ) -> Option<Action> {
+        viewer
+            .handle_mouse_event(crossterm::event::MouseEvent {
+                kind,
+                column,
+                row,
+                modifiers: crossterm::event::KeyModifiers::NONE,
+            })
+            .unwrap()
+    }
+
+    /// Press at `from`, drag to `to`, release there; what the release asked to copy.
+    fn drag(viewer: &mut DiffViewer, from: (u16, u16), to: (u16, u16)) -> Option<String> {
+        use crossterm::event::{MouseButton, MouseEventKind};
+        mouse(viewer, MouseEventKind::Down(MouseButton::Left), from);
+        mouse(viewer, MouseEventKind::Drag(MouseButton::Left), to);
+        match mouse(viewer, MouseEventKind::Up(MouseButton::Left), to) {
+            Some(Action::CopyToClipboard(text)) => Some(text),
+            None => None,
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    /// Screen cell of display column `col` on file row `row` of the before panel.
+    fn before_cell(viewer: &DiffViewer, row: u16, col: u16) -> (u16, u16) {
+        let content = viewer.last_before_content.expect("drawn");
+        (
+            content.x + viewer.left_viewer.gutter_width() as u16 + col,
+            content.y + row,
+        )
+    }
+
+    #[test]
+    fn a_drag_copies_the_characters_under_it_including_both_ends() {
+        let mut viewer = drawn_with("first line\nsecond line\nthird\n");
+        let from = before_cell(&viewer, 0, 6);
+        let to = before_cell(&viewer, 1, 5);
+        assert_eq!(drag(&mut viewer, from, to).as_deref(), Some("line\nsecond"));
+
+        // The same cells dragged the other way.
+        assert_eq!(drag(&mut viewer, to, from).as_deref(), Some("line\nsecond"));
+    }
+
+    #[test]
+    fn a_click_without_a_drag_copies_nothing() {
+        use crossterm::event::{MouseButton, MouseEventKind};
+        let mut viewer = drawn_with("first line\n");
+        let cell = before_cell(&viewer, 0, 2);
+        mouse(&mut viewer, MouseEventKind::Down(MouseButton::Left), cell);
+        assert_eq!(
+            mouse(&mut viewer, MouseEventKind::Up(MouseButton::Left), cell),
+            None
+        );
+        assert_eq!(viewer.left_viewer.state().selection, None);
+        // A release with no press before it, as after a click on the title row.
+        assert_eq!(
+            mouse(&mut viewer, MouseEventKind::Up(MouseButton::Left), cell),
+            None
+        );
+    }
+
+    #[test]
+    fn a_selection_takes_whole_wide_characters_and_never_the_gutter() {
+        let mut viewer = drawn_with("a\n\té漢x\n");
+        let content = viewer.last_before_content.expect("drawn");
+        // From the gutter of row 0 to the second cell of `漢` (display columns 5-6) on row 1.
+        let to = before_cell(&viewer, 1, 6);
+        assert_eq!(
+            drag(&mut viewer, (content.x, content.y), to).as_deref(),
+            Some("a\n\té漢")
+        );
+    }
+
+    #[test]
+    fn a_drag_past_the_panel_edge_stays_in_its_panel_and_scrolls_past_the_bottom() {
+        let contents: String = (0..40).map(|i| format!("row {i}\n")).collect();
+        let mut viewer = drawn_with(&contents);
+        let before = viewer.last_before_content.expect("drawn");
+        let after = viewer.last_after_content.expect("drawn");
+        let from = before_cell(&viewer, 0, 0);
+
+        // Into the other panel, a row down: clamped to the before panel's last column, which
+        // is past the end of `row 1`.
+        let into_after = (after.x + 3, before.y + 1);
+        assert_eq!(
+            drag(&mut viewer, from, into_after).as_deref(),
+            Some("row 0\nrow 1")
+        );
+        assert_eq!(viewer.right_viewer.state().selection, None);
+
+        // Below the panel: each event scrolls a row, extending the selection past the screen.
+        let below = (before.x + before.width - 1, before.y + before.height + 2);
+        let copied = drag(&mut viewer, from, below).expect("a selection");
+        assert_eq!(viewer.left_viewer.state().scroll, 1);
+        assert_eq!(copied.lines().count(), before.height as usize + 1);
+    }
+
+    #[test]
+    fn the_selection_is_drawn_reversed() {
+        let mut viewer = drawn_with("first line\n");
+        let from = before_cell(&viewer, 0, 1);
+        let to = before_cell(&viewer, 0, 3);
+        drag(&mut viewer, from, to);
+        let buffer = draw_viewer(&mut viewer, 240, 12);
+        let reversed = |col| {
+            let (x, y) = before_cell(&viewer, 0, col);
+            buffer[(x, y)]
+                .modifier
+                .contains(ratatui::style::Modifier::REVERSED)
+        };
+        assert_eq!(
+            (0..5).map(reversed).collect::<Vec<_>>(),
+            [false, true, true, true, false]
         );
     }
 
