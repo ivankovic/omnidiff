@@ -88,27 +88,36 @@ class Client:
             self.seen += chunk
             pending += chunk
             replies = []
+            # Where the last query answered ends: everything up to it is done with.
+            answered = 0
             # Only what tmux asks for and reads: an answer to anything else would arrive in the
             # pane as typed keys. The terminal's name and version (XTVERSION), which tmux keeps as client_termtype.
             if self.version:
-                for _ in re.finditer(rb"\x1b\[>0?q", pending):
+                for match in re.finditer(rb"\x1b\[>0?q", pending):
                     replies.append(b"\x1bP>|" + self.version + b"\x1b\\")
+                    answered = max(answered, match.end())
             # kitty's graphics protocol: every query is answered OK, under its own id.
             if self.graphics:
                 for match in re.finditer(rb"\x1b_G([^\x1b;]*)", pending):
                     found = re.search(rb"i=(\d+)", match.group(1))
                     if found:
                         replies.append(b"\x1b_Gi=" + found.group(1) + b";OK\x1b\\")
+                        answered = max(answered, match.end())
             # Through tmux's passthrough, wrapped with the graphics query (tmux does not ask these
             # itself): the cell size in pixels, and the status report that ends the query.
-            for _ in re.finditer(rb"\x1b\[16t", pending):
+            for match in re.finditer(rb"\x1b\[16t", pending):
                 replies.append(b"\x1b[6;20;10t")
-            for _ in re.finditer(rb"\x1b\[5n", pending):
+                answered = max(answered, match.end())
+            for match in re.finditer(rb"\x1b\[5n", pending):
                 replies.append(b"\x1b[0n")
+                answered = max(answered, match.end())
             for reply in replies:
                 os.write(self.fd, reply)
-            # Keep a tail, for a query split across reads.
-            pending = pending[-64:]
+            # Keep a tail, for a query split across reads - but never one already answered: a
+            # query left in the tail was answered again on the next read, and tmux, no longer
+            # waiting for it, typed the second reply into the shell (`ESC P` as Alt-P), which ran
+            # it and exited, taking the session and the server with it.
+            pending = pending[answered:][-64:]
 
     def type(self, text):
         os.write(self.fd, text.encode())
