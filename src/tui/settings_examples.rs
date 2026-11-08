@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-//! The settings page's examples: one small before/after pair per language, written for this
+//! The settings menu's examples (its Highlighting tab): one small before/after pair per language, written for this
 //! purpose (never sampled from a repository, for licensing), so that each highlighting option
 //! visibly changes something in it. The page shows the example in the language of the open diff,
 //! Rust when nothing is open, and plain text for a language without a grammar.

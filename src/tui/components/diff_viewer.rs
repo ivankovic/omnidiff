@@ -26,8 +26,9 @@ use crate::tui::actions::{Action, DiffSessionData};
 use crate::tui::theme::{OverlayTheme, PanelLayout};
 
 /// Below this terminal width two side-by-side panels are too narrow to read, so `Auto` layout
-/// shows one panel.
-pub const SINGLE_PANEL_THRESHOLD: u16 = 200;
+/// shows one panel - unless the user set another width ([`DiffViewer::set_wide_columns`],
+/// `theme::load_wide_columns`). The browser showcase and `human_solver` use it as it is.
+pub const SINGLE_PANEL_THRESHOLD: u16 = crate::tui::theme::DEFAULT_WIDE_COLUMNS;
 
 /// The TUI's central content pane: the before/after files side by side (or, under
 /// `DisplayMode::Single`, one at a time), each half owned by its own [`CodeViewer`].
@@ -41,6 +42,8 @@ pub struct DiffViewer {
     display_mode: DisplayMode,
     /// The persisted `v`-key preference; `Auto` means the width decides.
     layout_override: PanelLayout,
+    /// The width from which `Auto` shows two panels; `None` is [`SINGLE_PANEL_THRESHOLD`].
+    wide_columns: Option<u16>,
     /// The panel shown in single mode and whose cursor drives navigation in dual mode.
     active_panel: Panel,
     /// Kept here for the minimap strips, which this component draws.
@@ -291,9 +294,22 @@ impl DiffViewer {
 
     /// `S`: toggle syntax highlighting on both panels at once.
     pub fn toggle_syntax_highlighting(&mut self) {
-        let enable = !self.left_viewer.is_syntax_highlighting_enabled();
+        let enable = !self.syntax_highlighting();
+        self.set_syntax_highlighting(enable);
+    }
+
+    /// Syntax highlighting on both panels (the `S` key), for this run only.
+    pub fn set_syntax_highlighting(&mut self, enable: bool) {
         self.left_viewer.set_syntax_highlighting(enable);
         self.right_viewer.set_syntax_highlighting(enable);
+    }
+
+    pub fn syntax_highlighting(&self) -> bool {
+        self.left_viewer.is_syntax_highlighting_enabled()
+    }
+
+    pub fn node_highlight(&self) -> bool {
+        self.left_viewer.is_node_highlight_enabled()
     }
 
     pub fn set_syntax_theme(&mut self, name: String) {
@@ -490,13 +506,22 @@ impl DiffViewer {
             PanelLayout::Dual => DisplayMode::Dual,
             PanelLayout::Single => DisplayMode::Single,
             PanelLayout::Auto => {
-                if width < SINGLE_PANEL_THRESHOLD {
+                if width < self.wide_columns() {
                     DisplayMode::Single
                 } else {
                     DisplayMode::Dual
                 }
             }
         };
+    }
+
+    /// The width from which the `Auto` layout shows two panels. Takes effect on the next frame.
+    pub fn set_wide_columns(&mut self, columns: u16) {
+        self.wide_columns = Some(columns);
+    }
+
+    pub fn wide_columns(&self) -> u16 {
+        self.wide_columns.unwrap_or(SINGLE_PANEL_THRESHOLD)
     }
 
     /// Takes effect on the next frame.
@@ -529,7 +554,7 @@ impl DiffViewer {
         }
     }
 
-    /// The language the settings page shows its example in: the focused panel's, plain text
+    /// The language the settings menu shows its example in: the focused panel's, plain text
     /// (`Unknown`) for a file without a grammar, `None` when no file is open.
     pub fn example_language(&self) -> Option<crate::code::Language> {
         let viewer = match self.active_panel() {
@@ -1054,6 +1079,32 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect()
+    }
+
+    #[test]
+    fn the_auto_layout_shows_two_panels_from_the_wide_threshold() {
+        let mut viewer = DiffViewer::new();
+        let mode_at = |viewer: &mut DiffViewer, width| {
+            viewer.update_display_mode(width);
+            viewer.display_mode
+        };
+        assert_eq!(
+            viewer.wide_columns(),
+            160,
+            "two 80-column panels by default"
+        );
+        assert_eq!(mode_at(&mut viewer, 159), DisplayMode::Single);
+        assert_eq!(mode_at(&mut viewer, 160), DisplayMode::Dual);
+
+        viewer.set_wide_columns(200);
+        assert_eq!(mode_at(&mut viewer, 199), DisplayMode::Single);
+        assert_eq!(mode_at(&mut viewer, 200), DisplayMode::Dual);
+
+        // A fixed layout ignores the width.
+        viewer.set_layout_override(PanelLayout::Dual);
+        assert_eq!(mode_at(&mut viewer, 80), DisplayMode::Dual);
+        viewer.set_layout_override(PanelLayout::Single);
+        assert_eq!(mode_at(&mut viewer, 400), DisplayMode::Single);
     }
 
     #[test]
