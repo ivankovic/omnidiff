@@ -28,9 +28,15 @@ use super::{Component, move_selection};
 use crate::diff::text::{OPTION_INFO, RenderOptions, TextOperation};
 use crate::tui::actions::Action;
 use crate::tui::settings_examples::{Painted, SettingsExample, example_for, painted};
-use crate::tui::theme::OverlayTheme;
+use crate::tui::theme::{
+    DEFAULT_WIDE_COLUMNS, OverlayTheme, WIDE_COLUMNS_ENV, WIDE_COLUMNS_RANGE, WideColumnsSource,
+};
 
-const HINT: &str = "↑/↓ move  Space toggle  1 Minimal  2 Full  Enter or Esc close";
+const HINT: &str =
+    "↑/↓ move  Space toggle  ←/→ change the width  1 Minimal  2 Full  Enter or Esc close";
+
+/// How far one ←/→ moves the wide threshold.
+const WIDE_COLUMNS_STEP: u16 = 10;
 
 /// What the page is about: an example in the open diff's language, or non-code content, which
 /// these settings do not shape.
@@ -49,11 +55,20 @@ pub enum PageContent {
 /// it. There is nothing to accept or cancel, so `Enter` and `Esc` both just close. The presets are
 /// on `1`/`2`, not `m`/`f`: the page opens on `M`, and a doubled opening key must not wipe every
 /// field and persist that.
+///
+/// Below the checkboxes, one row that is not a highlighting setting: the width from which the
+/// `Auto` layout shows two panels (issue #70), changed with ←/→ and persisted the same way. It has
+/// no example to mark, so selecting it explains itself instead, with what this terminal's width
+/// gives. A width from `$OMNIDIFF_WIDE_COLUMNS` overrides the row, which then only says so.
 pub struct RenderOptionsDialog {
     options: RenderOptions,
     selected: usize,
     content: PageContent,
     theme: OverlayTheme,
+    wide_columns: u16,
+    wide_source: WideColumnsSource,
+    /// The terminal's width, from the last frame: the page is the whole screen.
+    terminal_width: u16,
     /// The example painted for `(options, selected)`; rebuilt when either changes.
     view: Option<ExampleView>,
 }
@@ -61,7 +76,8 @@ pub struct RenderOptionsDialog {
 /// The example under one choice of settings, and what the selected setting changes in it.
 struct ExampleView {
     options: RenderOptions,
-    selected: usize,
+    /// `None` on the width row, which marks nothing.
+    selected: Option<usize>,
     painted: Painted,
     texts: [String; 2],
     /// Per side, the bytes the selected setting repaints.
@@ -86,12 +102,80 @@ impl RenderOptionsDialog {
             selected: 0,
             content,
             theme,
+            wide_columns: DEFAULT_WIDE_COLUMNS,
+            wide_source: WideColumnsSource::Default,
+            terminal_width: 0,
             view: None,
         }
     }
 
+    /// The width row's starting value and where it came from (`theme::load_wide_columns`).
+    pub fn with_wide_columns(mut self, columns: u16, source: WideColumnsSource) -> Self {
+        self.wide_columns = columns;
+        self.wide_source = source;
+        self
+    }
+
+    /// The checkboxes, then the width row.
     fn row_count(&self) -> usize {
+        self.wide_row() + 1
+    }
+
+    fn wide_row(&self) -> usize {
         self.options.options().len()
+    }
+
+    /// The highlighting setting selected, or `None` on the width row.
+    fn selected_option(&self) -> Option<usize> {
+        (self.selected < self.wide_row()).then_some(self.selected)
+    }
+
+    /// ←/→ on the width row: a step, held to [`WIDE_COLUMNS_RANGE`]. A width the environment sets
+    /// is not this row's to change.
+    fn step_wide_columns(&mut self, up: bool) -> Option<Action> {
+        if self.selected_option().is_some() || self.wide_source == WideColumnsSource::Environment {
+            return None;
+        }
+        let stepped = if up {
+            self.wide_columns.saturating_add(WIDE_COLUMNS_STEP)
+        } else {
+            self.wide_columns.saturating_sub(WIDE_COLUMNS_STEP)
+        };
+        let clamped = stepped.clamp(*WIDE_COLUMNS_RANGE.start(), *WIDE_COLUMNS_RANGE.end());
+        if clamped == self.wide_columns {
+            return None;
+        }
+        self.wide_columns = clamped;
+        self.wide_source = WideColumnsSource::Config;
+        Some(Action::WideColumnsChanged(clamped))
+    }
+
+    /// The width row's explanation: what it does, what this terminal gets, where the value is from.
+    fn wide_row_text(&self) -> Vec<Line<'static>> {
+        let gets = if self.terminal_width >= self.wide_columns {
+            "two panels"
+        } else {
+            "one panel at a time"
+        };
+        let source = match self.wide_source {
+            WideColumnsSource::Environment => format!(
+                "Set by {WIDE_COLUMNS_ENV}, which overrides this page: unset it to change the \
+                 width here."
+            ),
+            WideColumnsSource::Config => "Saved in the config file as `wide_columns`.".to_string(),
+            WideColumnsSource::Default => format!(
+                "The default, two 80-column panels. {WIDE_COLUMNS_ENV} overrides it for one run."
+            ),
+        };
+        vec![
+            Line::from("Two panels from").bold(),
+            Line::from(format!(
+                "The auto layout (`v`) shows Before and After side by side from {} columns, and \
+                 one at a time below that (Tab switches). This terminal is {} columns wide: {gets}.",
+                self.wide_columns, self.terminal_width
+            )),
+            Line::from(source).italic(),
+        ]
     }
 
     /// The whole screen: the page replaces the diff while it is open.
@@ -104,12 +188,13 @@ impl RenderOptionsDialog {
         let PageContent::Example(example) = self.content else {
             return None;
         };
+        let selected = self.selected_option();
         let fresh = self
             .view
             .as_ref()
-            .is_some_and(|view| view.options == self.options && view.selected == self.selected);
+            .is_some_and(|view| view.options == self.options && view.selected == selected);
         if !fresh {
-            self.view = build_view(example, self.options, self.selected);
+            self.view = build_view(example, self.options, selected);
         }
         self.view.as_ref()
     }
@@ -142,13 +227,25 @@ impl RenderOptionsDialog {
 }
 
 /// `example` painted under `options`, the bytes `selected` repaints when flipped, and what to
-/// say when it repaints nothing: the example's own reason, or another setting it needs.
+/// say when it repaints nothing: the example's own reason, or another setting it needs. With no
+/// setting selected (the width row), the example as it is, nothing marked.
 fn build_view(
     example: &'static SettingsExample,
     options: RenderOptions,
-    selected: usize,
+    selected: Option<usize>,
 ) -> Option<ExampleView> {
     let (now, texts) = painted(example, options)?;
+    let Some(selected) = selected else {
+        let marked = [0, 1].map(|side| vec![false; now[side].len()]);
+        return Some(ExampleView {
+            options,
+            selected: None,
+            painted: now,
+            texts,
+            marked,
+            note: None,
+        });
+    };
     let flipped = |mut options: RenderOptions, index: usize| {
         options.toggle(index);
         options
@@ -190,7 +287,7 @@ fn build_view(
     };
     Some(ExampleView {
         options,
-        selected,
+        selected: Some(selected),
         painted: now,
         texts,
         marked,
@@ -296,10 +393,15 @@ impl Component for RenderOptionsDialog {
                 move_selection(&mut self.selected, 1, len);
                 Ok(Some(Action::Render))
             }
-            KeyCode::Char(' ') => {
-                self.options.toggle(self.selected);
-                Ok(Some(Action::RenderOptionsChanged(self.options)))
-            }
+            KeyCode::Char(' ') => match self.selected_option() {
+                Some(index) => {
+                    self.options.toggle(index);
+                    Ok(Some(Action::RenderOptionsChanged(self.options)))
+                }
+                None => Ok(None),
+            },
+            KeyCode::Right => Ok(self.step_wide_columns(true)),
+            KeyCode::Left => Ok(self.step_wide_columns(false)),
             KeyCode::Enter | KeyCode::Esc => Ok(Some(Action::RenderOptionsAccepted)),
             KeyCode::Char('1') => {
                 self.options = RenderOptions::MINIMAL;
@@ -318,6 +420,7 @@ impl Component for RenderOptionsDialog {
             self.draw_non_code(frame, area);
             return Ok(());
         };
+        self.terminal_width = area.width;
         let theme = self.theme;
         let (options, selected) = (self.options, self.selected);
         let title = format!(
@@ -361,18 +464,39 @@ impl Component for RenderOptionsDialog {
                 }
             })
             .collect();
+        // The width row in a fixed area at the bottom of the column, not after the checkboxes:
+        // they wrap, and on a short terminal they would push it out of sight.
+        let wide = format!("Two panels from {} columns", self.wide_columns);
+        let wide_line = if self.selected_option().is_none() {
+            Line::from(wide).reversed()
+        } else {
+            Line::from(wide)
+        };
+        let left = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(2)])
+            .split(columns[0]);
         frame.render_widget(
             Paragraph::new(list)
                 .wrap(Wrap { trim: false })
                 .block(Block::default().borders(Borders::RIGHT)),
-            columns[0],
+            left[0],
+        );
+        frame.render_widget(
+            Paragraph::new(wide_line).block(
+                Block::default()
+                    .borders(Borders::TOP | Borders::RIGHT)
+                    .title(" Layout ".dim()),
+            ),
+            left[1],
         );
 
+        let wide_text = self
+            .selected_option()
+            .is_none()
+            .then(|| self.wide_row_text());
         let view = self.view();
-        let (description, note) = (
-            OPTION_INFO[selected].description,
-            view.and_then(|view| view.note.clone()),
-        );
+        let note = view.and_then(|view| view.note.clone());
         if let Some(view) = view {
             let sides = Layout::default()
                 .direction(if columns[1].width >= 100 {
@@ -403,14 +527,19 @@ impl Component for RenderOptionsDialog {
             }
         }
 
-        let mut text = vec![
-            Line::from(OPTION_INFO[selected].name).bold(),
-            Line::from(description),
-        ];
-        text.push(match note {
-            Some(note) => Line::from(note).italic(),
-            None => Line::from("◆ marks the rows this setting changes in the example.").dim(),
-        });
+        let text = match wide_text {
+            Some(text) => text,
+            None => vec![
+                Line::from(OPTION_INFO[selected].name).bold(),
+                Line::from(OPTION_INFO[selected].description),
+                match note {
+                    Some(note) => Line::from(note).italic(),
+                    None => {
+                        Line::from("◆ marks the rows this setting changes in the example.").dim()
+                    }
+                },
+            ],
+        };
         frame.render_widget(
             Paragraph::new(text)
                 .wrap(Wrap { trim: true })
@@ -553,6 +682,84 @@ mod tests {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
         assert_eq!(dialog.selected, dialog.row_count() - 1);
+    }
+
+    /// The width row, the last one.
+    fn on_the_wide_row(dialog: &mut RenderOptionsDialog) {
+        for _ in 0..dialog.row_count() {
+            dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        }
+        assert_eq!(dialog.selected_option(), None);
+    }
+
+    #[test]
+    fn left_and_right_on_the_last_row_change_the_wide_threshold_by_ten() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL);
+        on_the_wide_row(&mut dialog);
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Right)).unwrap(),
+            Some(Action::WideColumnsChanged(170))
+        );
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Left)).unwrap(),
+            Some(Action::WideColumnsChanged(160))
+        );
+        // Space has nothing to toggle there.
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
+            None
+        );
+        assert_eq!(dialog.options, RenderOptions::FULL);
+    }
+
+    #[test]
+    fn the_wide_threshold_stays_in_range() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL)
+            .with_wide_columns(40, WideColumnsSource::Config);
+        on_the_wide_row(&mut dialog);
+        assert_eq!(dialog.handle_key_event(key(KeyCode::Left)).unwrap(), None);
+        assert_eq!(dialog.wide_columns, 40);
+        let mut top = RenderOptionsDialog::new(RenderOptions::FULL)
+            .with_wide_columns(1000, WideColumnsSource::Config);
+        on_the_wide_row(&mut top);
+        assert_eq!(top.handle_key_event(key(KeyCode::Right)).unwrap(), None);
+    }
+
+    #[test]
+    fn left_and_right_on_a_checkbox_change_nothing() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL);
+        assert_eq!(dialog.handle_key_event(key(KeyCode::Right)).unwrap(), None);
+        assert_eq!(dialog.wide_columns, DEFAULT_WIDE_COLUMNS);
+    }
+
+    /// The environment overrides the config, so the row the config backs cannot change it.
+    #[test]
+    fn a_threshold_from_the_environment_is_not_the_rows_to_change() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL)
+            .with_wide_columns(200, WideColumnsSource::Environment);
+        on_the_wide_row(&mut dialog);
+        assert_eq!(dialog.handle_key_event(key(KeyCode::Right)).unwrap(), None);
+        let text = screen(&mut dialog, 160, 40);
+        assert!(text.contains("Two panels from 200 columns"), "{text}");
+        assert!(text.contains(WIDE_COLUMNS_ENV), "{text}");
+    }
+
+    /// Selected, the row explains itself with what this terminal's width gives, and marks nothing.
+    #[test]
+    fn the_wide_row_says_what_this_terminal_gets() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL);
+        on_the_wide_row(&mut dialog);
+        let wide = screen(&mut dialog, 170, 40);
+        assert!(
+            wide.contains("This terminal is 170 columns wide: two panels"),
+            "{wide}"
+        );
+        assert!(
+            !wide.contains("◆"),
+            "the width row marks nothing in the example: {wide}"
+        );
+        let narrow = screen(&mut dialog, 120, 40);
+        assert!(narrow.contains("one panel at a time"), "{narrow}");
     }
 
     /// The page as text, drawn at `width` by `height`.

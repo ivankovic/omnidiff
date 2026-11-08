@@ -103,6 +103,9 @@ pub enum Action {
     /// A render option changed: applied and persisted at once, so the diff behind the panel shows
     /// its effect. Closing the panel keeps it; nothing is restored.
     RenderOptionsChanged(RenderOptions),
+    /// The settings page's last row: the width from which the `Auto` layout shows two panels.
+    /// Applied and persisted at once, like `RenderOptionsChanged`.
+    WideColumnsChanged(u16),
     /// Enter or Esc in the render-options panel. Carries nothing: `RenderOptionsChanged` has
     /// already applied and persisted every change.
     RenderOptionsAccepted,

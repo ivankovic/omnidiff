@@ -103,7 +103,9 @@ Appearance
                    Up/Down moves, Left/Right changes a dropdown, Enter edits a color
                    (type #rrggbb) or accepts, Esc cancels. Editing any color forks the
                    selection to Custom, leaving the presets untouched.
-  v                Cycle the panel layout: auto / dual / single (persisted)
+  v                Cycle the panel layout: auto / dual / single (persisted). Auto shows two
+                   panels from 160 columns: change it on the M page's last row, or for one
+                   run with OMNIDIFF_WIDE_COLUMNS
   S                Toggle syntax highlighting
   H                Toggle the node highlight (off by default): the range under the
                    cursor, and its match on the other panel, highlight when part of a

@@ -174,6 +174,9 @@ pub struct App {
     /// ticks, and by a tick that changes what is shown - or when something animates on its own
     /// (see [`App::frame_needed`]). Cleared by [`App::render`].
     needs_redraw: bool,
+    /// Where the diff viewer's wide threshold came from (`theme::load_wide_columns`), for the
+    /// settings page: a value from the environment is not what its row edits.
+    wide_columns_source: theme::WideColumnsSource,
     /// Read at draw time, so the counter's resolution is the frame rate rather than the 4Hz tick -
     /// which is what makes tenths of a second worth showing.
     diff_started_at: Option<std::time::Instant>,
@@ -280,6 +283,7 @@ impl App {
             review_position: None,
             summary_toast_ticks: 0,
             needs_redraw: true,
+            wide_columns_source: theme::WideColumnsSource::Default,
             diff_started_at: None,
             line_prompt: None,
             action_tx,
@@ -315,6 +319,9 @@ impl App {
         self.diff_viewer.set_overlay_theme(self.current_theme);
         self.diff_viewer
             .set_layout_override(theme::load_panel_layout());
+        let (wide_columns, wide_columns_source) = theme::load_wide_columns();
+        self.diff_viewer.set_wide_columns(wide_columns);
+        self.wide_columns_source = wide_columns_source;
         self.diff_viewer
             .set_node_highlight(theme::load_node_highlight());
         self.diff_viewer.set_render_options(
@@ -541,11 +548,17 @@ impl App {
                             self.diff_viewer.example_language(),
                         ))
                     };
-                    self.render_options_dialog = Some(RenderOptionsDialog::for_content(
-                        self.diff_viewer.render_options(),
-                        content,
-                        self.diff_viewer.overlay_theme(),
-                    ));
+                    self.render_options_dialog = Some(
+                        RenderOptionsDialog::for_content(
+                            self.diff_viewer.render_options(),
+                            content,
+                            self.diff_viewer.overlay_theme(),
+                        )
+                        .with_wide_columns(
+                            self.diff_viewer.wide_columns(),
+                            self.wide_columns_source,
+                        ),
+                    );
                     self.screen = AppScreen::RenderOptions;
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
@@ -843,6 +856,11 @@ impl App {
                 }
                 Action::RenderOptionsChanged(options) => self.apply_render_options(*options)?,
                 Action::RenderOptionsAccepted => self.handle_render_options_accepted(),
+                Action::WideColumnsChanged(columns) => {
+                    self.diff_viewer.set_wide_columns(*columns);
+                    self.wide_columns_source = theme::WideColumnsSource::Config;
+                    theme::save_wide_columns(*columns);
+                }
                 _ => {}
             }
 

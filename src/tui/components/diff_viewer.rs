@@ -26,8 +26,9 @@ use crate::tui::actions::{Action, DiffSessionData};
 use crate::tui::theme::{OverlayTheme, PanelLayout};
 
 /// Below this terminal width two side-by-side panels are too narrow to read, so `Auto` layout
-/// shows one panel.
-pub const SINGLE_PANEL_THRESHOLD: u16 = 200;
+/// shows one panel - unless the user set another width ([`DiffViewer::set_wide_columns`],
+/// `theme::load_wide_columns`). The browser showcase and `human_solver` use it as it is.
+pub const SINGLE_PANEL_THRESHOLD: u16 = crate::tui::theme::DEFAULT_WIDE_COLUMNS;
 
 /// The TUI's central content pane: the before/after files side by side (or, under
 /// `DisplayMode::Single`, one at a time), each half owned by its own [`CodeViewer`].
@@ -41,6 +42,8 @@ pub struct DiffViewer {
     display_mode: DisplayMode,
     /// The persisted `v`-key preference; `Auto` means the width decides.
     layout_override: PanelLayout,
+    /// The width from which `Auto` shows two panels; `None` is [`SINGLE_PANEL_THRESHOLD`].
+    wide_columns: Option<u16>,
     /// The panel shown in single mode and whose cursor drives navigation in dual mode.
     active_panel: Panel,
     /// Kept here for the minimap strips, which this component draws.
@@ -490,13 +493,22 @@ impl DiffViewer {
             PanelLayout::Dual => DisplayMode::Dual,
             PanelLayout::Single => DisplayMode::Single,
             PanelLayout::Auto => {
-                if width < SINGLE_PANEL_THRESHOLD {
+                if width < self.wide_columns() {
                     DisplayMode::Single
                 } else {
                     DisplayMode::Dual
                 }
             }
         };
+    }
+
+    /// The width from which the `Auto` layout shows two panels. Takes effect on the next frame.
+    pub fn set_wide_columns(&mut self, columns: u16) {
+        self.wide_columns = Some(columns);
+    }
+
+    pub fn wide_columns(&self) -> u16 {
+        self.wide_columns.unwrap_or(SINGLE_PANEL_THRESHOLD)
     }
 
     /// Takes effect on the next frame.
@@ -1054,6 +1066,32 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect()
+    }
+
+    #[test]
+    fn the_auto_layout_shows_two_panels_from_the_wide_threshold() {
+        let mut viewer = DiffViewer::new();
+        let mode_at = |viewer: &mut DiffViewer, width| {
+            viewer.update_display_mode(width);
+            viewer.display_mode
+        };
+        assert_eq!(
+            viewer.wide_columns(),
+            160,
+            "two 80-column panels by default"
+        );
+        assert_eq!(mode_at(&mut viewer, 159), DisplayMode::Single);
+        assert_eq!(mode_at(&mut viewer, 160), DisplayMode::Dual);
+
+        viewer.set_wide_columns(200);
+        assert_eq!(mode_at(&mut viewer, 199), DisplayMode::Single);
+        assert_eq!(mode_at(&mut viewer, 200), DisplayMode::Dual);
+
+        // A fixed layout ignores the width.
+        viewer.set_layout_override(PanelLayout::Dual);
+        assert_eq!(mode_at(&mut viewer, 80), DisplayMode::Dual);
+        viewer.set_layout_override(PanelLayout::Single);
+        assert_eq!(mode_at(&mut viewer, 400), DisplayMode::Single);
     }
 
     #[test]
