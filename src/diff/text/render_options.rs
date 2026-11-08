@@ -168,14 +168,14 @@ pub struct RenderOptions {
     pub interior_whitespace: bool,
 }
 
-/// How the settings page and the status bar name an option, and what the page says it does.
+/// How the settings menu and the status bar name an option, and what the menu says it does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OptionInfo {
-    /// The settings page's name for it, in plain words.
+    /// The settings menu's name for it, in plain words.
     pub name: &'static str,
     /// A few words for the status bar's badge.
     pub short: &'static str,
-    /// What it changes, for the settings page.
+    /// What it changes, for the settings menu.
     pub description: &'static str,
 }
 

@@ -355,6 +355,11 @@ impl PanelLayout {
         }
     }
 
+    /// The step back through the same cycle: the settings menu's ← on the layout row.
+    pub fn previous(self) -> Self {
+        self.next().next()
+    }
+
     /// Short label for the footer/title, e.g. `[layout: dual]`.
     pub fn label(self) -> &'static str {
         match self {
@@ -680,9 +685,10 @@ pub fn save_syntax_theme(name: &str) {
     update_config(|config| config.syntax_theme = name.to_string());
 }
 
-/// The width from which the `Auto` layout shows two panels, and where it came from: `$OMNIDIFF_WIDE_COLUMNS`,
-/// else the config file's `wide_columns` (the `M` page's last row), else [`DEFAULT_WIDE_COLUMNS`].
-/// A value that is not a number in [`WIDE_COLUMNS_RANGE`] is passed over, as if unset.
+/// The width from which the `Auto` layout shows two panels, and where it came from:
+/// `$OMNIDIFF_WIDE_COLUMNS`, else the config file's `wide_columns` (the settings menu's Layout
+/// tab), else [`DEFAULT_WIDE_COLUMNS`]. A value that is not a number in [`WIDE_COLUMNS_RANGE`] is
+/// passed over, as if unset.
 pub fn load_wide_columns() -> (u16, WideColumnsSource) {
     wide_columns_from(
         std::env::var(WIDE_COLUMNS_ENV).ok().as_deref(),
@@ -690,7 +696,7 @@ pub fn load_wide_columns() -> (u16, WideColumnsSource) {
     )
 }
 
-/// Where [`load_wide_columns`]' answer came from: the settings page says so, since a value from
+/// Where [`load_wide_columns`]' answer came from: the settings menu says so, since a value from
 /// the environment is not what its row edits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WideColumnsSource {

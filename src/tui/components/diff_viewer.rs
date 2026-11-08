@@ -294,9 +294,22 @@ impl DiffViewer {
 
     /// `S`: toggle syntax highlighting on both panels at once.
     pub fn toggle_syntax_highlighting(&mut self) {
-        let enable = !self.left_viewer.is_syntax_highlighting_enabled();
+        let enable = !self.syntax_highlighting();
+        self.set_syntax_highlighting(enable);
+    }
+
+    /// Syntax highlighting on both panels (the `S` key), for this run only.
+    pub fn set_syntax_highlighting(&mut self, enable: bool) {
         self.left_viewer.set_syntax_highlighting(enable);
         self.right_viewer.set_syntax_highlighting(enable);
+    }
+
+    pub fn syntax_highlighting(&self) -> bool {
+        self.left_viewer.is_syntax_highlighting_enabled()
+    }
+
+    pub fn node_highlight(&self) -> bool {
+        self.left_viewer.is_node_highlight_enabled()
     }
 
     pub fn set_syntax_theme(&mut self, name: String) {
@@ -541,7 +554,7 @@ impl DiffViewer {
         }
     }
 
-    /// The language the settings page shows its example in: the focused panel's, plain text
+    /// The language the settings menu shows its example in: the focused panel's, plain text
     /// (`Unknown`) for a file without a grammar, `None` when no file is open.
     pub fn example_language(&self) -> Option<crate::code::Language> {
         let viewer = match self.active_panel() {
