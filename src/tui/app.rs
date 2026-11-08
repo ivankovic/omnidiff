@@ -143,6 +143,9 @@ pub struct App {
     /// the `UI` needed to release and re-acquire the terminal.
     pending_editor: Option<(PathBuf, usize)>,
     pending_suspend: bool,
+    /// Characters the last mouse selection put on the clipboard, shown in the footer until the
+    /// next key.
+    copied_chars: Option<usize>,
     /// Most recent first; offered on the empty-start screen as digit shortcuts.
     recent_pairs: Vec<(PathBuf, PathBuf)>,
 
@@ -289,6 +292,7 @@ impl App {
             last_search_query: None,
             pending_editor: None,
             pending_suspend: false,
+            copied_chars: None,
             recent_pairs: Vec::new(),
             screen: AppScreen::default(),
             syntax_theme: None,
@@ -405,6 +409,7 @@ impl App {
         // Before dispatch, so the same key still does its own job (see `summary_toast_ticks`).
         if matches!(event, Event::Key(_)) {
             self.dismiss_summary_toast();
+            self.copied_chars = None;
         }
 
         if let Event::Key(key) = &event {
@@ -765,6 +770,14 @@ impl App {
                 Action::Tick => self.tick_summary_toast(),
                 Action::Quit => self.should_exit = true,
                 Action::Suspend => self.pending_suspend = true,
+                Action::CopyToClipboard(text) => {
+                    use std::io::Write;
+                    // Straight to the terminal, between frames: the sequence draws nothing.
+                    let backend = ui.terminal.backend_mut();
+                    backend.write_all(crate::tui::clipboard::osc52(text).as_bytes())?;
+                    backend.flush()?;
+                    self.copied_chars = Some(text.chars().count());
+                }
                 Action::Resize(w, h) => self.handle_resize(ui, *w, *h)?,
                 Action::Render => self.render(ui)?,
                 Action::FileSelected(path) => self.handle_file_selected(path.clone())?,
@@ -1404,6 +1417,9 @@ impl App {
         }
         if self.plain_text_fallback {
             left_parts.push("[plain text]".to_string());
+        }
+        if let Some(chars) = self.copied_chars {
+            left_parts.push(format!("[copied {chars} chars]"));
         }
         let layout = self.diff_viewer.layout_override();
         if layout != crate::tui::theme::PanelLayout::Auto {
