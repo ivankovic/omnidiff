@@ -39,7 +39,7 @@ OUT_DIR ?= research/data/ablation
 # research/data/performance/content_speed/<machine>.csv. MACHINE=<name> times a run as that one.
 which-machine = python3 scripts/machine.py $(MACHINE)
 
-.PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
+.PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
@@ -82,6 +82,24 @@ test-graphics:
 # The Rust suite alone, every feature on.
 test-rust:
 	cargo nextest run --cargo-profile ci --all-features
+
+# The edit loop's suite: every Rust test outside the fixtures but the corpus sweeps, and the
+# fixtures src/test/data/quick_fixtures.txt names - the cheapest set that reaches every line the
+# whole fixture corpus reaches beyond those tests, one per language at least - plus any fixture
+# added since that list was measured (scripts/quick_fixtures_filter.py). Not a gate: `make test`
+# and CI run everything.
+test-quick:
+	@filter=$$(python3 scripts/quick_fixtures_filter.py) || exit 1; \
+	cargo nextest run --cargo-profile ci --all-features -E "$$filter"
+
+# Rewrites src/test/data/quick_fixtures.txt from per-test coverage, measured first, at this commit
+# and with a clean src/, by `make -C research measure-per-test-coverage` (a systemd unit, about ten
+# minutes; start from an empty research/data/coverage/per_test/, keeping its PROVENANCE.md, so
+# nothing stale is resumed). Re-run after engine changes; between runs the quick tier picks up new
+# fixtures by itself.
+update-quick-fixtures:
+	cd research && uv run ./analysis/coverage_sets.py --area all quick \
+		--write ../src/test/data/quick_fixtures.txt --measured-at $$(git rev-parse --short HEAD)
 
 # The unit tests of research/analysis/ and scripts/, in research/'s uv environment.
 test-python:
