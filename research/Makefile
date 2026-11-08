@@ -363,7 +363,9 @@ rendering-report:
 # wrote them. PROVENANCE.md there records which commit that was.
 PER_TEST_COVERAGE_TARGET := $(abspath ../target/percov)
 measure-per-test-coverage:
-	cd .. && eval "$$(cargo llvm-cov show-env --export-prefix)" \
+	# The binary's path is written into this directory before cargo has created it on a clean tree.
+	mkdir -p $(PER_TEST_COVERAGE_TARGET)
+	cd .. && eval "$$(cargo llvm-cov show-env --sh)" \
 		&& CARGO_TARGET_DIR=$(PER_TEST_COVERAGE_TARGET) cargo test --release --lib --no-run \
 		--message-format=json 2>/dev/null \
 		| python3 -c 'import sys, json; print(next(m["executable"] for m in map(json.loads, sys.stdin) if m.get("reason") == "compiler-artifact" and m.get("profile", {}).get("test") and m.get("executable")))' \
