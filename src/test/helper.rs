@@ -111,23 +111,24 @@ pub fn node_for_path<'a>(root: Node<'a>, path: &[&str]) -> Result<Node<'a>> {
 
 /// One parent's children, indexed once for both directions: `by_kind` for path -> node,
 /// `occurrence_of` (child id -> 0-indexed same-kind occurrence) for node -> path.
+///
+/// `by_kind` holds each kind's children in order, so a lookup indexes by occurrence and allocates
+/// nothing: a loaded mapping can hold an entry per node, and resolving them is most of what
+/// building [`Caches`](human_mapping::Caches) costs.
 struct ParentIndex<'a> {
-    by_kind: HashMap<(String, usize), Node<'a>>,
+    by_kind: HashMap<&'static str, Vec<Node<'a>>>,
     occurrence_of: HashMap<usize, usize>,
 }
 
 impl<'a> ParentIndex<'a> {
     fn build(parent: Node<'a>) -> Self {
-        let mut by_kind = HashMap::new();
+        let mut by_kind: HashMap<&'static str, Vec<Node<'a>>> = HashMap::new();
         let mut occurrence_of = HashMap::new();
-        let mut counts: HashMap<String, usize> = HashMap::new();
         let mut cursor = parent.walk();
         for child in parent.children(&mut cursor) {
-            let kind = child.kind().to_string();
-            let occurrence = counts.entry(kind.clone()).or_insert(0);
-            occurrence_of.insert(child.id(), *occurrence);
-            by_kind.insert((kind, *occurrence), child);
-            *occurrence += 1;
+            let same_kind = by_kind.entry(child.kind()).or_default();
+            occurrence_of.insert(child.id(), same_kind.len());
+            same_kind.push(child);
         }
         Self {
             by_kind,
@@ -167,7 +168,8 @@ impl<'a> PathCache<'a> {
             match self
                 .index_of(current_node)
                 .by_kind
-                .get(&(node_type.to_string(), child_index))
+                .get(node_type)
+                .and_then(|same_kind| same_kind.get(child_index))
             {
                 Some(&node) => current_node = node,
                 None => bail!(
