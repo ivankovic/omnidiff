@@ -4048,20 +4048,10 @@ fn the_name_filter_is_a_case_insensitive_substring() {
 }
 
 #[test]
-fn value_filters_cycle_through_the_values_present_and_back_to_all() {
+fn value_filters_offer_the_values_present() {
     let rows = sample_rows();
     let languages = sample_language_values(&rows, &SampleFilters::default());
     assert_eq!(languages, vec!["Go", "Rust"]);
-    assert_eq!(next_value_filter(None, &languages).as_deref(), Some("Go"));
-    assert_eq!(
-        next_value_filter(Some("Go"), &languages).as_deref(),
-        Some("Rust")
-    );
-    assert_eq!(
-        next_value_filter(Some("Rust"), &languages),
-        None,
-        "past the last value the filter turns off rather than sticking"
-    );
 
     // Offered smallest-stratum-first, and only for strata some row actually has.
     let buckets = sample_bucket_values(&rows);
@@ -4753,19 +4743,247 @@ fn the_cmpl_and_unmarked_filters_select_the_same_rows() {
     }
 }
 
-#[test]
-fn next_dataset_filter_cycles_through_diff_datasets_then_content_families_and_back_to_all() {
-    // Walks every entry, so a new dataset or family needs no edit here.
-    let mut current = None;
-    for dataset in DIFF_DATASETS
-        .iter()
-        .copied()
-        .chain(Family::ALL.map(Family::name))
-    {
-        current = next_dataset_filter(current);
-        assert_eq!(current, Some(dataset));
+fn choice(value: Option<&str>, count: usize) -> FilterChoice {
+    FilterChoice {
+        value: value.map(str::to_string),
+        count,
     }
-    assert_eq!(next_dataset_filter(current), None);
+}
+
+#[test]
+fn the_dataset_choices_are_all_then_each_dataset_with_cases_counted() {
+    let view = DiffPickerView::default();
+    assert_eq!(
+        dataset_filter_choices(&mixed_picker_options(), &view, DiffPickerData::default()),
+        [
+            choice(None, 3),
+            choice(Some("handmade"), 1),
+            choice(Some(Family::Pictures.name()), 2),
+        ],
+        "datasets without a case are left out; content families follow the diff datasets"
+    );
+    // Counted under the other filters: the name filter leaves only the pictures.
+    let mut named = DiffPickerView::default();
+    named.filters.name = Some("png".to_string());
+    assert_eq!(
+        dataset_filter_choices(&mixed_picker_options(), &named, DiffPickerData::default()),
+        [choice(None, 2), choice(Some(Family::Pictures.name()), 2)]
+    );
+}
+
+/// A key in the `o` picker already in `app.modal`, as `handle_open_diff_picker` takes it.
+fn key_in_diff_picker(app: &mut App, code: KeyCode) {
+    let Some(Modal::OpenDiffPicker {
+        options,
+        selected,
+        view,
+        name_input,
+    }) = app.modal.take()
+    else {
+        panic!("expected the diff picker, got {:?}", app.modal);
+    };
+    handle_open_diff_picker(app, code, options, selected, view, name_input);
+}
+
+/// A key in the value popup, as `handle_modal_key` dispatches it.
+fn press_in_choice(app: &mut App, code: KeyCode) {
+    let Some(Modal::ChooseFilterValue {
+        picker,
+        choices,
+        selected,
+    }) = app.modal.take()
+    else {
+        panic!("expected the value popup, got {:?}", app.modal);
+    };
+    handle_choose_filter_value(app, code, *picker, choices, selected);
+}
+
+#[test]
+fn f_on_dataset_picks_the_value_from_a_popup_and_enter_applies_it() {
+    let mut app = test_app();
+    app.modal = Some(Modal::OpenDiffPicker {
+        options: mixed_picker_options(),
+        selected: 0,
+        view: DiffPickerView {
+            column: DiffColumn::Dataset,
+            ..DiffPickerView::default()
+        },
+        name_input: None,
+    });
+
+    key_in_diff_picker(&mut app, KeyCode::Char('f'));
+    match &app.modal {
+        Some(Modal::ChooseFilterValue {
+            choices, selected, ..
+        }) => {
+            assert_eq!(choices.len(), 3);
+            assert_eq!(*selected, 0, "opens on the filter in force: all");
+        }
+        other => panic!("expected the value popup, got {other:?}"),
+    }
+
+    // all -> handmade -> pictures, then one more `j` stays on the last.
+    for _ in 0..3 {
+        press_in_choice(&mut app, KeyCode::Char('j'));
+    }
+    press_in_choice(&mut app, KeyCode::Enter);
+    match &app.modal {
+        Some(Modal::OpenDiffPicker { view, .. }) => {
+            assert_eq!(view.filters.dataset, Some(Family::Pictures.name()));
+        }
+        other => panic!("expected the picker back, got {other:?}"),
+    }
+    assert_eq!(
+        app.diff_view.filters.dataset,
+        Some(Family::Pictures.name()),
+        "the filter persists on App, as `f` always did"
+    );
+
+    // Reopened, the popup starts on the value in force; choosing "all" clears it.
+    key_in_diff_picker(&mut app, KeyCode::Char('f'));
+    match &app.modal {
+        Some(Modal::ChooseFilterValue { selected, .. }) => assert_eq!(*selected, 2),
+        other => panic!("expected the value popup, got {other:?}"),
+    }
+    press_in_choice(&mut app, KeyCode::Char('g'));
+    press_in_choice(&mut app, KeyCode::Enter);
+    assert_eq!(app.diff_view.filters.dataset, None);
+}
+
+#[test]
+fn esc_in_the_value_popup_returns_to_the_picker_with_the_filter_unchanged() {
+    let mut app = test_app();
+    let view = SamplePickerView {
+        column: SampleColumn::Lang,
+        filters: SampleFilters {
+            language: Some("Rust".to_string()),
+            ..SampleFilters::default()
+        },
+        ..SamplePickerView::default()
+    };
+    app.modal = Some(Modal::OpenSamplePicker {
+        rows: sample_rows(),
+        selected: 0,
+        view: view.clone(),
+        name_input: None,
+    });
+    let Some(Modal::OpenSamplePicker {
+        rows,
+        selected,
+        view: picker_view,
+        name_input,
+    }) = app.modal.take()
+    else {
+        unreachable!()
+    };
+    handle_open_sample_picker(
+        &mut app,
+        KeyCode::Char('f'),
+        rows,
+        selected,
+        picker_view,
+        name_input,
+    );
+    match &app.modal {
+        Some(Modal::ChooseFilterValue {
+            choices, selected, ..
+        }) => {
+            assert_eq!(
+                choices,
+                &[
+                    choice(None, 3),
+                    choice(Some("Go"), 2),
+                    choice(Some("Rust"), 1)
+                ]
+            );
+            assert_eq!(*selected, 2, "opens on Rust, the filter in force");
+        }
+        other => panic!("expected the value popup, got {other:?}"),
+    }
+
+    press_in_choice(&mut app, KeyCode::Char('k'));
+    press_in_choice(&mut app, KeyCode::Esc);
+    match &app.modal {
+        Some(Modal::OpenSamplePicker {
+            view: picker_view, ..
+        }) => assert_eq!(picker_view, &view),
+        other => panic!("expected the picker back, got {other:?}"),
+    }
+
+    // Enter on Go applies it to the column under the cursor, Lang.
+    let Some(Modal::OpenSamplePicker {
+        rows,
+        selected,
+        view: picker_view,
+        name_input,
+    }) = app.modal.take()
+    else {
+        unreachable!()
+    };
+    handle_open_sample_picker(
+        &mut app,
+        KeyCode::Char('f'),
+        rows,
+        selected,
+        picker_view,
+        name_input,
+    );
+    press_in_choice(&mut app, KeyCode::Char('k'));
+    press_in_choice(&mut app, KeyCode::Enter);
+    assert_eq!(app.sample_view.filters.language.as_deref(), Some("Go"));
+}
+
+#[test]
+fn the_value_popup_is_drawn_over_its_picker_with_the_counts() {
+    let backend = ratatui::backend::TestBackend::new(100, 24);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let area = Rect::new(0, 0, 100, 24);
+    let modal = Modal::ChooseFilterValue {
+        picker: Box::new(Modal::OpenSamplePicker {
+            rows: sample_rows(),
+            selected: 0,
+            view: SamplePickerView {
+                column: SampleColumn::Lang,
+                ..SamplePickerView::default()
+            },
+            name_input: None,
+        }),
+        choices: vec![
+            choice(None, 3),
+            choice(Some("Go"), 2),
+            choice(Some("Rust"), 1),
+        ],
+        selected: 1,
+    };
+    terminal
+        .draw(|f| {
+            render_modal(
+                f,
+                area,
+                &modal,
+                "alpha",
+                None,
+                "",
+                "",
+                &HumanMapping::default(),
+                "Minimal",
+                &[],
+                TextOverlay::Human,
+                None,
+                DiffPickerData::default(),
+                None,
+            )
+        })
+        .unwrap();
+    let text = rendered_text(&terminal);
+    assert!(text.contains("Filter Lang"), "the popup's title: {text}");
+    assert!(text.contains("all  3"), "{text}");
+    assert!(text.contains("Go  2"), "{text}");
+    assert!(text.contains("Rust  1"), "{text}");
+    assert!(
+        text.contains("charlie"),
+        "the picker stays drawn behind it: {text}"
+    );
 }
 
 /// The picker's rows for the picture tests: one code case, and two pictures, one with a verdict.
@@ -5103,10 +5321,11 @@ fn diff_picker_invariant_column_separates_unscanned_from_clean() {
 /// `f` on `Dataset` cycles the filter and persists it on `App` for the next `o`.
 #[test]
 fn open_diff_picker_f_on_the_dataset_column_persists_the_filter_on_app() {
+    // `f` opens the value popup on "all"; `j` moves to the one dataset with a case.
     let app = press_in_diff_picker(
         vec![("alpha".to_string(), "handmade")],
         column_view(DiffColumn::Dataset),
-        &[KeyCode::Char('f')],
+        &[KeyCode::Char('f'), KeyCode::Char('j'), KeyCode::Enter],
     );
 
     assert_eq!(

@@ -73,10 +73,10 @@ use ratatui::widgets::Paragraph;
 use ratatui_image::picker::Picker;
 
 use crate::events::{
-    SessionEnd, handle_open_diff_picker, handle_open_sample_picker, open_diff_picker,
-    open_sample_picker, reject_sample, update_sample_csv,
+    SessionEnd, handle_choose_filter_value, handle_open_diff_picker, handle_open_sample_picker,
+    open_diff_picker, open_sample_picker, reject_sample, update_sample_csv,
 };
-use crate::render::{render_open_diff_picker, render_open_sample_picker};
+use crate::render::{render_filter_choices, render_open_diff_picker, render_open_sample_picker};
 use crate::state::{App, Modal, OpenTarget};
 use crate::stubs::{LICENSE_HEADER, fixtures_dir, insert_mod_declaration, module_name};
 use crate::{
@@ -710,8 +710,8 @@ fn update_marks(session: &mut ContentSession) {
 
 /// One key of the content session; `Some` when it ends the session.
 fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Option<SessionEnd> {
-    // The `o` and `O` pickers, while open, take every key. Any other modal is the tree
-    // session's and has no place here.
+    // The `o` and `O` pickers, and their `f` value popup, while open, take every key. Any other
+    // modal is the tree session's and has no place here.
     let picked = match app.modal.take() {
         Some(Modal::OpenDiffPicker {
             options,
@@ -729,6 +729,14 @@ fn handle_key(session: &mut ContentSession, app: &mut App, code: KeyCode) -> Opt
         }) => Some(without_unsaved(app, |app| {
             handle_open_sample_picker(app, code, rows, selected, view, name_input)
         })),
+        Some(Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        }) => {
+            handle_choose_filter_value(app, code, *picker, choices, selected);
+            Some(None)
+        }
         _ => None,
     };
     if let Some(target) = picked {
@@ -1028,8 +1036,60 @@ fn draw(frame: &mut ratatui::Frame, session: &mut ContentSession, app: &App) {
             view,
             name_input,
         }) => render_open_sample_picker(frame, area, rows, *selected, view, name_input.as_deref()),
+        Some(modal @ Modal::ChooseFilterValue { .. }) => {
+            render_content_filter_choice(frame, area, app, modal)
+        }
         _ => {}
     }
+}
+
+/// The `f` value popup over the picker it came from, as `render_modal` draws it in the tree
+/// session.
+fn render_content_filter_choice(
+    frame: &mut ratatui::Frame,
+    area: ratatui::layout::Rect,
+    app: &App,
+    modal: &Modal,
+) {
+    let Modal::ChooseFilterValue {
+        picker,
+        choices,
+        selected,
+    } = modal
+    else {
+        return;
+    };
+    let column = match picker.as_ref() {
+        Modal::OpenDiffPicker {
+            options,
+            selected,
+            view,
+            name_input,
+        } => {
+            render_open_diff_picker(
+                frame,
+                area,
+                options,
+                *selected,
+                view,
+                name_input.as_deref(),
+                DiffPickerData::from_app(app),
+                app.diff_comments.as_ref(),
+            );
+            view.column.header()
+        }
+        Modal::OpenSamplePicker {
+            rows,
+            selected,
+            view,
+            name_input,
+        } => {
+            render_open_sample_picker(frame, area, rows, *selected, view, name_input.as_deref());
+            view.column.label()
+        }
+        _ => "",
+    };
+    render_filter_choices(frame, area, column, choices, *selected);
 }
 
 /// Runs a picker's key handler as if the tree session's case had nothing unsaved. The pickers
