@@ -588,6 +588,50 @@ pub(crate) fn render_modal(
         } => {
             render_open_sample_picker(frame, area, rows, *selected, view, name_input.as_deref());
         }
+        Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        } => {
+            let column = match picker.as_ref() {
+                Modal::OpenDiffPicker {
+                    options,
+                    selected,
+                    view,
+                    name_input,
+                } => {
+                    render_open_diff_picker(
+                        frame,
+                        area,
+                        options,
+                        *selected,
+                        view,
+                        name_input.as_deref(),
+                        diff_data,
+                        diff_comments,
+                    );
+                    view.column.header()
+                }
+                Modal::OpenSamplePicker {
+                    rows,
+                    selected,
+                    view,
+                    name_input,
+                } => {
+                    render_open_sample_picker(
+                        frame,
+                        area,
+                        rows,
+                        *selected,
+                        view,
+                        name_input.as_deref(),
+                    );
+                    view.column.label()
+                }
+                _ => "",
+            };
+            render_filter_choices(frame, area, column, choices, *selected);
+        }
         Modal::ConfirmDiscardUnsaved { target, can_save } => render_text_modal(
             frame,
             area,
@@ -1625,6 +1669,66 @@ pub(crate) fn render_open_diff_picker(
 
 /// The `O` picker: one row per sample, one column per `SampleColumn`, with the same header markers
 /// and recompute-every-frame contract as [`render_open_diff_picker`].
+/// The `f` value popup over a picker: one line per choice with its row count, the current one
+/// highlighted, scrolled to keep it in view.
+pub(crate) fn render_filter_choices(
+    frame: &mut Frame,
+    area: Rect,
+    column: &str,
+    choices: &[FilterChoice],
+    selected: usize,
+) {
+    use ratatui::style::Stylize;
+    let label = |choice: &FilterChoice| choice.value.as_deref().unwrap_or("all").to_string();
+    let widest = choices
+        .iter()
+        .map(|choice| label(choice).chars().count() + choice.count.to_string().len() + 3)
+        .max()
+        .unwrap_or(0)
+        .max(column.len() + 10) as u16;
+    // +2 for the borders, +2 for padding; at most the area.
+    let width = (widest + 4).min(area.width);
+    let height = (choices.len() as u16 + 2)
+        .min(area.height.saturating_sub(2))
+        .max(3);
+    let popup_area = Rect {
+        x: area.x + area.width.saturating_sub(width) / 2,
+        y: area.y + area.height.saturating_sub(height) / 2,
+        width,
+        height,
+    };
+    frame.render_widget(Clear, popup_area);
+    let inner_height = height.saturating_sub(2) as usize;
+    let scroll = selected
+        .saturating_sub(inner_height / 2)
+        .min(choices.len().saturating_sub(inner_height));
+    let lines: Vec<Line> = choices
+        .iter()
+        .enumerate()
+        .skip(scroll)
+        .take(inner_height)
+        .map(|(i, choice)| {
+            let text = format!(" {}  {} ", label(choice), choice.count);
+            if i == selected {
+                text.reversed().into()
+            } else if choice.value.is_none() {
+                text.italic().into()
+            } else {
+                text.into()
+            }
+        })
+        .collect();
+    frame.render_widget(
+        Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" Filter {column} "))
+                .title_bottom(" j/k Enter Esc "),
+        ),
+        popup_area,
+    );
+}
+
 pub(crate) fn render_open_sample_picker(
     frame: &mut Frame,
     area: Rect,

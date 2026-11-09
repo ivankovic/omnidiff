@@ -101,6 +101,7 @@ pub(crate) fn mode_name(modal: Option<&Modal>) -> &'static str {
                 "sample-picker"
             }
         }
+        Some(Modal::ChooseFilterValue { .. }) => "filter-choice",
         Some(Modal::SolutionPicker { new_name, .. }) => {
             if new_name.is_some() {
                 "painting-picker-typing"

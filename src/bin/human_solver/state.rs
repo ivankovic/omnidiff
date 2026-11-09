@@ -2176,6 +2176,16 @@ pub(crate) enum Modal {
         /// Same contract as `OpenDiffPicker::name_input`.
         name_input: Option<String>,
     },
+    /// Raised by `f` on a picker column whose filter is one value from a list (`o`'s Dataset,
+    /// `O`'s Lang and Bucket): the values in a popup to pick from, rather than cycling through
+    /// them. `picker` is the `OpenDiffPicker`/`OpenSamplePicker` it came from, whose cursor column
+    /// says which filter is being set; Enter applies `choices[selected]` to it, Esc puts it back
+    /// unchanged. `choices[0]` is "all", no filter.
+    ChooseFilterValue {
+        picker: Box<Modal>,
+        choices: Vec<FilterChoice>,
+        selected: usize,
+    },
     /// Raised by `!`: confirms throwing away everything recorded for this case (`U` restores
     /// it).
     ConfirmResetCase {

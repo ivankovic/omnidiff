@@ -292,8 +292,10 @@ o              open a different test case (src/test/data/diffs/) as a table:
                  Name, Dataset, Cmpl, Unmarked, Paint, Disagree, Invariant, Review,
                  Size.
                  j/k pick a row, h/l pick a column, s sorts by that column (again to
-                 reverse), f filters on it -- substring on Name, dataset cycle on
-                 Dataset, off/yes/no on the rest. Filters AND across columns.
+                 reverse), f filters on it -- substring on Name, a popup of the
+                 datasets on Dataset (j/k pick, Enter apply, Esc cancel; each with
+                 how many cases it would show), off/yes/no on the rest. Filters AND
+                 across columns.
                  Invariant counts the ground-truth invariants this case's own
                  mapping breaks, the number its invariants() test asserts on;
                  Review counts its review_queue.tsv items; filtered to yes, } and {
@@ -315,8 +317,9 @@ o              open a different test case (src/test/data/diffs/) as a table:
 O              open a sampled candidate (src/test/data/samples/) as a table:
                  Name, Lang, Bucket, Status, Size. Same keys as o -- j/k pick a
                  row, h/l pick a column, s sorts by that column (again to
-                 reverse), f filters on it: substring on Name, a value cycle on
-                 Lang and Bucket, sampled/SOLVED/REJECTED on Status, and
+                 reverse), f filters on it: substring on Name, a popup of the
+                 values on Lang and Bucket (as on o's Dataset), sampled/SOLVED/
+                 REJECTED on Status, and
                  off/nonempty/empty on Size (an empty diff is a broken draw).
                  Bucket is the LOC stratum the sample was drawn for, ? for one
                  sampled before strata were recorded, and a ? row survives the
@@ -970,12 +973,106 @@ fn picker_datasets() -> impl Iterator<Item = &'static str> {
         .chain(Family::ALL.map(Family::name))
 }
 
-/// The `o` picker's next dataset filter: `picker_datasets` in order, then back to "all" (`None`).
-fn next_dataset_filter(current: Option<&'static str>) -> Option<&'static str> {
-    match current {
-        None => picker_datasets().next(),
-        Some(current) => picker_datasets().skip_while(|d| *d != current).nth(1),
+/// One line of the `f` value popup (`Modal::ChooseFilterValue`): a value of the column, `None`
+/// for "all", with how many rows choosing it would show under the other filters.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FilterChoice {
+    pub(crate) value: Option<String>,
+    pub(crate) count: usize,
+}
+
+/// "all" and then `values` with their counts, leaving out a value that would show nothing.
+fn filter_choices(
+    total: usize,
+    values: impl IntoIterator<Item = (String, usize)>,
+) -> Vec<FilterChoice> {
+    std::iter::once(FilterChoice {
+        value: None,
+        count: total,
+    })
+    .chain(
+        values
+            .into_iter()
+            .filter(|(_, count)| *count > 0)
+            .map(|(value, count)| FilterChoice {
+                value: Some(value),
+                count,
+            }),
+    )
+    .collect()
+}
+
+/// The `o` picker's Dataset choices, in `picker_datasets` order, counted under the other filters.
+fn dataset_filter_choices(
+    options: &[(String, &'static str)],
+    view: &DiffPickerView,
+    data: DiffPickerData<'_>,
+) -> Vec<FilterChoice> {
+    let mut others = view.clone();
+    others.filters.dataset = None;
+    let shown: std::collections::HashSet<String> = visible_diff_options(options, &others, data)
+        .into_iter()
+        .collect();
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for (name, dataset) in options {
+        if shown.contains(name) {
+            *counts.entry(dataset).or_default() += 1;
+        }
     }
+    filter_choices(
+        shown.len(),
+        picker_datasets().map(|dataset| {
+            (
+                dataset.to_string(),
+                counts.get(dataset).copied().unwrap_or(0),
+            )
+        }),
+    )
+}
+
+/// The `O` picker's choices for `column` (Lang or Bucket), counted under the other filters; empty
+/// for a column without a value list.
+fn sample_filter_choices(
+    rows: &[SampleRow],
+    filters: &SampleFilters,
+    column: SampleColumn,
+) -> Vec<FilterChoice> {
+    let mut others = filters.clone();
+    let values = match column {
+        SampleColumn::Lang => {
+            others.language = None;
+            sample_language_values(rows, filters)
+        }
+        SampleColumn::Bucket => {
+            others.bucket = None;
+            sample_bucket_values(rows)
+        }
+        _ => return Vec::new(),
+    };
+    let kept: Vec<&SampleRow> = rows.iter().filter(|row| others.keeps(row)).collect();
+    let count = |value: &str| {
+        kept.iter()
+            .filter(|row| match column {
+                SampleColumn::Lang => row.language == value,
+                _ => row.bucket.as_deref() == Some(value),
+            })
+            .count()
+    };
+    filter_choices(
+        kept.len(),
+        values.into_iter().map(|value| {
+            let n = count(&value);
+            (value, n)
+        }),
+    )
+}
+
+/// The index in `choices` of the filter now in force, so the popup opens on it.
+fn current_choice(choices: &[FilterChoice], current: Option<&str>) -> usize {
+    choices
+        .iter()
+        .position(|choice| choice.value.as_deref() == current)
+        .unwrap_or(0)
 }
 
 /// Runs `scan` over `names` on several threads, collecting the `Some` results into a map.
@@ -2105,15 +2202,6 @@ fn sample_bucket_values(rows: &[SampleRow]) -> Vec<String> {
     values.sort_by_key(|bucket| bucket_order(Some(bucket)));
     values.dedup();
     values
-}
-
-/// Advances a cycle-through-a-list filter: `None` (all) -> first -> ... -> last -> `None`.
-fn next_value_filter(current: Option<&str>, values: &[String]) -> Option<String> {
-    let Some(current) = current else {
-        return values.first().cloned();
-    };
-    let position = values.iter().position(|value| value == current)?;
-    values.get(position + 1).cloned()
 }
 
 fn next_status_filter(current: Option<SampleTriageStatus>) -> Option<SampleTriageStatus> {

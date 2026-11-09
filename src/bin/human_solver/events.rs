@@ -1670,6 +1670,13 @@ pub(crate) fn handle_modal_key(
         } => {
             return handle_open_sample_picker(app, code, rows, selected, view, name_input);
         }
+        Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        } => {
+            handle_choose_filter_value(app, code, *picker, choices, selected);
+        }
         Modal::OpenCommitPicker { commits, selected } => match code {
             KeyCode::Up | KeyCode::Char('k') => {
                 app.modal = Some(Modal::OpenCommitPicker {
@@ -3106,6 +3113,89 @@ pub(crate) fn open_diff_picker(app: &mut App, current: &str) {
 /// Opens the `O` picker over every sample (picture samples included), on `current`'s row if it is
 /// listed, measuring the samples not yet measured. Shared by the tree session and
 /// `content::run_content_session`.
+/// A key in the `f` value popup (`Modal::ChooseFilterValue`). Always leaves a modal up: the popup
+/// itself, or the picker it came from, rebuilt around the chosen filter on Enter.
+pub(crate) fn handle_choose_filter_value(
+    app: &mut App,
+    code: KeyCode,
+    picker: Modal,
+    choices: Vec<FilterChoice>,
+    selected: usize,
+) {
+    let last = choices.len().saturating_sub(1);
+    let selected = match code {
+        KeyCode::Up | KeyCode::Char('k') => selected.saturating_sub(1),
+        KeyCode::Down | KeyCode::Char('j') => (selected + 1).min(last),
+        KeyCode::PageUp => selected.saturating_sub(10),
+        KeyCode::PageDown => (selected + 10).min(last),
+        KeyCode::Home | KeyCode::Char('g') => 0,
+        KeyCode::End | KeyCode::Char('G') => last,
+        KeyCode::Esc => {
+            app.status = Some("Filter unchanged".to_string());
+            app.modal = Some(picker);
+            return;
+        }
+        KeyCode::Enter => {
+            let value = choices
+                .get(selected)
+                .and_then(|choice| choice.value.clone());
+            app.status = None;
+            app.modal = Some(apply_filter_choice(app, picker, value));
+            return;
+        }
+        _ => selected,
+    };
+    app.modal = Some(Modal::ChooseFilterValue {
+        picker: Box::new(picker),
+        choices,
+        selected,
+    });
+}
+
+/// `picker` with its cursor column's filter set to `value` (`None` clears it), rebuilt so the
+/// cursor stays on the row it was on where that row is still shown.
+fn apply_filter_choice(app: &mut App, picker: Modal, value: Option<String>) -> Modal {
+    match picker {
+        Modal::OpenDiffPicker {
+            options,
+            selected,
+            mut view,
+            ..
+        } => {
+            let current = visible_diff_options(&options, &view, DiffPickerData::from_app(app))
+                .get(selected)
+                .cloned();
+            view.filters.dataset =
+                value.and_then(|value| picker_datasets().find(|dataset| *dataset == value));
+            app.diff_view = view.clone();
+            open_diff_picker_modal(
+                options,
+                current.as_deref().unwrap_or(&app.name),
+                view,
+                DiffPickerData::from_app(app),
+            )
+        }
+        Modal::OpenSamplePicker {
+            rows,
+            selected,
+            mut view,
+            ..
+        } => {
+            let current = visible_sample_rows(&rows, &view)
+                .get(selected)
+                .map(|row| row.name.clone());
+            match view.column {
+                SampleColumn::Lang => view.filters.language = value,
+                SampleColumn::Bucket => view.filters.bucket = value,
+                _ => {}
+            }
+            app.sample_view = view.clone();
+            open_sample_picker_modal(rows, current.as_deref().unwrap_or(&app.name), view)
+        }
+        other => other,
+    }
+}
+
 pub(crate) fn open_sample_picker(app: &mut App, current: &str) {
     match list_sample_rows() {
         Ok(rows) if !rows.is_empty() => {
@@ -3254,15 +3344,28 @@ pub(crate) fn handle_open_sample_picker(
                     });
                     return None;
                 }
-                SampleColumn::Lang => {
-                    let values = sample_language_values(&rows, &view.filters);
-                    view.filters.language =
-                        next_value_filter(view.filters.language.as_deref(), &values);
-                }
-                SampleColumn::Bucket => {
-                    let values = sample_bucket_values(&rows);
-                    view.filters.bucket =
-                        next_value_filter(view.filters.bucket.as_deref(), &values);
+                SampleColumn::Lang | SampleColumn::Bucket => {
+                    let choices = sample_filter_choices(&rows, &view.filters, view.column);
+                    let current = match view.column {
+                        SampleColumn::Lang => view.filters.language.as_deref(),
+                        _ => view.filters.bucket.as_deref(),
+                    };
+                    let selected_choice = current_choice(&choices, current);
+                    app.status = Some(format!(
+                        "Filter {}: j/k pick, Enter apply, Esc cancel",
+                        view.column.label()
+                    ));
+                    app.modal = Some(Modal::ChooseFilterValue {
+                        picker: Box::new(Modal::OpenSamplePicker {
+                            rows,
+                            selected,
+                            view,
+                            name_input: None,
+                        }),
+                        choices,
+                        selected: selected_choice,
+                    });
+                    return None;
                 }
                 SampleColumn::Status => {
                     view.filters.status = next_status_filter(view.filters.status);
@@ -3425,10 +3528,25 @@ pub(crate) fn handle_open_diff_picker(
                 });
                 return None;
             }
-            ensure_diff_column_data(app, view.column);
             if view.column == DiffColumn::Dataset {
-                view.filters.dataset = next_dataset_filter(view.filters.dataset);
-            } else if let Some(flag) = view.filters.flag_mut(view.column) {
+                let choices =
+                    dataset_filter_choices(&options, &view, DiffPickerData::from_app(app));
+                let selected_choice = current_choice(&choices, view.filters.dataset);
+                app.status = Some("Filter Dataset: j/k pick, Enter apply, Esc cancel".to_string());
+                app.modal = Some(Modal::ChooseFilterValue {
+                    picker: Box::new(Modal::OpenDiffPicker {
+                        options,
+                        selected,
+                        view,
+                        name_input: None,
+                    }),
+                    choices,
+                    selected: selected_choice,
+                });
+                return None;
+            }
+            ensure_diff_column_data(app, view.column);
+            if let Some(flag) = view.filters.flag_mut(view.column) {
                 *flag = flag.next();
             } else if view.column == DiffColumn::Verdict {
                 app.status = Some("Verdict has no filter: s sorts by it".to_string());
