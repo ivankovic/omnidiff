@@ -1066,33 +1066,6 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "binary_expression:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "function_declaration:4",
@@ -1174,35 +1147,6 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "binary_expression:1",
-        "parenthesized_expression:1",
-        "composite_literal:1",
-        "qualified_type:1",
-        ".:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "call_expression:1",
-        "selector_expression:1",
-        ".:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "function_declaration:4",
@@ -1237,7 +1181,178 @@
       ]
     },
     {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "block:1"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "assignment_statement:1"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "assignment_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:2"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:2"
+      ]
+    },
+    {
       "operation": "identical",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "return_statement:1"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "return_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:57"
+      ],
+      "after_path": [
+        "comment:57"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:58"
+      ],
+      "after_path": [
+        "comment:58"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_declaration:5"
+      ],
+      "after_path": [
+        "function_declaration:5"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "call_expression:1",
+        "selector_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "binary_expression:1",
+        "parenthesized_expression:1",
+        "composite_literal:1",
+        "qualified_type:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "delete",
       "before_path": [
         "function_declaration:4",
         "block:1",
@@ -1249,7 +1364,40 @@
         "binary_expression:1",
         "parenthesized_expression:1",
         "):1"
-      ],
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "binary_expression:1",
+        "parenthesized_expression:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_declaration:4",
+        "block:1",
+        "statement_list:1",
+        "for_statement:1",
+        "block:1",
+        "statement_list:1",
+        "if_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
       "after_path": [
         "function_declaration:4",
         "block:1",
@@ -1262,144 +1410,61 @@
         "argument_list:1",
         "):1"
       ]
-    },
+    }
+  ],
+  "text_mappings": [
     {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "block:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:1",
-        "block:1"
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 236,
+              "start_column": 7,
+              "end_row": 236,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 236,
+              "start_column": 8,
+              "end_row": 236,
+              "end_column": 24
+            }
+          ]
+        }
       ]
     },
     {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "assignment_statement:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "assignment_statement:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:2"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "statement_list:1",
-        "if_statement:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "}:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "for_statement:1",
-        "block:1",
-        "}:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "return_statement:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "statement_list:1",
-        "return_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "function_declaration:4",
-        "block:1",
-        "}:1"
-      ],
-      "after_path": [
-        "function_declaration:4",
-        "block:1",
-        "}:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "comment:57"
-      ],
-      "after_path": [
-        "comment:57"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "comment:58"
-      ],
-      "after_path": [
-        "comment:58"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_declaration:5"
-      ],
-      "after_path": [
-        "function_declaration:5"
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 236,
+              "start_column": 7,
+              "end_row": 236,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 236,
+              "start_column": 7,
+              "end_row": 236,
+              "end_column": 24
+            }
+          ]
+        }
       ]
     }
   ]

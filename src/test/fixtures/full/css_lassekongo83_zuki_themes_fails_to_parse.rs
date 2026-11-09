@@ -15,7 +15,8 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -27,5 +28,16 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("css-lassekongo83-zuki-themes-fails-to-parse")
+    // Invariants 9 and 30, Full: row 102 paints the space before the inserted `1.64em; // ...` as
+    // Move on both sides, where the tree mapping reads it Delete/Insert and the spacing did not
+    // change.
+    assert_ground_truth_invariants_with_known_violations(
+        "css-lassekongo83-zuki-themes-fails-to-parse",
+        3,
+    )
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("css-lassekongo83-zuki-themes-fails-to-parse", 0.36)
 }
