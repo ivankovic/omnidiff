@@ -43,7 +43,7 @@ CRATES="
 	bytes@1.12.1
 	bzip2@0.6.1
 	castaway@0.2.4
-	cc@1.4.7
+	cc@1.2.67
 	cfg-if@1.0.5
 	cfg_aliases@0.2.2
 	chacha20@0.10.2
@@ -101,7 +101,7 @@ CRATES="
 	fearless_simd@0.4.1
 	filedescriptor@0.8.3
 	filetime@0.2.29
-	find-msvc-tools@0.1.13
+	find-msvc-tools@0.1.12
 	finl_unicode@1.5.0
 	fixedbitset@0.4.2
 	flate2@1.1.10
@@ -370,6 +370,7 @@ CRATES="
 	tree-sitter-ruby@0.23.1
 	tree-sitter-rust@0.24.2
 	tree-sitter-scala@0.24.1
+	tree-sitter-sequel@0.3.11
 	tree-sitter-swift@0.7.3
 	tree-sitter-typescript@0.23.2
 	tree-sitter-vim@0.4.0

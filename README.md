@@ -260,7 +260,7 @@ The language is detected from the file extension. A file with an unknown extensi
 plain text, line by line, so nothing is refused.
 
 <!-- languages:start -->
-25 languages are parsed with a tree-sitter grammar and diffed structurally:
+26 languages are parsed with a tree-sitter grammar and diffed structurally:
 
 | Language | File extensions |
 |---|---|
@@ -283,6 +283,7 @@ plain text, line by line, so nothing is refused.
 | Rust | `.rs` |
 | Scala | `.scala` |
 | Shell (Bash) | `.bash`, `.sh` |
+| SQL | `.sql` |
 | Swift | `.swift` |
 | TSX | `.tsx` |
 | TypeScript | `.ts`, `.mts`, `.cts` |
@@ -290,7 +291,7 @@ plain text, line by line, so nothing is refused.
 | XML | `.xml`, `.xht`, `.xhtml`, `.svg`, `.glif`, `.plist`, `.ui`, `.qrc`, `.glade`, `.xib`, `.storyboard`, `.xaml`, `.vcxproj`, `.filters`, `.csproj`, `.fsproj`, `.vbproj`, `.props`, `.targets`, `.nuspec`, `.resx`, `.wxs`, `.iml`, `.manifest`, `.config`, `.policy`, `.xsd`, `.xsl`, `.xslt`, `.xlf`, `.xliff`, `.kml`, `.gpx`, `.rss`, `.atom`, `.graphml`, `.dae` |
 | YAML | `.yaml`, `.yml` |
 
-Recognised by extension but diffed as plain text, since no grammar is compiled in: Bazel (`.bazel`), Dart (`.dart`), Emacs Lisp (`.el`), Markdown (`.md`, `.markdown`), Protocol Buffers (`.proto`), SQL (`.sql`).
+Recognised by extension but diffed as plain text, since no grammar is compiled in: Bazel (`.bazel`), Dart (`.dart`), Emacs Lisp (`.el`), Markdown (`.md`, `.markdown`), Protocol Buffers (`.proto`).
 <!-- languages:end -->
 
 Files that are not text are recognised by their bytes, never by their names, and diffed by what

@@ -1324,3 +1324,35 @@ fn member_identity_name_keys_members_by_their_declared_name() {
         Some(("method_declaration", "Bar".to_string()))
     );
 }
+
+#[test]
+fn sql_tables_views_and_types_are_matched_by_their_qualified_name() {
+    let code = Code::from_string(
+        "CREATE TABLE app.users (id INTEGER);\n\
+         CREATE VIEW adults AS SELECT id FROM app.users;\n\
+         CREATE FUNCTION one() RETURNS integer AS $$ SELECT 1 $$ LANGUAGE sql;\n",
+        &Language::SQL,
+    );
+    let root = code.ast.as_ref().expect("a clean parse").root_node();
+    assert_eq!(
+        collect_semantic_matches(root, &Language::SQL, &code),
+        [
+            ("create_table".to_string(), "app.users".to_string()),
+            ("create_view".to_string(), "adults".to_string()),
+        ],
+        "functions are left out: PostgreSQL overloads them"
+    );
+}
+
+#[test]
+fn sql_comparisons_cross_match_but_never_with_logic() {
+    assert!(kinds_update_allowed("=", "<>", &Language::SQL));
+    assert!(kinds_update_allowed(
+        "keyword_and",
+        "keyword_or",
+        &Language::SQL
+    ));
+    assert!(!kinds_update_allowed("=", "keyword_and", &Language::SQL));
+    // `=` compares only in SQL.
+    assert!(!kinds_update_allowed("=", "<>", &Language::CPP));
+}

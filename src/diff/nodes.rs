@@ -200,6 +200,19 @@ pub fn is_reference(node_kind: &str, language: &Language) -> bool {
         Language::R => node_kind == "program" || node_kind == "function_definition",
         Language::ShellScript => node_kind == "program" || node_kind == "function_definition",
         // Unvalidated: no Perl fixture yet.
+        // Unvalidated: no SQL fixture yet.
+        Language::SQL => matches!(
+            node_kind,
+            "program"
+                | "create_table"
+                | "create_view"
+                | "create_materialized_view"
+                | "create_function"
+                | "create_index"
+                | "create_trigger"
+                | "create_type"
+                | "alter_table"
+        ),
         Language::Perl => {
             node_kind == "source_file"
                 || node_kind == "package_statement"
@@ -862,6 +875,21 @@ pub fn is_semantically_structural<'a>(
             | "function_definition" => named_child_text(node, bytes, "name", None),
             _ => None,
         },
+        // Tables, views and types by their (schema-qualified) name, which a schema declares once.
+        // Functions are left out: PostgreSQL overloads them by argument types.
+        Language::SQL => match node_kind {
+            "create_table" | "create_view" | "create_materialized_view" | "create_type" => {
+                let mut cursor = node.walk();
+                let name = node
+                    .named_children(&mut cursor)
+                    .find(|child| child.kind() == "object_reference")?;
+                Some((
+                    node_kind.to_string(),
+                    name.utf8_text(bytes).ok()?.to_string(),
+                ))
+            }
+            _ => None,
+        },
         // `package Foo;` is left out: a file may switch back to a package it already named.
         Language::Perl => match node_kind {
             "subroutine_declaration_statement" | "method_declaration_statement" => {
@@ -992,6 +1020,12 @@ const ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "//", "@"];
 
 /// PHP's and Perl's `.` concatenation sits in the arithmetic slot.
 const PHP_ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "."];
+
+/// SQL's comparisons, where `=` compares rather than assigns.
+const SQL_COMPARISON_OPS: &[&str] = &["=", "<", "<=", ">", ">=", "<>", "!="];
+
+/// SQL's logical operators, which the grammar gives keyword kinds.
+const SQL_LOGICAL_OPS: &[&str] = &["keyword_and", "keyword_or"];
 
 const BITWISE_OPS: &[&str] = &[
     "&", "|", "^", "<<", ">>", ">>>", "&^", "bitand", "bitor", "xor",
@@ -1183,6 +1217,8 @@ const ALL_OPERATOR_FAMILIES: &[&[&str]] = &[
     NULL_POINTER_KINDS,
     JAVA_VALUE_LITERAL_KINDS,
     YAML_SCALAR_KINDS,
+    SQL_COMPARISON_OPS,
+    SQL_LOGICAL_OPS,
 ];
 
 /// A family past the mask's width would wrap silently in release; fail to compile instead.
@@ -1398,6 +1434,8 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             NUMERIC_LITERAL_KINDS,
         ],
         Language::ShellScript => &[SHELL_TEST_OPS, SHELL_STRING_BODY_KINDS],
+        // Unvalidated: no SQL fixture yet.
+        Language::SQL => &[SQL_COMPARISON_OPS, ARITHMETIC_OPS, SQL_LOGICAL_OPS],
         // `.` is concatenation, as in PHP. Unvalidated: no Perl fixture yet.
         Language::Perl => &[
             COMPARISON_OPS,

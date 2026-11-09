@@ -244,6 +244,32 @@ pub fn human_name(language: Language) -> String {
     }
 }
 
+/// Whether a tree of `language` is only used when it parses without errors; otherwise the file is
+/// diffed as plain text, as if there were no grammar.
+///
+/// SQL's dialects differ more than one grammar covers: of 7,055 corpus `.sql` files, the best grammar
+/// (`tree-sitter-sequel`) parsed 37% without errors, and left about a third of the bytes inside
+/// `ERROR` nodes, which tend to swallow the rest of a file. A diff over such a tree is worse than the
+/// line diff it replaces, so a SQL file that does not parse cleanly keeps the line diff. The other
+/// grammars parse nearly all of their corpus files and recover locally from the rest.
+pub fn requires_clean_parse(language: Language) -> bool {
+    language == Language::SQL
+}
+
+/// `contents` parsed with `parser`, already set to `language`'s grammar; `None` when the parse fails
+/// or [`requires_clean_parse`] rejects the tree.
+pub fn parse_tree(
+    parser: &mut tree_sitter::Parser,
+    contents: &str,
+    language: Language,
+) -> Option<tree_sitter::Tree> {
+    let tree = parser.parse(contents, None)?;
+    if requires_clean_parse(language) && tree.root_node().has_error() {
+        return None;
+    }
+    Some(tree)
+}
+
 /// The languages in the README's "Supported content" section, generated so they cannot drift from
 /// this file: one table of the languages with a grammar, and the extensions that are recognised
 /// but diffed as plain text because no grammar is compiled in.
@@ -319,6 +345,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::Ruby => Some(tree_sitter_ruby::LANGUAGE.into()),
         Language::Rust => Some(tree_sitter_rust::LANGUAGE.into()),
         Language::Scala => Some(tree_sitter_scala::LANGUAGE.into()),
+        Language::SQL => Some(tree_sitter_sequel::LANGUAGE.into()),
         Language::ShellScript => Some(tree_sitter_bash::LANGUAGE.into()),
         Language::Swift => Some(tree_sitter_swift::LANGUAGE.into()),
         Language::TSX => Some(tree_sitter_typescript::LANGUAGE_TSX.into()),
@@ -326,7 +353,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::Vimscript => Some(tree_sitter_vim::language()),
         Language::YAML => Some(tree_sitter_yaml::LANGUAGE.into()),
         Language::XML => Some(tree_sitter_xml::LANGUAGE_XML.into()),
-        // Bazel, Dart, MarkDown, SQL, ProtoBuf and Lisp are not supported at this time.
+        // Bazel, Dart, MarkDown, ProtoBuf and Lisp are not supported at this time.
         _ => None,
     }
 }
@@ -430,6 +457,21 @@ mod tests {
         assert_eq!(
             language_for_path_and_content(std::path::Path::new("app.ts"), ""),
             Some(Language::TypeScript)
+        );
+    }
+
+    #[test]
+    fn a_sql_tree_is_kept_only_when_it_parses_cleanly() {
+        let parsed = |text: &str| crate::code::Code::from_string(text, &Language::SQL).ast;
+        let tree = parsed("CREATE VIEW adults AS SELECT id FROM users WHERE age >= 18;\n")
+            .expect("a clean parse keeps its tree");
+        assert_eq!(tree.root_node().kind(), "program");
+        assert!(parsed("SELEC id FROM users;\n").is_none());
+        // Every other grammar keeps its tree with errors in it.
+        assert!(
+            crate::code::Code::from_string("fn main( {\n", &Language::Rust)
+                .ast
+                .is_some_and(|tree| tree.root_node().has_error())
         );
     }
 
