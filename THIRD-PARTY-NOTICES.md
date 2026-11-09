@@ -5037,7 +5037,7 @@ Used by:
 - thread_local 1.1.10 (https://github.com/Amanieu/thread_local-rs)
 - unicode-segmentation 1.13.3 (https://github.com/unicode-rs/unicode-segmentation)
 - unicode-truncate 2.0.1 (https://github.com/Aetf/unicode-truncate)
-- unicode-width 0.2.2 (https://github.com/unicode-rs/unicode-width)
+- unicode-width 0.2.3 (https://github.com/unicode-rs/unicode-width)
 - wasi 0.11.1+wasi-snapshot-preview1 (https://github.com/bytecodealliance/wasi)
 - yaml-rust 0.4.5 (https://github.com/chyh1990/yaml-rust)
 
