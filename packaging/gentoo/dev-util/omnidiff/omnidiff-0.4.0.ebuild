@@ -151,7 +151,7 @@ CRATES="
 	image@0.25.10
 	imagesize@0.15.0
 	indexmap@2.14.2
-	indoc@2.0.7
+	indoc@2.0.8
 	instability@0.3.14
 	is_terminal_polyfill@1.70.2
 	itertools@0.14.0
