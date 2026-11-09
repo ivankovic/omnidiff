@@ -1,0 +1,5378 @@
+{
+  "entries": [
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "fn:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "parameters:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "parameters:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "parameters:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "::1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "&:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "&:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "mutable_specifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "mutable_specifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1",
+        "reference_type:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "parameter:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "let:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "let:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "=:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "float_literal:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "float_literal:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "float_literal:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "float_literal:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        ";:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "let_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "::1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "..:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "..:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "scoped_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "base_field_initializer:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "struct_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "_:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "_:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        ",:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "_:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "_:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1",
+        "|:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "closure_parameters:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "type_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1",
+        "field_initializer_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "struct_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1",
+        "field_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "field_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "closure_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ],
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_item:1"
+      ],
+      "after_path": [
+        "function_item:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "fn:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "fn:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:1",
+        "parameters:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "parameters:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "function_item:1",
+        "block:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "{:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "function_item:1",
+        "block:1",
+        "}:1"
+      ],
+      "after_path": [
+        "function_item:2",
+        "block:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "attribute_item:3"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "function_item:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "inner_attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:1"
+      ],
+      "after_path": [
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "line_comment:2"
+      ],
+      "after_path": [
+        "line_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:1"
+      ],
+      "after_path": [
+        "use_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:2"
+      ],
+      "after_path": [
+        "use_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:3"
+      ],
+      "after_path": [
+        "use_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:1"
+      ],
+      "after_path": [
+        "struct_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "static_item:1"
+      ],
+      "after_path": [
+        "static_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "impl_item:1"
+      ],
+      "after_path": [
+        "impl_item:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 0,
+              "start_column": 0,
+              "end_row": 0,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 0,
+              "end_row": 32,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 0,
+              "end_row": 44,
+              "end_column": 1
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 51,
+              "start_column": 0,
+              "end_row": 51,
+              "end_column": 30
+            },
+            {
+              "start_row": 52,
+              "start_column": 0,
+              "end_row": 52,
+              "end_column": 45
+            },
+            {
+              "start_row": 53,
+              "start_column": 0,
+              "end_row": 53,
+              "end_column": 16
+            },
+            {
+              "start_row": 54,
+              "start_column": 4,
+              "end_row": 54,
+              "end_column": 30
+            },
+            {
+              "start_row": 55,
+              "start_column": 4,
+              "end_row": 55,
+              "end_column": 18
+            },
+            {
+              "start_row": 56,
+              "start_column": 0,
+              "end_row": 56,
+              "end_column": 1
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 46,
+              "start_column": 0,
+              "end_row": 46,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 48,
+              "start_column": 4,
+              "end_row": 48,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 32,
+              "start_column": 4,
+              "end_row": 32,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 33,
+              "start_column": 4,
+              "end_row": 33,
+              "end_column": 38
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 33,
+              "start_column": 8,
+              "end_row": 33,
+              "end_column": 76
+            }
+          ],
+          "after": [
+            {
+              "start_row": 34,
+              "start_column": 8,
+              "end_row": 34,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 34,
+              "start_column": 8,
+              "end_row": 34,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 35,
+              "start_column": 8,
+              "end_row": 35,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 35,
+              "start_column": 12,
+              "end_row": 35,
+              "end_column": 27
+            }
+          ],
+          "after": [
+            {
+              "start_row": 36,
+              "start_column": 12,
+              "end_row": 36,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 36,
+              "start_column": 16,
+              "end_row": 36,
+              "end_column": 68
+            }
+          ],
+          "after": [
+            {
+              "start_row": 37,
+              "start_column": 16,
+              "end_row": 37,
+              "end_column": 68
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 37,
+              "start_column": 16,
+              "end_row": 37,
+              "end_column": 36
+            }
+          ],
+          "after": [
+            {
+              "start_row": 38,
+              "start_column": 16,
+              "end_row": 38,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 38,
+              "start_column": 12,
+              "end_row": 38,
+              "end_column": 14
+            }
+          ],
+          "after": [
+            {
+              "start_row": 39,
+              "start_column": 12,
+              "end_row": 39,
+              "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 39,
+              "start_column": 12,
+              "end_row": 39,
+              "end_column": 40
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 12,
+              "end_row": 40,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 40,
+              "start_column": 8,
+              "end_row": 40,
+              "end_column": 9
+            }
+          ],
+          "after": [
+            {
+              "start_row": 41,
+              "start_column": 8,
+              "end_row": 41,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 41,
+              "start_column": 8,
+              "end_row": 41,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 42,
+              "start_column": 8,
+              "end_row": 42,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 42,
+              "start_column": 4,
+              "end_row": 42,
+              "end_column": 7
+            }
+          ],
+          "after": [
+            {
+              "start_row": 43,
+              "start_column": 4,
+              "end_row": 43,
+              "end_column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 0,
+              "start_column": 0,
+              "end_row": 0,
+              "end_column": 45
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 32,
+              "start_column": 0,
+              "end_row": 32,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 0,
+              "end_row": 44,
+              "end_column": 1
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 51,
+              "start_column": 0,
+              "end_row": 51,
+              "end_column": 30
+            },
+            {
+              "start_row": 52,
+              "start_column": 0,
+              "end_row": 52,
+              "end_column": 45
+            },
+            {
+              "start_row": 53,
+              "start_column": 0,
+              "end_row": 53,
+              "end_column": 16
+            },
+            {
+              "start_row": 54,
+              "start_column": 0,
+              "end_row": 54,
+              "end_column": 30
+            },
+            {
+              "start_row": 55,
+              "start_column": 0,
+              "end_row": 55,
+              "end_column": 18
+            },
+            {
+              "start_row": 56,
+              "start_column": 0,
+              "end_row": 56,
+              "end_column": 1
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 46,
+              "start_column": 0,
+              "end_row": 46,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 48,
+              "start_column": 0,
+              "end_row": 48,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 32,
+              "start_column": 0,
+              "end_row": 42,
+              "end_column": 7
+            }
+          ],
+          "after": [
+            {
+              "start_row": 33,
+              "start_column": 0,
+              "end_row": 43,
+              "end_column": 7
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 31,
+              "start_column": 0,
+              "end_row": 31,
+              "end_column": 11
+            }
+          ],
+          "after": [
+            {
+              "start_row": 47,
+              "start_column": 0,
+              "end_row": 47,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 43,
+              "start_column": 0,
+              "end_row": 43,
+              "end_column": 1
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 0,
+              "end_row": 49,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,18 @@ minutes. Query them with `analysis/coverage_sets.py`.
 
 ## Last run
 
+- **Measured:** 2026-11-08, against commit `3865e4d3` with a clean `src/`, on the laptop, by
+  `make measure-per-test-coverage`. Same binary and settings as the run below.
+- **Tests:** 6319 listed: 6291 ran and passed, 28 `#[ignore]`d.
+- **Lines:** 51696 instrumented lines outside the fixture stubs - 27139 engine, 12132 harness,
+  12425 other.
+- **Runtime:** 9 minutes 52 seconds wall, 32 minutes 18 seconds of CPU, 19 tests at a time.
+- **Used for:** `src/test/data/quick_fixtures.txt` (`make update-quick-fixtures`): 98 of 1951
+  fixtures reach all 1078 lines the fixtures reach beyond the tests `make test-quick` always runs.
+  Not re-validated against a single-process run.
+
+## Run of 2026-09-22
+
 - **Measured:** 2026-09-22, against commit `cf60d1ce` with a clean `src/`.
 - **Binary:** the library's own test binary, release profile, default features, instrumented by
   `cargo llvm-cov show-env`, built into `target/percov/`. Only this binary: the tests of the

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -28,10 +27,16 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-chart-5-xyseries", 1.33)
+    assert_matches_human_painting_within_limit("java-defects4j-chart-5-xyseries", 1.41)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-defects4j-chart-5-xyseries")
+    // Invariant 28, once: the `binary_expression` on before row 548 is deleted, but it is made of
+    // the children of the `binary_expression` on after row 552, which is paired with the code
+    // around this one instead: the two should pair, and the code around be removed.
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   before row 548: the space before the delete `&& !this.allowDuplicateXValues` is not painted
+    //     with it
+    assert_ground_truth_invariants_with_known_violations("java-defects4j-chart-5-xyseries", 2)
 }

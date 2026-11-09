@@ -4,8 +4,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,7 +19,7 @@
 # from the committed Cargo.lock. See that file for the derivation itself and for what a nixpkgs
 # submission would change.
 {
-  description = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs";
+  description = "Fast, robust, accurate content-aware diffing";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

@@ -1,0 +1,29 @@
+/*  This file is part of the OmniDiff code diffing tool.
+ *
+ *  Copyright (C) 2026 Marko Ivankovic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published
+ *  by the Free Software Foundation, version 3 of the License.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+//! Document fixtures (`src/test/data/documents/`): one stub per fixture, `verdicts()`, written by
+//! `human_solver` when a PDF sample is promoted. See `test::helper::human_content`.
+#[cfg(test)]
+mod pdf_x_abacus_gene_paml_dad7e43e_pamldoc;
+#[cfg(test)]
+mod pdf_x_adobe_fonts_source_han_mono_9a10a4fe_sourcehanmonoreadme;
+#[cfg(test)]
+mod pdf_x_dharple_detox_b2187368_detox_tbl_5;
+#[cfg(test)]
+mod pdf_x_erkin_ponysay_151d492a_ponysay;
+#[cfg(test)]
+mod pdf_x_governikus_ausweisapp_522d8b0b_communicationmodel_en;

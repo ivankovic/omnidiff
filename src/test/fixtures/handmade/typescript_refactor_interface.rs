@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -34,5 +33,8 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("typescript-refactor-interface")
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   after row 8: the space before the insert `implements Person` is not painted with it
+    //   after row 20: the space before the insert `implements Person` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("typescript-refactor-interface", 2)
 }

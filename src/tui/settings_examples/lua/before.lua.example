@@ -1,0 +1,42 @@
+local function record(...)
+  return { ... }
+end
+
+local function make_item(name, count)
+  return record(
+    "name", name,
+    "count", count
+  )
+end
+
+local Box = {}
+Box.__index = Box
+
+function Box.new(width, depth)
+  local box = { width = width, depth = depth }
+  return setmetatable(box, Box)
+end
+
+function Box:area()
+  return self.width * self.depth
+end
+
+function Box:describe(label)
+  local total = self:area()
+  return label .. ": " .. total .. " square units"
+end
+
+local function main()
+  local size = { w = 3, d = 4 }
+  local boxes = {
+    Box.new(size.w, size.d),
+    Box.new(5, 2),
+  }
+  for _, box in ipairs(boxes) do
+    print(box:describe("crate"))
+  end
+  local largest = boxes[#boxes]:area()
+  print(largest)
+end
+
+main()

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -90,9 +89,9 @@ fn main() -> Result<()> {
         include_str!("../../assets/mapping_site/reviewed.js"),
     )?;
 
-    let pairs = helper::handmade_test_code_pairs()?;
-    let mut names: Vec<&String> = pairs.keys().collect();
-    names.sort();
+    // One fixture at a time, dropped before the next: the cached `handmade_test_code_pairs` holds
+    // every parsed tree at once, which outgrows a CI runner's memory.
+    let cases = helper::handmade_test_case_dirs()?;
 
     // A fixture's origin lives in `sample.csv`, and its `owner-repo` slug needs the clone list to
     // become a URL (see `helper::repository_urls`).
@@ -103,8 +102,12 @@ fn main() -> Result<()> {
     let mut skipped = 0usize;
     let mut warnings: Vec<String> = Vec::new();
 
-    for name in names {
-        let (before, after) = &pairs[name];
+    for (name, dir) in &cases {
+        let Some((before, after)) = helper::code_pair_from_dir(dir)? else {
+            skipped += 1;
+            continue;
+        };
+        let (before, after) = (&before, &after);
         // A fixture with no grammar (`bazel-not-actually-supported-by-treesitter`) has no trees to
         // draw; skip it with a warning rather than failing the whole site.
         if before.ast.is_none() || after.ast.is_none() {

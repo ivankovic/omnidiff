@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -70,7 +69,7 @@ pub struct StatePayload {
     pub settings: SettingsPayload,
     pub themes: Vec<ThemePayload>,
     pub syntax_themes: Vec<String>,
-    /// The syntax theme until the user picks one, which the theme dialog opens on.
+    /// The syntax theme until the user picks one, which the settings menu's Colors tab opens on.
     pub default_syntax_theme: &'static str,
     pub render_option_rows: Vec<RenderOptionRow>,
     /// `RenderOptions::MINIMAL`/`FULL`, for the `M` panel's `1`/`2` keys and the footer badge -
@@ -93,7 +92,7 @@ pub struct StatePayload {
 /// TUI's `M` panel shows. Pinned by a test against the struct's real serialization so a renamed
 /// or reordered field cannot leave the page toggling the wrong row.
 pub fn render_option_rows() -> Vec<RenderOptionRow> {
-    const KEYS: [&str; 7] = [
+    const KEYS: [&str; 8] = [
         "leading_whitespace",
         "structural_punctuation",
         "whole_pair_updates",
@@ -101,6 +100,7 @@ pub fn render_option_rows() -> Vec<RenderOptionRow> {
         "paint_displaced_moves",
         "paint_resized_moves",
         "whole_identifier_updates",
+        "interior_whitespace",
     ];
     KEYS.iter()
         .zip(RenderOptions::FULL.options())
@@ -161,7 +161,11 @@ mod tests {
         let serialized: Vec<&str> = text.split('"').skip(1).step_by(2).collect();
         let rows: Vec<&str> = render_option_rows().iter().map(|row| row.key).collect();
         assert_eq!(rows, serialized);
-        assert!(render_option_rows()[1].label.starts_with("Structural"));
+        assert!(
+            render_option_rows()[1]
+                .label
+                .starts_with("Highlight brackets")
+        );
     }
 
     #[test]

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -27,10 +26,16 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-data-structure", 13.8)
+    assert_matches_human_painting_within_limit("rust-data-structure", 7.52)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("rust-data-structure")
+    // Invariant 25, 2 time(s): the inserted `expression_statement` on after row 1 starts insert
+    // but its `;` is unpainted (both presets).
+    // Invariant 30, 3 time(s): the space before an edit (awaiting a repaint):
+    //   before row 8: the space before the delete `{ x: 1, y: 2 }` is not painted with it
+    //   before row 9: the space before the delete `{ x: 3, y: 4 }` is not painted with it
+    //   before row 10: the space before the delete `{ x: 5, y: 6 }` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("rust-data-structure", 5)
 }

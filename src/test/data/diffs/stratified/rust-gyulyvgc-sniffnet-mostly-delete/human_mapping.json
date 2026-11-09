@@ -1,0 +1,620 @@
+{
+  "entries": [
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1"
+      ]
+    },
+    {
+      "operation": "delete_with_children",
+      "before_path": [
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "delete_with_children",
+      "before_path": [
+        "struct_item:2"
+      ]
+    },
+    {
+      "operation": "delete_with_children",
+      "before_path": [
+        "impl_item:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:1"
+      ],
+      "after_path": [
+        "use_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:2"
+      ],
+      "after_path": [
+        "use_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:3"
+      ],
+      "after_path": [
+        "use_declaration:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:4"
+      ],
+      "after_path": [
+        "use_declaration:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:5"
+      ],
+      "after_path": [
+        "use_declaration:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:6"
+      ],
+      "after_path": [
+        "use_declaration:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:7"
+      ],
+      "after_path": [
+        "use_declaration:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:8"
+      ],
+      "after_path": [
+        "use_declaration:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:9"
+      ],
+      "after_path": [
+        "use_declaration:9"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "use_declaration:10"
+      ],
+      "after_path": [
+        "use_declaration:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "use:1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "use:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "scoped_identifier:1",
+        "scoped_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "scoped_identifier:1",
+        ":::1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "scoped_identifier:1",
+        "scoped_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "scoped_identifier:1",
+        "scoped_identifier:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        ":::1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "scoped_identifier:1",
+        ":::1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        "scoped_use_list:1",
+        "use_list:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        "scoped_identifier:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "use_declaration:10",
+        ";:1"
+      ],
+      "after_path": [
+        "use_declaration:10",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:11"
+      ],
+      "after_path": [
+        "use_declaration:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:12"
+      ],
+      "after_path": [
+        "use_declaration:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "use_declaration:13"
+      ],
+      "after_path": [
+        "use_declaration:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:1"
+      ],
+      "after_path": [
+        "attribute_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:1"
+      ],
+      "after_path": [
+        "struct_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:1"
+      ],
+      "after_path": [
+        "function_item:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "attribute_item:3"
+      ],
+      "after_path": [
+        "attribute_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "struct_item:3"
+      ],
+      "after_path": [
+        "struct_item:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "function_item:2"
+      ],
+      "after_path": [
+        "function_item:2"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "use_declaration:10",
+          "scoped_use_list:1",
+          "scoped_identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "use_declaration:10",
+          "scoped_identifier:1"
+        ],
+        [
+          "use_declaration:10",
+          "scoped_identifier:1",
+          "scoped_identifier:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 22,
+              "end_row": 9,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 30,
+              "end_row": 9,
+              "end_column": 41
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 19,
+              "start_column": 0,
+              "end_row": 19,
+              "end_column": 32
+            },
+            {
+              "start_row": 20,
+              "start_column": 0,
+              "end_row": 20,
+              "end_column": 28
+            },
+            {
+              "start_row": 21,
+              "start_column": 4,
+              "end_row": 21,
+              "end_column": 46
+            },
+            {
+              "start_row": 22,
+              "start_column": 0,
+              "end_row": 22,
+              "end_column": 1
+            },
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 22
+            },
+            {
+              "start_row": 25,
+              "start_column": 4,
+              "end_row": 25,
+              "end_column": 52
+            },
+            {
+              "start_row": 26,
+              "start_column": 8,
+              "end_row": 26,
+              "end_column": 37
+            },
+            {
+              "start_row": 27,
+              "start_column": 12,
+              "end_row": 27,
+              "end_column": 21
+            },
+            {
+              "start_row": 28,
+              "start_column": 16,
+              "end_row": 28,
+              "end_column": 27
+            },
+            {
+              "start_row": 29,
+              "start_column": 16,
+              "end_row": 29,
+              "end_column": 50
+            },
+            {
+              "start_row": 30,
+              "start_column": 16,
+              "end_row": 30,
+              "end_column": 51
+            },
+            {
+              "start_row": 31,
+              "start_column": 8,
+              "end_row": 31,
+              "end_column": 9
+            },
+            {
+              "start_row": 32,
+              "start_column": 4,
+              "end_row": 32,
+              "end_column": 5
+            },
+            {
+              "start_row": 33,
+              "start_column": 0,
+              "end_row": 33,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 22,
+              "end_row": 9,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 30,
+              "end_row": 9,
+              "end_column": 41
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 19,
+              "start_column": 0,
+              "end_row": 19,
+              "end_column": 32
+            },
+            {
+              "start_row": 20,
+              "start_column": 0,
+              "end_row": 20,
+              "end_column": 28
+            },
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 46
+            },
+            {
+              "start_row": 22,
+              "start_column": 0,
+              "end_row": 22,
+              "end_column": 1
+            },
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 22
+            },
+            {
+              "start_row": 25,
+              "start_column": 0,
+              "end_row": 25,
+              "end_column": 52
+            },
+            {
+              "start_row": 26,
+              "start_column": 0,
+              "end_row": 26,
+              "end_column": 37
+            },
+            {
+              "start_row": 27,
+              "start_column": 0,
+              "end_row": 27,
+              "end_column": 21
+            },
+            {
+              "start_row": 28,
+              "start_column": 0,
+              "end_row": 28,
+              "end_column": 27
+            },
+            {
+              "start_row": 29,
+              "start_column": 0,
+              "end_row": 29,
+              "end_column": 50
+            },
+            {
+              "start_row": 30,
+              "start_column": 0,
+              "end_row": 30,
+              "end_column": 51
+            },
+            {
+              "start_row": 31,
+              "start_column": 0,
+              "end_row": 31,
+              "end_column": 9
+            },
+            {
+              "start_row": 32,
+              "start_column": 0,
+              "end_row": 32,
+              "end_column": 5
+            },
+            {
+              "start_row": 33,
+              "start_column": 0,
+              "end_row": 33,
+              "end_column": 1
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 23,
+              "end_row": 9,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 9,
+              "start_column": 22,
+              "end_row": 9,
+              "end_column": 29
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

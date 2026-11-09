@@ -6,6 +6,41 @@ the `size_bucket` column). `../samples/` has since been re-drawn under the LOC b
 DIFFERENT pair set than these files - do not mix rows across that boundary. `baselines/` snapshots
 are pinned to whatever corpus was current at their date; that is their point.
 
+## `content_speed/<machine>.csv`
+
+One file per machine registered in `../machines.csv`, written by `make benchmark-content` on it.
+Compare figures within one file, never across two.
+
+### `content_speed/laptop.csv` (2026-11-07)
+
+The same samples as `server.csv`, timed by `make benchmark-content` on the laptop
+(`../machines.csv`), first on 2026-10-11 on AC power with the `performance` platform profile and
+nothing else running, and re-timed 2026-10-17 with nothing else running (power profile not
+recorded). Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures
+fail).
+
+Re-timed 2026-11-07, on AC power with the `performance` profile and nothing else running, three
+runs of `make benchmark-content`; each pair's `elapsed_ms` is its median over the three, since
+single runs moved a family's p50 by up to a third. The same pairs timed and judged (131 pictures
+judged, one more than before). Fonts and PDFs now miss the 99th-percentile goal (p99 1,109 and
+1,330 ms, from 826 and 985): consistent across all three runs, not noise.
+
+### `content_speed/server.csv` (2026-10-06)
+
+The README's speed figures for content other than code. Written by `make benchmark-content`
+(`benchmark_content --csv`) on the Intel Xeon E3-1275 v5 the code figures were measured on, with
+nothing else running. One row per sampled content pair under `src/test/data/samples/` (git-ignored;
+the draw is `src/test/data/sample.csv`, seed 20261004, at most 4 pairs per repository and family,
+pictures from the earlier 250-pair draw), grouped by the `dataset` in each pair's `source.json`.
+`elapsed_ms` is one single-shot `content::diff` from the bytes in memory, decoding included.
+`outcome` is `diffed`, `not_content` or `failed`; only `diffed` rows are timed into the figures.
+Two pictures fail (`ico-x-exeldro-obs-3d-effect-6aca6c46-icon`,
+`ico-x-krtirtho-spotube-0e48b7a3-favicon`: the ICO decoder refuses them).
+
+The same run prints the accuracy figures (verdicts against `human_content.json` in
+`src/test/data/<family>/`), which are not written to a file: 39 judged pictures, 6 judged cursors,
+nothing judged in the other families yet.
+
 ## `robustness_fixtures.csv` (2026-09-26)
 
 The paper's robustness run, over the fixture corpus rather than a sampled pair set. Written by

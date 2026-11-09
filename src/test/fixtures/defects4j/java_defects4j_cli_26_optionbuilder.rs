@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,16 +24,17 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 fn mapping() -> Result<()> {
     // One local declaration is removed and another inserted; omnidiff reuses the old one's parts
     // for the new, and pairs a `line_comment` across (`APTED("large_flat_subtree")`).
+    // Re-measured after the ground truth was re-mapped in 1948fa9c.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-26-optionbuilder",
-        6,
-        6,
+        9,
+        7,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-26-optionbuilder", 0.48)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-26-optionbuilder", 0.36)
 }
 
 #[test]

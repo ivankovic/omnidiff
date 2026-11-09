@@ -1,0 +1,58 @@
+[
+  {
+    "family": "documents",
+    "fixture": "pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en",
+    "title": "A PDF diagram: one box renamed",
+    "path": "docs/installation/CommunicationModel_en.pdf",
+    "gif": "pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en.gif",
+    "report": "Documents a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf: PDF, 2 members, 30752 bytes -> PDF, 2 members, 30522 bytes\n  2 changed, 0 added, 0 removed, 0 unchanged\n    changed  metadata: 2 lines removed, 2 added\n    changed  page 1: 0.21% of pixels changed, in 1 region"
+  },
+  {
+    "family": "fonts",
+    "fixture": "woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900",
+    "title": "A web font: twenty icons redrawn",
+    "path": "js-packages/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2",
+    "gif": "woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif",
+    "report": "Fonts a/fa-solid-900.woff2 and b/fa-solid-900.woff2: WOFF2, 1996 members, 113108 bytes -> WOFF2, 1996 members, 113180 bytes\n  21 changed, 0 added, 0 removed, 1975 unchanged\n    changed  names: 2 lines removed, 2 added\n    changed  U+0021 !: 1.40% of pixels changed, in 2 regions\n    changed  U+2611 \u2611: 2.75% of pixels changed, in 1 region\n    changed  U+26A0 \u26a0: 0.90% of pixels changed, in 3 regions\n    changed  U+2705 \u2705: 2.75% of pixels changed, in 1 region\n    changed  U+2755 \u2755: 1.40% of pixels changed, in 2 regions\n    changed  U+2757 \u2757: 1.40% of pixels changed, in 2 regions\n    changed  U+E17B \ue17b: 4.88% of pixels changed, in 4 regions\n    changed  U+F046 \uf046: 2.75% of pixels changed, in 1 region\n    changed  U+F058 \uf058: 2.75% of pixels changed, in 1 region\n    changed  U+F05D \uf05d: 2.75% of pixels changed, in 1 region\n    changed  U+F06A \uf06a: 0.90% of pixels changed, in 3 regions\n    changed  U+F071 \uf071: 0.90% of pixels changed, in 3 regions\n    changed  U+F12A \uf12a: 1.40% of pixels changed, in 2 regions\n    changed  U+F14A \uf14a: 2.75% of pixels changed, in 1 region\n    changed  U+F274 \uf274: 2.75% of pixels changed, in 1 region\n    changed  U+F46C \uf46c: 1.22% of pixels changed, in 2 regions\n    changed  U+F4FC \uf4fc: 1.65% of pixels changed, in 1 region\n    changed  U+F662 \uf662: 4.88% of pixels changed, in 4 regions\n    changed  U+F772 \uf772: 1.65% of pixels changed, in 1 region\n    ... 1 more"
+  },
+  {
+    "family": "archives",
+    "fixture": "zip-x-silnrsi-teckit-3d06b4f4-teckit_tools",
+    "title": "An OpenDocument file: its text and its thumbnail",
+    "path": "docs/TECkit_Tools.odt",
+    "gif": "zip-x-silnrsi-teckit-3d06b4f4-teckit_tools.gif",
+    "report": "Archives a/TECkit_Tools.odt and b/TECkit_Tools.odt: ZIP, 9 members, 31088 bytes -> ZIP, 9 members, 31223 bytes\n  7 changed, 0 added, 0 removed, 2 unchanged\n    changed  meta.xml: 1 line removed, 1 added\n    changed  settings.xml: 1 line removed, 1 added\n    changed  Thumbnails/thumbnail.png: 12.52% of pixels changed, in 93 regions\n    changed  styles.xml: 1 line removed, 1 added\n    changed  content.xml: 1 line removed, 1 added\n    changed  layout-cache: 71 -> 63 bytes\n    changed  META-INF/manifest.xml: 4 lines removed, 4 added"
+  },
+  {
+    "family": "catalogs",
+    "fixture": "mo-x-ubernostrum-django-registration-906912aa-django",
+    "title": "A compiled translation: three messages reworded",
+    "path": "src/django_registration/locale/pl/LC_MESSAGES/django.mo",
+    "gif": "mo-x-ubernostrum-django-registration-906912aa-django.gif",
+    "report": "Catalogs a/django.mo and b/django.mo: MO, 18 members, 2356 bytes -> MO, 18 members, 2391 bytes\n  3 changed, 0 added, 0 removed, 15 unchanged\n    changed  I have read and agree to the Terms of Service: 1 line removed, 1 added\n    changed  The account you attempted to activate is invalid.: 1 line removed, 1 added\n    changed  The account you tried to activate has already been activated.: 1 line removed, 1 added"
+  },
+  {
+    "family": "pictures",
+    "fixture": "bmp-x-talamus-solarize-12x29-psf-8a856fdb-solarize-12x29",
+    "title": "A bitmap font sheet: one glyph redrawn",
+    "path": "Solarize.12x29.bmp",
+    "gif": "bmp-x-talamus-solarize-12x29-psf-8a856fdb-solarize-12x29.gif",
+    "report": "Pictures a/Solarize.12x29.bmp and b/Solarize.12x29.bmp: BMP 384x464 RGB8, 534582 bytes -> BMP 384x464 RGB8, 534582 bytes\n  0.04% of pixels changed (73 of 178176), in 1 region:\n    11x12 at (276, 301)"
+  },
+  {
+    "family": "pictures",
+    "fixture": "ico-x-golang-tour-16d3ff4a-favicon",
+    "title": "A favicon re-exported at a larger size",
+    "path": "static/img/favicon.ico",
+    "gif": "ico-x-golang-tour-16d3ff4a-favicon.gif",
+    "report": "Pictures a/favicon.ico and b/favicon.ico: ICO 16x16 RGBA8, 1150 bytes -> ICO 32x32 RGBA8, 5686 bytes\n  resized; scaled to one size, 26.95% of pixels changed"
+  },
+  {
+    "family": "pictures",
+    "fixture": "gif-x-ascii-boxes-boxes-eea1dfea-readme-0",
+    "title": "An animated demo with frames added",
+    "path": "README-0.gif",
+    "gif": "gif-x-ascii-boxes-boxes-eea1dfea-readme-0.gif",
+    "report": "Pictures a/README-0.gif and b/README-0.gif: GIF 600x382 RGBA8, 5 frames, 10.0s, 79022 bytes -> GIF 600x382 RGBA8, 7 frames, 14.0s, 102975 bytes\n  5 frames changed, 2 added\n    frame 0 -> 0: changed, in 270 regions\n    frame 1 -> 1: changed, in 181 regions\n    frame 2 -> 2: changed, in 316 regions\n    frame 3 -> 3: changed, in 397 regions\n    frame 4 -> 4: changed, in 347 regions\n    frames 5-6 added"
+  }
+]

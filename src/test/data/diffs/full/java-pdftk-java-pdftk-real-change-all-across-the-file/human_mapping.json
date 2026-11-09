@@ -1683,7 +1683,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "modifiers:1"
@@ -1691,19 +1691,6 @@
       "after_path": [
         "class_declaration:1",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -2897,7 +2884,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -2917,23 +2904,6 @@
         "class_declaration:1",
         "class_body:1",
         "constructor_declaration:1",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
         "identifier:1"
       ],
       "after_path": [
@@ -2944,7 +2914,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -2959,96 +2929,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3060,40 +2941,6 @@
         "class_body:1",
         "constructor_declaration:1",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:1",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -3370,7 +3217,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3382,23 +3229,6 @@
         "class_body:1",
         "constructor_declaration:2",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -3449,7 +3279,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3472,44 +3302,6 @@
         "class_body:1",
         "constructor_declaration:2",
         "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
         ",:1"
       ],
       "after_path": [
@@ -3521,7 +3313,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3535,44 +3327,6 @@
         "constructor_declaration:2",
         "formal_parameters:1",
         "formal_parameter:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:2",
-        "boolean_type:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:2",
-        "boolean_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "formal_parameters:1",
-        "formal_parameter:2",
-        "identifier:1"
       ]
     },
     {
@@ -3635,7 +3389,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3647,40 +3401,6 @@
         "class_body:1",
         "constructor_declaration:2",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -3823,7 +3543,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -3837,483 +3557,6 @@
         "constructor_declaration:2",
         "constructor_body:1",
         "if_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "if:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "if:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "==:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "==:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "null_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "throw:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "throw:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "new:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "new:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "string_fragment:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "string_fragment:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:1",
-        "throw_statement:1",
-        ";:1"
       ]
     },
     {
@@ -4634,7 +3877,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -4650,269 +3893,6 @@
         "constructor_body:1",
         "if_statement:2",
         "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "!:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "!:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "unary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "parenthesized_expression:1",
-        "):1"
       ]
     },
     {
@@ -5048,7 +4028,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -5077,364 +4057,6 @@
         "binary_expression:1",
         "binary_expression:1",
         "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "string_fragment:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "string_fragment:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "string_literal:1",
-        "\":2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -7693,7 +6315,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -7724,114 +6346,6 @@
         "assignment_expression:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -10640,7 +9154,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -10671,114 +9185,6 @@
         "assignment_expression:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "if_statement:1",
-        "block:2",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -12053,7 +10459,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -12071,75 +10477,6 @@
         "if_statement:2",
         "if_statement:1",
         "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:2",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
       ]
     },
     {
@@ -15711,7 +14048,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -15723,23 +14060,6 @@
         "class_body:1",
         "constructor_declaration:3",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -15862,7 +14182,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -15874,40 +14194,6 @@
         "class_body:1",
         "constructor_declaration:3",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -16974,7 +15260,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -16997,90 +15283,6 @@
         "assignment_expression:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:3",
-        "constructor_body:1",
-        "try_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -17974,7 +16176,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -17986,23 +16188,6 @@
         "class_body:1",
         "constructor_declaration:4",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -18125,7 +16310,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -18137,40 +16322,6 @@
         "class_body:1",
         "constructor_declaration:4",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -18377,7 +16528,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -18396,78 +16547,6 @@
         "assignment_expression:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:4",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -18993,7 +17072,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -19013,23 +17092,6 @@
         "class_declaration:1",
         "class_body:1",
         "constructor_declaration:6",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
         "identifier:1"
       ],
       "after_path": [
@@ -19040,7 +17102,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -19052,95 +17114,6 @@
         "class_body:1",
         "constructor_declaration:6",
         "formal_parameters:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "formal_parameters:1",
-        "):1"
       ]
     },
     {
@@ -19788,7 +17761,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -19808,81 +17781,6 @@
         "expression_statement:1",
         "assignment_expression:1",
         "field_access:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:2"
       ]
     },
     {
@@ -20253,7 +18151,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -20274,84 +18172,6 @@
         "expression_statement:2",
         "assignment_expression:1",
         "field_access:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "field_access:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "if_statement:2",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:2"
       ]
     },
     {
@@ -20520,7 +18340,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -20538,75 +18358,6 @@
         "expression_statement:3",
         "assignment_expression:1",
         "field_access:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:3",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:3",
-        "assignment_expression:1",
-        "field_access:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "field_access:2",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "constructor_declaration:6",
-        "constructor_body:1",
-        "expression_statement:3",
-        "assignment_expression:1",
-        "field_access:1",
-        "identifier:2"
       ]
     },
     {
@@ -23853,7 +21604,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -23868,24 +21619,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -23905,23 +21639,6 @@
         "class_declaration:1",
         "class_body:1",
         "method_declaration:7",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "integral_type:1",
-        "int:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
         "identifier:1"
       ],
       "after_path": [
@@ -23932,7 +21649,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -23947,41 +21664,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -23993,40 +21676,6 @@
         "class_body:1",
         "method_declaration:7",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -24081,7 +21730,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -24097,69 +21746,6 @@
         "block:1",
         "if_statement:1",
         "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
       ]
     },
     {
@@ -24222,7 +21808,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -24240,29 +21826,6 @@
         "block:1",
         "local_variable_declaration:1",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "local_variable_declaration:1",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -24426,7 +21989,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -24451,142 +22014,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -24604,156 +22032,6 @@
         "if_statement:1",
         "block:1",
         "expression_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
       ]
     },
     {
@@ -25252,7 +22530,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -25274,195 +22552,6 @@
         "return_statement:1",
         "ternary_expression:1",
         "method_invocation:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        "ternary_expression:1",
-        "method_invocation:2",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "return_statement:1",
-        ";:1"
       ]
     },
     {
@@ -25983,31 +23072,6 @@
         "if_statement:1",
         "if_statement:1",
         "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
-        "if_statement:1",
-        "if_statement:1",
-        "block:1",
         "}:1"
       ],
       "after_path": [
@@ -26113,7 +23177,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -26128,24 +23192,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -26157,23 +23204,6 @@
         "class_body:1",
         "method_declaration:8",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -26593,7 +23623,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -26605,40 +23635,6 @@
         "class_body:1",
         "method_declaration:8",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -29968,7 +26964,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -29984,69 +26980,6 @@
         "block:1",
         "if_statement:4",
         "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "if_statement:4",
-        "parenthesized_expression:1",
-        "):1"
       ]
     },
     {
@@ -35373,7 +32306,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -35387,63 +32320,6 @@
         "method_declaration:8",
         "block:1",
         "return_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:8",
-        "block:1",
-        "return_statement:1",
-        ";:1"
       ]
     },
     {
@@ -37779,29 +34655,6 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        ";:1"
-      ]
-    },
-    {
       "operation": "match_but_not_identical",
       "before_path": [
         "class_declaration:1",
@@ -38025,7 +34878,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -38045,220 +34898,6 @@
         "block:1",
         "if_statement:1",
         "throw_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "throw:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "throw:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "new:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "new:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        "object_creation_expression:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:10",
-        "block:1",
-        "while_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:11",
-        "block:1",
-        "do_statement:1",
-        "block:1",
-        "if_statement:1",
-        "throw_statement:1",
-        ";:1"
       ]
     },
     {
@@ -39171,7 +35810,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -39183,23 +35822,6 @@
         "class_body:1",
         "method_declaration:14",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -39233,7 +35855,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -39248,41 +35870,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -39294,40 +35882,6 @@
         "class_body:1",
         "method_declaration:14",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -39541,7 +36095,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -39562,84 +36116,6 @@
         "binary_expression:1",
         "binary_expression:1",
         "binary_expression:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "==:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "==:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
       ]
     },
     {
@@ -41560,7 +38036,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -41578,75 +38054,6 @@
         "expression_statement:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "decimal_integer_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "decimal_integer_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:12",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -41722,7 +38129,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -41734,23 +38141,6 @@
         "class_body:1",
         "method_declaration:15",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "modifiers:1",
-        "protected:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "modifiers:1",
-        "protected:1"
       ]
     },
     {
@@ -41784,7 +38174,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -41799,41 +38189,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -41845,40 +38201,6 @@
         "class_body:1",
         "method_declaration:15",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -42092,7 +38414,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -42113,84 +38435,6 @@
         "binary_expression:1",
         "binary_expression:1",
         "binary_expression:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "==:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "==:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
       ]
     },
     {
@@ -42283,7 +38527,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -42299,219 +38543,6 @@
         "block:1",
         "if_statement:1",
         "block:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "{:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "{:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "}:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "}:1"
       ]
     },
     {
@@ -42553,7 +38584,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -42565,23 +38596,6 @@
         "class_body:1",
         "method_declaration:16",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -42615,7 +38629,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -42627,40 +38641,6 @@
         "class_body:1",
         "method_declaration:16",
         "formal_parameters:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "formal_parameters:1",
-        "):1"
       ]
     },
     {
@@ -42874,7 +38854,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -42895,84 +38875,6 @@
         "binary_expression:1",
         "binary_expression:1",
         "binary_expression:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "!=:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "!=:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:14",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "return_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:2",
-        "null_literal:1"
       ]
     },
     {
@@ -43122,7 +39024,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43134,23 +39036,6 @@
         "class_body:1",
         "method_declaration:17",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -43184,7 +39069,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43199,41 +39084,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43245,40 +39096,6 @@
         "class_body:1",
         "method_declaration:17",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -43510,7 +39327,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43526,138 +39343,6 @@
         "block:1",
         "if_statement:1",
         "parenthesized_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "!=:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "!=:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "null_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "):1"
       ]
     },
     {
@@ -43701,7 +39386,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43722,207 +39407,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -43940,127 +39425,6 @@
         "if_statement:1",
         "block:1",
         "expression_statement:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "=:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "=:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "null_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        "assignment_expression:1",
-        "null_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:15",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
       ]
     },
     {
@@ -44589,7 +39953,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -44604,24 +39968,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -44641,23 +39988,6 @@
         "class_declaration:1",
         "class_body:1",
         "method_declaration:16",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "integral_type:1",
-        "int:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
         "identifier:1"
       ],
       "after_path": [
@@ -44668,7 +39998,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -44683,41 +40013,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -44729,40 +40025,6 @@
         "class_body:1",
         "method_declaration:18",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -45025,7 +40287,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -45043,156 +40305,6 @@
         "if_statement:1",
         "block:1",
         "expression_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
       ]
     },
     {
@@ -45315,7 +40427,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -45339,35 +40451,6 @@
         "binary_expression:1",
         "cast_expression:1",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:16",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "binary_expression:1",
-        "cast_expression:1",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "binary_expression:1",
-        "cast_expression:1",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -46452,7 +41535,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46467,24 +41550,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46504,23 +41570,6 @@
         "class_declaration:1",
         "class_body:1",
         "method_declaration:17",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "integral_type:1",
-        "int:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
         "identifier:1"
       ],
       "after_path": [
@@ -46531,7 +41580,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46546,41 +41595,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46592,40 +41607,6 @@
         "class_body:1",
         "method_declaration:21",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -46661,7 +41642,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46675,132 +41656,6 @@
         "method_declaration:21",
         "block:1",
         "expression_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
       ]
     },
     {
@@ -46838,7 +41693,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46854,27 +41709,6 @@
         "block:1",
         "local_variable_declaration:1",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -46939,7 +41773,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -46957,121 +41791,6 @@
         "local_variable_declaration:1",
         "variable_declarator:1",
         "ternary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "?:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "?:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "decimal_integer_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "decimal_integer_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "::1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "::1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "decimal_integer_literal:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "local_variable_declaration:1",
-        "variable_declarator:1",
-        "ternary_expression:1",
-        "decimal_integer_literal:2"
       ]
     },
     {
@@ -47469,7 +42188,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -47495,37 +42214,6 @@
         "binary_expression:1",
         "cast_expression:1",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:17",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "cast_expression:1",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:21",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "cast_expression:1",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -48474,7 +43162,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -48486,23 +43174,6 @@
         "class_body:1",
         "method_declaration:19",
         "modifiers:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "modifiers:1",
-        "public:1"
       ]
     },
     {
@@ -48536,7 +43207,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -48551,117 +43222,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "integral_type:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "integral_type:1",
-        "int:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -48673,40 +43234,6 @@
         "class_body:1",
         "method_declaration:19",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -48742,7 +43269,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -48759,108 +43286,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "+=:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "+=:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -48874,132 +43300,6 @@
         "method_declaration:19",
         "block:1",
         "expression_statement:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:18",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:19",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
       ]
     },
     {
@@ -50981,7 +45281,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -50996,24 +45296,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "modifiers:1",
-        "public:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "modifiers:1",
-        "public:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -51025,23 +45308,6 @@
         "class_body:1",
         "method_declaration:13",
         "integral_type:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "integral_type:1",
-        "int:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "integral_type:1",
-        "int:1"
       ]
     },
     {
@@ -51185,7 +45451,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -51197,40 +45463,6 @@
         "class_body:1",
         "method_declaration:13",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -51453,7 +45685,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -51469,138 +45701,6 @@
         "block:1",
         "if_statement:1",
         "block:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "{:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "{:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "decimal_integer_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        "decimal_integer_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "return_statement:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "}:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:1",
-        "block:1",
-        "}:1"
       ]
     },
     {
@@ -52077,7 +46177,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -52095,75 +46195,6 @@
         "if_statement:2",
         "block:1",
         "return_statement:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        "return:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        "decimal_integer_literal:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        "decimal_integer_literal:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        ";:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "if_statement:2",
-        "block:1",
-        "return_statement:1",
-        ";:1"
       ]
     },
     {
@@ -53577,7 +47608,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -53595,75 +47626,6 @@
         "expression_statement:1",
         "method_invocation:1",
         "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:20",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:13",
-        "block:1",
-        "expression_statement:1",
-        "method_invocation:1",
-        "argument_list:1",
-        "):1"
       ]
     },
     {
@@ -93832,7 +87794,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -93847,96 +87809,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "formal_parameter:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "formal_parameters:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -93948,40 +87821,6 @@
         "class_body:1",
         "method_declaration:1",
         "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "throws:1",
-        "throws:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "throws:1",
-        "throws:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "throws:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:1",
-        "throws:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -95966,6 +89805,112 @@
         "if_statement:1",
         "block:1",
         "}:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:2",
+        "return_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:1",
+        "if_statement:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:2",
+        "block:1",
+        "return_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:10",
+        "block:1",
+        "while_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:11",
+        "block:1",
+        "do_statement:1",
+        "block:1",
+        "local_variable_declaration:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:1",
+        "block:1",
+        "local_variable_declaration:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:1",
+        "block:1",
+        "expression_statement:1",
+        ";:1"
       ]
     }
   ],

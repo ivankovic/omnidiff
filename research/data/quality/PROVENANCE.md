@@ -2,8 +2,18 @@
 
 Measured against the human-authored ground-truth fixtures in `src/test/data/diffs/` (NOT the
 sampled corpus in `../samples/` - quality is scored on hand-verified mappings, so re-sampling the
-corpus does not stale these files). `quality_baseline.txt` is updated only via
+corpus does not stale these files). `quality_baseline.csv` is updated only via
 `make update-quality-baseline` at the repository root.
+
+`timing/` holds the gate's wall-clock baselines, one pair of files per machine registered in
+`../machines.csv`: `<machine>.csv`, each fixture's `elapsed_ms`, and `<machine>.txt`, the
+ms/fixture `make check-quality` warns against. Written by `make update-quality-baseline` or, timing
+alone, `make update-timing-baseline`, on that machine. `server.*` are the times that were the
+`elapsed_ms` column of `quality_baseline.csv` and `quality_baseline.txt` until 2026-10-11, split out
+unchanged.
+`laptop.*` were first recorded 2026-10-11 by `make update-timing-baseline`, on AC power with the
+`performance` platform profile, idle: 16.5 ms/fixture against the server's 41.3, a median fixture
+0.42x the server's time.
 
 `human_mapping_analysis.csv` also defines *which* fixtures are in scope for
 `analysis/ambiguity_report.py` (the paper's RA1.1): that script reads the `human_mapping.json`
@@ -38,6 +48,72 @@ per-dataset node columns against this CSV, and a fixture solved after this CSV w
 `int('-')`. A crash was the right outcome - the other reading was a comparison section over 1217
 fixtures inside a paper whose every other block said 1056.
 
+## Refresh of 2026-10-17
+
+`optimal_solutions_benchmark.csv` and `human_mapping_analysis.csv` re-run, in that order, on the
+laptop, with the CORPUS block, the ambiguity, rendering and shape reports and both AST-diff oracle
+runs. Unlike 2026-09-26 this is a partial refresh: the tool comparison (`../comparison/`
+`benchmark_other.csv` and `benchmark_accuracy.csv`) and the fixture robustness run were not re-run,
+because the external tools were not installed on the laptop and the timings belong to the server.
+They still describe 1,217 fixtures, and the paper says so in footnote `fn:in-progress`.
+282 more fixtures in scope: 221 stratified and 61 Defects4J.
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 712 | 712 |
+| `defects4j` | 996 | 335 |
+| **total** | **2223** | **1561** |
+
+The paper's scope is **1499** fixtures. Over them omnidiff maps 16,322,226 of 16,329,845 nodes
+(99.95%), and 11,013,577 of 11,018,678 visible nodes.
+
+## Refresh of 2026-10-22
+
+The same partial refresh as 2026-10-17, on the laptop: `optimal_solutions_benchmark.csv` and
+`human_mapping_analysis.csv` re-run in that order, with the CORPUS block, the ambiguity, rendering and
+shape reports and both AST-diff oracle runs. The tool comparison and the fixture robustness run are
+still at the 1,217 fixtures of 2026-09-26. 184 more fixtures in scope: 79 stratified and 105
+Defects4J.
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 791 | 791 |
+| `defects4j` | 996 | 440 |
+| **total** | **2302** | **1745** |
+
+The paper's scope is **1683** fixtures. Over them omnidiff maps 18,597,127 of 18,605,165 nodes
+(99.96%), and 12,569,053 of 12,574,430 visible nodes.
+
+## Refresh of 2026-11-07
+
+The same partial refresh as 2026-10-22, on the laptop: `optimal_solutions_benchmark.csv` and
+`human_mapping_analysis.csv` re-run in that order, with the CORPUS block and the ambiguity,
+rendering and shape reports. Not re-run: the tool comparison and the fixture robustness run (still
+at the 1,217 fixtures of 2026-09-26), and the two AST-diff oracle runs, which need Java and the
+pinned RefactoringMiner, neither installed on the laptop - they stay at the 1,683 fixtures of
+2026-10-22. 4 more fixtures in scope, all Defects4J; the rest of the change since 2026-10-22 is
+repainted and newly painted ground truth (1,479 fixtures carry a painting, from 1,419).
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 791 | 791 |
+| `defects4j` | 996 | 444 |
+| **total** | **2302** | **1749** |
+
+The paper's scope is **1687** fixtures. Over them omnidiff maps 18,616,022 of 18,623,801 nodes
+(99.96%), and 12,581,856 of 12,587,060 visible nodes. `optimal_solutions_benchmark.csv` is the
+third of three runs; the README's code-speed figures are each fixture's median `elapsed_ms` over
+the three.
+
 ## Scope
 
 The paper's scope is `_common.PAPER_DATASETS`: every dataset above except `handmade`, which stays
@@ -63,6 +139,10 @@ annotation has reached, not a draw - do not read a Defects4J figure as an estima
   `analyze_human_mappings --kind-mismatches`.
 - `kind_invariant_candidates.csv` - the delete+insert leaf pairs the kind invariants would force
   to match, written by `analyze_human_mappings --kind-invariant-cost`.
+- `ground_truth_conflicts.md` - the open ground-truth conflicts: conventions the fixtures answer
+  both ways, single fixtures that hold back a general change, and the fixtures whose 2026-10-13
+  `analysis.md` flags their ground truth. Written by hand; a settled conflict moves to its
+  *Resolved* section.
 
 The four census tests live in `src/test/helper/human_mapping/tests/exploratory.rs`, are
 `#[ignore]`d, and run with `cargo test --release --lib --features test-fixtures <name> --

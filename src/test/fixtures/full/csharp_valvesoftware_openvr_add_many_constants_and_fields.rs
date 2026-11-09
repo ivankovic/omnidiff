@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,14 +20,8 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Many constants and fields added to a large declaration list. Roughly half the residual is
-    // `StructurallyIdenticalAncestor` (52) - omnidiff inherits a match from an ancestor whose
-    // shape survived, where the human paired the members individually - with
-    // `APTED("qualified_name")` (32) and `MovedSubtree` (13) accounting for most of the rest.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "csharp-valvesoftware-openvr-add-many-constants-and-fields",
-        106,
-        58,
     )
 }
 

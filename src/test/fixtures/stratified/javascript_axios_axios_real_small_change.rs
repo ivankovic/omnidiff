@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,14 +28,14 @@ fn mapping() -> Result<()> {
     // under unit costs: the cost function speaking, not a search failure.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-axios-axios-real-small-change",
-        3,
-        1,
+        2,
+        0,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("javascript-axios-axios-real-small-change", 11.75)
+    assert_matches_human_painting_within_limit("javascript-axios-axios-real-small-change", 0.28)
 }
 
 #[test]

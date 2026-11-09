@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -434,7 +433,7 @@ impl Workspace {
 
     /// Writes `bytes` to `<workspace>/<label>/<path>`, creating the directories, and returns the
     /// file's path.
-    fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
+    pub(crate) fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
         let target = self.dir.join(label).join(path);
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)

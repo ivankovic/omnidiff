@@ -4,8 +4,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,10 +20,10 @@
 # attested release asset every other route ships, so `brew install` takes seconds instead of the
 # ten-minute grammar-and-LTO compile a build-from-source formula would run on every machine.
 class Omnidiff < Formula
-  desc "Fast, robust, syntax-aware code diffing"
+  desc "Fast, robust, accurate content-aware diffing"
   homepage "https://github.com/ivankovic/omnidiff"
   version "{{VERSION}}"
-  license "AGPL-3.0-or-later"
+  license "AGPL-3.0-only"
 
   on_macos do
     on_arm do

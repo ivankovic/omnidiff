@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,11 +28,14 @@ use crate::diff::{ASTDiff, ASTMappingReason};
 ///    nodes only. One coarse tier on purpose, rather than several intermediate normalisations.
 ///
 /// Both hashes are order-independent for `nodes::is_commutative_container` kinds at every level.
+/// The second run reads the shifts the first one's matches found (`ShiftAnchors`), to tell twins
+/// apart by position.
 pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
     let (before, after, node_cache) = (ctx.before, ctx.after, ctx.node_cache);
     let selector_config = NodeSelectionConfig::default();
     let before_metadata = ctx.before_metadata();
     let after_metadata = ctx.after_metadata();
+    let mut anchors = hash_tree_matching::ShiftAnchors::new();
     hash_tree_matching::solve_with_hash_map(
         before,
         after,
@@ -44,6 +46,7 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         ASTMappingReason::IdenticalHash,
         ASTMappingReason::IdenticalHashOfAncestor,
         selector_config.to_node_list_selector(),
+        &mut anchors,
     );
 
     hash_tree_matching::solve_with_hash_map(
@@ -69,6 +72,7 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
                 })
                 .collect()
         },
+        &mut anchors,
     );
 }
 

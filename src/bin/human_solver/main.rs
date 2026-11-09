@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -49,17 +48,21 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 
 mod actions;
+mod content;
 mod events;
 mod flatten;
 mod keylog;
+mod layers;
 mod navigate;
 mod render;
+mod review;
 mod state;
 mod stubs;
 use actions::*;
 use events::*;
 use flatten::*;
 use keylog::*;
+use layers::*;
 use navigate::*;
 use render::*;
 use state::*;
@@ -71,8 +74,10 @@ use tree_sitter::Node;
 
 use omnidiff::code::language::{language_for_path, to_treesitter};
 use omnidiff::code::{Code, Language};
+use omnidiff::diff::content::{Family, Level, Vocabulary};
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
+use omnidiff::test::helper::human_content::{self, HumanContent};
 #[cfg(test)]
 use omnidiff::test::helper::human_mapping::rebuild_caches;
 use omnidiff::test::helper::human_mapping::{
@@ -157,6 +162,20 @@ n / N          jump to next / previous mismatch (`*`) vs. omnidiff's verdict
 } / {          open the next / previous case as the o picker lists it - its
                  sort and filters apply, so with Unmarked filtered to yes this
                  walks the unfinished cases; unsaved changes prompt first
+Enter          on a string holding code of another language (TSX in a JSON
+                 string, shell in a YAML run: block, CSS in a styled template):
+                 open that code as a file of its own - escapes resolved, the
+                 host's indentation gone - and map and paint it like any file.
+                 Works where omnidiff found the code, on a layer already
+                 mapped, or on a string you matched whose context names a
+                 language. Enter in the t view opens the string under the text
+                 cursor, straight into the layer's own t view, and Esc there
+                 goes back to the host's t view (enter from the panels to map
+                 the layer's trees). In the panels q or Esc goes back. s saves
+                 the whole fixture. A
+                 painted layer is what grading reads for its string, and the
+                 host's t view shows it, read-only, on the escaped text: paint the
+                 rest of the host file as usual (Z if nothing else changed)
 /              search: jump to the next leaf node whose text contains the
                  given string (plain substring, no regex)
 
@@ -166,7 +185,7 @@ t              text view: read the source, and paint the human text-range ground
                  panel is on, the focused panel's side first. Tab side, hjkl/g/G move, w/b/e by word and W/B/E by
                  blank-separated word as in vim, 0/^/$ to a line's start/first
                  code character/end, v select. On a terminal narrower than
-                 220 columns only the focused side is drawn; Tab shows the other. By default a selection spanning
+                 200 columns only the focused side is drawn; Tab shows the other. By default a selection spanning
                  several rows sweeps full lines from the anchor to the cursor, one
                  contiguous multi-line block; V toggles that to vertical -- the same
                  columns on each row, like a stack of squares, not every full line
@@ -180,23 +199,31 @@ t              text view: read the source, and paint the human text-range ground
                  Z marks a nothing-to-paint fixture, : jumps to a line number,
                  / searches this side's text (plain substring; Enter jumps to the
                  next match, wrapping; the last query is offered again, so / Enter
-                 repeats it), Esc unselects or closes.
+                 repeats it), Enter opens the code in the string under the
+                 cursor (see Enter above), Esc unselects or closes.
                  In a painting named Minimal, d/i on a multi-row full-line (V)
                  sweep is recorded as one range per row starting at that row's
                  first code character, never through the indentation -- the rule
                  invariant 6 states, kept for you instead of reported afterwards.
                  m on a full-line sweep on each side does the same and pairs the
-                 rows one to one (the same number of rows on both sides, or it is
-                 refused), one match per row, each a move or an update by itself.
+                 rows one to one, one match per row, each a move or an update by
+                 itself; with a different number of rows on each side, it is one
+                 match over all of them instead, an update (a rewritten passage).
                  A blank row in the sweep drops out; a vertical selection and a
                  Full or free-named painting are left exactly as drawn.
                  Branching a Minimal painting to one named Full (s, Enter) does
                  the opposite on the way across: every line whose every visible
                  character is painted deleted, or every one inserted, is widened
                  to start at column 0, which is what invariant 4 requires of a
-                 Full painting. Only those lines -- a partly changed line, a
-                 matched (move/update) line, and a branch to any other name are
-                 copied unchanged, and the Minimal painting itself never moves.
+                 Full painting. A delete or insert that starts mid-line is also
+                 widened left over the unpainted blanks before it (`,    gone`
+                 becomes one range from the blank after the comma), never into a
+                 line's indentation. An update (a match whose sides read
+                 differently) that paints part of an identifier is widened to the
+                 whole identifier on both sides, with a member's dot in front
+                 (`.minIndex` / `.maxIndex`). Nothing else changes -- a move, a
+                 range that would run into another, and a branch to any other name
+                 are copied unchanged, and the Minimal painting itself never moves.
                  A range that overlaps one already painted is refused at the
                  keystroke (u removes the old one first): the renderer resolves
                  an overlap by highest verdict and the scorer by list order, so
@@ -220,6 +247,9 @@ t              text view: read the source, and paint the human text-range ground
                  puts the other panel on the same line number as this one and
                  scrolls it to the same place on screen -- the two ways to stop
                  hand-scrolling two independently scrolled panels
+                 f on a painted match puts the other panel's cursor on the range
+                 it is matched with, level with this one; f again walks the
+                 other ranges of an N:M match in turn, wrapping
                  A puts THIS side's AST panel on the leaf under the text cursor,
                  expanding whatever is collapsed over it and focusing that panel,
                  without closing this view -- so a row an invariant names becomes
@@ -244,7 +274,10 @@ V              list every ground-truth invariant this case breaks: the rule's
                  j/k move, g/G ends, Enter puts both trees and both text panels
                  on it (opening the text view over them, one Esc from the trees),
                  Esc closes. Read from the mapping in memory, so it sees unsaved
-                 edits; the o picker's Invariant column is the same count
+                 edits; the o picker's Invariant column is the same count.
+                 After them come the case's review_queue.tsv items, numbered R
+                 (places someone asked you to look at again; the file's format
+                 is in review.rs); x on one drops it from the queue
 
 s              save -- or, on a sample, prompt for a name (pre-filled with
                  <language>-<repository>) and promote it
@@ -256,13 +289,16 @@ e              on a diff, enter/edit its description.md (written on Enter, empty
                  works regardless of status; carried into the generated test stub
                  if present when later promoted)
 o              open a different test case (src/test/data/diffs/) as a table:
-                 Name, Dataset, Cmpl, Unmarked, Paint, Disagree, Invariant, Size.
+                 Name, Dataset, Cmpl, Unmarked, Paint, Disagree, Invariant, Review,
+                 Size.
                  j/k pick a row, h/l pick a column, s sorts by that column (again to
                  reverse), f filters on it -- substring on Name, dataset cycle on
                  Dataset, off/yes/no on the rest. Filters AND across columns.
                  Invariant counts the ground-truth invariants this case's own
                  mapping breaks, the number its invariants() test asserts on;
-                 Size is the diff's changed lines, as in the O picker.
+                 Review counts its review_queue.tsv items; filtered to yes, } and {
+                 walk the review queue. Size is the diff's changed lines, as in
+                 the O picker.
                  The scans behind Cmpl/Unmarked, Paint, Disagree, Invariant and
                  Size run on the first s or f on that column (Cmpl/Unmarked blocks
                  for ~12s and Disagree ~7s on the full corpus the first time; their
@@ -334,10 +370,15 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             )
         })?;
 
-    // A language with no tree-sitter grammar opens in text-only mode (see
-    // `FrameState::before_root`): the painting is what such a fixture records. `ensure_parsed`
-    // errors on such a language, so it runs only when there is a tree. It fills
-    // node_to_full_hash, which `m`/`M` classify inner nodes by.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
+    Ok((before, after))
+}
+
+/// A language with no tree-sitter grammar opens in text-only mode (see
+/// `FrameState::before_root`): the painting is what such a pair records. `ensure_parsed` errors on
+/// such a language, so it runs only when there is a tree. It fills node_to_full_hash, which
+/// `m`/`M` classify inner nodes by.
+fn ensure_parsed_if_tree(before: &mut Code, after: &mut Code) -> Result<()> {
     if before.ast.is_some() {
         before
             .ensure_parsed()
@@ -348,8 +389,7 @@ fn load_case(name: &str) -> Result<(Code, Code)> {
             .ensure_parsed()
             .context("Failed to compute AST metadata for after code")?;
     }
-
-    Ok((before, after))
+    Ok(())
 }
 
 fn diffs_root() -> PathBuf {
@@ -415,6 +455,80 @@ fn list_available_cases() -> Result<Vec<(String, &'static str)>> {
     Ok(names)
 }
 
+/// What the `o` picker lists: every case of [`list_available_cases`], then every content fixture
+/// (one dataset per `Family`: `pictures`, `archives`, ...), sorted by name. Only the picker sees
+/// them: the corpus scans, `load_case` and `{`/`}` read their names as code.
+fn list_picker_cases() -> Result<Vec<(String, &'static str)>> {
+    let mut names = list_available_cases()?;
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family))? {
+            names.push((name, family.name()));
+        }
+    }
+    names.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(names)
+}
+
+/// What the `o` picker shows for a content fixture.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ContentRow {
+    /// The pair verdict's place in `Level::ALL`, can't judge after them, if one is recorded:
+    /// what the `Verdict` column sorts by.
+    pub(crate) rank: Option<usize>,
+    /// The `Verdict` column: the pair verdict, or how many members have one.
+    pub(crate) label: String,
+    /// The `Cmpl` column: a picture without its verdict, or a container without a pair verdict
+    /// or one for every changed member.
+    pub(crate) incomplete: bool,
+}
+
+impl ContentRow {
+    /// A content fixture's row, from its ground truth (`None` before any is saved): a
+    /// container's verdict in its own names (`changed+added_files`).
+    pub(crate) fn of(family: Family, human: Option<HumanContent>) -> Self {
+        let human = human.unwrap_or_default();
+        let names = match family {
+            Family::Pictures => Vocabulary::Pictures,
+            _ => Vocabulary::Container,
+        };
+        let label = match (&human.verdict, human.members.len()) {
+            (Some(judgement), _) => judgement.label_in(names),
+            (None, 0) => String::new(),
+            (None, judged) => format!("{judged} judged"),
+        };
+        let rank = human
+            .verdict
+            .as_ref()
+            .map(|judgement| match judgement.verdict() {
+                Some(verdict) => Level::ALL
+                    .iter()
+                    .position(|level| *level == verdict.level)
+                    .expect("every level is in ALL"),
+                None => Level::ALL.len(),
+            });
+        Self {
+            rank,
+            label,
+            incomplete: !human.is_complete(),
+        }
+    }
+}
+
+/// Every content fixture's row (`App::content_rows`), re-read on each `o`: a few hundred small
+/// files.
+fn read_content_rows() -> HashMap<String, ContentRow> {
+    let mut rows = HashMap::new();
+    for family in Family::ALL {
+        for name in list_dir_names(&human_content::root(family)).unwrap_or_default() {
+            rows.insert(
+                name.clone(),
+                ContentRow::of(family, human_content::load(family, &name).ok()),
+            );
+        }
+    }
+    rows
+}
+
 /// The case names the `o` picker shows, in order: `options` narrowed by every filter in `view`
 /// (ANDed; an unknown value survives either direction, see `FlagFilter::keeps`), sorted by
 /// `view.sort` with the name as an always-ascending tiebreak, so the order is total. Unknown values
@@ -434,11 +548,7 @@ fn visible_diff_options(
                 .as_ref()
                 .is_none_or(|needle| name.to_lowercase().contains(needle))
         })
-        .filter(|(name, _)| {
-            filters
-                .cmpl
-                .keeps(data.unmarked_of(name).map(|count| count > 0))
-        })
+        .filter(|(name, _)| filters.cmpl.keeps(data.incomplete_of(name)))
         .filter(|(name, _)| {
             filters
                 .unmarked
@@ -454,6 +564,11 @@ fn visible_diff_options(
             filters
                 .invariant
                 .keeps(data.invariants_of(name).map(|count| count > 0))
+        })
+        .filter(|(name, _)| {
+            filters
+                .review
+                .keeps(data.review_of(name).map(|count| count > 0))
         })
         .filter(|(name, _)| {
             filters
@@ -475,8 +590,9 @@ fn visible_diff_options(
         let primary = match view.sort.column {
             DiffColumn::Name => std::cmp::Ordering::Equal,
             DiffColumn::Dataset => dataset_of(a).cmp(dataset_of(b)),
-            DiffColumn::Cmpl => bool_rank(data.unmarked_of(a).map(|count| count > 0))
-                .cmp(&bool_rank(data.unmarked_of(b).map(|count| count > 0))),
+            DiffColumn::Cmpl => {
+                bool_rank(data.incomplete_of(a)).cmp(&bool_rank(data.incomplete_of(b)))
+            }
             DiffColumn::Unmarked => {
                 sort_rank(data.unmarked_of(a)).cmp(&sort_rank(data.unmarked_of(b)))
             }
@@ -487,7 +603,11 @@ fn visible_diff_options(
             DiffColumn::Invariant => {
                 sort_rank(data.invariants_of(a)).cmp(&sort_rank(data.invariants_of(b)))
             }
+            DiffColumn::Review => sort_rank(data.review_of(a)).cmp(&sort_rank(data.review_of(b))),
             DiffColumn::Size => sort_rank(data.size_of(a)).cmp(&sort_rank(data.size_of(b))),
+            DiffColumn::Verdict => {
+                sort_rank(data.verdict_rank(a)).cmp(&sort_rank(data.verdict_rank(b)))
+            }
         };
         let primary = if view.sort.descending {
             primary.reverse()
@@ -546,6 +666,7 @@ struct DiffFiltersRecord {
     paint: FlagFilter,
     disagree: FlagFilter,
     invariant: FlagFilter,
+    review: FlagFilter,
     size: FlagFilter,
 }
 
@@ -559,6 +680,7 @@ impl From<DiffFilters> for DiffFiltersRecord {
             paint: filters.paint,
             disagree: filters.disagree,
             invariant: filters.invariant,
+            review: filters.review,
             size: filters.size,
         }
     }
@@ -582,12 +704,13 @@ impl From<DiffFiltersRecord> for DiffFilters {
             name: record.name.filter(|name| !name.is_empty()),
             dataset: record
                 .dataset
-                .and_then(|name| DIFF_DATASETS.iter().copied().find(|d| *d == name)),
+                .and_then(|name| picker_datasets().find(|d| *d == name)),
             cmpl: record.cmpl,
             unmarked: record.unmarked,
             paint: record.paint,
             disagree: record.disagree,
             invariant: record.invariant,
+            review: record.review,
             size: record.size,
         }
     }
@@ -839,15 +962,19 @@ where
     result
 }
 
-/// The `o` picker's next dataset filter: `DIFF_DATASETS` in order, then back to "all" (`None`).
+/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the content fixtures' families.
+fn picker_datasets() -> impl Iterator<Item = &'static str> {
+    DIFF_DATASETS
+        .iter()
+        .copied()
+        .chain(Family::ALL.map(Family::name))
+}
+
+/// The `o` picker's next dataset filter: `picker_datasets` in order, then back to "all" (`None`).
 fn next_dataset_filter(current: Option<&'static str>) -> Option<&'static str> {
     match current {
-        None => Some(DIFF_DATASETS[0]),
-        Some(current) => DIFF_DATASETS
-            .iter()
-            .position(|d| *d == current)
-            .and_then(|i| DIFF_DATASETS.get(i + 1))
-            .copied(),
+        None => picker_datasets().next(),
+        Some(current) => picker_datasets().skip_while(|d| *d != current).nth(1),
     }
 }
 
@@ -959,7 +1086,8 @@ fn ensure_diff_column_data(app: &mut App, column: DiffColumn) {
                 app.diff_sizes = Some(compute_diff_sizes());
             }
         }
-        DiffColumn::Name | DiffColumn::Dataset => {}
+        // Read on every `o` (`read_picture_verdicts`, `review::load_queue`): small files.
+        DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict | DiffColumn::Review => {}
     }
 }
 
@@ -991,7 +1119,7 @@ fn diff_case_unmarked_count(name: &str) -> Option<usize> {
     let dir = diffs_case_dir(name)?;
     // Without metadata: the count never diffs, and metadata is most of the load.
     let (before, after) = code_pair_from_dir_without_metadata(&dir).ok().flatten()?;
-    let mapping = human_mapping::load(name).unwrap_or_default();
+    let mapping = human_mapping::load_with(name, &before, &after).unwrap_or_default();
     let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref()) else {
         return Some(0);
     };
@@ -1062,7 +1190,7 @@ fn compute_diff_text_painted() -> std::collections::HashMap<String, bool> {
 fn diff_case_disagreement_bytes(name: &str) -> Option<usize> {
     let dir = diffs_case_dir(name)?;
     let (before, after) = code_pair_from_dir(&dir).ok().flatten()?;
-    let mapping = human_mapping::load(name).ok()?;
+    let mapping = human_mapping::load_with(name, &before, &after).ok()?;
     let check = text_mapping_disagreements(&mapping, &before, &after)
         .ok()
         .flatten()?;
@@ -1306,24 +1434,9 @@ fn load_sample(name: &str) -> Result<(Code, Code, SampleSource)> {
         .with_context(|| format!("Failed to load sample from {:?}", dir))?
         .ok_or_else(|| anyhow!("No before/after fixture found in samples/{}", name))?;
 
-    if before.ast.is_none() {
-        bail!(
-            "Before code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    if after.ast.is_none() {
-        bail!(
-            "After code for sample '{}' has no AST (unsupported or undetected language)",
-            name
-        );
-    }
-    before
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for before code")?;
-    after
-        .ensure_parsed()
-        .context("Failed to compute AST metadata for after code")?;
+    // A sample with no grammar (a UTF-16 `.rc` or `.strings`, `sample_test_diffs --encodings`)
+    // opens text-only, as such a case does.
+    ensure_parsed_if_tree(&mut before, &mut after)?;
 
     let source_path = dir.join("source.json");
     let contents =
@@ -1381,9 +1494,9 @@ fn raw_before_after(dir: &Path) -> Option<(String, String)> {
             continue;
         };
         if name.starts_with("before.") && name.ends_with(".test") {
-            before = fs::read_to_string(&path).ok();
+            before = omnidiff::code::read_text(&path).ok();
         } else if name.starts_with("after.") && name.ends_with(".test") {
-            after = fs::read_to_string(&path).ok();
+            after = omnidiff::code::read_text(&path).ok();
         }
     }
 
@@ -1465,13 +1578,18 @@ enum DiffColumn {
     Paint,
     Disagree,
     Invariant,
+    /// Items `review_queue.tsv` holds for the case (see `review`).
+    Review,
     /// Changed lines of the case's `diff -u`, the same measure as the `O` picker's `Size`.
     Size,
+    /// A picture fixture's human verdict; blank for code. Never the engine's, so the listing does
+    /// not hint at its answer.
+    Verdict,
 }
 
 impl DiffColumn {
     /// Left-to-right order, shared by the header, cursor movement and `render_open_diff_picker`.
-    const ALL: [DiffColumn; 8] = [
+    const ALL: [DiffColumn; 10] = [
         DiffColumn::Name,
         DiffColumn::Dataset,
         DiffColumn::Cmpl,
@@ -1479,7 +1597,9 @@ impl DiffColumn {
         DiffColumn::Paint,
         DiffColumn::Disagree,
         DiffColumn::Invariant,
+        DiffColumn::Review,
         DiffColumn::Size,
+        DiffColumn::Verdict,
     ];
 
     fn index(self) -> usize {
@@ -1508,11 +1628,14 @@ impl DiffColumn {
             DiffColumn::Paint => "Paint",
             DiffColumn::Disagree => "Disagree",
             DiffColumn::Invariant => "Invariant",
+            DiffColumn::Review => "Review",
             DiffColumn::Size => "Size",
+            DiffColumn::Verdict => "Verdict",
         }
     }
 
-    /// The (`Yes`, `No`) labels of this column's `FlagFilter`; `None` for `Name` and `Dataset`.
+    /// The (`Yes`, `No`) labels of this column's `FlagFilter`; `None` for `Name`, `Dataset` and
+    /// `Verdict`, which sorts but does not filter.
     fn flag_labels(self) -> Option<(&'static str, &'static str)> {
         match self {
             DiffColumn::Cmpl => Some(("incomplete only", "complete only")),
@@ -1520,9 +1643,10 @@ impl DiffColumn {
             DiffColumn::Paint => Some(("painted only", "unpainted only")),
             DiffColumn::Disagree => Some(("disagreements only", "agreeing only")),
             DiffColumn::Invariant => Some(("breaks invariants", "invariants hold")),
+            DiffColumn::Review => Some(("queued for review", "nothing queued")),
             // An empty diff is a broken fixture; "No" finds them.
             DiffColumn::Size => Some(("has changed lines", "empty diffs only")),
-            DiffColumn::Name | DiffColumn::Dataset => None,
+            DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => None,
         }
     }
 }
@@ -1564,13 +1688,14 @@ struct DiffFilters {
     /// Case-insensitive name substring, stored lowercased. Never `Some("")`, which would read as
     /// on while filtering nothing.
     name: Option<String>,
-    /// Which of `DIFF_DATASETS` to show; `None` is all.
+    /// Which of `picker_datasets` to show; `None` is all.
     dataset: Option<&'static str>,
     cmpl: FlagFilter,
     unmarked: FlagFilter,
     paint: FlagFilter,
     disagree: FlagFilter,
     invariant: FlagFilter,
+    review: FlagFilter,
     size: FlagFilter,
 }
 
@@ -1583,6 +1708,7 @@ impl DiffFilters {
             (DiffColumn::Paint, self.paint),
             (DiffColumn::Disagree, self.disagree),
             (DiffColumn::Invariant, self.invariant),
+            (DiffColumn::Review, self.review),
             (DiffColumn::Size, self.size),
         ]
         .into_iter()
@@ -1598,8 +1724,9 @@ impl DiffFilters {
             DiffColumn::Paint => Some(&mut self.paint),
             DiffColumn::Disagree => Some(&mut self.disagree),
             DiffColumn::Invariant => Some(&mut self.invariant),
+            DiffColumn::Review => Some(&mut self.review),
             DiffColumn::Size => Some(&mut self.size),
-            DiffColumn::Name | DiffColumn::Dataset => None,
+            DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => None,
         }
     }
 
@@ -1610,8 +1737,9 @@ impl DiffFilters {
             DiffColumn::Paint => self.paint,
             DiffColumn::Disagree => self.disagree,
             DiffColumn::Invariant => self.invariant,
+            DiffColumn::Review => self.review,
             DiffColumn::Size => self.size,
-            DiffColumn::Name | DiffColumn::Dataset => FlagFilter::Off,
+            DiffColumn::Name | DiffColumn::Dataset | DiffColumn::Verdict => FlagFilter::Off,
         }
     }
 
@@ -1705,7 +1833,11 @@ struct DiffPickerData<'a> {
     text_painted: Option<&'a HashMap<String, bool>>,
     disagreement: Option<&'a HashMap<String, usize>>,
     invariants: Option<&'a HashMap<String, usize>>,
+    /// `App::review_counts`. A case the queue does not name has 0 items, not an unknown count.
+    review: Option<&'a HashMap<String, usize>>,
     sizes: Option<&'a HashMap<String, usize>>,
+    /// `App::content_rows`: which rows are content fixtures, and their verdicts.
+    content: Option<&'a HashMap<String, ContentRow>>,
 }
 
 impl<'a> DiffPickerData<'a> {
@@ -1715,8 +1847,32 @@ impl<'a> DiffPickerData<'a> {
             text_painted: app.diff_text_painted.as_ref(),
             disagreement: app.diff_disagreement.as_ref(),
             invariants: app.diff_invariants.as_ref(),
+            review: Some(&app.review_counts),
             sizes: app.diff_sizes.as_ref(),
+            content: Some(&app.content_rows),
         }
+    }
+
+    fn is_content(&self, name: &str) -> bool {
+        self.content.is_some_and(|map| map.contains_key(name))
+    }
+
+    fn content_of(&self, name: &str) -> Option<&'a ContentRow> {
+        self.content.and_then(|map| map.get(name))
+    }
+
+    /// The pair verdict's place in `Level::ALL`, the order the `Verdict` column sorts in.
+    fn verdict_rank(&self, name: &str) -> Option<usize> {
+        self.content_of(name).and_then(|row| row.rank)
+    }
+
+    /// The `Cmpl` column, `true` while work is left: unmarked nodes for a code case, verdicts
+    /// still to give for a content fixture.
+    fn incomplete_of(&self, name: &str) -> Option<bool> {
+        if let Some(row) = self.content_of(name) {
+            return Some(row.incomplete);
+        }
+        self.unmarked_of(name).map(|count| count > 0)
     }
 
     fn size_of(&self, name: &str) -> Option<usize> {
@@ -1737,6 +1893,10 @@ impl<'a> DiffPickerData<'a> {
 
     fn invariants_of(&self, name: &str) -> Option<usize> {
         self.invariants.and_then(|map| map.get(name)).copied()
+    }
+
+    fn review_of(&self, name: &str) -> Option<usize> {
+        self.review.map(|map| map.get(name).copied().unwrap_or(0))
     }
 }
 
@@ -1923,8 +2083,18 @@ struct SamplePickerView {
 }
 
 /// The distinct values present in a column, in its sort order, for `f` to cycle through.
-fn sample_language_values(rows: &[SampleRow]) -> Vec<String> {
-    let mut values: Vec<String> = rows.iter().map(|row| row.language.clone()).collect();
+/// Languages come only from rows that pass every other filter in `filters`, so `f` never lands on
+/// a language whose list is empty.
+fn sample_language_values(rows: &[SampleRow], filters: &SampleFilters) -> Vec<String> {
+    let others = SampleFilters {
+        language: None,
+        ..filters.clone()
+    };
+    let mut values: Vec<String> = rows
+        .iter()
+        .filter(|row| others.keeps(row))
+        .map(|row| row.language.clone())
+        .collect();
     values.sort();
     values.dedup();
     values
@@ -2163,7 +2333,7 @@ fn main() -> Result<()> {
     let before_root_id = starting_cursor_id(&before);
     let after_root_id = starting_cursor_id(&after);
 
-    let mapping = human_mapping::load(&name).unwrap_or_default();
+    let mapping = human_mapping::load_with(&name, &before, &after).unwrap_or_default();
 
     let mut app = App::new(
         name,

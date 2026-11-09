@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -30,12 +29,17 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-gin-gonic-gin-whitespace-in-comment", 0.08)
+    assert_matches_human_painting_within_limit("go-gin-gonic-gin-whitespace-in-comment", 0.07)
 }
 
 #[test]
 fn invariants() -> Result<()> {
     // One of two spaces after "Gin Core Team." is deleted, so the run ends on a space - mid-row,
     // with text still to come, so not *trailing*: invariant 1 must not fire.
-    assert_ground_truth_invariants("go-gin-gonic-gin-whitespace-in-comment")
+    // Invariant 29: the files differ only in whitespace, and the lone painting paints the deleted
+    // space, so Minimal does too; awaiting a split into an empty `Minimal` and a `Full`.
+    assert_ground_truth_invariants_with_known_violations(
+        "go-gin-gonic-gin-whitespace-in-comment",
+        1,
+    )
 }

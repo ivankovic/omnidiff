@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,12 +47,41 @@ pub fn language_for_path(path: &std::path::Path) -> Option<Language> {
 /// beyond a `starts_with` check. Callers that only have a path, or where reading content first would
 /// add real I/O cost against a large corpus (e.g. `sample_test_diffs`'s commit-delta walk, which
 /// checks extension before ever touching a blob), should keep using `language_for_path` alone.
+///
+/// The second check is the same kind, the other way round: an extension in
+/// [`XML_FORMAT_EXTENSIONS`] (`.config`, `.props`, `.policy`) whose content does not open with markup
+/// is not XML, whatever its name says, and is diffed as plain text rather than parsed into errors.
 pub fn language_for_path_and_content(path: &std::path::Path, content: &str) -> Option<Language> {
     let guess = language_for_path(path)?;
     if guess == Language::TypeScript && looks_like_xml(content) {
         return Some(Language::XML);
     }
+    if guess == Language::XML && is_xml_format(path) && !looks_like_markup(content) {
+        return None;
+    }
     Some(guess)
+}
+
+/// True if `path`'s extension is one of [`XML_FORMAT_EXTENSIONS`].
+fn is_xml_format(path: &std::path::Path) -> bool {
+    let path = match path.extension() {
+        Some(ext) if ext.eq_ignore_ascii_case("test") => {
+            std::path::Path::new(path.file_stem().unwrap_or_default())
+        }
+        _ => path,
+    };
+    path.extension()
+        .map(|ext| ext.to_string_lossy().to_ascii_lowercase())
+        .is_some_and(|ext| XML_FORMAT_EXTENSIONS.contains(&ext.as_str()))
+}
+
+/// True if `content` opens with markup - `<`, after a UTF-8 BOM and whitespace - as every XML
+/// document does, declaration or not.
+fn looks_like_markup(content: &str) -> bool {
+    content
+        .trim_start_matches('\u{feff}')
+        .trim_start()
+        .starts_with('<')
 }
 
 /// True if `content` opens with an XML declaration, ignoring a leading UTF-8 BOM and whitespace.
@@ -64,6 +92,51 @@ fn looks_like_xml(content: &str) -> bool {
         .trim_start()
         .starts_with("<?xml")
 }
+
+/// XML vocabularies with an extension of their own, diffed with the XML grammar. Each is in the
+/// change census (`research/data/corpus_stats/change_census.csv`: `.svg` alone is 137k changes in
+/// 263 repositories, Qt `.ui` 163 repositories, `.vcxproj` 139) or a well-known XML format.
+///
+/// Only the grammar follows the extension. [`super::tip`] still files these by what they hold (an
+/// SVG is an image, a `.vcxproj` a build file), not as code, and a file whose content is not markup
+/// stays plain text (see [`language_for_path_and_content`]): `.config` and `.policy` are not always
+/// XML.
+pub const XML_FORMAT_EXTENSIONS: &[&str] = &[
+    "svg",
+    "glif",
+    "plist",
+    "ui",
+    "qrc",
+    "glade",
+    "xib",
+    "storyboard",
+    "xaml",
+    "vcxproj",
+    "filters",
+    "csproj",
+    "fsproj",
+    "vbproj",
+    "props",
+    "targets",
+    "nuspec",
+    "resx",
+    "wxs",
+    "iml",
+    "manifest",
+    "config",
+    "policy",
+    "xsd",
+    "xsl",
+    "xslt",
+    "xlf",
+    "xliff",
+    "kml",
+    "gpx",
+    "rss",
+    "atom",
+    "graphml",
+    "dae",
+];
 
 /// Every file extension OmniDiff recognises, lower-cased, and the language it means. The one
 /// table behind [`language_for_extension`] and the README's language list.
@@ -85,6 +158,7 @@ pub const EXTENSIONS: &[(&[&str], Language)] = &[
     (&["lua"], Language::LUA),
     (&["md", "markdown"], Language::MarkDown),
     (&["php"], Language::PHP),
+    (&["pl", "pm"], Language::Perl),
     (&["proto"], Language::ProtoBuf),
     (&["py", "pyi", "pyw"], Language::Python),
     (&["r"], Language::R),
@@ -98,6 +172,7 @@ pub const EXTENSIONS: &[(&[&str], Language)] = &[
     (&["vim"], Language::Vimscript),
     (&["yaml", "yml"], Language::YAML),
     (&["xml", "xht", "xhtml"], Language::XML),
+    (XML_FORMAT_EXTENSIONS, Language::XML),
 ];
 
 /// The language `ext` (lower-cased, no dot) most likely means; some extensions are shared, so this
@@ -130,6 +205,7 @@ pub fn stable_name(language: Language) -> &'static str {
         Language::Lisp => "Lisp",
         Language::MarkDown => "MarkDown",
         Language::PHP => "PHP",
+        Language::Perl => "Perl",
         Language::ProtoBuf => "ProtoBuf",
         Language::Python => "Python",
         Language::R => "R",
@@ -147,6 +223,13 @@ pub fn stable_name(language: Language) -> &'static str {
     }
 }
 
+/// The language [`stable_name`] spells `name`, for files that store one (a human mapping's
+/// embedded layers).
+pub fn from_stable_name(name: &str) -> Option<Language> {
+    use strum::IntoEnumIterator;
+    Language::iter().find(|language| stable_name(*language) == name)
+}
+
 /// The language's name as a person writes it, where the variant name is not that.
 pub fn human_name(language: Language) -> String {
     match language {
@@ -161,9 +244,9 @@ pub fn human_name(language: Language) -> String {
     }
 }
 
-/// The README's "Supported languages" section, generated so it cannot drift from this file: one
-/// table of the languages with a grammar, and the extensions that are recognised but diffed as
-/// plain text because no grammar is compiled in.
+/// The languages in the README's "Supported content" section, generated so they cannot drift from
+/// this file: one table of the languages with a grammar, and the extensions that are recognised
+/// but diffed as plain text because no grammar is compiled in.
 pub fn supported_languages_markdown() -> String {
     use strum::IntoEnumIterator;
 
@@ -230,6 +313,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::Kotlin => Some(tree_sitter_kotlin_ng::LANGUAGE.into()),
         Language::LUA => Some(tree_sitter_lua::LANGUAGE.into()),
         Language::PHP => Some(tree_sitter_php::LANGUAGE_PHP.into()),
+        Language::Perl => Some(ts_parser_perl::LANGUAGE.into()),
         Language::Python => Some(tree_sitter_python::LANGUAGE.into()),
         Language::R => Some(tree_sitter_r::LANGUAGE.into()),
         Language::Ruby => Some(tree_sitter_ruby::LANGUAGE.into()),
@@ -276,6 +360,42 @@ mod tests {
         );
         // No inner extension to fall back to.
         assert_eq!(language_for_path(std::path::Path::new("foo.test")), None);
+    }
+
+    #[test]
+    fn xml_formats_are_diffed_with_the_xml_grammar() {
+        for name in [
+            "logo.svg",
+            "App.vcxproj",
+            "Info.plist",
+            "dialog.ui",
+            "a.glif",
+            "before.svg.test",
+        ] {
+            assert_eq!(
+                language_for_path_and_content(std::path::Path::new(name), "\u{feff}\n  <root/>"),
+                Some(Language::XML),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_xml_format_whose_content_is_not_markup_stays_plain_text() {
+        // `.config` and `.policy` name non-XML files too; their content decides.
+        assert_eq!(
+            language_for_path_and_content(std::path::Path::new("app.config"), "key = value\n"),
+            None
+        );
+        assert_eq!(
+            language_for_path_and_content(std::path::Path::new("app.config"), "<configuration/>"),
+            Some(Language::XML)
+        );
+        // Plain `.xml` keeps no such check: it is XML by name, and a broken one is still XML.
+        assert_eq!(
+            language_for_path_and_content(std::path::Path::new("a.xml"), "not markup"),
+            Some(Language::XML)
+        );
     }
 
     #[test]
@@ -386,6 +506,7 @@ mod tests {
                 "Lisp",
                 "MarkDown",
                 "PHP",
+                "Perl",
                 "ProtoBuf",
                 "Python",
                 "R",

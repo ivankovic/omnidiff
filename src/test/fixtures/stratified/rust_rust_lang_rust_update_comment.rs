@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,7 +29,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Ground truth anchors an ambiguous add/delete inside a value LEFT; `intra_node_update_ranges`
     // is right-anchored by construction. An expected residual, the price of that rule.
-    assert_matches_human_painting_within_limit("rust-rust-lang-rust-update-comment", 4.51)
+    assert_matches_human_painting_within_limit("rust-rust-lang-rust-update-comment", 4.5)
 }
 
 #[test]

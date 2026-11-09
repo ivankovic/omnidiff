@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,7 @@
 //! Non-interactive counterpart to the TUI: prints a diff as text, for when stdout is not a
 //! terminal (git's pager, pipes, CI) or `--headless` is given.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
@@ -271,7 +270,7 @@ pub(crate) fn nearest_reference_line(
 /// moved chunk. `side_is_before` only picks the box header's wording (`Moved to`/`Moved from`).
 ///
 /// Re-parses `contents` for the breadcrumb rather than threading the diff's AST through
-/// `DiffSessionData`; headless is not a hot path.
+/// `DiffSessionData`: only the tree (`Code::parse_only`), since the breadcrumb reads no metadata.
 fn render_side(
     contents: &str,
     ranges: &[RangeMatch],
@@ -289,7 +288,7 @@ fn render_side(
     let keep = lines_to_keep(&flags, context);
 
     let language = language_for_path_and_content(path, contents);
-    let parsed = language.map(|lang| Code::from_string(contents, &lang));
+    let parsed = language.map(|lang| Code::parse_only(contents, &lang));
 
     let number_width = lines.len().to_string().len();
 
@@ -408,29 +407,40 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
     if let Some(header) = summary_header(data, use_color) {
         out.push_str(&header);
     }
+    // Each side re-parses its text, so the two render concurrently.
+    let (before, after) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(&data.before_contents, &data.after_contents),
+        || {
+            render_side(
+                &data.before_contents,
+                &data.before_ranges,
+                true,
+                use_color,
+                &data.before_path,
+                context,
+            )
+        },
+        || {
+            render_side(
+                &data.after_contents,
+                &data.after_ranges,
+                false,
+                use_color,
+                &data.after_path,
+                context,
+            )
+        },
+    );
     out.push_str(&format!("=== before: {} ===\n", data.before_path.display()));
-    out.push_str(&render_side(
-        &data.before_contents,
-        &data.before_ranges,
-        true,
-        use_color,
-        &data.before_path,
-        context,
-    ));
+    out.push_str(&before);
     out.push_str(&format!("=== after: {} ===\n", data.after_path.display()));
-    out.push_str(&render_side(
-        &data.after_contents,
-        &data.after_ranges,
-        false,
-        use_color,
-        &data.after_path,
-        context,
-    ));
+    out.push_str(&after);
     out
 }
 
 /// Computes the diff exactly as the TUI does and prints it to stdout. Returns whether the files'
-/// bytes differ, for a `diff`-style exit code.
+/// bytes differ, for a `diff`-style exit code. `titles` names the two sides in place of the files
+/// read (see [`crate::tui::positional::display_names`]).
 ///
 /// A large unmatched residual is reported with `eprintln!`, not `tracing`: headless mode installs
 /// no subscriber.
@@ -440,8 +450,13 @@ pub fn run(
     use_color: bool,
     context: usize,
     render_options: RenderOptions,
+    titles: Option<(PathBuf, PathBuf)>,
 ) -> Result<bool> {
     let (mut data, large_residual) = compute_diff_with_options(before, after, render_options)?;
+    if let Some((before_title, after_title)) = titles {
+        data.before_path = before_title;
+        data.after_path = after_title;
+    }
     // A presentation filter over a finished diff, so not part of `compute_diff`.
     data.before_ranges =
         ranges_for_options(&data.before_ranges, &data.before_contents, render_options);
@@ -1112,7 +1127,8 @@ mod tests {
             &after_path,
             false,
             CONTEXT_LINES,
-            RenderOptions::FULL
+            RenderOptions::FULL,
+            None
         )?);
         Ok(())
     }

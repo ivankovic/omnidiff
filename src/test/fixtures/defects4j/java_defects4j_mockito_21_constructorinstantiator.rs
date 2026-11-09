@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,18 +35,16 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-mockito-21-constructorinstantiator",
-        4.89,
+        2.92,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16, twice: `c` renamed `constructor` on before rows 24 and 25. `Minimal` marks the
-    // whole `c`, where the rule treats `c` as the shared prefix and marks only `onstructor`.
     // Invariant 18: `type_arguments` holds `T` on before row 24 and the wildcard `?` on after row
     // 24. The parents are matched, yet the mapping deletes one and inserts the other.
     assert_ground_truth_invariants_with_known_violations(
         "java-defects4j-mockito-21-constructorinstantiator",
-        3,
+        1,
     )
 }

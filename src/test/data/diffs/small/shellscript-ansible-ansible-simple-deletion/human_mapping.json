@@ -456,5 +456,34 @@
         "unset_command:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 4,
+              "start_column": 0,
+              "end_row": 5,
+              "end_column": 0
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 8,
+              "start_column": 0,
+              "end_row": 9,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

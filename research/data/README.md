@@ -45,6 +45,12 @@ the introductory paper's corpus-shape figure, drawn by `analysis/distributions_r
 AST node-kind distribution per language, and size/LOC-changed statistics for the sampled Rust
 pairs. Written by `analysis/file_stats.py` and `analysis/code_pair_diff_stats.py`.
 
+`change_census.csv` is *what* real-world commits change, over the same 50-commit window: one row per
+extension (or file name) with its `code::tip` category, how many changes, how many of those binary,
+lines changed, and how many repositories changed such a file (`make measure-change-census
+MODE=<mode>`, `analysis/change_census.py`). The repositories column is the one to read: a handful of
+repositories dominate the change counts.
+
 `edit_shape.csv` is how big a real-world *edit* is, per language, over the most recent 50 commits
 of each repository (`make measure-edit-shape MODE=<mode>`, `analysis/edit_shape_stats.py`) - the source of
 the paper's edit-size numbers. Per-language rows only: the per-edit population is ~435k modifications
@@ -73,6 +79,9 @@ baseline, which only warns; and `painting_attribution.csv`, the per-fixture pain
 produced each, written by `measure/benchmark_all_extended.sh`. The logs are kept deliberately:
 they are the only record of why a given language sampled fewer pairs than expected (see that
 script's own comment about Lua sampling zero pairs).
+
+`content_speed.csv`, written by `make benchmark-content`: how long each sampled content pair
+(pictures, fonts, archives, ...) takes to diff. See `PROVENANCE.md`.
 
 `baselines/` holds dated or labelled snapshots (`benchmark_2026-08-17_after_runtime_pass.csv`,
 `benchmark_<language>_baseline_pre_<change>.csv`) kept for before/after comparison across a

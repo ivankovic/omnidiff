@@ -1,0 +1,2145 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:1"
+      ],
+      "after_path": [
+        "labeled_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:1"
+      ],
+      "after_path": [
+        "ERROR:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:2"
+      ],
+      "after_path": [
+        "labeled_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:2"
+      ],
+      "after_path": [
+        "expression_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:3"
+      ],
+      "after_path": [
+        "labeled_statement:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:3"
+      ],
+      "after_path": [
+        "expression_statement:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4"
+      ],
+      "after_path": [
+        "labeled_statement:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "statement_identifier:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "statement_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "::1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "{:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "string:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "::1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "{:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "string:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "::1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "{:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "::1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "\":1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "string_fragment:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "string_fragment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "\":2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:1",
+        "string:2",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:2"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:3"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:3"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:4"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "pair:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "}:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "pair:1",
+        "object:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "}:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:3",
+        "object:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:3"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        ",:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:4"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "pair:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "}:1"
+      ],
+      "after_path": [
+        "labeled_statement:4",
+        "expression_statement:1",
+        "object:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:4"
+      ],
+      "after_path": [
+        "expression_statement:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:5"
+      ],
+      "after_path": [
+        "labeled_statement:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:6"
+      ],
+      "after_path": [
+        "labeled_statement:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:5"
+      ],
+      "after_path": [
+        "expression_statement:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:7"
+      ],
+      "after_path": [
+        "labeled_statement:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:6"
+      ],
+      "after_path": [
+        "expression_statement:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:8"
+      ],
+      "after_path": [
+        "labeled_statement:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:9"
+      ],
+      "after_path": [
+        "labeled_statement:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:2"
+      ],
+      "after_path": [
+        "ERROR:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:10"
+      ],
+      "after_path": [
+        "labeled_statement:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:7"
+      ],
+      "after_path": [
+        "expression_statement:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:11"
+      ],
+      "after_path": [
+        "labeled_statement:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:8"
+      ],
+      "after_path": [
+        "expression_statement:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:12"
+      ],
+      "after_path": [
+        "labeled_statement:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:3"
+      ],
+      "after_path": [
+        "ERROR:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:13"
+      ],
+      "after_path": [
+        "labeled_statement:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:14"
+      ],
+      "after_path": [
+        "labeled_statement:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:9"
+      ],
+      "after_path": [
+        "expression_statement:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:15"
+      ],
+      "after_path": [
+        "labeled_statement:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:10"
+      ],
+      "after_path": [
+        "expression_statement:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:16"
+      ],
+      "after_path": [
+        "labeled_statement:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:4"
+      ],
+      "after_path": [
+        "ERROR:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:17"
+      ],
+      "after_path": [
+        "labeled_statement:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:18"
+      ],
+      "after_path": [
+        "labeled_statement:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:5"
+      ],
+      "after_path": [
+        "ERROR:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:11"
+      ],
+      "after_path": [
+        "expression_statement:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:12"
+      ],
+      "after_path": [
+        "expression_statement:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:13"
+      ],
+      "after_path": [
+        "expression_statement:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:14"
+      ],
+      "after_path": [
+        "expression_statement:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:6"
+      ],
+      "after_path": [
+        "ERROR:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:15"
+      ],
+      "after_path": [
+        "expression_statement:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:16"
+      ],
+      "after_path": [
+        "expression_statement:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:7"
+      ],
+      "after_path": [
+        "ERROR:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:17"
+      ],
+      "after_path": [
+        "expression_statement:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:18"
+      ],
+      "after_path": [
+        "expression_statement:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:19"
+      ],
+      "after_path": [
+        "expression_statement:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:8"
+      ],
+      "after_path": [
+        "ERROR:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:20"
+      ],
+      "after_path": [
+        "expression_statement:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:21"
+      ],
+      "after_path": [
+        "expression_statement:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:22"
+      ],
+      "after_path": [
+        "expression_statement:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:23"
+      ],
+      "after_path": [
+        "expression_statement:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:19"
+      ],
+      "after_path": [
+        "labeled_statement:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:20"
+      ],
+      "after_path": [
+        "labeled_statement:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:24"
+      ],
+      "after_path": [
+        "expression_statement:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:21"
+      ],
+      "after_path": [
+        "labeled_statement:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:22"
+      ],
+      "after_path": [
+        "labeled_statement:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:25"
+      ],
+      "after_path": [
+        "expression_statement:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:26"
+      ],
+      "after_path": [
+        "expression_statement:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:23"
+      ],
+      "after_path": [
+        "labeled_statement:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:24"
+      ],
+      "after_path": [
+        "labeled_statement:24"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:25"
+      ],
+      "after_path": [
+        "labeled_statement:25"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:26"
+      ],
+      "after_path": [
+        "labeled_statement:26"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:27"
+      ],
+      "after_path": [
+        "labeled_statement:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:28"
+      ],
+      "after_path": [
+        "labeled_statement:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:29"
+      ],
+      "after_path": [
+        "labeled_statement:29"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:30"
+      ],
+      "after_path": [
+        "labeled_statement:30"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:31"
+      ],
+      "after_path": [
+        "labeled_statement:31"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:32"
+      ],
+      "after_path": [
+        "labeled_statement:32"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:9"
+      ],
+      "after_path": [
+        "ERROR:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:27"
+      ],
+      "after_path": [
+        "expression_statement:27"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:28"
+      ],
+      "after_path": [
+        "expression_statement:28"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:29"
+      ],
+      "after_path": [
+        "expression_statement:29"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:33"
+      ],
+      "after_path": [
+        "labeled_statement:33"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:34"
+      ],
+      "after_path": [
+        "labeled_statement:34"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:30"
+      ],
+      "after_path": [
+        "expression_statement:30"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:35"
+      ],
+      "after_path": [
+        "labeled_statement:35"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:36"
+      ],
+      "after_path": [
+        "labeled_statement:36"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:31"
+      ],
+      "after_path": [
+        "expression_statement:31"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:37"
+      ],
+      "after_path": [
+        "labeled_statement:37"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:32"
+      ],
+      "after_path": [
+        "expression_statement:32"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:38"
+      ],
+      "after_path": [
+        "labeled_statement:38"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:33"
+      ],
+      "after_path": [
+        "expression_statement:33"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:39"
+      ],
+      "after_path": [
+        "labeled_statement:39"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:10"
+      ],
+      "after_path": [
+        "ERROR:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:34"
+      ],
+      "after_path": [
+        "expression_statement:34"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:35"
+      ],
+      "after_path": [
+        "expression_statement:35"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:36"
+      ],
+      "after_path": [
+        "expression_statement:36"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:40"
+      ],
+      "after_path": [
+        "labeled_statement:40"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:41"
+      ],
+      "after_path": [
+        "labeled_statement:41"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:37"
+      ],
+      "after_path": [
+        "expression_statement:37"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:42"
+      ],
+      "after_path": [
+        "labeled_statement:42"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:43"
+      ],
+      "after_path": [
+        "labeled_statement:43"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:38"
+      ],
+      "after_path": [
+        "expression_statement:38"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:44"
+      ],
+      "after_path": [
+        "labeled_statement:44"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:39"
+      ],
+      "after_path": [
+        "expression_statement:39"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:45"
+      ],
+      "after_path": [
+        "labeled_statement:45"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:40"
+      ],
+      "after_path": [
+        "expression_statement:40"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:46"
+      ],
+      "after_path": [
+        "labeled_statement:46"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:11"
+      ],
+      "after_path": [
+        "ERROR:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:41"
+      ],
+      "after_path": [
+        "expression_statement:41"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:42"
+      ],
+      "after_path": [
+        "expression_statement:42"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:43"
+      ],
+      "after_path": [
+        "expression_statement:43"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:47"
+      ],
+      "after_path": [
+        "labeled_statement:47"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:48"
+      ],
+      "after_path": [
+        "labeled_statement:48"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:44"
+      ],
+      "after_path": [
+        "expression_statement:44"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:49"
+      ],
+      "after_path": [
+        "labeled_statement:49"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:50"
+      ],
+      "after_path": [
+        "labeled_statement:50"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:45"
+      ],
+      "after_path": [
+        "expression_statement:45"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:51"
+      ],
+      "after_path": [
+        "labeled_statement:51"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:46"
+      ],
+      "after_path": [
+        "expression_statement:46"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:52"
+      ],
+      "after_path": [
+        "labeled_statement:52"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:47"
+      ],
+      "after_path": [
+        "expression_statement:47"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:53"
+      ],
+      "after_path": [
+        "labeled_statement:53"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:12"
+      ],
+      "after_path": [
+        "ERROR:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:48"
+      ],
+      "after_path": [
+        "expression_statement:48"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:49"
+      ],
+      "after_path": [
+        "expression_statement:49"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:50"
+      ],
+      "after_path": [
+        "expression_statement:50"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:54"
+      ],
+      "after_path": [
+        "labeled_statement:54"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:55"
+      ],
+      "after_path": [
+        "labeled_statement:55"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:51"
+      ],
+      "after_path": [
+        "expression_statement:51"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:56"
+      ],
+      "after_path": [
+        "labeled_statement:56"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:57"
+      ],
+      "after_path": [
+        "labeled_statement:57"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:52"
+      ],
+      "after_path": [
+        "expression_statement:52"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:58"
+      ],
+      "after_path": [
+        "labeled_statement:58"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:53"
+      ],
+      "after_path": [
+        "expression_statement:53"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:59"
+      ],
+      "after_path": [
+        "labeled_statement:59"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:54"
+      ],
+      "after_path": [
+        "expression_statement:54"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:60"
+      ],
+      "after_path": [
+        "labeled_statement:60"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:13"
+      ],
+      "after_path": [
+        "ERROR:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:55"
+      ],
+      "after_path": [
+        "expression_statement:55"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:56"
+      ],
+      "after_path": [
+        "expression_statement:56"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:57"
+      ],
+      "after_path": [
+        "expression_statement:57"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:61"
+      ],
+      "after_path": [
+        "labeled_statement:61"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:62"
+      ],
+      "after_path": [
+        "labeled_statement:62"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:58"
+      ],
+      "after_path": [
+        "expression_statement:58"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:63"
+      ],
+      "after_path": [
+        "labeled_statement:63"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:64"
+      ],
+      "after_path": [
+        "labeled_statement:64"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:59"
+      ],
+      "after_path": [
+        "expression_statement:59"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:65"
+      ],
+      "after_path": [
+        "labeled_statement:65"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:60"
+      ],
+      "after_path": [
+        "expression_statement:60"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:66"
+      ],
+      "after_path": [
+        "labeled_statement:66"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:61"
+      ],
+      "after_path": [
+        "expression_statement:61"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:67"
+      ],
+      "after_path": [
+        "labeled_statement:67"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "ERROR:14"
+      ],
+      "after_path": [
+        "ERROR:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:62"
+      ],
+      "after_path": [
+        "expression_statement:62"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:63"
+      ],
+      "after_path": [
+        "expression_statement:63"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:64"
+      ],
+      "after_path": [
+        "expression_statement:64"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:68"
+      ],
+      "after_path": [
+        "labeled_statement:68"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:69"
+      ],
+      "after_path": [
+        "labeled_statement:69"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:65"
+      ],
+      "after_path": [
+        "expression_statement:65"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:70"
+      ],
+      "after_path": [
+        "labeled_statement:70"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:71"
+      ],
+      "after_path": [
+        "labeled_statement:71"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:66"
+      ],
+      "after_path": [
+        "expression_statement:66"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:72"
+      ],
+      "after_path": [
+        "labeled_statement:72"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:67"
+      ],
+      "after_path": [
+        "expression_statement:67"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "labeled_statement:73"
+      ],
+      "after_path": [
+        "labeled_statement:73"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 21,
+              "end_row": 9,
+              "end_column": 27
+            }
+          ],
+          "after": [
+            {
+              "start_row": 9,
+              "start_column": 21,
+              "end_row": 9,
+              "end_column": 27
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

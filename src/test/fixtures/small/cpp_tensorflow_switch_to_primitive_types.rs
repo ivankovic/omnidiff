@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,19 +15,30 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-tensorflow-switch-to-primitive-types",
-        6,
-        6,
+        1,
+        1,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-tensorflow-switch-to-primitive-types")
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 87: the space before `std::` is painted, though it did not change
+    assert_ground_truth_invariants_with_known_violations(
+        "cpp-tensorflow-switch-to-primitive-types",
+        1,
+    )
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("cpp-tensorflow-switch-to-primitive-types", 5.69)
 }

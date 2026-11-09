@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,14 +29,15 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-openssl-openssl-very-interesting-test-case", 3.3)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-very-interesting-test-case", 3.28)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: `okeylen` -> `md_len` on after row 321 is not painted as its differing word `md_`
-    // under Minimal. Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted
-    // regions on before row 298 and after row 301.
+    // Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted regions on
+    // before row 298 and after row 301.
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   before row 273: the space before the delete `output` is not painted with it
     assert_ground_truth_invariants_with_known_violations(
         "c-openssl-openssl-very-interesting-test-case",
         3,

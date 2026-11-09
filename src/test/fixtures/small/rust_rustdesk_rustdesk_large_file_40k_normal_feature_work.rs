@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,12 +20,12 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused (40/28); the rest is solve_multi_maps (phase 9c) grouping the
-    // `self.keyboard` line the ground truth inserts: the `else if` nesting artifact (NM_MAPPING.md).
+    // A `||` chain gains and loses operands; the human keeps a different `||` than
+    // `APTED("qualified_name")` does.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rustdesk-rustdesk-large-file-40k-normal-feature-work",
-        60,
-        40,
+        4,
+        2,
     )
 }
 

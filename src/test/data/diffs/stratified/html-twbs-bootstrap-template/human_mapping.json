@@ -1,0 +1,171 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "text:1"
+      ],
+      "after_path": [
+        "text:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:1"
+      ],
+      "after_path": [
+        "script_element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "text:2"
+      ],
+      "after_path": [
+        "text:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:2"
+      ],
+      "after_path": [
+        "script_element:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "text:3"
+      ],
+      "after_path": [
+        "text:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:3"
+      ],
+      "after_path": [
+        "script_element:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "text:4"
+      ],
+      "after_path": [
+        "text:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:4"
+      ],
+      "after_path": [
+        "script_element:4"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "text:5"
+      ],
+      "after_path": [
+        "text:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:5"
+      ],
+      "after_path": [
+        "script_element:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "text:6"
+      ],
+      "after_path": [
+        "text:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "script_element:6"
+      ],
+      "after_path": [
+        "script_element:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "text:7"
+      ],
+      "after_path": [
+        "text:7"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 0,
+              "start_column": 6,
+              "end_row": 0,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 0,
+              "start_column": 6,
+              "end_row": 0,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 17,
+              "start_column": 7,
+              "end_row": 17,
+              "end_column": 39
+            }
+          ],
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 7,
+              "end_row": 17,
+              "end_column": 24
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

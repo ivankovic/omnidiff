@@ -1,24 +1,24 @@
 # Maintainer: Marko Ivankovic <marko@ivankovic.me>
 
 pkgname=omnidiff
-pkgver=0.1.1
+pkgver=0.4.0
 pkgrel=1
-pkgdesc="Fast, robust, syntax-aware code diffing using tree-sitter ASTs"
+pkgdesc="Fast, robust, accurate content-aware diffing"
 arch=('x86_64' 'aarch64')
 url="https://github.com/ivankovic/omnidiff"
-license=('AGPL-3.0-or-later')
+license=('AGPL-3.0-only')
 depends=('gcc-libs' 'glibc')
 makedepends=('cargo')
 # Sourced from the GitHub tag rather than the crates.io tarball: the published crate carries
 # neither tests/, src/bin/ nor the fixture corpus (see Cargo.toml's `include`), so `check()` would
 # have nothing to run. The tradeoff is that this download also carries research/ and the test corpus.
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-# sha256 of the v0.1.1 tag tarball. Until `updpkgsums` runs after the next tag exists, this is
+# sha256 of the v0.4.0 tag tarball. Until `updpkgsums` runs after the next tag exists, this is
 # the previous tag's hash, and the package does not build. Re-run `updpkgsums` in this
 # directory after every tag; do not guess it, and do not read it from the release's
 # SHA256SUMS.txt - that asset covers the *release assets* (the prebuilt binaries, the .deb, the
 # completions tarball), and GitHub's auto-generated source tarball is not one of them.
-sha256sums=('a59bf5c332abb07f15612f2221c3b7b8f8987920beaea9cf9a825e1002b6b886')
+sha256sums=('864d75c5689691fc84df540a55f467ed2783cdb974ca9b627316143e4ab4ecf3')
 
 prepare() {
 	cd "$pkgname-$pkgver"

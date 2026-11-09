@@ -4,8 +4,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,7 +28,7 @@
   installShellFiles,
   git,
   src ? ../..,
-  version ? "0.1.1",
+  version ? "0.4.0",
 }:
 
 rustPlatform.buildRustPackage {
@@ -83,7 +82,7 @@ rustPlatform.buildRustPackage {
   '';
 
   meta = {
-    description = "Fast, robust, syntax-aware code diffing using tree-sitter ASTs";
+    description = "Fast, robust, accurate content-aware diffing";
     longDescription = ''
       OmniDiff parses both sides of a diff with tree-sitter and matches their syntax trees, so a
       change is reported as what it structurally is - an insertion, deletion, update, or move -
@@ -93,7 +92,7 @@ rustPlatform.buildRustPackage {
     '';
     homepage = "https://github.com/ivankovic/omnidiff";
     changelog = "https://github.com/ivankovic/omnidiff/releases";
-    license = lib.licenses.agpl3Plus;
+    license = lib.licenses.agpl3Only;
     mainProgram = "omnidiff";
     maintainers = [ ];
     platforms = lib.platforms.unix ++ lib.platforms.windows;

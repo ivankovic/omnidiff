@@ -178,6 +178,12 @@ benchmark-quality` prints the total runtime and the time per fixture; `make chec
 the p50/p90/p99 distribution against the committed baseline, and warns, never fails, on a runtime
 above 2x the baseline.
 
+Times are only comparable on one machine, so each machine keeps its own baseline. A machine is
+registered in `research/data/machines.csv` by its CPU's model name, and `scripts/machine.py` tells
+the Makefile which one it is on; `MACHINE=<name>` overrides. On a machine new to the project, add
+its row, then run `make update-timing-baseline` (and `make benchmark-content` for the content
+figures). A machine without a baseline, such as a CI runner, skips the runtime comparison.
+
 ## Code structure
 
 Follow Rust's standard project structure.
@@ -222,7 +228,7 @@ documented there.
 
 ### Build, test, quality
 
-* `test` - `cargo nextest run --release --all-features`, plus `test-mapping-site-js`,
+* `test` - `cargo nextest run --cargo-profile ci --all-features`, plus `test-mapping-site-js`,
   `test-viewer-js` and `test-showcase-js` (plain-Node tests of the human-mapping site's and the
   showcase's vanilla JS, which cargo's suite cannot cover - see the root Makefile) and
   `test-python` (`pytest` over the research and script helpers, in `research/`'s uv environment).
@@ -236,6 +242,13 @@ documented there.
 * `coverage` - line coverage of the suite over this repository's own code, via `cargo-llvm-cov`
   driving nextest (`cargo install cargo-llvm-cov`, plus `rustup component add llvm-tools-preview`).
   See "Coverage" above for what it reports and why it is not a gate.
+* `test-quick` - the edit loop's Rust suite, about 12 s warm against `test-rust`'s two minutes:
+  every test outside the fixtures but the corpus sweeps, and the fixtures
+  `src/test/data/quick_fixtures.txt` names, the cheapest set reaching every line the whole fixture
+  corpus reaches beyond those tests, plus any fixture added since that list was measured. Not a
+  gate; `test` and CI run everything.
+* `update-quick-fixtures` - rewrites that list from per-test coverage, measured first with
+  `make -C research measure-per-test-coverage` (about ten minutes). Re-run after engine changes.
 * `lint-python` - `ruff check` then `ruff format --check` over `research`, `scripts` and `assets`,
   the same three directories CI's python job covers. Requires `ruff`
   (`uv tool install ruff@0.16.4`, one-time - see "Code quality" above).
@@ -275,7 +288,8 @@ Three verbs, and which file a target lives in follows from them:
 * `check-quality` - the gate. What CI runs on every push and what `deploy` runs before it tags a
   release. Fails hard on an accuracy regression against the checked-in baseline; only warns on a
   runtime jump of more than 2x.
-* `update-quality-baseline` - re-cuts both baselines after a reviewed change. `deploy` never runs
+* `update-quality-baseline` - re-cuts the accuracy baseline and this machine's timing baseline
+  after a reviewed change; `update-timing-baseline` re-cuts the timing alone. `deploy` never runs
   it automatically. It cannot lower the accuracy bar: a test pins `quality_baseline.csv`'s
   per-fixture accuracy columns to the `fixtures` stubs' limits, so raising a limit means editing
   that fixture's stub - the same file that holds the prose explaining why.
@@ -307,8 +321,8 @@ Every push and pull request runs (see `.github/workflows/ci.yml`):
 * `cargo fmt --check`
 * `cargo clippy --tests -- -D warnings`, once each for the three Cargo feature configs (default,
   `test-fixtures`, `stats` - see Cargo.toml's `[features]`)
-* `cargo build --release` + `cargo nextest run --release`, once each for the same three feature
-  configs; the fixture-corpus tests, which no feature changes, run once, split three ways across
+* `cargo build` + `cargo nextest run` under the `ci` profile, once each for the same three
+  feature configs; the fixture-corpus tests, which no feature changes, run once, split three ways across
   those jobs
 * `cargo audit` (checks Cargo.lock against the RustSec advisory database)
 * The vanilla-JS tests of the `human_mapping` site, the showcase viewer and the showcase shim

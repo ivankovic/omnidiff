@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -185,13 +184,17 @@ pub(crate) fn action_save_solution_as(
     // `Minimal` forbids a wholly-changed line's indentation and `Full` requires it, so a branch
     // between those two presets converts (see `expand_leading_whitespace_for_full`). A free-form
     // name states no preset, so nothing is converted.
-    let extended = if copy
+    let (extended, reached_back, identifiers) = if copy
         && human_mapping::invariants::designates_minimal(&app.text_solution)
         && human_mapping::invariants::designates_full(target)
     {
-        expand_leading_whitespace_for_full(&mut entries, before_src, after_src)
+        (
+            expand_leading_whitespace_for_full(&mut entries, before_src, after_src),
+            expand_whitespace_before_removals_for_full(&mut entries, before_src, after_src),
+            expand_updated_identifiers_for_full(&mut entries, before_src, after_src),
+        )
     } else {
-        0
+        (0, 0, 0)
     };
     app.mapping.text_mappings.push(NamedTextMapping {
         name: target.to_string(),
@@ -200,11 +203,25 @@ pub(crate) fn action_save_solution_as(
     app.text_solution = target.to_string();
     app.mark_dirty();
     app.status = Some(if copy {
-        let widened = match extended {
+        let mut widened = match extended {
             0 => String::new(),
             1 => ", 1 line widened to its indentation".to_string(),
             rows => format!(", {rows} lines widened to their indentation"),
         };
+        match reached_back {
+            0 => {}
+            1 => widened.push_str(", 1 range widened over the whitespace before it"),
+            ranges => widened.push_str(&format!(
+                ", {ranges} ranges widened over the whitespace before them"
+            )),
+        }
+        match identifiers {
+            0 => {}
+            1 => widened.push_str(", 1 update widened to whole identifiers"),
+            ranges => widened.push_str(&format!(
+                ", {ranges} update ranges widened to whole identifiers"
+            )),
+        }
         format!(
             "Started '{target}' as a copy of the previous painting ({count} range(s)){widened} - {} now on file",
             app.mapping.text_mappings.len()
@@ -558,6 +575,9 @@ pub(crate) fn verdict_at(
 pub(crate) struct InvariantEntry {
     pub(crate) violation: human_mapping::invariants::GroundTruthViolation,
     pub(crate) details: Vec<String>,
+    /// For a review-queue item (see `review`), its line in `review_queue.tsv`; `None` for an
+    /// invariant violation.
+    pub(crate) review: Option<String>,
 }
 
 /// Every violation of the *in-memory* mapping, with rendered sites. Not the by-name form, which
@@ -577,14 +597,18 @@ pub(crate) fn invariant_entries(
                 .iter()
                 .map(|site| site_detail(*site, before, after))
                 .collect();
-            InvariantEntry { violation, details }
+            InvariantEntry {
+                violation,
+                details,
+                review: None,
+            }
         })
         .collect())
 }
 
 /// One site as a line: `before 17:54-17:56  ": "  in line_comment 534..606`. The node part is
 /// dropped for a side with no tree, and for a span that reads back as nothing.
-fn site_detail(
+pub(crate) fn site_detail(
     site: human_mapping::invariants::ViolationSite,
     before: &Code,
     after: &Code,
@@ -678,9 +702,12 @@ pub(crate) fn action_focus_violation(
     };
     state.scroll_into_view(20);
     app.modal = Some(Modal::TextView { state });
+    let what = match entry.review {
+        Some(_) => "Review item".to_string(),
+        None => format!("Invariant {}", entry.violation.invariant),
+    };
     app.status = Some(format!(
-        "Invariant {} - {} side(s) moved, Esc for the trees behind this",
-        entry.violation.invariant,
+        "{what} - {} side(s) moved, Esc for the trees behind this",
         moved.join(" and "),
     ));
 }
@@ -1236,6 +1263,204 @@ pub(crate) fn expand_leading_whitespace_for_full(
     extended
 }
 
+/// The other half of branching `Minimal` to `Full`: a `Delete` or `Insert` range that starts
+/// mid-row is widened leftwards over the unpainted whitespace before it, so `,    gone` reads as
+/// one removal from just after the `,` (a list element and its separating blank go together).
+/// `Full` paintings on file do this about four times in five; the rest leave a single blank after
+/// `=`, `return` or `&&` unpainted, which is then corrected by hand.
+///
+/// Only within the range's first row, and only over whitespace that code precedes: a run that
+/// reaches column 0 is indentation, which [`expand_leading_whitespace_for_full`] widens for a
+/// wholly changed line and a partly changed line keeps. Whitespace any range already paints is
+/// left alone, so nothing overlaps: the range widens up to it, closing the gap. Returns how many
+/// ranges it widened.
+pub(crate) fn expand_whitespace_before_removals_for_full(
+    entries: &mut [HumanTextEntry],
+    before_src: &str,
+    after_src: &str,
+) -> usize {
+    let mut widened = 0;
+    for (side, source) in [(0usize, before_src), (1usize, after_src)] {
+        let spans_of = |entry: &HumanTextEntry| {
+            if side == 0 {
+                entry.before.clone()
+            } else {
+                entry.after.clone()
+            }
+        };
+        let placed: Vec<HumanTextSpan> = entries.iter().flat_map(spans_of).collect();
+        for entry in entries.iter_mut() {
+            if !matches!(
+                entry.operation,
+                HumanTextOperation::Delete | HumanTextOperation::Insert
+            ) {
+                continue;
+            }
+            let spans = if side == 0 {
+                &mut entry.before
+            } else {
+                &mut entry.after
+            };
+            for span in spans.iter_mut() {
+                let row = span.start_row;
+                let line = TextPaintState::row_text(source, row);
+                let Some(head) = line.get(..span.start_column) else {
+                    continue;
+                };
+                // Back over the blanks before the range, stopping at one another range paints.
+                let mut start = span.start_column;
+                for c in head.chars().rev() {
+                    let column = start - c.len_utf8();
+                    if !c.is_whitespace()
+                        || placed
+                            .iter()
+                            .any(|other| span_covers(*other, row, column, line.len()))
+                    {
+                        break;
+                    }
+                    start = column;
+                }
+                // Blanks back to column 0 are indentation.
+                if start == span.start_column || line[..start].trim().is_empty() {
+                    continue;
+                }
+                span.start_column = start;
+                widened += 1;
+            }
+        }
+    }
+    widened
+}
+
+/// A character an identifier is made of, judged by text as invariant 16 judges one.
+fn is_identifier_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '$'
+}
+
+/// The third part of branching `Minimal` to `Full`: an updated `Match` (its sides read
+/// differently) that paints part of an identifier is widened to the whole identifier, on every
+/// span of both sides - `Minimal` marks only the differing words of a rename, `Full` the name
+/// entire (invariant 16). A member's `.` goes with it: `.minIndex` -> `.maxIndex` is painted from
+/// the dot, as every `Full` painting made since 2026-10-21 does (the bulk paintings of 2026-10-02
+/// left it out).
+///
+/// A span is widened at its start back to where the identifier it starts in begins, then over a
+/// `.` right before that, and at its end on to where the identifier it ends in ends. A span whose
+/// ends are not in an identifier is left as it is, as is a `Move` (identical text) and every
+/// one-sided range. Judged by text alone, so a word inside a string is widened like a name. The
+/// widening never takes a byte another range paints: a span that would is left as it was. Returns
+/// how many spans it widened.
+pub(crate) fn expand_updated_identifiers_for_full(
+    entries: &mut [HumanTextEntry],
+    before_src: &str,
+    after_src: &str,
+) -> usize {
+    let sources = [before_src, after_src];
+    let mut widened = 0;
+    for index in 0..entries.len() {
+        if entries[index].operation != HumanTextOperation::Match {
+            continue;
+        }
+        let texts: Vec<&str> = [0usize, 1]
+            .into_iter()
+            .flat_map(|side| {
+                let spans = if side == 0 {
+                    &entries[index].before
+                } else {
+                    &entries[index].after
+                };
+                spans
+                    .iter()
+                    .filter_map(move |span| human_mapping::span_text(sources[side], *span))
+            })
+            .collect();
+        if texts.windows(2).all(|pair| pair[0] == pair[1]) {
+            continue;
+        }
+        for (side, &source) in sources.iter().enumerate() {
+            let others: Vec<HumanTextSpan> = entries
+                .iter()
+                .enumerate()
+                .filter(|(other, _)| *other != index)
+                .flat_map(|(_, entry)| {
+                    if side == 0 {
+                        entry.before.clone()
+                    } else {
+                        entry.after.clone()
+                    }
+                })
+                .collect();
+            let spans = if side == 0 {
+                &mut entries[index].before
+            } else {
+                &mut entries[index].after
+            };
+            for span in spans.iter_mut() {
+                let first = TextPaintState::row_text(source, span.start_row);
+                let last = TextPaintState::row_text(source, span.end_row);
+                let (Some(head), Some(tail)) = (
+                    first.get(..span.start_column),
+                    last.get(span.end_column.min(last.len())..),
+                ) else {
+                    continue;
+                };
+                let inside_start = first[span.start_column..]
+                    .chars()
+                    .next()
+                    .is_some_and(is_identifier_char);
+                let inside_end = last[..span.end_column.min(last.len())]
+                    .chars()
+                    .next_back()
+                    .is_some_and(is_identifier_char);
+                let mut start = span.start_column;
+                if inside_start {
+                    start -= head
+                        .chars()
+                        .rev()
+                        .take_while(|&c| is_identifier_char(c))
+                        .map(char::len_utf8)
+                        .sum::<usize>();
+                    // A member's dot, not a number's (`1.5`): only before what can start a name.
+                    let starts_a_name = first[start..]
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_alphabetic() || c == '_' || c == '$');
+                    if starts_a_name && first[..start].ends_with('.') {
+                        start -= 1;
+                    }
+                }
+                let mut end = span.end_column;
+                if inside_end {
+                    end += tail
+                        .chars()
+                        .take_while(|&c| is_identifier_char(c))
+                        .map(char::len_utf8)
+                        .sum::<usize>();
+                }
+                if start == span.start_column && end == span.end_column {
+                    continue;
+                }
+                let taken = |row: usize, columns: std::ops::Range<usize>, line: &str| {
+                    columns.into_iter().any(|column| {
+                        others
+                            .iter()
+                            .any(|other| span_covers(*other, row, column, line.len()))
+                    })
+                };
+                if taken(span.start_row, start..span.start_column, first)
+                    || taken(span.end_row, span.end_column..end, last)
+                {
+                    continue;
+                }
+                span.start_column = start;
+                span.end_column = end;
+                widened += 1;
+            }
+        }
+    }
+    widened
+}
+
 /// `n` / `p`: moves *both* sides' cursors to the next/previous hunk, wrapping. Both, because the
 /// panels scroll independently. "Next" is read off the focused side's row. A live selection is
 /// left alone.
@@ -1312,6 +1537,93 @@ pub(crate) fn action_paint_align(
         ));
     }
     // Moving a cursor with an anchor grows a selection the reader is not looking at, so say so.
+    if state.anchor[other].is_some() {
+        status.push_str(" - its selection now reaches there too");
+    }
+    app.status = Some(status);
+}
+
+/// `f` in the text view: puts the other side's cursor on a range the painted `Match` under this
+/// side's cursor pairs with, scrolled level with this cursor. Pressed again it takes the next one,
+/// wrapping, so an N:M match is walked range by range; the focus stays on this side for that.
+pub(crate) fn action_paint_follow_match(
+    app: &mut App,
+    state: &mut TextPaintState,
+    before_src: &str,
+    after_src: &str,
+    viewport_rows: usize,
+) {
+    let sources = [before_src, after_src];
+    let (side, other) = (state.side, 1 - state.side);
+    let contains = |span: &HumanTextSpan, source: &str, offset: usize| {
+        let start = TextPaintState::byte_offset(source, span.start_row, span.start_column);
+        let end = TextPaintState::byte_offset(source, span.end_row, span.end_column);
+        matches!((start, end), (Some(start), Some(end)) if start <= offset && offset < end)
+    };
+    let (row, column) = state.cursor[side];
+    let entry = TextPaintState::byte_offset(sources[side], row, column).and_then(|offset| {
+        solution_entries(&app.mapping, &app.text_solution)
+            .iter()
+            .find(|entry| {
+                let spans = if side == 0 {
+                    &entry.before
+                } else {
+                    &entry.after
+                };
+                entry.operation == HumanTextOperation::Match
+                    && spans
+                        .iter()
+                        .any(|span| contains(span, sources[side], offset))
+            })
+    });
+    let Some(entry) = entry else {
+        app.status = Some(
+            "No painted match under the cursor - f follows a match (m) to its other side"
+                .to_string(),
+        );
+        return;
+    };
+    let mut partners = if other == 0 {
+        entry.before.clone()
+    } else {
+        entry.after.clone()
+    };
+    partners.sort_by_key(|span| (span.start_row, span.start_column));
+    let verdict = match entry.verdict(before_src, after_src) {
+        Ok(HumanTextVerdict::Move) => "move",
+        _ => "update",
+    };
+
+    // The range after the one the other cursor is already on, so repeating walks them all.
+    let (other_row, other_column) = state.cursor[other];
+    let current =
+        TextPaintState::byte_offset(sources[other], other_row, other_column).and_then(|offset| {
+            partners
+                .iter()
+                .position(|span| contains(span, sources[other], offset))
+        });
+    let next = current.map_or(0, |index| (index + 1) % partners.len());
+    let target = partners[next];
+    state.cursor[other] = (target.start_row, target.start_column);
+    state.scroll[other] = target
+        .start_row
+        .saturating_sub(row.saturating_sub(state.scroll[side]));
+    state.scroll_side_into_view(other, viewport_rows);
+
+    let name = if other == 0 { "Before" } else { "After" };
+    let mut status = if partners.len() == 1 {
+        format!(
+            "The {verdict}'s {name} range, line {}",
+            target.start_row + 1
+        )
+    } else {
+        format!(
+            "The {verdict}'s {name} range {} of {}, line {} - f for the next",
+            next + 1,
+            partners.len(),
+            target.start_row + 1
+        )
+    };
     if state.anchor[other].is_some() {
         status.push_str(" - its selection now reaches there too");
     }
@@ -1464,7 +1776,8 @@ fn spans_share_a_byte(a: HumanTextSpan, b: HumanTextSpan, source: &str) -> bool 
 /// is committed as `d`/`i` would commit it: without indentation, one range per row (invariant 6).
 /// The rows are paired one to one as separate matches, each a move or an update by itself - one
 /// match over every row would be an update as a whole as soon as any row differs. Unequal row
-/// counts are refused.
+/// counts cannot pair, so they are one N:M match over every row instead: a passage rewritten into
+/// more or fewer lines, which is an update.
 pub(crate) fn action_paint_match(
     app: &mut App,
     state: &mut TextPaintState,
@@ -1527,7 +1840,8 @@ pub(crate) fn action_paint_match(
 }
 
 /// The `Minimal` multi-row branch of [`action_paint_match`]: `before` and `after` are the two
-/// sweeps. All or nothing: every row pair is checked before any is painted.
+/// sweeps. All or nothing: every row pair is checked before any is painted. With unequal row
+/// counts, one match over every row of both sides.
 fn action_paint_match_rows(
     app: &mut App,
     state: &mut TextPaintState,
@@ -1538,17 +1852,7 @@ fn action_paint_match_rows(
 ) {
     let before_rows = skip_leading_whitespace(before, before_src);
     let after_rows = skip_leading_whitespace(after, after_src);
-    if before_rows.len() != after_rows.len() {
-        app.status = Some(format!(
-            "Not matched: {} line(s) against {} after dropping blank lines and indentation - \
-             Minimal pairs the rows one to one, so sweep the same number of lines on each side, \
-             or use a vertical selection (V)",
-            before_rows.len(),
-            after_rows.len()
-        ));
-        return;
-    }
-    if before_rows.is_empty() {
+    if before_rows.is_empty() || after_rows.is_empty() {
         app.status = Some(
             "Only blank lines selected - Minimal claims no indentation, so nothing to match"
                 .to_string(),
@@ -1557,6 +1861,35 @@ fn action_paint_match_rows(
     }
 
     let solution = app.text_solution.clone();
+    if before_rows.len() != after_rows.len() {
+        let shape = format!("{}:{}", before_rows.len(), after_rows.len());
+        let entry = HumanTextEntry {
+            operation: HumanTextOperation::Match,
+            before: before_rows,
+            after: after_rows,
+        };
+        // Unequal counts cannot all read the same, so this is always an update; checked anyway
+        // for spans that do not read back.
+        if let Err(err) = entry.verdict(before_src, after_src) {
+            app.status = Some(format!("Not matched: {err:#}"));
+            return;
+        }
+        if let Some(clash) =
+            overlapping_painted_range(&app.mapping, &solution, &entry, before_src, after_src)
+        {
+            app.status = Some(format!("Not matched: {clash} - u removes it first"));
+            return;
+        }
+        solution_entries_mut(&mut app.mapping, &solution).push(entry);
+        app.mark_dirty();
+        state.anchor = [None; 2];
+        state.pending = [Vec::new(), Vec::new()];
+        app.status = Some(format!(
+            "Matched {shape} line(s) as one update: unequal line counts cannot pair one to one - \
+             indentation left unpainted (Minimal)"
+        ));
+        return;
+    }
     let mut entries = Vec::with_capacity(before_rows.len());
     let mut moves = 0usize;
     for (before_row, after_row) in before_rows.into_iter().zip(after_rows) {
@@ -1929,6 +2262,10 @@ pub(crate) enum OpenTarget {
         summary: String,
         path: String,
     },
+    /// `Enter` on a host string: its embedded layer (see [`LayerFrame`]).
+    EnterLayer(LayerRequest),
+    /// `q`/`Esc` inside an embedded layer: back to the host file.
+    LeaveLayer,
 }
 
 impl OpenTarget {
@@ -1936,8 +2273,45 @@ impl OpenTarget {
         match self {
             OpenTarget::Diffs(name) | OpenTarget::Sample(name) => name,
             OpenTarget::GitCommitFile { path, .. } => path,
+            OpenTarget::EnterLayer(_) => "the embedded layer",
+            OpenTarget::LeaveLayer => "the host file",
         }
     }
+}
+
+/// The embedded layer `Enter` asks for: the host string pair, by path, and its language.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct LayerRequest {
+    pub(crate) before_path: Vec<String>,
+    pub(crate) after_path: Vec<String>,
+    pub(crate) language: omnidiff::code::Language,
+}
+
+/// What an open embedded layer hides of the file it is in, restored by `q`/`Esc`.
+///
+/// Inside a layer the session is an ordinary session over the *decoded* pair: `App::mapping` is
+/// the layer's own [`HumanMapping`] and the panels, `t` view and omnidiff's run are all about the
+/// embedded code, so every key works as in a file. Only saving and leaving know about the host:
+/// `s` writes the layer back into the host's mapping, all the way out, and saves the fixture
+/// ([`App::whole_mapping`]). `dirty` is one flag across the stack, since one file holds it all.
+pub(crate) struct LayerFrame {
+    /// The host's mapping, with this layer at `embedded[index]` (its content stale while the
+    /// layer is open: `App::mapping` is the live copy).
+    pub(crate) mapping: HumanMapping,
+    pub(crate) index: usize,
+    /// Whether the layer was created by opening it, so leaving it untouched removes it again.
+    pub(crate) created: bool,
+    /// For the title line: the language and where the string is.
+    pub(crate) label: String,
+    pub(crate) focus: Focus,
+    pub(crate) before: PanelState,
+    pub(crate) after: PanelState,
+    pub(crate) undo_stack: Vec<HumanMapping>,
+    pub(crate) redo_stack: Vec<HumanMapping>,
+    pub(crate) algo_diff: Option<ASTDiff>,
+    pub(crate) text_solution: String,
+    /// The host's `t` view when `Enter` was pressed in it, reopened on the way back.
+    pub(crate) text_view: Option<TextPaintState>,
 }
 
 /// Where the open case's content lives. Decides what `s` does and what switching away with
@@ -2002,6 +2376,8 @@ pub(crate) struct App {
     /// Invariant violations per case, for the `Invariant` column. Lazy like the caches above; a
     /// case with no mapping is absent rather than 0.
     pub(crate) diff_invariants: Option<std::collections::HashMap<String, usize>>,
+    /// Open `review_queue.tsv` items per case, for the `Review` column. Re-read on each `o`.
+    pub(crate) review_counts: std::collections::HashMap<String, usize>,
     /// Changed-line count per case (`diff_case_size`), for the `Size` column. Lazy.
     pub(crate) diff_sizes: Option<std::collections::HashMap<String, usize>>,
     /// Whether each case has a painting (`diff_case_has_text_mapping`), for the `Paint` column.
@@ -2010,6 +2386,10 @@ pub(crate) struct App {
     /// Every case's `description.md`, loaded on the first `o` since it is displayed, not just
     /// filtered on. Cases with no note are absent.
     pub(crate) diff_comments: Option<std::collections::HashMap<String, String>>,
+    /// Every content fixture (pictures, archives, ...) with what the human recorded, re-read on
+    /// each `o`: the picker lists them beside the code cases, and a row is content exactly when
+    /// its name is here.
+    pub(crate) content_rows: std::collections::HashMap<String, crate::ContentRow>,
     /// What the `t` view paints (see `TextOverlay`), cycled by `o`.
     pub(crate) text_overlay: TextOverlay,
     /// omnidiff's text ranges per side, computed on first use and dropped on case change.
@@ -2031,6 +2411,10 @@ pub(crate) struct App {
     /// How the pending selection's members correspond, flipped by `X`. Reset whenever the
     /// selection is cleared, so all-to-all is always deliberate.
     pub(crate) multi_select_pairing: GroupPairing,
+    /// Open embedded layers, outermost first; empty in the host file (see [`LayerFrame`]).
+    pub(crate) layers: Vec<LayerFrame>,
+    /// The case's painted layers as the `t` view draws them; set as each session starts.
+    pub(crate) layer_paint: Vec<LayerPaint>,
 }
 
 impl App {
@@ -2070,9 +2454,11 @@ impl App {
             diff_view: DiffPickerView::default(),
             diff_disagreement: None,
             diff_invariants: None,
+            review_counts: std::collections::HashMap::new(),
             diff_sizes: None,
             diff_text_painted: None,
             diff_comments: None,
+            content_rows: std::collections::HashMap::new(),
             text_solution,
             text_overlay: TextOverlay::default(),
             algo_text_spans: None,
@@ -2081,7 +2467,32 @@ impl App {
             before_multi_select: std::collections::BTreeSet::new(),
             after_multi_select: std::collections::BTreeSet::new(),
             multi_select_pairing: GroupPairing::default(),
+            layers: Vec::new(),
+            layer_paint: Vec::new(),
         }
+    }
+
+    /// The fixture's whole mapping: `mapping` itself in the host file; inside a layer, the host's
+    /// mapping with each open layer's live mapping written back into it, all the way out. What
+    /// `s` saves.
+    pub(crate) fn whole_mapping(&self) -> HumanMapping {
+        let mut inner = self.mapping.clone();
+        for frame in self.layers.iter().rev() {
+            let mut outer = frame.mapping.clone();
+            outer.embedded[frame.index].mapping = inner;
+            inner = outer;
+        }
+        inner
+    }
+
+    /// The case's name, with the open layers after it, for the title line.
+    pub(crate) fn display_name(&self) -> String {
+        let mut name = self.name.clone();
+        for frame in &self.layers {
+            name.push_str(" > ");
+            name.push_str(&frame.label);
+        }
+        name
     }
 
     /// Drops the pending selection and its pairing: the only way it is cleared, so no `X` leaks

@@ -1,0 +1,37 @@
+<?php
+
+class Table
+{
+    public function __construct(
+        private string $label,
+        private array $guests,
+    ) {
+    }
+
+    public function title(): string
+    {
+        return 'Table ' . $this->label;
+    }
+
+    public function seats(): int
+    {
+        return array_sum($this->guests);
+    }
+
+    public function describe(): string
+    {
+        $total = $this->seats();
+        return "{$this->title()}: {$total} seats";
+    }
+}
+
+$sizes = array(4, 2);
+$tables = [
+    new Table('window', $sizes),
+    new Table('terrace', [6, 1]),
+];
+foreach ($tables as $table) {
+    echo $table->describe(), PHP_EOL;
+}
+$largest = max(array_map(fn ($t) => $t->seats(), $tables));
+echo $largest, PHP_EOL;

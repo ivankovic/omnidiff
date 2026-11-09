@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -44,11 +43,10 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // `FULL` sets the limit. `displaced_beside_an_edit_on_its_first_row` costs `MINIMAL` two bytes
     // here that the human paints.
-    assert_matches_human_painting_within_limit("rust-algorithm-change", 28.0)
+    assert_matches_human_painting_within_limit("rust-algorithm-change", 26.75)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the rename split is not painted (`num` against `nums`).
-    assert_ground_truth_invariants_with_known_violations("rust-algorithm-change", 1)
+    assert_ground_truth_invariants("rust-algorithm-change")
 }

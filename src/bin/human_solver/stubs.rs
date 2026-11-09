@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,8 +32,7 @@ pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the OmniDiff c
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,8 +44,19 @@ pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the OmniDiff c
  */
 ";
 
+/// A fixture's stub module: its name lowercased (rustc's `non_snake_case` lint rejects the `URL`
+/// of `csharp-waf-csharprepl-update-string-URL`), with every character a Rust identifier cannot
+/// hold (`-`, and the `@` of `logo@2x`) as `_`.
 pub(crate) fn module_name(name: &str) -> String {
-    name.replace('-', "_")
+    name.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 /// `fixtures/` mirrors `diffs/`'s split by dataset (see `DIFF_DATASETS`).
@@ -160,6 +169,29 @@ pub(crate) fn wrap_comment_lines_with_prefix(comment: &str, prefix: &str) -> Str
         .into_iter()
         .map(|line| format!("{prefix}{line}\n"))
         .collect()
+}
+
+/// Whether a save of `mapping` under `name` has a painting to test: its own, or the empty one its
+/// painted embedded layers imply (`human_mapping::implied_host_painting`). Only that second case
+/// reads the fixture's files.
+pub(crate) fn is_painted(
+    name: &str,
+    mapping: &omnidiff::test::helper::human_mapping::HumanMapping,
+) -> Result<bool> {
+    if !mapping.text_mappings.is_empty() {
+        return Ok(true);
+    }
+    if mapping
+        .embedded
+        .iter()
+        .all(|layer| layer.mapping.text_mappings.is_empty())
+    {
+        return Ok(false);
+    }
+    let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;
+    Ok(omnidiff::test::helper::human_mapping::has_painting(
+        mapping, before, after,
+    ))
 }
 
 /// Appends a `painting()` test to the file [`ensure_stub_test`] created; a missing file is an
@@ -338,7 +370,7 @@ pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeas
         ))
     };
 
-    let painting_percent = if load(name)?.text_mappings.is_empty() {
+    let painting_percent = if !is_painted(name, &load(name)?)? {
         None
     } else {
         let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;

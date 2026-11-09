@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,18 +15,19 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // New attributes plus seven new <string> elements at scattered points. Byte-identical
-    // whitespace `CharData` downstream of each insertion matches a content-identical sibling other
-    // than the human's (see xml-nextcloud-android-add-few-translations).
+    // New attributes plus seven new <string> elements at scattered points. One is left: a
+    // whitespace `CharData` (`\n` -> `\n  `) the human grades Update and `APTED("fast_fallback")`
+    // Identical.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "xml-mozilla-firefox-firefox-add-a-few-translations-and-a-few-attributes",
-        69,
-        49,
+        1,
+        1,
     )
 }
 
@@ -35,5 +35,13 @@ fn mapping() -> Result<()> {
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants(
         "xml-mozilla-firefox-firefox-add-a-few-translations-and-a-few-attributes",
+    )
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "xml-mozilla-firefox-firefox-add-a-few-translations-and-a-few-attributes",
+        0.09,
     )
 }

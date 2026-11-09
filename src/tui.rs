@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,6 +16,7 @@
  */
 pub mod actions;
 pub mod app;
+pub mod clipboard;
 pub mod color_depth;
 pub mod components;
 pub mod display_columns;
@@ -25,6 +25,7 @@ pub mod headless;
 pub mod json_output;
 pub mod positional;
 pub mod screenshot;
+pub mod settings_examples;
 pub mod theme;
 pub mod ui;
 pub mod widgets;

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -50,6 +49,7 @@ pub(crate) fn difftastic_extension(language: Language) -> Option<&'static str> {
         Language::Swift => Some("swift"),
         Language::Scala => Some("scala"),
         Language::LUA => Some("lua"),
+        Language::Perl => Some("pl"),
         Language::CSS => Some("css"),
         Language::HTML => Some("html"),
         Language::JSON => Some("json"),

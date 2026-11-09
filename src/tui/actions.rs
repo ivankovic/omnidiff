@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,7 @@ use std::path::PathBuf;
 
 use crate::diff::text::{RangeMatch, RenderOptions};
 use crate::review::ReviewTarget;
-use crate::tui::theme::OverlayTheme;
+use crate::tui::theme::{OverlayTheme, PanelLayout};
 
 /// One entry in a directory listing shown by the file dialog.
 #[derive(Debug, Clone, PartialEq)]
@@ -65,6 +64,8 @@ pub enum Action {
     Suspend,
     /// A recoverable failure, shown in the one-line `App::last_error` banner.
     Error(String),
+    /// Text selected with the mouse, to put on the clipboard (`clipboard::osc52`).
+    CopyToClipboard(String),
     /// A directory listing for the file dialog finished loading.
     DirectoryListed(PathBuf, Vec<DirEntryInfo>),
     /// The user confirmed a file selection in the file dialog.
@@ -88,23 +89,29 @@ pub enum Action {
     },
     DiffReady(DiffSessionData),
     DiffFailed(String),
-    /// Enter in the theme dialog: apply and persist.
-    ThemeSelected(OverlayTheme),
-    /// The theme dialog's selection moved: apply to the viewer as a preview, without persisting.
-    ThemePreviewed(OverlayTheme),
-    /// Live preview of a syntax theme; like `ThemePreviewed`, persisted only when the dialog is
-    /// accepted (by the dialog itself, since no action carries the value that far).
-    SyntaxThemePreviewed(String),
+    /// The settings menu's Colors tab chose an overlay theme: apply and persist. A color edit
+    /// arrives as `ThemeChanged(Custom)`, the custom palette already saved by the tab.
+    ThemeChanged(OverlayTheme),
+    /// The Colors tab chose a syntax theme: apply and persist.
+    SyntaxThemeChanged(String),
+    /// The Colors tab's syntax-highlighting row (the `S` key): apply, for this run only, as `S`.
+    SyntaxHighlightingChanged(bool),
+    /// The Highlighting tab's node-highlight row (the `H` key): apply and persist.
+    NodeHighlightChanged(bool),
+    /// The Layout tab's panel-layout row (the `v` key): apply and persist.
+    PanelLayoutChanged(PanelLayout),
     /// Jump the focused panel's cursor to the nearest match and highlight every match.
     SearchSubmitted(String),
     /// Recompute the live match count and preview highlights, without moving the cursor.
     SearchQueryChanged(String),
     /// A 1-indexed line number, already parsed by the prompt.
     JumpToLineSubmitted(usize),
-    /// A render option changed: applied and persisted at once, so the diff behind the panel shows
-    /// its effect. Closing the panel keeps it; nothing is restored.
+    /// A highlighting setting changed on the Highlighting tab: applied and persisted at once.
     RenderOptionsChanged(RenderOptions),
-    /// Enter or Esc in the render-options panel. Carries nothing: `RenderOptionsChanged` has
-    /// already applied and persisted every change.
-    RenderOptionsAccepted,
+    /// The Layout tab's width row: the width from which the `Auto` layout shows two panels.
+    /// Applied and persisted at once, like every setting in the menu.
+    WideColumnsChanged(u16),
+    /// Enter or Esc in the settings menu. Carries nothing: every change was applied and persisted
+    /// as it was made, so closing restores nothing.
+    SettingsClosed,
 }

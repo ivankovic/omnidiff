@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -301,6 +300,16 @@ impl<'a> SourceText<'a> {
 
     pub fn text(&self) -> &'a str {
         self.text
+    }
+
+    /// Row `row` without its newline, `None` past the last row.
+    pub fn row(&self, row: usize) -> Option<&'a str> {
+        let &start = self.row_starts.get(row)?;
+        let end = self
+            .row_starts
+            .get(row + 1)
+            .map_or(self.text.len(), |next| next - 1);
+        self.text.get(start..end)
     }
 
     /// Byte offset of a (row, byte column) position. `None` for a column past the row's end or

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -26,12 +25,17 @@ fn mapping() -> Result<()> {
     // `class_body`'s constructors with every descendant.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-pdftk-java-pdftk-real-change-all-across-the-file",
-        348,
-        237,
+        345,
+        234,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("java-pdftk-java-pdftk-real-change-all-across-the-file")
+    // Invariant 26: `int retVal = -1;` (before row 237) is paired with `int retVal = getBack();`
+    // (after row 207), but its `;` is deleted and the other one inserted.
+    assert_ground_truth_invariants_with_known_violations(
+        "java-pdftk-java-pdftk-real-change-all-across-the-file",
+        1,
+    )
 }

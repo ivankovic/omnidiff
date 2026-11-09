@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -337,7 +336,7 @@ fn blend_toward_base(accent: (u8, u8, u8), base: (u8, u8, u8), base_weight: f32)
 /// How the before/after panels are laid out. Lives here because this module owns the config file.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PanelLayout {
-    /// Pick dual/single from the terminal width (`SINGLE_PANEL_THRESHOLD`).
+    /// Pick dual/single from the terminal width (see [`load_wide_columns`]).
     #[default]
     Auto,
     /// Always side-by-side, regardless of width.
@@ -354,6 +353,11 @@ impl PanelLayout {
             PanelLayout::Dual => PanelLayout::Single,
             PanelLayout::Single => PanelLayout::Auto,
         }
+    }
+
+    /// The step back through the same cycle: the settings menu's ← on the layout row.
+    pub fn previous(self) -> Self {
+        self.next().next()
     }
 
     /// Short label for the footer/title, e.g. `[layout: dual]`.
@@ -392,6 +396,10 @@ struct ThemeConfig {
     /// The `M` key; defaults to `RenderOptions::FULL`.
     #[serde(default)]
     render_options: crate::diff::text::RenderOptions,
+    /// The width from which the `Auto` layout shows two panels; unset means
+    /// [`DEFAULT_WIDE_COLUMNS`] (see [`load_wide_columns`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wide_columns: Option<u16>,
 }
 
 /// Deserialize a theme name, falling back to the default for anything this build does not know.
@@ -413,6 +421,17 @@ where
 /// The environment variable that overrides every other config layer.
 pub const CONFIG_ENV: &str = "OMNIDIFF_CONFIG";
 
+/// Overrides the config file's `wide_columns` (see [`load_wide_columns`]).
+pub const WIDE_COLUMNS_ENV: &str = "OMNIDIFF_WIDE_COLUMNS";
+
+/// The terminal width from which the `Auto` layout shows the two panels side by side: two 80-column
+/// panels. Below it each would be narrower than the 80 columns code is written for.
+pub const DEFAULT_WIDE_COLUMNS: u16 = 160;
+
+/// The range a width setting is held to: below 40 columns even one panel is barely readable, and
+/// above 1000 no terminal would ever show two.
+pub const WIDE_COLUMNS_RANGE: std::ops::RangeInclusive<u16> = 40..=1000;
+
 /// The project-level config file's name, looked for at or above the current directory.
 const PROJECT_CONFIG: &str = ".omnidiff.toml";
 
@@ -433,8 +452,18 @@ const LEGACY_CONFIG_DIR: &str = "codediff";
 ///
 /// Each layer also accepts its pre-rename name (see [`LEGACY_CONFIG_ENV`]).
 pub(crate) fn config_path() -> PathBuf {
+    #[cfg(test)]
+    if let Some(path) = TEST_CONFIG.with(|path| path.borrow().clone()) {
+        return path;
+    }
+    config_path_from(|variable| std::env::var(variable).ok())
+}
+
+/// [`config_path`] with the environment read through `lookup`, so the order can be tested without
+/// setting a process-wide variable under threads that read it.
+fn config_path_from(lookup: impl Fn(&str) -> Option<String>) -> PathBuf {
     for variable in [CONFIG_ENV, LEGACY_CONFIG_ENV] {
-        if let Ok(explicit) = std::env::var(variable)
+        if let Some(explicit) = lookup(variable)
             && !explicit.is_empty()
         {
             return PathBuf::from(explicit);
@@ -478,10 +507,42 @@ fn adopt_legacy_user_config(path: &Path) {
 /// A throwaway config for the test build. Many tests reach the persisting setters incidentally,
 /// so redirecting here is the only way no test writes a developer's real settings. Done in code
 /// because nextest ignores an `[env]` table and a Makefile variable misses a bare `cargo test`;
-/// keyed by process id so threaded `cargo test` runs do not share a file.
+/// keyed by process and thread, since `cargo test` runs tests as threads of one process and one
+/// test's saved setting must not be read back by another.
 #[cfg(test)]
 fn test_config_path() -> PathBuf {
-    std::env::temp_dir().join(format!("omnidiff-test-config-{}.toml", std::process::id()))
+    let thread = format!("{:?}", std::thread::current().id());
+    let thread: String = thread.chars().filter(char::is_ascii_digit).collect();
+    std::env::temp_dir().join(format!(
+        "omnidiff-test-config-{}-{thread}.toml",
+        std::process::id()
+    ))
+}
+
+#[cfg(test)]
+thread_local! {
+    /// The config this test thread reads and writes, set by [`use_config_for_this_thread`].
+    static TEST_CONFIG: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Points this test thread's config at `path` until the guard drops. Per thread rather than
+/// through `$OMNIDIFF_CONFIG`: setting a process-wide variable races every test running beside it
+/// under `cargo test`, which runs tests as threads of one process.
+#[cfg(test)]
+pub(crate) fn use_config_for_this_thread(path: &Path) -> TestConfigGuard {
+    TEST_CONFIG.with(|config| *config.borrow_mut() = Some(path.to_path_buf()));
+    TestConfigGuard
+}
+
+/// Restores [`use_config_for_this_thread`]'s default when dropped.
+#[cfg(test)]
+pub(crate) struct TestConfigGuard;
+
+#[cfg(test)]
+impl Drop for TestConfigGuard {
+    fn drop(&mut self) {
+        TEST_CONFIG.with(|config| *config.borrow_mut() = None);
+    }
 }
 
 /// The nearest existing `.omnidiff.toml` at or above the current directory. Unreachable in the
@@ -624,6 +685,44 @@ pub fn save_syntax_theme(name: &str) {
     update_config(|config| config.syntax_theme = name.to_string());
 }
 
+/// The width from which the `Auto` layout shows two panels, and where it came from:
+/// `$OMNIDIFF_WIDE_COLUMNS`, else the config file's `wide_columns` (the settings menu's Layout
+/// tab), else [`DEFAULT_WIDE_COLUMNS`]. A value that is not a number in [`WIDE_COLUMNS_RANGE`] is
+/// passed over, as if unset.
+pub fn load_wide_columns() -> (u16, WideColumnsSource) {
+    wide_columns_from(
+        std::env::var(WIDE_COLUMNS_ENV).ok().as_deref(),
+        load_from(config_path()).wide_columns,
+    )
+}
+
+/// Where [`load_wide_columns`]' answer came from: the settings menu says so, since a value from
+/// the environment is not what its row edits.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WideColumnsSource {
+    Environment,
+    Config,
+    Default,
+}
+
+fn wide_columns_from(environment: Option<&str>, config: Option<u16>) -> (u16, WideColumnsSource) {
+    let valid = |columns: u16| WIDE_COLUMNS_RANGE.contains(&columns);
+    if let Some(columns) = environment
+        .and_then(|value| value.trim().parse::<u16>().ok())
+        .filter(|&columns| valid(columns))
+    {
+        return (columns, WideColumnsSource::Environment);
+    }
+    match config.filter(|&columns| valid(columns)) {
+        Some(columns) => (columns, WideColumnsSource::Config),
+        None => (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default),
+    }
+}
+
+pub fn save_wide_columns(columns: u16) {
+    update_config(|config| config.wide_columns = Some(columns));
+}
+
 /// Whether the node highlight (the `H` key) is on. Off by default: it repaints on every cursor
 /// move, which reads as flicker and hides the diff colors; it answers an occasional question.
 pub fn load_node_highlight() -> bool {
@@ -717,13 +816,19 @@ mod tests {
         );
     }
 
-    /// Tests rely on this to stay off a real user's settings.
+    /// A user, or a script, relies on this to point omnidiff at a config of their choosing.
     #[test]
     fn the_environment_override_wins_over_every_other_layer() {
         let file = tempfile::NamedTempFile::new().expect("temp file");
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        assert_eq!(config_path(), file.path());
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let path = file.path().to_string_lossy().into_owned();
+        let lookup = |variable: &str| (variable == CONFIG_ENV).then(|| path.clone());
+        assert_eq!(config_path_from(lookup), file.path());
+        let empty = |variable: &str| (variable == CONFIG_ENV).then(String::new);
+        assert_ne!(
+            config_path_from(empty),
+            PathBuf::new(),
+            "an empty value is not a path"
+        );
     }
 
     #[test]
@@ -744,12 +849,68 @@ mod tests {
             },
         );
 
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        let pairs = load_recent_pairs();
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let pairs = {
+            let _config = use_config_for_this_thread(file.path());
+            load_recent_pairs()
+        };
 
         assert_eq!(pairs.len(), 1);
         assert_eq!(pairs[0].0, alive.path());
+    }
+
+    #[test]
+    fn the_wide_threshold_comes_from_the_environment_then_the_config_then_the_default() {
+        assert_eq!(
+            wide_columns_from(Some("200"), Some(180)),
+            (200, WideColumnsSource::Environment)
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(180)),
+            (180, WideColumnsSource::Config)
+        );
+        assert_eq!(
+            wide_columns_from(None, None),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+        assert_eq!(DEFAULT_WIDE_COLUMNS, 2 * 80, "two 80-column panels");
+    }
+
+    #[test]
+    fn an_unusable_wide_threshold_is_passed_over() {
+        // Not a number, empty, or outside the range: the next layer answers.
+        for bad in ["wide", "", "-5", "39", "1001", "99999999"] {
+            assert_eq!(
+                wide_columns_from(Some(bad), Some(180)),
+                (180, WideColumnsSource::Config),
+                "{bad:?}"
+            );
+        }
+        assert_eq!(
+            wide_columns_from(Some(" 120 "), None).0,
+            120,
+            "spaces around it"
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(5000)),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+    }
+
+    #[test]
+    fn the_wide_threshold_is_saved_and_read_back() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        let saved = {
+            let _config = use_config_for_this_thread(file.path());
+            save_wide_columns(220);
+            load_from(config_path()).wide_columns
+        };
+        assert_eq!(saved, Some(220));
+        // An unset value is not written, so a config without the setting stays without it.
+        let other = tempfile::NamedTempFile::new().unwrap();
+        let _config = use_config_for_this_thread(other.path());
+        save_node_highlight(true);
+        let text = std::fs::read_to_string(other.path()).unwrap();
+        assert!(!text.contains("wide_columns"), "{text}");
     }
 
     #[test]

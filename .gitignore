@@ -96,5 +96,7 @@ src/test/data/samples/
 # ---> Local working files, never committed.
 # Working notes (follow-ups, experiments, negative results, decision log); see AGENTS.md.
 /AGENT_LOG.md
+# Places queued for a human to look at again in human_solver (src/bin/human_solver/review.rs).
+/review_queue.tsv
 # A generated index of the tree, regenerated locally.
 /OVERVIEW.md

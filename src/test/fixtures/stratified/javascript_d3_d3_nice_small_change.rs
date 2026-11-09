@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,7 +36,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Mostly `ours=None, theirs=Move`, inherited from the wrong `call_expression` pairing the
     // mapping clamp describes.
-    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.26)
+    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.12)
 }
 
 #[test]

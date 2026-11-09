@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,6 +33,59 @@ fn changed(row: usize, start: usize, end: usize) -> RangeMatch {
         destination: text_range_on(row, start, end),
         operation: TextOperation::Update,
     }
+}
+
+/// `args := x` from `var args x`: the blank between the moved `args` and the inserted `:=` takes
+/// the insertion under `FULL`, and stays unpainted under `MINIMAL`.
+#[test]
+fn full_paints_the_blank_between_two_differently_painted_ranges() {
+    let source = "args := x\n";
+    let ranges = vec![
+        RangeMatch {
+            source: text_range_on(0, 0, 4),
+            destination: text_range_on(0, 4, 8),
+            operation: TextOperation::Move,
+        },
+        RangeMatch {
+            source: text_range_on(0, 5, 7),
+            destination: text_range_on(0, 8, 8),
+            operation: TextOperation::Insert,
+        },
+    ];
+    let blank = |options| {
+        ranges_for_options(&ranges, source, options)
+            .into_iter()
+            .find(|range| range.source == text_range_on(0, 4, 5))
+            .map(|range| range.operation)
+    };
+    assert_eq!(blank(RenderOptions::FULL), Some(TextOperation::Insert));
+    assert_eq!(blank(RenderOptions::MINIMAL), None);
+}
+
+/// A blank after a comma stays with the comma, and one beside an `Update` goes to the other side.
+#[test]
+fn the_blank_follows_a_comma_and_avoids_an_update() {
+    let source = "f(a, b) c d\n";
+    let range = |start, end, operation| RangeMatch {
+        source: text_range_on(0, start, end),
+        destination: text_range_on(0, start, end),
+        operation,
+    };
+    let ranges = vec![
+        range(2, 4, TextOperation::Move),
+        range(5, 6, TextOperation::Insert),
+        range(8, 9, TextOperation::Update),
+        range(10, 11, TextOperation::Move),
+    ];
+    let filled = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let blank_at = |start| {
+        filled
+            .iter()
+            .find(|range| range.source == text_range_on(0, start, start + 1))
+            .map(|range| range.operation.clone())
+    };
+    assert_eq!(blank_at(4), Some(TextOperation::Move));
+    assert_eq!(blank_at(9), Some(TextOperation::Move));
 }
 
 /// The corpus was painted narrow under both presets, so `whole_pair_updates` is off in both.
@@ -128,48 +180,64 @@ fn minimal_and_full_disagree_on_paint_displaced_moves() {
     const { assert!(RenderOptions::FULL.paint_displaced_moves) };
 }
 
-/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
-/// place beside the one edit on its row, but a line inserted above changes its row index. The
-/// `FULL` half pins that this stays a preset split, not a blanket suppression.
-#[test]
-fn paint_displaced_moves_gates_a_node_pushed_down_by_an_insertion_above_it() {
-    let before = Code::from_string(
-        "fn main() {\n         \x20   let total = compute(first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
-    let after = Code::from_string(
-        "fn main() {\n         \x20   setup();\n         \x20   let total = compute(extra, first, second);\n         }\n",
-        &crate::code::Language::Rust,
-    );
+/// Whether an `Identical` range covers `before`'s row 1 at `column` under `options`: the displaced
+/// node left unpainted. Asked this way because a node may be painted as part of a larger range
+/// rather than form one of its own.
+fn identical_on_row_one_at(
+    before: &str,
+    after: &str,
+    column: usize,
+    options: RenderOptions,
+) -> bool {
+    let before = Code::from_string(before, &crate::code::Language::Rust);
+    let after = Code::from_string(after, &crate::code::Language::Rust);
     let ast = crate::diff::diff_code(&before, &after);
     let node_cache = crate::diff::NodeCache::build(&before, &after);
+    TextDiff::from_with_options(
+        &before,
+        &after,
+        ast.ast.as_ref().unwrap(),
+        &node_cache,
+        options,
+    )
+    .all(0)
+    .iter()
+    .any(|r| {
+        r.operation == TextOperation::Identical
+            && (r.source.start_row, r.source.start_column) <= (1, column)
+            && (1, column) < (r.source.end_row, r.source.end_column)
+    })
+}
 
-    // The call row's unchanged tail, pushed down by `setup();` and right by `extra, `. Asserted as
-    // "is there an `Identical` range there" because under `FULL` it is swallowed into a larger
-    // multi-row `Move`, not a range of its own.
-    let identical_tail_on_the_call_row = |options| {
-        TextDiff::from_with_options(
-            &before,
-            &after,
-            ast.ast.as_ref().unwrap(),
-            &node_cache,
-            options,
-        )
-        .all(0)
-        .iter()
-        .any(|r| {
-            r.operation == TextOperation::Identical
-                && r.source.start_row == 1
-                && r.source.start_column == 33
-        })
-    };
+/// `shellscript-ansible-ansible-a-small-add`'s shape: a single-row node keeps its text and its
+/// place beside the one edit on its row, and a line inserted above changes its row index. The two
+/// rows open on the same statement, so they read as one row pushed down, under both presets.
+#[test]
+fn a_node_pushed_down_beside_an_edit_on_its_row_is_not_moved() {
+    let before = "fn main() {\n    let total = compute(first, second);\n}\n";
+    let after = "fn main() {\n    setup();\n    let total = compute(extra, first, second);\n}\n";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        assert!(
+            identical_on_row_one_at(before, after, 24, options),
+            "{options:?} must leave the displaced `first` unpainted"
+        );
+    }
+}
 
+/// The same tail pushed down into a different statement: the rows share no head, so `FULL` reads
+/// a relocation (`java-defects4j-codec-6-base64inputstream`'s `return f(x);` -> `y = f(x);`),
+/// while `MINIMAL` still leaves the untouched tail alone. That is the preset split
+/// `paint_displaced_moves` makes.
+#[test]
+fn paint_displaced_moves_gates_a_tail_pushed_down_into_another_statement() {
+    let before = "fn main() {\n    foo(compute(first, second));\n}\n";
+    let after = "fn main() {\n    setup();\n    bar(compute(extra, first, second));\n}\n";
     assert!(
-        !identical_tail_on_the_call_row(RenderOptions::FULL),
-        "paint_displaced_moves: true must keep painting the displaced tail Move"
+        !identical_on_row_one_at(before, after, 16, RenderOptions::FULL),
+        "paint_displaced_moves: true must paint the relocated `first` Move"
     );
     assert!(
-        identical_tail_on_the_call_row(RenderOptions::MINIMAL),
+        identical_on_row_one_at(before, after, 16, RenderOptions::MINIMAL),
         "paint_displaced_moves: false must leave the purely displaced tail unpainted"
     );
 }
@@ -333,7 +401,8 @@ fn minimal_and_full_disagree_on_paint_resized_moves() {
     const { assert!(RenderOptions::FULL.paint_resized_moves) };
 }
 
-/// The first two options are post-filters and never need a rebuild; every other one does.
+/// The first two options and `interior_whitespace` are post-filters and never need a rebuild;
+/// every other one does.
 #[test]
 fn only_the_post_filters_skip_a_rebuild() {
     let base = RenderOptions::FULL;
@@ -342,7 +411,7 @@ fn only_the_post_filters_skip_a_rebuild() {
         toggled.toggle(index);
         assert_eq!(
             toggled.needs_rebuild_from(&base),
-            index >= 2,
+            !matches!(index, 0 | 1 | 7),
             "option {index} ({})",
             base.options()[index].0
         );
@@ -576,11 +645,10 @@ fn leading_whitespace_off_does_not_split_a_multiline_update() {
     );
 }
 
-/// The structural-punctuation filter still applies per row after the split - a row that is
-/// nothing but a standalone bracket is dropped under `MINIMAL`'s `structural_punctuation: false`
-/// exactly as a single-row range in the same shape already is.
+/// An inserted block keeps its brace rows after the per-row split: inserted punctuation is the
+/// edit, so `structural_punctuation: false` does not drop it.
 #[test]
-fn leading_whitespace_off_still_drops_a_structural_only_row() {
+fn leading_whitespace_off_keeps_the_brace_rows_of_an_inserted_block() {
     let source = "{\n    body();\n}\n";
     let range = RangeMatch {
         source: TextRange::new(0, 0, 2, 1),
@@ -599,8 +667,8 @@ fn leading_whitespace_off_still_drops_a_structural_only_row() {
             .iter()
             .map(|r| r.source.start_row)
             .collect::<Vec<_>>(),
-        vec![1],
-        "rows 0 ('{{') and 2 ('}}') are standalone punctuation and must be dropped: {result:?}"
+        vec![0, 1, 2],
+        "rows 0 ('{{') and 2 ('}}') are inserted with the body: {result:?}"
     );
 }
 
@@ -620,6 +688,7 @@ fn structural_punctuation_off_alone_still_keeps_leading_whitespace() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -644,6 +713,7 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
         paint_displaced_moves: true,
         paint_resized_moves: true,
         whole_identifier_updates: true,
+        interior_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -656,9 +726,9 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
 }
 
 /// `python-refactoring`, minimized: merging bundles `max_val = max(` into one `Insert` and leaves
-/// `)` alone. The lone `)` is restored so a reader never sees `(` without it.
+/// `)` alone. The lone inserted `)` is kept, so a reader never sees `(` without it.
 #[test]
-fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
+fn minimal_keeps_a_lone_inserted_closing_paren() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -682,13 +752,14 @@ fn a_lone_closing_paren_is_restored_when_its_open_partner_survives() {
 
     assert!(
         result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "the lone ')' must be restored: {result:?}"
+        "the lone ')' must be kept: {result:?}"
     );
 }
 
-/// A pair whose halves are both standalone stays dropped.
+/// Inserted punctuation is the edit: both halves of an inserted pair around a surviving `x` are
+/// kept under `MINIMAL`.
 #[test]
-fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
+fn minimal_keeps_an_inserted_pair_of_brackets() {
     let source = "(x)";
     let ranges = vec![
         RangeMatch {
@@ -711,16 +782,16 @@ fn a_pair_that_is_entirely_standalone_punctuation_stays_dropped() {
     let result = ranges_for_options(&ranges, source, RenderOptions::MINIMAL);
 
     assert!(
-        !result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
-        "neither half of a wholly standalone pair should be restored: {result:?}"
+        result.iter().any(|r| r.source == text_range_on(0, 0, 1)),
+        "the inserted '(' must be kept: {result:?}"
     );
-    assert!(!result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
+    assert!(result.iter().any(|r| r.source == text_range_on(0, 2, 3)));
 }
 
-/// Restoration is scoped to `Insert`/`Delete`: `javascript-refactor-arrow-func` paints a lone `");"`
-/// `Move` that its ground truth never shows.
+/// Only inserted and deleted punctuation is kept: `javascript-refactor-arrow-func` paints a lone
+/// `");"` `Move` that its ground truth never shows.
 #[test]
-fn a_lone_move_bracket_is_not_restored() {
+fn minimal_drops_a_lone_move_bracket() {
     let source = "max_val = max(numbers)";
     let ranges = vec![
         RangeMatch {
@@ -744,7 +815,7 @@ fn a_lone_move_bracket_is_not_restored() {
 
     assert!(
         !result.iter().any(|r| r.source == text_range_on(0, 21, 22)),
-        "a lone Move bracket must not be restored: {result:?}"
+        "a lone Move bracket must be dropped: {result:?}"
     );
 }
 
@@ -2454,10 +2525,10 @@ fn a_phrase_added_inside_a_string_renders_as_an_insert_not_an_update() {
     );
 }
 
-/// `IntBox` -> `Box` leaves an empty middle too, but an identifier is a name: painters call it a
-/// rename, not the deletion of `Int`.
+/// `IntBox` -> `Box` leaves an empty middle too. `FULL` paints a renamed identifier whole
+/// (`whole_identifier_updates`), so it is no deletion of `Int` there.
 #[test]
-fn a_renamed_identifier_stays_an_update_even_though_one_side_is_empty() {
+fn a_renamed_identifier_stays_an_update_under_full() {
     let before = Code::from_string("struct IntBox;\n", &crate::code::Language::Rust);
     let after = Code::from_string("struct Box;\n", &crate::code::Language::Rust);
     let diff = crate::diff::diff_code(&before, &after);
@@ -2473,8 +2544,83 @@ fn a_renamed_identifier_stays_an_update_even_though_one_side_is_empty() {
         .collect();
     assert!(
         !ops.contains(&TextOperation::Delete),
-        "a rename is not a deletion of the dropped prefix: {ops:?}"
+        "FULL paints a rename whole, not a deletion of the dropped prefix: {ops:?}"
     );
+}
+
+/// Under `MINIMAL` the same `IntBox` -> `Box` is narrowed, and its middle stays an `Update`: a
+/// renamed name is no deletion of `Int`. A non-name losing a part is a deletion: the CSS property
+/// `-webkit-transition` becoming `transition` (`css-wordpress-wordpress-remove-webkit-prefix`).
+#[test]
+fn a_part_dropped_from_a_non_name_is_a_delete_but_a_name_keeps_its_update() {
+    let painted = |before: &str, after: &str, language| {
+        let before = Code::from_string(before, &language);
+        let after = Code::from_string(after, &language);
+        let diff = crate::diff::diff_code(&before, &after);
+        let ast = diff.ast.as_ref().expect("an AST diff");
+        let node_cache = NodeCache::build(&before, &after);
+        TextDiff::from_with_options(&before, &after, ast, &node_cache, RenderOptions::MINIMAL)
+            .all(0)
+            .iter()
+            .filter(|r| !r.source.is_empty() && r.operation != TextOperation::Identical)
+            .map(|r| {
+                (
+                    r.operation.clone(),
+                    r.source.start_column,
+                    r.source.end_column,
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(
+        painted(
+            "struct IntBox;\n",
+            "struct Box;\n",
+            crate::code::Language::Rust
+        ),
+        vec![(TextOperation::Update, 7, 10)]
+    );
+    assert_eq!(
+        painted(
+            "a {\n  -webkit-transition: none;\n}\n",
+            "a {\n  transition: none;\n}\n",
+            crate::code::Language::CSS
+        ),
+        vec![(TextOperation::Delete, 2, 10)]
+    );
+}
+
+/// A changed operator is a renamed name too, so `%%` -> `%` stays one `Update`
+/// (`scala-ymnk-jzlib-interesting-probably-has-no-optimal-solution`); content never is.
+#[test]
+fn renamed_names_are_identifiers_and_operators_outside_content() {
+    assert!(is_renamed_name("identifier", "IntBox", "Box"));
+    assert!(is_renamed_name("operator", "%%", "%"));
+    assert!(!is_renamed_name(
+        "property_name",
+        "-webkit-transition",
+        "transition"
+    ));
+    assert!(!is_renamed_name("string_content", "Fetch", "FetchAll"));
+}
+
+/// The common suffix is capped so it never overlaps the prefix, which leaves a node in a repeated
+/// tail outside it: in `f(a)` -> `f(a, a)` the kept `a` is the after row's second one. Its tail
+/// from the node on, `a)`, is the same on both rows, so under `MINIMAL` the edit is beside it.
+#[test]
+fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
+    let untouched = |read_rows_carrying_several_edits| {
+        node_untouched_on_its_row(
+            "f(a)\n",
+            "f(a, a)\n",
+            &TextRange::new(0, 2, 0, 3),
+            &TextRange::new(0, 5, 0, 6),
+            read_rows_carrying_several_edits,
+        )
+    };
+    assert!(untouched(true));
+    assert!(!untouched(false));
 }
 
 /// A row carrying two edits, one on each side of an untouched node (`cpp-add-const-correctness`).
@@ -2656,12 +2802,6 @@ fn full_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
 }
 
 #[test]
-fn bracket_pair_partners_skips_a_mismatched_bracket() {
-    assert!(bracket_pair_partners("(]").is_empty());
-    assert_eq!(bracket_pair_partners("[()]").get(&0), Some(&3));
-}
-
-#[test]
 fn toggling_an_out_of_range_option_is_a_no_op() {
     let mut options = RenderOptions::FULL;
     options.toggle(options.options().len());
@@ -2703,5 +2843,245 @@ fn every_member_of_an_identical_group_paints_as_a_move_even_in_place() {
         };
         assert_eq!(moved_rows(0), vec![1], "{options:?}");
         assert_eq!(moved_rows(1), vec![1, 2], "{options:?}");
+    }
+}
+
+/// The text each non-`Identical` range of `side` (0 before, 1 after) covers, in order, under
+/// `options`: what a reader sees highlighted.
+fn painted_texts(
+    language: crate::code::Language,
+    before_src: &str,
+    after_src: &str,
+    side: usize,
+    options: RenderOptions,
+) -> Vec<String> {
+    let mut before = crate::code::Code::from_string(before_src, &language);
+    let mut after = crate::code::Code::from_string(after_src, &language);
+    before.ensure_parsed().unwrap();
+    after.ensure_parsed().unwrap();
+    let diff = crate::diff::diff_code(&before, &after);
+    let ast = diff.ast.expect("both sides parse");
+    let node_cache = NodeCache::build(&before, &after);
+    let text = TextDiff::from_with_options(&before, &after, &ast, &node_cache, options);
+    let source = if side == 0 { before_src } else { after_src };
+    let rows: Vec<&str> = source.split('\n').collect();
+    text.all(side)
+        .iter()
+        .filter(|r| r.operation != TextOperation::Identical)
+        .map(|r| {
+            let s = &r.source;
+            if s.start_row == s.end_row {
+                rows[s.start_row][s.start_column..s.end_column].to_string()
+            } else {
+                let mut out = rows[s.start_row][s.start_column..].to_string();
+                for row in &rows[s.start_row + 1..s.end_row] {
+                    out.push('\n');
+                    out.push_str(row);
+                }
+                out.push('\n');
+                out.push_str(&rows[s.end_row][..s.end_column]);
+                out
+            }
+        })
+        .collect()
+}
+
+/// An escape splits a string's content into two gaps; an edit in either is narrowed within it
+/// rather than lost (`python-odoo-odoo-version`'s `Odoo 20` -> `Odoo 22`).
+#[test]
+fn an_edit_beside_an_escape_inside_a_string_is_painted() {
+    for preset in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        for (before, after, old, new) in [
+            (
+                "s = \"alpha one\\tbeta\"\n",
+                "s = \"alpha two\\tbeta\"\n",
+                "one",
+                "two",
+            ),
+            (
+                "s = \"alpha\\tbeta one\"\n",
+                "s = \"alpha\\tbeta two\"\n",
+                "one",
+                "two",
+            ),
+        ] {
+            let language = crate::code::Language::Python;
+            assert_eq!(painted_texts(language, before, after, 0, preset), [old]);
+            assert_eq!(painted_texts(language, before, after, 1, preset), [new]);
+        }
+    }
+}
+
+/// An entity splits an XML attribute value the same way.
+#[test]
+fn an_edit_beside_an_entity_in_an_attribute_value_is_painted() {
+    let (before, after) = ("<a b=\"x &amp; one\"/>\n", "<a b=\"x &amp; two\"/>\n");
+    let language = crate::code::Language::XML;
+    assert_eq!(
+        painted_texts(language, before, after, 0, RenderOptions::FULL),
+        ["one"]
+    );
+    assert_eq!(
+        painted_texts(language, before, after, 1, RenderOptions::FULL),
+        ["two"]
+    );
+}
+
+/// A deleted attribute's value sits between its quotes as the value node's own text, not a child;
+/// it is painted with the quotes, so the attribute reads as one deletion
+/// (`xml-genymobile-scrcpy-remove-package-attribute`).
+#[test]
+fn a_deleted_attribute_value_is_painted_between_its_quotes() {
+    let before = "<root>\n<s Label=\"InDualCone\">\n</s>\n</root>\n";
+    let after = "<root>\n<s>\n</s>\n</root>\n";
+    let painted = painted_texts(
+        crate::code::Language::XML,
+        before,
+        after,
+        0,
+        RenderOptions::FULL,
+    );
+    assert_eq!(painted, ["Label=\"InDualCone\""]);
+}
+
+/// A CSS `100%` is `integer_value` text plus a `%` unit child; an inserted declaration paints the
+/// number too (`css-mastodon-mastodon-add-two-lines`).
+#[test]
+fn an_inserted_css_number_with_a_unit_is_painted_whole() {
+    let before = "a {\n  width: 10px;\n}\n";
+    let after = "a {\n  width: 10px;\n  height: 100%;\n}\n";
+    let painted = painted_texts(
+        crate::code::Language::CSS,
+        before,
+        after,
+        1,
+        RenderOptions::FULL,
+    );
+    // The raw range carries the row's newline; `ranges_for_options` trims it later.
+    let painted: Vec<&str> = painted.iter().map(|text| text.trim_end()).collect();
+    assert_eq!(painted, ["height: 100%;"]);
+}
+
+/// `ranges`' changed spans of `text`, each as `(operation, text)`.
+fn changed_spans<'t>(ranges: &[RangeMatch], text: &'t str) -> Vec<(TextOperation, &'t str)> {
+    ranges
+        .iter()
+        .filter(|range| range.operation != TextOperation::Identical)
+        .map(|range| {
+            (
+                range.operation.clone(),
+                &text[range.source.start_column..range.source.end_column],
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_token_diff_paints_two_far_apart_edits_apart() {
+    let before = "CASE e WHEN '0' THEN '  no' WHEN '1' THEN '  yes' END";
+    let after = "CASE e WHEN '0' THEN '--no---' WHEN '1' THEN '--yes--' END";
+    let (before_ranges, after_ranges) = plain_text_token_diff(before, after).unwrap();
+    // Whitespace replaced is a delete and an insert, not an edit of that whitespace.
+    assert_eq!(
+        changed_spans(&before_ranges, before),
+        [(TextOperation::Delete, "  "), (TextOperation::Delete, "  ")]
+    );
+    assert_eq!(
+        changed_spans(&after_ranges, after),
+        [
+            (TextOperation::Insert, "--"),
+            (TextOperation::Insert, "---"),
+            (TextOperation::Insert, "--"),
+            (TextOperation::Insert, "--"),
+        ]
+    );
+    assert_eq!(token_edit_count(before, after), Some(2));
+}
+
+#[test]
+fn a_token_diff_updates_only_the_characters_that_differ() {
+    let (before_ranges, after_ranges) =
+        plain_text_token_diff("x canary.21 y", "x canary.22 y").unwrap();
+    assert_eq!(
+        changed_spans(&before_ranges, "x canary.21 y"),
+        [(TextOperation::Update, "1")]
+    );
+    assert_eq!(
+        changed_spans(&after_ranges, "x canary.22 y"),
+        [(TextOperation::Update, "2")]
+    );
+}
+
+#[test]
+fn edits_count_apart_only_across_unchanged_words_and_spaces() {
+    // A version bump, a renamed word and a rewritten phrase are one edit each.
+    assert_eq!(token_edit_count("^3.0.2", "^4.0.0"), Some(1));
+    assert_eq!(
+        token_edit_count("-p next-swc-napi -p x", "-p next-napi-bindings -p x"),
+        Some(1)
+    );
+    assert_eq!(
+        token_edit_count("'Did you mean'", "'The most similar command'"),
+        Some(1)
+    );
+    assert_eq!(token_edit_count("a b c d", "x b c y"), Some(2));
+}
+
+#[test]
+fn a_class_list_is_diffed_class_by_class() {
+    let before = "border-input text-primary dark:bg-input/30 flex";
+    let after = "border-input dark:bg-input/30 data-checked:bg-primary flex";
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (before_ranges, after_ranges) = class_list_diff(before, after, options).unwrap();
+        let changed = |ranges: &[RangeMatch], text: &'static str| {
+            changed_spans(ranges, text)
+                .into_iter()
+                .filter(|(operation, _)| *operation != TextOperation::Move)
+                .collect::<Vec<_>>()
+        };
+        // Never a piece of a class: `text-primary` goes whole, `data-checked:bg-primary` comes whole.
+        assert_eq!(
+            changed(&before_ranges, before),
+            [(TextOperation::Delete, "text-primary")]
+        );
+        assert_eq!(
+            changed(&after_ranges, after),
+            [(TextOperation::Insert, "data-checked:bg-primary")]
+        );
+    }
+}
+
+#[test]
+fn a_reordered_class_moves_and_full_also_moves_the_displaced_ones() {
+    // `b` jumps over two classes: only it moved, not a swap.
+    let (before, after) = ("a b c d e", "a c d b e f");
+    let moved = |options| {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        changed_spans(&ranges, before)
+            .into_iter()
+            .filter(|(operation, _)| *operation == TextOperation::Move)
+            .map(|(_, text)| text)
+            .collect::<Vec<_>>()
+    };
+    // Both presets show the reordered class; Full also the kept class inside the edited stretch.
+    let (minimal, full) = (moved(RenderOptions::MINIMAL), moved(RenderOptions::FULL));
+    assert_eq!(minimal.len(), 1, "{minimal:?}");
+    assert!(full.len() > minimal.len(), "{full:?}");
+}
+
+#[test]
+fn two_swapped_classes_both_move() {
+    let (before, after) = ("x bg-border shrink-0 y", "x shrink-0 bg-border y");
+    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+        let (ranges, _) = class_list_diff(before, after, options).unwrap();
+        let mut moved: Vec<&str> = changed_spans(&ranges, before)
+            .into_iter()
+            .map(|(operation, text)| {
+                assert_eq!(operation, TextOperation::Move);
+                text
+            })
+            .collect();
+        moved.sort();
+        assert_eq!(moved, ["bg-border", "shrink-0"]);
     }
 }

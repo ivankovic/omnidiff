@@ -1,0 +1,38 @@
+type Fields = Record<string, string | number>;
+
+function makeReading(city: string, temp: number): Fields {
+  return toFields(
+    "city", city,
+    "temp", temp
+  );
+}
+
+class Station {
+  constructor(
+    private readonly name: string,
+    private readonly samples: number[],
+  ) {}
+
+  mean(): number {
+    const sum = this.samples.reduce((a, b) => a + b, 0);
+    return sum / this.samples.length;
+  }
+
+  report(unit: string): string {
+    const average = this.mean().toFixed(1);
+    return `${this.name}: ${average} ${unit} at noon`;
+  }
+}
+
+export function main(): void {
+  const range = { low: 12, high: 19 };
+  const stations = [
+    new Station("Split", [range.low, range.high]),
+    new Station("Zagreb", [8, 11]),
+  ];
+  for (const station of stations) {
+    console.log(station.report("C"));
+  }
+  const warmest = stations.map((s) => s.mean());
+  console.log(warmest);
+}

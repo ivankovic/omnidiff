@@ -4,8 +4,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,7 +54,7 @@ RESEARCH_DIR = /var/tmp/research/$(MODE)/
 .PHONY: build require-full-corpus clean clean-db fetch file-stats-report measure-file-stats reclassify-tips measure-commit-stats \
 	debug-stats analyze tiny small full sample-pairs sample-pairs-all measure-pairs \
 	measure-code-pair-diffs pairs-diff-report measure-sampled matching-reasons-report \
-	shapes-report measure-edit-shape ambiguity-report rendering-report measure-tools-timing \
+	shapes-report measure-edit-shape measure-change-census measure-content-census ambiguity-report rendering-report measure-tools-timing \
 	measure-tools-accuracy timing-report install-bdiff install-srcdiff apted-budget-report measure-apted-budget \
 	paper-variables introductory-paper introductory-paper-empirical fetch-external \
 	measure-astdiff-oracle measure-astdiff-oracle-human measure-robustness-fixtures
@@ -314,6 +313,22 @@ shapes-report:
 measure-edit-shape:
 	uv run ./analysis/edit_shape_stats.py --repositories $(REPOSITORIES_DIR) --max-commits $(EDIT_SHAPE_COMMITS)
 
+# What a diff tool is asked about: every file changed in the same window as measure-edit-shape,
+# by extension or name and by `code::tip` category, binary files included. Counts repositories as
+# well as changes, because a few repositories dominate the volume. See analysis/change_census.py.
+measure-change-census:
+	cd .. && cargo build --release --features stats --bin classify_paths
+	uv run ./analysis/change_census.py --repositories $(REPOSITORIES_DIR) --max-commits $(EDIT_SHAPE_COMMITS)
+
+# How much of the change census OmniDiff diffs by content: the same window, each change judged by
+# OmniDiff from its blobs (`content_census`: text, a content family, or binary) and every content
+# pair diffed. Writes data/corpus_stats/content_census.csv (by extension and outcome) and
+# content_census_repositories.csv (by repository and outcome), and prints both shares. About as
+# long as measure-change-census plus the diffs; run it as a memory-capped unit on the full corpus.
+measure-content-census:
+	cd .. && cargo build --release --features stats --bin content_census
+	uv run ./analysis/content_census.py --repositories $(REPOSITORIES_DIR) --max-commits $(EDIT_SHAPE_COMMITS)
+
 # Ground-truth ambiguity over the human-authored mappings: how often a real-world change admits no
 # unique correct AST mapping, i.e. how often the annotator recorded a multi-map group. This is the
 # paper's RQ3, and it mentions no diffing tool at all - unlike shapes-report above, nothing here
@@ -348,7 +363,9 @@ rendering-report:
 # wrote them. PROVENANCE.md there records which commit that was.
 PER_TEST_COVERAGE_TARGET := $(abspath ../target/percov)
 measure-per-test-coverage:
-	cd .. && eval "$$(cargo llvm-cov show-env --export-prefix)" \
+	# The binary's path is written into this directory before cargo has created it on a clean tree.
+	mkdir -p $(PER_TEST_COVERAGE_TARGET)
+	cd .. && eval "$$(cargo llvm-cov show-env --sh)" \
 		&& CARGO_TARGET_DIR=$(PER_TEST_COVERAGE_TARGET) cargo test --release --lib --no-run \
 		--message-format=json 2>/dev/null \
 		| python3 -c 'import sys, json; print(next(m["executable"] for m in map(json.loads, sys.stdin) if m.get("reason") == "compiler-artifact" and m.get("profile", {}).get("test") and m.get("executable")))' \

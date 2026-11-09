@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,11 +20,12 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
+    // Two nested `if`s swap nesting levels. The bodies match; what is left is the swapped
+    // `if`/`else` scaffolding, which `APTED("qualified_name")` pairs by position or deletes.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-nwg-piotr-gopsuinfo-shuffle-around-if-blocks",
-        91,
-        57,
+        14,
+        9,
     )
 }
 

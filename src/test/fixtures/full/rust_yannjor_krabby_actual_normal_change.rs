@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,13 +36,17 @@ fn invariants() -> Result<()> {
     // `pokemon_db` <-> `pokemon_db_file`, `pokemon` <-> `pokemon_db` and `load_pokemon` <-> `load` are
     // not painted entire under Full, and `load_pokemon` <-> `load` is not painted as its differing
     // word `_pokemon` under Minimal.
+    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
+    // separator (awaiting a repaint):
+    //   before row 223 leaves 7 of the 8 byte(s) of `pokemond` unpainted, which becomes `pokemon`
+    //   after row 109 leaves 7 of the 7 byte(s) of `pokemon` unpainted, which becomes `pokemond`
     assert_ground_truth_invariants_with_known_violations(
         "rust-yannjor-krabby-actual-normal-change",
-        9,
+        11,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 18.55)
+    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 18.45)
 }

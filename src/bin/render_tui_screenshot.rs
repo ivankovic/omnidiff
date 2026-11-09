@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,7 +34,7 @@ use omnidiff::tui::widgets::code_viewer::syntax_theme_names;
 struct Args {
     before: PathBuf,
     after: PathBuf,
-    /// Terminal width. Two panels need at least 220 columns.
+    /// Terminal width. Two panels need at least 200 columns.
     #[arg(long, default_value_t = 230)]
     cols: u16,
     /// Terminal height.

@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +30,7 @@ fn painting() -> Result<()> {
     // One word changes inside a `\`-continued triple-quoted string, whose content is split
     // across several gaps; the `own_content_span` guard in `classify_node` descends instead of
     // painting the string whole.
-    assert_matches_human_painting_within_limit("python-odoo-odoo-version", 0.13)
+    assert_matches_human_painting_within_limit("python-odoo-odoo-version", 0.0)
 }
 
 #[test]

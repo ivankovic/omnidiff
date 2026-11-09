@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,8 +26,8 @@ fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-20-posixparser",
         // Includes the N:M floor: 16 all-to-all group members a one-to-one output cannot reach.
-        55,
-        40,
+        53,
+        38,
     )
 }
 
@@ -36,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // The two disagree about which of two after-`if`s the before one became, so they paint
     // different halves of it.
-    assert_matches_human_painting_within_limit("java-defects4j-cli-20-posixparser", 2.00)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-20-posixparser", 1.82)
 }
 
 #[test]

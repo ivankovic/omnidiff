@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,14 +22,7 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // A `return` becomes a `throw` deep in an `if` chain. The mapping replaces the statement
-    // whole; omnidiff pairs the shared `;` across. Invariant 18 deliberately does not rule on
-    // delimiters surviving a construct substitution.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "java-defects4j-cli-40-typehandler",
-        2,
-        2,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("java-defects4j-cli-40-typehandler")
 }
 
 #[test]

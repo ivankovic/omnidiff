@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,7 +32,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // A whitespace reflow: interior whitespace lives between AST nodes where no painting can reach,
     // so omnidiff paints the reflowed statements while Minimal paints nothing.
-    assert_matches_human_painting_within_limit("c-openssl-openssl-format-only-change", 11.20)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-format-only-change", 11.19)
 }
 
 #[test]

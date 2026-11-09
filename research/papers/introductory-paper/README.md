@@ -73,9 +73,12 @@ done about it.
 ## Building
 
 This uses the ACM `acmart` document class, which is not vendored into this repository. To build
-locally you need a LaTeX distribution that includes it, plus `cm-super` for full font expansion:
+locally you need a LaTeX distribution that includes it and the fonts it uses (Linux Libertine,
+Biolinum, Inconsolata, newtx), plus `cm-super` for full font expansion. Without those fonts acmart
+silently falls back to Computer Modern, which changes the layout (14 pages instead of 13); check with
+`pdffonts main.pdf` that the fonts are LinLibertine, LinBiolinum and Inconsolata.
 
-* Debian/Ubuntu: `sudo apt-get install texlive-publishers texlive-latex-extra cm-super`, then
+* Debian/Ubuntu: `sudo apt-get install texlive-publishers texlive-latex-extra texlive-fonts-extra cm-super`, then
   `latexmk -pdf -g main` (or `pdflatex main && bibtex main && pdflatex main && pdflatex main`). The
   `-g` matters: without it, latexmk can decide `main.pdf` is already current from `main.tex`'s own
   timestamp and skip rebuilding even though an `\input`-ed generated table changed underneath it.

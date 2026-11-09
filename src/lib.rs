@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -58,8 +57,11 @@ use crate::{
 
 /// Diffs two programs given as source strings in `language`.
 pub fn diff_strings(before: &str, after: &str, language: &Language) -> Diff {
-    let code_before = Code::from_string(before, language);
-    let code_after = Code::from_string(after, language);
+    let (code_before, code_after) = code::build_sides(
+        code::worth_building_in_parallel(before, after),
+        || Code::from_string(before, language),
+        || Code::from_string(after, language),
+    );
 
     let mut diff = diff_code(&code_before, &code_after);
     diff.language = *language;

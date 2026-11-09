@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library name="city-branch">
+  <settings>
+    <open day="sat" from="09:00" to="20:00"/>
+    <loanDays>14</loanDays>
+    <maxItems>8</maxItems>
+  </settings>
+  <floor level="1" access="public">
+    <shelf id="fiction">
+      <book isbn="978-0-00-000001-1" year="1999">
+        <title>The Quiet River</title>
+        <author>A. Moss</author>
+      </book>
+      <book isbn="978-0-00-000002-8" year="2004">
+        <title>Lanterns</title>
+        <author>B. Hale</author>
+      </book>
+    </shelf>
+  </floor>
+  <shelf id="science">
+    <book format="ebook" isbn="978-0-00-000003-5" year="2011">
+      <title>Small Stars</title>
+      <authorName>C. Reyes</authorName>
+    </book>
+  </shelf>
+</library>

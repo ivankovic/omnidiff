@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,7 +29,9 @@ mod zhang_shasha;
 
 pub use common::{Algorithm, for_nodes, for_roots};
 pub(crate) use common::{
-    myers_lcs, prematch_identical_statement_siblings, prematch_unique_named_locals,
+    SEGMENT_MUTUAL_SIMILARITY_MIN, SEGMENT_SIMILARITY_MAX_CELLS, add_delete_mappings,
+    add_insert_mappings, entry_similarity, myers_lcs, prematch_identical_if_clauses,
+    prematch_identical_statement_siblings, prematch_unique_named_locals,
 };
 
 use crate::code::Code;

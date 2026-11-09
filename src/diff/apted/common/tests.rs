@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -321,6 +320,64 @@ fn test_apted_engine_matches_oracle_multi_root_forest() {
         (14, "leaf", "z", &[]),
     ]);
     assert_distance_matches_oracle(&before, &after, &[0, 1, 2], &[10, 11, 14]);
+}
+
+#[test]
+fn compute_edit_mapping_decides_every_tree_of_a_multi_root_forest() {
+    // before forest: leaf(a), leaf(b), inner(c -> leaf(d))
+    let before = synthetic_meta(&[
+        (0, "leaf", "a", &[]),
+        (1, "leaf", "b", &[]),
+        (2, "inner", "", &[3]),
+        (3, "leaf", "d", &[]),
+    ]);
+    // after forest: leaf(a), inner(c -> leaf(d), leaf(e)), leaf(z)
+    let after = synthetic_meta(&[
+        (10, "leaf", "a", &[]),
+        (11, "inner", "", &[12, 13]),
+        (12, "leaf", "d", &[]),
+        (13, "leaf", "e", &[]),
+        (14, "leaf", "z", &[]),
+    ]);
+    let empty_map = rustc_hash::FxHashMap::default();
+    let before_idx = PostorderIndexer::build(&before, &[0, 1, 2], &empty_map);
+    let after_idx = PostorderIndexer::build(&after, &[10, 11, 14], &empty_map);
+    let cost_model = UnitCostModel::new(Language::Unknown);
+    let mut delta =
+        compute_delta_zhang_shasha(&before_idx, &after_idx, &before, &after, &cost_model, None);
+    let decisions = compute_edit_mapping(
+        &before_idx,
+        &after_idx,
+        &before,
+        &after,
+        &cost_model,
+        None,
+        &mut delta,
+    );
+
+    // Not only the last tree's: a leading tree left undecided is read as deleted.
+    let mut before_decided: Vec<usize> = Vec::new();
+    let mut after_decided: Vec<usize> = Vec::new();
+    for decision in &decisions {
+        match *decision {
+            RawDecision::Match(b, a) => {
+                before_decided.push(b);
+                after_decided.push(a);
+            }
+            RawDecision::Delete(b) => before_decided.push(b),
+            RawDecision::Insert(a) => after_decided.push(a),
+        }
+    }
+    before_decided.sort_unstable();
+    after_decided.sort_unstable();
+    assert_eq!(before_decided, vec![0, 1, 2, 3]);
+    assert_eq!(after_decided, vec![10, 11, 12, 13, 14]);
+    assert!(
+        decisions
+            .iter()
+            .any(|d| matches!(*d, RawDecision::Match(0, 10))),
+        "{decisions:?}"
+    );
 }
 
 #[test]
@@ -1960,6 +2017,50 @@ fn anchor_leftovers_by_member_name_zips_equal_counts_and_leaves_unequal_counts_a
 }
 
 #[test]
+fn anchor_leftovers_by_member_name_pairs_cpp_definitions_by_their_qualified_names() {
+    let before = Code::from_string(
+        "void A::f() { a(1); }\nvoid B::f() { b(1); }\nA::~A() { c(1); }\n\
+         bool A::operator==(A const&) const { return d(1); }\n",
+        &Language::CPP,
+    );
+    let after = Code::from_string(
+        "void A::g() { e(); }\nvoid A::f() { a(2); }\nvoid B::f() { b(2); }\n\
+         A::~A() { c(2); }\nbool A::operator==(A const&) const { return d(2); }\n",
+        &Language::CPP,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    let definitions = |code: &Code, meta: &ASTMetadata| {
+        let root = code.ast.as_ref().unwrap().root_node().id();
+        meta.node_info[&root].children.clone()
+    };
+    let b = definitions(&before, &before_meta);
+    let a = definitions(&after, &after_meta);
+
+    let mut diff = ASTDiff::default();
+    let (before_left, after_left) = anchor_leftovers_by_member_name(
+        b.clone(),
+        a.clone(),
+        &before_meta,
+        &after_meta,
+        "test",
+        &mut diff,
+    );
+
+    // Every body changed and `A::g` is new, so neither exact hashes nor positions pair these:
+    // the scope keeps `A::f` and `B::f` apart, and a destructor and an operator have names too.
+    for (before_index, after_index) in [(0, 1), (1, 2), (2, 3), (3, 4)] {
+        assert_eq!(
+            diff.before_node_map.get(&b[before_index]),
+            Some(&a[after_index]),
+            "definition {before_index}"
+        );
+    }
+    assert!(before_left.is_empty());
+    assert_eq!(after_left, vec![a[0]]);
+}
+
+#[test]
 fn widest_statement_sequence_body_takes_the_shallowest_body_over_a_wider_nested_one() {
     let code = Code::from_string(
         "def f():\n    a = 1\n    for i in x:\n        b = 1\n        c = 2\n        d = 3\n",
@@ -2221,5 +2322,153 @@ fn the_name_guard_keeps_a_named_entry_with_its_own_name_when_one_is_on_offer() {
     assert!(
         !lone.forbids(0, 0),
         "a rename with no same-named alternative stays open"
+    );
+}
+
+/// `lua-neovim-neovim-if-flips-two-branches`: two branches of an if-chain swap places, each
+/// unchanged. The first sits bare in `if_statement`, the second in `elseif_statement`.
+#[test]
+fn prematch_identical_if_clauses_follows_swapped_branches() {
+    let before = Code::from_string(
+        "function f()\n  if opts.loclist then\n    setloc(list)\n    lopen()\n  \
+         elseif opts.on_list then\n    on_list(list)\n  else\n    setq(list)\n  end\nend\n",
+        &Language::LUA,
+    );
+    let after = Code::from_string(
+        "function f()\n  if opts.on_list then\n    on_list(list)\n  \
+         elseif opts.loclist then\n    setloc(list)\n    lopen()\n  else\n    setq(list)\n  end\nend\n",
+        &Language::LUA,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    // The `block` whose first leaf is `callee`.
+    let block_calling = |meta: &ASTMetadata, callee: &str| -> usize {
+        let first_leaf = |mut id: usize| {
+            while let Some(&child) = meta.node_info[&id].children.first() {
+                id = child;
+            }
+            meta.node_info[&id].text.clone()
+        };
+        *meta
+            .node_info
+            .iter()
+            .find(|(id, info)| info.kind == "block" && first_leaf(**id) == callee)
+            .unwrap()
+            .0
+    };
+    let root = |code: &Code| code.ast.as_ref().unwrap().root_node().id();
+
+    let mut diff = ASTDiff::default();
+    prematch_identical_if_clauses(
+        root(&before),
+        root(&after),
+        &before_meta,
+        &after_meta,
+        "test",
+        &mut diff,
+    );
+
+    for callee in ["setloc", "on_list"] {
+        assert_eq!(
+            diff.before_node_map
+                .get(&block_calling(&before_meta, callee)),
+            Some(&block_calling(&after_meta, callee)),
+            "the {callee} body should follow its branch"
+        );
+    }
+}
+
+/// `python-aboutcode-org-license-expression-excellent-test-case`: a version table loses rows at
+/// the top and gains rows at the bottom. The kept rows stay paired; unit-cost APTED alone shifts
+/// every row by one.
+#[test]
+fn residual_pair_keeps_identical_data_literal_elements() {
+    let before = Code::from_string(
+        "import x\nV = \"37\", \"38\", \"39\", \"310\"\n",
+        &Language::Python,
+    );
+    let after = Code::from_string(
+        "import x\nV = \"39\", \"310\", \"311\", \"312\", \"313\"\n",
+        &Language::Python,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    // The `string` whose content is `text`.
+    let string_of = |meta: &ASTMetadata, text: &str| -> usize {
+        *meta
+            .node_info
+            .iter()
+            .find(|(_, info)| {
+                info.kind == "string"
+                    && info.children.iter().any(|c| meta.node_info[c].text == text)
+            })
+            .unwrap()
+            .0
+    };
+    let before_root = before.ast.as_ref().unwrap().root_node().id();
+    let after_root = after.ast.as_ref().unwrap().root_node().id();
+
+    let mut diff = ASTDiff::default();
+    matched(&mut diff, before_root, after_root);
+    resolve_residual_forest_via_myers_lcs(
+        &before_meta,
+        &after_meta,
+        before_root,
+        after_root,
+        "test",
+        &mut diff,
+    );
+
+    for version in ["39", "310"] {
+        assert_eq!(
+            diff.before_node_map.get(&string_of(&before_meta, version)),
+            Some(&string_of(&after_meta, version)),
+            "{version}"
+        );
+    }
+    assert_eq!(
+        diff.before_node_map.get(&string_of(&before_meta, "37")),
+        Some(&0)
+    );
+}
+
+/// `ren_keyed` is `ren` on interned keys: every node pair of two real trees, comments (worded and
+/// bare markers), literals, operators and identifiers included, prices the same both ways.
+#[test]
+fn ren_keyed_agrees_with_ren_on_every_pair() {
+    let before = Code::from_string(
+        "// Sum.\n//\nfn f(a: u32) -> u32 {\n    let x = a + 1; // add\n    if x < 2 { \"s\" } else { 'c' }\n}\n",
+        &Language::Rust,
+    );
+    let after = Code::from_string(
+        "// Sum it.\n// \nfn g(b: u64) -> u32 {\n    let y = b - 2; //\n    if y <= 3 { \"t\" } else { 'c' }\n}\n",
+        &Language::Rust,
+    );
+    let before_meta = crate::code::metadata::metadata_of(&before);
+    let after_meta = crate::code::metadata::metadata_of(&after);
+    let cost_model = UnitCostModel::new(Language::Rust);
+    let mut interner = RenInterner::default();
+    let before_nodes: Vec<_> = before_meta.node_info.values().collect();
+    let after_nodes: Vec<_> = after_meta.node_info.values().collect();
+    let before_keys: Vec<_> = before_nodes.iter().map(|n| interner.key(n)).collect();
+    let after_keys: Vec<_> = after_nodes.iter().map(|n| interner.key(n)).collect();
+    let mut costs = std::collections::BTreeSet::new();
+    for (b, bk) in before_nodes.iter().zip(&before_keys) {
+        for (a, ak) in after_nodes.iter().zip(&after_keys) {
+            let cost = cost_model.ren(b, a);
+            assert_eq!(
+                cost_model.ren_keyed(bk, ak),
+                cost,
+                "{} vs {}",
+                b.kind,
+                a.kind
+            );
+            costs.insert(cost);
+        }
+    }
+    assert_eq!(
+        costs.into_iter().collect::<Vec<_>>(),
+        vec![0, COST_UPDATE, COST_DELETE + COST_INSERT + 1],
+        "the snippets exercise every cost tier"
     );
 }

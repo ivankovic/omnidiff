@@ -6,203 +6,12 @@
       "after_path": []
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "prolog:1"
       ],
       "after_path": [
         "prolog:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "<?:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "<?:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "xml:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "xml:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "version:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "version:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "=:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "=:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "VersionNum:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "VersionNum:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":2"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "encoding:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "encoding:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "=:2"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "=:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":3"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":3"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "EncName:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "EncName:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":4"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "\":4"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "?>:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "XMLDecl:1",
-        "?>:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "prolog:1",
-        "Comment:1"
-      ],
-      "after_path": [
-        "prolog:1",
-        "Comment:1"
       ]
     },
     {
@@ -878,7 +687,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "element:1",
         "content:1",
@@ -893,24 +702,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "content:1",
-        "CharData:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "content:1",
-        "CharData:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "element:1",
         "content:1",
@@ -922,57 +714,6 @@
         "content:1",
         "element:2",
         "ETag:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        "</:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        "</:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        "Name:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        "Name:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        ">:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:2",
-        "ETag:1",
-        ">:1"
       ]
     },
     {
@@ -1230,7 +971,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "element:1",
         "content:1",
@@ -1245,24 +986,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "content:1",
-        "CharData:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "content:1",
-        "CharData:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "element:1",
         "content:1",
@@ -1274,57 +998,6 @@
         "content:1",
         "element:3",
         "ETag:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        "</:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        "</:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        "Name:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        "Name:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        ">:1"
-      ],
-      "after_path": [
-        "element:1",
-        "content:1",
-        "element:3",
-        "ETag:1",
-        ">:1"
       ]
     },
     {
@@ -3557,7 +3230,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "element:1",
         "ETag:1"
@@ -3566,44 +3239,294 @@
         "element:1",
         "ETag:1"
       ]
-    },
+    }
+  ],
+  "text_mappings": [
     {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "ETag:1",
-        "</:1"
-      ],
-      "after_path": [
-        "element:1",
-        "ETag:1",
-        "</:1"
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 36,
+              "start_column": 2,
+              "end_row": 36,
+              "end_column": 77
+            },
+            {
+              "start_row": 37,
+              "start_column": 2,
+              "end_row": 37,
+              "end_column": 83
+            },
+            {
+              "start_row": 38,
+              "start_column": 2,
+              "end_row": 38,
+              "end_column": 70
+            },
+            {
+              "start_row": 39,
+              "start_column": 2,
+              "end_row": 39,
+              "end_column": 83
+            },
+            {
+              "start_row": 40,
+              "start_column": 2,
+              "end_row": 40,
+              "end_column": 62
+            },
+            {
+              "start_row": 41,
+              "start_column": 2,
+              "end_row": 41,
+              "end_column": 74
+            },
+            {
+              "start_row": 42,
+              "start_column": 2,
+              "end_row": 42,
+              "end_column": 67
+            },
+            {
+              "start_row": 43,
+              "start_column": 2,
+              "end_row": 43,
+              "end_column": 75
+            },
+            {
+              "start_row": 44,
+              "start_column": 2,
+              "end_row": 44,
+              "end_column": 106
+            },
+            {
+              "start_row": 45,
+              "start_column": 2,
+              "end_row": 45,
+              "end_column": 88
+            },
+            {
+              "start_row": 46,
+              "start_column": 2,
+              "end_row": 46,
+              "end_column": 69
+            },
+            {
+              "start_row": 47,
+              "start_column": 2,
+              "end_row": 47,
+              "end_column": 92
+            },
+            {
+              "start_row": 48,
+              "start_column": 2,
+              "end_row": 48,
+              "end_column": 54
+            },
+            {
+              "start_row": 49,
+              "start_column": 2,
+              "end_row": 49,
+              "end_column": 60
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 11,
+              "end_row": 8,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 61,
+              "end_row": 12,
+              "end_column": 111
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 75,
+              "end_row": 17,
+              "end_column": 125
+            }
+          ]
+        }
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "ETag:1",
-        "Name:1"
-      ],
-      "after_path": [
-        "element:1",
-        "ETag:1",
-        "Name:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "element:1",
-        "ETag:1",
-        ">:1"
-      ],
-      "after_path": [
-        "element:1",
-        "ETag:1",
-        ">:1"
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 36,
+              "start_column": 0,
+              "end_row": 36,
+              "end_column": 77
+            },
+            {
+              "start_row": 37,
+              "start_column": 0,
+              "end_row": 37,
+              "end_column": 83
+            },
+            {
+              "start_row": 38,
+              "start_column": 0,
+              "end_row": 38,
+              "end_column": 70
+            },
+            {
+              "start_row": 39,
+              "start_column": 0,
+              "end_row": 39,
+              "end_column": 83
+            },
+            {
+              "start_row": 40,
+              "start_column": 0,
+              "end_row": 40,
+              "end_column": 62
+            },
+            {
+              "start_row": 41,
+              "start_column": 0,
+              "end_row": 41,
+              "end_column": 74
+            },
+            {
+              "start_row": 42,
+              "start_column": 0,
+              "end_row": 42,
+              "end_column": 67
+            },
+            {
+              "start_row": 43,
+              "start_column": 0,
+              "end_row": 43,
+              "end_column": 75
+            },
+            {
+              "start_row": 44,
+              "start_column": 0,
+              "end_row": 44,
+              "end_column": 106
+            },
+            {
+              "start_row": 45,
+              "start_column": 0,
+              "end_row": 45,
+              "end_column": 88
+            },
+            {
+              "start_row": 46,
+              "start_column": 0,
+              "end_row": 46,
+              "end_column": 69
+            },
+            {
+              "start_row": 47,
+              "start_column": 0,
+              "end_row": 47,
+              "end_column": 92
+            },
+            {
+              "start_row": 48,
+              "start_column": 0,
+              "end_row": 48,
+              "end_column": 54
+            },
+            {
+              "start_row": 49,
+              "start_column": 0,
+              "end_row": 49,
+              "end_column": 60
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 11,
+              "end_row": 8,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 61,
+              "end_row": 12,
+              "end_column": 111
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 75,
+              "end_row": 17,
+              "end_column": 125
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 10,
+              "end_row": 8,
+              "end_column": 11
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 60,
+              "end_row": 12,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 74,
+              "end_row": 17,
+              "end_column": 75
+            }
+          ]
+        }
       ]
     }
   ]

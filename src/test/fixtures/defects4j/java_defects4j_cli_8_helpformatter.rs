@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,16 +22,7 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // `findWrapPos(text, width, nextLineTabStop)` becomes `findWrapPos(text, width, 0)`. The human
-    // pairs the third argument across the kind change, since `text` and `width` are untouched and
-    // nothing else is left for `0` to be; omnidiff deletes and inserts
-    // (`APTED("large_flat_subtree")`). Java's `argument_list` names no fields, so invariant 18
-    // reaches this only by elimination.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "java-defects4j-cli-8-helpformatter",
-        1,
-        1,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("java-defects4j-cli-8-helpformatter")
 }
 
 #[test]

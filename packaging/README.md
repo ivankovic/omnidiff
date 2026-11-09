@@ -18,7 +18,7 @@ than a recipe here.
 
 ## The one thing you cannot skip: checksums
 
-The tarball hashes belong to the **v0.1.1** tag: they hash GitHub's tag tarball, so they can only
+The tarball hashes belong to the **v0.2.0** tag: they hash GitHub's tag tarball, so they can only
 be regenerated after the next tag exists, and until then the recipes name the new version with the
 old hash and do not build. `make check-versions` checks the version strings, not the hashes.
 
@@ -93,7 +93,7 @@ Run this after any `Cargo.lock` change. A stale list produces a package that fai
 users while looking fine in review. `pycargoebuild` does the same job if you have it installed.
 
 The `LICENSE` variable enumerates the vendored crates' licenses alongside the package's own
-`AGPL-3+`; re-check it if the dependency set changes substantially.
+`AGPL-3`; re-check it if the dependency set changes substantially.
 
 ## Debian
 

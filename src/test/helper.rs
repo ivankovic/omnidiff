@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,7 +14,9 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+pub mod human_content;
 pub mod human_mapping;
+pub mod json_schema;
 
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "stats")]
@@ -110,23 +111,24 @@ pub fn node_for_path<'a>(root: Node<'a>, path: &[&str]) -> Result<Node<'a>> {
 
 /// One parent's children, indexed once for both directions: `by_kind` for path -> node,
 /// `occurrence_of` (child id -> 0-indexed same-kind occurrence) for node -> path.
+///
+/// `by_kind` holds each kind's children in order, so a lookup indexes by occurrence and allocates
+/// nothing: a loaded mapping can hold an entry per node, and resolving them is most of what
+/// building [`Caches`](human_mapping::Caches) costs.
 struct ParentIndex<'a> {
-    by_kind: HashMap<(String, usize), Node<'a>>,
+    by_kind: HashMap<&'static str, Vec<Node<'a>>>,
     occurrence_of: HashMap<usize, usize>,
 }
 
 impl<'a> ParentIndex<'a> {
     fn build(parent: Node<'a>) -> Self {
-        let mut by_kind = HashMap::new();
+        let mut by_kind: HashMap<&'static str, Vec<Node<'a>>> = HashMap::new();
         let mut occurrence_of = HashMap::new();
-        let mut counts: HashMap<String, usize> = HashMap::new();
         let mut cursor = parent.walk();
         for child in parent.children(&mut cursor) {
-            let kind = child.kind().to_string();
-            let occurrence = counts.entry(kind.clone()).or_insert(0);
-            occurrence_of.insert(child.id(), *occurrence);
-            by_kind.insert((kind, *occurrence), child);
-            *occurrence += 1;
+            let same_kind = by_kind.entry(child.kind()).or_default();
+            occurrence_of.insert(child.id(), same_kind.len());
+            same_kind.push(child);
         }
         Self {
             by_kind,
@@ -166,7 +168,8 @@ impl<'a> PathCache<'a> {
             match self
                 .index_of(current_node)
                 .by_kind
-                .get(&(node_type.to_string(), child_index))
+                .get(node_type)
+                .and_then(|same_kind| same_kind.get(child_index))
             {
                 Some(&node) => current_node = node,
                 None => bail!(
@@ -518,9 +521,19 @@ fn handmade_test_code_pairs_uncached() -> Result<HashMap<String, (Code, Code)>> 
 /// `small` and `full` (sampled from the two research datasets), `stratified` (sampled per language
 /// *per size bucket*, so large files are represented), and `defects4j` (a third party's list taken
 /// whole, so a rate over its solved fixtures is not a rate over the dataset; see
-/// `research/external/README.md`). Names are unique across all five, so readers resolve a name to
-/// whichever dataset holds it.
-pub const DIFF_DATASETS: &[&str] = &["handmade", "small", "full", "stratified", "defects4j"];
+/// `research/external/README.md`), `encodings` (text in UTF-16 or UTF-32, sampled with
+/// `sample_test_diffs --encodings`), and `crosslang` (a file moved to another language, its before
+/// side at the sample.csv row's `before_path`). Names are unique across all seven, so readers
+/// resolve a name to whichever dataset holds it.
+pub const DIFF_DATASETS: &[&str] = &[
+    "handmade",
+    "small",
+    "full",
+    "stratified",
+    "defects4j",
+    "encodings",
+    "crosslang",
+];
 
 fn diffs_root() -> std::path::PathBuf {
     std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -654,8 +667,10 @@ pub fn sample_provenance() -> Result<HashMap<String, SampleProvenance>> {
 }
 
 /// Clone URL for each [`SampleProvenance::repository`] slug, from `list_of_repositories.csv`,
-/// found by deriving the slug from every clone URL (the slug cannot be split back). A slug that
-/// does not resolve is absent. Every listed host serves `<clone url>/commit/<sha>`.
+/// found by deriving every row's clone-directory name the way `research/sampling/dataset.sh` does
+/// (see [`repository_slug`]; the slug cannot be split back). A slug that does not resolve is
+/// absent. Every listed host serves `<clone url>/commit/<sha>`, `git.libreoffice.org` as a
+/// redirect to its Gitiles commit page.
 #[cfg(feature = "test-fixtures")]
 pub fn repository_urls() -> Result<HashMap<String, String>> {
     let path =
@@ -672,18 +687,24 @@ pub fn repository_urls() -> Result<HashMap<String, String>> {
             continue;
         };
         let url = url.trim().trim_end_matches('/');
-        if let Some(slug) = repository_slug(url) {
+        let name = record.get("name").map(String::as_str).unwrap_or_default();
+        if let Some(slug) = repository_slug(url, name) {
             out.entry(slug).or_insert_with(|| url.to_string());
         }
     }
     Ok(out)
 }
 
-/// The clone-directory slug for a clone URL: everything after the host, `.git` dropped, `/`
-/// replaced by `-`. `None` for a URL with nothing after the host.
-fn repository_slug(url: &str) -> Option<String> {
+/// The clone-directory slug `research/sampling/dataset.sh` gives a row of the repository list: on
+/// GitHub, GitLab and Codeberg everything after the host, `.git` dropped, `/` replaced by `-`;
+/// on any other host the row's `name` (LibreOffice's `git.libreoffice.org/core` is cloned as
+/// `libreoffice`). `None` for a forge URL with nothing after the host, or no name.
+fn repository_slug(url: &str, name: &str) -> Option<String> {
     let after_scheme = url.split_once("://").map(|(_, rest)| rest).unwrap_or(url);
-    let (_host, path) = after_scheme.split_once('/')?;
+    let (host, path) = after_scheme.split_once('/')?;
+    if !matches!(host, "github.com" | "gitlab.com" | "codeberg.org") {
+        return (!name.is_empty()).then(|| name.to_string());
+    }
     let path = path.trim_matches('/');
     if path.is_empty() {
         return None;
@@ -844,7 +865,8 @@ pub const UNIT_TEST_FIXTURES: &[&str] = &[
 /// Reads one `before.<ext>.test`/`after.<ext>.test` file into an unparsed `Code`, with its
 /// `metadata.path` set.
 fn load_side(file_path: &Path) -> Result<Code> {
-    let contents = fs::read_to_string(file_path)?;
+    // Not `read_to_string`: an `encodings` fixture is UTF-16 or UTF-32 on disk.
+    let contents = crate::code::read_text(file_path)?;
     let mut code = Code {
         contents,
         ..Default::default()
@@ -1072,23 +1094,32 @@ mod tests {
     #[test]
     fn repository_slug_matches_the_clone_directory_name_sample_csv_records() {
         assert_eq!(
-            repository_slug("https://github.com/awslabs/aws-c-common").as_deref(),
+            repository_slug("https://github.com/awslabs/aws-c-common", "any").as_deref(),
             Some("awslabs-aws-c-common")
         );
         assert_eq!(
-            repository_slug("https://gitlab.com/gitlab-org/gitlab-runner").as_deref(),
+            repository_slug("https://gitlab.com/gitlab-org/gitlab-runner", "any").as_deref(),
             Some("gitlab-org-gitlab-runner")
         );
         assert_eq!(
-            repository_slug("https://codeberg.org/dnkl/foot.git").as_deref(),
+            repository_slug("https://codeberg.org/dnkl/foot.git", "any").as_deref(),
             Some("dnkl-foot")
         );
         // Why the slug is derived from URLs rather than split: the owner contains a dash.
         assert_eq!(
-            repository_slug("https://github.com/Ondsel-Development/OndselSolver").as_deref(),
+            repository_slug("https://github.com/Ondsel-Development/OndselSolver", "any").as_deref(),
             Some("Ondsel-Development-OndselSolver")
         );
-        assert_eq!(repository_slug("https://git.libreoffice.org"), None);
+        assert_eq!(repository_slug("https://github.com", "any"), None);
+        // Off the three forges, `dataset.sh` clones into the row's name, not the URL's path.
+        assert_eq!(
+            repository_slug("https://git.libreoffice.org/core", "libreoffice").as_deref(),
+            Some("libreoffice")
+        );
+        assert_eq!(
+            repository_slug("https://git.libreoffice.org/core", ""),
+            None
+        );
     }
 
     #[test]

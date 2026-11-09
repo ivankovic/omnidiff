@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,8 +24,8 @@ fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "lua-neovim-neovim-logic-change-with-some-code-re-use",
         // Includes the N:M floor: 9 all-to-all group members a one-to-one output cannot reach.
-        16,
-        14,
+        15,
+        13,
     )
 }
 

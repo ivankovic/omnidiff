@@ -4,8 +4,7 @@
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,10 +32,12 @@ fn mapping() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     // Invariant 10, both presets: the `,` on before row 299 and after row 301 is painted gone and
-    // new, where the tree mapping calls it the same text.
+    // new, where the tree mapping calls it the same text. Invariant 27, both presets: `None` ->
+    // `block_table` and `# page_table,` -> `# block_table,` on the same rows are painted gone and
+    // new, where the tree mapping pairs them as edits.
     assert_ground_truth_invariants_with_known_violations(
         "python-pytorch-pytorch-add-param-to-many-places-and-update-one",
-        2,
+        4,
     )
 }
 

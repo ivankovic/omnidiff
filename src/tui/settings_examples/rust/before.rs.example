@@ -1,0 +1,40 @@
+use std::collections::HashMap;
+use std::fmt::Write;
+use std::io;
+use std::path::Path;
+
+fn create_person(name: String, age: u32) -> Fields {
+    hash_map(
+        "name", name,
+        "age", age
+    )
+}
+
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+
+    fn describe(&self, label: &str) -> String {
+        let total = self.area();
+        format!("{label}: {total} square units")
+    }
+}
+
+fn main() {
+    let size = (3, 4);
+    let shapes = vec![
+        Rectangle { width: size.0, height: size.1 },
+        Rectangle { width: 5, height: 2 },
+    ];
+    for shape in &shapes {
+        println!("{}", shape.describe("box"));
+    }
+    let largest = shapes.iter().map(Rectangle::area);
+    println!("{largest:?}");
+}

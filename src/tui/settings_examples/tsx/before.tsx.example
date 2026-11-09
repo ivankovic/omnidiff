@@ -1,0 +1,39 @@
+import { useState } from "react";
+
+type Fields = Record<string, string | number>;
+
+function toRow(sku: string, qty: number): Fields {
+  return pairs(
+    "sku", sku,
+    "qty", qty
+  );
+}
+
+type Props = { items: string[]; title: string };
+
+export function StockList({ items, title }: Props) {
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen(!open);
+  const limits = { low: 0, high: 8 };
+  const columns = ["Name", "Stock"];
+  const total = items.length;
+  for (const item of items) {
+    console.log("rendering", item);
+  }
+  const shown = items.slice(limits.low, limits.high);
+  return (
+    <section className="stock">
+      <h2 title="tap to expand" onClick={toggle}>
+        {title} ({total})
+      </h2>
+      <p>{columns.join(" / ")}</p>
+      {open && (
+        <ul>
+          {shown.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
