@@ -121,8 +121,24 @@ a regression suite. Only fixtures with a `human_mapping.json` are ever scored; t
 Defects4J directories are invisible to every report. Which Defects4J units are solved is how far
 annotation has reached, not a draw - do not read a Defects4J figure as an estimate over Defects4J.
 
+## `content_accuracy.csv` (2026-11-09)
+
+The introductory paper's accuracy figures for content other than code: one row per judged fixture
+in `src/test/data/<family>/` (pictures, archives, cursors, fonts, catalogs, documents), with how
+many verdicts the human gave on it (the pair's and each judged member's) and whether the engine's
+verdicts are all equal to them (`perfect`) and all within one level (`near_perfect`). Written by
+`benchmark_content --accuracy-csv` (`cargo run --release --features stats --bin benchmark_content
+-- --samples <an empty directory> --accuracy-csv research/data/quality/content_accuracy.csv`; the
+empty samples directory skips the timing half, which `make benchmark-content` writes to
+`../performance/content_speed/`), on the laptop at `d577f89a`. 194 fixtures judged: 131 pictures,
+23 archives, 13 cursors, 11 fonts, 12 catalogs, 4 documents; the same counts and rates the root
+README prints. These are judged, not painted: the fixtures are the content ground truth, as
+`src/test/data/diffs/` is the code one, and a re-run after adding or re-judging one rewrites this
+file.
+
 ## Other files in this directory
 
+- `content_accuracy.csv` - see above.
 - `quality_baseline.csv` - the per-fixture accuracy gate of `make check-quality`, written by
   `make update-quality-baseline` as a projection of the `fixtures` stubs' limits.
 - `painting_attribution.csv` - the painting gate of `make check-painting-attribution`, one row per
