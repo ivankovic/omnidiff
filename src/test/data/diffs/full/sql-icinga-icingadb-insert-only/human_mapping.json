@@ -1,0 +1,75 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:1"
+      ],
+      "after_path": [
+        "statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:1"
+      ],
+      "after_path": [
+        ";:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:2"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:2"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:3"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:3"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 0,
+              "end_row": 2,
+              "end_column": 90
+            },
+            {
+              "start_row": 3,
+              "start_column": 0,
+              "end_row": 3,
+              "end_column": 94
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

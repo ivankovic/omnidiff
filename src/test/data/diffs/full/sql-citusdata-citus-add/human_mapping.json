@@ -1,0 +1,435 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:14"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:14"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:15"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:15"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:16"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:16"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:17"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:17"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:18"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:18"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:19"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:19"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:20"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:20"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "statement:21"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        ";:21"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:1"
+      ],
+      "after_path": [
+        "statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:1"
+      ],
+      "after_path": [
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:2"
+      ],
+      "after_path": [
+        "statement:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:2"
+      ],
+      "after_path": [
+        ";:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:3"
+      ],
+      "after_path": [
+        "statement:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:3"
+      ],
+      "after_path": [
+        ";:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:4"
+      ],
+      "after_path": [
+        "statement:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:4"
+      ],
+      "after_path": [
+        ";:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:5"
+      ],
+      "after_path": [
+        "statement:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:5"
+      ],
+      "after_path": [
+        ";:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:6"
+      ],
+      "after_path": [
+        "statement:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:6"
+      ],
+      "after_path": [
+        ";:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:7"
+      ],
+      "after_path": [
+        "statement:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:7"
+      ],
+      "after_path": [
+        ";:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:8"
+      ],
+      "after_path": [
+        "statement:8"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:8"
+      ],
+      "after_path": [
+        ";:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:9"
+      ],
+      "after_path": [
+        "statement:9"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:9"
+      ],
+      "after_path": [
+        ";:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:10"
+      ],
+      "after_path": [
+        "statement:10"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:10"
+      ],
+      "after_path": [
+        ";:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:11"
+      ],
+      "after_path": [
+        "statement:11"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:11"
+      ],
+      "after_path": [
+        ";:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:12"
+      ],
+      "after_path": [
+        "statement:12"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:12"
+      ],
+      "after_path": [
+        ";:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:13"
+      ],
+      "after_path": [
+        "statement:13"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:13"
+      ],
+      "after_path": [
+        ";:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:14"
+      ],
+      "after_path": [
+        "statement:22"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:14"
+      ],
+      "after_path": [
+        ";:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:15"
+      ],
+      "after_path": [
+        "statement:23"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:15"
+      ],
+      "after_path": [
+        ";:23"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 15,
+              "start_column": 0,
+              "end_row": 15,
+              "end_column": 26
+            },
+            {
+              "start_row": 16,
+              "start_column": 0,
+              "end_row": 16,
+              "end_column": 24
+            },
+            {
+              "start_row": 17,
+              "start_column": 0,
+              "end_row": 17,
+              "end_column": 47
+            },
+            {
+              "start_row": 19,
+              "start_column": 0,
+              "end_row": 19,
+              "end_column": 88
+            },
+            {
+              "start_row": 20,
+              "start_column": 0,
+              "end_row": 20,
+              "end_column": 94
+            },
+            {
+              "start_row": 21,
+              "start_column": 0,
+              "end_row": 21,
+              "end_column": 95
+            },
+            {
+              "start_row": 23,
+              "start_column": 0,
+              "end_row": 23,
+              "end_column": 14
+            },
+            {
+              "start_row": 24,
+              "start_column": 0,
+              "end_row": 24,
+              "end_column": 32
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

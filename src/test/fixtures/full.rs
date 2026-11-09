@@ -371,6 +371,30 @@ mod shellscript_openlightingproject_ola_real_small_change;
 #[cfg(test)]
 mod shellscript_ropery_ffcast_comment_only_change;
 #[cfg(test)]
+mod sql_citusdata_citus_add;
+#[cfg(test)]
+mod sql_citusdata_citus_change_one_function_call_to_another;
+#[cfg(test)]
+mod sql_citusdata_citus_comment_is_also_sql;
+#[cfg(test)]
+mod sql_citusdata_citus_modify_column_name;
+#[cfg(test)]
+mod sql_icinga_icingadb_insert_only;
+#[cfg(test)]
+mod sql_postgres_postgres_add;
+#[cfg(test)]
+mod sql_postgres_postgres_add_only;
+#[cfg(test)]
+mod sql_postgres_postgres_insert_only;
+#[cfg(test)]
+mod sql_reorg_pg_repack_add_year_to_copyright_comment;
+#[cfg(test)]
+mod sql_timescale_timescaledb_equals_becomes_in;
+#[cfg(test)]
+mod sql_timescale_timescaledb_only_insert;
+#[cfg(test)]
+mod sql_timescale_timescaledb_replace_star_with_column_names;
+#[cfg(test)]
 mod swift_apple_swift_argument_parser_if_to_guard;
 #[cfg(test)]
 mod swift_apple_swift_argument_parser_refactor_and_improve_tests;

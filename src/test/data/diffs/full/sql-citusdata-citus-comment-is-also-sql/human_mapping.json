@@ -1,0 +1,189 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:1"
+      ],
+      "after_path": [
+        "statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:1"
+      ],
+      "after_path": [
+        ";:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "statement:2"
+      ],
+      "after_path": [
+        "statement:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_comment:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_on:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_on:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_function:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_function:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "object_reference:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "object_reference:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "function_arguments:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "function_arguments:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_is:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "keyword_is:1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "statement:2",
+        "comment_statement:1",
+        "literal:1"
+      ],
+      "after_path": [
+        "statement:2",
+        "comment_statement:1",
+        "literal:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        ";:2"
+      ],
+      "after_path": [
+        ";:2"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 44,
+              "end_row": 7,
+              "end_column": 51
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 37,
+              "end_row": 7,
+              "end_column": 58
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 37,
+              "end_row": 7,
+              "end_column": 51
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
