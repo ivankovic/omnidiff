@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{33}
+\begin{thebibliography}{36}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -36,6 +36,19 @@
 \providecommand\bibinfo[2]{#2}
 \providecommand\natexlab[1]{#1}
 \providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Agafonkin(2015)]%
+        {pixelmatch}
+\bibfield{author}{\bibinfo{person}{Vladimir Agafonkin}.}
+  \bibinfo{year}{2015}\natexlab{}.
+\newblock \bibinfo{title}{pixelmatch: A Small, Simple and Fast {JavaScript}
+  Pixel-Level Image Comparison Library}.
+\newblock \bibinfo{howpublished}{Mapbox,
+  \url{https://github.com/mapbox/pixelmatch}}.
+\newblock
+\newblock
+\shownote{Accessed 2026-11-09}.
+
 
 \bibitem[Alcocer et~al\mbox{.}(2023)]%
         {alcocer-2023}
@@ -471,6 +484,18 @@
 \showDOI{\tempurl}
 
 
+\bibitem[{Reproducible Builds}({[n.\,d.]})]%
+        {diffoscope}
+\bibfield{author}{\bibinfo{person}{{Reproducible Builds}}.}
+  \bibinfo{year}{[n.\,d.]}\natexlab{}.
+\newblock \bibinfo{title}{diffoscope: In-Depth Comparison of Files, Archives,
+  and Directories}.
+\newblock \bibinfo{howpublished}{\url{https://diffoscope.org}}.
+\newblock
+\newblock
+\shownote{Accessed 2026-11-09}.
+
+
 \bibitem[Sadowski et~al\mbox{.}(2018)]%
         {sadowski-2018}
 \bibfield{author}{\bibinfo{person}{Caitlin Sadowski}, \bibinfo{person}{Emma
@@ -503,6 +528,19 @@
 \urldef\tempurl%
 \url{https://doi.org/10.1145/2393596.2393656}
 \showDOI{\tempurl}
+
+
+\bibitem[{The Git Project}({[n.\,d.]})]%
+        {gitattributes}
+\bibfield{author}{\bibinfo{person}{{The Git Project}}.}
+  \bibinfo{year}{[n.\,d.]}\natexlab{}.
+\newblock \bibinfo{title}{gitattributes: Defining Attributes per Path}.
+\newblock \bibinfo{howpublished}{Git documentation,
+  \url{https://git-scm.com/docs/gitattributes}}.
+\newblock
+\newblock
+\shownote{Sections ``Marking files as binary'' and ``Performing text diffs of
+  binary files''. Accessed 2026-11-09}.
 
 
 \bibitem[Wurzel~Gon{\c{c}}alves et~al\mbox{.}(2022)]%
