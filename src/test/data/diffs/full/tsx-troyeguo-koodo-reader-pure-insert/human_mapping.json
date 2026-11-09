@@ -2045,5 +2045,325 @@
         "export_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 252,
+              "start_column": 4,
+              "end_row": 252,
+              "end_column": 8
+            },
+            {
+              "start_row": 253,
+              "start_column": 6,
+              "end_row": 253,
+              "end_column": 69
+            },
+            {
+              "start_row": 254,
+              "start_column": 6,
+              "end_row": 254,
+              "end_column": 28
+            },
+            {
+              "start_row": 255,
+              "start_column": 6,
+              "end_row": 255,
+              "end_column": 48
+            },
+            {
+              "start_row": 256,
+              "start_column": 6,
+              "end_row": 256,
+              "end_column": 78
+            },
+            {
+              "start_row": 257,
+              "start_column": 4,
+              "end_row": 257,
+              "end_column": 7
+            },
+            {
+              "start_row": 258,
+              "start_column": 6,
+              "end_row": 258,
+              "end_column": 18
+            },
+            {
+              "start_row": 259,
+              "start_column": 8,
+              "end_row": 259,
+              "end_column": 21
+            },
+            {
+              "start_row": 260,
+              "start_column": 10,
+              "end_row": 260,
+              "end_column": 122
+            },
+            {
+              "start_row": 261,
+              "start_column": 8,
+              "end_row": 261,
+              "end_column": 11
+            },
+            {
+              "start_row": 262,
+              "start_column": 10,
+              "end_row": 262,
+              "end_column": 23
+            },
+            {
+              "start_row": 263,
+              "start_column": 12,
+              "end_row": 263,
+              "end_column": 27
+            },
+            {
+              "start_row": 264,
+              "start_column": 14,
+              "end_row": 264,
+              "end_column": 78
+            },
+            {
+              "start_row": 265,
+              "start_column": 12,
+              "end_row": 265,
+              "end_column": 26
+            },
+            {
+              "start_row": 266,
+              "start_column": 10,
+              "end_row": 266,
+              "end_column": 12
+            },
+            {
+              "start_row": 267,
+              "start_column": 8,
+              "end_row": 267,
+              "end_column": 9
+            },
+            {
+              "start_row": 268,
+              "start_column": 10,
+              "end_row": 268,
+              "end_column": 25
+            },
+            {
+              "start_row": 269,
+              "start_column": 8,
+              "end_row": 269,
+              "end_column": 9
+            },
+            {
+              "start_row": 270,
+              "start_column": 6,
+              "end_row": 270,
+              "end_column": 8
+            },
+            {
+              "start_row": 271,
+              "start_column": 6,
+              "end_row": 271,
+              "end_column": 39
+            },
+            {
+              "start_row": 272,
+              "start_column": 6,
+              "end_row": 272,
+              "end_column": 19
+            },
+            {
+              "start_row": 273,
+              "start_column": 4,
+              "end_row": 273,
+              "end_column": 5
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 305,
+              "start_column": 10,
+              "end_row": 305,
+              "end_column": 30
+            },
+            {
+              "start_row": 306,
+              "start_column": 12,
+              "end_row": 306,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 252,
+              "start_column": 0,
+              "end_row": 252,
+              "end_column": 8
+            },
+            {
+              "start_row": 253,
+              "start_column": 0,
+              "end_row": 253,
+              "end_column": 69
+            },
+            {
+              "start_row": 254,
+              "start_column": 0,
+              "end_row": 254,
+              "end_column": 28
+            },
+            {
+              "start_row": 255,
+              "start_column": 0,
+              "end_row": 255,
+              "end_column": 48
+            },
+            {
+              "start_row": 256,
+              "start_column": 0,
+              "end_row": 256,
+              "end_column": 78
+            },
+            {
+              "start_row": 257,
+              "start_column": 0,
+              "end_row": 257,
+              "end_column": 7
+            },
+            {
+              "start_row": 258,
+              "start_column": 0,
+              "end_row": 258,
+              "end_column": 18
+            },
+            {
+              "start_row": 259,
+              "start_column": 0,
+              "end_row": 259,
+              "end_column": 21
+            },
+            {
+              "start_row": 260,
+              "start_column": 0,
+              "end_row": 260,
+              "end_column": 122
+            },
+            {
+              "start_row": 261,
+              "start_column": 0,
+              "end_row": 261,
+              "end_column": 11
+            },
+            {
+              "start_row": 262,
+              "start_column": 0,
+              "end_row": 262,
+              "end_column": 23
+            },
+            {
+              "start_row": 263,
+              "start_column": 0,
+              "end_row": 263,
+              "end_column": 27
+            },
+            {
+              "start_row": 264,
+              "start_column": 0,
+              "end_row": 264,
+              "end_column": 78
+            },
+            {
+              "start_row": 265,
+              "start_column": 0,
+              "end_row": 265,
+              "end_column": 26
+            },
+            {
+              "start_row": 266,
+              "start_column": 0,
+              "end_row": 266,
+              "end_column": 12
+            },
+            {
+              "start_row": 267,
+              "start_column": 0,
+              "end_row": 267,
+              "end_column": 9
+            },
+            {
+              "start_row": 268,
+              "start_column": 0,
+              "end_row": 268,
+              "end_column": 25
+            },
+            {
+              "start_row": 269,
+              "start_column": 0,
+              "end_row": 269,
+              "end_column": 9
+            },
+            {
+              "start_row": 270,
+              "start_column": 0,
+              "end_row": 270,
+              "end_column": 8
+            },
+            {
+              "start_row": 271,
+              "start_column": 0,
+              "end_row": 271,
+              "end_column": 39
+            },
+            {
+              "start_row": 272,
+              "start_column": 0,
+              "end_row": 272,
+              "end_column": 19
+            },
+            {
+              "start_row": 273,
+              "start_column": 0,
+              "end_row": 273,
+              "end_column": 5
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 305,
+              "start_column": 0,
+              "end_row": 305,
+              "end_column": 30
+            },
+            {
+              "start_row": 306,
+              "start_column": 0,
+              "end_row": 306,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

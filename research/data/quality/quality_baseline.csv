@@ -311,7 +311,7 @@ css-wordpress-wordpress-rename-attribute,0,0
 go-caddy-rename-type,0,0
 go-caddyserver-caddy-add-only,2,2
 go-caddyserver-caddy-multiple-solutions-interesting-case,3,3
-go-cloudflare-cfssl-change-zero-value-to-is-zero,5,5
+go-cloudflare-cfssl-change-zero-value-to-is-zero,2,2
 go-cockroachdb-cockroach-add-function,0,0
 go-cockroachdb-cockroach-add-one-test,0,0
 go-cockroachdb-cockroach-add-only,0,0
