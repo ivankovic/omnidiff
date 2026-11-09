@@ -1001,6 +1001,249 @@ def astdiff_oracle_human(research_dir):
     return values
 
 
+# The content families of `src/diff/content.rs` (`Family::name`), in the order the paper's table
+# lists them, with the stem each family's macros carry. `documents` is the PDF family and
+# `catalogs` the compiled message catalogs; the stems say what a reader of `main.tex` would call
+# them.
+CONTENT_FAMILIES = [
+    ("pictures", "Pictures"),
+    ("cursors", "Cursors"),
+    ("fonts", "Fonts"),
+    ("archives", "Archives"),
+    ("catalogs", "Catalogs"),
+    ("documents", "Pdfs"),
+]
+
+# Which machine's `data/performance/content_speed/<machine>.csv` the paper's content timings are
+# read from. `server` is the MACHINE block's hardware, which every other corpus-wide measurement in
+# the paper ran on (2026-10-06, single-shot). `laptop.csv` holds the same pairs re-timed on
+# 2026-11-07 as the median of three runs - the README's figures - and is not comparable with it
+# (`data/performance/PROVENANCE.md`: compare figures within one file, never across two).
+CONTENT_SPEED_MACHINE = "server"
+
+# The content census's per-repository cap: each repository weighs min(1, CAP / its changes), the
+# expected outcome of sampling CAP of its changes. The figure data/corpus_stats/PROVENANCE.md and
+# the root README quote ("at most 1,000 per repository"); a parameter of the reading, not a
+# measurement.
+CONTENT_CENSUS_CAP = 1000
+
+
+def _rank_percentile(sorted_values, p):
+    """`benchmark_content`'s own percentile (the value at rank ceil(p/100 * n)), so a figure here
+    equals the one that binary prints for the same file."""
+    rank = -(-p * len(sorted_values) // 100)
+    return sorted_values[min(max(rank, 1), len(sorted_values)) - 1]
+
+
+def change_census(research_dir):
+    """How many of the files commits change git itself calls binary, over the 50-commit window of
+    Section 3.2. DERIVED from `data/corpus_stats/change_census.csv`, whose `binary_changes` column
+    is git's own verdict (`--numstat` prints `-`): a file counted there is one `git diff` shows as
+    "Binary files differ" and nothing more.
+
+    source: `make measure-change-census MODE=full`, 2026-10-02; see
+            data/corpus_stats/PROVENANCE.md ("The change census").
+    """
+    path = os.path.join(research_dir, "data", "corpus_stats", "change_census.csv")
+    if not os.path.exists(path):
+        return {}
+    with open(path, newline="") as f:
+        rows = list(csv.DictReader(f))
+    changes = sum(int(r["changes"]) for r in rows)
+    binary = sum(int(r["binary_changes"]) for r in rows)
+    return {
+        "ChangeCensusChanges": latex_number(changes),
+        "ChangeCensusBinary": latex_number(binary),
+        "ChangeCensusBinaryPct": f"{binary / changes * 100:.1f}",
+        "ChangeCensusTextPct": f"{(changes - binary) / changes * 100:.1f}",
+    }
+
+
+def content_census(research_dir):
+    """How much of what commits change OmniDiff diffs as text or by its content, every change
+    judged by OmniDiff itself from its blobs. DERIVED from `data/corpus_stats/content_census.csv`
+    (per key and outcome) and `content_census_repositories.csv` (per repository and outcome).
+
+    An outcome is `text`, a content family that diffed, `failed:<family>` (sniffs as the family and
+    does not decode), `binary` (nothing OmniDiff reads), or `missing` (a submodule entry, or a path
+    `git log` names that the tree does not hold): `missing` is not a file and is left out of every
+    denominator here, as it is in the PROVENANCE's own figures. The capped share weights each
+    repository by min(1, 1000 / its changes), so that the one repository whose 50 commits touch
+    159,244 files does not decide it.
+
+    source: `make measure-content-census MODE=full`, 2026-10-04; see
+            data/corpus_stats/PROVENANCE.md ("The content census").
+    """
+    by_key = os.path.join(research_dir, "data", "corpus_stats", "content_census.csv")
+    by_repo = os.path.join(research_dir, "data", "corpus_stats", "content_census_repositories.csv")
+    if not (os.path.exists(by_key) and os.path.exists(by_repo)):
+        return {}
+
+    def diffed(outcome):
+        return outcome != "binary" and not outcome.startswith("failed:")
+
+    outcomes = collections.Counter()
+    with open(by_key, newline="") as f:
+        for r in csv.DictReader(f):
+            if r["outcome"] != "missing":
+                outcomes[r["outcome"]] += int(r["changes"])
+    total = sum(outcomes.values())
+    text = outcomes["text"]
+    shown = sum(v for o, v in outcomes.items() if diffed(o))
+
+    repositories = collections.defaultdict(collections.Counter)
+    with open(by_repo, newline="") as f:
+        for r in csv.DictReader(f):
+            if r["outcome"] != "missing":
+                repositories[r["repository"]][r["outcome"]] += int(r["changes"])
+    weighted_shown = weighted_total = 0.0
+    entirely = 0
+    family_repositories = collections.Counter()
+    for counts in repositories.values():
+        n = sum(counts.values())
+        weight = min(1.0, CONTENT_CENSUS_CAP / n)
+        d = sum(v for o, v in counts.items() if diffed(o))
+        weighted_shown += weight * d
+        weighted_total += weight * n
+        entirely += d == n
+        for outcome in counts:
+            if outcome != "text" and diffed(outcome):
+                family_repositories[outcome] += 1
+
+    values = {
+        "ContentCensusChanges": latex_number(total),
+        "ContentCensusRepos": latex_number(len(repositories)),
+        "ContentCensusReposEntirely": latex_number(entirely),
+        "ContentCensusShownPct": f"{shown / total * 100:.1f}",
+        "ContentCensusShownCappedPct": f"{weighted_shown / weighted_total * 100:.1f}",
+        "ContentCensusTextPct": f"{text / total * 100:.1f}",
+        "ContentCensusFamiliesPct": f"{(shown - text) / total * 100:.1f}",
+        "ContentCensusFamilies": latex_number(shown - text),
+        "ContentCensusLeftPct": f"{(total - shown) / total * 100:.1f}",
+        "ContentCensusText": latex_number(text),
+        "ContentCensusLeft": latex_number(total - shown),
+        "ContentCensusCapPerRepo": latex_number(CONTENT_CENSUS_CAP),
+    }
+    for family, stem in CONTENT_FAMILIES:
+        values[f"ContentCensus{stem}"] = latex_number(outcomes[family])
+        values[f"ContentCensus{stem}Repos"] = latex_number(family_repositories[family])
+    return values
+
+
+def content_speed(research_dir):
+    """Speed per content family: one single-shot `content::diff` per sampled pair, from the bytes
+    in memory, decoding included (unpacking, drawing glyphs and pages). DERIVED from
+    `data/performance/content_speed/<CONTENT_SPEED_MACHINE>.csv`; only `diffed` rows are timed, as
+    in `benchmark_content` itself, and the two pictures the ICO decoder refuses are counted apart.
+
+    source: `make benchmark-content` on the MACHINE block's hardware, 2026-10-06; see
+            data/performance/PROVENANCE.md (`content_speed/server.csv`).
+    """
+    path = os.path.join(
+        research_dir, "data", "performance", "content_speed", f"{CONTENT_SPEED_MACHINE}.csv"
+    )
+    if not os.path.exists(path):
+        return {}
+    times = collections.defaultdict(list)
+    not_diffed = 0
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f):
+            if r["outcome"] == "diffed":
+                times[r["family"]].append(float(r["elapsed_ms"]))
+            else:
+                not_diffed += 1
+
+    def ms(value):
+        return f"{value:.1f}" if value < 100 else latex_number(round(value))
+
+    values = {}
+    pooled = []
+    for family, stem in CONTENT_FAMILIES:
+        t = sorted(times.get(family, []))
+        if not t:
+            continue
+        pooled += t
+        values[f"ContentSpeed{stem}Pairs"] = latex_number(len(t))
+        values[f"ContentSpeed{stem}PFifty"] = ms(_rank_percentile(t, 50))
+        values[f"ContentSpeed{stem}PNinety"] = ms(_rank_percentile(t, 90))
+        values[f"ContentSpeed{stem}PNinetyNine"] = ms(_rank_percentile(t, 99))
+        values[f"ContentSpeed{stem}UnderHundredPct"] = (
+            f"{sum(x < 100 for x in t) / len(t) * 100:.0f}"
+        )
+        values[f"ContentSpeed{stem}UnderSecondPct"] = (
+            f"{sum(x < 1000 for x in t) / len(t) * 100:.0f}"
+        )
+    pooled.sort()
+    if pooled:
+        values["ContentSpeedPairs"] = latex_number(len(pooled))
+        values["ContentSpeedNotDiffed"] = not_diffed
+        values["ContentSpeedPFifty"] = ms(_rank_percentile(pooled, 50))
+        values["ContentSpeedUnderSecondPct"] = (
+            f"{sum(x < 1000 for x in pooled) / len(pooled) * 100:.1f}"
+        )
+    return values
+
+
+def content_accuracy(research_dir):
+    """Accuracy per content family: the engine's verdicts (how much a change changed, on the
+    six-level scale of `content::Level`) against the verdicts a human gave on each judged fixture
+    in `src/test/data/<family>/`. Perfect is every verdict equal, near-perfect every one within one
+    level. DERIVED from `data/quality/content_accuracy.csv`.
+
+    source: `benchmark_content --accuracy-csv`, 2026-11-09; see data/quality/PROVENANCE.md.
+    """
+    path = os.path.join(research_dir, "data", "quality", "content_accuracy.csv")
+    if not os.path.exists(path):
+        return {}
+    with open(path, newline="") as f:
+        rows = list(csv.DictReader(f))
+    values = {}
+
+    def tally(stem, subset):
+        judged = len(subset)
+        perfect = sum(r["perfect"] == "true" for r in subset)
+        near = sum(r["near_perfect"] == "true" for r in subset)
+        values[f"ContentAcc{stem}Judged"] = latex_number(judged)
+        values[f"ContentAcc{stem}Perfect"] = latex_number(perfect)
+        values[f"ContentAcc{stem}PerfectPct"] = f"{perfect / judged * 100:.0f}"
+        values[f"ContentAcc{stem}NearPerfectPct"] = f"{near / judged * 100:.0f}"
+
+    for family, stem in CONTENT_FAMILIES:
+        subset = [r for r in rows if r["family"] == family]
+        if subset:
+            tally(stem, subset)
+    if rows:
+        tally("All", rows)
+        values["ContentAccVerdicts"] = latex_number(sum(int(r["verdicts"]) for r in rows))
+    return values
+
+
+def embedded_fixtures(repo_root):
+    """How many of the paper's fixtures carry ground truth for code embedded in a string of
+    another language (`src/diff/embedded.rs`): a non-empty `embedded` list in the fixture's
+    `human_mapping.json`, each entry a mapping of the decoded string's own AST. DERIVED from those
+    files directly, scoped to `PAPER_DATASETS` like every other fixture count here."""
+    fixtures = 0
+    layers = 0
+    languages = set()
+    for dataset in PAPER_DATASETS:
+        pattern = os.path.join(
+            repo_root, "src", "test", "data", "diffs", dataset, "*", "human_mapping.json"
+        )
+        for path in glob.glob(pattern):
+            with open(path) as f:
+                embedded = json.load(f).get("embedded") or []
+            if embedded:
+                fixtures += 1
+                layers += len(embedded)
+                languages.update(e.get("language") for e in embedded if e.get("language"))
+    return {
+        "EmbeddedFixtures": fixtures,
+        "EmbeddedLayers": layers,
+        "EmbeddedLanguages": len(languages),
+    }
+
+
 def build(
     empirical_lines,
     rq1_lines,
@@ -1016,6 +1259,7 @@ def build(
     robustness_full_values,
     oracle,
     oracle_human,
+    content,
 ):
     """Returns the complete variables.tex as a list of lines."""
     out = [
@@ -1219,6 +1463,18 @@ def build(
     ]
     out += [command(name, value) for name, value in concentration.items()]
 
+    out += [
+        "",
+        "% --- Content other than code: what commits change that is not text (DERIVED from",
+        "% data/corpus_stats/change_census.csv - see `change_census`), how much of it OmniDiff",
+        "% diffs as text or by content (content_census.csv and content_census_repositories.csv -",
+        "% `content_census`), how fast per family (data/performance/content_speed/, the machine",
+        "% CONTENT_SPEED_MACHINE names - `content_speed`), how accurate against the judged",
+        "% fixtures (data/quality/content_accuracy.csv - `content_accuracy`), and how many code",
+        "% fixtures carry ground truth for code inside a string (`embedded_fixtures`).",
+    ]
+    out += [command(name, value) for name, value in content.items()]
+
     return out
 
 
@@ -1385,6 +1641,20 @@ def main():
             "absent. See data/performance/PROVENANCE.md for the run that produces it."
         )
 
+    content = {}
+    for name, part in (
+        ("change census", change_census(research_dir)),
+        ("content census", content_census(research_dir)),
+        ("content speed", content_speed(research_dir)),
+        ("content accuracy", content_accuracy(research_dir)),
+    ):
+        if not part:
+            print(
+                f"WARNING: no {name} data found - its Content*/ChangeCensus* macros will be absent."
+            )
+        content.update(part)
+    content.update(embedded_fixtures(repo_root))
+
     lines = build(
         empirical,
         rq1,
@@ -1400,6 +1670,7 @@ def main():
         full,
         oracle,
         oracle_human,
+        content,
     )
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

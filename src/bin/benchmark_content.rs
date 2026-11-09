@@ -28,6 +28,8 @@
 //! the engine's verdict equals every verdict the human gave on it (the pair's, and each judged
 //! member's), and near-perfect when every one of the engine's levels is at most one level from the
 //! human's, tags aside. Can't judge is left out; a fixture with nothing judged counts in neither.
+//! `--accuracy-csv` writes one row per judged fixture, which the paper's content accuracy figures
+//! are read back from (`research/data/quality/content_accuracy.csv`).
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -48,6 +50,10 @@ struct Args {
     /// Also write one row per timed pair to this CSV.
     #[arg(long)]
     csv: Option<PathBuf>,
+    /// Also write one row per judged fixture to this CSV: how many verdicts the human gave on it,
+    /// and whether the engine's are perfect and near-perfect against them.
+    #[arg(long)]
+    accuracy_csv: Option<PathBuf>,
 }
 
 #[derive(Default)]
@@ -138,6 +144,7 @@ fn main() -> Result<()> {
     }
 
     let mut accuracy: BTreeMap<Family, Accuracy> = BTreeMap::new();
+    let mut judged_rows = Vec::new();
     for family in Family::ALL {
         let entry = accuracy.entry(family).or_default();
         for dir in std::fs::read_dir(human_content::root(family))? {
@@ -153,19 +160,23 @@ fn main() -> Result<()> {
                 continue;
             }
             entry.judged += 1;
-            if verdicts
+            let perfect = verdicts
                 .iter()
-                .all(|(human, engine)| Some(*human) == *engine)
-            {
-                entry.perfect += 1;
-            }
-            if verdicts.iter().all(|(human, engine)| {
+                .all(|(human, engine)| Some(*human) == *engine);
+            let near_perfect = verdicts.iter().all(|(human, engine)| {
                 engine.is_some_and(|engine| {
                     (human.level as usize).abs_diff(engine.level as usize) <= 1
                 })
-            }) {
-                entry.near_perfect += 1;
-            }
+            });
+            entry.perfect += usize::from(perfect);
+            entry.near_perfect += usize::from(near_perfect);
+            judged_rows.push((
+                family,
+                name.into_owned(),
+                verdicts.len(),
+                perfect,
+                near_perfect,
+            ));
         }
     }
 
@@ -219,6 +230,20 @@ fn main() -> Result<()> {
                 .to_string_lossy()
                 .into_owned();
             writer.write_record([family.name(), &name, outcome, &format!("{elapsed:.2}")])?;
+        }
+        writer.flush()?;
+    }
+    if let Some(path) = args.accuracy_csv {
+        let mut writer = csv::Writer::from_path(&path)?;
+        writer.write_record(["family", "fixture", "verdicts", "perfect", "near_perfect"])?;
+        for (family, name, verdicts, perfect, near_perfect) in judged_rows {
+            writer.write_record([
+                family.name(),
+                &name,
+                &verdicts.to_string(),
+                &perfect.to_string(),
+                &near_perfect.to_string(),
+            ])?;
         }
         writer.flush()?;
     }
