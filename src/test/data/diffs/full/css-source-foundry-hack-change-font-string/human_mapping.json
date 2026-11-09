@@ -433,5 +433,31 @@
         "at_rule:4"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 22,
+              "start_column": 99,
+              "end_row": 22,
+              "end_column": 106
+            }
+          ],
+          "after": [
+            {
+              "start_row": 22,
+              "start_column": 99,
+              "end_row": 22,
+              "end_column": 105
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
