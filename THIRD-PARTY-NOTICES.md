@@ -8227,7 +8227,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Used by:
 
-- tokio 1.53.1 (https://github.com/tokio-rs/tokio)
+- tokio 1.54.1 (https://github.com/tokio-rs/tokio)
 
 ```
 MIT License

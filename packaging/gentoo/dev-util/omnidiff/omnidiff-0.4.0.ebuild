@@ -340,7 +340,7 @@ CRATES="
 	tiny-skia-path@0.12.0
 	tiny-skia@0.12.0
 	tokio-macros@2.7.2
-	tokio@1.53.1
+	tokio@1.54.1
 	toml@0.9.12+spec-1.1.0
 	toml_datetime@0.7.5+spec-1.1.0
 	toml_parser@1.1.3+spec-1.1.0
