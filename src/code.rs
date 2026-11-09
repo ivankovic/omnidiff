@@ -66,7 +66,8 @@ impl Clone for Code {
 }
 
 impl Code {
-    /// Parses `contents` into `ast`; a no-op when the language is unset or has no grammar.
+    /// Parses `contents` into `ast`; a no-op when the language is unset or has no grammar, and
+    /// `ast` stays `None` when `language::requires_clean_parse` rejects the tree.
     pub fn parse(&mut self, parser: &mut tree_sitter::Parser) {
         let language = match self.metadata.language.as_ref() {
             Some(lang) => lang,
@@ -79,7 +80,7 @@ impl Code {
         if parser.set_language(&ts_language).is_err() {
             return;
         }
-        self.ast = parser.parse(&self.contents, None);
+        self.ast = crate::code::language::parse_tree(parser, &self.contents, *language);
     }
 
     /// Parses and computes `ast_metadata` where either is missing.
@@ -111,7 +112,7 @@ impl Code {
             if parser.set_language(&ts_language).is_err() {
                 return Err(anyhow!("Failed to set tree-sitter language"));
             }
-            self.ast = parser.parse(&self.contents, None);
+            self.ast = crate::code::language::parse_tree(&mut parser, &self.contents, *language);
         }
 
         if needs_metadata && self.ast.is_some() {

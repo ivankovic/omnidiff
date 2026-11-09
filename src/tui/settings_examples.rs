@@ -94,6 +94,7 @@ pub const EXAMPLES: &[SettingsExample] = &[
     example!("ruby", "rb", Language::Ruby, &[]),
     example!("php", "php", Language::PHP, &[]),
     example!("perl", "pl", Language::Perl, &[]),
+    example!("sql", "sql", Language::SQL, &[(5, SQL_NO_RESHAPED_MOVES)]),
     example!("text", "txt", Language::Unknown, PLAIN_TEXT_NO_EFFECT),
 ];
 
@@ -127,6 +128,11 @@ const MARKUP_NO_EFFECT: &[(usize, &str)] = &[
         larger account of a move to show.",
     ),
 ];
+
+/// Why SQL has no reshaped move to show. Tried: a multi-line `VALUES` list folded onto one row, a
+/// `CASE` taken out of a subquery and de-indented, a `SELECT` wrapped into a `WITH`.
+const SQL_NO_RESHAPED_MOVES: &str = "In SQL, both sides measure moved code the same way in every \
+    reshaping we tried, so there is no second, larger account of a move to show.";
 
 /// Why JSON has no renamed name to show: every key is a string.
 const JSON_NO_NAMES: &str = "JSON has no names, only strings: a changed key or value shows the \

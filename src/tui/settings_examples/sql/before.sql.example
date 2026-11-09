@@ -1,0 +1,32 @@
+CREATE TABLE customers (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  status TEXT DEFAULT 'active'
+);
+
+CREATE TABLE orders (
+  id INTEGER PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers (id),
+  total NUMERIC(10, 2),
+  placed_at DATE
+);
+
+CREATE INDEX orders_by_customer ON orders (customer_id);
+
+CREATE VIEW big_spenders AS
+SELECT c.name, SUM(o.total) AS spent
+FROM customers c
+JOIN orders o ON o.customer_id = c.id
+WHERE o.total > 100
+GROUP BY c.name;
+
+SELECT name, status FROM customers WHERE status = 'active' ORDER BY name;
+
+UPDATE orders SET total = total * 1.10 WHERE placed_at < '2024-01-01';
+
+INSERT INTO customers (id, name, status)
+VALUES (
+  7,
+  'Ada',
+  'active'
+);

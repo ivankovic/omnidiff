@@ -1,0 +1,36 @@
+CREATE TABLE customers (
+  id INTEGER PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  email TEXT UNIQUE,
+  status TEXT DEFAULT 'archived'
+);
+
+CREATE TABLE orders (
+  id INTEGER PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers (id),
+  total NUMERIC(12, 2),
+  placed_at DATE
+);
+
+CREATE INDEX orders_by_customer ON orders (customer_id, placed_at);
+
+CREATE VIEW big_spenders AS
+WITH recent AS (
+  SELECT c.full_name, SUM(o.total) AS spent
+  FROM customers c
+  JOIN orders o ON o.customer_id = c.id
+  WHERE o.total > 120
+  GROUP BY c.full_name
+)
+SELECT * FROM recent;
+
+SELECT full_name,
+  status
+FROM customers
+WHERE status = 'active'
+ORDER BY full_name;
+
+UPDATE orders SET total = ROUND(total * 1.10, 2) WHERE placed_at < '2025-01-01';
+
+INSERT INTO customers (id, full_name, email, status)
+VALUES (7, 'Ada', 'ada@example.com', 'active');

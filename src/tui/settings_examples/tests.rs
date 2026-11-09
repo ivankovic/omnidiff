@@ -78,5 +78,8 @@ fn every_option_changes_every_example() {
 fn an_unknown_or_missing_language_falls_back() {
     assert_eq!(example_for(None).language, Language::Rust);
     assert_eq!(example_for(Some(Language::Rust)).language, Language::Rust);
-    assert_eq!(example_for(Some(Language::SQL)).language, Language::Unknown);
+    assert_eq!(
+        example_for(Some(Language::MarkDown)).language,
+        Language::Unknown
+    );
 }

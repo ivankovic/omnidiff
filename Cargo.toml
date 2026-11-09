@@ -169,6 +169,12 @@ tree-sitter-r = "1.3"
 tree-sitter-ruby = "0.23.1"
 tree-sitter-rust = "0.24"
 tree-sitter-scala = "0.24"
+# DerekStride/tree-sitter-sql, the grammar nvim-treesitter uses, published under this name. Of 7,055
+# corpus .sql files it parsed 37% without errors (48% leaving out psql scripts), level with its T-SQL
+# fork and ahead of tree-sitter-mssql (21%) and tree-sitter-sqlite3 (34%); so a SQL file is diffed as a
+# tree only when it parses cleanly (`language::requires_clean_parse`). It pins `cc ~1.2`, which holds
+# every other crate's `cc` at 1.2.x too.
+tree-sitter-sequel = "0.3.11"
 tree-sitter-swift = "0.7"
 tree-sitter-typescript = "0.23"
 tree-sitter-vim = "0.4"

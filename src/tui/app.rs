@@ -2022,6 +2022,27 @@ mod tests {
         Ok(())
     }
 
+    /// SQL is diffed as a tree only when both sides parse cleanly (`requires_clean_parse`).
+    #[test]
+    fn a_sql_pair_is_diffed_as_a_tree_only_when_both_sides_parse_cleanly() -> Result<()> {
+        let diff = |before: &str, after: &str| {
+            let path = Path::new("schema.sql");
+            compute_diff_of_texts(path, before, path, after, RenderOptions::default())
+                .map(|(data, _)| data.plain_text_fallback)
+        };
+        let clean = "CREATE TABLE users (id INTEGER, name TEXT);\n";
+        let renamed = "CREATE TABLE users (id INTEGER, full_name TEXT);\n";
+        assert!(!diff(clean, renamed)?, "both sides parse: a tree diff");
+
+        // A psql meta-command, which no SQL grammar parses.
+        let psql = "\\set id 1\nCREATE TABLE users (id INTEGER, full_name TEXT);\n";
+        assert!(
+            diff(clean, psql)?,
+            "one side with a parse error: the line diff"
+        );
+        Ok(())
+    }
+
     #[test]
     fn open_files_loads_both_panels_and_starts_diff() -> Result<()> {
         let mut app = App::new(4.0, 60.0)?;
