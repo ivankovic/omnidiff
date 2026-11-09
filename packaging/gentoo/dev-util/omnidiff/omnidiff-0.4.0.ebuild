@@ -151,7 +151,7 @@ CRATES="
 	image@0.25.10
 	imagesize@0.15.0
 	indexmap@2.14.2
-	indoc@2.0.7
+	indoc@2.0.8
 	instability@0.3.14
 	is_terminal_polyfill@1.70.2
 	itertools@0.14.0
@@ -167,7 +167,7 @@ CRATES="
 	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
-	libsqlite3-sys@0.38.2
+	libsqlite3-sys@0.39.1
 	libz-sys@1.1.31
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
@@ -274,7 +274,7 @@ CRATES="
 	roff@1.1.1
 	roxmltree@0.21.1
 	rsqlite-vfs@0.1.1
-	rusqlite@0.40.2
+	rusqlite@0.41.1
 	rustc-hash@2.1.3
 	rustc_version@0.4.1
 	rustix@0.38.44
@@ -384,7 +384,7 @@ CRATES="
 	unicode-ident@1.0.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
-	unicode-width@0.2.2
+	unicode-width@0.2.3
 	usvg@0.48.1
 	utf8parse@0.2.2
 	uuid@1.26.1

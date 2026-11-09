@@ -32,9 +32,21 @@ fn mapping() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 25, twice: the inserted `expression_statement` on after row 211 starts move but
     // its `;` is insert (both presets).
+    // Invariant 28, twice:
+    // - the `binary_expression` on after row 574 is inserted, but it is made of the children of the
+    //   `binary_expression` on before row 548, which is paired with the code around this one
+    //   instead: the two should pair, and the code around be new.
+    // - the `binary_expression` on after row 462 is inserted, but it is made of the children of the
+    //   `binary_expression` on before row 458, which is paired with the code around this one
+    //   instead: the two should pair, and the code around be new.
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   after row 462: the space before the insert `|| is<SVGPatternBox>(*ances...` is not painted
+    //     with it
+    //   after row 574: the space before the insert `|| is<SVGPatternBox>(child)` is not painted with
+    //     it
     assert_ground_truth_invariants_with_known_violations(
         "cpp-ladybird-refactor-variables-if-changes",
-        2,
+        6,
     )
 }
 

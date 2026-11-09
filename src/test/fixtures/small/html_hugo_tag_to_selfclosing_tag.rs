@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -31,7 +31,9 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("html-hugo-tag-to-selfclosing-tag")
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   before row 6: the space before the update `/>` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("html-hugo-tag-to-selfclosing-tag", 1)
 }
 
 #[test]

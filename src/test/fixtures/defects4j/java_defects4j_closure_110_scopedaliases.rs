@@ -40,8 +40,10 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 27, both presets: `parent` (before row 371) is painted deleted and `null` (after
     // row 373) inserted, where the tree mapping pairs them as one edit.
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 367: the space before the insert `|| isFunctionDecl` is not painted with it
     assert_ground_truth_invariants_with_known_violations(
         "java-defects4j-closure-110-scopedaliases",
-        2,
+        3,
     )
 }

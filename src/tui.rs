@@ -16,6 +16,7 @@
  */
 pub mod actions;
 pub mod app;
+pub mod clipboard;
 pub mod color_depth;
 pub mod components;
 pub mod display_columns;

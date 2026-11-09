@@ -310,5 +310,23 @@
         "for_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 39,
+              "start_column": 0,
+              "end_row": 39,
+              "end_column": 7
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

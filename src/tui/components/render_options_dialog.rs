@@ -30,7 +30,7 @@ use crate::tui::actions::Action;
 use crate::tui::settings_examples::{Painted, SettingsExample, example_for, painted};
 use crate::tui::theme::OverlayTheme;
 
-const HINT: &str = "↑/↓ move  Space toggle  1 Minimal  2 Full  Enter or Esc close";
+const HINT: &str = "↑/↓ move  Space toggle  1 Minimal  2 Full  Tab next tab  Enter or Esc close";
 
 /// What the page is about: an example in the open diff's language, or non-code content, which
 /// these settings do not shape.
@@ -40,20 +40,26 @@ pub enum PageContent {
     NonCode,
 }
 
-/// The `M` key's settings page, full screen: one checkbox row per [`RenderOptions`] field, an
+/// The settings menu's Highlighting tab (the `M` key opens it): one checkbox row per [`RenderOptions`] field, an
 /// example diff in the open diff's language painted under the current settings, and what the
 /// selected setting does - with the bytes it changes in the example in bold and marked in the
 /// gutter, so a setting is seen rather than described.
 ///
-/// Every toggle applies and persists the moment it is pressed, and the diff behind the page shows
-/// it. There is nothing to accept or cancel, so `Enter` and `Esc` both just close. The presets are
-/// on `1`/`2`, not `m`/`f`: the page opens on `M`, and a doubled opening key must not wipe every
+/// Every toggle applies and persists the moment it is pressed, like the whole menu: there is
+/// nothing to accept or cancel, so `Enter` and `Esc` both just close it. The presets are on
+/// `1`/`2`, not `m`/`f`: the menu opens here on `M`, and a doubled opening key must not wipe every
 /// field and persist that.
+///
+/// Below the checkboxes, one row that is not a rendering option: the node highlight (the `H` key),
+/// which paints over the diff rather than changing it. It has no example to mark, so selecting it
+/// explains itself instead.
 pub struct RenderOptionsDialog {
     options: RenderOptions,
     selected: usize,
     content: PageContent,
     theme: OverlayTheme,
+    /// The node highlight's state (the `H` key), as the menu opened.
+    node_highlight: bool,
     /// The example painted for `(options, selected)`; rebuilt when either changes.
     view: Option<ExampleView>,
 }
@@ -61,7 +67,8 @@ pub struct RenderOptionsDialog {
 /// The example under one choice of settings, and what the selected setting changes in it.
 struct ExampleView {
     options: RenderOptions,
-    selected: usize,
+    /// `None` on the width row, which marks nothing.
+    selected: Option<usize>,
     painted: Painted,
     texts: [String; 2],
     /// Per side, the bytes the selected setting repaints.
@@ -86,12 +93,45 @@ impl RenderOptionsDialog {
             selected: 0,
             content,
             theme,
+            node_highlight: false,
             view: None,
         }
     }
 
+    /// The overlay theme the example is drawn in, changed live from the Colors tab.
+    pub fn set_theme(&mut self, theme: OverlayTheme) {
+        self.theme = theme;
+    }
+
+    pub fn with_node_highlight(mut self, enabled: bool) -> Self {
+        self.node_highlight = enabled;
+        self
+    }
+
+    /// The checkboxes, then the node-highlight row.
     fn row_count(&self) -> usize {
+        self.node_row() + 1
+    }
+
+    fn node_row(&self) -> usize {
         self.options.options().len()
+    }
+
+    /// The highlighting setting selected, or `None` on the node-highlight row.
+    fn selected_option(&self) -> Option<usize> {
+        (self.selected < self.node_row()).then_some(self.selected)
+    }
+
+    fn node_row_text() -> Vec<Line<'static>> {
+        vec![
+            Line::from("Node highlight").bold(),
+            Line::from(
+                "The range under the cursor, and its match on the other panel, highlight when \
+                 part of a real change. Off by default: it repaints on every move and covers the \
+                 diff color.",
+            ),
+            Line::from("Also the H key, anywhere in the diff.").italic(),
+        ]
     }
 
     /// The whole screen: the page replaces the diff while it is open.
@@ -104,12 +144,13 @@ impl RenderOptionsDialog {
         let PageContent::Example(example) = self.content else {
             return None;
         };
+        let selected = self.selected_option();
         let fresh = self
             .view
             .as_ref()
-            .is_some_and(|view| view.options == self.options && view.selected == self.selected);
+            .is_some_and(|view| view.options == self.options && view.selected == selected);
         if !fresh {
-            self.view = build_view(example, self.options, self.selected);
+            self.view = build_view(example, self.options, selected);
         }
         self.view.as_ref()
     }
@@ -142,13 +183,25 @@ impl RenderOptionsDialog {
 }
 
 /// `example` painted under `options`, the bytes `selected` repaints when flipped, and what to
-/// say when it repaints nothing: the example's own reason, or another setting it needs.
+/// say when it repaints nothing: the example's own reason, or another setting it needs. With no
+/// setting selected (the width row), the example as it is, nothing marked.
 fn build_view(
     example: &'static SettingsExample,
     options: RenderOptions,
-    selected: usize,
+    selected: Option<usize>,
 ) -> Option<ExampleView> {
     let (now, texts) = painted(example, options)?;
+    let Some(selected) = selected else {
+        let marked = [0, 1].map(|side| vec![false; now[side].len()]);
+        return Some(ExampleView {
+            options,
+            selected: None,
+            painted: now,
+            texts,
+            marked,
+            note: None,
+        });
+    };
     let flipped = |mut options: RenderOptions, index: usize| {
         options.toggle(index);
         options
@@ -190,7 +243,7 @@ fn build_view(
     };
     Some(ExampleView {
         options,
-        selected,
+        selected: Some(selected),
         painted: now,
         texts,
         marked,
@@ -281,7 +334,7 @@ impl Component for RenderOptionsDialog {
     fn handle_key_event(&mut self, key: KeyEvent) -> Result<Option<Action>> {
         if matches!(self.content, PageContent::NonCode) {
             return Ok(match key.code {
-                KeyCode::Enter | KeyCode::Esc => Some(Action::RenderOptionsAccepted),
+                KeyCode::Enter | KeyCode::Esc => Some(Action::SettingsClosed),
                 _ => None,
             });
         }
@@ -296,11 +349,17 @@ impl Component for RenderOptionsDialog {
                 move_selection(&mut self.selected, 1, len);
                 Ok(Some(Action::Render))
             }
-            KeyCode::Char(' ') => {
-                self.options.toggle(self.selected);
-                Ok(Some(Action::RenderOptionsChanged(self.options)))
-            }
-            KeyCode::Enter | KeyCode::Esc => Ok(Some(Action::RenderOptionsAccepted)),
+            KeyCode::Char(' ') => match self.selected_option() {
+                Some(index) => {
+                    self.options.toggle(index);
+                    Ok(Some(Action::RenderOptionsChanged(self.options)))
+                }
+                None => {
+                    self.node_highlight = !self.node_highlight;
+                    Ok(Some(Action::NodeHighlightChanged(self.node_highlight)))
+                }
+            },
+            KeyCode::Enter | KeyCode::Esc => Ok(Some(Action::SettingsClosed)),
             KeyCode::Char('1') => {
                 self.options = RenderOptions::MINIMAL;
                 Ok(Some(Action::RenderOptionsChanged(self.options)))
@@ -361,18 +420,39 @@ impl Component for RenderOptionsDialog {
                 }
             })
             .collect();
+        // The node-highlight row in a fixed area at the bottom of the column, not after the
+        // checkboxes: they wrap, and on a short terminal they would push it out of sight.
+        let node = format!(
+            "[{}] Node highlight",
+            if self.node_highlight { 'x' } else { ' ' }
+        );
+        let node_line = if self.selected_option().is_none() {
+            Line::from(node).reversed()
+        } else {
+            Line::from(node)
+        };
+        let left = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(2)])
+            .split(columns[0]);
         frame.render_widget(
             Paragraph::new(list)
                 .wrap(Wrap { trim: false })
                 .block(Block::default().borders(Borders::RIGHT)),
-            columns[0],
+            left[0],
+        );
+        frame.render_widget(
+            Paragraph::new(node_line).block(
+                Block::default()
+                    .borders(Borders::TOP | Borders::RIGHT)
+                    .title(" Cursor ".dim()),
+            ),
+            left[1],
         );
 
+        let node_text = self.selected_option().is_none().then(Self::node_row_text);
         let view = self.view();
-        let (description, note) = (
-            OPTION_INFO[selected].description,
-            view.and_then(|view| view.note.clone()),
-        );
+        let note = view.and_then(|view| view.note.clone());
         if let Some(view) = view {
             let sides = Layout::default()
                 .direction(if columns[1].width >= 100 {
@@ -403,14 +483,19 @@ impl Component for RenderOptionsDialog {
             }
         }
 
-        let mut text = vec![
-            Line::from(OPTION_INFO[selected].name).bold(),
-            Line::from(description),
-        ];
-        text.push(match note {
-            Some(note) => Line::from(note).italic(),
-            None => Line::from("◆ marks the rows this setting changes in the example.").dim(),
-        });
+        let text = match node_text {
+            Some(text) => text,
+            None => vec![
+                Line::from(OPTION_INFO[selected].name).bold(),
+                Line::from(OPTION_INFO[selected].description),
+                match note {
+                    Some(note) => Line::from(note).italic(),
+                    None => {
+                        Line::from("◆ marks the rows this setting changes in the example.").dim()
+                    }
+                },
+            ],
+        };
         frame.render_widget(
             Paragraph::new(text)
                 .wrap(Wrap { trim: true })
@@ -507,7 +592,7 @@ mod tests {
 
             let action = dialog.handle_key_event(key(close)).unwrap();
 
-            assert_eq!(action, Some(Action::RenderOptionsAccepted), "{close:?}");
+            assert_eq!(action, Some(Action::SettingsClosed), "{close:?}");
             assert_eq!(
                 dialog.options, toggled,
                 "{close:?} must not edit the options it closes on"
@@ -542,7 +627,7 @@ mod tests {
 
         let action = dialog.handle_key_event(key(KeyCode::Esc)).unwrap();
 
-        assert_eq!(action, Some(Action::RenderOptionsAccepted));
+        assert_eq!(action, Some(Action::SettingsClosed));
         assert_eq!(dialog.options, RenderOptions::MINIMAL);
     }
 
@@ -553,6 +638,44 @@ mod tests {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
         assert_eq!(dialog.selected, dialog.row_count() - 1);
+    }
+
+    /// The node-highlight row, the last one.
+    fn on_the_node_row(dialog: &mut RenderOptionsDialog) {
+        for _ in 0..dialog.row_count() {
+            dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        }
+        assert_eq!(dialog.selected_option(), None);
+    }
+
+    #[test]
+    fn space_on_the_last_row_switches_the_node_highlight() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL).with_node_highlight(false);
+        on_the_node_row(&mut dialog);
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
+            Some(Action::NodeHighlightChanged(true))
+        );
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
+            Some(Action::NodeHighlightChanged(false))
+        );
+        assert_eq!(
+            dialog.options,
+            RenderOptions::FULL,
+            "no rendering option moved"
+        );
+    }
+
+    /// Selected, the row explains itself and marks nothing in the example.
+    #[test]
+    fn the_node_row_explains_itself() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::FULL);
+        on_the_node_row(&mut dialog);
+        let text = screen(&mut dialog, 160, 40);
+        assert!(text.contains("[ ] Node highlight"), "{text}");
+        assert!(text.contains("Also the H key"), "{text}");
+        assert!(!text.contains("◆"), "{text}");
     }
 
     /// The page as text, drawn at `width` by `height`.
@@ -621,7 +744,7 @@ mod tests {
         );
         assert_eq!(
             dialog.handle_key_event(key(KeyCode::Esc)).unwrap(),
-            Some(Action::RenderOptionsAccepted)
+            Some(Action::SettingsClosed)
         );
     }
 }

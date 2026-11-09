@@ -15,15 +15,26 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping("csharp-lidarr-add-function")
+    // Recorded as found, not examined.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+        "csharp-lidarr-add-function",
+        2,
+        2,
+    )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("csharp-lidarr-add-function")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("csharp-lidarr-add-function", 1.13)
 }

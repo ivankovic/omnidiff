@@ -1775,8 +1775,9 @@ pub fn rebuild_caches_for_mapping(
     before_root: Node,
     after_root: Node,
 ) -> Caches {
-    let entries = representative_entries(mapping, before_root, after_root)
-        .unwrap_or_else(|_| mapping.entries.clone());
+    let entries =
+        representative_entries_of(&mapping.entries, &mapping.groups, before_root, after_root)
+            .unwrap_or(std::borrow::Cow::Borrowed(&mapping.entries));
     let mut caches = rebuild_caches(&entries, before_root, after_root);
 
     let mut before_cache = PathCache::new();
@@ -2279,11 +2280,8 @@ pub fn as_ast_diff_for_mapping(
         .iter()
         .cloned()
         .partition(|group| group.pairing == GroupPairing::AllToAll);
-    let flattened = HumanMapping {
-        groups: other_groups,
-        ..mapping.clone()
-    };
-    let entries = representative_entries(&flattened, before_root, after_root)?;
+    let entries =
+        representative_entries_of(&mapping.entries, &other_groups, before_root, after_root)?;
 
     let mut diff = ASTDiff::default();
     for group in &all_to_all {
@@ -2317,7 +2315,7 @@ pub fn as_ast_diff_for_mapping(
             },
         );
     }
-    for entry in &entries {
+    for entry in entries.iter() {
         let before_id = match &entry.before_path {
             Some(path) => before_cache
                 .resolve(before_root, &path_refs(path))
@@ -2385,15 +2383,28 @@ pub fn representative_entries(
     before_root: Node,
     after_root: Node,
 ) -> Result<Vec<HumanMappingEntry>> {
-    let mut entries = mapping.entries.clone();
-    if mapping.groups.is_empty() {
-        return Ok(entries);
+    representative_entries_of(&mapping.entries, &mapping.groups, before_root, after_root)
+        .map(std::borrow::Cow::into_owned)
+}
+
+/// [`representative_entries`] of `entries` under `groups`, borrowing `entries` when there is no
+/// group to flatten: a loaded mapping can hold an entry per node, and copying them was a large
+/// part of building an [`ASTDiff`] or [`Caches`] from it.
+fn representative_entries_of<'entries>(
+    entries: &'entries [HumanMappingEntry],
+    groups: &[MultiMapGroup],
+    before_root: Node,
+    after_root: Node,
+) -> Result<std::borrow::Cow<'entries, [HumanMappingEntry]>> {
+    if groups.is_empty() {
+        return Ok(std::borrow::Cow::Borrowed(entries));
     }
+    let mut entries = entries.to_vec();
 
     let mut before_cache = PathCache::new();
     let mut after_cache = PathCache::new();
 
-    for group in &mapping.groups {
+    for group in groups {
         let mut before_nodes: Vec<Node> = group
             .before_paths
             .iter()
@@ -2469,7 +2480,7 @@ pub fn representative_entries(
         }
     }
 
-    Ok(entries)
+    Ok(std::borrow::Cow::Owned(entries))
 }
 
 fn check_entry<'b, 'a>(

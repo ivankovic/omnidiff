@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -32,5 +32,11 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("python-aboutcode-org-license-expression-excellent-test-case")
+    // Invariant 28, once: the `expression_statement` on before row 1487 is deleted, but it is made
+    // of the children of the `expression_statement` on after row 1489, which is itself inserted:
+    // the two are one pair.
+    assert_ground_truth_invariants_with_known_violations(
+        "python-aboutcode-org-license-expression-excellent-test-case",
+        1,
+    )
 }

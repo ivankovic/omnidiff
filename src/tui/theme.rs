@@ -336,7 +336,7 @@ fn blend_toward_base(accent: (u8, u8, u8), base: (u8, u8, u8), base_weight: f32)
 /// How the before/after panels are laid out. Lives here because this module owns the config file.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PanelLayout {
-    /// Pick dual/single from the terminal width (`SINGLE_PANEL_THRESHOLD`).
+    /// Pick dual/single from the terminal width (see [`load_wide_columns`]).
     #[default]
     Auto,
     /// Always side-by-side, regardless of width.
@@ -353,6 +353,11 @@ impl PanelLayout {
             PanelLayout::Dual => PanelLayout::Single,
             PanelLayout::Single => PanelLayout::Auto,
         }
+    }
+
+    /// The step back through the same cycle: the settings menu's ← on the layout row.
+    pub fn previous(self) -> Self {
+        self.next().next()
     }
 
     /// Short label for the footer/title, e.g. `[layout: dual]`.
@@ -391,6 +396,10 @@ struct ThemeConfig {
     /// The `M` key; defaults to `RenderOptions::FULL`.
     #[serde(default)]
     render_options: crate::diff::text::RenderOptions,
+    /// The width from which the `Auto` layout shows two panels; unset means
+    /// [`DEFAULT_WIDE_COLUMNS`] (see [`load_wide_columns`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wide_columns: Option<u16>,
 }
 
 /// Deserialize a theme name, falling back to the default for anything this build does not know.
@@ -411,6 +420,17 @@ where
 
 /// The environment variable that overrides every other config layer.
 pub const CONFIG_ENV: &str = "OMNIDIFF_CONFIG";
+
+/// Overrides the config file's `wide_columns` (see [`load_wide_columns`]).
+pub const WIDE_COLUMNS_ENV: &str = "OMNIDIFF_WIDE_COLUMNS";
+
+/// The terminal width from which the `Auto` layout shows the two panels side by side: two 80-column
+/// panels. Below it each would be narrower than the 80 columns code is written for.
+pub const DEFAULT_WIDE_COLUMNS: u16 = 160;
+
+/// The range a width setting is held to: below 40 columns even one panel is barely readable, and
+/// above 1000 no terminal would ever show two.
+pub const WIDE_COLUMNS_RANGE: std::ops::RangeInclusive<u16> = 40..=1000;
 
 /// The project-level config file's name, looked for at or above the current directory.
 const PROJECT_CONFIG: &str = ".omnidiff.toml";
@@ -665,6 +685,44 @@ pub fn save_syntax_theme(name: &str) {
     update_config(|config| config.syntax_theme = name.to_string());
 }
 
+/// The width from which the `Auto` layout shows two panels, and where it came from:
+/// `$OMNIDIFF_WIDE_COLUMNS`, else the config file's `wide_columns` (the settings menu's Layout
+/// tab), else [`DEFAULT_WIDE_COLUMNS`]. A value that is not a number in [`WIDE_COLUMNS_RANGE`] is
+/// passed over, as if unset.
+pub fn load_wide_columns() -> (u16, WideColumnsSource) {
+    wide_columns_from(
+        std::env::var(WIDE_COLUMNS_ENV).ok().as_deref(),
+        load_from(config_path()).wide_columns,
+    )
+}
+
+/// Where [`load_wide_columns`]' answer came from: the settings menu says so, since a value from
+/// the environment is not what its row edits.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WideColumnsSource {
+    Environment,
+    Config,
+    Default,
+}
+
+fn wide_columns_from(environment: Option<&str>, config: Option<u16>) -> (u16, WideColumnsSource) {
+    let valid = |columns: u16| WIDE_COLUMNS_RANGE.contains(&columns);
+    if let Some(columns) = environment
+        .and_then(|value| value.trim().parse::<u16>().ok())
+        .filter(|&columns| valid(columns))
+    {
+        return (columns, WideColumnsSource::Environment);
+    }
+    match config.filter(|&columns| valid(columns)) {
+        Some(columns) => (columns, WideColumnsSource::Config),
+        None => (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default),
+    }
+}
+
+pub fn save_wide_columns(columns: u16) {
+    update_config(|config| config.wide_columns = Some(columns));
+}
+
 /// Whether the node highlight (the `H` key) is on. Off by default: it repaints on every cursor
 /// move, which reads as flicker and hides the diff colors; it answers an occasional question.
 pub fn load_node_highlight() -> bool {
@@ -798,6 +856,61 @@ mod tests {
 
         assert_eq!(pairs.len(), 1);
         assert_eq!(pairs[0].0, alive.path());
+    }
+
+    #[test]
+    fn the_wide_threshold_comes_from_the_environment_then_the_config_then_the_default() {
+        assert_eq!(
+            wide_columns_from(Some("200"), Some(180)),
+            (200, WideColumnsSource::Environment)
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(180)),
+            (180, WideColumnsSource::Config)
+        );
+        assert_eq!(
+            wide_columns_from(None, None),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+        assert_eq!(DEFAULT_WIDE_COLUMNS, 2 * 80, "two 80-column panels");
+    }
+
+    #[test]
+    fn an_unusable_wide_threshold_is_passed_over() {
+        // Not a number, empty, or outside the range: the next layer answers.
+        for bad in ["wide", "", "-5", "39", "1001", "99999999"] {
+            assert_eq!(
+                wide_columns_from(Some(bad), Some(180)),
+                (180, WideColumnsSource::Config),
+                "{bad:?}"
+            );
+        }
+        assert_eq!(
+            wide_columns_from(Some(" 120 "), None).0,
+            120,
+            "spaces around it"
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(5000)),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+    }
+
+    #[test]
+    fn the_wide_threshold_is_saved_and_read_back() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        let saved = {
+            let _config = use_config_for_this_thread(file.path());
+            save_wide_columns(220);
+            load_from(config_path()).wide_columns
+        };
+        assert_eq!(saved, Some(220));
+        // An unset value is not written, so a config without the setting stays without it.
+        let other = tempfile::NamedTempFile::new().unwrap();
+        let _config = use_config_for_this_thread(other.path());
+        save_node_highlight(true);
+        let text = std::fs::read_to_string(other.path()).unwrap();
+        assert!(!text.contains("wide_columns"), "{text}");
     }
 
     #[test]

@@ -36,8 +36,10 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted regions on
     // before row 298 and after row 301.
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   before row 273: the space before the delete `output` is not painted with it
     assert_ground_truth_invariants_with_known_violations(
         "c-openssl-openssl-very-interesting-test-case",
-        2,
+        3,
     )
 }

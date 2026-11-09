@@ -4028,3 +4028,214 @@ fn embedded_language_census() -> Result<()> {
     }
     Ok(())
 }
+
+/// EXPLORATORY: a node the tree mapping deletes or inserts while every one of its children
+/// survives - paired, or in a multi-map group - with all the children's partners under one node
+/// on the other side. The node then reads as removed while everything it is made of stays, and
+/// that common parent is what it should have gone with (`cpp-laydbird-change-function-signature`
+/// row 96: the `[]` of two new lambdas is inserted, but its `[` and `]` are in 1:3 groups with the
+/// old lambda's).
+///
+/// Each hit is classed by whether the common parent is of the node's kind, what the mapping says
+/// of that parent (paired 1:1, in a group, removed), and whether any painting paints a byte of
+/// the node. `FIXTURES=a,b` limits the run.
+///
+/// `cargo test --release --lib --features test-fixtures removed_parent_of_kept_children_census --
+/// --ignored --nocapture`
+#[test]
+#[ignore]
+fn removed_parent_of_kept_children_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{TreeContext, painted_labels};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let only: Option<BTreeSet<String>> = std::env::var("FIXTURES")
+        .ok()
+        .map(|list| list.split(',').map(str::to_string).collect());
+    let mut by_class: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut by_kind: BTreeMap<String, usize> = BTreeMap::new();
+    let (mut total, mut fixtures, mut scanned) = (0usize, BTreeSet::new(), 0usize);
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        if only.as_ref().is_some_and(|only| !only.contains(&name)) {
+            continue;
+        }
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref())
+        else {
+            continue;
+        };
+        scanned += 1;
+        let context = TreeContext::build(&mapping, before_tree.root_node(), after_tree.root_node());
+        let labels: Vec<_> = mapping
+            .text_mappings
+            .iter()
+            .filter_map(|named| painted_labels(named, &before, &after).ok())
+            .collect();
+        let codes = [&before, &after];
+        for side in 0..2 {
+            let root = [before_tree.root_node(), after_tree.root_node()][side];
+            let mut stack = vec![root];
+            while let Some(node) = stack.pop() {
+                let mut cursor = node.walk();
+                let children: Vec<Node> = node.children(&mut cursor).collect();
+                stack.extend(children.iter().copied());
+                if children.is_empty()
+                    || !context.removed(node, side)
+                    || context.in_group(node, side)
+                {
+                    continue;
+                }
+                // The parents the children's partners share.
+                let mut common: Option<BTreeMap<usize, Node>> = None;
+                let mut grouped = 0;
+                for child in &children {
+                    let partners = context.partners(*child, side);
+                    if partners.is_empty() {
+                        common = Some(BTreeMap::new());
+                        break;
+                    }
+                    if context.in_group(*child, side) {
+                        grouped += 1;
+                    }
+                    let parents: BTreeMap<usize, Node> = partners
+                        .iter()
+                        .filter_map(|partner| partner.parent())
+                        .map(|parent| (parent.id(), parent))
+                        .collect();
+                    common = Some(match common {
+                        None => parents,
+                        Some(so_far) => so_far
+                            .into_iter()
+                            .filter(|(id, _)| parents.contains_key(id))
+                            .collect(),
+                    });
+                }
+                let Some(common) = common.filter(|common| !common.is_empty()) else {
+                    continue;
+                };
+                let parent = common
+                    .values()
+                    .find(|parent| parent.kind() == node.kind())
+                    .copied()
+                    .unwrap_or(*common.values().next().expect("not empty"));
+                // Whether the node is made of *all* of that parent's children (every one of them
+                // has a partner among the node's), or only some: a new block that takes some of an
+                // old block's statements is a container extracted, not the old block again.
+                let mut parent_cursor = parent.walk();
+                let whole = parent.children(&mut parent_cursor).all(|theirs| {
+                    context
+                        .partners(theirs, 1 - side)
+                        .iter()
+                        .any(|partner| children.iter().any(|child| child.id() == partner.id()))
+                });
+                let cover = if whole {
+                    "all-of-parent"
+                } else {
+                    "part-of-parent"
+                };
+                let kind = if parent.kind() == node.kind() {
+                    "same-kind"
+                } else {
+                    "other-kind"
+                };
+                let parent_status = if context.in_group(parent, 1 - side) {
+                    "parent-in-group"
+                } else if context.partner(parent, 1 - side).is_some() {
+                    "parent-paired"
+                } else if context.removed(parent, 1 - side) {
+                    "parent-removed"
+                } else {
+                    "parent-undecided"
+                };
+                let children_by = if grouped == children.len() {
+                    "children-grouped"
+                } else if grouped == 0 {
+                    "children-paired"
+                } else {
+                    "children-mixed"
+                };
+                // What the paintings say of the node's bytes: removed (an `Insert`/`Delete` on
+                // some byte), only carried (`Move` and nothing else), or edited (`Update`).
+                use crate::test::helper::human_mapping::TextLabel;
+                let says = |label: TextLabel| {
+                    labels
+                        .iter()
+                        .any(|labels| labels[side][node.byte_range()].contains(&Some(label)))
+                };
+                let painting = if labels.is_empty() {
+                    "no-paintings"
+                } else if says(TextLabel::Insert) || says(TextLabel::Delete) {
+                    "painted-removed"
+                } else if says(TextLabel::Update) {
+                    "painted-update"
+                } else if says(TextLabel::Move) {
+                    "painted-move-only"
+                } else {
+                    "unpainted"
+                };
+                let class = format!(
+                    "{:<6} {kind:<10} {cover:<14} {parent_status:<16} {children_by:<16} {painting}",
+                    ["delete", "insert"][side]
+                );
+                let entry = by_class.entry(class.clone()).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+                *by_kind.entry(node.kind().to_string()).or_default() += 1;
+                total += 1;
+                fixtures.insert(name.clone());
+                let text: String = codes[side].contents[node.byte_range()]
+                    .chars()
+                    .take(40)
+                    .collect::<String>()
+                    .replace('\n', "⏎");
+                // What the common parent is paired with instead, if anything.
+                let parent_partner = context
+                    .partners(parent, 1 - side)
+                    .iter()
+                    .map(|partner| {
+                        let text: String = codes[side].contents[partner.byte_range()]
+                            .chars()
+                            .take(40)
+                            .collect::<String>()
+                            .replace('\n', "⏎");
+                        format!(
+                            "{} row {} {text:?}",
+                            partner.kind(),
+                            partner.start_position().row + 1
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                println!(
+                    "{name}\t{class}\t{} {} row {}\t{text:?}\tparent {} row {}\tparent's partner {}",
+                    ["before", "after"][side],
+                    node.kind(),
+                    node.start_position().row + 1,
+                    parent.kind(),
+                    parent.start_position().row + 1,
+                    if parent_partner.is_empty() {
+                        "-".to_string()
+                    } else {
+                        parent_partner
+                    },
+                );
+            }
+        }
+    }
+    println!(
+        "\n{total} removed nodes with every child kept, in {} of {scanned} fixtures\n",
+        fixtures.len()
+    );
+    for (class, (count, names)) in &by_class {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    println!();
+    let mut kinds: Vec<_> = by_kind.into_iter().collect();
+    kinds.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
+    for (kind, count) in kinds.iter().take(40) {
+        println!("{count:>6}  {kind}");
+    }
+    Ok(())
+}

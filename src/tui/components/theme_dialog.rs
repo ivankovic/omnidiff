@@ -28,10 +28,7 @@ use strum::IntoEnumIterator;
 
 use super::{Component, move_selection};
 use crate::tui::actions::Action;
-use crate::tui::theme::{
-    CustomPalette, OverlayTheme, parse_hex_color, save_custom_palette, save_syntax_theme,
-    set_custom_palette,
-};
+use crate::tui::theme::{CustomPalette, OverlayTheme, parse_hex_color, save_custom_palette};
 use crate::tui::widgets::code_viewer::{DEFAULT_SYNTAX_THEME, syntax_theme_names};
 
 /// One editable color in the dialog, and the [`CustomPalette`] field it reads and writes. Declared
@@ -106,16 +103,23 @@ impl ColorSlot {
     }
 }
 
-/// The dialog's rows, in display order: two dropdowns, then one row per [`ColorSlot`].
-const DROPDOWN_ROWS: usize = 2;
+/// The tab's rows, in display order: two dropdowns and the syntax-highlighting switch, then one
+/// row per [`ColorSlot`].
+const HEADER_ROWS: usize = 3;
 const THEME_ROW: usize = 0;
 const SYNTAX_ROW: usize = 1;
+const SYNTAX_HIGHLIGHTING_ROW: usize = 2;
 
-/// The theme editor (the `c` key): the selected theme's colors, each editable in place.
+/// The settings menu's Colors tab (the `c` key opens it): the overlay and syntax themes, syntax
+/// highlighting on or off (the `S` key), and the selected theme's colors, each editable in place.
+///
+/// Every change applies and is saved as it is made, like the rest of the menu: there is nothing to
+/// accept or cancel, and `Enter` (off a color row) and `Esc` close the menu. Only a hex value being
+/// typed can be abandoned, with `Esc`, which then cancels that edit and nothing else.
 ///
 /// Editing any color forks to `OverlayTheme::Custom`, seeded from the current preset; presets never
 /// change. There is one custom palette, not one per preset, so forking again from another preset
-/// overwrites it.
+/// overwrites it. Choosing a preset keeps the saved custom palette, for switching back.
 pub struct ThemeDialog {
     themes: Vec<OverlayTheme>,
     theme_index: usize,
@@ -127,6 +131,8 @@ pub struct ThemeDialog {
     selected_row: usize,
     /// `Some` while a hex value is being typed into the focused color row.
     editing: Option<String>,
+    /// The `S` key's state, as the menu opened.
+    syntax_highlighting: bool,
 }
 
 impl ThemeDialog {
@@ -152,16 +158,27 @@ impl ThemeDialog {
             working: CustomPalette::from_palette(&current.palette()),
             selected_row: THEME_ROW,
             editing: None,
+            syntax_highlighting: true,
         }
     }
 
+    pub fn with_syntax_highlighting(mut self, enabled: bool) -> Self {
+        self.syntax_highlighting = enabled;
+        self
+    }
+
+    /// A hex value is being typed: every key is the edit's, the menu's Tab and Esc included.
+    pub fn is_editing(&self) -> bool {
+        self.editing.is_some()
+    }
+
     fn row_count(&self) -> usize {
-        DROPDOWN_ROWS + ColorSlot::ALL.len()
+        HEADER_ROWS + ColorSlot::ALL.len()
     }
 
     fn focused_slot(&self) -> Option<ColorSlot> {
         self.selected_row
-            .checked_sub(DROPDOWN_ROWS)
+            .checked_sub(HEADER_ROWS)
             .and_then(|i| ColorSlot::ALL.get(i).copied())
     }
 
@@ -173,7 +190,7 @@ impl ThemeDialog {
         move_selection(&mut self.theme_index, delta, self.themes.len());
         let theme = self.theme();
         self.working = CustomPalette::from_palette(&theme.palette());
-        Action::ThemePreviewed(theme)
+        Action::ThemeChanged(theme)
     }
 
     fn cycle_syntax(&mut self, delta: i32) -> Option<Action> {
@@ -181,36 +198,28 @@ impl ThemeDialog {
             return None;
         }
         move_selection(&mut self.syntax_index, delta, self.syntax_themes.len());
-        Some(Action::SyntaxThemePreviewed(
+        Some(Action::SyntaxThemeChanged(
             self.syntax_themes[self.syntax_index].clone(),
         ))
     }
 
-    /// Forks to Custom. An unparseable value is dropped and the row keeps its previous color.
+    /// Forks to Custom, saving the custom palette here rather than in `app.rs`: no `Action`
+    /// carries it. An unparseable value is dropped and the row keeps its previous color.
     fn commit_edit(&mut self, slot: ColorSlot, typed: String) -> Option<Action> {
         parse_hex_color(&typed)?;
         slot.set(&mut self.working, normalize_hex(&typed));
-        set_custom_palette(self.working.clone());
+        save_custom_palette(self.working.clone());
         self.theme_index = self
             .themes
             .iter()
             .position(|&t| t == OverlayTheme::Custom)
             .unwrap_or(self.theme_index);
-        Some(Action::ThemePreviewed(OverlayTheme::Custom))
+        Some(Action::ThemeChanged(OverlayTheme::Custom))
     }
 
-    /// Persists the custom palette and syntax theme here rather than in `app.rs`: no `Action`
-    /// carries them, and both are dialog-owned state. The custom palette only when Custom is the
-    /// choice: with a preset selected `working` holds the preset's colors, and saving them would
-    /// discard the user's edits, which the config keeps for switching back.
-    fn commit_dialog(&self) -> Action {
-        if self.theme() == OverlayTheme::Custom {
-            save_custom_palette(self.working.clone());
-        }
-        if let Some(name) = self.syntax_themes.get(self.syntax_index) {
-            save_syntax_theme(name);
-        }
-        Action::ThemeSelected(self.theme())
+    fn toggle_syntax_highlighting(&mut self) -> Action {
+        self.syntax_highlighting = !self.syntax_highlighting;
+        Action::SyntaxHighlightingChanged(self.syntax_highlighting)
     }
 
     pub fn popup_area(&self, area: Rect) -> Rect {
@@ -274,17 +283,21 @@ impl Component for ThemeDialog {
                 match self.selected_row {
                     THEME_ROW => Ok(Some(self.cycle_theme(delta))),
                     SYNTAX_ROW => Ok(self.cycle_syntax(delta)),
+                    SYNTAX_HIGHLIGHTING_ROW => Ok(Some(self.toggle_syntax_highlighting())),
                     _ => Ok(None),
                 }
+            }
+            KeyCode::Char(' ') if self.selected_row == SYNTAX_HIGHLIGHTING_ROW => {
+                Ok(Some(self.toggle_syntax_highlighting()))
             }
             KeyCode::Enter => match self.focused_slot() {
                 Some(slot) => {
                     self.editing = Some(slot.get(&self.working).to_string());
                     Ok(Some(Action::Render))
                 }
-                None => Ok(Some(self.commit_dialog())),
+                None => Ok(Some(Action::SettingsClosed)),
             },
-            KeyCode::Esc => Ok(Some(Action::DialogCancelled)),
+            KeyCode::Esc => Ok(Some(Action::SettingsClosed)),
             _ => Ok(None),
         }
     }
@@ -311,9 +324,24 @@ impl Component for ThemeDialog {
             Span::raw(format!("{:<20}", "Syntax theme:")),
             Span::styled(format!("< {syntax_name} >"), Style::new().fg(Color::Cyan)),
         ]));
+        lines.push(Line::from(vec![
+            Span::raw(marker(SYNTAX_HIGHLIGHTING_ROW, self.selected_row)),
+            Span::raw(format!("{:<20}", "Syntax colors:")),
+            Span::styled(
+                format!(
+                    "< {} >",
+                    if self.syntax_highlighting {
+                        "on"
+                    } else {
+                        "off"
+                    }
+                ),
+                Style::new().fg(Color::Cyan),
+            ),
+        ]));
 
         for (index, slot) in ColorSlot::ALL.iter().enumerate() {
-            let row = DROPDOWN_ROWS + index;
+            let row = HEADER_ROWS + index;
             let stored = slot.get(&self.working).to_string();
             // The swatch previews the typed value whenever it parses.
             let shown = match (&self.editing, row == self.selected_row) {
@@ -340,7 +368,7 @@ impl Component for ThemeDialog {
         let hint = if self.editing.is_some() {
             " type #rrggbb | Enter: apply | Esc: cancel edit "
         } else {
-            " ←/→: change | Enter: edit or accept | Esc: cancel "
+            " ←/→: change | Enter: edit a color | Esc: close "
         };
 
         frame.render_widget(Clear, area);
@@ -348,7 +376,7 @@ impl Component for ThemeDialog {
             Paragraph::new(lines).block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(Line::from(" Theme ".bold().fg(Color::Cyan)))
+                    .title(Line::from(" Colors ".bold().fg(Color::Cyan)))
                     .title_bottom(Line::from(hint)),
             ),
             area,
@@ -373,7 +401,7 @@ mod tests {
     }
 
     fn focus_first_color(dialog: &mut ThemeDialog) {
-        for _ in 0..DROPDOWN_ROWS {
+        for _ in 0..HEADER_ROWS {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
     }
@@ -387,9 +415,9 @@ mod tests {
         );
     }
 
-    /// Enter on a preset leaves the saved custom palette alone.
+    /// Choosing a preset leaves the saved custom palette alone, for switching back.
     #[test]
-    fn accepting_a_preset_keeps_the_saved_custom_palette() {
+    fn choosing_a_preset_keeps_the_saved_custom_palette() {
         let config = tempfile::NamedTempFile::new().expect("temp config");
         let _config = crate::tui::theme::use_config_for_this_thread(config.path());
         let edited = CustomPalette {
@@ -398,14 +426,41 @@ mod tests {
         };
         save_custom_palette(edited.clone());
 
-        let dialog = ThemeDialog::with_syntax_theme(OverlayTheme::Nord, None);
-        let action = dialog.commit_dialog();
-        let saved = crate::tui::theme::load_custom_palette();
-        let syntax = crate::tui::theme::load_syntax_theme();
+        let mut dialog = ThemeDialog::with_syntax_theme(OverlayTheme::Nord, None);
+        let action = dialog.handle_key_event(key(KeyCode::Right)).unwrap();
 
-        assert_eq!(action, Action::ThemeSelected(OverlayTheme::Nord));
-        assert_eq!(saved, edited);
-        assert_eq!(syntax.as_deref(), Some(DEFAULT_SYNTAX_THEME));
+        assert!(
+            matches!(action, Some(Action::ThemeChanged(_))),
+            "{action:?}"
+        );
+        assert_eq!(crate::tui::theme::load_custom_palette(), edited);
+    }
+
+    #[test]
+    fn the_syntax_colors_row_switches_syntax_highlighting() {
+        let mut dialog = ThemeDialog::new(OverlayTheme::Dracula).with_syntax_highlighting(true);
+        for _ in 0..SYNTAX_HIGHLIGHTING_ROW {
+            dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        }
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
+            Some(Action::SyntaxHighlightingChanged(false))
+        );
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Right)).unwrap(),
+            Some(Action::SyntaxHighlightingChanged(true))
+        );
+    }
+
+    #[test]
+    fn a_syntax_theme_applies_as_it_is_chosen() {
+        let mut dialog = ThemeDialog::new(OverlayTheme::Dracula);
+        dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        let action = dialog.handle_key_event(key(KeyCode::Right)).unwrap();
+        assert!(
+            matches!(action, Some(Action::SyntaxThemeChanged(_))),
+            "{action:?}"
+        );
     }
 
     #[test]
@@ -424,7 +479,7 @@ mod tests {
         let action = dialog.handle_key_event(key(KeyCode::Right)).unwrap();
         let theme = dialog.theme();
         assert_ne!(theme, OverlayTheme::Dark);
-        assert_eq!(action, Some(Action::ThemePreviewed(theme)));
+        assert_eq!(action, Some(Action::ThemeChanged(theme)));
         assert_eq!(
             dialog.working,
             CustomPalette::from_palette(&theme.palette())
@@ -433,6 +488,8 @@ mod tests {
 
     #[test]
     fn editing_a_color_switches_the_selection_to_custom() {
+        let config = tempfile::NamedTempFile::new().expect("temp config");
+        let _config = crate::tui::theme::use_config_for_this_thread(config.path());
         let mut dialog = ThemeDialog::new(OverlayTheme::Dracula);
         focus_first_color(&mut dialog);
         dialog.handle_key_event(key(KeyCode::Enter)).unwrap();
@@ -443,9 +500,14 @@ mod tests {
         typing(&mut dialog, "#123456");
         let action = dialog.handle_key_event(key(KeyCode::Enter)).unwrap();
 
-        assert_eq!(action, Some(Action::ThemePreviewed(OverlayTheme::Custom)));
+        assert_eq!(action, Some(Action::ThemeChanged(OverlayTheme::Custom)));
         assert_eq!(dialog.theme(), OverlayTheme::Custom);
         assert_eq!(dialog.working.insert_bg, "#123456");
+        assert_eq!(
+            crate::tui::theme::load_custom_palette().insert_bg,
+            "#123456",
+            "saved as it is made"
+        );
         // The preset itself is untouched.
         assert_ne!(
             OverlayTheme::Dracula.palette().insert_bg,
@@ -470,7 +532,7 @@ mod tests {
     }
 
     #[test]
-    fn esc_while_editing_cancels_the_edit_not_the_dialog() {
+    fn esc_while_editing_cancels_the_edit_not_the_menu() {
         let mut dialog = ThemeDialog::new(OverlayTheme::Dracula);
         focus_first_color(&mut dialog);
         dialog.handle_key_event(key(KeyCode::Enter)).unwrap();
@@ -480,14 +542,14 @@ mod tests {
         assert!(dialog.editing.is_none());
 
         let action = dialog.handle_key_event(key(KeyCode::Esc)).unwrap();
-        assert_eq!(action, Some(Action::DialogCancelled));
+        assert_eq!(action, Some(Action::SettingsClosed));
     }
 
     #[test]
-    fn enter_on_a_dropdown_row_accepts_the_dialog() {
+    fn enter_on_a_dropdown_row_closes_the_menu() {
         let mut dialog = ThemeDialog::new(OverlayTheme::Dracula);
         let action = dialog.handle_key_event(key(KeyCode::Enter)).unwrap();
-        assert_eq!(action, Some(Action::ThemeSelected(OverlayTheme::Dracula)));
+        assert_eq!(action, Some(Action::SettingsClosed));
     }
 
     #[test]
@@ -542,6 +604,7 @@ mod tests {
         assert!(rendered.contains("Theme:"), "{rendered}");
         assert!(rendered.contains("Dracula"), "{rendered}");
         assert!(rendered.contains("Syntax theme:"), "{rendered}");
+        assert!(rendered.contains("Syntax colors:"), "{rendered}");
         for slot in ColorSlot::ALL {
             assert!(
                 rendered.contains(slot.label()),

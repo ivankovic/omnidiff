@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -31,5 +31,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("python-add-remove-block")
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 2: the space before the insert `and filtering` is not painted with it
+    assert_ground_truth_invariants_with_known_violations("python-add-remove-block", 1)
 }
