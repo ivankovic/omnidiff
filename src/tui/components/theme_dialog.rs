@@ -47,57 +47,57 @@ enum ColorSlot {
 }
 
 impl ColorSlot {
-    const ALL: [ColorSlot; 9] = [
-        ColorSlot::Insert,
-        ColorSlot::Delete,
-        ColorSlot::Update,
-        ColorSlot::Move,
-        ColorSlot::CursorCounterpart,
-        ColorSlot::Search,
-        ColorSlot::OverlayText,
-        ColorSlot::BeforeTitle,
-        ColorSlot::AfterTitle,
+    const ALL: [Self; 9] = [
+        Self::Insert,
+        Self::Delete,
+        Self::Update,
+        Self::Move,
+        Self::CursorCounterpart,
+        Self::Search,
+        Self::OverlayText,
+        Self::BeforeTitle,
+        Self::AfterTitle,
     ];
 
     fn label(self) -> &'static str {
         match self {
-            ColorSlot::Insert => "Insert",
-            ColorSlot::Delete => "Delete",
-            ColorSlot::Update => "Update",
-            ColorSlot::Move => "Move",
-            ColorSlot::CursorCounterpart => "Cursor counterpart",
-            ColorSlot::Search => "Search match",
-            ColorSlot::OverlayText => "Overlay text",
-            ColorSlot::BeforeTitle => "\"Before\" title",
-            ColorSlot::AfterTitle => "\"After\" title",
+            Self::Insert => "Insert",
+            Self::Delete => "Delete",
+            Self::Update => "Update",
+            Self::Move => "Move",
+            Self::CursorCounterpart => "Cursor counterpart",
+            Self::Search => "Search match",
+            Self::OverlayText => "Overlay text",
+            Self::BeforeTitle => "\"Before\" title",
+            Self::AfterTitle => "\"After\" title",
         }
     }
 
     fn get(self, palette: &CustomPalette) -> &str {
         match self {
-            ColorSlot::Insert => &palette.insert_bg,
-            ColorSlot::Delete => &palette.delete_bg,
-            ColorSlot::Update => &palette.update_bg,
-            ColorSlot::Move => &palette.move_bg,
-            ColorSlot::CursorCounterpart => &palette.cross_highlight_bg,
-            ColorSlot::Search => &palette.search_bg,
-            ColorSlot::OverlayText => &palette.overlay_fg,
-            ColorSlot::BeforeTitle => &palette.before_title_fg,
-            ColorSlot::AfterTitle => &palette.after_title_fg,
+            Self::Insert => &palette.insert_bg,
+            Self::Delete => &palette.delete_bg,
+            Self::Update => &palette.update_bg,
+            Self::Move => &palette.move_bg,
+            Self::CursorCounterpart => &palette.cross_highlight_bg,
+            Self::Search => &palette.search_bg,
+            Self::OverlayText => &palette.overlay_fg,
+            Self::BeforeTitle => &palette.before_title_fg,
+            Self::AfterTitle => &palette.after_title_fg,
         }
     }
 
     fn set(self, palette: &mut CustomPalette, hex: String) {
         let field = match self {
-            ColorSlot::Insert => &mut palette.insert_bg,
-            ColorSlot::Delete => &mut palette.delete_bg,
-            ColorSlot::Update => &mut palette.update_bg,
-            ColorSlot::Move => &mut palette.move_bg,
-            ColorSlot::CursorCounterpart => &mut palette.cross_highlight_bg,
-            ColorSlot::Search => &mut palette.search_bg,
-            ColorSlot::OverlayText => &mut palette.overlay_fg,
-            ColorSlot::BeforeTitle => &mut palette.before_title_fg,
-            ColorSlot::AfterTitle => &mut palette.after_title_fg,
+            Self::Insert => &mut palette.insert_bg,
+            Self::Delete => &mut palette.delete_bg,
+            Self::Update => &mut palette.update_bg,
+            Self::Move => &mut palette.move_bg,
+            Self::CursorCounterpart => &mut palette.cross_highlight_bg,
+            Self::Search => &mut palette.search_bg,
+            Self::OverlayText => &mut palette.overlay_fg,
+            Self::BeforeTitle => &mut palette.before_title_fg,
+            Self::AfterTitle => &mut palette.after_title_fg,
         };
         *field = hex;
     }

@@ -136,9 +136,9 @@ impl MemberDetail {
     /// lines, and past it redrawn if the words stayed and replaced if not. Bytes are edited.
     pub fn verdict(&self) -> Verdict {
         let level = match self {
-            MemberDetail::Picture(diff) => return diff.verdict(),
-            MemberDetail::Content { content } => return content.verdict(),
-            MemberDetail::Text {
+            Self::Picture(diff) => return diff.verdict(),
+            Self::Content { content } => return content.verdict(),
+            Self::Text {
                 before_lines,
                 after_lines,
                 removed,
@@ -162,7 +162,7 @@ impl MemberDetail {
                     Level::Replaced
                 }
             }
-            MemberDetail::Binary { .. } => Level::Edited,
+            Self::Binary { .. } => Level::Edited,
         };
         Verdict::new(level)
     }

@@ -55,36 +55,36 @@ pub enum FileStatus {
 impl FileStatus {
     fn from_letter(letter: char) -> Self {
         match letter {
-            'A' => FileStatus::Added,
-            'M' => FileStatus::Modified,
-            'D' => FileStatus::Deleted,
-            'R' => FileStatus::Renamed,
-            'C' => FileStatus::Copied,
-            'T' => FileStatus::TypeChanged,
-            'U' => FileStatus::Unmerged,
-            '?' => FileStatus::Untracked,
-            _ => FileStatus::Unknown,
+            'A' => Self::Added,
+            'M' => Self::Modified,
+            'D' => Self::Deleted,
+            'R' => Self::Renamed,
+            'C' => Self::Copied,
+            'T' => Self::TypeChanged,
+            'U' => Self::Unmerged,
+            '?' => Self::Untracked,
+            _ => Self::Unknown,
         }
     }
 
     /// The one-letter marker `git status --short` readers know.
     pub fn letter(self) -> char {
         match self {
-            FileStatus::Added => 'A',
-            FileStatus::Modified => 'M',
-            FileStatus::Deleted => 'D',
-            FileStatus::Renamed => 'R',
-            FileStatus::Copied => 'C',
-            FileStatus::TypeChanged => 'T',
-            FileStatus::Unmerged => 'U',
-            FileStatus::Untracked => '?',
-            FileStatus::Unknown => 'X',
+            Self::Added => 'A',
+            Self::Modified => 'M',
+            Self::Deleted => 'D',
+            Self::Renamed => 'R',
+            Self::Copied => 'C',
+            Self::TypeChanged => 'T',
+            Self::Unmerged => 'U',
+            Self::Untracked => '?',
+            Self::Unknown => 'X',
         }
     }
 
     /// Whether a rename or copy carries the previous path.
     fn takes_two_paths(self) -> bool {
-        matches!(self, FileStatus::Renamed | FileStatus::Copied)
+        matches!(self, Self::Renamed | Self::Copied)
     }
 }
 
@@ -143,9 +143,9 @@ impl ChangeSet {
     /// Short enough for a footer: `working tree`, `staged`, or the abbreviated hash.
     pub fn label(&self) -> String {
         match self {
-            ChangeSet::WorkingTree => "working tree".to_string(),
-            ChangeSet::Staged => "staged".to_string(),
-            ChangeSet::Commit { hash } => hash.chars().take(7).collect(),
+            Self::WorkingTree => "working tree".to_string(),
+            Self::Staged => "staged".to_string(),
+            Self::Commit { hash } => hash.chars().take(7).collect(),
         }
     }
 }

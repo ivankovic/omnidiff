@@ -54,7 +54,7 @@ pub struct Code {
 /// `ast_metadata` ids match its own `ast` by construction; it is recomputed on first use.
 impl Clone for Code {
     fn clone(&self) -> Self {
-        Code {
+        Self {
             contents: self.contents.clone(),
             metadata: Metadata {
                 ast_metadata: None,
@@ -123,7 +123,7 @@ impl Code {
 
     /// Parses `contents` as `language`, with `tip` set to `Type::Code` whatever the content is.
     pub fn from_string(contents: &str, language: &Language) -> Self {
-        let mut code = Code {
+        let mut code = Self {
             contents: contents.to_string(),
             metadata: Metadata {
                 path: None,
@@ -154,7 +154,7 @@ impl Code {
     /// such as a hunk's enclosing-declaration breadcrumb; the metadata costs about as much again
     /// as the parse.
     pub fn parse_only(contents: &str, language: &Language) -> Self {
-        let mut code = Code {
+        let mut code = Self {
             contents: contents.to_string(),
             metadata: Metadata {
                 path: None,
@@ -176,7 +176,7 @@ impl Code {
         let language =
             language::language_for_path_and_content(path, &contents).unwrap_or(Language::Unknown);
 
-        let mut code = Code::from_string(&contents, &language);
+        let mut code = Self::from_string(&contents, &language);
         code.metadata.path = Some(path.to_path_buf());
 
         Ok(code)
@@ -238,25 +238,25 @@ pub enum Encoding {
 
 impl Encoding {
     /// The encoding the byte order mark at the start of `bytes` announces; UTF-8 without one.
-    pub fn of(bytes: &[u8]) -> Encoding {
+    pub fn of(bytes: &[u8]) -> Self {
         // UTF-32LE's mark starts with UTF-16LE's, so it is checked first.
         match bytes {
-            [0xFF, 0xFE, 0x00, 0x00, ..] => Encoding::Utf32Le,
-            [0x00, 0x00, 0xFE, 0xFF, ..] => Encoding::Utf32Be,
-            [0xFF, 0xFE, ..] => Encoding::Utf16Le,
-            [0xFE, 0xFF, ..] => Encoding::Utf16Be,
-            _ => Encoding::Utf8,
+            [0xFF, 0xFE, 0x00, 0x00, ..] => Self::Utf32Le,
+            [0x00, 0x00, 0xFE, 0xFF, ..] => Self::Utf32Be,
+            [0xFF, 0xFE, ..] => Self::Utf16Le,
+            [0xFE, 0xFF, ..] => Self::Utf16Be,
+            _ => Self::Utf8,
         }
     }
 
     /// The encoding's usual name (`"UTF-16LE"`).
     pub fn name(self) -> &'static str {
         match self {
-            Encoding::Utf8 => "UTF-8",
-            Encoding::Utf16Le => "UTF-16LE",
-            Encoding::Utf16Be => "UTF-16BE",
-            Encoding::Utf32Le => "UTF-32LE",
-            Encoding::Utf32Be => "UTF-32BE",
+            Self::Utf8 => "UTF-8",
+            Self::Utf16Le => "UTF-16LE",
+            Self::Utf16Be => "UTF-16BE",
+            Self::Utf32Le => "UTF-32LE",
+            Self::Utf32Be => "UTF-32BE",
         }
     }
 }
@@ -369,7 +369,7 @@ impl ASTNodeMetadata {
             literal_like: crate::diff::nodes::is_literal_kind(&kind),
             operator_families: crate::diff::nodes::operator_family_mask(&kind),
         };
-        ASTNodeMetadata {
+        Self {
             kind,
             text,
             owned_text_hash: 0,

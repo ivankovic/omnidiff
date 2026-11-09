@@ -133,13 +133,13 @@ impl ContentCase {
 
     pub(crate) fn name(&self) -> &str {
         match self {
-            ContentCase::Sample(name, _) | ContentCase::Fixture(name, _) => name,
+            Self::Sample(name, _) | Self::Fixture(name, _) => name,
         }
     }
 
     fn family(&self) -> Family {
         match self {
-            ContentCase::Sample(_, family) | ContentCase::Fixture(_, family) => *family,
+            Self::Sample(_, family) | Self::Fixture(_, family) => *family,
         }
     }
 }

@@ -97,51 +97,51 @@ pub enum Level {
 
 impl Level {
     /// In the order of `human_solver`'s keys `0`-`5`.
-    pub const ALL: [Level; 6] = [
-        Level::Invisible,
-        Level::Imperceptible,
-        Level::Artifacts,
-        Level::Edited,
-        Level::Redrawn,
-        Level::Replaced,
+    pub const ALL: [Self; 6] = [
+        Self::Invisible,
+        Self::Imperceptible,
+        Self::Artifacts,
+        Self::Edited,
+        Self::Redrawn,
+        Self::Replaced,
     ];
 
     pub fn name(self) -> &'static str {
         match self {
-            Level::Invisible => "invisible",
-            Level::Imperceptible => "imperceptible",
-            Level::Artifacts => "artifacts",
-            Level::Edited => "edited",
-            Level::Redrawn => "redrawn",
-            Level::Replaced => "replaced",
+            Self::Invisible => "invisible",
+            Self::Imperceptible => "imperceptible",
+            Self::Artifacts => "artifacts",
+            Self::Edited => "edited",
+            Self::Redrawn => "redrawn",
+            Self::Replaced => "replaced",
         }
     }
 
-    pub fn from_name(name: &str) -> Option<Level> {
-        Level::ALL.into_iter().find(|level| level.name() == name)
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|level| level.name() == name)
     }
 
     /// What `vocabulary` calls the level: [`Level::name`] for pictures, plainer names for text,
     /// containers and binary bytes.
     pub fn name_in(self, vocabulary: Vocabulary) -> &'static str {
         match (vocabulary, self) {
-            (Vocabulary::Text | Vocabulary::Container | Vocabulary::Binary, Level::Invisible) => {
+            (Vocabulary::Text | Vocabulary::Container | Vocabulary::Binary, Self::Invisible) => {
                 "identical"
             }
-            (Vocabulary::Text, Level::Imperceptible) => "whitespace",
-            (Vocabulary::Text, Level::Artifacts) => "formatting",
-            (Vocabulary::Text, Level::Redrawn) => "rewritten",
-            (Vocabulary::Container | Vocabulary::Binary, Level::Edited) => "changed",
+            (Vocabulary::Text, Self::Imperceptible) => "whitespace",
+            (Vocabulary::Text, Self::Artifacts) => "formatting",
+            (Vocabulary::Text, Self::Redrawn) => "rewritten",
+            (Vocabulary::Container | Vocabulary::Binary, Self::Edited) => "changed",
             (_, level) => level.name(),
         }
     }
 
     /// The levels `vocabulary` judges with, in key order: all six, or the two of a container or
     /// of binary bytes.
-    pub fn offered(vocabulary: Vocabulary) -> &'static [Level] {
+    pub fn offered(vocabulary: Vocabulary) -> &'static [Self] {
         match vocabulary {
-            Vocabulary::Container | Vocabulary::Binary => &[Level::Invisible, Level::Edited],
-            _ => &Level::ALL,
+            Vocabulary::Container | Vocabulary::Binary => &[Self::Invisible, Self::Edited],
+            _ => &Self::ALL,
         }
     }
 }
@@ -190,38 +190,38 @@ pub enum Tag {
 }
 
 impl Tag {
-    pub const ALL: [Tag; 8] = [
-        Tag::Resized,
-        Tag::Canvas,
-        Tag::Rotated,
-        Tag::Timing,
-        Tag::Frames,
-        Tag::AddedFiles,
-        Tag::RemovedFiles,
-        Tag::ChangedFiles,
+    pub const ALL: [Self; 8] = [
+        Self::Resized,
+        Self::Canvas,
+        Self::Rotated,
+        Self::Timing,
+        Self::Frames,
+        Self::AddedFiles,
+        Self::RemovedFiles,
+        Self::ChangedFiles,
     ];
 
     pub fn name(self) -> &'static str {
         match self {
-            Tag::Resized => "resized",
-            Tag::Canvas => "canvas",
-            Tag::Rotated => "rotated",
-            Tag::Timing => "timing",
-            Tag::Frames => "frames",
-            Tag::AddedFiles => "added_files",
-            Tag::RemovedFiles => "removed_files",
-            Tag::ChangedFiles => "changed_files",
+            Self::Resized => "resized",
+            Self::Canvas => "canvas",
+            Self::Rotated => "rotated",
+            Self::Timing => "timing",
+            Self::Frames => "frames",
+            Self::AddedFiles => "added_files",
+            Self::RemovedFiles => "removed_files",
+            Self::ChangedFiles => "changed_files",
         }
     }
 
-    pub fn from_name(name: &str) -> Option<Tag> {
-        Tag::ALL.into_iter().find(|tag| tag.name() == name)
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tag| tag.name() == name)
     }
 
     /// True if a verdict about `shape` can take the tag.
     pub fn fits(self, shape: Shape) -> bool {
         match self {
-            Tag::AddedFiles | Tag::RemovedFiles | Tag::ChangedFiles => shape == Shape::Container,
+            Self::AddedFiles | Self::RemovedFiles | Self::ChangedFiles => shape == Shape::Container,
             _ => shape == Shape::Picture,
         }
     }
@@ -318,7 +318,7 @@ impl std::str::FromStr for Verdict {
     fn from_str(text: &str) -> Result<Self> {
         let mut parts = text.split('+');
         let level = parts.next().unwrap_or_default();
-        let mut verdict = Verdict::new(
+        let mut verdict = Self::new(
             Level::from_name(level).with_context(|| format!("no level is called '{level}'"))?,
         );
         for tag in parts {
@@ -347,65 +347,65 @@ impl Serialize for Family {
 }
 
 impl Family {
-    pub const ALL: [Family; 6] = [
-        Family::Pictures,
-        Family::Archives,
-        Family::Cursors,
-        Family::Fonts,
-        Family::Catalogs,
-        Family::Documents,
+    pub const ALL: [Self; 6] = [
+        Self::Pictures,
+        Self::Archives,
+        Self::Cursors,
+        Self::Fonts,
+        Self::Catalogs,
+        Self::Documents,
     ];
 
     /// The family's fixture dataset, `src/test/data/<name>/`, and its `sample.csv` tag.
     pub fn name(self) -> &'static str {
         match self {
-            Family::Pictures => "pictures",
-            Family::Archives => "archives",
-            Family::Cursors => "cursors",
-            Family::Fonts => "fonts",
-            Family::Catalogs => "catalogs",
-            Family::Documents => "documents",
+            Self::Pictures => "pictures",
+            Self::Archives => "archives",
+            Self::Cursors => "cursors",
+            Self::Fonts => "fonts",
+            Self::Catalogs => "catalogs",
+            Self::Documents => "documents",
         }
     }
 
     /// What one file of the family is called in a report (`"Picture"`), or two (`"Pictures"`).
     pub fn noun(self, plural: bool) -> &'static str {
         match (self, plural) {
-            (Family::Pictures, false) => "Picture",
-            (Family::Pictures, true) => "Pictures",
-            (Family::Archives, false) => "Archive",
-            (Family::Archives, true) => "Archives",
-            (Family::Cursors, false) => "Cursor",
-            (Family::Cursors, true) => "Cursors",
-            (Family::Fonts, false) => "Font",
-            (Family::Fonts, true) => "Fonts",
-            (Family::Catalogs, false) => "Catalog",
-            (Family::Catalogs, true) => "Catalogs",
-            (Family::Documents, false) => "Document",
-            (Family::Documents, true) => "Documents",
+            (Self::Pictures, false) => "Picture",
+            (Self::Pictures, true) => "Pictures",
+            (Self::Archives, false) => "Archive",
+            (Self::Archives, true) => "Archives",
+            (Self::Cursors, false) => "Cursor",
+            (Self::Cursors, true) => "Cursors",
+            (Self::Fonts, false) => "Font",
+            (Self::Fonts, true) => "Fonts",
+            (Self::Catalogs, false) => "Catalog",
+            (Self::Catalogs, true) => "Catalogs",
+            (Self::Documents, false) => "Document",
+            (Self::Documents, true) => "Documents",
         }
     }
 
-    pub fn from_name(name: &str) -> Option<Family> {
-        Family::ALL.into_iter().find(|family| family.name() == name)
+    pub fn from_name(name: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|family| family.name() == name)
     }
 
     /// The extensions files of this family usually carry, lower-cased: where the sampler looks.
     /// Recognising a file never depends on them ([`sniff`]).
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
-            Family::Pictures => picture::PICTURE_EXTENSIONS,
+            Self::Pictures => picture::PICTURE_EXTENSIONS,
             // Office documents, EPUBs and Python wheels are zips too.
-            Family::Archives => &[
+            Self::Archives => &[
                 "zip", "jar", "war", "ear", "aar", "apk", "whl", "nupkg", "vsix", "xpi", "epub",
                 "docx", "xlsx", "pptx", "odt", "ods", "odp", "odg", "tar", "gz", "tgz", "xz",
                 "txz", "bz2", "tbz2",
             ],
             // X cursors carry no extension at all: the sampler sniffs extensionless files too.
-            Family::Cursors => &["cur", "ani", "hlc"],
-            Family::Fonts => &["ttf", "otf", "ttc", "otc", "woff", "woff2", "eot"],
-            Family::Catalogs => &["mo", "gmo", "qm"],
-            Family::Documents => &["pdf"],
+            Self::Cursors => &["cur", "ani", "hlc"],
+            Self::Fonts => &["ttf", "otf", "ttc", "otc", "woff", "woff2", "eot"],
+            Self::Catalogs => &["mo", "gmo", "qm"],
+            Self::Documents => &["pdf"],
         }
     }
 }
@@ -444,14 +444,14 @@ pub enum Format {
 impl Format {
     pub fn family(self) -> Family {
         match self {
-            Format::Picture(_) => Family::Pictures,
-            Format::Zip | Format::Tar | Format::Gzip | Format::Xz | Format::Bzip2 => {
+            Self::Picture(_) => Family::Pictures,
+            Self::Zip | Self::Tar | Self::Gzip | Self::Xz | Self::Bzip2 => {
                 Family::Archives
             }
-            Format::Cur | Format::Ani | Format::Xcursor | Format::Hyprcursor => Family::Cursors,
-            Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Family::Fonts,
-            Format::Mo | Format::Qm => Family::Catalogs,
-            Format::Pdf => Family::Documents,
+            Self::Cur | Self::Ani | Self::Xcursor | Self::Hyprcursor => Family::Cursors,
+            Self::Sfnt | Self::Woff | Self::Woff2 | Self::Eot => Family::Fonts,
+            Self::Mo | Self::Qm => Family::Catalogs,
+            Self::Pdf => Family::Documents,
         }
     }
 
@@ -459,7 +459,7 @@ impl Format {
     pub fn engine(self) -> Engine {
         match self {
             // A single cursor is a picture, still or animated.
-            Format::Picture(_) | Format::Cur | Format::Ani => Engine::Picture,
+            Self::Picture(_) | Self::Cur | Self::Ani => Engine::Picture,
             other => Engine::Container(other.family()),
         }
     }
@@ -467,23 +467,23 @@ impl Format {
     /// The format's name as reports show it (`"PNG"`).
     pub fn name(self) -> String {
         match self {
-            Format::Picture(format) => format!("{format:?}").to_uppercase(),
-            Format::Zip => "ZIP".to_string(),
-            Format::Tar => "TAR".to_string(),
-            Format::Gzip => "GZIP".to_string(),
-            Format::Xz => "XZ".to_string(),
-            Format::Bzip2 => "BZIP2".to_string(),
-            Format::Cur => "CUR".to_string(),
-            Format::Ani => "ANI".to_string(),
-            Format::Xcursor => "XCURSOR".to_string(),
-            Format::Hyprcursor => "HYPRCURSOR".to_string(),
-            Format::Sfnt => "SFNT".to_string(),
-            Format::Woff => "WOFF".to_string(),
-            Format::Woff2 => "WOFF2".to_string(),
-            Format::Eot => "EOT".to_string(),
-            Format::Mo => "MO".to_string(),
-            Format::Qm => "QM".to_string(),
-            Format::Pdf => "PDF".to_string(),
+            Self::Picture(format) => format!("{format:?}").to_uppercase(),
+            Self::Zip => "ZIP".to_string(),
+            Self::Tar => "TAR".to_string(),
+            Self::Gzip => "GZIP".to_string(),
+            Self::Xz => "XZ".to_string(),
+            Self::Bzip2 => "BZIP2".to_string(),
+            Self::Cur => "CUR".to_string(),
+            Self::Ani => "ANI".to_string(),
+            Self::Xcursor => "XCURSOR".to_string(),
+            Self::Hyprcursor => "HYPRCURSOR".to_string(),
+            Self::Sfnt => "SFNT".to_string(),
+            Self::Woff => "WOFF".to_string(),
+            Self::Woff2 => "WOFF2".to_string(),
+            Self::Eot => "EOT".to_string(),
+            Self::Mo => "MO".to_string(),
+            Self::Qm => "QM".to_string(),
+            Self::Pdf => "PDF".to_string(),
         }
     }
 }
@@ -654,16 +654,16 @@ impl ContentDiff {
     /// The picture diff, for a picture pair.
     pub fn as_picture(&self) -> Option<&PictureDiff> {
         match self {
-            ContentDiff::Picture(diff) => Some(diff),
-            ContentDiff::Container(_) => None,
+            Self::Picture(diff) => Some(diff),
+            Self::Container(_) => None,
         }
     }
 
     /// The engine's verdict on the whole pair.
     pub fn verdict(&self) -> Verdict {
         match self {
-            ContentDiff::Picture(diff) => diff.verdict(),
-            ContentDiff::Container(diff) => diff.verdict(),
+            Self::Picture(diff) => diff.verdict(),
+            Self::Container(diff) => diff.verdict(),
         }
     }
 }

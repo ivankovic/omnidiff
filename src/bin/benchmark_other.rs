@@ -154,42 +154,42 @@ enum ExternalTool {
 
 impl ExternalTool {
     const ALL: &'static [ExternalTool] = &[
-        ExternalTool::UnixDiff,
-        ExternalTool::GitMyers,
-        ExternalTool::GitMinimal,
-        ExternalTool::GitPatience,
-        ExternalTool::GitHistogram,
-        ExternalTool::BDiff,
-        ExternalTool::NvimDiff,
-        ExternalTool::GumTree,
-        ExternalTool::Difftastic,
-        ExternalTool::Diffsitter,
-        ExternalTool::SrcDiff,
+        Self::UnixDiff,
+        Self::GitMyers,
+        Self::GitMinimal,
+        Self::GitPatience,
+        Self::GitHistogram,
+        Self::BDiff,
+        Self::NvimDiff,
+        Self::GumTree,
+        Self::Difftastic,
+        Self::Diffsitter,
+        Self::SrcDiff,
     ];
 
     fn name(&self) -> &'static str {
         match self {
-            ExternalTool::UnixDiff => "unix_diff",
-            ExternalTool::GitMyers => "git_myers",
-            ExternalTool::GitMinimal => "git_minimal",
-            ExternalTool::GitPatience => "git_patience",
-            ExternalTool::GitHistogram => "git_histogram",
-            ExternalTool::BDiff => "bdiff",
-            ExternalTool::NvimDiff => "nvim_diff",
-            ExternalTool::GumTree => "gumtree",
-            ExternalTool::Difftastic => "difftastic",
-            ExternalTool::Diffsitter => "diffsitter",
-            ExternalTool::SrcDiff => "srcdiff",
+            Self::UnixDiff => "unix_diff",
+            Self::GitMyers => "git_myers",
+            Self::GitMinimal => "git_minimal",
+            Self::GitPatience => "git_patience",
+            Self::GitHistogram => "git_histogram",
+            Self::BDiff => "bdiff",
+            Self::NvimDiff => "nvim_diff",
+            Self::GumTree => "gumtree",
+            Self::Difftastic => "difftastic",
+            Self::Diffsitter => "diffsitter",
+            Self::SrcDiff => "srcdiff",
         }
     }
 
     /// The `--diff-algorithm` value for the four git variants, which share one labeller.
     fn git_algorithm(&self) -> Option<&'static str> {
         match self {
-            ExternalTool::GitMyers => Some("myers"),
-            ExternalTool::GitMinimal => Some("minimal"),
-            ExternalTool::GitPatience => Some("patience"),
-            ExternalTool::GitHistogram => Some("histogram"),
+            Self::GitMyers => Some("myers"),
+            Self::GitMinimal => Some("minimal"),
+            Self::GitPatience => Some("patience"),
+            Self::GitHistogram => Some("histogram"),
             _ => None,
         }
     }
@@ -200,20 +200,20 @@ impl ExternalTool {
     // as Testing rather than Stable, so the comparison spans everything it can run on.
     fn supports(&self, language: Language) -> bool {
         match self {
-            ExternalTool::UnixDiff
-            | ExternalTool::GitMyers
-            | ExternalTool::GitMinimal
-            | ExternalTool::GitPatience
-            | ExternalTool::GitHistogram
-            | ExternalTool::BDiff
-            | ExternalTool::NvimDiff => {
+            Self::UnixDiff
+            | Self::GitMyers
+            | Self::GitMinimal
+            | Self::GitPatience
+            | Self::GitHistogram
+            | Self::BDiff
+            | Self::NvimDiff => {
                 let _ = language;
                 true
             }
-            ExternalTool::GumTree => gumtree_generator(language).is_some(),
-            ExternalTool::Difftastic => difftastic_extension(language).is_some(),
-            ExternalTool::Diffsitter => diffsitter_file_type(language).is_some(),
-            ExternalTool::SrcDiff => srcdiff_language(language).is_some(),
+            Self::GumTree => gumtree_generator(language).is_some(),
+            Self::Difftastic => difftastic_extension(language).is_some(),
+            Self::Diffsitter => diffsitter_file_type(language).is_some(),
+            Self::SrcDiff => srcdiff_language(language).is_some(),
         }
     }
 
@@ -221,21 +221,20 @@ impl ExternalTool {
     /// considers the line part of the edit. Only meaningful when `supports` is true.
     fn line_labels(&self, before: &Code, after: &Code) -> Result<(Vec<bool>, Vec<bool>)> {
         match self {
-            ExternalTool::UnixDiff => human_mapping::unix_diff_line_labels(before, after),
-            ExternalTool::GitMyers
-            | ExternalTool::GitMinimal
-            | ExternalTool::GitPatience
-            | ExternalTool::GitHistogram => git_line_labels(
-                self.git_algorithm().expect("git variant has an algorithm"),
-                before,
-                after,
-            ),
-            ExternalTool::BDiff => bdiff_line_labels(before, after),
-            ExternalTool::NvimDiff => nvim_line_labels(before, after),
-            ExternalTool::GumTree => gumtree_line_labels(before, after),
-            ExternalTool::Difftastic => difftastic_line_labels(before, after),
-            ExternalTool::Diffsitter => diffsitter_line_labels(before, after),
-            ExternalTool::SrcDiff => srcdiff_line_labels(before, after),
+            Self::UnixDiff => human_mapping::unix_diff_line_labels(before, after),
+            Self::GitMyers | Self::GitMinimal | Self::GitPatience | Self::GitHistograqm => {
+                git_line_labels(
+                    self.git_algorithm().expect("git variant has an algorithm"),
+                    before,
+                    after,
+                )
+            }
+            Self::BDiff => bdiff_line_labels(before, after),
+            Self::NvimDiff => nvim_line_labels(before, after),
+            Self::GumTree => gumtree_line_labels(before, after),
+            Self::Difftastic => difftastic_line_labels(before, after),
+            Self::Diffsitter => diffsitter_line_labels(before, after),
+            Self::SrcDiff => srcdiff_line_labels(before, after),
         }
     }
 }

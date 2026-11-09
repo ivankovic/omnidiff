@@ -192,7 +192,7 @@ pub enum Comparison {
         /// Two still pictures of one aspect ratio compared at the smaller one's size, the larger
         /// scaled down to it: always [`Comparison::Pixels`], in the smaller one's pixels.
         #[serde(skip_serializing_if = "Option::is_none")]
-        scaled: Option<Box<Comparison>>,
+        scaled: Option<Box<Self>>,
     },
     /// Animations of the same size (or an animation and a still), compared frame by frame.
     Frames {
