@@ -44,8 +44,12 @@ fn invariants() -> Result<()> {
     // Full leaves the whitespace at columns 47..48 of after row 318 unpainted between two painted
     // regions. Invariant 16, twice: the `AbstractPostOrderCallback` <-> `ScopedCallback` rename on
     // row 26 is not painted entire under Full.
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   before row 235: the space before the delete `extends AbstractPostOrderCa...` is not painted
+    //     with it
+    //   after row 237: the space before the insert `ScopedCallback,` is not painted with it
     assert_ground_truth_invariants_with_known_violations(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        5,
+        7,
     )
 }

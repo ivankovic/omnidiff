@@ -15,20 +15,28 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet examined.
+    // Residual not yet examined. Re-recorded 2026-11-04 (54/33 -> 120/72) after the ground truth
+    // was repainted around row 96: the engine still moves type fragments out of the deleted
+    // declarations into the new lambdas' parameters (`MovedSubtree`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-laydbird-change-function-signature",
-        54,
-        33,
+        120,
+        72,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("cpp-laydbird-change-function-signature")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("cpp-laydbird-change-function-signature", 0.66)
 }

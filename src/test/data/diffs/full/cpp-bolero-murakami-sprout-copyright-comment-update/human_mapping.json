@@ -32,5 +32,79 @@
         "comment:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 24,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 24,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 24,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 24,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 21,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 21,
+              "end_row": 1,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -83,5 +83,23 @@
         "function_declaration:4"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 0,
+              "end_row": 10,
+              "end_column": 35
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,5 +37,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-mongodb-mongo-test-changes")
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   before row 278: the indentation before `colls, BSON("a" << GT << 0 ...` is painted, though
+    //     it did not change
+    //   after row 255: the indentation change before `[](FindCommandRequest& find...` is not painted
+    //     from column 0
+    assert_ground_truth_invariants_with_known_violations("cpp-mongodb-mongo-test-changes", 2)
 }

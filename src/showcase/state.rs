@@ -69,7 +69,7 @@ pub struct StatePayload {
     pub settings: SettingsPayload,
     pub themes: Vec<ThemePayload>,
     pub syntax_themes: Vec<String>,
-    /// The syntax theme until the user picks one, which the theme dialog opens on.
+    /// The syntax theme until the user picks one, which the settings menu's Colors tab opens on.
     pub default_syntax_theme: &'static str,
     pub render_option_rows: Vec<RenderOptionRow>,
     /// `RenderOptions::MINIMAL`/`FULL`, for the `M` panel's `1`/`2` keys and the footer badge -

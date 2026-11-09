@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -35,5 +35,9 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("vimscript-neovim-neovim-small-change")
+    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
+    // separator (awaiting a repaint):
+    //   before row 6 paints the unchanged `,` beside the changed `21` update
+    //   after row 6 paints the unchanged `,` beside the changed `5` update
+    assert_ground_truth_invariants_with_known_violations("vimscript-neovim-neovim-small-change", 2)
 }

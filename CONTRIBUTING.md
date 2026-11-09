@@ -242,6 +242,13 @@ documented there.
 * `coverage` - line coverage of the suite over this repository's own code, via `cargo-llvm-cov`
   driving nextest (`cargo install cargo-llvm-cov`, plus `rustup component add llvm-tools-preview`).
   See "Coverage" above for what it reports and why it is not a gate.
+* `test-quick` - the edit loop's Rust suite, about 12 s warm against `test-rust`'s two minutes:
+  every test outside the fixtures but the corpus sweeps, and the fixtures
+  `src/test/data/quick_fixtures.txt` names, the cheapest set reaching every line the whole fixture
+  corpus reaches beyond those tests, plus any fixture added since that list was measured. Not a
+  gate; `test` and CI run everything.
+* `update-quick-fixtures` - rewrites that list from per-test coverage, measured first with
+  `make -C research measure-per-test-coverage` (about ten minutes). Re-run after engine changes.
 * `lint-python` - `ruff check` then `ruff format --check` over `research`, `scripts` and `assets`,
   the same three directories CI's python job covers. Requires `ruff`
   (`uv tool install ruff@0.16.4`, one-time - see "Code quality" above).

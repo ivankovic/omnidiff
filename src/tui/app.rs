@@ -47,12 +47,12 @@ use crate::tui::components::{
     render_options_dialog::{PageContent, RenderOptionsDialog},
     review_dialog::ReviewDialog,
     search_modal::SearchModal,
+    settings_menu::{LayoutSettings, SettingsMenu, SettingsTab},
     theme_dialog::ThemeDialog,
 };
 use crate::tui::events::Event;
 use crate::tui::theme::{self, OverlayTheme};
 use crate::tui::ui::UI;
-use crate::tui::widgets::code_viewer::DEFAULT_SYNTAX_THEME;
 
 /// Which top-level screen is currently shown.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -62,9 +62,8 @@ pub enum AppScreen {
     Viewer,
     /// A file dialog is picking a file for `dialog_target`.
     SelectFile,
-    SelectTheme,
-    /// The `M` render-options panel.
-    RenderOptions,
+    /// The settings menu (`c` opens it on Colors, `M` on Highlighting).
+    Settings,
     Diffing,
     /// The `?` keybinding reference.
     Help,
@@ -105,8 +104,7 @@ fn esc_should_quit(screen: AppScreen) -> bool {
         AppScreen::Viewer => true,
         AppScreen::Diffing
         | AppScreen::SelectFile
-        | AppScreen::SelectTheme
-        | AppScreen::RenderOptions
+        | AppScreen::Settings
         | AppScreen::Help
         | AppScreen::Search
         | AppScreen::JumpToLine
@@ -121,8 +119,7 @@ pub struct App {
 
     diff_viewer: DiffViewer,
     file_dialog: Option<FileDialog>,
-    theme_dialog: Option<ThemeDialog>,
-    render_options_dialog: Option<RenderOptionsDialog>,
+    settings_menu: Option<SettingsMenu>,
     help_modal: Option<HelpModal>,
     search_modal: Option<SearchModal>,
     line_prompt: Option<LinePrompt>,
@@ -146,13 +143,16 @@ pub struct App {
     /// the `UI` needed to release and re-acquire the terminal.
     pending_editor: Option<(PathBuf, usize)>,
     pending_suspend: bool,
+    /// Characters the last mouse selection put on the clipboard, shown in the footer until the
+    /// next key.
+    copied_chars: Option<usize>,
     /// Most recent first; offered on the empty-start screen as digit shortcuts.
     recent_pairs: Vec<(PathBuf, PathBuf)>,
 
     screen: AppScreen,
     dialog_target: Option<Panel>,
     current_theme: OverlayTheme,
-    /// `None` until picked in the theme dialog; the code viewer keeps its built-in default.
+    /// `None` until picked in the settings menu; the code viewer keeps its built-in default.
     syntax_theme: Option<String>,
     before_path: Option<PathBuf>,
     after_path: Option<PathBuf>,
@@ -167,6 +167,16 @@ pub struct App {
     /// difftool the first keystroke is usually `n` or `q`, and swallowing it would trade a missed
     /// notification for a stolen one, so any key clears the toast and still does its own job.
     summary_toast_ticks: u8,
+    /// Whether the screen may differ from the last frame drawn. The frame clock fires 60 times a
+    /// second, and an idle viewer redrawn on every one costs CPU in proportion to its size and its
+    /// file, and a terminal that repaints on every synchronized update costs more (issue #72). So a
+    /// frame is drawn only when this is set - by input, by any action other than the clock's own
+    /// ticks, and by a tick that changes what is shown - or when something animates on its own
+    /// (see [`App::frame_needed`]). Cleared by [`App::render`].
+    needs_redraw: bool,
+    /// Where the diff viewer's wide threshold came from (`theme::load_wide_columns`), for the
+    /// settings menu: a value from the environment is not what its row edits.
+    wide_columns_source: theme::WideColumnsSource,
     /// Read at draw time, so the counter's resolution is the frame rate rather than the 4Hz tick -
     /// which is what makes tenths of a second worth showing.
     diff_started_at: Option<std::time::Instant>,
@@ -264,14 +274,15 @@ impl App {
             frame_rate,
             diff_viewer: DiffViewer::new(),
             file_dialog: None,
-            theme_dialog: None,
-            render_options_dialog: None,
+            settings_menu: None,
             help_modal: None,
             search_modal: None,
             review_dialog: None,
             review_workspace: None,
             review_position: None,
             summary_toast_ticks: 0,
+            needs_redraw: true,
+            wide_columns_source: theme::WideColumnsSource::Default,
             diff_started_at: None,
             line_prompt: None,
             action_tx,
@@ -281,6 +292,7 @@ impl App {
             last_search_query: None,
             pending_editor: None,
             pending_suspend: false,
+            copied_chars: None,
             recent_pairs: Vec::new(),
             screen: AppScreen::default(),
             syntax_theme: None,
@@ -307,6 +319,9 @@ impl App {
         self.diff_viewer.set_overlay_theme(self.current_theme);
         self.diff_viewer
             .set_layout_override(theme::load_panel_layout());
+        let (wide_columns, wide_columns_source) = theme::load_wide_columns();
+        self.diff_viewer.set_wide_columns(wide_columns);
+        self.wide_columns_source = wide_columns_source;
         self.diff_viewer
             .set_node_highlight(theme::load_node_highlight());
         self.diff_viewer.set_render_options(
@@ -353,9 +368,12 @@ impl App {
             self.handle_actions(&mut ui)?;
             if let Some((path, line)) = self.pending_editor.take() {
                 self.run_editor(&mut ui, &path, line)?;
+                // The terminal was handed over and cleared; nothing on it is ours any more.
+                self.needs_redraw = true;
             }
             if std::mem::take(&mut self.pending_suspend) {
                 self.suspend(&mut ui)?;
+                self.needs_redraw = true;
             }
             if self.should_exit {
                 break;
@@ -382,9 +400,16 @@ impl App {
         // key, and `/` would seed SearchModal's query.
         let mut globally_handled = false;
 
+        // Input may change anything on screen, whether or not it turns into an action: a
+        // component that handles a key itself only mutates its own state.
+        if matches!(event, Event::Key(_) | Event::Mouse(_) | Event::Resize(..)) {
+            self.needs_redraw = true;
+        }
+
         // Before dispatch, so the same key still does its own job (see `summary_toast_ticks`).
         if matches!(event, Event::Key(_)) {
             self.dismiss_summary_toast();
+            self.copied_chars = None;
         }
 
         if let Event::Key(key) = &event {
@@ -508,28 +533,12 @@ impl App {
                     globally_handled = true;
                 }
                 KeyCode::Char('c') if self.screen == AppScreen::Viewer => {
-                    self.theme_dialog = Some(ThemeDialog::with_syntax_theme(
-                        self.current_theme,
-                        self.syntax_theme.as_deref(),
-                    ));
-                    self.screen = AppScreen::SelectTheme;
+                    self.open_settings(SettingsTab::Colors);
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
                 KeyCode::Char('M') if self.screen == AppScreen::Viewer => {
-                    let content = if self.content_viewer.is_some() {
-                        PageContent::NonCode
-                    } else {
-                        PageContent::Example(crate::tui::settings_examples::example_for(
-                            self.diff_viewer.example_language(),
-                        ))
-                    };
-                    self.render_options_dialog = Some(RenderOptionsDialog::for_content(
-                        self.diff_viewer.render_options(),
-                        content,
-                        self.diff_viewer.overlay_theme(),
-                    ));
-                    self.screen = AppScreen::RenderOptions;
+                    self.open_settings(SettingsTab::Highlighting);
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
@@ -566,7 +575,8 @@ impl App {
 
         match event {
             Event::Tick => action_tx.send(Action::Tick)?,
-            Event::Render => action_tx.send(Action::Render)?,
+            Event::Render if self.frame_needed() => action_tx.send(Action::Render)?,
+            Event::Render => {}
             Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
             Event::Key(_) | Event::Mouse(_) => {}
         }
@@ -586,12 +596,8 @@ impl App {
                 Some(dialog) => dialog.handle_events(Some(event)),
                 None => Ok(None),
             },
-            AppScreen::SelectTheme => match self.theme_dialog.as_mut() {
-                Some(dialog) => dialog.handle_events(Some(event)),
-                None => Ok(None),
-            },
-            AppScreen::RenderOptions => match self.render_options_dialog.as_mut() {
-                Some(dialog) => dialog.handle_events(Some(event)),
+            AppScreen::Settings => match self.settings_menu.as_mut() {
+                Some(menu) => menu.handle_events(Some(event)),
                 None => Ok(None),
             },
             AppScreen::Diffing => Ok(None),
@@ -759,10 +765,19 @@ impl App {
             if action != Action::Tick && action != Action::Render {
                 debug!("{action:?}");
             }
+            self.note_action_for_redraw(&action);
             match &action {
                 Action::Tick => self.tick_summary_toast(),
                 Action::Quit => self.should_exit = true,
                 Action::Suspend => self.pending_suspend = true,
+                Action::CopyToClipboard(text) => {
+                    use std::io::Write;
+                    // Straight to the terminal, between frames: the sequence draws nothing.
+                    let backend = ui.terminal.backend_mut();
+                    backend.write_all(crate::tui::clipboard::osc52(text).as_bytes())?;
+                    backend.flush()?;
+                    self.copied_chars = Some(text.chars().count());
+                }
                 Action::Resize(w, h) => self.handle_resize(ui, *w, *h)?,
                 Action::Render => self.render(ui)?,
                 Action::FileSelected(path) => self.handle_file_selected(path.clone())?,
@@ -805,16 +820,14 @@ impl App {
                     error!("{message}");
                     self.last_error = Some(message.clone());
                 }
-                Action::ThemeSelected(selected_theme) => {
-                    self.apply_theme_selection(*selected_theme)
-                }
-                // Not persisted or recorded as `current_theme`; Esc reverts to it.
-                Action::ThemePreviewed(previewed) => {
-                    self.diff_viewer.set_overlay_theme(*previewed);
-                }
-                Action::SyntaxThemePreviewed(name) => {
-                    self.diff_viewer.set_syntax_theme(name.clone());
-                }
+                Action::ThemeChanged(_)
+                | Action::SyntaxThemeChanged(_)
+                | Action::SyntaxHighlightingChanged(_)
+                | Action::NodeHighlightChanged(_)
+                | Action::PanelLayoutChanged(_)
+                | Action::WideColumnsChanged(_)
+                | Action::RenderOptionsChanged(_)
+                | Action::SettingsClosed => self.apply_setting(&action)?,
                 Action::SearchSubmitted(query) => self.handle_search_submitted(query.clone()),
                 Action::SearchQueryChanged(query) => self.handle_search_query_changed(query),
                 Action::JumpToLineSubmitted(line) => {
@@ -822,8 +835,7 @@ impl App {
                     self.line_prompt = None;
                     self.screen = AppScreen::Viewer;
                 }
-                Action::RenderOptionsChanged(options) => self.apply_render_options(*options)?,
-                Action::RenderOptionsAccepted => self.handle_render_options_accepted(),
+
                 _ => {}
             }
 
@@ -1061,25 +1073,13 @@ impl App {
     }
 
     fn handle_dialog_cancelled(&mut self) -> Result<()> {
-        if self.theme_dialog.is_some() {
-            // Everything the dialog previews: the overlay, the syntax theme, and a color edit,
-            // which installs the process-global custom palette as it is typed.
-            self.diff_viewer.set_overlay_theme(self.current_theme);
-            self.diff_viewer.set_syntax_theme(
-                self.syntax_theme
-                    .clone()
-                    .unwrap_or_else(|| DEFAULT_SYNTAX_THEME.to_string()),
-            );
-            theme::set_custom_palette(theme::load_custom_palette());
-        }
         if self.search_modal.is_some() {
             let last = self.last_search_query.clone().unwrap_or_default();
             self.diff_viewer.preview_search(&last);
         }
         self.file_dialog = None;
-        self.theme_dialog = None;
-        // The render-options panel has nothing to restore: every toggle is final as pressed.
-        self.render_options_dialog = None;
+        // The settings menu has nothing to restore: every change is final as made.
+        self.settings_menu = None;
         self.help_modal = None;
         self.search_modal = None;
         self.line_prompt = None;
@@ -1112,20 +1112,80 @@ impl App {
         }
     }
 
-    fn apply_theme_selection(&mut self, selected_theme: OverlayTheme) {
-        self.current_theme = selected_theme;
-        // The dialog saved it; kept here too, or the next open and the next Esc would use a stale
-        // one.
-        self.syntax_theme = theme::load_syntax_theme();
-        self.diff_viewer.set_overlay_theme(selected_theme);
-        theme::save_overlay_theme(selected_theme);
-        self.theme_dialog = None;
-        self.screen = AppScreen::Viewer;
+    /// One of the settings menu's actions: applied to the viewer and saved at once (syntax
+    /// highlighting on or off for this run only, as its `S` key), or the menu closed.
+    fn apply_setting(&mut self, action: &Action) -> Result<()> {
+        match action {
+            Action::ThemeChanged(theme) => self.apply_theme(*theme),
+            Action::SyntaxThemeChanged(name) => {
+                self.diff_viewer.set_syntax_theme(name.clone());
+                self.syntax_theme = Some(name.clone());
+                theme::save_syntax_theme(name);
+            }
+            Action::SyntaxHighlightingChanged(enabled) => {
+                self.diff_viewer.set_syntax_highlighting(*enabled);
+            }
+            Action::NodeHighlightChanged(enabled) => {
+                self.diff_viewer.set_node_highlight(*enabled);
+                theme::save_node_highlight(*enabled);
+            }
+            Action::PanelLayoutChanged(layout) => {
+                self.diff_viewer.set_layout_override(*layout);
+                theme::save_panel_layout(*layout);
+            }
+            Action::WideColumnsChanged(columns) => {
+                self.diff_viewer.set_wide_columns(*columns);
+                self.wide_columns_source = theme::WideColumnsSource::Config;
+                theme::save_wide_columns(*columns);
+            }
+            Action::RenderOptionsChanged(options) => self.apply_render_options(*options)?,
+            Action::SettingsClosed => self.close_settings(),
+            _ => {}
+        }
+        Ok(())
     }
 
-    /// `Enter` or `Esc`: closing is all that is left (see `RenderOptionsDialog`).
-    fn handle_render_options_accepted(&mut self) {
-        self.render_options_dialog = None;
+    /// The Colors tab's overlay theme, applied and saved; the menu stays open, and its
+    /// Highlighting tab draws its example in the new colors.
+    fn apply_theme(&mut self, selected_theme: OverlayTheme) {
+        self.current_theme = selected_theme;
+        self.diff_viewer.set_overlay_theme(selected_theme);
+        theme::save_overlay_theme(selected_theme);
+        if let Some(menu) = self.settings_menu.as_mut() {
+            menu.set_overlay_theme(selected_theme);
+        }
+    }
+
+    /// The settings menu on `tab`, every tab showing the viewer's settings as they are now.
+    fn open_settings(&mut self, tab: SettingsTab) {
+        let content = if self.content_viewer.is_some() {
+            PageContent::NonCode
+        } else {
+            PageContent::Example(crate::tui::settings_examples::example_for(
+                self.diff_viewer.example_language(),
+            ))
+        };
+        let highlighting = RenderOptionsDialog::for_content(
+            self.diff_viewer.render_options(),
+            content,
+            self.diff_viewer.overlay_theme(),
+        )
+        .with_node_highlight(self.diff_viewer.node_highlight());
+        let layout = LayoutSettings::new(
+            self.diff_viewer.layout_override(),
+            self.diff_viewer.wide_columns(),
+            self.wide_columns_source,
+        );
+        let colors =
+            ThemeDialog::with_syntax_theme(self.current_theme, self.syntax_theme.as_deref())
+                .with_syntax_highlighting(self.diff_viewer.syntax_highlighting());
+        self.settings_menu = Some(SettingsMenu::new(tab, highlighting, layout, colors));
+        self.screen = AppScreen::Settings;
+    }
+
+    /// `Enter` or `Esc`: closing is all that is left (see `settings_menu`).
+    fn close_settings(&mut self) {
+        self.settings_menu = None;
         self.screen = AppScreen::Viewer;
     }
 
@@ -1165,6 +1225,8 @@ impl App {
     }
 
     fn render(&mut self, ui: &mut UI) -> Result<()> {
+        // Before drawing: a draw that reports an error sends an action, which sets it again.
+        self.needs_redraw = false;
         let palette = self.diff_viewer.overlay_theme().palette();
         ui.draw(&palette, |frame| {
             let area = frame.area();
@@ -1174,8 +1236,7 @@ impl App {
                     Some(dialog) => dialog.draw(frame, area),
                     None => Ok(()),
                 },
-                AppScreen::SelectTheme => self.draw_theme_dialog(frame, area),
-                AppScreen::RenderOptions => self.draw_render_options_dialog(frame, area),
+                AppScreen::Settings => self.draw_settings(frame, area),
                 AppScreen::Diffing => {
                     let elapsed = self.diff_started_at.map(|start| start.elapsed());
                     frame.render_widget(diffing_status_paragraph(elapsed), area);
@@ -1302,7 +1363,32 @@ impl App {
     }
 
     fn tick_summary_toast(&mut self) {
+        let was_up = self.summary_toast_ticks > 0;
         self.summary_toast_ticks = self.summary_toast_ticks.saturating_sub(1);
+        // The toast fading is the only thing a tick changes on screen.
+        if was_up && self.summary_toast_ticks == 0 {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Any action may change what is shown; the clock's own ticks and frames do not, except where
+    /// a tick fades the toast (`tick_summary_toast`). An explicit `Action::Render` draws at once.
+    fn note_action_for_redraw(&mut self, action: &Action) {
+        if !matches!(action, Action::Tick | Action::Render) {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Whether the frame clock's next frame should be drawn: the screen changed since the last
+    /// one, or something on it changes by itself - the "Diffing…" counter, which reads the clock at
+    /// draw time, and a playing animation, which advances when drawn.
+    fn frame_needed(&self) -> bool {
+        self.needs_redraw
+            || self.screen == AppScreen::Diffing
+            || self
+                .content_viewer
+                .as_ref()
+                .is_some_and(|viewer| viewer.is_playing())
     }
 
     fn dismiss_summary_toast(&mut self) {
@@ -1331,6 +1417,9 @@ impl App {
         }
         if self.plain_text_fallback {
             left_parts.push("[plain text]".to_string());
+        }
+        if let Some(chars) = self.copied_chars {
+            left_parts.push(format!("[copied {chars} chars]"));
         }
         let layout = self.diff_viewer.layout_override();
         if layout != crate::tui::theme::PanelLayout::Auto {
@@ -1398,25 +1487,12 @@ impl App {
         );
     }
 
-    fn draw_theme_dialog(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
-        self.draw_viewer(frame, area)?;
-        let Some(dialog) = self.theme_dialog.as_mut() else {
-            return Ok(());
-        };
-        let popup = dialog.popup_area(area);
-        frame.render_widget(Clear, popup);
-        dialog.draw(frame, popup)
-    }
-
-    /// Over the viewer, so the diff repaints live as options toggle.
-    /// Full screen: the page shows its own example, not the diff.
-    fn draw_render_options_dialog(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
-        let Some(dialog) = self.render_options_dialog.as_mut() else {
+    /// Full screen: the menu shows its own example, not the diff.
+    fn draw_settings(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
+        let Some(menu) = self.settings_menu.as_mut() else {
             return self.draw_viewer(frame, area);
         };
-        let page = dialog.popup_area(area);
-        frame.render_widget(Clear, page);
-        dialog.draw(frame, page)
+        menu.draw(frame, area)
     }
 
     fn draw_line_prompt(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
@@ -2261,7 +2337,7 @@ mod tests {
     #[test]
     fn esc_should_quit_is_false_for_every_screen_with_its_own_dialog() {
         assert!(!esc_should_quit(AppScreen::SelectFile));
-        assert!(!esc_should_quit(AppScreen::SelectTheme));
+        assert!(!esc_should_quit(AppScreen::Settings));
         assert!(!esc_should_quit(AppScreen::Help));
         assert!(!esc_should_quit(AppScreen::Search));
         assert!(!esc_should_quit(AppScreen::JumpToLine));
@@ -2275,8 +2351,7 @@ mod tests {
         assert!(q_should_quit(AppScreen::Diffing));
         for screen in [
             AppScreen::SelectFile,
-            AppScreen::SelectTheme,
-            AppScreen::RenderOptions,
+            AppScreen::Settings,
             AppScreen::Help,
             AppScreen::Search,
             AppScreen::JumpToLine,
@@ -2405,7 +2480,7 @@ mod tests {
             press(&mut app, KeyCode::Char('c'), KeyModifiers::CONTROL)?.contains(&Action::Quit),
             "Ctrl-C must quit"
         );
-        assert_eq!(app.screen, AppScreen::Viewer, "not open the theme dialog");
+        assert_eq!(app.screen, AppScreen::Viewer, "not open the settings menu");
 
         press(&mut app, KeyCode::Char('e'), KeyModifiers::CONTROL)?;
         assert!(
@@ -2416,7 +2491,11 @@ mod tests {
         press(&mut app, KeyCode::Char('e'), KeyModifiers::NONE)?;
         assert!(app.pending_editor.is_some(), "a bare e opens the editor");
         press(&mut app, KeyCode::Char('c'), KeyModifiers::NONE)?;
-        assert_eq!(app.screen, AppScreen::SelectTheme);
+        assert_eq!(app.screen, AppScreen::Settings);
+        assert_eq!(
+            app.settings_menu.as_ref().map(SettingsMenu::tab),
+            Some(SettingsTab::Colors)
+        );
         Ok(())
     }
 
@@ -2434,36 +2513,54 @@ mod tests {
         Ok(())
     }
 
-    /// Every toggle is saved the moment it is pressed, and closing the panel by any route keeps
-    /// it: what the viewer shows and what the config file holds are the same thing.
+    /// Every change is saved the moment it is made, and closing the menu by any route keeps it:
+    /// what the viewer shows and what the config file holds are the same thing.
     #[test]
-    fn closing_the_render_options_panel_keeps_what_was_toggled_and_persisted() -> Result<()> {
+    fn closing_the_settings_menu_keeps_what_was_changed_and_persisted() -> Result<()> {
         // `apply_render_options` persists, so redirect the write - see the note on
-        // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
+        // `a_theme_from_the_menu_applies_and_saves_and_the_menu_stays_open`.
         let config = tempfile::NamedTempFile::new().expect("temp config");
         let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
         app.diff_viewer.set_render_options(RenderOptions::FULL);
-        app.screen = AppScreen::RenderOptions;
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::FULL));
+        app.open_settings(SettingsTab::Highlighting);
 
         // What a preset key does: applied and persisted immediately.
         app.apply_render_options(RenderOptions::MINIMAL)?;
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert_eq!(theme::load_render_options(), RenderOptions::MINIMAL);
 
-        // Esc and Enter both arrive as `RenderOptionsAccepted`; a stray `DialogCancelled` must
-        // not revert either.
+        // Esc and Enter both arrive as `SettingsClosed`; a stray `DialogCancelled` must not revert
+        // either.
         app.handle_dialog_cancelled()?;
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
+        assert!(app.settings_menu.is_none());
 
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::MINIMAL));
-        app.handle_render_options_accepted();
+        app.open_settings(SettingsTab::Layout);
+        app.close_settings();
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert_eq!(theme::load_render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
+        assert!(app.settings_menu.is_none());
+        assert_eq!(app.screen, AppScreen::Viewer);
+        Ok(())
+    }
+
+    #[test]
+    fn m_opens_the_settings_menu_on_highlighting() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.handle_event(
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('M'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            Rect::new(0, 0, 80, 24),
+        )?;
+        assert_eq!(app.screen, AppScreen::Settings);
+        assert_eq!(
+            app.settings_menu.as_ref().map(SettingsMenu::tab),
+            Some(SettingsTab::Highlighting)
+        );
         Ok(())
     }
 
@@ -2669,43 +2766,69 @@ mod tests {
         Ok(())
     }
 
+    /// The saved settings would otherwise land in the developer's own config, so this test
+    /// thread's config points at a temp file (`theme::use_config_for_this_thread`).
     #[test]
-    fn accepting_the_render_options_panel_keeps_what_it_applied() -> Result<()> {
-        // `apply_render_options` persists, so redirect the write - see the note on
-        // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
-        let config = tempfile::NamedTempFile::new().expect("temp config");
-        let _config = theme::use_config_for_this_thread(config.path());
-
-        let mut app = App::new(4.0, 60.0)?;
-        app.diff_viewer.set_render_options(RenderOptions::FULL);
-        app.screen = AppScreen::RenderOptions;
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::FULL));
-        app.apply_render_options(RenderOptions::MINIMAL)?;
-
-        app.handle_render_options_accepted();
-
-        assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
-        assert_eq!(app.screen, AppScreen::Viewer);
-        Ok(())
-    }
-
-    /// The saved theme would otherwise land in the developer's own config, so this test thread's
-    /// config points at a temp file (`theme::use_config_for_this_thread`).
-    #[test]
-    fn apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen() {
+    fn a_theme_from_the_menu_applies_and_saves_and_the_menu_stays_open() {
         let config = tempfile::NamedTempFile::new().expect("temp config");
         let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
-        app.screen = AppScreen::SelectTheme;
-        app.theme_dialog = Some(ThemeDialog::new(app.current_theme));
+        app.open_settings(SettingsTab::Colors);
 
-        app.apply_theme_selection(OverlayTheme::SolarizedLight);
+        app.apply_theme(OverlayTheme::SolarizedLight);
 
         assert_eq!(app.current_theme, OverlayTheme::SolarizedLight);
+        assert_eq!(
+            app.diff_viewer.overlay_theme(),
+            OverlayTheme::SolarizedLight
+        );
+        assert_eq!(theme::load_overlay_theme(), OverlayTheme::SolarizedLight);
+        assert_eq!(
+            app.screen,
+            AppScreen::Settings,
+            "applying does not close the menu"
+        );
+    }
+
+    /// The rows for the `v`, `H` and `S` keys do what the keys do, `S` for this run only.
+    #[test]
+    fn the_menus_layout_and_highlight_rows_apply_like_their_keys() -> Result<()> {
+        let config = tempfile::NamedTempFile::new().expect("temp config");
+        let _config = theme::use_config_for_this_thread(config.path());
+        let mut app = App::new(4.0, 60.0)?;
+        app.open_settings(SettingsTab::Layout);
+        for action in [
+            Action::PanelLayoutChanged(theme::PanelLayout::Single),
+            Action::NodeHighlightChanged(true),
+            Action::SyntaxHighlightingChanged(false),
+            Action::WideColumnsChanged(180),
+            Action::SyntaxThemeChanged("Solarized (dark)".to_string()),
+        ] {
+            app.apply_setting(&action)?;
+        }
+        assert_eq!(
+            app.diff_viewer.layout_override(),
+            theme::PanelLayout::Single
+        );
+        assert_eq!(theme::load_panel_layout(), theme::PanelLayout::Single);
+        assert!(app.diff_viewer.node_highlight());
+        assert!(theme::load_node_highlight());
+        assert!(!app.diff_viewer.syntax_highlighting());
+        assert_eq!(app.diff_viewer.wide_columns(), 180);
+        assert_eq!(theme::load_wide_columns().0, 180);
+        assert_eq!(
+            theme::load_syntax_theme().as_deref(),
+            Some("Solarized (dark)")
+        );
+        assert_eq!(
+            app.screen,
+            AppScreen::Settings,
+            "none of them closes the menu"
+        );
+        app.apply_setting(&Action::SettingsClosed)?;
         assert_eq!(app.screen, AppScreen::Viewer);
-        assert!(app.theme_dialog.is_none());
+        Ok(())
     }
 
     fn rendered_text(terminal: &ratatui::Terminal<ratatui::backend::TestBackend>) -> String {
@@ -3468,5 +3591,147 @@ mod tests {
     fn display_safe_keeps_a_crlf_terminator_and_substitutes_a_lone_carriage_return() {
         assert_eq!(display_safe("a\r\nb\rc\n"), "a\r\nb c\n");
         assert_eq!(display_safe("trailing\r"), "trailing ");
+    }
+
+    // ── Drawing only what changed (issue #72) ──────────────────────────────────────────────
+
+    /// The `Action::Render` the frame clock's tick queued, if any.
+    fn frame_drawn(app: &mut App) -> Result<bool> {
+        app.handle_event(Event::Render, Rect::new(0, 0, 80, 24))?;
+        let mut drawn = false;
+        while let Ok(action) = app.action_rx.try_recv() {
+            drawn |= action == Action::Render;
+        }
+        Ok(drawn)
+    }
+
+    #[test]
+    fn the_first_frame_is_drawn_and_an_idle_one_is_not() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(frame_drawn(&mut app)?, "nothing has been drawn yet");
+        // What `render` does after drawing.
+        app.needs_redraw = false;
+        assert!(
+            !frame_drawn(&mut app)?,
+            "an idle frame redraws an unchanged screen"
+        );
+        assert!(!frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn input_makes_the_next_frame_draw() -> Result<()> {
+        let area = Rect::new(0, 0, 80, 24);
+        let inputs = [
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('j'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            Event::Mouse(crossterm::event::MouseEvent {
+                kind: crossterm::event::MouseEventKind::ScrollDown,
+                column: 1,
+                row: 1,
+                modifiers: crossterm::event::KeyModifiers::NONE,
+            }),
+            Event::Resize(100, 30),
+        ];
+        for input in inputs {
+            let mut app = App::new(4.0, 60.0)?;
+            app.needs_redraw = false;
+            app.handle_event(input.clone(), area)?;
+            assert!(
+                frame_drawn(&mut app)?,
+                "{input:?} left the screen as it was"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn every_action_but_the_clocks_own_marks_the_screen_changed() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        for clock in [Action::Tick, Action::Render] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&clock);
+            assert!(
+                !app.needs_redraw,
+                "{clock:?} alone changes nothing on screen"
+            );
+        }
+        for action in [
+            Action::Error("boom".to_string()),
+            Action::Resize(80, 24),
+            Action::SettingsClosed,
+            Action::DialogCancelled,
+        ] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&action);
+            assert!(
+                app.needs_redraw,
+                "{action:?} did not mark the screen changed"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn only_the_tick_that_fades_the_toast_redraws() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.summary_toast_ticks = 2;
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "the toast is still up and unchanged");
+        app.tick_summary_toast();
+        assert!(
+            app.needs_redraw,
+            "the toast faded and must disappear from the screen"
+        );
+
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "no toast, nothing to fade");
+        Ok(())
+    }
+
+    #[test]
+    fn the_diffing_counter_keeps_frames_coming() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.needs_redraw = false;
+        app.screen = AppScreen::Diffing;
+        assert!(
+            frame_drawn(&mut app)?,
+            "the counter reads the clock at draw time"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn a_playing_animation_keeps_frames_coming() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let gif = |frames: &[u32]| {
+            crate::diff::picture::test_gif(
+                &frames
+                    .iter()
+                    .map(|&k| (crate::diff::picture::test_frame(k), 100))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let (before, after) = (dir.path().join("a.gif"), dir.path().join("b.gif"));
+        std::fs::write(&before, gif(&[0, 1, 2]))?;
+        std::fs::write(&after, gif(&[0, 5, 1, 2]))?;
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(app.open_content_pair(&before, &after), "a picture pair");
+        app.needs_redraw = false;
+        assert!(!frame_drawn(&mut app)?, "a paused animation is a still");
+
+        assert!(app.content_key(KeyCode::Char(' ')), "space plays");
+        app.needs_redraw = false;
+        assert!(
+            frame_drawn(&mut app)?,
+            "a playing animation advances when drawn"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
     }
 }

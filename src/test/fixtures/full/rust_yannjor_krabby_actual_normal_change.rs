@@ -36,9 +36,13 @@ fn invariants() -> Result<()> {
     // `pokemon_db` <-> `pokemon_db_file`, `pokemon` <-> `pokemon_db` and `load_pokemon` <-> `load` are
     // not painted entire under Full, and `load_pokemon` <-> `load` is not painted as its differing
     // word `_pokemon` under Minimal.
+    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
+    // separator (awaiting a repaint):
+    //   before row 223 leaves 7 of the 8 byte(s) of `pokemond` unpainted, which becomes `pokemon`
+    //   after row 109 leaves 7 of the 7 byte(s) of `pokemon` unpainted, which becomes `pokemond`
     assert_ground_truth_invariants_with_known_violations(
         "rust-yannjor-krabby-actual-normal-change",
-        9,
+        11,
     )
 }
 

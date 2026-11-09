@@ -51,7 +51,9 @@ Navigation
   Ctrl-e/Ctrl-y    Scroll the view one line without moving the cursor
   Page Up/Down     Scroll by a page
   Home/End         Jump to the top/bottom of the file
-  Mouse            Wheel scrolls; a click places the cursor and focuses that panel
+  Mouse            Wheel scrolls; a click places the cursor and focuses that panel.
+                   A drag selects text in one panel and copies it on release (OSC 52;
+                   in tmux, set-clipboard on). Shift-drag uses the terminal's own selection
 
 Files and diffing
   o                Open a file selector for the active panel
@@ -97,26 +99,30 @@ Archives and other containers
                    archive in place; Backspace comes back out
 
 Appearance
-  c                Open the theme editor: a Theme dropdown, a syntax-highlighting
-                   dropdown, and one editable color per diff operation, the cursor
-                   counterpart, search matches, and the Before/After titles.
-                   Up/Down moves, Left/Right changes a dropdown, Enter edits a color
-                   (type #rrggbb) or accepts, Esc cancels. Editing any color forks the
-                   selection to Custom, leaving the presets untouched.
+  M, c             Open the settings menu, full screen, on its Highlighting tab (M) or its
+                   Colors tab (c). Tab / Shift-Tab switch tabs; every change is applied
+                   and saved to the config the moment it is made, so Enter or Esc only
+                   close it and nothing is undone on the way out.
+                   Highlighting: a checkbox per setting, an example diff in the open
+                   file's language (Rust when none is open) painted as you choose, and
+                   the selected setting's effect on it in bold and marked with a diamond
+                   in the gutter; 1/2 pick the Minimal/Full presets, and the last row is
+                   the node highlight (H). Trailing whitespace is never painted,
+                   regardless of any setting.
+                   Layout: the panel layout (v), and the width from which auto shows
+                   two panels, 160 columns unless changed there or, for one run, by
+                   OMNIDIFF_WIDE_COLUMNS.
+                   Colors: the Theme and syntax-theme dropdowns, syntax highlighting on
+                   or off (S), and one editable color per diff operation, the cursor
+                   counterpart, search matches, and the Before/After titles. Enter
+                   edits a color (type #rrggbb; Esc cancels the edit); editing any
+                   color forks the selection to Custom, leaving the presets untouched.
+                   Up/Down moves within a tab, Left/Right changes a value, Space toggles.
   v                Cycle the panel layout: auto / dual / single (persisted)
   S                Toggle syntax highlighting
   H                Toggle the node highlight (off by default): the range under the
                    cursor, and its match on the other panel, highlight when part of a
                    real change. Unchanged content is never highlighted either way.
-  M                Open the highlighting settings: a checkbox per setting, an
-                   example diff in the open file's language (Rust when none is
-                   open) painted as you choose, and the selected setting's effect
-                   on it in bold and marked with a diamond in the gutter, plus
-                   1/2 shortcuts for the Minimal/Full presets. Every choice is
-                   applied and saved to the config the moment it is pressed.
-                   Trailing whitespace is never painted, regardless of any
-                   setting. Up/Down moves, Space toggles, Enter or Esc closes;
-                   nothing is undone on the way out.
 
 Other
   ?                Toggle this help

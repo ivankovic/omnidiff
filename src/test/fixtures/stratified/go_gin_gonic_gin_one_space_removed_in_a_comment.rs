@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -38,5 +38,10 @@ fn painting() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     // The deleted space is mid-comment, not trailing: invariant 1 must not fire.
-    assert_ground_truth_invariants("go-gin-gonic-gin-one-space-removed-in-a-comment")
+    // Invariant 29: the files differ only in whitespace, and the lone painting paints the deleted
+    // space, so Minimal does too; awaiting a split into an empty `Minimal` and a `Full`.
+    assert_ground_truth_invariants_with_known_violations(
+        "go-gin-gonic-gin-one-space-removed-in-a-comment",
+        1,
+    )
 }

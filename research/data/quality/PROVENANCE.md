@@ -90,6 +90,30 @@ Defects4J.
 The paper's scope is **1683** fixtures. Over them omnidiff maps 18,597,127 of 18,605,165 nodes
 (99.96%), and 12,569,053 of 12,574,430 visible nodes.
 
+## Refresh of 2026-11-07
+
+The same partial refresh as 2026-10-22, on the laptop: `optimal_solutions_benchmark.csv` and
+`human_mapping_analysis.csv` re-run in that order, with the CORPUS block and the ambiguity,
+rendering and shape reports. Not re-run: the tool comparison and the fixture robustness run (still
+at the 1,217 fixtures of 2026-09-26), and the two AST-diff oracle runs, which need Java and the
+pinned RefactoringMiner, neither installed on the laptop - they stay at the 1,683 fixtures of
+2026-10-22. 4 more fixtures in scope, all Defects4J; the rest of the change since 2026-10-22 is
+repainted and newly painted ground truth (1,479 fixtures carry a painting, from 1,419).
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 232 | 232 |
+| `stratified` | 791 | 791 |
+| `defects4j` | 996 | 444 |
+| **total** | **2302** | **1749** |
+
+The paper's scope is **1687** fixtures. Over them omnidiff maps 18,616,022 of 18,623,801 nodes
+(99.96%), and 12,581,856 of 12,587,060 visible nodes. `optimal_solutions_benchmark.csv` is the
+third of three runs; the README's code-speed figures are each fixture's median `elapsed_ms` over
+the three.
+
 ## Scope
 
 The paper's scope is `_common.PAPER_DATASETS`: every dataset above except `handmade`, which stays

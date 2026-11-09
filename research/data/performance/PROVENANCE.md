@@ -11,13 +11,19 @@ are pinned to whatever corpus was current at their date; that is their point.
 One file per machine registered in `../machines.csv`, written by `make benchmark-content` on it.
 Compare figures within one file, never across two.
 
-### `content_speed/laptop.csv` (2026-10-17)
+### `content_speed/laptop.csv` (2026-11-07)
 
 The same samples as `server.csv`, timed by `make benchmark-content` on the laptop
 (`../machines.csv`), first on 2026-10-11 on AC power with the `performance` platform profile and
 nothing else running, and re-timed 2026-10-17 with nothing else running (power profile not
 recorded). Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures
 fail).
+
+Re-timed 2026-11-07, on AC power with the `performance` profile and nothing else running, three
+runs of `make benchmark-content`; each pair's `elapsed_ms` is its median over the three, since
+single runs moved a family's p50 by up to a third. The same pairs timed and judged (131 pictures
+judged, one more than before). Fonts and PDFs now miss the 99th-percentile goal (p99 1,109 and
+1,330 ms, from 826 and 985): consistent across all three runs, not noise.
 
 ### `content_speed/server.csv` (2026-10-06)
 

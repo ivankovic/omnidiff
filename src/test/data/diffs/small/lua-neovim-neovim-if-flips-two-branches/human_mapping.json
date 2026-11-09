@@ -7745,5 +7745,321 @@
         "return_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 873,
+              "start_column": 8,
+              "end_row": 873,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 876,
+              "start_column": 8,
+              "end_row": 876,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 874,
+              "start_column": 8,
+              "end_row": 874,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 877,
+              "start_column": 8,
+              "end_row": 877,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 876,
+              "start_column": 8,
+              "end_row": 876,
+              "end_column": 74
+            }
+          ],
+          "after": [
+            {
+              "start_row": 873,
+              "start_column": 8,
+              "end_row": 873,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 877,
+              "start_column": 8,
+              "end_row": 877,
+              "end_column": 26
+            }
+          ],
+          "after": [
+            {
+              "start_row": 874,
+              "start_column": 8,
+              "end_row": 874,
+              "end_column": 26
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 875,
+              "start_column": 13,
+              "end_row": 875,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 872,
+              "start_column": 9,
+              "end_row": 872,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 872,
+              "start_column": 9,
+              "end_row": 872,
+              "end_column": 21
+            }
+          ],
+          "after": [
+            {
+              "start_row": 875,
+              "start_column": 13,
+              "end_row": 875,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 873,
+              "start_column": 8,
+              "end_row": 873,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 876,
+              "start_column": 8,
+              "end_row": 876,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 874,
+              "start_column": 8,
+              "end_row": 874,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 877,
+              "start_column": 8,
+              "end_row": 877,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 876,
+              "start_column": 8,
+              "end_row": 876,
+              "end_column": 74
+            }
+          ],
+          "after": [
+            {
+              "start_row": 873,
+              "start_column": 8,
+              "end_row": 873,
+              "end_column": 74
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 877,
+              "start_column": 8,
+              "end_row": 877,
+              "end_column": 26
+            }
+          ],
+          "after": [
+            {
+              "start_row": 874,
+              "start_column": 8,
+              "end_row": 874,
+              "end_column": 26
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 875,
+              "start_column": 13,
+              "end_row": 875,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 872,
+              "start_column": 9,
+              "end_row": 872,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 872,
+              "start_column": 9,
+              "end_row": 872,
+              "end_column": 21
+            }
+          ],
+          "after": [
+            {
+              "start_row": 875,
+              "start_column": 13,
+              "end_row": 875,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 876,
+              "start_column": 0,
+              "end_row": 876,
+              "end_column": 8
+            }
+          ],
+          "after": [
+            {
+              "start_row": 873,
+              "start_column": 0,
+              "end_row": 873,
+              "end_column": 8
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 877,
+              "start_column": 0,
+              "end_row": 877,
+              "end_column": 8
+            }
+          ],
+          "after": [
+            {
+              "start_row": 874,
+              "start_column": 0,
+              "end_row": 874,
+              "end_column": 8
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 873,
+              "start_column": 0,
+              "end_row": 873,
+              "end_column": 8
+            }
+          ],
+          "after": [
+            {
+              "start_row": 876,
+              "start_column": 0,
+              "end_row": 876,
+              "end_column": 8
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 874,
+              "start_column": 0,
+              "end_row": 874,
+              "end_column": 8
+            }
+          ],
+          "after": [
+            {
+              "start_row": 877,
+              "start_column": 0,
+              "end_row": 877,
+              "end_column": 8
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
