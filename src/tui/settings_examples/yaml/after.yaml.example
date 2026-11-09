@@ -1,0 +1,31 @@
+name: build
+on:
+  push:
+    branches: [release, main, dev]
+  pull_request:
+
+job_defaults: &job_defaults
+  runs-on: ubuntu-latest
+  timeout_minutes: 20
+
+jobs:
+  test:
+    <<: *job_defaults
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18, 20]
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm test -- --coverage
+  docs:
+    <<: *job_defaults
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run docs

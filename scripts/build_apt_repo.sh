@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 #
-#  This file is part of the CodeDiff code diffing tool.
+#  This file is part of the OmniDiff code diffing tool.
 #
 #  Copyright (C) 2026 Marko Ivankovic
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#  by the Free Software Foundation, version 3 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -44,11 +43,11 @@ set -euo pipefail
 # conventionally use, and it is what the sources.list line in README.md names.
 SUITE="stable"
 COMPONENT="main"
-ORIGIN="codediff"
-LABEL="codediff"
-DESCRIPTION="Unofficial codediff packages for Debian and Ubuntu"
+ORIGIN="omnidiff"
+LABEL="omnidiff"
+DESCRIPTION="Unofficial omnidiff packages for Debian and Ubuntu"
 # Bare name, no .gpg suffix on the key id: this is the file users fetch into /etc/apt/keyrings/.
-KEYRING_NAME="codediff-archive-keyring.gpg"
+KEYRING_NAME="omnidiff-archive-keyring.gpg"
 
 debs_dir=""
 out_dir=""
@@ -133,8 +132,8 @@ while IFS= read -r -d '' deb; do
     mkdir -p "$dest"
 
     # Canonical Debian filename, rebuilt from the control fields rather than taken from the
-    # downloaded asset's name. The release assets are called codediff_amd64.deb and
-    # codediff_arm64.deb with no version in them, so copying them across releases under their own
+    # downloaded asset's name. The release assets are called omnidiff_amd64.deb and
+    # omnidiff_arm64.deb with no version in them, so copying them across releases under their own
     # names would have every release overwrite the last and leave the pool holding one version.
     # An epoch is legal in a Version field and illegal in a filename.
     file_version="${version##*:}"

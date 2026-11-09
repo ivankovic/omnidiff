@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,14 +40,14 @@ pub(crate) struct FrameState<'a> {
     /// header. Kept here because counting walks every node, not just the visible ones.
     pub(crate) before_unmarked: usize,
     pub(crate) after_unmarked: usize,
-    /// How many nodes in `before_flat`/`after_flat` codediff disagrees with the human on
+    /// How many nodes in `before_flat`/`after_flat` omnidiff disagrees with the human on
     /// (`algo_disagrees`, the `*` rows `n`/`N` visit), for the same header; `None` until
-    /// codediff's diff has arrived. Here for the same reason as the unmarked counts.
+    /// omnidiff's diff has arrived. Here for the same reason as the unmarked counts.
     pub(crate) before_mismatches: Option<usize>,
     pub(crate) after_mismatches: Option<usize>,
 }
 
-/// How many nodes of `flat` draw a `*`: the human has marked them and codediff says otherwise.
+/// How many nodes of `flat` draw a `*`: the human has marked them and omnidiff says otherwise.
 pub(crate) fn count_mismatches(
     flat: &[(Node, usize)],
     caches: &Caches,
@@ -161,25 +160,68 @@ pub(crate) fn run_event_loop(
     before: Code,
     after: Code,
 ) -> Result<()> {
-    // `Arc`, not owned: the background codediff run (`start_algo_diff`) must diff these very
+    // `Arc`, not owned: the background omnidiff run (`start_algo_diff`) must diff these very
     // trees, since `ASTDiff` is keyed by node id and a re-parse would number the nodes afresh.
     let mut before = Arc::new(before);
     let mut after = Arc::new(after);
+    // The host files under each open embedded layer, outermost first; `app.layers` holds the
+    // rest of their session state.
+    let mut host_codes: Vec<(Arc<Code>, Arc<Code>)> = Vec::new();
     loop {
         // The session borrows `before`/`after` immutably, so its cached `FrameState` can live for
         // the whole session; only this loop reassigns them, between sessions.
-        let end = run_case_session(terminal, app, &before, &after)?;
+        app.layer_paint = project_layer_paint(&app.mapping, &before, &after);
+        let mut end = run_case_session(terminal, app, &before, &after)?;
+        // A picture sample or fixture has no trees: it gets its own session, which hands back
+        // whatever is opened from it. The tree session's case stays loaded underneath.
+        while let Some(case) = crate::content::ContentCase::opened_by(&end) {
+            end = match crate::content::run_content_session(terminal, app, &case) {
+                Ok(end) => end,
+                // A picture the decoder cannot read (some multi-size ICOs): said, and the tree
+                // session resumes as it was.
+                Err(err) => {
+                    app.status = Some(format!("Cannot open picture '{}': {err:#}", case.name()));
+                    run_case_session(terminal, app, &before, &after)?
+                }
+            };
+        }
         // Before the switch, so the memory names the case being left; on quit it is the last.
         remember_session(app);
+        // Every other target opens a different case, which no open layer belongs to.
+        if !matches!(
+            end,
+            SessionEnd::Open(OpenTarget::EnterLayer(_) | OpenTarget::LeaveLayer)
+        ) {
+            host_codes.clear();
+            app.layers.clear();
+        }
         match end {
             SessionEnd::Quit => break,
+            SessionEnd::Open(OpenTarget::EnterLayer(request)) => {
+                match enter_layer(app, &before, &after, &request) {
+                    Ok((inner_before, inner_after)) => {
+                        let host_before = std::mem::replace(&mut before, Arc::new(inner_before));
+                        let host_after = std::mem::replace(&mut after, Arc::new(inner_after));
+                        host_codes.push((host_before, host_after));
+                    }
+                    Err(err) => app.status = Some(format!("Cannot open the layer: {err:#}")),
+                }
+            }
+            SessionEnd::Open(OpenTarget::LeaveLayer) => {
+                if let Some((host_before, host_after)) = host_codes.pop() {
+                    leave_layer(app);
+                    before = host_before;
+                    after = host_after;
+                }
+            }
             SessionEnd::Open(OpenTarget::Diffs(name)) => match load_case(&name) {
                 Ok((new_before, new_after)) => {
                     let before_root_id = starting_cursor_id(&new_before);
                     let after_root_id = starting_cursor_id(&new_after);
                     before = Arc::new(new_before);
                     after = Arc::new(new_after);
-                    app.mapping = human_mapping::load(&name).unwrap_or_default();
+                    app.mapping =
+                        human_mapping::load_with(&name, &before, &after).unwrap_or_default();
                     app.name = name;
                     app.origin = CaseOrigin::Diffs;
                     app.before = PanelState::new(before_root_id);
@@ -450,7 +492,7 @@ pub(crate) fn history_key(
     }
 }
 
-/// Runs codediff on `before`/`after` on a background thread; `poll_algo_diff` collects the
+/// Runs omnidiff on `before`/`after` on a background thread; `poll_algo_diff` collects the
 /// result. The `Arc`s keep the trees alive for the thread, and the thread diffs the same trees
 /// the panels show, so the node ids in its `ASTDiff` are the panels' ids.
 pub(crate) fn start_algo_diff(app: &mut App, before: &Arc<Code>, after: &Arc<Code>) {
@@ -476,12 +518,12 @@ pub(crate) fn poll_algo_diff(app: &mut App) -> bool {
             app.algo_diff_pending = None;
             app.status = Some(match &ast_diff {
                 Some(ast_diff) => format!(
-                    "codediff ran: {} before-node(s), {} after-node(s) mapped; n/N jump to \
+                    "omnidiff ran: {} before-node(s), {} after-node(s) mapped; n/N jump to \
                      where you disagree",
                     ast_diff.before_node_map.len(),
                     ast_diff.after_node_map.len()
                 ),
-                None => "codediff produced no AST diff".to_string(),
+                None => "omnidiff produced no AST diff".to_string(),
             });
             app.algo_diff = ast_diff;
             true
@@ -489,7 +531,7 @@ pub(crate) fn poll_algo_diff(app: &mut App) -> bool {
         Err(std::sync::mpsc::TryRecvError::Empty) => false,
         Err(std::sync::mpsc::TryRecvError::Disconnected) => {
             app.algo_diff_pending = None;
-            app.status = Some("codediff's background run failed; p re-runs it".to_string());
+            app.status = Some("omnidiff's background run failed; p re-runs it".to_string());
             false
         }
     }
@@ -504,7 +546,7 @@ pub(crate) fn run_case_session(
     before: &Arc<Code>,
     after: &Arc<Code>,
 ) -> Result<SessionEnd> {
-    // codediff's verdicts (`*`, `n`/`N`, the header count) are wanted from the first frame, and
+    // omnidiff's verdicts (`*`, `n`/`N`, the header count) are wanted from the first frame, and
     // the run takes up to a second on a large fixture, so it starts now and lands via
     // `poll_algo_diff` while the human reads.
     if app.algo_diff.is_none() && app.algo_diff_pending.is_none() {
@@ -527,7 +569,7 @@ pub(crate) fn run_case_session(
 
         if needs_redraw {
             // Cloned: `draw_ui` also takes `app` mutably.
-            let current_name = app.name.clone();
+            let current_name = app.display_name();
             terminal.draw(|f| {
                 draw_ui(
                     f,
@@ -1115,6 +1157,18 @@ pub(crate) fn handle_key(
             });
             None
         }
+        KeyCode::Enter => {
+            let (flat, panel, side) = match focus {
+                Focus::Before => (before_flat, &app.before, Side::Before),
+                Focus::After => (after_flat, &app.after, Side::After),
+            };
+            let node = flat.node_for_id(panel.cursor_id)?;
+            match layer_request(app, node, side, caches, before, after) {
+                Ok(request) => return Some(OpenTarget::EnterLayer(request)),
+                Err(reason) => app.status = Some(reason),
+            }
+            None
+        }
         KeyCode::Char('H') => {
             app.hide_solved = !app.hide_solved;
             app.status = Some(if app.hide_solved {
@@ -1179,6 +1233,9 @@ pub(crate) fn handle_tree_independent_key(
     tree_available: bool,
 ) -> Option<OpenTarget> {
     let result: Option<Result<String>> = match code {
+        KeyCode::Char('q') | KeyCode::Esc if !app.layers.is_empty() => {
+            return Some(OpenTarget::LeaveLayer);
+        }
         KeyCode::Char('q') | KeyCode::Esc => {
             app.should_quit = true;
             None
@@ -1206,14 +1263,14 @@ pub(crate) fn handle_tree_independent_key(
             app.status = Some(match diff.ast {
                 Some(ast_diff) => {
                     let msg = format!(
-                        "Ran codediff: {} before-node(s), {} after-node(s) mapped",
+                        "Ran omnidiff: {} before-node(s), {} after-node(s) mapped",
                         ast_diff.before_node_map.len(),
                         ast_diff.after_node_map.len()
                     );
                     app.algo_diff = Some(ast_diff);
                     msg
                 }
-                None => "codediff produced no AST diff".to_string(),
+                None => "omnidiff produced no AST diff".to_string(),
             });
             None
         }
@@ -1225,14 +1282,26 @@ pub(crate) fn handle_tree_independent_key(
         }
         KeyCode::Char('V') => {
             match invariant_entries(&app.mapping, before, after) {
-                Ok(entries) if entries.is_empty() => {
-                    app.status =
-                        Some("This case's ground truth breaks none of its invariants".to_string());
-                }
-                Ok(entries) => {
+                Ok(mut entries) => {
+                    let violations = entries.len();
+                    entries.extend(crate::review::review_entries(
+                        &crate::review::load_queue(),
+                        &app.name,
+                        before,
+                        after,
+                    ));
+                    if entries.is_empty() {
+                        app.status = Some(
+                            "This case's ground truth breaks none of its invariants, and nothing \
+                             is queued for review"
+                                .to_string(),
+                        );
+                        return None;
+                    }
                     app.status = Some(format!(
-                        "{} invariant violation(s) - j/k to move, Enter to jump, Esc to close",
-                        entries.len()
+                        "{violations} invariant violation(s), {} review item(s) - j/k to move, \
+                         Enter to jump, Esc to close",
+                        entries.len() - violations
                     ));
                     app.modal = Some(Modal::InvariantList {
                         entries,
@@ -1253,7 +1322,7 @@ pub(crate) fn handle_tree_independent_key(
         KeyCode::Char('s') => match &app.origin {
             CaseOrigin::Diffs => {
                 let result = action_save(
-                    &mut app.mapping,
+                    &mut app.whole_mapping(),
                     &mut app.dirty,
                     &app.name,
                     None,
@@ -1317,64 +1386,13 @@ pub(crate) fn handle_tree_independent_key(
             None
         }
         KeyCode::Char('o') => {
-            // Eager, unlike the other per-case maps: notes are displayed, not just sorted by.
-            if app.diff_comments.is_none() {
-                app.diff_comments = Some(compute_diff_comments());
-            }
-            match list_available_cases() {
-                Ok(options) if !options.is_empty() => {
-                    let modal = open_diff_picker_modal(
-                        options,
-                        &app.name,
-                        app.diff_view.clone(),
-                        DiffPickerData::from_app(app),
-                    );
-                    app.modal = Some(modal);
-                }
-                Ok(_) => {
-                    app.status = Some("No test cases found in src/test/data/diffs".to_string());
-                }
-                Err(err) => {
-                    app.status = Some(format!("Error listing cases: {:#}", err));
-                }
-            }
+            let current = app.name.clone();
+            open_diff_picker(app, &current);
             None
         }
         KeyCode::Char('O') => {
-            match list_sample_rows() {
-                Ok(rows) if !rows.is_empty() => {
-                    // One external `diff` per sample: scan only the unmeasured ones, in parallel.
-                    let missing: Vec<String> = rows
-                        .iter()
-                        .map(|row| row.name.clone())
-                        .filter(|name| !app.sample_diff_sizes.contains_key(name))
-                        .collect();
-                    if !missing.is_empty() {
-                        app.sample_diff_sizes.extend(scan_corpus(&missing, |name| {
-                            Some(sample_diff_line_count(name))
-                        }));
-                    }
-                    let rows: Vec<SampleRow> = rows
-                        .into_iter()
-                        .map(|mut row| {
-                            row.size = app
-                                .sample_diff_sizes
-                                .get(&row.name)
-                                .copied()
-                                .unwrap_or_default();
-                            row
-                        })
-                        .collect();
-                    let view = app.sample_view.clone();
-                    app.modal = Some(open_sample_picker_modal(rows, &app.name, view));
-                }
-                Ok(_) => {
-                    app.status = Some("No samples found in src/test/data/samples".to_string());
-                }
-                Err(err) => {
-                    app.status = Some(format!("Error listing samples: {:#}", err));
-                }
-            }
+            let current = app.name.clone();
+            open_sample_picker(app, &current);
             None
         }
         KeyCode::Char('C') => {
@@ -1764,7 +1782,7 @@ pub(crate) fn handle_modal_key(
         Modal::ConfirmDiscardUnsaved { target, can_save } => match code {
             KeyCode::Char('s') | KeyCode::Char('S') if can_save => {
                 match action_save(
-                    &mut app.mapping,
+                    &mut app.whole_mapping(),
                     &mut app.dirty,
                     &app.name,
                     None,
@@ -1802,7 +1820,8 @@ pub(crate) fn handle_modal_key(
         } => match code {
             KeyCode::Enter => {
                 let new_name = input.trim().to_string();
-                match action_promote(app, &new_name, before_src, after_src) {
+                let text_only = is_text_only(before, after);
+                match action_promote(app, &new_name, before_src, after_src, text_only) {
                     Ok(msg) => app.status = Some(msg),
                     Err(err) => {
                         app.modal = Some(Modal::PromptPromoteName {
@@ -1932,7 +1951,9 @@ pub(crate) fn handle_modal_key(
             }
         },
         Modal::TextView { state } => {
-            return handle_text_view(app, code, state, before_src, after_src, before, after);
+            return handle_text_view(
+                app, code, state, caches, before_src, after_src, before, after,
+            );
         }
         Modal::SolutionPicker {
             names,
@@ -2024,6 +2045,31 @@ pub(crate) fn handle_modal_key(
                         action_focus_violation(app, entry, before, after);
                     }
                 }
+                KeyCode::Char('x') => {
+                    let mut entries = entries;
+                    match entries.get(selected).and_then(|entry| entry.review.clone()) {
+                        None => {
+                            app.status =
+                                Some("x drops a review item; this row is an invariant".to_string());
+                        }
+                        Some(line) => match crate::review::remove_from_queue(&line) {
+                            Ok(()) => {
+                                entries.remove(selected);
+                                if let Some(count) = app.review_counts.get_mut(&app.name) {
+                                    *count = count.saturating_sub(1);
+                                }
+                                app.status = Some("Dropped the review item".to_string());
+                            }
+                            Err(err) => {
+                                app.status = Some(format!("Could not drop it: {err:#}"));
+                            }
+                        },
+                    }
+                    if !entries.is_empty() {
+                        let selected = selected.min(entries.len() - 1);
+                        app.modal = Some(Modal::InvariantList { entries, selected });
+                    }
+                }
                 KeyCode::Esc | KeyCode::Char('V') | KeyCode::Char('q') => {
                     app.status = Some("Closed the invariant list".to_string());
                 }
@@ -2070,7 +2116,7 @@ pub(crate) fn action_save(
     human_mapping::save(name, mapping)?;
     let created = ensure_stub_test(name, comment, text_only)?;
     // An unpainted fixture has nothing to score, and its painting stub would fail.
-    if !mapping.text_mappings.is_empty() {
+    if is_painted(name, mapping)? {
         ensure_painting_stub_test(name)?;
     }
     // The invariants also cover the tree mapping, which every saved fixture has.
@@ -2103,7 +2149,7 @@ pub(crate) fn action_save(
 pub(crate) fn describe_measurement(measurement: &SaveMeasurement) -> String {
     let mut parts = Vec::new();
     if let Some((total, visible)) = measurement.mismatches {
-        parts.push(format!("codediff: {total} mismatch(es), {visible} visible"));
+        parts.push(format!("omnidiff: {total} mismatch(es), {visible} visible"));
     }
     if let Some(percent) = measurement.painting_percent {
         parts.push(format!("painting {}%", format_percent(percent)));
@@ -2152,12 +2198,15 @@ pub(crate) fn validate_new_case_name(name: &str) -> Result<()> {
 /// Promotes the open sample or git-commit-sourced case into
 /// `src/test/data/diffs/<dataset>/<new_name>/` (see `promote_target_dataset`), writing
 /// `before_src`/`after_src` and saving via `action_save`. A sample also gets `new_name` recorded in
-/// its sample.csv row. On success `app` is switched to the new diffs/ case.
+/// its sample.csv row. On success `app` is switched to the new diffs/ case. `text_only` is
+/// [`is_text_only`] of the open pair, as for `action_save`: a sample without a grammar on some side
+/// (`encodings`, or a `crosslang` move from Perl or to Markdown) gets a stub without `mapping()`.
 pub(crate) fn action_promote(
     app: &mut App,
     new_name: &str,
     before_src: &[u8],
     after_src: &[u8],
+    text_only: bool,
 ) -> Result<String> {
     let origin = app.origin.clone();
     let (path, sample_source): (String, Option<SampleSource>) = match &origin {
@@ -2190,14 +2239,14 @@ pub(crate) fn action_promote(
     }
     let dir = diffs_root().join(&dataset).join(new_name);
 
-    let ext = Path::new(&path)
-        .extension()
-        .map(|e| e.to_string_lossy().into_owned())
-        .ok_or_else(|| anyhow!("path {} has no extension", path))?;
+    let sample_dir = sample_source
+        .is_some()
+        .then(|| samples_root().join(&app.name));
+    let (before_file, after_file) = promoted_file_names(sample_dir.as_deref(), &path)?;
 
     fs::create_dir_all(&dir).with_context(|| format!("creating {:?}", dir))?;
-    fs::write(dir.join(format!("before.{ext}.test")), before_src)?;
-    fs::write(dir.join(format!("after.{ext}.test")), after_src)?;
+    fs::write(dir.join(before_file), before_src)?;
+    fs::write(dir.join(after_file), after_src)?;
 
     // The README carries the third-party code's license attribution, which must survive
     // promotion. A git-commit case is this repo's own code and has none.
@@ -2219,12 +2268,11 @@ pub(crate) fn action_promote(
         None => None,
     };
     let save_msg = action_save(
-        &mut app.mapping,
+        &mut app.whole_mapping(),
         &mut app.dirty,
         new_name,
         comment.as_deref(),
-        // Samples and git-commit files load only with a grammar, so they are never text-only.
-        false,
+        text_only,
     )?;
 
     // The note moves to `description.md`; `update_sample_csv` clears the sample.csv cell so there
@@ -2263,6 +2311,26 @@ pub(crate) fn action_promote(
             ""
         }
     ))
+}
+
+/// The `before.<ext>.test`/`after.<ext>.test` names a promotion writes: those in `sample_dir`, a
+/// sample's own, since a `crosslang` sample's two sides differ in extension (`before.java.test`,
+/// `after.kt.test`); `path`'s extension on both sides for a git-commit case (no `sample_dir`).
+pub(crate) fn promoted_file_names(
+    sample_dir: Option<&Path>,
+    path: &str,
+) -> Result<(String, String)> {
+    if let Some(dir) = sample_dir {
+        let (before, after) = crate::content::pair_paths(dir)
+            .ok_or_else(|| anyhow!("no before/after fixture in {:?}", dir))?;
+        let name = |path: &Path| path.file_name().unwrap().to_string_lossy().into_owned();
+        return Ok((name(&before), name(&after)));
+    }
+    let ext = Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().into_owned())
+        .ok_or_else(|| anyhow!("path {} has no extension", path))?;
+    Ok((format!("before.{ext}.test"), format!("after.{ext}.test")))
 }
 
 /// Rejects the open sample: records `reason` as its sample.csv `comment` with `status` REJECTED.
@@ -2343,6 +2411,8 @@ pub(crate) struct SampleCsvRow {
     /// See `sample_test_diffs::Row::size_bucket`. Unused here, but carried because every write
     /// rewrites the whole file, and a dropped column would be erased for every row.
     pub(crate) size_bucket: String,
+    /// See `sample_test_diffs::Row::before_path`; carried for the same reason as `size_bucket`.
+    pub(crate) before_path: String,
 }
 
 /// The `status` of a row that has none; duplicates `sample_test_diffs::default_status`, as the
@@ -2376,6 +2446,7 @@ pub(crate) fn read_sample_csv_rows(path: &Path) -> Result<Vec<SampleCsvRow>> {
             status,
             comment: record.get(7).unwrap_or("").to_string(),
             size_bucket: record.get(8).unwrap_or("").to_string(),
+            before_path: record.get(9).unwrap_or("").to_string(),
         });
     }
     Ok(rows)
@@ -2393,6 +2464,7 @@ pub(crate) fn write_sample_csv_rows(path: &Path, rows: &[SampleCsvRow]) -> Resul
         "status",
         "comment",
         "size_bucket",
+        "before_path",
     ])?;
     for row in rows {
         writer.write_record([
@@ -2405,6 +2477,7 @@ pub(crate) fn write_sample_csv_rows(path: &Path, rows: &[SampleCsvRow]) -> Resul
             &row.status,
             &row.comment,
             &row.size_bucket,
+            &row.before_path,
         ])?;
     }
     writer.flush()?;
@@ -2656,10 +2729,12 @@ fn handle_solution_picker(
 }
 
 /// `handle_modal_key`'s `Modal::TextView` arm.
+#[allow(clippy::too_many_arguments)]
 fn handle_text_view(
     app: &mut App,
     code: KeyCode,
     mut state: TextPaintState,
+    caches: &Caches,
     before_src: &[u8],
     after_src: &[u8],
     before: &Code,
@@ -2805,8 +2880,9 @@ fn handle_text_view(
                 None => "Selection cleared".to_string(),
             });
         }
-        // Vertical selects the same columns on each row; full-line sweeps rows end to end, which
-        // a contiguous multi-line block needs because `m` requires identical text on both sides.
+        // Vertical selects the same columns on each row; full-line sweeps rows end to end, which a
+        // block painted as a move needs: one `m` over a per-row stack is a move only if every row
+        // reads the same as every other, else an update as a whole.
         KeyCode::Char('V') => {
             state.vertical = !state.vertical;
             let mode = if state.vertical {
@@ -2872,16 +2948,19 @@ fn handle_text_view(
         KeyCode::Char('a') => {
             action_paint_align(app, &mut state, before_text, after_text, VIEWPORT_ROWS)
         }
+        KeyCode::Char('f') => {
+            action_paint_follow_match(app, &mut state, before_text, after_text, VIEWPORT_ROWS)
+        }
         // Unlike `a`, aligns this side's *tree* panel with the text cursor.
         KeyCode::Char('A') => action_paint_reveal_node(app, &state, before, after),
-        // Adopts codediff's rendering (what `o` shows) as the draft to correct.
-        KeyCode::Char('P') => action_paint_seed_from_codediff(app, before, after),
+        // Adopts omnidiff's rendering (what `o` shows) as the draft to correct.
+        KeyCode::Char('P') => action_paint_seed_from_omnidiff(app, before, after),
         KeyCode::Char('o') => {
             let next = app.text_overlay.next();
-            // Lazy, and kept for the case: running codediff is slow on a large fixture.
+            // Lazy, and kept for the case: running omnidiff is slow on a large fixture.
             if next != TextOverlay::Human && app.algo_text_spans.is_none() {
                 app.algo_text_spans =
-                    Some(codediff_text_spans(before, after, app.algo_diff.as_ref()));
+                    Some(omnidiff_text_spans(before, after, app.algo_diff.as_ref()));
             }
             app.text_overlay = next;
             let human_spans_for_status = || {
@@ -2892,7 +2971,7 @@ fn handle_text_view(
             };
             app.status = Some(match next {
                 TextOverlay::Human => "Showing your painting".to_string(),
-                TextOverlay::CodeDiff => "Showing codediff's own diff".to_string(),
+                TextOverlay::OmniDiff => "Showing omnidiff's own diff".to_string(),
                 TextOverlay::Disagreements => {
                     let differing: usize = app
                         .algo_text_spans
@@ -2910,7 +2989,7 @@ fn handle_text_view(
                         })
                         .unwrap_or(0);
                     if differing == 0 {
-                        "You and codediff agree everywhere".to_string()
+                        "You and omnidiff agree everywhere".to_string()
                     } else {
                         format!("Showing {differing} disagreeing range(s)")
                     }
@@ -2928,6 +3007,30 @@ fn handle_text_view(
                 state,
             });
             return None;
+        }
+        // As in the tree panels, on the string around the text cursor.
+        KeyCode::Enter => {
+            let side = if state.side == 0 {
+                Side::Before
+            } else {
+                Side::After
+            };
+            let (row, column) = state.cursor[state.side];
+            let code_on_side = if state.side == 0 { before } else { after };
+            match host_string_at(code_on_side, focused_source, row, column) {
+                Some(node) => match layer_request(app, node, side, caches, before, after) {
+                    Ok(request) => {
+                        // Kept open, so `enter_layer` finds the view to put back on the way out.
+                        app.modal = Some(Modal::TextView { state });
+                        return Some(OpenTarget::EnterLayer(request));
+                    }
+                    Err(reason) => app.status = Some(reason),
+                },
+                None => {
+                    app.status =
+                        Some("Enter opens the code in a string; the cursor is not in one".into())
+                }
+            }
         }
         KeyCode::Char('T') => match run_unix_diff(before_src, after_src) {
             Ok(output) => {
@@ -2952,7 +3055,16 @@ fn handle_text_view(
         _ => {}
     }
 
-    if close {
+    if close
+        && app
+            .layers
+            .last()
+            .is_some_and(|frame| frame.text_view.is_some())
+    {
+        // A layer entered from the host's `t` view is left the way it came, back to that view;
+        // one entered from the panels closes to its own panels like any file.
+        return Some(OpenTarget::LeaveLayer);
+    } else if close {
         app.status = Some("Closed text view".to_string());
     } else {
         state.scroll_into_view(VIEWPORT_ROWS);
@@ -2962,10 +3074,79 @@ fn handle_text_view(
     None
 }
 
+/// Opens the `o` picker over every case and picture fixture, on `current`'s row if it is listed.
+/// Shared by the tree session and `content::run_content_session`.
+pub(crate) fn open_diff_picker(app: &mut App, current: &str) {
+    // Eager, unlike the other per-case maps: notes are displayed, not just sorted by.
+    if app.diff_comments.is_none() {
+        app.diff_comments = Some(compute_diff_comments());
+    }
+    // Re-read every time: the content session saves verdicts behind the picker's back.
+    app.content_rows = read_content_rows();
+    app.review_counts = crate::review::queue_counts(&crate::review::load_queue());
+    match list_picker_cases() {
+        Ok(options) if !options.is_empty() => {
+            let modal = open_diff_picker_modal(
+                options,
+                current,
+                app.diff_view.clone(),
+                DiffPickerData::from_app(app),
+            );
+            app.modal = Some(modal);
+        }
+        Ok(_) => {
+            app.status = Some("No test cases found in src/test/data/diffs".to_string());
+        }
+        Err(err) => {
+            app.status = Some(format!("Error listing cases: {:#}", err));
+        }
+    }
+}
+
+/// Opens the `O` picker over every sample (picture samples included), on `current`'s row if it is
+/// listed, measuring the samples not yet measured. Shared by the tree session and
+/// `content::run_content_session`.
+pub(crate) fn open_sample_picker(app: &mut App, current: &str) {
+    match list_sample_rows() {
+        Ok(rows) if !rows.is_empty() => {
+            // One external `diff` per sample: scan only the unmeasured ones, in parallel.
+            let missing: Vec<String> = rows
+                .iter()
+                .map(|row| row.name.clone())
+                .filter(|name| !app.sample_diff_sizes.contains_key(name))
+                .collect();
+            if !missing.is_empty() {
+                app.sample_diff_sizes.extend(scan_corpus(&missing, |name| {
+                    Some(sample_diff_line_count(name))
+                }));
+            }
+            let rows: Vec<SampleRow> = rows
+                .into_iter()
+                .map(|mut row| {
+                    row.size = app
+                        .sample_diff_sizes
+                        .get(&row.name)
+                        .copied()
+                        .unwrap_or_default();
+                    row
+                })
+                .collect();
+            let view = app.sample_view.clone();
+            app.modal = Some(open_sample_picker_modal(rows, current, view));
+        }
+        Ok(_) => {
+            app.status = Some("No samples found in src/test/data/samples".to_string());
+        }
+        Err(err) => {
+            app.status = Some(format!("Error listing samples: {:#}", err));
+        }
+    }
+}
+
 /// `handle_modal_key`'s `Modal::OpenSamplePicker` arm. Deliberately parallel to
 /// `handle_open_diff_picker`: the same table over a different corpus (see `SampleColumn` on why
 /// the types are not shared).
-fn handle_open_sample_picker(
+pub(crate) fn handle_open_sample_picker(
     app: &mut App,
     code: KeyCode,
     rows: Vec<SampleRow>,
@@ -3074,7 +3255,7 @@ fn handle_open_sample_picker(
                     return None;
                 }
                 SampleColumn::Lang => {
-                    let values = sample_language_values(&rows);
+                    let values = sample_language_values(&rows, &view.filters);
                     view.filters.language =
                         next_value_filter(view.filters.language.as_deref(), &values);
                 }
@@ -3127,7 +3308,7 @@ fn handle_open_sample_picker(
 }
 
 /// `handle_modal_key`'s `Modal::OpenDiffPicker` arm.
-fn handle_open_diff_picker(
+pub(crate) fn handle_open_diff_picker(
     app: &mut App,
     code: KeyCode,
     options: Vec<(String, &'static str)>,
@@ -3249,6 +3430,8 @@ fn handle_open_diff_picker(
                 view.filters.dataset = next_dataset_filter(view.filters.dataset);
             } else if let Some(flag) = view.filters.flag_mut(view.column) {
                 *flag = flag.next();
+            } else if view.column == DiffColumn::Verdict {
+                app.status = Some("Verdict has no filter: s sorts by it".to_string());
             }
             app.diff_view = view.clone();
             let modal = open_diff_picker_modal(

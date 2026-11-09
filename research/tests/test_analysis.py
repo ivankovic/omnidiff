@@ -1,11 +1,10 @@
-# This file is part of the CodeDiff code diffing tool.
+# This file is part of the OmniDiff code diffing tool.
 #
 # Copyright (C) 2026 Marko Ivankovic
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,10 +19,12 @@ test-python` from the repository root (or `uv run pytest` from research/)."""
 
 import json
 import re
+import subprocess
 
 import _common
 import apted_only_report
 import benchmark_other_report
+import change_census
 import ci_local
 import coverage_report
 import coverage_sets
@@ -92,7 +93,7 @@ def test_bucket_label_formats_the_open_top_bucket_with_a_plus():
 
 
 def test_tool_names_come_from_the_mismatch_columns_in_order():
-    fields = ["solution", "difft_mismatches", "difft_ms", "gumtree_mismatches", "codediff_ms"]
+    fields = ["solution", "difft_mismatches", "difft_ms", "gumtree_mismatches", "omnidiff_ms"]
     assert benchmark_other_report.tool_names(fields) == ["difft", "gumtree"]
 
 
@@ -144,6 +145,49 @@ def test_pct_is_zero_where_the_total_is_zero():
 )
 def test_percentile_by_nearest_rank(values, q, expected):
     assert edit_shape_stats.percentile(values, q) == expected
+
+
+def test_change_census_keys_by_extension_or_by_name():
+    assert change_census.key_of("assets/Logo.PNG") == ".png"
+    assert change_census.key_of("dist/app.min.js") == ".min.js"
+    assert change_census.key_of("src/Makefile") == "makefile"
+    assert change_census.key_of(".gitignore") == ".gitignore"
+    assert change_census.key_of("doc/foo.tar.gz") == ".gz"
+
+
+def _git(repo, *args):
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_change_census_counts_binary_files_and_skips_the_shallow_boundary(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    (repo / "a.txt").write_text("one\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "boundary")
+    (repo / "a.txt").write_text("one\ntwo\n")
+    (repo / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "edit")
+    boundary = subprocess.run(
+        ["git", "-C", str(repo), "rev-list", "--max-parents=0", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    (repo / ".git" / "shallow").write_text(boundary + "\n")
+
+    changes, binary, lines, sample, commits = change_census.census_of(str(repo), 50)
+    assert commits == 1
+    assert changes == {".txt": 1, ".png": 1}
+    assert binary == {".png": 1}
+    assert lines == {".txt": 1}
+    assert sample[".png"] == "logo.png"
 
 
 def test_shallow_boundary_commits_reads_the_graft_points(tmp_path):
@@ -326,6 +370,95 @@ def test_the_ruff_version_named_outside_ci_matches_the_one_ci_pins():
     assert named == {pin}, f"CONTRIBUTING.md names ruff@{named or '(none)'}, ci.yml pins {pin}"
 
 
+# --- the quick tier: coverage_sets.select_quick + scripts/quick_fixtures_filter.py ----------------
+
+
+def fx(name):
+    return f"test::fixtures::small::{name}"
+
+
+def test_the_quick_tier_takes_the_cheapest_fixture_for_each_line_and_stops_when_all_are_covered():
+    fixtures = {
+        fx("rust_expensive"): 0b0111,
+        fx("rust_cheap"): 0b0011,
+        fx("rust_other"): 0b0100,
+        fx("rust_redundant"): 0b0001,
+    }
+    seconds = {
+        fx("rust_expensive"): 20.0,
+        fx("rust_cheap"): 0.1,
+        fx("rust_other"): 0.2,
+        fx("rust_redundant"): 0.05,
+    }
+    chosen, covered = coverage_sets.select_quick(fixtures, seconds, already=0)
+    assert chosen == [fx("rust_cheap"), fx("rust_other")], "per second, not per fixture"
+    assert covered == 0b0111
+
+
+def test_the_quick_tier_skips_what_the_always_run_tests_cover():
+    fixtures = {fx("rust_a"): 0b011, fx("rust_b"): 0b100}
+    chosen, covered = coverage_sets.select_quick(
+        fixtures, {fx("rust_a"): 1.0, fx("rust_b"): 1.0}, already=0b011
+    )
+    assert chosen == [fx("rust_b")], "rust_a adds nothing the other tests do not reach"
+    assert covered == 0b100
+
+
+def test_the_quick_tier_speaks_every_language_once():
+    """Grammars are C, outside Rust coverage: a language whose fixtures add no Rust line still gets
+    its cheapest fixture."""
+    fixtures = {fx("rust_a"): 0b1, fx("go_slow"): 0b1, fx("go_fast"): 0b1}
+    seconds = {fx("rust_a"): 0.1, fx("go_slow"): 9.0, fx("go_fast"): 0.5}
+    chosen, _ = coverage_sets.select_quick(fixtures, seconds, already=0)
+    assert chosen == [fx("rust_a"), fx("go_fast")]
+    assert coverage_sets.language_of(fx("java_defects4j_lang_1_x")) == "java"
+
+
+def test_the_quick_command_counts_corpus_sweeps_as_not_run(tmp_path):
+    lines = [("engine", "src/diff.rs", n) for n in range(1, 4)]
+    write_per_test_data(
+        tmp_path,
+        lines,
+        {
+            "diff::tests::unit": [0],
+            "diff::corpus_sweep::every_fixture": [1],
+            f"{fx('rust_a')}::mapping": [0, 1],
+            f"{fx('rust_a')}::invariants": [2],
+            f"{fx('rust_b')}::mapping": [1],
+        },
+        seconds={f"{fx('rust_a')}::mapping": 1.0, f"{fx('rust_b')}::mapping": 0.1},
+    )
+    out = tmp_path / "quick.txt"
+
+    class Args:
+        data = tmp_path
+        write = out
+        measured_at = "abc1234"
+
+    coverage_sets.cmd_quick(coverage_sets.Coverage(tmp_path, "all", "test"), Args)
+    text = out.read_text()
+    assert "# measured-at: abc1234" in text
+    # Line 1 is reached by the sweep, which the quick tier does not run, so a fixture must cover it.
+    # rust_b does so cheapest, but rust_a is needed for line 2 and covers line 1 too, so the pruning
+    # pass drops rust_b again.
+    assert [line for line in text.splitlines() if not line.startswith("#")] == ["small::rust_a"]
+    assert "2 of 2 lines" in text, "line 1 counts, though the sweep reaches it"
+
+
+def test_the_quick_filter_reads_its_list_and_names_whole_fixtures(tmp_path):
+    import quick_fixtures_filter
+
+    listed = tmp_path / "quick.txt"
+    listed.write_text("# header\n# measured-at: abc1234\nsmall::rust_a\n\nfull::go_b\n")
+    assert quick_fixtures_filter.read_list(listed) == ("abc1234", ["small::rust_a", "full::go_b"])
+    expression = quick_fixtures_filter.expression(["small::rust_a", "full::go_b"])
+    assert expression == (
+        "(not test(/^test::fixtures::/) and not test(/corpus/))"
+        " or test(/^test::fixtures::(full::go_b|small::rust_a)::/)"
+    )
+    assert quick_fixtures_filter.EXCLUDED == coverage_sets.QUICK_EXCLUDED.pattern
+
+
 # ── distributions_report ────────────────────────────────────────────────────────────────────────
 
 
@@ -439,9 +572,10 @@ def test_coverage_sets_groups_a_fixtures_tests_but_leaves_other_tests_alone():
     )
 
 
-def write_per_test_data(root, lines, tests):
+def write_per_test_data(root, lines, tests, seconds=None):
     """A per_test directory by hand: `lines` is [(area, file, line)], `tests` is
-    {name: [covered line positions]} - the same shape measure/per_test_coverage.py writes."""
+    {name: [covered line positions]} - the same shape measure/per_test_coverage.py writes -
+    and `seconds` each test's measured time, where given."""
     (root / "bits").mkdir()
     with open(root / "lines.tsv", "w") as handle:
         handle.write("index\tarea\tfile\tline\n")
@@ -458,6 +592,8 @@ def write_per_test_data(root, lines, tests):
                 covered[area] = covered.get(area, 0) + 1
             (root / "bits" / f"k{number}").write_bytes(bits.to_bytes(width, "little"))
             record = {"name": name, "status": "ok", "bits": f"k{number}", "covered": covered}
+            if seconds and name in seconds:
+                record["seconds"] = seconds[name]
             handle.write(json.dumps(record) + "\n")
 
 
@@ -509,17 +645,17 @@ def test_the_homebrew_formula_renders_from_the_release_checksums():
     """The tap installs release assets by name and checksum; both come from SHA256SUMS.txt, so
     the rendered formula must carry the version in every URL and the digest of every asset."""
     sums = render_homebrew_formula.checksums(
-        "aaaa  codediff-aarch64-apple-darwin.tar.gz\n"
-        "bbbb *codediff-x86_64-apple-darwin.tar.gz\n"
-        "cccc  codediff-aarch64-unknown-linux-musl.tar.gz\n"
-        "dddd  codediff-x86_64-unknown-linux-musl.tar.gz\n"
+        "aaaa  omnidiff-aarch64-apple-darwin.tar.gz\n"
+        "bbbb *omnidiff-x86_64-apple-darwin.tar.gz\n"
+        "cccc  omnidiff-aarch64-unknown-linux-musl.tar.gz\n"
+        "dddd  omnidiff-x86_64-unknown-linux-musl.tar.gz\n"
         "eeee  SHA256SUMS.txt\n"
     )
     formula = render_homebrew_formula.render(
         render_homebrew_formula.TEMPLATE.read_text(), "0.1.0", sums
     )
     assert 'version "0.1.0"' in formula
-    assert "download/v0.1.0/codediff-aarch64-apple-darwin.tar.gz" in formula
+    assert "download/v0.1.0/omnidiff-aarch64-apple-darwin.tar.gz" in formula
     assert 'sha256 "aaaa"' in formula
     assert 'sha256 "bbbb"' in formula
     assert 'sha256 "dddd"' in formula
@@ -529,6 +665,6 @@ def test_the_homebrew_formula_renders_from_the_release_checksums():
 def test_the_homebrew_formula_refuses_an_asset_the_release_lacks():
     """A placeholder left behind would fail at `brew install` on a user's machine; a missing asset
     fails here, naming it."""
-    sums = render_homebrew_formula.checksums("aaaa  codediff-aarch64-apple-darwin.tar.gz\n")
+    sums = render_homebrew_formula.checksums("aaaa  omnidiff-aarch64-apple-darwin.tar.gz\n")
     with pytest.raises(KeyError, match="x86_64-apple-darwin"):
         render_homebrew_formula.render(render_homebrew_formula.TEMPLATE.read_text(), "0.1.0", sums)

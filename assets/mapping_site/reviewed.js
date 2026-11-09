@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,7 +41,7 @@
 
   // Prefixed like the viewer's own keys: localStorage is shared by everything on this origin
   // (all of ivankovic.github.io), not just this site.
-  const STORAGE_KEY = "codediff-mapping-reviewed";
+  const STORAGE_KEY = "omnidiff-mapping-reviewed";
 
   // The stored shape is one object of fixture name -> revision string. Anything else (an older
   // format, a hand-edited value, garbage) reads as "no marks" rather than throwing on every page.
@@ -172,7 +171,7 @@
         revision: row.dataset.revision || "",
       }));
     }
-    return Array.isArray(window.CODEDIFF_FIXTURES) ? window.CODEDIFF_FIXTURES : [];
+    return Array.isArray(window.OMNIDIFF_FIXTURES) ? window.OMNIDIFF_FIXTURES : [];
   }
 
   // ─── Random unreviewed fixture ──────────────────────────────────────────────────────────────

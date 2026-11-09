@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -44,7 +43,6 @@ mod tests {
         "python-portagefilelist-client-remove-one-import-and-update-one-const-string",
         "scala-com-lihaoyi-mill-add-a-function-call",
         "scala-com-lihaoyi-mill-small-refactoring",
-        "shellscript-scikit-learn-scikit-learn-string-to-regex",
         "swift-apple-swift-argument-parser-small-change",
         "swift-nextcloud-ios-move-function-and-refactor-logic",
         "swift-nextcloud-ios-refactor-and-change",
@@ -107,7 +105,7 @@ mod tests {
         }
         assert!(
             undocumented.is_empty(),
-            "these clamped limits have no comment saying why codediff cannot do better. Write one, \
+            "these clamped limits have no comment saying why omnidiff cannot do better. Write one, \
              or tighten the limit until none is needed:\n    {}",
             undocumented.join("\n    ")
         );
@@ -135,7 +133,9 @@ mod tests {
             .join("fixtures");
         let mut orphaned = Vec::new();
         let mut datasets_seen = 0usize;
-        for dataset in helper::DIFF_DATASETS {
+        // The content fixtures' stubs too, though their data is not a `DIFF_DATASETS` dataset.
+        let families = crate::diff::content::Family::ALL.map(crate::diff::content::Family::name);
+        for dataset in helper::DIFF_DATASETS.iter().copied().chain(families) {
             let dir = fixtures.join(dataset);
             if !dir.exists() {
                 continue;
@@ -207,7 +207,7 @@ mod tests {
 
     /// **`quality_baseline.csv`'s accuracy columns must equal the fixture stubs' limits.**
     /// `write_baseline` writes a run's own numbers; this test is what keeps the two from
-    /// drifting apart. `elapsed_ms` is machine-dependent and not pinned.
+    /// drifting apart. Times are machine-dependent and live per machine, in `quality/timing/`.
     #[test]
     #[cfg(feature = "test-fixtures")]
     fn the_quality_baseline_accuracy_columns_are_a_projection_of_the_stub_limits() -> Result<()> {

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +22,7 @@ use anyhow::Result;
 #[test]
 fn mapping() -> Result<()> {
     // The invariant-18 pairing of `type: undefined` with `type: GREENBONE_SENSOR_SCANNER_TYPE`
-    // across `pair.value`; codediff deletes the `undefined` (`APTED("greedy_anchor_block")`).
+    // across `pair.value`; omnidiff deletes the `undefined` (`APTED("greedy_anchor_block")`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "tsx-greenbone-gsa-add-import-and-use-it",
         1,

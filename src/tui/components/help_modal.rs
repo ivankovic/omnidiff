@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,7 +51,9 @@ Navigation
   Ctrl-e/Ctrl-y    Scroll the view one line without moving the cursor
   Page Up/Down     Scroll by a page
   Home/End         Jump to the top/bottom of the file
-  Mouse            Wheel scrolls; a click places the cursor and focuses that panel
+  Mouse            Wheel scrolls; a click places the cursor and focuses that panel.
+                   A drag selects text in one panel and copies it on release (OSC 52;
+                   in tmux, set-clipboard on). Shift-drag uses the terminal's own selection
 
 Files and diffing
   o                Open a file selector for the active panel
@@ -62,29 +63,66 @@ Files and diffing
   G                Review git changes: a picker of the repository's unstaged files, staged
                    files, and recent commits (Enter unfolds a commit into its files).
                    Enter on a file opens its diff - index vs working tree, HEAD vs index,
-                   or parent vs commit. `codediff --review` starts here.
+                   or parent vs commit. `omnidiff --review` starts here.
   ]/[              Next/previous file of the set the reviewed file came from
   Esc              While a diff is computing: cancel it and keep the previous result
 
+Pictures
+  t                For a pair of pictures (PNG, JPEG, GIF, WebP, BMP, ICO, TIFF, and Windows
+                   .cur and .ani cursors): cycle the
+                   view - side by side with the changed regions outlined in pink,
+                   changed areas (the changed regions alone, the rest left blank), difference
+                   (changed pixels over the faded after picture), blend, swipe. Drawn as
+                   pixels where the terminal speaks kitty, sixel or iTerm2 graphics, in
+                   half blocks elsewhere
+  h/l, Left/Right  In the swipe view: move the divider between before and after
+  ,/. and Space    For an animation: step a frame back or on, play or pause
+  +/-, HJKL        Zoom in or out (up to 32x) on the same part of before and after; pan
+                   with Shift+h/j/k/l while zoomed
+  b                Draw every picture in half blocks, or with the terminal's graphics again:
+                   for a terminal that claimed pictures it cannot show (crossed-out boxes).
+                   OMNIDIFF_GRAPHICS=halfblocks starts that way and sends no graphics query
+
+Archives and other containers
+  j/k, Down/Up     For a pair of archives (zip, jar, tar, gzip, xz, bzip2), cursor themes
+                   (X cursors, Hyprland .hlc), fonts (TTF, OTF, WOFF, WOFF2, EOT), message
+                   catalogs (.mo, .qm) or PDFs: move through the members that changed, were
+                   added or were removed; the selected one shows beside the list - text as
+                   a line diff, pictures, glyphs and pages as above
+  a                Show every member, unchanged ones too, or only the changed again
+  g                Show every changed member that is a picture at once, as a grid on each
+                   side - a font's changed glyphs, a theme's changed cursors
+  J/K, PgDn/PgUp   In a text member - diffed by OmniDiff as its language, a Java class file
+                   as a listing of its methods and what they call - jump to the next or
+                   previous change, or page; long lines are wrapped, long unchanged runs cut
+  Enter            Open a text member in the full diff view, or a member that is itself an
+                   archive in place; Backspace comes back out
+
 Appearance
-  c                Open the theme editor: a Theme dropdown, a syntax-highlighting
-                   dropdown, and one editable color per diff operation, the cursor
-                   counterpart, search matches, and the Before/After titles.
-                   Up/Down moves, Left/Right changes a dropdown, Enter edits a color
-                   (type #rrggbb) or accepts, Esc cancels. Editing any color forks the
-                   selection to Custom, leaving the presets untouched.
+  M, c             Open the settings menu, full screen, on its Highlighting tab (M) or its
+                   Colors tab (c). Tab / Shift-Tab switch tabs; every change is applied
+                   and saved to the config the moment it is made, so Enter or Esc only
+                   close it and nothing is undone on the way out.
+                   Highlighting: a checkbox per setting, an example diff in the open
+                   file's language (Rust when none is open) painted as you choose, and
+                   the selected setting's effect on it in bold and marked with a diamond
+                   in the gutter; 1/2 pick the Minimal/Full presets, and the last row is
+                   the node highlight (H). Trailing whitespace is never painted,
+                   regardless of any setting.
+                   Layout: the panel layout (v), and the width from which auto shows
+                   two panels, 160 columns unless changed there or, for one run, by
+                   OMNIDIFF_WIDE_COLUMNS.
+                   Colors: the Theme and syntax-theme dropdowns, syntax highlighting on
+                   or off (S), and one editable color per diff operation, the cursor
+                   counterpart, search matches, and the Before/After titles. Enter
+                   edits a color (type #rrggbb; Esc cancels the edit); editing any
+                   color forks the selection to Custom, leaving the presets untouched.
+                   Up/Down moves within a tab, Left/Right changes a value, Space toggles.
   v                Cycle the panel layout: auto / dual / single (persisted)
   S                Toggle syntax highlighting
   H                Toggle the node highlight (off by default): the range under the
                    cursor, and its match on the other panel, highlight when part of a
                    real change. Unchanged content is never highlighted either way.
-  M                Open the render-options panel: independent checkboxes for which
-                   parts of the diff get painted (leading whitespace, standalone
-                   punctuation), plus 1/2 shortcuts for the Minimal/Full presets.
-                   Every choice is applied and saved to the config the moment it
-                   is pressed. Trailing whitespace is never painted, regardless of
-                   any option. Up/Down moves, Space toggles, Enter or Esc closes;
-                   nothing is undone on the way out.
 
 Other
   ?                Toggle this help
@@ -94,12 +132,12 @@ Other
   Ctrl-Z           Suspend to the shell (Unix); `fg` comes back to the same view
 
 About
-  codediff - fast, syntax-aware code diffing using tree-sitter ASTs
+  omnidiff - fast, robust, accurate content-aware diffing
   Copyright (C) 2026 Marko Ivankovic
-  License: GNU Affero General Public License v3 or later
+  License: GNU Affero General Public License v3 only
            https://www.gnu.org/licenses/
-  Repository: https://github.com/ivankovic/codediff
-  Bugs:       https://github.com/ivankovic/codediff/issues
+  Repository: https://github.com/ivankovic/omnidiff
+  Bugs:       https://github.com/ivankovic/omnidiff/issues
 ";
 
 /// The `?` popup: a scrollable keybinding reference plus a color legend rendered from the live
@@ -239,7 +277,8 @@ mod tests {
     /// Sized past `HELP_TEXT`'s extent so the result does not depend on scrolling or wrapping.
     #[test]
     fn help_modal_renders_keybindings() {
-        let backend = TestBackend::new(120, 100);
+        // Tall enough for the whole text, About at its foot included.
+        let backend = TestBackend::new(120, 140);
         let mut terminal = Terminal::new(backend).unwrap();
         let mut modal = HelpModal::new(OverlayTheme::default());
 

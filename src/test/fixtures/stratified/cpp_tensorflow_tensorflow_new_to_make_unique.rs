@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,14 +27,14 @@ fn mapping() -> Result<()> {
     // arguments inside are identical. Mostly the two paren pairs: the delimiter-pairing family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-tensorflow-tensorflow-new-to-make-unique",
+        8,
         6,
-        4,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.23)
+    assert_matches_human_painting_within_limit("cpp-tensorflow-tensorflow-new-to-make-unique", 0.71)
 }
 
 #[test]

@@ -1,0 +1,1181 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:1"
+      ],
+      "after_path": [
+        "import_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:2"
+      ],
+      "after_path": [
+        "import_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:3"
+      ],
+      "after_path": [
+        "import_statement:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:4"
+      ],
+      "after_path": [
+        "import_statement:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_statement:5"
+      ],
+      "after_path": [
+        "import_statement:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:1"
+      ],
+      "after_path": [
+        "import_from_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:2"
+      ],
+      "after_path": [
+        "import_from_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:3"
+      ],
+      "after_path": [
+        "import_from_statement:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:4"
+      ],
+      "after_path": [
+        "import_from_statement:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:5"
+      ],
+      "after_path": [
+        "import_from_statement:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:6"
+      ],
+      "after_path": [
+        "import_from_statement:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:7"
+      ],
+      "after_path": [
+        "import_from_statement:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:8"
+      ],
+      "after_path": [
+        "import_from_statement:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:9"
+      ],
+      "after_path": [
+        "import_from_statement:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:10"
+      ],
+      "after_path": [
+        "import_from_statement:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:11"
+      ],
+      "after_path": [
+        "import_from_statement:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:12"
+      ],
+      "after_path": [
+        "import_from_statement:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:13"
+      ],
+      "after_path": [
+        "import_from_statement:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:14"
+      ],
+      "after_path": [
+        "import_from_statement:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:15"
+      ],
+      "after_path": [
+        "import_from_statement:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:16"
+      ],
+      "after_path": [
+        "import_from_statement:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "import_from_statement:17"
+      ],
+      "after_path": [
+        "import_from_statement:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_definition:1"
+      ],
+      "after_path": [
+        "class_definition:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1"
+      ],
+      "after_path": [
+        "decorated_definition:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "decorator:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "decorator:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "class:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "class:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "::1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "::1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:2"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:3"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:2"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:3"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:4"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:5"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:6"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "comment:6"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "@:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "@:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "=:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_start:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_start:1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_content:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_content:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_end:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "keyword_argument:1",
+        "string:1",
+        "string_end:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "decorator:1",
+        "call:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "function_definition:1"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:1",
+        "function_definition:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:2"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "decorated_definition:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:4"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:5"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:6"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:7"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:7"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:8"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:9"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:10"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:11"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:12"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:13"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:14"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:15"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:16"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:17"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:18"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:19"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:20"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:21"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:21"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:22"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:22"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:23"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:23"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:24"
+      ],
+      "after_path": [
+        "decorated_definition:1",
+        "class_definition:1",
+        "block:1",
+        "function_definition:24"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 96,
+              "start_column": 35,
+              "end_row": 96,
+              "end_column": 49
+            }
+          ],
+          "after": [
+            {
+              "start_row": 96,
+              "start_column": 35,
+              "end_row": 96,
+              "end_column": 54
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

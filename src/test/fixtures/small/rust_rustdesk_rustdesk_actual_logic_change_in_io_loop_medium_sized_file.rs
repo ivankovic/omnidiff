@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,11 +20,13 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
+    // The four leaves of a `.is_file_transfer()` call form a multi-map group with one after node,
+    // of which omnidiff matches none; and `APTED("qualified_name")` deletes an `if` keyword the
+    // human keeps.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rustdesk-rustdesk-actual-logic-change-in-io-loop-medium-sized-file",
-        74,
-        46,
+        10,
+        5,
     )
 }
 

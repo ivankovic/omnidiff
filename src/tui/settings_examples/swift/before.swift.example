@@ -1,0 +1,39 @@
+func reading(city: String, temp: Double) -> [String: Any] {
+    return [
+        "city": city,
+        "celsius": temp
+    ]
+}
+
+struct Forecast {
+    let city: String
+    var highs: [Double]
+
+    func title() -> String {
+        return "Weather in " + city
+    }
+
+    func average() -> Double {
+        return highs.reduce(0, +) / Double(highs.count)
+    }
+
+    func summary(unit: String) -> String {
+        let mean = average()
+        return "\(title()): about \(mean) \(unit)"
+    }
+}
+
+func main() {
+    let range = (18.5, 24.0)
+    let week = [
+        Forecast(city: "Oslo", highs: [range.0, range.1]),
+        Forecast(city: "Lima", highs: [21.0, 23.5]),
+    ]
+    for day in week {
+        print(day.summary(unit: "C"))
+    }
+    let warmest = week.map { $0.average() }
+    print(warmest)
+}
+
+main()

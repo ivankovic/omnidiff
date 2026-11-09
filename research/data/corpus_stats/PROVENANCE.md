@@ -169,7 +169,7 @@ new), and the median bytes per node is 4.8 either way; the paper reports both an
 
 Note what a zero node count means in this database, since 311,112 code files (8.0%) carry one:
 177,991 are flagged `automatically_generated` from a header comment and never parsed (a rule older
-than this run), 128,288 are in a language the classifier knows but codediff has no grammar for,
+than this run), 128,288 are in a language the classifier knows but omnidiff has no grammar for,
 4,824 are empty, 9 gave up. The largest files in the corpus are generated too, but carry no such
 comment and so are parsed; that is why the corpus-shape figure's nodes curve starts flat and its
 maximum is a data table.
@@ -188,7 +188,7 @@ walked again instead.
 | | |
 |---|---|
 | Date | 2026-09-24, 18:01 to 20:54 for the walk, then the report |
-| Command | `file_stats --path <repository> --db /var/tmp/research/full/stats.sqlite`, one process per repository over `/var/tmp/research/full/repositories/*/`, in alphabetical order, as a systemd user unit capped at 48 GB (`codediff-fullwalk-20260924`) |
+| Command | `file_stats --path <repository> --db /var/tmp/research/full/stats.sqlite`, one process per repository over `/var/tmp/research/full/repositories/*/`, in alphabetical order, as a systemd user unit capped at 48 GB (`omnidiff-fullwalk-20260924`) |
 | Repositories | 7,444, 0 non-zero exits |
 | Wall clock | 2h53m for the walk; `analysis/file_stats.py` about 20 minutes, run twice (once by `make file-stats-report`, once as `make introductory-paper-empirical`'s prerequisite) |
 | Held out | `FasterXML-jackson-dataformats-text/yaml/src/test/resources/data/fuzz-65918.yaml`, renamed for the duration and restored, for the reason under "One file is excluded from the parse" above |
@@ -246,3 +246,74 @@ to 0.9156 because its "within the 99th percentile" cut uses the node p99, which 
 population it is taken over.
 The per-language rows of `code_percentiles.csv` are unchanged: a language's own rows never held a
 no-grammar file, and its generated, failed and empty files stay in them as before.
+
+## The change census, 2026-10-02
+
+`change_census.csv` counts the files a diff tool is asked about: every file changed by the most
+recent 50 non-merge commits of each clone, the same window and the same `numstat_rows` as
+`edit_shape.csv` (shallow-boundary commits skipped, renames attributed to the new path), but with
+binary files kept and counted by git's own verdict (`--numstat` prints `-`). One row per extension
+(or per file name, for files without one), with the `code::tip` category of a representative path
+(`classify_paths`), the changes, the binary changes, the lines changed and how many repositories
+changed such a file at all.
+
+| | |
+|---|---|
+| Date | 2026-10-02 |
+| Command | `make measure-change-census MODE=full` (24 minutes, 8 workers) |
+| Corpus | `/var/tmp/research/full/repositories`, the 2026-09-07 clones |
+| Repositories | **7,444** (`ytdl-org-youtube-dl.git`'s `git log` failed and contributes nothing) |
+| Commits | **247,076** |
+| Changed files | **2,021,166**, of which **184,486 (9.1%)** binary |
+
+What the volume says, and what it does not: by changed files, Code is 43.9%, Data 41.3%,
+Documentation 6.6%, Unknown 5.3% and Configuration 2.9% - but Data is dominated by a few
+repositories. UFO font sources (`.glif`, XML) are 411k changes from 9 repositories; `.woff`/`.woff2`
+web fonts, 43% of all binary changes, come from about 30. Count the `repositories` column, not the
+`changes` one, to say how common a format is. The most widespread binary format is PNG (629
+repositories, 8.4%), then PDF (109), `.gz` (88), GIF (95), JPEG (89), ICO (81) and TTF (81); images
+are 39% of binary changes. The most widespread text formats OmniDiff diffs only line by line were
+Markdown (65.3% of repositories), `.txt` (36.3%), TOML (13.7%), reStructuredText (10.5%) and gettext
+`.po` (4.9%), and the XML formats not then mapped to the XML grammar (`.svg` 263 repositories, Qt
+`.ui` 163, `.vcxproj` 139, `.plist` 75; 563k changes together).
+
+`code::tip` counts JSON, XML and YAML as Code, because OmniDiff has grammars for them; the paper's
+"two thirds of all files are code" (files at rest, above) is the same convention.
+
+## The content census, 2026-10-04
+
+`content_census.csv` and `content_census_repositories.csv` say how much of the change census's
+window OmniDiff diffs as text or by content, every change judged by OmniDiff itself from its
+blobs (`content_census`, branch `content-families`): `text`, a content family that diffed
+(`pictures`, `fonts`, `cursors`, `archives`, `documents`, `catalogs`), `failed:<family>` (it
+sniffs as the family and does not diff), or `binary`. By key and outcome with the repositories,
+and by repository and outcome.
+
+| | |
+|---|---|
+| Date | 2026-10-04 |
+| Command | `make measure-content-census MODE=full` (3 h 12 min, 8 threads, a busy disk) |
+| Corpus | `/var/tmp/research/full/repositories`, the 2026-09-07 clones |
+| Repositories | **7,352** with a change in the window |
+| Changed files | **2,018,010** (the change census's 2,021,166 less submodule entries and files `git log` names but the trees do not hold) |
+
+| Share diffed as text or content | |
+|---|---|
+| of changes | **98.818%** |
+| of changes, at most 1,000 per repository | **98.208%** |
+| per repository, mean | **99.049%**; 6,481 of 7,352 repositories entirely |
+
+The raw share counts a few giant repositories many times: one repository's 50 commits touch
+159,244 files (rpm-software-management-distribution-gpg-keys), 8% of the window. The capped share
+weights each repository's counts by min(1, 1000 / its changes), the expected outcome of sampling
+1,000 of them; it is the lowest of the three because fonts (3.9% raw) and cursors (1.7%) come from
+a few repositories each and shrink with them (0.9% and 0.1% capped).
+
+What is left, capped (1.79%): text in a legacy encoding git reads and OmniDiff does not (`.po`,
+`.c`, `.cpp`, `.h`, `.html`, `.txt`, man pages, ChangeLogs; 6,168 changes raw, 0.31%), compiled
+objects (`.class`, `.dll`, `.so`, `.o`, `.exe`), audio (`.wav`, 22 repositories), EOT fonts
+compressed with MicroType Express (all 1,303 `failed:fonts`, 22 repositories), and one-repository
+formats (`.traineddata`, `.rrd`, `.tplg`, `.icc`, `.pcap`, Sphinx `.doctree`).
+
+The per-repository tallies are in `/var/tmp/research/full/content_census.partial.jsonl` (not
+committed); a rerun resumes from it, so delete it to measure again.

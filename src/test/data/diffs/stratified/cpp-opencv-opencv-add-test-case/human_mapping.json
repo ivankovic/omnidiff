@@ -1,0 +1,1124 @@
+{
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:21"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:2"
+      ],
+      "after_path": [
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:3"
+      ],
+      "after_path": [
+        "comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:4"
+      ],
+      "after_path": [
+        "comment:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:1"
+      ],
+      "after_path": [
+        "preproc_include:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:2"
+      ],
+      "after_path": [
+        "preproc_include:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:3"
+      ],
+      "after_path": [
+        "preproc_include:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:4"
+      ],
+      "after_path": [
+        "preproc_include:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_include:5"
+      ],
+      "after_path": [
+        "preproc_include:5"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "preproc_ifdef:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "#ifdef:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "#ifdef:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "namespace:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "namespace:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "namespace_identifier:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "namespace_identifier:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "namespace:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "namespace:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "{:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "using_declaration:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "using_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "using_declaration:2"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "using_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "class_specifier:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "class_specifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        ";:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        ";:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:2"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:3"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:4"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:5"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:6"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:6"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:2"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:7"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:3"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "comment:3"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:8"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:9"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:10"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:10"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:11"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:11"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:12"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:12"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:13"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:13"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:14"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:14"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:15"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:15"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:16"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:16"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:17"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:17"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:18"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:18"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:19"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:19"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:20"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:20"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "expression_statement:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "expression_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "}:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "namespace_definition:1",
+        "declaration_list:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "comment:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "preproc_ifdef:1",
+        "#endif:1"
+      ],
+      "after_path": [
+        "preproc_ifdef:1",
+        "#endif:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:5"
+      ],
+      "after_path": [
+        "comment:5"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 313,
+              "start_column": 0,
+              "end_row": 313,
+              "end_column": 28
+            },
+            {
+              "start_row": 314,
+              "start_column": 0,
+              "end_row": 314,
+              "end_column": 1
+            },
+            {
+              "start_row": 315,
+              "start_column": 4,
+              "end_row": 315,
+              "end_column": 75
+            },
+            {
+              "start_row": 317,
+              "start_column": 4,
+              "end_row": 317,
+              "end_column": 38
+            },
+            {
+              "start_row": 318,
+              "start_column": 4,
+              "end_row": 318,
+              "end_column": 36
+            },
+            {
+              "start_row": 320,
+              "start_column": 4,
+              "end_row": 320,
+              "end_column": 78
+            },
+            {
+              "start_row": 321,
+              "start_column": 4,
+              "end_row": 321,
+              "end_column": 78
+            },
+            {
+              "start_row": 323,
+              "start_column": 4,
+              "end_row": 323,
+              "end_column": 31
+            },
+            {
+              "start_row": 324,
+              "start_column": 4,
+              "end_row": 324,
+              "end_column": 31
+            },
+            {
+              "start_row": 326,
+              "start_column": 4,
+              "end_row": 326,
+              "end_column": 28
+            },
+            {
+              "start_row": 327,
+              "start_column": 4,
+              "end_row": 327,
+              "end_column": 73
+            },
+            {
+              "start_row": 329,
+              "start_column": 4,
+              "end_row": 329,
+              "end_column": 21
+            },
+            {
+              "start_row": 330,
+              "start_column": 4,
+              "end_row": 330,
+              "end_column": 23
+            },
+            {
+              "start_row": 332,
+              "start_column": 4,
+              "end_row": 332,
+              "end_column": 75
+            },
+            {
+              "start_row": 333,
+              "start_column": 4,
+              "end_row": 333,
+              "end_column": 5
+            },
+            {
+              "start_row": 334,
+              "start_column": 8,
+              "end_row": 334,
+              "end_column": 18
+            },
+            {
+              "start_row": 335,
+              "start_column": 8,
+              "end_row": 335,
+              "end_column": 20
+            },
+            {
+              "start_row": 336,
+              "start_column": 4,
+              "end_row": 336,
+              "end_column": 5
+            },
+            {
+              "start_row": 338,
+              "start_column": 4,
+              "end_row": 338,
+              "end_column": 39
+            },
+            {
+              "start_row": 339,
+              "start_column": 0,
+              "end_row": 339,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 313,
+              "start_column": 0,
+              "end_row": 313,
+              "end_column": 28
+            },
+            {
+              "start_row": 314,
+              "start_column": 0,
+              "end_row": 314,
+              "end_column": 1
+            },
+            {
+              "start_row": 315,
+              "start_column": 0,
+              "end_row": 315,
+              "end_column": 75
+            },
+            {
+              "start_row": 317,
+              "start_column": 0,
+              "end_row": 317,
+              "end_column": 38
+            },
+            {
+              "start_row": 318,
+              "start_column": 0,
+              "end_row": 318,
+              "end_column": 36
+            },
+            {
+              "start_row": 320,
+              "start_column": 0,
+              "end_row": 320,
+              "end_column": 78
+            },
+            {
+              "start_row": 321,
+              "start_column": 0,
+              "end_row": 321,
+              "end_column": 78
+            },
+            {
+              "start_row": 323,
+              "start_column": 0,
+              "end_row": 323,
+              "end_column": 31
+            },
+            {
+              "start_row": 324,
+              "start_column": 0,
+              "end_row": 324,
+              "end_column": 31
+            },
+            {
+              "start_row": 326,
+              "start_column": 0,
+              "end_row": 326,
+              "end_column": 28
+            },
+            {
+              "start_row": 327,
+              "start_column": 0,
+              "end_row": 327,
+              "end_column": 73
+            },
+            {
+              "start_row": 329,
+              "start_column": 0,
+              "end_row": 329,
+              "end_column": 21
+            },
+            {
+              "start_row": 330,
+              "start_column": 0,
+              "end_row": 330,
+              "end_column": 23
+            },
+            {
+              "start_row": 332,
+              "start_column": 0,
+              "end_row": 332,
+              "end_column": 75
+            },
+            {
+              "start_row": 333,
+              "start_column": 0,
+              "end_row": 333,
+              "end_column": 5
+            },
+            {
+              "start_row": 334,
+              "start_column": 0,
+              "end_row": 334,
+              "end_column": 18
+            },
+            {
+              "start_row": 335,
+              "start_column": 0,
+              "end_row": 335,
+              "end_column": 20
+            },
+            {
+              "start_row": 336,
+              "start_column": 0,
+              "end_row": 336,
+              "end_column": 5
+            },
+            {
+              "start_row": 338,
+              "start_column": 0,
+              "end_row": 338,
+              "end_column": 39
+            },
+            {
+              "start_row": 339,
+              "start_column": 0,
+              "end_row": 339,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

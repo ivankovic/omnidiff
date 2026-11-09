@@ -1,0 +1,44 @@
+import { useState } from "react";
+
+class Row {
+  constructor(public sku: string, public qty: number) {}
+}
+
+function toRow(sku: string, qty: number): Row {
+  return new Row(sku, qty);
+}
+
+type Props = { items: string[]; title: string };
+
+function badge(count: number) {
+  return count > 5 ? "plenty" : "running low";
+}
+
+export function StockList({ items, title }: Props) {
+  const [open, setOpen] = useState(false);
+  const toggle = () => setOpen(!open);
+  const limits = [0, 8];
+  const columns = ["Code", "Name", "Stock"];
+  const totalCount = items.length;
+  if (localStorage.getItem("debug")) {
+    for (const item of items) {
+      console.log("rendering", item);
+    }
+  }
+  let visible = items.slice(limits[0], limits[1]);
+  return (
+    <section className="stock">
+      <h2 title="click to expand" onClick={toggle}>
+        {title} ({totalCount}, {badge(totalCount)})
+      </h2>
+      <p>{columns.join(" / ")}</p>
+      {open && (
+        <ul>
+          {visible.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

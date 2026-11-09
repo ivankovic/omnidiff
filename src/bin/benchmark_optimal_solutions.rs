@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,18 +15,18 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Scores codediff against every fixture in `src/test/data/diffs/` that has a
+//! Scores omnidiff against every fixture in `src/test/data/diffs/` that has a
 //! `human_mapping.json`, counting mismatched nodes; fixtures without one are reported as
 //! "unsolved". A mismatch count shows partial progress that the `fixtures` tests' pass/fail
 //! cannot.
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
-use codediff::code::Code;
-use codediff::diff::ASTMappingReason;
-use codediff::diff::cost::diff_cost;
-use codediff::test::helper;
-use codediff::test::helper::human_mapping;
+use omnidiff::code::Code;
+use omnidiff::diff::ASTMappingReason;
+use omnidiff::diff::cost::diff_cost;
+use omnidiff::test::helper;
+use omnidiff::test::helper::human_mapping;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 
@@ -60,6 +59,7 @@ const NON_APTED_REASON_LABELS: &[&str] = &[
     "CondCollapse",
     "HeritageGrowth",
     "WrapGrowth",
+    "MultiMap",
 ];
 
 /// Column label for one `ASTMappingReason`: `bucket_label`, except that `APTED` gets one column
@@ -70,24 +70,6 @@ fn reason_column_label(reason: &ASTMappingReason) -> String {
         ASTMappingReason::APTED(source) => format!("APTED:{source}"),
         other => other.bucket_label().to_string(),
     }
-}
-
-/// Tallies every mapping entry, including lone deletes/inserts, by `reason_column_label`.
-fn reason_counts_for(
-    before: &Code,
-    after: &Code,
-    config: &codediff::diff::HeuristicConfig,
-) -> HashMap<String, usize> {
-    let diff = codediff::diff::diff_code_with_config(before, after, config);
-    let mut counts = HashMap::new();
-    if let Some(diff_ast) = diff.ast {
-        for mapping in diff_ast.mapping.values() {
-            *counts
-                .entry(reason_column_label(&mapping.reason))
-                .or_insert(0) += 1;
-        }
-    }
-    counts
 }
 
 /// CSV columns: all of `NON_APTED_REASON_LABELS`, even when zero everywhere, so downstream tools
@@ -119,37 +101,152 @@ fn active_reason_columns(rows: &[Row]) -> Vec<String> {
         .collect()
 }
 
-/// Total unit-cost (`diff_cost`) of codediff's own mapping.
-fn algorithm_cost_for(
-    before: &Code,
-    after: &Code,
-    config: &codediff::diff::HeuristicConfig,
-) -> u64 {
-    let diff = codediff::diff::diff_code_with_config(before, after, config);
-    let Some(diff_ast) = diff.ast else {
-        return 0;
-    };
-    let before_metadata = codediff::code::metadata::metadata_of(before);
-    let after_metadata = codediff::code::metadata::metadata_of(after);
-    diff_cost(&diff_ast, &before_metadata, &after_metadata)
+/// Every fixture's [`Row`] but its timing, `threads` fixtures at a time, in `cases` order. Each
+/// worker diffs a fixture once and loads its mapping once, and reads every column off those two.
+fn grade_in_parallel(
+    cases: &[(String, std::path::PathBuf)],
+    config: &omnidiff::diff::HeuristicConfig,
+    threads: usize,
+) -> Result<Vec<Row>> {
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let results: Vec<std::sync::Mutex<Option<Result<Option<Row>>>>> =
+        cases.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            std::thread::Builder::new()
+                // The diff recurses as deep as the tree; the TUI's diff thread has the same need.
+                .stack_size(omnidiff::tui::app::DIFF_COMPUTE_STACK_SIZE)
+                .spawn_scoped(scope, || {
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some((name, dir)) = cases.get(i) else {
+                            break;
+                        };
+                        let row = grade(name, dir, config);
+                        *results[i].lock().expect("no worker panics holding it") = Some(row);
+                    }
+                })
+                .expect("spawn grading worker");
+        }
+    });
+    let mut rows = Vec::with_capacity(cases.len());
+    for result in results {
+        if let Some(row) = result
+            .into_inner()
+            .expect("no worker panics holding it")
+            .transpose()?
+        {
+            rows.extend(row);
+        }
+    }
+    Ok(rows)
 }
 
-/// Wall-clock milliseconds for one diff, single-shot. Each of this file's measurements runs its
-/// own diff; a benchmark run once by hand does not warrant sharing one.
-fn elapsed_ms_for(before: &Code, after: &Code, config: &codediff::diff::HeuristicConfig) -> f64 {
+/// One fixture's [`Row`], `elapsed_ms` left at zero for the timing pass; `None` when the fixture
+/// has no before/after pair.
+fn grade(
+    name: &str,
+    dir: &std::path::Path,
+    config: &omnidiff::diff::HeuristicConfig,
+) -> Result<Option<Row>> {
+    let Some((before, after)) = helper::code_pair_from_dir(dir)? else {
+        return Ok(None);
+    };
+    let (before, after) = (&before, &after);
+    let diff = omnidiff::diff::diff_code_with_config(before, after, config);
+    let mut reason_counts = HashMap::new();
+    let mut algorithm_cost = 0;
+    if let Some(diff_ast) = &diff.ast {
+        for mapping in diff_ast.mapping.values() {
+            *reason_counts
+                .entry(reason_column_label(&mapping.reason))
+                .or_insert(0) += 1;
+        }
+        let before_metadata = omnidiff::code::metadata::metadata_of(before);
+        let after_metadata = omnidiff::code::metadata::metadata_of(after);
+        algorithm_cost = diff_cost(diff_ast, &before_metadata, &after_metadata);
+    }
+    let mut row = Row {
+        name: name.to_string(),
+        mismatches: None,
+        reason_counts,
+        algorithm_cost,
+        human_cost: None,
+        elapsed_ms: 0.0,
+        visible_mismatches: None,
+        graded_nodes: None,
+        nm_floor: None,
+        text_only: false,
+    };
+    // Keyed off `Code::ast`, not `diff.ast`, which is `Some` even when neither side parsed.
+    // The human-mapping calls below bail on an AST-less pair and would fail the whole gate.
+    if before.ast.is_none() || after.ast.is_none() {
+        row.text_only = true;
+        return Ok(Some(row));
+    }
+    if !human_mapping::mapping_path(name).exists() {
+        return Ok(Some(row));
+    }
+    let diff_ast = diff.ast.as_ref().context("Diff has no AST")?;
+    let node_cache = omnidiff::diff::NodeCache::build(before, after);
+    let mapping = human_mapping::load_with(name, before, after)?;
+    let visible = human_mapping::visible_mismatches_with(
+        name,
+        before,
+        after,
+        diff_ast,
+        &node_cache,
+        config,
+        &mapping,
+    )?;
+    let (before_root, after_root) = (
+        before.ast.as_ref().expect("checked").root_node(),
+        after.ast.as_ref().expect("checked").root_node(),
+    );
+    let before_metadata = omnidiff::code::metadata::metadata_of(before);
+    let after_metadata = omnidiff::code::metadata::metadata_of(after);
+    row.mismatches = Some((
+        visible.visible.len() + visible.invisible.len(),
+        node_cache.before.len() + node_cache.after.len(),
+    ));
+    row.visible_mismatches = Some((
+        visible.visible.len(),
+        visible.before_visible_node_count + visible.after_visible_node_count,
+    ));
+    row.human_cost = Some(human_mapping::human_mapping_cost(
+        &mapping,
+        before_root,
+        after_root,
+        &before_metadata,
+        &after_metadata,
+    )?);
+    row.graded_nodes = Some(human_mapping::graded_node_count(
+        &mapping,
+        before_root,
+        after_root,
+        &before_metadata,
+        &after_metadata,
+    )?);
+    row.nm_floor = Some(human_mapping::nm_floor(&mapping, before, after)?);
+    Ok(Some(row))
+}
+
+/// Wall-clock milliseconds for one diff, single-shot, kept apart from the graded diff so grading
+/// can run in parallel without touching the figure.
+fn elapsed_ms_for(before: &Code, after: &Code, config: &omnidiff::diff::HeuristicConfig) -> f64 {
     let started = std::time::Instant::now();
-    let _diff = codediff::diff::diff_code_with_config(before, after, config);
+    let _diff = omnidiff::diff::diff_code_with_config(before, after, config);
     started.elapsed().as_secs_f64() * 1000.0
 }
 
 #[derive(Parser)]
 struct Args {
-    /// Print every mismatch for this fixture, with codediff's operation and reason, instead of the
+    /// Print every mismatch for this fixture, with omnidiff's operation and reason, instead of the
     /// table.
     #[arg(long)]
     details: Option<String>,
 
-    /// Print codediff's complete mapping for this fixture (paths, operation, reason) instead of the
+    /// Print omnidiff's complete mapping for this fixture (paths, operation, reason) instead of the
     /// table.
     #[arg(long)]
     dump: Option<String>,
@@ -166,6 +263,15 @@ struct Args {
     /// Write this run as the new quality baseline (`make update-quality-baseline`).
     #[arg(long, value_name = "PATH")]
     write_baseline: Option<std::path::PathBuf>,
+
+    /// With `--compare`, report latency against this machine's per-fixture timing baseline
+    /// (`research/data/quality/timing/<machine>.csv`) rather than the accuracy baseline's.
+    #[arg(long, value_name = "PATH", requires = "compare")]
+    compare_timing: Option<std::path::PathBuf>,
+
+    /// Write this run's per-fixture times as this machine's timing baseline.
+    #[arg(long, value_name = "PATH")]
+    write_timing: Option<std::path::PathBuf>,
 
     /// Enable `solve_moved_subtrees` (default).
     #[arg(long = "solver-moved-subtrees", action = clap::ArgAction::SetTrue, default_value_t = true, overrides_with = "no_solver_moved_subtrees")]
@@ -197,8 +303,8 @@ struct Args {
 }
 
 /// Resolves the `--solver-X`/`--no-solver-X` pairs; `overrides_with` makes the last flag win.
-fn config_from_args(args: &Args) -> codediff::diff::HeuristicConfig {
-    codediff::diff::HeuristicConfig {
+fn config_from_args(args: &Args) -> omnidiff::diff::HeuristicConfig {
+    omnidiff::diff::HeuristicConfig {
         solver_moved_subtrees: args.solver_moved_subtrees && !args.no_solver_moved_subtrees,
         solver_bottom_up_propagation: args.solver_bottom_up_propagation
             && !args.no_solver_bottom_up_propagation,
@@ -234,17 +340,17 @@ struct Row {
     nm_floor: Option<human_mapping::NmFloor>,
 }
 
-/// Prints every mapping codediff produces for one fixture, with human-readable paths, sorted by
+/// Prints every mapping omnidiff produces for one fixture, with human-readable paths, sorted by
 /// the before path (inserts, having none, sort last).
-fn dump_mapping(name: &str, config: &codediff::diff::HeuristicConfig) -> Result<()> {
-    use codediff::test::helper::path_for_node;
+fn dump_mapping(name: &str, config: &omnidiff::diff::HeuristicConfig) -> Result<()> {
+    use omnidiff::test::helper::path_for_node;
 
     // Borrowed, not cloned: `Code`'s `Clone` drops `ast_metadata`, which makes every
     // `metadata_of` recompute.
     let pair = helper::handmade_test_code_pair(name)?;
     let (before, after) = (&pair.0, &pair.1);
 
-    let diff = codediff::diff::diff_code_with_config(before, after, config);
+    let diff = omnidiff::diff::diff_code_with_config(before, after, config);
     let ast = diff.ast.expect("diff has AST");
 
     let before_ast = before.ast.as_ref().expect("before parsed");
@@ -326,78 +432,20 @@ fn main() -> Result<()> {
     // recompute it on every lookup.
     let cases = helper::handmade_test_case_dirs()?;
 
-    let started = std::time::Instant::now();
-    // Load+parse time is subtracted so the reported runtime covers scoring only.
-    let mut load_time = std::time::Duration::ZERO;
-    let mut rows = Vec::with_capacity(cases.len());
-    for (name, dir) in &cases {
-        let load_started = std::time::Instant::now();
-        let pair = helper::code_pair_from_dir(dir)?;
-        load_time += load_started.elapsed();
-        let Some((before, after)) = pair else {
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
+    let mut rows = grade_in_parallel(&cases, &config, threads)?;
+    // Timed afterwards, one diff at a time on this thread, so the latency figures are not shared
+    // with seven other diffs competing for the cores. Loading and parsing are not timed.
+    let dirs: HashMap<&str, &std::path::PathBuf> = cases
+        .iter()
+        .map(|(name, dir)| (name.as_str(), dir))
+        .collect();
+    for row in &mut rows {
+        let dir = dirs[row.name.as_str()];
+        let Some((before, after)) = helper::code_pair_from_dir(dir)? else {
             continue;
         };
-        let (before, after) = (&before, &after);
-        let reason_counts = reason_counts_for(before, after, &config);
-        let algorithm_cost = algorithm_cost_for(before, after, &config);
-        let elapsed_ms = elapsed_ms_for(before, after, &config);
-
-        // Keyed off `Code::ast`, not `diff.ast`, which is `Some` even when neither side parsed.
-        // The human-mapping calls below bail on an AST-less pair and would fail the whole gate.
-        if before.ast.is_none() || after.ast.is_none() {
-            rows.push(Row {
-                name: name.clone(),
-                mismatches: None,
-                reason_counts,
-                algorithm_cost,
-                human_cost: None,
-                elapsed_ms,
-                visible_mismatches: None,
-                graded_nodes: None,
-                nm_floor: None,
-                text_only: true,
-            });
-            continue;
-        }
-
-        if !human_mapping::mapping_path(name).exists() {
-            rows.push(Row {
-                name: name.clone(),
-                mismatches: None,
-                reason_counts,
-                algorithm_cost,
-                human_cost: None,
-                elapsed_ms,
-                visible_mismatches: None,
-                graded_nodes: None,
-                nm_floor: None,
-                text_only: false,
-            });
-            continue;
-        }
-        let visible = human_mapping::compute_visible_mismatches_for_with_config(
-            name, before, after, &config,
-        )?;
-        let mismatch_count = visible.visible.len() + visible.invisible.len();
-        let total_nodes = human_mapping::total_node_count_for(before, after);
-        let human_cost = human_mapping::human_mapping_cost_for(name, before, after)?;
-        let graded_nodes = human_mapping::graded_node_count_for(name, before, after)?;
-        let nm_floor = human_mapping::nm_floor_for(name, before, after)?;
-        rows.push(Row {
-            name: name.clone(),
-            mismatches: Some((mismatch_count, total_nodes)),
-            reason_counts,
-            algorithm_cost,
-            human_cost: Some(human_cost),
-            elapsed_ms,
-            visible_mismatches: Some((
-                visible.visible.len(),
-                visible.before_visible_node_count + visible.after_visible_node_count,
-            )),
-            graded_nodes: Some(graded_nodes),
-            nm_floor: Some(nm_floor),
-            text_only: false,
-        });
+        row.elapsed_ms = elapsed_ms_for(&before, &after, &config);
     }
 
     // Worst first; unsolved last.
@@ -407,8 +455,6 @@ fn main() -> Result<()> {
         (None, Some(_)) => std::cmp::Ordering::Greater,
         (None, None) => a.name.cmp(&b.name),
     });
-
-    let elapsed = started.elapsed().saturating_sub(load_time);
 
     if let Some(csv_path) = args.csv {
         let path = csv_path.unwrap_or_else(|| {
@@ -422,19 +468,46 @@ fn main() -> Result<()> {
         println!("Wrote quality baseline to {path:?}");
     }
 
-    print_table(&rows);
-    print_reason_table(&rows);
-    print_goal_progress(&rows);
+    if let Some(path) = &args.write_timing {
+        write_timing(&rows, path)?;
+        println!("Wrote timing baseline to {path:?}");
+    }
+
+    // A file moved to another language (the `crosslang` dataset) is reported apart: the README's
+    // goals and figures are about code changed within one language. The CSV, the baseline and the
+    // gate keep every fixture. A stable sort, so each part stays worst first.
+    let crosslang: std::collections::HashSet<&str> = cases
+        .iter()
+        .filter(|(_, dir)| dir.parent().and_then(|p| p.file_name()) == Some("crosslang".as_ref()))
+        .map(|(name, _)| name.as_str())
+        .collect();
+    rows.sort_by_key(|row| crosslang.contains(row.name.as_str()));
+    let (code, cross) =
+        rows.split_at(rows.partition_point(|row| !crosslang.contains(row.name.as_str())));
+
+    print_table(code);
+    print_reason_table(code);
+    print_goal_progress(code);
+    let code_ms: f64 = code.iter().map(|row| row.elapsed_ms).sum();
+    // The diffs alone: grading runs on every core and is not part of the figure.
     println!(
         "\nRuntime: {:.3}s total, {:.1}ms/fixture ({} fixtures)",
-        elapsed.as_secs_f64(),
-        elapsed.as_secs_f64() * 1000.0 / rows.len() as f64,
-        rows.len()
+        code_ms / 1000.0,
+        code_ms / code.len() as f64,
+        code.len()
     );
+    if !cross.is_empty() {
+        println!("\nCross-language fixtures, not counted above:\n");
+        print_table(cross);
+        print_goal_progress(cross);
+    }
 
     // Last, so a failing gate still leaves the full table on screen.
     if let Some(path) = &args.compare {
-        let baseline = read_baseline(path)?;
+        let mut baseline = read_baseline(path)?;
+        if let Some(timing) = &args.compare_timing {
+            with_timing(&mut baseline, &read_timing(timing)?);
+        }
         let report = compare_to_baseline(&rows, &baseline);
         print_gate_report(&report, path);
         if report.failed() {
@@ -726,6 +799,10 @@ fn print_reason_table(rows: &[Row]) {
 // hard cases, so any aggregate total or rate rises when hard fixtures are added and cannot tell
 // that apart from a regression. It also catches drift below the `fixtures` tests'
 // per-fixture clamps, which only fire above the recorded value.
+//
+// Accuracy and time are baselined apart. Mismatch counts are the same on every machine, so there
+// is one accuracy baseline; a fixture's time is not, so each machine (`scripts/machine.py`) keeps
+// its own timing baseline, and latency is only ever compared on the machine that recorded it.
 
 /// One fixture's row in the gate baseline.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -844,21 +921,63 @@ fn read_baseline(path: &std::path::Path) -> Result<BTreeMap<String, BaselineEntr
     Ok(out)
 }
 
+/// The accuracy baseline: no times, which belong to a machine (see [`write_timing`]).
 fn write_baseline(rows: &[Row], path: &std::path::Path) -> Result<()> {
     let mut writer = Writer::from_writer(
         File::create(path).with_context(|| format!("writing the quality baseline to {path:?}"))?,
     );
-    writer.write_record(["solution", "mismatches", "visible_mismatches", "elapsed_ms"])?;
+    writer.write_record(["solution", "mismatches", "visible_mismatches"])?;
     for (name, entry) in baseline_from_rows(rows) {
         writer.write_record([
             name,
             entry.mismatches.to_string(),
             entry.visible_mismatches.to_string(),
-            format!("{:.2}", entry.elapsed_ms),
         ])?;
     }
     writer.flush()?;
     Ok(())
+}
+
+/// One machine's timing baseline: each scored fixture's `elapsed_ms`.
+fn write_timing(rows: &[Row], path: &std::path::Path) -> Result<()> {
+    let mut writer = Writer::from_writer(
+        File::create(path).with_context(|| format!("writing the timing baseline to {path:?}"))?,
+    );
+    writer.write_record(["solution", "elapsed_ms"])?;
+    for (name, entry) in baseline_from_rows(rows) {
+        writer.write_record([name, format!("{:.2}", entry.elapsed_ms)])?;
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+fn read_timing(path: &std::path::Path) -> Result<HashMap<String, f64>> {
+    let mut reader = csv::Reader::from_path(path)
+        .with_context(|| format!("reading the timing baseline from {path:?}"))?;
+    let mut out = HashMap::new();
+    for record in reader.deserialize::<HashMap<String, String>>() {
+        let record = record.context("parsing a timing-baseline row")?;
+        let name = record
+            .get("solution")
+            .context("the timing baseline has no 'solution' column")?
+            .trim()
+            .to_string();
+        let elapsed_ms = record
+            .get("elapsed_ms")
+            .context("the timing baseline has no 'elapsed_ms' column")?
+            .trim()
+            .parse()
+            .context("the timing baseline's 'elapsed_ms' column is not a number")?;
+        out.insert(name, elapsed_ms);
+    }
+    Ok(out)
+}
+
+/// Replaces every baseline time with the machine's; a fixture it never timed reads as untimed.
+fn with_timing(baseline: &mut BTreeMap<String, BaselineEntry>, timing: &HashMap<String, f64>) {
+    for (name, entry) in baseline.iter_mut() {
+        entry.elapsed_ms = timing.get(name).copied().unwrap_or(0.0);
+    }
 }
 
 /// Compares a run against a baseline. Both columns gate: a flat total can hide invisible
@@ -1197,6 +1316,7 @@ mod tests {
             ASTMappingReason::NestedConditionCollapse,
             ASTMappingReason::HeritageClauseGrowth,
             ASTMappingReason::WrapGrowth,
+            ASTMappingReason::MultiMap,
         ];
 
         for reason in every_variant {
@@ -1466,6 +1586,32 @@ mod tests {
         assert!(
             report.failed(),
             "the regression must not escape as new+removed"
+        );
+    }
+
+    #[test]
+    fn times_come_from_the_timing_baseline_and_accuracy_from_the_quality_one() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (quality, timing) = (dir.path().join("q.csv"), dir.path().join("t.csv"));
+        let mut slow = row("a", 3, 1);
+        slow.elapsed_ms = 42.0;
+        write_baseline(std::slice::from_ref(&slow), &quality).expect("write");
+        write_timing(&[slow, row("b", 0, 0)], &timing).expect("write");
+
+        let mut baseline = read_baseline(&quality).expect("read");
+        assert_eq!(
+            baseline["a"].elapsed_ms, 0.0,
+            "the accuracy baseline holds no time"
+        );
+        with_timing(&mut baseline, &read_timing(&timing).expect("read"));
+        assert_eq!(baseline["a"].elapsed_ms, 42.0);
+        assert_eq!(
+            (baseline["a"].mismatches, baseline["a"].visible_mismatches),
+            (3, 1)
+        );
+        assert!(
+            !baseline.contains_key("b"),
+            "timing never adds a fixture to gate"
         );
     }
 

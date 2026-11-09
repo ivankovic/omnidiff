@@ -1,0 +1,38 @@
+import java.util.List;
+import java.util.Map;
+
+public class Shapes {
+    static Object createPerson(String name, int age) {
+        return Map.of(
+            "name", name,
+            "age", age
+        );
+    }
+
+    record Rectangle(int width, int height) {
+        int area() {
+            return width * height;
+        }
+
+        String describe(String label) {
+            int total = area();
+            return label + ": " + total
+                + " square units";
+        }
+    }
+
+    public static void main(String[] args) {
+        List<Integer> size = List.of(3, 4);
+        List<Rectangle> shapes = List.of(
+            new Rectangle(size.get(0), size.get(1)),
+            new Rectangle(5, 2));
+        for (Rectangle shape : shapes) {
+            System.out.println(shape.describe("box"));
+        }
+        int largest = shapes.stream()
+            .mapToInt(Rectangle::area)
+            .max()
+            .orElse(0);
+        System.out.println(largest);
+    }
+}

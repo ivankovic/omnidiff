@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,14 +16,14 @@
  */
 
 use anyhow::{Context, Result, bail};
-use codediff::code::Code;
+use omnidiff::code::Code;
 use std::process::Command;
 
 use super::write_temp_pair;
 
 /// Neutralizes the user's git configuration for a child that runs `git`, directly or through
 /// BDiff. BDiff's hard-coded `git diff` cannot take `--no-ext-diff`, so a user's
-/// `diff.external=codediff` makes it return an empty edit script that scores as "nothing changed"
+/// `diff.external=omnidiff` makes it return an empty edit script that scores as "nothing changed"
 /// rather than as a failure. Ignoring the config also stops `diff.algorithm` and `core.autocrlf`
 /// from altering the measurement.
 pub(crate) fn git_env(command: &mut Command) -> &mut Command {

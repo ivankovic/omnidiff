@@ -1,20 +1,20 @@
 # Introductory paper
 
-"CodeDiff: A Fast, Robust, Syntax-Aware Code Diffing Tool", an ACM `sigconf` LaTeX paper. It is a
+"OmniDiff: A Fast, Robust, Syntax-Aware Code Diffing Tool", an ACM `sigconf` LaTeX paper. It is a
 research paper with a tool contribution at the end, not a tool paper: the introduction states four
 groups of research questions, each is answered in its own section, and the tool comes last.
 
 1 Introduction, 2 Background, 3 Empirical Dataset (methodology only, no RQ answered),
 4 Viability (RQ1.1, RQ1.2), 5 Speed (RQ2), 6 Uniqueness (RQ3.1-RQ3.3), 7 State of the Art
-(RQ4.1, RQ4.2: eight established tools in eleven configurations), 8 CodeDiff, 9 Threats to
+(RQ4.1, RQ4.2: eight established tools in eleven configurations), 8 OmniDiff, 9 Threats to
 Validity, 10 Related Work, 11 Conclusions. The ACM conference, DOI, ISBN and rights fields are
 placeholders until a venue is chosen.
 
 ## Rules that are easy to break
 
-* **No RQ answer names CodeDiff.** An RA box and its supporting argument describe the problem or
+* **No RQ answer names OmniDiff.** An RA box and its supporting argument describe the problem or
   the state of the art. RA1.2 and RA3.1 compare the human mapping's cost with the harness's own
-  matcher; the text describes it tool-neutrally. CodeDiff's own results are in Section 8.
+  matcher; the text describes it tool-neutrally. OmniDiff's own results are in Section 8.
 * **RA1.1 and RA3.1 read the same multi-map groups two ways**: as an N:M site the four edit
   operations cannot express (RA1.1), and as a set of equally correct one-to-one pairings (RA3.1).
   RA3.1 adds a second reading that needs no annotation, cost ties at a different mapping
@@ -62,7 +62,7 @@ placeholders until a venue is chosen.
   `plots/tips.png` needs the corpus database `stats.sqlite`, which is not committed: `make
   file-stats-report MODE=full` re-reads it on the measuring machine.
 * **Some generated macros are unused on purpose** - `Shape*`, `Ablation*`
-  (`scripts/ablation_study.sh`, an older corpus state), `OracleHumanCodeDiff*` - so a cut result
+  (`scripts/ablation_study.sh`, an older corpus state), `OracleHumanOmniDiff*` - so a cut result
   can return with a `main.tex` edit only.
 
 ## Reviews
@@ -73,9 +73,12 @@ done about it.
 ## Building
 
 This uses the ACM `acmart` document class, which is not vendored into this repository. To build
-locally you need a LaTeX distribution that includes it, plus `cm-super` for full font expansion:
+locally you need a LaTeX distribution that includes it and the fonts it uses (Linux Libertine,
+Biolinum, Inconsolata, newtx), plus `cm-super` for full font expansion. Without those fonts acmart
+silently falls back to Computer Modern, which changes the layout (14 pages instead of 13); check with
+`pdffonts main.pdf` that the fonts are LinLibertine, LinBiolinum and Inconsolata.
 
-* Debian/Ubuntu: `sudo apt-get install texlive-publishers texlive-latex-extra cm-super`, then
+* Debian/Ubuntu: `sudo apt-get install texlive-publishers texlive-latex-extra texlive-fonts-extra cm-super`, then
   `latexmk -pdf -g main` (or `pdflatex main && bibtex main && pdflatex main && pdflatex main`). The
   `-g` matters: without it, latexmk can decide `main.pdf` is already current from `main.tex`'s own
   timestamp and skip rebuilding even though an `\input`-ed generated table changed underneath it.

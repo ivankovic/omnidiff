@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,10 +26,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use codediff::test::helper::human_mapping::{
+use omnidiff::test::helper::human_mapping::{
     rebuild_caches_for_mapping, status_after, status_before,
 };
-use codediff::test::helper::{
+use omnidiff::test::helper::{
     DIFF_DATASETS, code_pair_from_dir_without_metadata, human_mapping, note_as_csv_cell, read_note,
     readme_provenance,
 };
@@ -121,22 +120,12 @@ fn main() -> Result<()> {
     let mut rows = Vec::new();
     let mut unreadable = Vec::new();
 
-    for dataset in DIFF_DATASETS {
-        let root = diffs_root().join(dataset);
-        let Ok(entries) = std::fs::read_dir(&root) else {
-            continue;
-        };
-        for entry in entries {
-            let entry = entry?;
-            if !entry.file_type()?.is_dir() {
-                continue;
-            }
-            let name = entry.file_name().to_string_lossy().into_owned();
-            match row_for(&name, dataset, &entry.path()) {
-                Ok(Some(row)) => rows.push(row),
-                Ok(None) => {}
-                Err(err) => unreadable.push((name, format!("{err:#}"))),
-            }
+    let fixtures = fixture_dirs()?;
+    for ((name, _, _), row) in fixtures.iter().zip(rows_for(&fixtures)) {
+        match row {
+            Ok(Some(row)) => rows.push(row),
+            Ok(None) => {}
+            Err(err) => unreadable.push((name.clone(), format!("{err:#}"))),
         }
     }
 
@@ -185,6 +174,60 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Every fixture directory, as `(name, dataset, dir)`, in no particular order.
+fn fixture_dirs() -> Result<Vec<(String, &'static str, PathBuf)>> {
+    let mut fixtures = Vec::new();
+    for dataset in DIFF_DATASETS {
+        let root = diffs_root().join(dataset);
+        let Ok(entries) = std::fs::read_dir(&root) else {
+            continue;
+        };
+        for entry in entries {
+            let entry = entry?;
+            if !entry.file_type()?.is_dir() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().into_owned();
+            fixtures.push((name, *dataset, entry.path()));
+        }
+    }
+    Ok(fixtures)
+}
+
+/// [`row_for`] of every fixture, in `fixtures`' order, one thread per core: each row parses its
+/// pair and walks both trees, and the corpus is two thousand of them.
+fn rows_for(fixtures: &[(String, &'static str, PathBuf)]) -> Vec<Result<Option<Row>>> {
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let results: Vec<std::sync::Mutex<Option<Result<Option<Row>>>>> = fixtures
+        .iter()
+        .map(|_| std::sync::Mutex::new(None))
+        .collect();
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| {
+                loop {
+                    let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let Some((name, dataset, dir)) = fixtures.get(i) else {
+                        break;
+                    };
+                    let row = row_for(name, dataset, dir);
+                    *results[i].lock().expect("no worker panics holding it") = Some(row);
+                }
+            });
+        }
+    });
+    results
+        .into_iter()
+        .map(|result| {
+            result
+                .into_inner()
+                .expect("no worker panics holding it")
+                .expect("every fixture visited")
+        })
+        .collect()
+}
+
 fn row_for(name: &str, dataset: &str, dir: &Path) -> Result<Option<Row>> {
     // Nothing here diffs, so the metadata `code_pair_from_dir` computes would be wasted.
     let Some((before, after)) = code_pair_from_dir_without_metadata(dir)? else {
@@ -192,7 +235,7 @@ fn row_for(name: &str, dataset: &str, dir: &Path) -> Result<Option<Row>> {
     };
 
     // No `human_mapping.json` yet is a state to report, not an error: every node reads unmarked.
-    let mapping = human_mapping::load(name).unwrap_or_default();
+    let mapping = human_mapping::load_with(name, &before, &after).unwrap_or_default();
 
     let (before_nodes, after_nodes, unmatched_nodes, error_nodes) =
         match (before.ast.as_ref(), after.ast.as_ref()) {
@@ -273,7 +316,7 @@ fn count_error_nodes(root: tree_sitter::Node) -> usize {
     count
 }
 
-/// A subtree's node count, root inclusive. A local copy of `codediff::stats::count_nodes`, which
+/// A subtree's node count, root inclusive. A local copy of `omnidiff::stats::count_nodes`, which
 /// sits behind the `stats` feature this binary otherwise does not need.
 fn count_nodes(root: tree_sitter::Node) -> usize {
     let mut count = 0;
@@ -331,23 +374,13 @@ mod tests {
     #[test]
     fn every_fixture_in_the_corpus_produces_a_row() {
         let mut seen = 0usize;
-        for dataset in DIFF_DATASETS {
-            let root = diffs_root().join(dataset);
-            let Ok(entries) = std::fs::read_dir(&root) else {
-                continue;
-            };
-            for entry in entries.flatten() {
-                if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                    continue;
-                }
-                let name = entry.file_name().to_string_lossy().into_owned();
-                let row = row_for(&name, dataset, &entry.path())
-                    .unwrap_or_else(|err| panic!("'{name}' should be readable: {err:#}"));
-                if let Some(row) = row {
-                    assert!(row.before_lines > 0, "'{name}' has no before content");
-                    assert!(row.after_lines > 0, "'{name}' has no after content");
-                    seen += 1;
-                }
+        let fixtures = fixture_dirs().expect("the corpus directories are readable");
+        for ((name, _, _), row) in fixtures.iter().zip(rows_for(&fixtures)) {
+            let row = row.unwrap_or_else(|err| panic!("'{name}' should be readable: {err:#}"));
+            if let Some(row) = row {
+                assert!(row.before_lines > 0, "'{name}' has no before content");
+                assert!(row.after_lines > 0, "'{name}' has no after content");
+                seen += 1;
             }
         }
         assert!(seen > 100, "expected the whole corpus, saw {seen}");
@@ -355,7 +388,7 @@ mod tests {
 
     #[test]
     fn a_handmade_fixture_has_blank_provenance_rather_than_a_missing_row() {
-        let dir = codediff::test::helper::diffs_case_dir("cpp-add-templates")
+        let dir = omnidiff::test::helper::diffs_case_dir("cpp-add-templates")
             .expect("a known handmade fixture");
         let row = row_for("cpp-add-templates", "handmade", &dir)
             .unwrap()
@@ -375,7 +408,7 @@ mod tests {
     #[test]
     fn error_nodes_and_their_percentage_come_from_the_real_parse() {
         let row_of = |name: &str, dataset: &str| {
-            let dir = codediff::test::helper::diffs_case_dir(name).expect("a known fixture");
+            let dir = omnidiff::test::helper::diffs_case_dir(name).expect("a known fixture");
             row_for(name, dataset, &dir).unwrap().expect("a row")
         };
 
@@ -402,9 +435,9 @@ mod tests {
 
     #[test]
     fn missing_nodes_are_not_counted_as_errors() {
-        let code = codediff::code::Code::from_string(
+        let code = omnidiff::code::Code::from_string(
             "fn f() { let x = 1 }\n",
-            &codediff::code::Language::Rust,
+            &omnidiff::code::Language::Rust,
         );
         let root = code.ast.as_ref().expect("a tree").root_node();
         let mut has_missing = false;

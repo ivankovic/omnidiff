@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,18 +23,18 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // Includes the invariant-18 pairing of `0` with `keyboard` across
-    // `assignment_expression.right`, which codediff still deletes (`APTED("qualified_name")`).
+    // `assignment_expression.right`, which omnidiff still deletes (`APTED("qualified_name")`).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-genymobile-scrcpy-big-change",
-        103,
-        70,
+        99,
+        66,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
     // Includes the `0`/`keyboard` pairing the mapping clamp describes.
-    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-big-change", 41.07)
+    assert_matches_human_painting_within_limit("c-genymobile-scrcpy-big-change", 36.9)
 }
 
 #[test]

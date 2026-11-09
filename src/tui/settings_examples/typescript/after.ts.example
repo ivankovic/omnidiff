@@ -1,0 +1,45 @@
+class Reading {
+  constructor(public city: string, public temp: number) {}
+}
+
+function makeReading(city: string, temp: number): Reading {
+  return new Reading(city, temp);
+}
+
+class Station {
+  constructor(
+    private readonly name: string,
+    private readonly samples: number[],
+  ) {}
+
+  mean(): number {
+    const sum = this.samples.reduce((a, b) => a + b, 0);
+    return sum / this.samples.length;
+  }
+
+  spread(): number {
+    const s = this.samples;
+    return Math.max(...s) - Math.min(...s);
+  }
+
+  report(unit: string): string {
+    const averageTemp = this.mean().toFixed(1);
+    return `${this.name}: ${averageTemp} ${unit} at dawn`;
+  }
+}
+
+export function main(): void {
+  const range: [number, number] = [12, 19];
+  const stations = [
+    new Station("Osijek", [3, 6]),
+    new Station("Split", [range[0], range[1]]),
+    new Station("Zagreb", [8, 11]),
+  ];
+  if (process.argv.includes("--verbose")) {
+    for (const station of stations) {
+      console.log(station.report("C"));
+    }
+  }
+  let hottest = stations.map((s) => s.mean());
+  console.log(stations.length, hottest);
+}

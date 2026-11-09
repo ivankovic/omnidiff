@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,7 +24,7 @@
 use super::*;
 
 /// EXPLORATORY: every disagreement run between the *tree mapping* and the painting for the fixture
-/// in `FIXTURE` (`painting_disagreement_detail` checks codediff's *rendering* instead).
+/// in `FIXTURE` (`painting_disagreement_detail` checks omnidiff's *rendering* instead).
 /// `FIXTURE=name cargo test --lib --features test-fixtures
 /// mapping_vs_painting_disagreement_detail_for_fixture -- --ignored --nocapture`.
 #[test]
@@ -84,12 +83,12 @@ fn measure_stub_fixtures() -> Result<()> {
     Ok(())
 }
 
-/// EXPLORATORY: every run of bytes where codediff's rendering disagrees with the closest human
+/// EXPLORATORY: every run of bytes where omnidiff's rendering disagrees with the closest human
 /// painting for one fixture (`compare_painting`'s byte projection): `FIXTURE=<name>
 /// MODE=<minimal|full> cargo test --lib --features test-fixtures painting_disagreement_detail --
 /// --ignored --nocapture`.
 ///
-/// `MAPPING=human` renders the human tree mapping instead, with codediff's reasons borrowed as
+/// `MAPPING=human` renders the human tree mapping instead, with omnidiff's reasons borrowed as
 /// `painting_failure_census` does - the runs only a rendering change can fix.
 #[test]
 #[ignore]
@@ -112,7 +111,7 @@ fn painting_disagreement_detail() -> Result<()> {
     let real = diff
         .ast
         .as_ref()
-        .with_context(|| format!("codediff produced no AST diff for '{name}'"))?;
+        .with_context(|| format!("omnidiff produced no AST diff for '{name}'"))?;
     let ast = if human {
         let mut human_ast = as_ast_diff_for_mapping(&mapping, before, after)?;
         for (key, pair) in human_ast.mapping.iter_mut() {
@@ -138,12 +137,37 @@ fn painting_disagreement_detail() -> Result<()> {
             .map(|(side, contents)| {
                 let ranges =
                     crate::diff::text::ranges_for_options(&text_diff.all(side), contents, options);
+                // `DUMP_RANGES=1` prints every painted range of the side, with its text.
+                if std::env::var("DUMP_RANGES").is_ok() {
+                    for range in &ranges {
+                        let text = byte_offset(
+                            contents,
+                            range.source.start_row,
+                            range.source.start_column,
+                        )
+                        .zip(byte_offset(
+                            contents,
+                            range.source.end_row,
+                            range.source.end_column,
+                        ))
+                        .and_then(|(start, end)| contents.get(start..end))
+                        .unwrap_or("?");
+                        eprintln!(
+                            "    side={side} {:?} {}:{}-{}:{} {text:?}",
+                            range.operation,
+                            range.source.start_row,
+                            range.source.start_column,
+                            range.source.end_row,
+                            range.source.end_column
+                        );
+                    }
+                }
                 label_bytes_from_ranges(contents, &ranges)
             })
             .collect()
     };
     let ours = render(&ast);
-    // The candidate is chosen against codediff's own rendering even under `MAPPING=human`, as
+    // The candidate is chosen against omnidiff's own rendering even under `MAPPING=human`, as
     // the census chooses it, so the two report runs against the same painting.
     let chooser = if human { render(real) } else { ours.clone() };
 
@@ -185,7 +209,7 @@ fn painting_disagreement_detail() -> Result<()> {
 
     eprintln!(
         "fixture={name} mode={mode} mapping={} (painting solution='{}')",
-        if human { "human" } else { "codediff" },
+        if human { "human" } else { "omnidiff" },
         painting.name
     );
     for (side, contents) in [(0usize, &before.contents), (1usize, &after.contents)] {
@@ -322,7 +346,7 @@ fn mismatch_detail_for_fixture() -> Result<()> {
                 .map(|&partner_id| locate(partner_code, partner_id))
                 .unwrap_or_else(|| "0 (unmapped)".to_string());
             eprintln!(
-                "{side} {}  -> codediff chose {partner}",
+                "{side} {}  -> omnidiff chose {partner}",
                 locate(code, mismatch.node_id)
             );
             eprintln!("    {}", mismatch.message);
@@ -824,7 +848,7 @@ fn cross_fixture_convention_census() -> Result<()> {
     Ok(())
 }
 
-/// EXPLORATORY: every run of bytes where codediff's rendering disagrees with the painting,
+/// EXPLORATORY: every run of bytes where omnidiff's rendering disagrees with the painting,
 /// classified and **attributed** to the node matcher or the renderer, per preset:
 ///
 /// * `real` - `diff_code`'s mapping, rendered. What a reader sees.
@@ -837,7 +861,8 @@ fn cross_fixture_convention_census() -> Result<()> {
 /// repeated mistakes.
 ///
 /// `cargo test --release --lib --features test-fixtures painting_failure_census --
-/// --ignored --nocapture`
+/// --ignored --nocapture`. `PAINTING_RUNS_TSV=<path>` also writes every run, one per row with its
+/// side, first byte and text, for classifying offline.
 #[test]
 #[ignore]
 // `csv` is only linked under `test-fixtures`.
@@ -868,6 +893,10 @@ fn painting_failure_census() -> Result<()> {
         /// otherwise, or when no single range covers the run's first byte.
         geometry: String,
         sample: String,
+        /// 0 = before, 1 = after, and the run's first byte there: `PAINTING_RUNS_TSV` rows.
+        side: usize,
+        start: usize,
+        text: String,
     }
 
     fn label_name(label: Option<TextLabel>) -> &'static str {
@@ -999,37 +1028,56 @@ fn painting_failure_census() -> Result<()> {
     let mut single_painting: HashSet<String> = HashSet::new();
     let (mut unpainted, mut no_tree, mut errors) = (0usize, 0usize, Vec::new());
 
-    for name in &names {
-        let Ok(pair) = crate::test::helper::handmade_test_code_pair(name) else {
-            continue;
+    // One fixture's share of every tally above, so the fixtures can be measured in parallel and
+    // merged in name order: the artifact is the same as a serial pass's.
+    #[derive(Default)]
+    struct FixtureCensus {
+        runs: Vec<(&'static str, Run)>,
+        rows: Vec<[String; 8]>,
+        totals: BTreeMap<&'static str, [usize; 4]>,
+        measured: bool,
+        violating: bool,
+        single_painting: bool,
+        unpainted: bool,
+        no_tree: bool,
+        error: Option<String>,
+    }
+    let census_of = |name: &String| -> Result<FixtureCensus> {
+        let mut census = FixtureCensus::default();
+        // Parsed here and dropped with the census, not kept in `handmade_test_code_pair`'s
+        // process-wide cache: eight workers fill that with the whole corpus (19 GB).
+        let Some(Ok(Some(pair))) = crate::test::helper::diffs_case_dir(name)
+            .map(|dir| crate::test::helper::code_pair_from_dir(&dir))
+        else {
+            return Ok(census);
         };
-        let (before, after) = &*pair;
-        let Ok(mapping) = load(name) else {
-            continue;
+        let (before, after) = (&pair.0, &pair.1);
+        let Ok(mapping) = load_with(name, before, after) else {
+            return Ok(census);
         };
         if mapping.text_mappings.is_empty() {
-            unpainted += 1;
-            continue;
+            census.unpainted = true;
+            return Ok(census);
         }
         if before.ast.is_none() || after.ast.is_none() {
             // The plain-text fallback has no tree to classify against. Counted, not measured.
-            no_tree += 1;
-            continue;
+            census.no_tree = true;
+            return Ok(census);
         }
         let real_diff = crate::diff::diff_code(before, after);
         let Some(real_ast) = real_diff.ast.as_ref() else {
-            continue;
+            return Ok(census);
         };
         let mut human_ast = match as_ast_diff_for_mapping(&mapping, before, after) {
             Ok(diff) => diff,
             Err(e) => {
-                errors.push(format!("{name}: human mapping -> ASTDiff: {e:#}"));
-                continue;
+                census.error = Some(format!("{name}: human mapping -> ASTDiff: {e:#}"));
+                return Ok(census);
             }
         };
         // The human format records no `ASTMappingReason`, but `identical_or_move` reads one to
         // keep a verified pure reindent or relocation unpainted. Pairs both mappings make borrow
-        // codediff's reason, or `ideal` would blame the renderer for `Move`s it never paints.
+        // omnidiff's reason, or `ideal` would blame the renderer for `Move`s it never paints.
         for (key, human) in human_ast.mapping.iter_mut() {
             if let Some(real) = real_ast.mapping.get(key) {
                 human.reason = real.reason;
@@ -1043,14 +1091,14 @@ fn painting_failure_census() -> Result<()> {
         let contents = [&before.contents, &after.contents];
 
         if mapping.text_mappings.len() == 1 {
-            single_painting.insert(name.clone());
+            census.single_painting = true;
         }
         if crate::test::helper::human_mapping::invariants::ground_truth_invariant_violations_for(
             &mapping, before, after,
         )
         .is_ok_and(|violations| !violations.is_empty())
         {
-            violating.insert(name.clone());
+            census.violating = true;
         }
 
         for (preset, options) in [
@@ -1116,7 +1164,7 @@ fn painting_failure_census() -> Result<()> {
             }
             let Some((theirs, _)) = best else { continue };
 
-            measured.insert(name.clone());
+            census.measured = true;
             let per_fixture = {
                 let mut counts = [0usize; 3];
                 for (index, side) in (0..2).flat_map(|side| [(0usize, side), (1usize, side)]) {
@@ -1135,7 +1183,7 @@ fn painting_failure_census() -> Result<()> {
                 }
                 counts
             };
-            rows.push([
+            census.rows.push([
                 name.clone(),
                 preset.to_string(),
                 (before.contents.len() + after.contents.len()).to_string(),
@@ -1143,9 +1191,9 @@ fn painting_failure_census() -> Result<()> {
                 per_fixture[1].to_string(),
                 per_fixture[2].to_string(),
                 mapping.text_mappings.len().to_string(),
-                usize::from(violating.contains(name)).to_string(),
+                usize::from(census.violating).to_string(),
             ]);
-            let entry = totals.entry(preset).or_insert([0; 4]);
+            let entry = census.totals.entry(preset).or_insert([0; 4]);
             entry[3] += before.contents.len() + after.contents.len();
             for (real, ideal) in ours[0].iter().zip(&ours[1]) {
                 entry[2] += real
@@ -1159,7 +1207,7 @@ fn painting_failure_census() -> Result<()> {
             {
                 for side in 0..2 {
                     let (ours, theirs) = (&ours[index][side], &theirs[side]);
-                    totals.get_mut(preset).unwrap()[index] += ours
+                    census.totals.get_mut(preset).unwrap()[index] += ours
                         .iter()
                         .zip(theirs)
                         .filter(|(ours, theirs)| ours != theirs)
@@ -1202,7 +1250,7 @@ fn painting_failure_census() -> Result<()> {
                                 )
                             })
                             .unwrap_or_else(|| ("unmapped".to_string(), String::new()));
-                        runs.push((
+                        census.runs.push((
                             stream,
                             Run {
                                 fixture: name.clone(),
@@ -1217,6 +1265,9 @@ fn painting_failure_census() -> Result<()> {
                                 ours_op,
                                 ours_reason,
                                 geometry,
+                                side,
+                                start,
+                                text: text.to_string(),
                                 sample: format!(
                                     "{name} {preset} side={side} row={} {:?}",
                                     contents[side][..start].matches('\n').count() + 1,
@@ -1232,6 +1283,83 @@ fn painting_failure_census() -> Result<()> {
                 }
             }
         }
+        Ok(census)
+    };
+
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let results: Vec<std::sync::Mutex<Option<Result<FixtureCensus>>>> =
+        names.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            std::thread::Builder::new()
+                // As deep as the diff recurses; `tui::app::DIFF_COMPUTE_STACK_SIZE` is the same.
+                .stack_size(256 * 1024 * 1024)
+                .spawn_scoped(scope, || {
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(name) = names.get(i) else { break };
+                        let census = census_of(name);
+                        *results[i].lock().expect("no worker panics holding it") = Some(census);
+                    }
+                })
+                .expect("spawn census worker");
+        }
+    });
+    for (name, result) in names.iter().zip(results) {
+        let census = result
+            .into_inner()
+            .expect("no worker panics holding it")
+            .expect("every fixture measured")?;
+        runs.extend(census.runs);
+        rows.extend(census.rows);
+        for (preset, counts) in census.totals {
+            let entry = totals.entry(preset).or_insert([0; 4]);
+            for (total, count) in entry.iter_mut().zip(counts) {
+                *total += count;
+            }
+        }
+        if census.measured {
+            measured.insert(name.clone());
+        }
+        if census.violating {
+            violating.insert(name.clone());
+        }
+        if census.single_painting {
+            single_painting.insert(name.clone());
+        }
+        unpainted += usize::from(census.unpainted);
+        no_tree += usize::from(census.no_tree);
+        errors.extend(census.error);
+    }
+
+    // Every run, one per row, for offline classification: `PAINTING_RUNS_TSV=<path>`.
+    if let Ok(path) = std::env::var("PAINTING_RUNS_TSV") {
+        let mut out = String::from(
+            "stream\tfixture\tpreset\tside\tstart\tbytes\tours\ttheirs\tclass\tkind\texact\t\
+             human_op\tours_op\tours_reason\tgeometry\ttext\n",
+        );
+        for (stream, run) in &runs {
+            out.push_str(&format!(
+                "{stream}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{:?}\n",
+                run.fixture,
+                run.preset,
+                run.side,
+                run.start,
+                run.bytes,
+                label_name(run.ours),
+                label_name(run.theirs),
+                run.class,
+                run.kind,
+                run.exact,
+                run.human_op,
+                run.ours_op,
+                run.ours_reason,
+                run.geometry,
+                run.text,
+            ));
+        }
+        fs::write(&path, out)?;
     }
 
     // ---- the artifact ----------------------------------------------------------------------
@@ -1347,7 +1475,7 @@ fn painting_failure_census() -> Result<()> {
         );
     }
     eprintln!(
-        "  real = codediff's mapping vs the painting; renderer = the human mapping rendered vs \
+        "  real = omnidiff's mapping vs the painting; renderer = the human mapping rendered vs \
          the painting\n  (what no matcher fix can remove); matcher = the two renderings of the two \
          mappings against each other."
     );
@@ -1407,7 +1535,7 @@ fn painting_failure_census() -> Result<()> {
         let title = if stream == "ideal" {
             "renderer's own errors (human mapping rendered vs painting): ours -> theirs"
         } else {
-            "everything a reader sees (codediff's mapping rendered vs painting): ours -> theirs"
+            "everything a reader sees (omnidiff's mapping rendered vs painting): ours -> theirs"
         };
         print(
             title,
@@ -1578,8 +1706,8 @@ fn painting_failure_census() -> Result<()> {
 /// **Which identical leftovers the ground truth calls a copy.** Measures, before any engine code
 /// exists, what a pass that attaches leftovers to N:M groups would gain and break.
 ///
-/// A *candidate* is a node codediff deletes or inserts together with its whole subtree, whose
-/// full hash equals a node on the same side that codediff pairs with an identical node (its
+/// A *candidate* is a node omnidiff deletes or inserts together with its whole subtree, whose
+/// full hash equals a node on the same side that omnidiff pairs with an identical node (its
 /// *twin*): the leftover a copy-attaching pass could add to its twin's pair as a group. Only
 /// maximal candidates are rows; their descendants ride along and are counted in `size`.
 ///
@@ -1591,7 +1719,7 @@ fn painting_failure_census() -> Result<()> {
 /// * `matched` - the human pairs it one-to-one elsewhere: a mismatch either way.
 /// * `ungraded`.
 ///
-/// Then recall: every all-to-all member whose codediff partner is outside its group, and whether
+/// Then recall: every all-to-all member whose omnidiff partner is outside its group, and whether
 /// a candidate covers it (is it, or an ancestor of it). Writes
 /// `research/data/quality/nm_candidates.csv`.
 ///
@@ -1747,7 +1875,7 @@ fn nm_candidate_census() -> Result<()> {
                 fully_unmatched.insert(node.id(), own && children);
             }
 
-            // Hash -> the nodes on this side codediff pairs with an identical node.
+            // Hash -> the nodes on this side omnidiff pairs with an identical node.
             let mut twins: FxHashMap<u64, Vec<Node>> = FxHashMap::default();
             for node in &nodes {
                 let Some(&partner) = node_map.get(&node.id()) else {
@@ -1772,7 +1900,7 @@ fn nm_candidate_census() -> Result<()> {
                     && hash_of(node.id()).is_some_and(|hash| twins.contains_key(&hash))
             };
             for node in &nodes {
-                if !is_candidate(*node) || node.parent().is_some_and(&is_candidate) {
+                if !is_candidate(*node) || node.parent().is_some_and(is_candidate) {
                     continue;
                 }
                 candidate_roots[side].insert(node.id());
@@ -1879,7 +2007,7 @@ fn nm_candidate_census() -> Result<()> {
             }
         }
 
-        // Recall over the all-to-all members codediff leaves outside their group.
+        // Recall over the all-to-all members omnidiff leaves outside their group.
         let mut before_cache = PathCache::new();
         let mut after_cache = PathCache::new();
         for group in &mapping.groups {
@@ -1954,13 +2082,13 @@ fn nm_candidate_census() -> Result<()> {
         println!("  {label:<15} {}", line.join("  "));
     }
     println!(
-        "\nall-to-all members codediff leaves outside their group: {missed_members}, \
+        "\nall-to-all members omnidiff leaves outside their group: {missed_members}, \
          covered by a candidate: {covered_members}"
     );
     Ok(())
 }
 
-/// **Where codediff gives a node a second partner and silently drops the first**
+/// **Where omnidiff gives a node a second partner and silently drops the first**
 /// ([`ASTDiff::node_map_disagreements`]), per fixture, with the passes that wrote each side of the
 /// disagreement. Every fixture, solved or not.
 ///
@@ -2143,6 +2271,1971 @@ fn pinned_lexeme_census() -> Result<()> {
     kinds.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
     for (pair, count) in kinds.iter().take(60) {
         println!("{count:>6}  {pair}");
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: candidate invariants between the tree mapping and the paintings, counted over the
+/// corpus before any becomes a rule. Developed on `cpp-ladybird-refactor-variables-if-changes`,
+/// painted after its mapping was written.
+///
+/// - `21` a leaf painted `Update` that the tree mapping deletes or inserts;
+/// - `22` a leaf the tree mapping pairs, painted wholly `Delete` (before) or `Insert` (after);
+/// - `23` a leaf inside a painted `Match` whose mapping partner lies outside that entry's spans on
+///   the other side.
+///
+/// Each is split by `named` (text is not its own kind) against punctuation, and by partner `same`
+/// (identical) against `paired` (edited). `FIXTURES=a,b` limits the run and prints every hit.
+///
+/// `cargo test --release --lib --features test-fixtures mapping_painting_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn mapping_painting_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{LeafStatus, TreeContext, painted_labels};
+    use std::collections::BTreeMap;
+
+    let wanted = std::env::var("FIXTURES").unwrap_or_default();
+    let wanted: Vec<&str> = wanted
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect();
+    let verbose = !wanted.is_empty();
+    let mut totals: BTreeMap<String, (usize, std::collections::BTreeSet<String>)> = BTreeMap::new();
+    let mut samples: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        if !wanted.is_empty() && !wanted.contains(&name.as_str()) {
+            continue;
+        }
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        if mapping.text_mappings.is_empty() {
+            continue;
+        }
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        for named in &mapping.text_mappings {
+            let labels = painted_labels(named, &before, &after)?;
+            let whole = |side: usize, leaf: Node| -> Option<Option<TextLabel>> {
+                let slice = labels[side].get(leaf.byte_range())?;
+                let first = *slice.first()?;
+                slice.iter().all(|l| *l == first).then_some(first)
+            };
+            let mut hit = |rule: &str, side: usize, leaf: Node, detail: String| {
+                let named_leaf = codes[side].contents.get(leaf.byte_range()) != Some(leaf.kind());
+                let key = format!("{rule} {}", if named_leaf { "named" } else { "punct" });
+                let entry = totals.entry(key.clone()).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+                let line = format!(
+                    "{name} [{}] {} row {} `{}` {detail}",
+                    named.name,
+                    if side == 0 { "before" } else { "after" },
+                    leaf.start_position().row + 1,
+                    codes[side].contents[leaf.byte_range()]
+                        .chars()
+                        .take(30)
+                        .collect::<String>()
+                );
+                let list = samples.entry(key).or_default();
+                if verbose || list.len() < 12 {
+                    list.push(line);
+                }
+            };
+            let mut exact_update_spans: [std::collections::HashSet<(usize, usize)>; 2] =
+                Default::default();
+            for entry in &named.mapping.entries {
+                if entry.operation != HumanTextOperation::Match {
+                    continue;
+                }
+                for (side, spans) in [(0, &entry.before), (1, &entry.after)] {
+                    for span in spans {
+                        if let (Some(s), Some(e)) = (
+                            byte_offset(&codes[side].contents, span.start_row, span.start_column),
+                            byte_offset(&codes[side].contents, span.end_row, span.end_column),
+                        ) {
+                            exact_update_spans[side].insert((s, e));
+                        }
+                    }
+                }
+            }
+            for side in 0..2 {
+                for &leaf in &context.leaves[side] {
+                    if codes[side].contents[leaf.byte_range()].trim().is_empty() {
+                        continue;
+                    }
+                    let status = context.status(leaf, side);
+                    let label = whole(side, leaf);
+                    // 21: only where an update span is exactly this token, not a byte of a larger
+                    // edited span (`width: Double` -> `val width: Double`).
+                    if status == LeafStatus::Removed
+                        && label == Some(Some(TextLabel::Update))
+                        && exact_update_spans[side].contains(&(leaf.start_byte(), leaf.end_byte()))
+                    {
+                        hit("21 update-on-removed", side, leaf, String::new());
+                    }
+                    // 22
+                    let removed_label = if side == 0 {
+                        TextLabel::Delete
+                    } else {
+                        TextLabel::Insert
+                    };
+                    if label == Some(Some(removed_label)) {
+                        match status {
+                            LeafStatus::Same(p) => hit(
+                                "22 paired-painted-removed same",
+                                side,
+                                leaf,
+                                format!("partner row {}", p.start_position().row + 1),
+                            ),
+                            LeafStatus::Paired(p) => hit(
+                                "22 paired-painted-removed paired",
+                                side,
+                                leaf,
+                                format!(
+                                    "partner row {} `{}`",
+                                    p.start_position().row + 1,
+                                    codes[1 - side].contents[p.byte_range()]
+                                        .chars()
+                                        .take(30)
+                                        .collect::<String>()
+                                ),
+                            ),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            // 23
+            let to_bytes = |side: usize, span: &HumanTextSpan| -> Option<(usize, usize)> {
+                Some((
+                    byte_offset(&codes[side].contents, span.start_row, span.start_column)?,
+                    byte_offset(&codes[side].contents, span.end_row, span.end_column)?,
+                ))
+            };
+            for entry in &named.mapping.entries {
+                if entry.operation != HumanTextOperation::Match {
+                    continue;
+                }
+                let sides: [Vec<(usize, usize)>; 2] = [
+                    entry.before.iter().filter_map(|s| to_bytes(0, s)).collect(),
+                    entry.after.iter().filter_map(|s| to_bytes(1, s)).collect(),
+                ];
+                for side in 0..2 {
+                    for &leaf in &context.leaves[side] {
+                        let r = leaf.byte_range();
+                        if codes[side].contents[r.clone()].trim().is_empty()
+                            || !sides[side].iter().any(|&(s, e)| s <= r.start && r.end <= e)
+                        {
+                            continue;
+                        }
+                        let partner = match context.status(leaf, side) {
+                            LeafStatus::Same(p) | LeafStatus::Paired(p) => p,
+                            _ => continue,
+                        };
+                        // Overlap, not containment: Minimal paints part of a token (`Linked` inserted,
+                        // `HashMap` matched).
+                        let pr = partner.byte_range();
+                        if !sides[1 - side]
+                            .iter()
+                            .any(|&(s, e)| s < pr.end && pr.start < e)
+                        {
+                            hit(
+                                "23 match-partner-outside",
+                                side,
+                                leaf,
+                                format!("partner row {}", partner.start_position().row + 1),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    println!();
+    for (key, (count, fixtures)) in &totals {
+        println!("{key:45} {count:6} hits in {:4} fixtures", fixtures.len());
+    }
+    for (key, list) in &samples {
+        println!("\n== {key}");
+        for line in list {
+            println!("  {line}");
+        }
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: every unnamed token in a position a matched pair pins ([`invariants::
+/// pinned_counterpart`]) whose counterpart reads differently - `!=` against `==`, `&` against `*` -
+/// and what the ground truth does with the two: pairs them, deletes one and inserts the other, or
+/// something else. Measures whether "an unnamed token in a pinned slot is paired" could be an
+/// invariant, and how consistent the ground truth already is about it.
+///
+/// `FIXTURES=a,b` prints every case; otherwise a summary and samples.
+/// `cargo test --release --lib --features test-fixtures unnamed_slot_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn unnamed_slot_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{
+        LeafStatus, TreeContext, field_arity, field_of, pinned_counterpart,
+    };
+    use std::collections::BTreeMap;
+
+    let wanted = std::env::var("FIXTURES").unwrap_or_default();
+    let wanted: Vec<&str> = wanted
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect();
+    let mut by_verdict: BTreeMap<String, (usize, std::collections::BTreeSet<String>)> =
+        BTreeMap::new();
+    let mut by_pair: BTreeMap<(String, String), BTreeMap<String, usize>> = BTreeMap::new();
+    let mut samples: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        if !wanted.is_empty() && !wanted.contains(&name.as_str()) {
+            continue;
+        }
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        for &leaf in &context.leaves[0] {
+            let text = &before.contents[leaf.byte_range()];
+            if leaf.is_named() || text.trim().is_empty() {
+                continue;
+            }
+            let Some(parent) = leaf.parent() else {
+                continue;
+            };
+            let Some(after_parent) = context.partner(parent, 0) else {
+                continue;
+            };
+            let Some(counterpart) = pinned_counterpart(&context, leaf, parent, after_parent) else {
+                continue;
+            };
+            let other = &after.contents[counterpart.byte_range()];
+            if counterpart.is_named() || counterpart.child_count() != 0 || other == text {
+                continue;
+            }
+            let in_error = {
+                let mut current = Some(parent);
+                let mut found = false;
+                while let Some(node) = current {
+                    if node.is_error() {
+                        found = true;
+                        break;
+                    }
+                    current = node.parent();
+                }
+                found
+            };
+            let verdict = match (context.status(leaf, 0), context.status(counterpart, 1)) {
+                (LeafStatus::Paired(p), _) if p.id() == counterpart.id() => "paired",
+                (LeafStatus::Removed, LeafStatus::Removed) => "deleted+inserted",
+                (LeafStatus::Undecided, _) | (_, LeafStatus::Undecided) => "undecided",
+                _ => "other",
+            };
+            let pinned = match field_of(parent, leaf) {
+                Some(field) if field_arity(parent, &field) == 1 => format!("field:{field}"),
+                _ => "elimination".to_string(),
+            };
+            let parents = if parent.kind() == after_parent.kind() {
+                "same-parent-kind"
+            } else {
+                "cross-parent-kind"
+            };
+            let key = format!(
+                "{verdict:<17} {parents:<17}{}",
+                if in_error { " in-ERROR" } else { "" }
+            );
+            let entry = by_verdict.entry(key.clone()).or_default();
+            entry.0 += 1;
+            entry.1.insert(name.clone());
+            *by_pair
+                .entry((text.to_string(), other.to_string()))
+                .or_default()
+                .entry(verdict.to_string())
+                .or_default() += 1;
+            let line = format!(
+                "{name}  row {} `{text}` -> `{other}`  in {}->{} ({pinned})",
+                leaf.start_position().row + 1,
+                parent.kind(),
+                after_parent.kind()
+            );
+            let list = samples.entry(key).or_default();
+            if !wanted.is_empty() || list.len() < 25 {
+                list.push(line);
+            }
+        }
+    }
+    println!();
+    for (key, (count, fixtures)) in &by_verdict {
+        println!("{count:6} in {:4} fixtures  {key}", fixtures.len());
+    }
+    println!("\nby token pair (verdict counts):");
+    let mut pairs: Vec<_> = by_pair.into_iter().collect();
+    pairs.sort_by_key(|(_, v)| std::cmp::Reverse(v.values().sum::<usize>()));
+    for ((b, a), verdicts) in pairs.iter().take(40) {
+        println!("  `{b}` -> `{a}`  {verdicts:?}");
+    }
+    for (key, list) in &samples {
+        println!("\n== {key}");
+        for line in list {
+            println!("  {line}");
+        }
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: every all-to-all copy in the ground truth, one line per *copy* - the solver writes
+/// one group per node of a copied subtree, so groups nested under another group's member are
+/// folded into it. For each member: its row, whether the human pairs its parent with the parent of
+/// a member on the other side ("in place"), and what omnidiff does with it today.
+///
+/// `cargo test --release --lib --features test-fixtures nm_copy_census -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn nm_copy_census() -> Result<()> {
+    use crate::test::helper::node_for_path;
+
+    let mut copies = 0usize;
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Ok(mapping) = load(&name) else { continue };
+        let groups: Vec<&MultiMapGroup> = mapping
+            .groups
+            .iter()
+            .filter(|g| g.pairing == GroupPairing::AllToAll)
+            .collect();
+        if groups.is_empty() {
+            continue;
+        }
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let (broot, aroot) = (bt.root_node(), at.root_node());
+        let resolve = |root: Node<'_>, paths: &[Vec<String>]| -> Vec<Option<usize>> {
+            paths
+                .iter()
+                .map(|p| node_for_path(root, &path_refs(p)).ok().map(|n| n.id()))
+                .collect()
+        };
+        // Every member id per side, to fold nested groups.
+        let mut all_before = std::collections::HashSet::new();
+        let mut all_after = std::collections::HashSet::new();
+        for g in &groups {
+            all_before.extend(resolve(broot, &g.before_paths).into_iter().flatten());
+            all_after.extend(resolve(aroot, &g.after_paths).into_iter().flatten());
+        }
+        let human: std::collections::HashMap<Vec<String>, Vec<String>> = mapping
+            .entries
+            .iter()
+            .filter_map(|e| Some((e.before_path.clone()?, e.after_path.clone()?)))
+            .collect();
+        let diff = crate::diff::diff_code(&before, &after);
+        let ast = diff.ast.as_ref();
+
+        for g in &groups {
+            let bnodes: Vec<Node> = g
+                .before_paths
+                .iter()
+                .filter_map(|p| node_for_path(broot, &path_refs(p)).ok())
+                .collect();
+            let anodes: Vec<Node> = g
+                .after_paths
+                .iter()
+                .filter_map(|p| node_for_path(aroot, &path_refs(p)).ok())
+                .collect();
+            let nested = |n: &Node, set: &std::collections::HashSet<usize>| {
+                let mut cur = n.parent();
+                while let Some(p) = cur {
+                    if set.contains(&p.id()) {
+                        return true;
+                    }
+                    cur = p.parent();
+                }
+                false
+            };
+            if bnodes.iter().any(|n| nested(n, &all_before))
+                || anodes.iter().any(|n| nested(n, &all_after))
+            {
+                continue;
+            }
+            copies += 1;
+            let text = |n: &Node, code: &crate::code::Code| {
+                code.contents[n.byte_range()]
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .chars()
+                    .take(50)
+                    .collect::<String>()
+            };
+            let parent_path = |p: &Vec<String>| p[..p.len().saturating_sub(1)].to_vec();
+            let in_place_before = |p: &Vec<String>| {
+                human
+                    .get(&parent_path(p))
+                    .is_some_and(|ap| g.after_paths.iter().any(|q| &parent_path(q) == ap))
+            };
+            let in_place_after = |q: &Vec<String>| {
+                g.before_paths
+                    .iter()
+                    .any(|p| human.get(&parent_path(p)) == Some(&parent_path(q)))
+            };
+            let ours = |id: usize, before_side: bool| -> String {
+                let Some(ast) = ast else { return "-".into() };
+                let partner = if before_side {
+                    ast.before_node_map.get(&id)
+                } else {
+                    ast.after_node_map.get(&id)
+                };
+                match partner {
+                    Some(0) | None => "gone".into(),
+                    Some(p)
+                        if (before_side && anodes.iter().any(|a| a.id() == *p))
+                            || (!before_side && bnodes.iter().any(|b| b.id() == *p)) =>
+                    {
+                        "in-group".into()
+                    }
+                    Some(_) => "elsewhere".into(),
+                }
+            };
+            let members = |nodes: &[Node], paths: &[Vec<String>], before_side: bool| {
+                nodes
+                    .iter()
+                    .zip(paths)
+                    .map(|(n, p)| {
+                        let place = if before_side {
+                            in_place_before(p)
+                        } else {
+                            in_place_after(p)
+                        };
+                        format!(
+                            "r{}{}:{}",
+                            n.start_position().row + 1,
+                            if place { "=" } else { "*" },
+                            ours(n.id(), before_side)
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            let (kind, sample) = match (bnodes.first(), anodes.first()) {
+                (Some(n), _) => (n.kind(), text(n, &before)),
+                (None, Some(n)) => (n.kind(), text(n, &after)),
+                _ => ("?", String::new()),
+            };
+            println!(
+                "{name}\t{}:{}\t{:?}\t{kind}\t{sample:?}\tbefore[{}]\tafter[{}]",
+                bnodes.len(),
+                anodes.len(),
+                g.operation,
+                members(&bnodes, &g.before_paths, true),
+                members(&anodes, &g.after_paths, false),
+            );
+        }
+    }
+    println!("\n{copies} copies (all-to-all groups not nested in another)");
+    Ok(())
+}
+
+/// EXPLORATORY: a boolean against an identifier (`false` -> `enabled`, `enabled` -> `true`), and
+/// how the ground truth treats it - the question behind making it an update by rule.
+///
+/// A case is a `true`/`false` token on one side and an identifier on the other, found two ways:
+/// the tree mapping *pairs* the two (the token or the node wrapping it), or it deletes and inserts
+/// them as children of a matched pair: in a position the pair pins ([`pinned_removed_lexemes`],
+/// invariant 18's test) or anywhere among its children (one argument of several). A boolean
+/// inside a larger deleted or inserted subtree is not a case: nothing stands in for it. Each case is then read in every painting: the label each side's token
+/// carries whole - `update`/`move` (a `Match` entry), `delete`/`insert`, `unpainted`, or `mixed`.
+///
+/// `cargo test --release --lib --features test-fixtures boolean_identifier_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn boolean_identifier_census() -> Result<()> {
+    fn token_of(node: Node) -> Node {
+        crate::test::helper::human_mapping::invariants::lexeme_token(node).unwrap_or(node)
+    }
+    /// A removed token's occupant: the node wrapping only it, or the token itself.
+    fn occupant<'tree>(
+        context: &crate::test::helper::human_mapping::invariants::TreeContext<'tree>,
+        side: usize,
+        token: Node<'tree>,
+    ) -> Option<Node<'tree>> {
+        use crate::test::helper::human_mapping::invariants::{LeafStatus, lexeme_token};
+        if context.status(token, side) != LeafStatus::Removed {
+            return None;
+        }
+        let wrapper = token
+            .parent()
+            .filter(|parent| lexeme_token(*parent).is_some_and(|t| t.id() == token.id()));
+        Some(wrapper.unwrap_or(token))
+    }
+    use crate::test::helper::human_mapping::invariants::{
+        LeafStatus, TreeContext, lexeme_token, painted_labels, pinned_removed_lexemes,
+    };
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let is_boolean = |text: &str| matches!(text.to_ascii_lowercase().as_str(), "true" | "false");
+    let is_identifier = |node: Node, text: &str| {
+        let kind = node.kind();
+        (kind.contains("identifier") || matches!(kind, "name" | "constant" | "word"))
+            && !is_boolean(text)
+    };
+    let label_name = |label: Option<Option<TextLabel>>| match label {
+        None => "mixed",
+        Some(None) => "unpainted",
+        Some(Some(TextLabel::Update)) => "update",
+        Some(Some(TextLabel::Move)) => "move",
+        Some(Some(TextLabel::Delete)) => "delete",
+        Some(Some(TextLabel::Insert)) => "insert",
+    };
+
+    let mut trees: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut paintings: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut lines = Vec::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        let text =
+            |side: usize, node: Node<'_>| codes[side].contents[node.byte_range()].to_string();
+
+        // (before token, after token, how the tree mapping holds them).
+        let mut cases: Vec<(Node, Node, &str)> = Vec::new();
+        for &leaf in &context.leaves[0] {
+            let partner = match context.status(leaf, 0) {
+                LeafStatus::Paired(partner) => Some(partner),
+                _ => leaf
+                    .parent()
+                    .filter(|wrapper| lexeme_token(*wrapper).is_some_and(|t| t.id() == leaf.id()))
+                    .and_then(|wrapper| context.partner(wrapper, 0))
+                    .map(token_of),
+            };
+            if let Some(partner) = partner {
+                cases.push((leaf, partner, "paired"));
+            }
+        }
+        for (b, a) in pinned_removed_lexemes(&context, &before, &after) {
+            cases.push((token_of(b), token_of(a), "deleted+inserted pinned"));
+        }
+        // Unpinned: a removed token whose occupant's parent is matched, against a removed token
+        // among the partner parent's children, in any position (one argument of several).
+        for &leaf in &context.leaves[0] {
+            let Some(before_occupant) = occupant(&context, 0, leaf) else {
+                continue;
+            };
+            let Some(after_parent) = before_occupant
+                .parent()
+                .and_then(|parent| context.partner(parent, 0))
+            else {
+                continue;
+            };
+            let mut cursor = after_parent.walk();
+            for child in after_parent.children(&mut cursor) {
+                let token = token_of(child);
+                if occupant(&context, 1, token).is_some_and(|o| o.id() == child.id())
+                    && !cases
+                        .iter()
+                        .any(|(b, a, _)| b.id() == leaf.id() && a.id() == token.id())
+                {
+                    cases.push((leaf, token, "deleted+inserted unpinned"));
+                }
+            }
+        }
+        cases.retain(|(b, a, _)| {
+            let (bt, at) = (text(0, *b), text(1, *a));
+            (is_boolean(&bt) && is_identifier(*a, &at))
+                || (is_identifier(*b, &bt) && is_boolean(&at))
+        });
+        if cases.is_empty() {
+            continue;
+        }
+        let labels: Vec<(String, _)> = mapping
+            .text_mappings
+            .iter()
+            .map(|named| Ok((named.name.clone(), painted_labels(named, &before, &after)?)))
+            .collect::<Result<_>>()?;
+        for (b, a, held) in cases {
+            let direction = if is_boolean(&text(0, b)) {
+                "boolean -> identifier"
+            } else {
+                "identifier -> boolean"
+            };
+            let tree = format!("{direction:<22} {held}");
+            let entry = trees.entry(tree.clone()).or_default();
+            entry.0 += 1;
+            entry.1.insert(name.clone());
+            let mut painted = Vec::new();
+            for (painting, labels) in &labels {
+                let whole = |side: usize, node: Node| -> Option<Option<TextLabel>> {
+                    let slice = labels[side].get(node.byte_range())?;
+                    let first = *slice.first()?;
+                    slice.iter().all(|l| *l == first).then_some(first)
+                };
+                let shape = format!("{}/{}", label_name(whole(0, b)), label_name(whole(1, a)));
+                let key = format!("{tree:<40} {painting:<8} {shape}");
+                let entry = paintings.entry(key).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+                painted.push(format!("{painting} {shape}"));
+            }
+            lines.push(format!(
+                "{name}\t{tree}\tbefore {} {:?} -> after {} {:?} ({})\t{}",
+                b.start_position().row + 1,
+                text(0, b),
+                a.start_position().row + 1,
+                text(1, a),
+                a.kind(),
+                painted.join(", ")
+            ));
+        }
+    }
+    for line in &lines {
+        println!("{line}");
+    }
+    println!("\nTree mapping ({} cases):", lines.len());
+    for (class, (count, names)) in &trees {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    println!("\nPaintings (before token / after token):");
+    for (class, (count, names)) in &paintings {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: two painting conventions noticed while hand painting, measured over every painting
+/// of every fixture, before either is considered as an invariant.
+///
+/// **Call dot.** In `foo.bar()` the `.` is painted like `bar`, the member being called - unless a
+/// line break separates the two: in `a().\nb()` the dot ends `a().`'s line and goes with `a()`.
+/// A case is a `.`, `?.` or `->` token whose parent is a member access; it counts only where its
+/// two neighbours - the object's last byte before it and the member's first byte after it - are
+/// painted differently, since otherwise any painting of the dot agrees with one of them. Each case
+/// is classed by layout (`same row` as the member, or `trailing` with the member on a later row),
+/// by whether the access is called, by what happened to each neighbour (`removed`, `move`,
+/// `edited` - a member painted only in part counts as edited - or `unpainted`), and by which
+/// neighbour the dot's own label follows.
+///
+/// **Statement end.** The first visible byte of a row is painted like the row's last `;` token
+/// (a tree leaf, so never one inside a string or comment). Rows where the `;` is itself the first
+/// visible byte, or where both are unpainted, are skipped. Each row is classed by whether it
+/// `opens` the statement the `;` closes or `continues` one begun earlier, and by what happened to
+/// its first token, judged whole as for the dot.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` also prints every case that breaks a convention.
+#[test]
+#[ignore]
+fn painting_convention_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{LeafStatus, TreeContext, painted_labels};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    fn is_call(node: Node) -> bool {
+        node.kind().contains("call") || node.kind().contains("invocation")
+    }
+    /// Whether the member access holding a dot is called: it is the callee of a call, or (Java's
+    /// `method_invocation`, Ruby's `call`, PHP's `member_call_expression`) is the call itself.
+    fn access_is_called(access: Node) -> bool {
+        // Kotlin and Swift put the dot in a `navigation_suffix` under the access.
+        let access = if access.kind() == "navigation_suffix" {
+            access.parent().unwrap_or(access)
+        } else {
+            access
+        };
+        is_call(access)
+            || access.parent().is_some_and(|parent| {
+                is_call(parent)
+                    && parent
+                        .named_child(0)
+                        .is_some_and(|callee| callee.id() == access.id())
+            })
+    }
+    fn label_name(label: Option<TextLabel>) -> &'static str {
+        match label {
+            None => "unpainted",
+            Some(TextLabel::Update) => "update",
+            Some(TextLabel::Move) => "move",
+            Some(TextLabel::Delete) => "delete",
+            Some(TextLabel::Insert) => "insert",
+        }
+    }
+    fn tally(table: &mut BTreeMap<String, (usize, BTreeSet<String>)>, key: String, name: &str) {
+        let entry = table.entry(key).or_default();
+        entry.0 += 1;
+        entry.1.insert(name.to_string());
+    }
+    fn print_table(title: &str, table: &BTreeMap<String, (usize, BTreeSet<String>)>) {
+        println!("\n{title}:");
+        for (class, (count, names)) in table {
+            println!("{count:>7}  {:>4} fixtures  {class}", names.len());
+        }
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    let mut dots: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut ends: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut end_shapes: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let codes = [&before, &after];
+        for named in &mapping.text_mappings {
+            let labels = painted_labels(named, &before, &after)?;
+            let preset = if crate::test::helper::human_mapping::invariants::designates_minimal(
+                &named.name,
+            ) {
+                "Minimal"
+            } else if crate::test::helper::human_mapping::invariants::designates_full(&named.name) {
+                "Full"
+            } else {
+                "other"
+            };
+            for side in 0..2 {
+                let contents = codes[side].contents.as_str();
+                let label = |byte: usize| labels[side].get(byte).copied().flatten();
+                let row_of = |byte: usize| contents[..byte].matches('\n').count();
+                let row_text = |row: usize| contents.split('\n').nth(row).unwrap_or("").trim();
+
+                // Call dot.
+                for &leaf in &context.leaves[side] {
+                    if !matches!(leaf.kind(), "." | "?." | "->") {
+                        continue;
+                    }
+                    let Some(access) = leaf.parent() else {
+                        continue;
+                    };
+                    let mut member = leaf.next_named_sibling();
+                    while member.is_some_and(|m| m.kind().contains("comment")) {
+                        member = member.and_then(|m| m.next_named_sibling());
+                    }
+                    let Some(member) = member else { continue };
+                    let Some(object_end) = contents[..leaf.start_byte()]
+                        .trim_end()
+                        .len()
+                        .checked_sub(1)
+                    else {
+                        continue;
+                    };
+                    let (object, dot, callee) = (
+                        label(object_end),
+                        label(leaf.start_byte()),
+                        label(member.start_byte()),
+                    );
+                    if object == callee {
+                        continue;
+                    }
+                    // A member painted in part (`Minimal`'s `unsafe_` before `layout_node`) is
+                    // edited in place, like a rename, not inserted or deleted.
+                    let member_whole = member.byte_range().all(|byte| {
+                        label(byte) == callee || contents.as_bytes()[byte].is_ascii_whitespace()
+                    });
+                    let member_class = match callee {
+                        _ if !member_whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let object_class = match object {
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let trailing = row_of(leaf.start_byte()) != row_of(member.start_byte());
+                    let follows = if dot == callee {
+                        "member"
+                    } else if dot == object {
+                        "object"
+                    } else {
+                        "neither"
+                    };
+                    let expected = if trailing { "object" } else { "member" };
+                    let layout = if trailing { "trailing" } else { "same row" };
+                    let called = if access_is_called(access) {
+                        "call  "
+                    } else {
+                        "access"
+                    };
+                    tally(
+                        &mut dots,
+                        format!(
+                            "{called} {layout:<8} {object_class:>9} . {member_class:<9} dot follows \
+                             {follows}"
+                        ),
+                        &name,
+                    );
+                    if detail
+                        && follows != expected
+                        && called == "call  "
+                        && matches!(member_class, "removed" | "move")
+                    {
+                        println!(
+                            "dot\t{name}\t{preset}\t{} row {}\t{} {} / dot {} / {} {}\t{}",
+                            ["before", "after"][side],
+                            row_of(leaf.start_byte()) + 1,
+                            label_name(object),
+                            &contents[object_end..=object_end],
+                            label_name(dot),
+                            label_name(callee),
+                            &contents[member.byte_range()],
+                            row_text(row_of(leaf.start_byte())),
+                        );
+                    }
+                }
+
+                // Statement end: the last `;` leaf of each row.
+                let mut last_semicolon: BTreeMap<usize, Node> = BTreeMap::new();
+                for &leaf in &context.leaves[side] {
+                    if leaf.kind() == ";" {
+                        last_semicolon.insert(leaf.start_position().row, leaf);
+                    }
+                }
+                let root = [bt.root_node(), at.root_node()][side];
+                let mut offset = 0usize;
+                for (row, line) in contents.split('\n').enumerate() {
+                    let start = offset;
+                    offset += line.len() + 1;
+                    let Some(&semicolon_leaf) = last_semicolon.get(&row) else {
+                        continue;
+                    };
+                    let semicolon = semicolon_leaf.start_byte();
+                    let Some(first) = line.find(|c: char| !c.is_whitespace()) else {
+                        continue;
+                    };
+                    if start + first == semicolon {
+                        continue;
+                    }
+                    let (head, end) = (label(start + first), label(semicolon));
+                    if head.is_none() && end.is_none() {
+                        continue;
+                    }
+                    // Whether the row opens the statement its `;` closes, rather than continuing
+                    // one begun on an earlier row.
+                    let mut opens = None;
+                    let mut node = semicolon_leaf.parent();
+                    while let Some(statement) =
+                        node.filter(|n| n.end_byte() == semicolon_leaf.end_byte())
+                    {
+                        if statement.start_byte() == start + first {
+                            opens = Some(statement);
+                        }
+                        node = statement.parent();
+                    }
+                    let statement = opens;
+                    let opens = opens.is_some();
+                    let shape = if opens { "opens    " } else { "continues" };
+                    // The first token's class, judged whole: a token painted in part is edited.
+                    let token = root
+                        .descendant_for_byte_range(start + first, start + first + 1)
+                        .unwrap_or(semicolon_leaf);
+                    let whole = token.byte_range().all(|byte| label(byte) == head);
+                    let class = match head {
+                        _ if !whole => "edited",
+                        None => "unpainted",
+                        Some(TextLabel::Update) => "edited",
+                        Some(TextLabel::Move) => "move",
+                        Some(TextLabel::Delete | TextLabel::Insert) => "removed",
+                    };
+                    let agree = if head == end { "agree   " } else { "disagree" };
+                    tally(
+                        &mut ends,
+                        format!("{shape} {class:<9} {agree} {preset}"),
+                        &name,
+                    );
+                    tally(
+                        &mut end_shapes,
+                        format!(
+                            "{shape} {agree} {preset:<7} {} / {}",
+                            label_name(head),
+                            label_name(end)
+                        ),
+                        &name,
+                    );
+                    if detail && head != end && opens && matches!(class, "removed" | "move") {
+                        let status = |leaf: Node| match context.status(leaf, side) {
+                            LeafStatus::Same(_) => "same",
+                            LeafStatus::Paired(_) => "paired",
+                            LeafStatus::Removed => "removed",
+                            LeafStatus::Undecided => "undecided",
+                        };
+                        let held = statement.map_or("?".to_string(), |statement| {
+                            format!(
+                                "{} {}, first {}, `;` {}",
+                                statement.kind(),
+                                if context.partner(statement, side).is_some() {
+                                    "paired"
+                                } else {
+                                    "unpaired"
+                                },
+                                status(token),
+                                status(semicolon_leaf),
+                            )
+                        });
+                        println!(
+                            "end\t{name}\t{preset}\t{} row {}\t{} / {}\t{}\t{held}",
+                            ["before", "after"][side],
+                            row + 1,
+                            label_name(head),
+                            label_name(end),
+                            line.trim(),
+                        );
+                    }
+                }
+            }
+        }
+    }
+    print_table(
+        "Call dot (object's last byte and member's first byte painted differently)",
+        &dots,
+    );
+    print_table(
+        "Statement end by first token's class (first visible byte vs the row's last `;`)",
+        &ends,
+    );
+    print_table("Statement end by label (first / `;`)", &end_shapes);
+    Ok(())
+}
+
+/// EXPLORATORY: invariants 24 (call dot) and 25 (statement end) held against omnidiff's *own*
+/// painting under each preset, with the human tree mapping deciding which statements were removed.
+/// Prints each break as `fixture  preset  message` and a count per invariant and preset.
+///
+/// `cargo test --profile ci --lib --features test-fixtures painting_convention_engine_census --
+/// --ignored --nocapture`
+#[test]
+#[ignore]
+fn painting_convention_engine_census() -> Result<()> {
+    use crate::diff::text::RenderOptions;
+    use crate::test::helper::human_mapping::invariants::{
+        PaintedLabels, TreeContext, call_dots_go_with_their_member,
+        removed_statements_take_their_terminator,
+    };
+    use std::collections::BTreeMap;
+
+    let mut counts: BTreeMap<(u8, &str), (usize, std::collections::BTreeSet<String>)> =
+        BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        let diff = crate::test::helper::human_mapping::omnidiff_diff_for_painting(&before, &after)?;
+        for (preset, options) in [
+            ("Minimal", RenderOptions::MINIMAL),
+            ("Full", RenderOptions::FULL),
+        ] {
+            let labels: PaintedLabels =
+                crate::test::helper::human_mapping::omnidiff_painting_labels(
+                    &diff, &before, &after, options,
+                );
+            let found = call_dots_go_with_their_member(preset, &labels, &context, &before, &after)
+                .into_iter()
+                .chain(removed_statements_take_their_terminator(
+                    preset, &labels, &context, &before, &after,
+                ));
+            for violation in found {
+                // For 25: what omnidiff's own mapping does with the `;`, and why.
+                let mut ours = String::new();
+                if let (
+                    25,
+                    Some(site),
+                    crate::test::helper::human_mapping::PaintingDiff::Ast { ast, .. },
+                ) = (violation.invariant, violation.sites.get(1), &diff)
+                {
+                    let root = [bt.root_node(), at.root_node()][site.side];
+                    let point = |row, column| tree_sitter::Point { row, column };
+                    if let Some(semicolon) = root.descendant_for_point_range(
+                        point(site.span.start_row, site.span.start_column),
+                        point(site.span.end_row, site.span.end_column),
+                    ) {
+                        let map = if site.side == 0 {
+                            &ast.before_node_map
+                        } else {
+                            &ast.after_node_map
+                        };
+                        let partner = map.get(&semicolon.id()).copied().unwrap_or(0);
+                        let key = if site.side == 0 {
+                            (semicolon.id(), partner)
+                        } else {
+                            (partner, semicolon.id())
+                        };
+                        let parent_partner = semicolon
+                            .parent()
+                            .and_then(|parent| map.get(&parent.id()).copied())
+                            .unwrap_or(0);
+                        ours = format!(
+                            "\tours: `;` partner {} reason {:?}, statement {}",
+                            if partner == 0 { "none" } else { "some" },
+                            ast.mapping.get(&key).map(|m| m.reason),
+                            if parent_partner == 0 {
+                                "unmatched"
+                            } else {
+                                "matched"
+                            },
+                        );
+                    }
+                }
+                println!("{name}\t{preset}\t{}{ours}", violation.message);
+                let entry = counts.entry((violation.invariant, preset)).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+            }
+        }
+    }
+    println!();
+    for ((invariant, preset), (count, names)) in &counts {
+        println!(
+            "invariant {invariant} {preset:<7} {count:>5} in {:>4} fixtures",
+            names.len()
+        );
+    }
+    Ok(())
+}
+
+/// Census of human tree mappings that pair a statement-closing `;` across two statements the
+/// mapping does not pair with each other - the pairing `solve_stray_terminators` undoes in the
+/// engine. Prints each as `fixture  before row  after row  before statement => after statement`.
+///
+/// `cargo test --profile ci --lib --features test-fixtures stray_terminator_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+fn stray_terminator_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::TreeContext;
+
+    /// The statement `leaf` closes, if it is a `;` and its parent's last child.
+    fn closed_statement(leaf: Node) -> Option<Node> {
+        let parent = leaf.parent()?;
+        (leaf.kind() == ";"
+            && parent.child_count() > 1
+            && parent.child(parent.child_count() - 1).map(|n| n.id()) == Some(leaf.id()))
+        .then_some(parent)
+    }
+    fn first_line(node: Node, contents: &str) -> String {
+        contents[node.byte_range()]
+            .lines()
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string()
+    }
+
+    let mut total = 0;
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let context = TreeContext::build(&mapping, bt.root_node(), at.root_node());
+        for &leaf in &context.leaves[0] {
+            let Some(statement) = closed_statement(leaf) else {
+                continue;
+            };
+            let Some(partner) = context.partner(leaf, 0) else {
+                continue;
+            };
+            let Some(partner_statement) = closed_statement(partner) else {
+                continue;
+            };
+            if context
+                .partner(statement, 0)
+                .is_some_and(|p| p.id() == partner_statement.id())
+            {
+                continue;
+            }
+            total += 1;
+            println!(
+                "{name}\tb{}\ta{}\t{} `{}` => {} `{}`",
+                leaf.start_position().row + 1,
+                partner.start_position().row + 1,
+                statement.kind(),
+                first_line(statement, &before.contents),
+                partner_statement.kind(),
+                first_line(partner_statement, &after.contents),
+            );
+        }
+    }
+    println!("{total} stray terminators");
+    Ok(())
+}
+
+/// **Cost models with moves.** Scores omnidiff's mapping and the human's under three models, from
+/// the node pairing alone (both sides judged the same way, ignoring how either labels its
+/// operations):
+///
+/// - `unit`: insert 1, delete 1, update 1, identity 0, no moves - today's `diff_cost`.
+/// - `double_no_move`: insert 2, delete 2, update 1, identity 0, no moves - the doubling alone.
+/// - `move_per_node`: insert 2, delete 2, update 1, identity 0, and 1 per node a move carries.
+/// - `move_per_subtree`: the same, but a move costs 1 whatever the size of the subtree it carries.
+/// - `token_per_token` / `token_per_block`: insert 2, delete 2, update 1, with moves read off
+///   token order instead of the tree - 1 per moved leaf, or 1 per block of moved leaves adjacent
+///   on both sides. Re-nesting (`a.b.c` -> `a.b.x.c`) moves no token.
+///
+/// A pair is updated when its kinds differ, or its text does (a leaf's whole text, an inner node's
+/// own text between its children). A pair is a move root when its parents are not paired with
+/// each other, or when, among siblings whose parents are paired, it falls outside the longest run
+/// kept in order. A move carries every node under its root paired into its partner's subtree.
+///
+/// The question it answers: under which model is the human mapping the cheaper one, i.e. does
+/// minimising the model's cost lead towards what a human paints.
+///
+/// `cargo test --profile ci --lib --features test-fixtures move_cost_model_census -- --ignored
+/// --nocapture`; `CENSUS_DETAIL=1` prints every fixture.
+#[test]
+#[ignore]
+fn move_cost_model_census() -> Result<()> {
+    use crate::code::ASTMetadata;
+    use std::collections::{HashMap, HashSet};
+
+    #[derive(Default, Clone, Copy)]
+    struct Score {
+        inserted: u64,
+        deleted: u64,
+        updated: u64,
+        move_roots: u64,
+        moved_nodes: u64,
+        moved_tokens: u64,
+        moved_blocks: u64,
+    }
+    impl Score {
+        fn costs(self) -> [u64; 6] {
+            let removed = 2 * (self.inserted + self.deleted) + self.updated;
+            [
+                self.inserted + self.deleted + self.updated,
+                removed,
+                removed + self.moved_nodes,
+                removed + self.move_roots,
+                removed + self.moved_tokens,
+                removed + self.moved_blocks,
+            ]
+        }
+    }
+
+    fn all_nodes(root: Node) -> Vec<Node> {
+        let mut nodes = Vec::new();
+        let mut stack = vec![root];
+        while let Some(node) = stack.pop() {
+            nodes.push(node);
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                stack.push(child);
+            }
+        }
+        nodes
+    }
+    fn subtree_ids(node: Node) -> HashSet<usize> {
+        all_nodes(node).into_iter().map(|n| n.id()).collect()
+    }
+    /// Indices into `seq` of one longest strictly increasing subsequence.
+    fn longest_increasing(seq: &[usize]) -> HashSet<usize> {
+        let mut tails: Vec<usize> = Vec::new();
+        let mut previous = vec![usize::MAX; seq.len()];
+        for (i, &value) in seq.iter().enumerate() {
+            let at = tails.partition_point(|&t| seq[t] < value);
+            if at > 0 {
+                previous[i] = tails[at - 1];
+            }
+            if at == tails.len() {
+                tails.push(i);
+            } else {
+                tails[at] = i;
+            }
+        }
+        let mut kept = HashSet::new();
+        let mut current = tails.last().copied().unwrap_or(usize::MAX);
+        while current != usize::MAX {
+            kept.insert(current);
+            current = previous[current];
+        }
+        kept
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn score(
+        before_root: Node,
+        after_root: Node,
+        before_src: &str,
+        after_src: &str,
+        before_meta: &ASTMetadata,
+        after_meta: &ASTMetadata,
+        pairs: &HashMap<usize, usize>,
+    ) -> Score {
+        let before_nodes = all_nodes(before_root);
+        let after_nodes = all_nodes(after_root);
+        let after_by_id: HashMap<usize, Node> = after_nodes.iter().map(|n| (n.id(), *n)).collect();
+        let paired_after: HashSet<usize> = pairs.values().copied().collect();
+        let mut s = Score {
+            deleted: before_nodes
+                .iter()
+                .filter(|n| !pairs.contains_key(&n.id()))
+                .count() as u64,
+            inserted: after_nodes
+                .iter()
+                .filter(|n| !paired_after.contains(&n.id()))
+                .count() as u64,
+            ..Score::default()
+        };
+        let owned =
+            |meta: &ASTMetadata, id: usize| meta.node_info.get(&id).map(|i| i.owned_text_hash);
+        let mut roots: Vec<(Node, Node)> = Vec::new();
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let changed = b.kind() != a.kind()
+                || if b.child_count() == 0 || a.child_count() == 0 {
+                    before_src[b.byte_range()] != after_src[a.byte_range()]
+                } else {
+                    owned(before_meta, b.id()) != owned(after_meta, a.id())
+                };
+            s.updated += changed as u64;
+            if let (Some(bp), Some(ap)) = (b.parent(), a.parent())
+                && pairs.get(&bp.id()) != Some(&ap.id())
+            {
+                roots.push((*b, *a));
+            }
+        }
+        // Reorders under a paired parent.
+        for b in &before_nodes {
+            let Some(a) = pairs.get(&b.id()).and_then(|id| after_by_id.get(id)) else {
+                continue;
+            };
+            let mut after_index: HashMap<usize, usize> = HashMap::new();
+            let mut cursor = a.walk();
+            for (i, child) in a.children(&mut cursor).enumerate() {
+                after_index.insert(child.id(), i);
+            }
+            let mut cursor = b.walk();
+            let kids: Vec<(Node, usize)> = b
+                .children(&mut cursor)
+                .filter_map(|child| {
+                    let partner = pairs.get(&child.id())?;
+                    Some((child, *after_index.get(partner)?))
+                })
+                .collect();
+            let seq: Vec<usize> = kids.iter().map(|(_, i)| *i).collect();
+            let kept = longest_increasing(&seq);
+            for (i, (child, _)) in kids.iter().enumerate() {
+                if !kept.contains(&i) {
+                    roots.push((*child, after_by_id[&pairs[&child.id()]]));
+                }
+            }
+        }
+        s.move_roots = roots.len() as u64;
+        let mut carried: HashSet<usize> = HashSet::new();
+        for (b, a) in roots {
+            let inside = subtree_ids(a);
+            for id in subtree_ids(b) {
+                if pairs.get(&id).is_some_and(|p| inside.contains(p)) {
+                    carried.insert(id);
+                }
+            }
+        }
+        s.moved_nodes = carried.len() as u64;
+
+        // Token order: paired leaves in before order, read off by their partners' after order.
+        // Those outside one longest increasing run are moved, however the tree around them
+        // regrouped; a block is a run of moved tokens adjacent on both sides.
+        let mut after_leaf_rank: HashMap<usize, usize> = HashMap::new();
+        let mut after_leaves: Vec<Node> = after_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        after_leaves.sort_by_key(|n| n.start_byte());
+        for (rank, leaf) in after_leaves.iter().enumerate() {
+            after_leaf_rank.insert(leaf.id(), rank);
+        }
+        let mut before_leaves: Vec<Node> = before_nodes
+            .iter()
+            .filter(|n| n.child_count() == 0)
+            .copied()
+            .collect();
+        before_leaves.sort_by_key(|n| n.start_byte());
+        let ranks: Vec<usize> = before_leaves
+            .iter()
+            .filter_map(|leaf| after_leaf_rank.get(pairs.get(&leaf.id())?).copied())
+            .collect();
+        let kept = longest_increasing(&ranks);
+        let mut previous_moved: Option<usize> = None;
+        for (i, &rank) in ranks.iter().enumerate() {
+            if kept.contains(&i) {
+                previous_moved = None;
+                continue;
+            }
+            s.moved_tokens += 1;
+            if previous_moved != Some(rank.wrapping_sub(1)) {
+                s.moved_blocks += 1;
+            }
+            previous_moved = Some(rank);
+        }
+        s
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    const MODELS: [&str; 6] = [
+        "unit",
+        "double_no_move",
+        "move_per_node",
+        "move_per_subtree",
+        "token_per_token",
+        "token_per_block",
+    ];
+    // Per model: (engine total, human total, fixtures engine cheaper, equal, human cheaper).
+    let mut totals = [(0u64, 0u64, 0usize, 0usize, 0usize); 6];
+    let (mut fixtures, mut incomplete) = (0, 0);
+    let (mut engine_score, mut human_score) = (Score::default(), Score::default());
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(bt), Some(at)) = (before.ast.as_ref(), after.ast.as_ref()) else {
+            continue;
+        };
+        let (br, ar) = (bt.root_node(), at.root_node());
+        let caches = rebuild_caches_for_mapping(&mapping, br, ar);
+        if caches.unresolved > 0 {
+            continue;
+        }
+        let Some(diff) = crate::diff::diff_code(&before, &after).ast else {
+            continue;
+        };
+        let engine_pairs: HashMap<usize, usize> = diff
+            .before_node_map
+            .iter()
+            .filter(|&(&b, &a)| b != 0 && a != 0)
+            .map(|(&b, &a)| (b, a))
+            .collect();
+        // An `Identical` entry vouches for its whole subtree: pair the descendants in lockstep.
+        let mut human_pairs: HashMap<usize, usize> = caches.before_match.clone();
+        let after_ids: HashMap<usize, Node> =
+            all_nodes(ar).into_iter().map(|n| (n.id(), n)).collect();
+        let mut stack: Vec<(Node, Node)> = all_nodes(br)
+            .into_iter()
+            .filter_map(|b| {
+                let a = after_ids.get(caches.before_match.get(&b.id())?)?;
+                let identical = matches!(
+                    caches.before_operation.get(&b.id()),
+                    None | Some(HumanOperation::Identical)
+                );
+                identical.then_some((b, *a))
+            })
+            .collect();
+        while let Some((b, a)) = stack.pop() {
+            if b.child_count() != a.child_count() {
+                continue;
+            }
+            for i in 0..b.child_count() {
+                let (Some(bc), Some(ac)) = (b.child(i), a.child(i)) else {
+                    continue;
+                };
+                human_pairs.entry(bc.id()).or_insert(ac.id());
+                stack.push((bc, ac));
+            }
+        }
+        // An unfinished mapping would read its unmarked nodes as deleted and inserted.
+        let paired_after: HashSet<usize> = human_pairs.values().copied().collect();
+        let unmarked = all_nodes(br).into_iter().any(|n| {
+            !human_pairs.contains_key(&n.id())
+                && !matches!(status_before(n, &caches), NodeStatus::Marked { .. })
+        }) || all_nodes(ar).into_iter().any(|n| {
+            !paired_after.contains(&n.id())
+                && !matches!(status_after(n, &caches), NodeStatus::Marked { .. })
+        });
+        if unmarked {
+            incomplete += 1;
+            continue;
+        }
+        let (bm, am) = (
+            crate::code::metadata::metadata_of(&before),
+            crate::code::metadata::metadata_of(&after),
+        );
+        let (bs, as_) = (before.contents.as_str(), after.contents.as_str());
+        let engine = score(br, ar, bs, as_, &bm, &am, &engine_pairs);
+        let human = score(br, ar, bs, as_, &bm, &am, &human_pairs);
+        for (total, s) in [(&mut engine_score, engine), (&mut human_score, human)] {
+            total.inserted += s.inserted;
+            total.deleted += s.deleted;
+            total.updated += s.updated;
+            total.move_roots += s.move_roots;
+            total.moved_nodes += s.moved_nodes;
+            total.moved_tokens += s.moved_tokens;
+            total.moved_blocks += s.moved_blocks;
+        }
+        fixtures += 1;
+        let (ec, hc) = (engine.costs(), human.costs());
+        for model in 0..MODELS.len() {
+            let t = &mut totals[model];
+            t.0 += ec[model];
+            t.1 += hc[model];
+            match ec[model].cmp(&hc[model]) {
+                std::cmp::Ordering::Less => t.2 += 1,
+                std::cmp::Ordering::Equal => t.3 += 1,
+                std::cmp::Ordering::Greater => t.4 += 1,
+            }
+        }
+        if detail {
+            println!("{name}\tengine {ec:?}\thuman {hc:?}");
+        }
+    }
+    println!("\n{fixtures} fixtures ({incomplete} with unmarked nodes skipped)");
+    for (label, s) in [("engine", engine_score), ("human", human_score)] {
+        println!(
+            "{label:>6}: inserted {} deleted {} updated {} move roots {} moved nodes {} \
+             moved tokens {} moved blocks {}",
+            s.inserted,
+            s.deleted,
+            s.updated,
+            s.move_roots,
+            s.moved_nodes,
+            s.moved_tokens,
+            s.moved_blocks
+        );
+    }
+    println!(
+        "\n{:<18} {:>10} {:>10} {:>8}  {:>14} {:>6} {:>14}",
+        "model", "engine", "human", "ratio", "engine cheaper", "equal", "human cheaper"
+    );
+    for (model, (engine, human, less, equal, more)) in MODELS.iter().zip(totals) {
+        println!(
+            "{model:<18} {engine:>10} {human:>10} {:>8.4}  {less:>14} {equal:>6} {more:>14}",
+            engine as f64 / human as f64
+        );
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: every fixture in which `diff::embedded` finds a layer - a changed pair of host
+/// strings diffed as code of another language - with the language, the decoded sizes, how many
+/// inner nodes changed, and whether the fixture's human mapping has a layer for it yet.
+///
+/// `cargo test --profile ci --lib --features test-fixtures embedded_layer_census -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore]
+fn embedded_layer_census() -> Result<()> {
+    let pairs = crate::test::helper::handmade_test_code_pairs()?;
+    let mut names: Vec<&String> = pairs.keys().collect();
+    names.sort();
+    let mut found = 0;
+    for name in names {
+        let (before, after) = &pairs[name];
+        let Some(ast) = crate::diff::diff_code(before, after).ast else {
+            continue;
+        };
+        if ast.embedded.is_empty() {
+            continue;
+        }
+        let human_layers = load_with(name, before, after)
+            .map(|mapping| mapping.embedded.len())
+            .unwrap_or(0);
+        for layer in &ast.embedded {
+            found += 1;
+            let changed = layer
+                .diff
+                .mapping
+                .values()
+                .filter(|mapping| mapping.operation != ASTMappingOperation::Identical)
+                .count();
+            println!(
+                "{name}\t{}\t{}/{} rows\t{changed} changed\thuman layers: {human_layers}",
+                crate::code::language::stable_name(layer.language),
+                layer.before.contents.lines().count(),
+                layer.after.contents.lines().count(),
+            );
+        }
+    }
+    println!("{found} embedded layers");
+    Ok(())
+}
+
+/// EXPLORATORY: fixtures with code of another language held in a string literal - SQL in a Java
+/// string, shell in a YAML `run:` scalar or a `package.json` script, CSS in an HTML `style`
+/// attribute, a Vim command in a Vimscript string. A grammar parses such a string as one leaf, so a
+/// change inside it is a text change, whatever its structure.
+///
+/// A case is an outermost string node (a kind holding `string`, a YAML scalar, a heredoc, an HTML
+/// or XML attribute value) whose text one of the detectors below recognises, as a language other
+/// than the fixture's own. `changed` means the same text does not occur on the other side.
+///
+/// `cargo test --profile ci --lib --features test-fixtures embedded_language_census -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore]
+fn embedded_language_census() -> Result<()> {
+    use regex::Regex;
+    use std::collections::{BTreeMap, BTreeSet};
+
+    fn is_string(kind: &str) -> bool {
+        // C's `#include <vector>` is a `system_lib_string`, a path rather than a literal.
+        (kind.contains("string") && kind != "system_lib_string")
+            || kind.ends_with("_scalar")
+            || kind.contains("heredoc")
+            || kind == "nowdoc"
+            || kind == "text_block"
+            || kind == "quoted_attribute_value"
+            || kind == "AttValue"
+    }
+    fn strings<'tree>(node: Node<'tree>, out: &mut Vec<Node<'tree>>) {
+        if is_string(node.kind()) {
+            out.push(node);
+            return;
+        }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            strings(child, out);
+        }
+    }
+
+    // First match wins, so the narrower languages come first: awk before js, the C preprocessor
+    // before anything. `own` lists the fixture languages in which the text is not foreign.
+    let detectors: Vec<(&str, &[&str], Regex)> = vec![
+        (
+            "c",
+            &["c", "cpp"],
+            Regex::new(r#"#include\s*[<"][\w./]|\bint\s+main\s*\([^)]*\)\s*\{"#)?,
+        ),
+        (
+            "awk",
+            &[],
+            Regex::new(r"\bBEGIN\s*\{|\bEND\s*\{\s*(print|printf)\b")?,
+        ),
+        (
+            "sql",
+            &[],
+            Regex::new(
+                r"(?s)\bSELECT\b.{1,3000}?\bFROM\s+\w|\bINSERT\s+INTO\s+\w|\bUPDATE\s+\w+\s+SET\s+\w|\bDELETE\s+FROM\s+\w|\bCREATE\s+(TABLE|INDEX|VIEW|UNIQUE\s+INDEX)\b|\bALTER\s+TABLE\s+\w|\bDROP\s+TABLE\b|(?i:\bselect\s+[\w.*, ]+\s+from\s+\w+\s+(where|order\s+by|join|limit|group\s+by)\b)",
+            )?,
+        ),
+        (
+            "html/xml",
+            &["html", "xml"],
+            // A document, or a tag that is not a placeholder (`<unknown>`), a key (`<C-R>`) or a
+            // regex group (`(?<major>`): it has attributes, or the string closes a tag.
+            Regex::new(
+                r#"^\W{0,4}\s*(<\?xml|<!DOCTYPE)|(^|[^?\\])<[a-zA-Z][\w:-]*\s+[\w:-]+=["'{]|(^|[^?\\])<[a-zA-Z][\w:-]*>.*</[a-zA-Z]"#,
+            )?,
+        ),
+        (
+            "css",
+            &["css", "html"],
+            Regex::new(
+                r"(?i)\b(color|background(-color)?|margin(-\w+)?|padding(-\w+)?|font-(size|weight|family)|display|border(-\w+)?|width|height|position|min-height|aspect-ratio)\s*:\s*[^;:{}()]{1,40};",
+            )?,
+        ),
+        (
+            "js",
+            &["javascript", "typescript", "tsx", "html"],
+            Regex::new(
+                r"\bfunction\s*\w*\s*\([^)]*\)\s*\{|\bdocument\.(getElementById|querySelector|createElement|write)\b|\bconsole\.log\s*\(|\bwindow\.(__\w+|location)\b",
+            )?,
+        ),
+        (
+            "js",
+            &["javascript", "typescript", "tsx", "html"],
+            Regex::new(r#"(?m)^\W{0,3}\s*("use client"|import\s+[\w*{][^;\n]*\bfrom\s+\\?["'])"#)?,
+        ),
+        (
+            "shell",
+            &["shellscript", "dockerfile"],
+            Regex::new(
+                r"(?m)(^|&&|;|\|\||\$\()\s*(sudo\s+)?(apt-get|yum|dnf|brew|pip3?|npm|npx|yarn|pnpm|cargo|make|cmake|git|curl|wget|mkdir|rm|cp|mv|chmod|export|echo|tar|docker|node|cross-env)\s+-{0,2}[\w./$\x22']|\benv\s+[A-Z_]+=",
+            )?,
+        ),
+        (
+            "python",
+            &["python"],
+            Regex::new(
+                r"(?m)^\s*(def\s+\w+\s*\(.*\)\s*(->.*)?:\s*$|from\s+[\w.]+\s+import\s+\w|import\s+(sys|os|re|json)\s*$)",
+            )?,
+        ),
+        (
+            "json",
+            &["json", "javascript", "typescript", "tsx"],
+            Regex::new(r#"^\W{0,3}[\[{]\s*"[\w$-]+"\s*:\s*["\[{\dtfn]"#)?,
+        ),
+        (
+            "yaml",
+            &["yaml"],
+            Regex::new(r"(?m)(^[ \t]*(- )?[\w.-]+:[ \t]+\S[^\n]*\n){3,}")?,
+        ),
+        (
+            "vim",
+            &["vimscript"],
+            Regex::new(
+                r#"^.?\s*(:\s*(set|setlocal|let|call|normal|exe|execute|autocmd|syntax|highlight|hi)\b|(setlocal|set)\s+\w+[\^+-]?=|normal!\s|autocmd\s+\w+|[nvxoic](nore)?map\s+<)"#,
+            )?,
+        ),
+    ];
+    // A scalar under one of these keys (a CI `run:`, a `package.json` script) is a command line.
+    const COMMAND_KEYS: [&str; 7] = [
+        "run",
+        "script",
+        "before_script",
+        "after_script",
+        "command",
+        "entrypoint",
+        "cmd",
+    ];
+    fn command_key(node: Node, contents: &str) -> bool {
+        let mut current = node;
+        for _ in 0..4 {
+            let Some(parent) = current.parent() else {
+                return false;
+            };
+            if parent.kind().ends_with("pair") {
+                // The value, not the key: `"build": "tsc"` is a command, `"build"` is not.
+                let in_value = parent
+                    .child_by_field_name("value")
+                    .is_some_and(|value| value.byte_range().contains(&node.start_byte()));
+                // JSON's `pair` names a command only under `scripts` (tsserver's `"command":
+                // "geterr"` is a message name); YAML's pairs under any of COMMAND_KEYS.
+                let yaml = parent.kind() != "pair";
+                return in_value
+                    && parent.child_by_field_name("key").is_some_and(|key| {
+                        let key = contents[key.byte_range()].trim_matches(['"', '\'']);
+                        (yaml && COMMAND_KEYS.contains(&key))
+                            || parent
+                                .parent()
+                                .and_then(|object| object.parent())
+                                .and_then(|pair| pair.child_by_field_name("key"))
+                                .is_some_and(|outer| {
+                                    contents[outer.byte_range()].trim_matches('"') == "scripts"
+                                })
+                    });
+            }
+            current = parent;
+        }
+        false
+    }
+
+    let detail = std::env::var_os("CENSUS_DETAIL").is_some();
+    // embedded language -> (cases, changed cases, fixtures)
+    let mut totals: BTreeMap<&str, (usize, usize, BTreeSet<String>)> = BTreeMap::new();
+    // fixture -> embedded language -> (cases, changed, first changed sample)
+    let mut per_fixture: BTreeMap<String, BTreeMap<&str, (usize, usize, String)>> = BTreeMap::new();
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let language = name.split('-').next().unwrap_or("").to_lowercase();
+        let codes = [&before, &after];
+        for (side, code) in codes.iter().enumerate() {
+            let Some(tree) = code.ast.as_ref() else {
+                continue;
+            };
+            let other = &codes[1 - side].contents;
+            let mut found = Vec::new();
+            strings(tree.root_node(), &mut found);
+            for node in found {
+                let text = &code.contents[node.start_byte()..node.end_byte()];
+                if text.len() < 8 {
+                    continue;
+                }
+                let found = detectors
+                    .iter()
+                    .find(|(_, own, regex)| {
+                        !own.contains(&language.as_str()) && regex.is_match(text)
+                    })
+                    .map(|(embedded, _, regex)| (*embedded, regex.find(text)))
+                    .or_else(|| {
+                        (language != "shellscript" && command_key(node, &code.contents))
+                            .then_some(("shell", None))
+                    });
+                let Some((embedded, matched)) = found else {
+                    continue;
+                };
+                let changed = !other.contains(text);
+                let total = totals.entry(embedded).or_default();
+                total.0 += 1;
+                total.1 += usize::from(changed);
+                total.2.insert(name.clone());
+                let entry = per_fixture
+                    .entry(name.clone())
+                    .or_default()
+                    .entry(embedded)
+                    .or_default();
+                entry.0 += 1;
+                entry.1 += usize::from(changed);
+                if entry.2.is_empty() || (changed && entry.1 == 1) {
+                    let from = matched.map_or(0, |m| m.start());
+                    let sample: String = text[from..].chars().take(90).collect();
+                    entry.2 = format!(
+                        "{}:{} {}",
+                        ["before", "after"][side],
+                        node.start_position().row + 1,
+                        sample.replace('\n', "⏎")
+                    );
+                }
+                if detail {
+                    println!("{name} {embedded} changed={changed} {:?}", text);
+                }
+            }
+        }
+    }
+
+    println!("\nembedded language: cases (changed) in fixtures");
+    for (embedded, (cases, changed, fixtures)) in &totals {
+        println!(
+            "{embedded:>10}: {cases:>6} ({changed:>5}) in {:>4}",
+            fixtures.len()
+        );
+    }
+    println!("\nper fixture: language cases/changed  first sample (a changed one if any)");
+    for (name, found) in &per_fixture {
+        for (embedded, (cases, changed, sample)) in found {
+            println!("{name}\t{embedded}\t{cases}/{changed}\t{sample}");
+        }
+    }
+    Ok(())
+}
+
+/// EXPLORATORY: a node the tree mapping deletes or inserts while every one of its children
+/// survives - paired, or in a multi-map group - with all the children's partners under one node
+/// on the other side. The node then reads as removed while everything it is made of stays, and
+/// that common parent is what it should have gone with (`cpp-laydbird-change-function-signature`
+/// row 96: the `[]` of two new lambdas is inserted, but its `[` and `]` are in 1:3 groups with the
+/// old lambda's).
+///
+/// Each hit is classed by whether the common parent is of the node's kind, what the mapping says
+/// of that parent (paired 1:1, in a group, removed), and whether any painting paints a byte of
+/// the node. `FIXTURES=a,b` limits the run.
+///
+/// `cargo test --release --lib --features test-fixtures removed_parent_of_kept_children_census --
+/// --ignored --nocapture`
+#[test]
+#[ignore]
+fn removed_parent_of_kept_children_census() -> Result<()> {
+    use crate::test::helper::human_mapping::invariants::{TreeContext, painted_labels};
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let only: Option<BTreeSet<String>> = std::env::var("FIXTURES")
+        .ok()
+        .map(|list| list.split(',').map(str::to_string).collect());
+    let mut by_class: BTreeMap<String, (usize, BTreeSet<String>)> = BTreeMap::new();
+    let mut by_kind: BTreeMap<String, usize> = BTreeMap::new();
+    let (mut total, mut fixtures, mut scanned) = (0usize, BTreeSet::new(), 0usize);
+    for (name, dir) in crate::test::helper::handmade_test_case_dirs()? {
+        if only.as_ref().is_some_and(|only| !only.contains(&name)) {
+            continue;
+        }
+        let Some((before, after)) = crate::test::helper::code_pair_from_dir(&dir)? else {
+            continue;
+        };
+        let Ok(mapping) = load(&name) else { continue };
+        let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref())
+        else {
+            continue;
+        };
+        scanned += 1;
+        let context = TreeContext::build(&mapping, before_tree.root_node(), after_tree.root_node());
+        let labels: Vec<_> = mapping
+            .text_mappings
+            .iter()
+            .filter_map(|named| painted_labels(named, &before, &after).ok())
+            .collect();
+        let codes = [&before, &after];
+        for side in 0..2 {
+            let root = [before_tree.root_node(), after_tree.root_node()][side];
+            let mut stack = vec![root];
+            while let Some(node) = stack.pop() {
+                let mut cursor = node.walk();
+                let children: Vec<Node> = node.children(&mut cursor).collect();
+                stack.extend(children.iter().copied());
+                if children.is_empty()
+                    || !context.removed(node, side)
+                    || context.in_group(node, side)
+                {
+                    continue;
+                }
+                // The parents the children's partners share.
+                let mut common: Option<BTreeMap<usize, Node>> = None;
+                let mut grouped = 0;
+                for child in &children {
+                    let partners = context.partners(*child, side);
+                    if partners.is_empty() {
+                        common = Some(BTreeMap::new());
+                        break;
+                    }
+                    if context.in_group(*child, side) {
+                        grouped += 1;
+                    }
+                    let parents: BTreeMap<usize, Node> = partners
+                        .iter()
+                        .filter_map(|partner| partner.parent())
+                        .map(|parent| (parent.id(), parent))
+                        .collect();
+                    common = Some(match common {
+                        None => parents,
+                        Some(so_far) => so_far
+                            .into_iter()
+                            .filter(|(id, _)| parents.contains_key(id))
+                            .collect(),
+                    });
+                }
+                let Some(common) = common.filter(|common| !common.is_empty()) else {
+                    continue;
+                };
+                let parent = common
+                    .values()
+                    .find(|parent| parent.kind() == node.kind())
+                    .copied()
+                    .unwrap_or(*common.values().next().expect("not empty"));
+                // Whether the node is made of *all* of that parent's children (every one of them
+                // has a partner among the node's), or only some: a new block that takes some of an
+                // old block's statements is a container extracted, not the old block again.
+                let mut parent_cursor = parent.walk();
+                let whole = parent.children(&mut parent_cursor).all(|theirs| {
+                    context
+                        .partners(theirs, 1 - side)
+                        .iter()
+                        .any(|partner| children.iter().any(|child| child.id() == partner.id()))
+                });
+                let cover = if whole {
+                    "all-of-parent"
+                } else {
+                    "part-of-parent"
+                };
+                let kind = if parent.kind() == node.kind() {
+                    "same-kind"
+                } else {
+                    "other-kind"
+                };
+                let parent_status = if context.in_group(parent, 1 - side) {
+                    "parent-in-group"
+                } else if context.partner(parent, 1 - side).is_some() {
+                    "parent-paired"
+                } else if context.removed(parent, 1 - side) {
+                    "parent-removed"
+                } else {
+                    "parent-undecided"
+                };
+                let children_by = if grouped == children.len() {
+                    "children-grouped"
+                } else if grouped == 0 {
+                    "children-paired"
+                } else {
+                    "children-mixed"
+                };
+                // What the paintings say of the node's bytes: removed (an `Insert`/`Delete` on
+                // some byte), only carried (`Move` and nothing else), or edited (`Update`).
+                use crate::test::helper::human_mapping::TextLabel;
+                let says = |label: TextLabel| {
+                    labels
+                        .iter()
+                        .any(|labels| labels[side][node.byte_range()].contains(&Some(label)))
+                };
+                let painting = if labels.is_empty() {
+                    "no-paintings"
+                } else if says(TextLabel::Insert) || says(TextLabel::Delete) {
+                    "painted-removed"
+                } else if says(TextLabel::Update) {
+                    "painted-update"
+                } else if says(TextLabel::Move) {
+                    "painted-move-only"
+                } else {
+                    "unpainted"
+                };
+                let class = format!(
+                    "{:<6} {kind:<10} {cover:<14} {parent_status:<16} {children_by:<16} {painting}",
+                    ["delete", "insert"][side]
+                );
+                let entry = by_class.entry(class.clone()).or_default();
+                entry.0 += 1;
+                entry.1.insert(name.clone());
+                *by_kind.entry(node.kind().to_string()).or_default() += 1;
+                total += 1;
+                fixtures.insert(name.clone());
+                let text: String = codes[side].contents[node.byte_range()]
+                    .chars()
+                    .take(40)
+                    .collect::<String>()
+                    .replace('\n', "⏎");
+                // What the common parent is paired with instead, if anything.
+                let parent_partner = context
+                    .partners(parent, 1 - side)
+                    .iter()
+                    .map(|partner| {
+                        let text: String = codes[side].contents[partner.byte_range()]
+                            .chars()
+                            .take(40)
+                            .collect::<String>()
+                            .replace('\n', "⏎");
+                        format!(
+                            "{} row {} {text:?}",
+                            partner.kind(),
+                            partner.start_position().row + 1
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                println!(
+                    "{name}\t{class}\t{} {} row {}\t{text:?}\tparent {} row {}\tparent's partner {}",
+                    ["before", "after"][side],
+                    node.kind(),
+                    node.start_position().row + 1,
+                    parent.kind(),
+                    parent.start_position().row + 1,
+                    if parent_partner.is_empty() {
+                        "-".to_string()
+                    } else {
+                        parent_partner
+                    },
+                );
+            }
+        }
+    }
+    println!(
+        "\n{total} removed nodes with every child kept, in {} of {scanned} fixtures\n",
+        fixtures.len()
+    );
+    for (class, (count, names)) in &by_class {
+        println!("{count:>6}  {:>4} fixtures  {class}", names.len());
+    }
+    println!();
+    let mut kinds: Vec<_> = by_kind.into_iter().collect();
+    kinds.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
+    for (kind, count) in kinds.iter().take(40) {
+        println!("{count:>6}  {kind}");
     }
     Ok(())
 }

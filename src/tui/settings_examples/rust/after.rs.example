@@ -1,0 +1,46 @@
+use std::collections::HashMap;
+use std::fmt::Write;
+use std::io;
+use std::path::Path;
+
+struct Person(String, u32);
+
+fn create_person(name: String, age: u32) -> Person {
+    Person(name, age)
+}
+
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+
+    fn perimeter(&self) -> u32 {
+        2 * (self.width + self.height)
+    }
+
+    fn describe(&self, label: &str) -> String {
+        let total_area = self.area();
+        format!("{label}: {total_area} square metres")
+    }
+}
+
+fn main() {
+    let size = [3, 4];
+    let shapes = vec![
+        Rectangle { width: 1, height: 1 },
+        Rectangle { width: size[0], height: size[1] },
+        Rectangle { width: 5, height: 2 },
+    ];
+    if cfg!(debug_assertions) {
+        for shape in &shapes {
+            println!("{}", shape.describe("box"));
+        }
+    }
+    let mut biggest = shapes.iter().map(Rectangle::area);
+    println!("{} {biggest:?}", shapes.len());
+}

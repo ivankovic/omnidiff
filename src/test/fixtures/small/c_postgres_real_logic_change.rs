@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,11 +29,11 @@ fn mapping() -> Result<()> {
     // 4. Its surrounding `if` matches both the before `if` around the `ereport` and the one at the
     //    same location: another 2-to-1.
     // The unmarked nodes left are all at that N:M site, which no `MultiMapGroup` can encode; the
-    // limit is high because the mapping is specific, not because codediff is wrong there.
+    // limit is high because the mapping is specific, not because omnidiff is wrong there.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-postgres-real-logic-change",
-        124,
-        82,
+        123,
+        81,
     )
 }
 

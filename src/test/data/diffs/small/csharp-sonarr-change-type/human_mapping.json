@@ -7179,5 +7179,77 @@
         "namespace_declaration:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 9,
+              "start_column": 27,
+              "end_row": 9,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 29,
+              "start_column": 62,
+              "end_row": 29,
+              "end_column": 70
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 9,
+              "start_column": 27,
+              "end_row": 9,
+              "end_column": 36
+            }
+          ],
+          "after": [
+            {
+              "start_row": 9,
+              "start_column": 27,
+              "end_row": 9,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 29,
+              "start_column": 62,
+              "end_row": 29,
+              "end_column": 71
+            }
+          ],
+          "after": [
+            {
+              "start_row": 29,
+              "start_column": 62,
+              "end_row": 29,
+              "end_column": 79
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,7 +23,7 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // All one disagreement (`APTED("qualified_name")`): the human pairs the first
-    // `call_expression` on each side, codediff pairs before's first with after's second, and the
+    // `call_expression` on each side, omnidiff pairs before's first with after's second, and the
     // whole subtree follows. The qualified_name family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-d3-d3-nice-small-change",
@@ -37,7 +36,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     // Mostly `ours=None, theirs=Move`, inherited from the wrong `call_expression` pairing the
     // mapping clamp describes.
-    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.26)
+    assert_matches_human_painting_within_limit("javascript-d3-d3-nice-small-change", 15.12)
 }
 
 #[test]

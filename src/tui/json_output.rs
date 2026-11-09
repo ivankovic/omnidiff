@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,36 +18,21 @@
 //! Machine-readable counterpart to `tui::headless`: prints a diff as one JSON object on stdout,
 //! for editor/tool integrations that place highlights on their own buffers.
 //!
-//! Schema (see `JsonDiff`/`JsonSide`/`JsonHunk`/`JsonRange` below for the authoritative field
-//! list):
-//!
-//! ```json
-//! {
-//!   "before": {
-//!     "path": "old.rs",
-//!     "language": "Rust",
-//!     "hunks": [
-//!       { "operation": "delete", "range": { "start_row": 12, "start_column": 4, "end_row": 12, "end_column": 20 } }
-//!     ]
-//!   },
-//!   "after": { "path": "new.rs", "language": "Rust", "hunks": [ ... ] },
-//!   "large_residual": false,
-//!   "summary": "comment_only"
-//! }
-//! ```
+//! The format is specified by `json_output.schema.json` beside this file, a JSON Schema whose
+//! descriptions are the field documentation: the README links to it rather than repeating it.
+//! `every_output_matches_the_schema` checks what this module prints against it, and every content
+//! fixture's test checks its pair's `content` (`test::helper::json_schema`), so a field added,
+//! renamed or dropped here fails until the schema says so too.
 //!
 //! If either side is binary, `main.rs` answers with `binary_diff_json` instead: the same object
-//! with `"binary": true`, empty `hunks` and no `summary`. `binary` is omitted for text diffs.
-//!
-//! Each side's `hunks` are ranges in that side's own file. Rows and columns are 0-indexed.
+//! with `"binary": true`, empty `hunks` and no `summary`, plus `content` when `diff::content`
+//! diffs the pair. A picture pair also carries `picture`, the same diff without its `kind`, for the
+//! consumers written before `content`.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
 //! directly; VS Code / LSP need UTF-16 code units and character-offset consumers must decode the
 //! row, both per line. No second coordinate space is offered: it could disagree with the first,
 //! and every consumer already has the line's text.
-//!
-//! `summary` is the diff's overall shape (`no_changes`, `new_file`, `deleted_file`,
-//! `whitespace_only`, `comment_only`, `refactor_moved_only`), omitted for an ordinary mix of edits.
 //!
 //! File contents are not embedded: both paths are always real files the caller can open, and a
 //! second copy would be one more thing to keep in sync.
@@ -153,7 +137,24 @@ struct JsonHunk {
 struct JsonSide {
     path: PathBuf,
     language: Option<String>,
+    /// The file's encoding when it is not UTF-8 (`"UTF-16LE"`, see `code::Encoding`); the hunks
+    /// are still in the UTF-8 text it decodes to.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    encoding: Option<&'static str>,
     hunks: Vec<JsonHunk>,
+}
+
+/// [`JsonSide::encoding`] of the file at `path`, from its byte order mark.
+fn encoding_of(path: &Path) -> Option<&'static str> {
+    use std::io::Read;
+    let mut mark = Vec::with_capacity(4);
+    std::fs::File::open(path)
+        .and_then(|file| file.take(4).read_to_end(&mut mark))
+        .ok()?;
+    match crate::code::Encoding::of(&mark) {
+        crate::code::Encoding::Utf8 => None,
+        encoding => Some(encoding.name()),
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -170,13 +171,21 @@ struct JsonDiff {
     /// look like identical files.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     binary: bool,
+    /// For a binary pair that is a picture pair: what each side is and what changed (see
+    /// `diff::picture`). Absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    picture: Option<crate::diff::picture::PictureDiff>,
+    /// For any binary pair diffed by content, pictures included: the same, tagged with its `kind`
+    /// (see `diff::content`). Absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content: Option<crate::diff::content::ContentDiff>,
 }
 
-/// Re-parses `contents` for `nearest_reference_line`; not on a hot path, so the redundant parse
-/// is fine.
+/// Re-parses `contents` for `nearest_reference_line`, which reads the tree alone, so without
+/// metadata (`Code::parse_only`).
 fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     let language = language_for_path_and_content(path, contents);
-    let parsed = language.map(|lang| Code::from_string(contents, &lang));
+    let parsed = language.map(|lang| Code::parse_only(contents, &lang));
 
     let mut hunks = Vec::new();
     for range_match in ranges {
@@ -202,6 +211,7 @@ fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     JsonSide {
         path: path.to_path_buf(),
         language: language.map(|lang| stable_name(lang).to_string()),
+        encoding: encoding_of(path),
         hunks,
     }
 }
@@ -216,26 +226,41 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
     )
     .map(JsonDiffSummary::from);
 
+    // Each side re-parses its text, so the two are built concurrently.
+    let (before, after) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(&data.before_contents, &data.after_contents),
+        || {
+            build_side(
+                &data.before_contents,
+                &data.before_path,
+                &data.before_ranges,
+            )
+        },
+        || build_side(&data.after_contents, &data.after_path, &data.after_ranges),
+    );
     JsonDiff {
-        before: build_side(
-            &data.before_contents,
-            &data.before_path,
-            &data.before_ranges,
-        ),
-        after: build_side(&data.after_contents, &data.after_path, &data.after_ranges),
+        before,
+        after,
         large_residual,
         summary,
         binary: false,
+        picture: None,
+        content: None,
     }
 }
 
 /// The `--mode json` answer when a side is binary: the usual shape with `binary` set, no hunks
 /// and no `summary`. `language` is still filled in, since it describes the file, not the diff.
 /// Returns the text so `main.rs` keeps the single print site.
-pub fn binary_diff_json(before: &Path, after: &Path) -> Result<String> {
+pub fn binary_diff_json(
+    before: &Path,
+    after: &Path,
+    content: Option<&crate::diff::content::ContentDiff>,
+) -> Result<String> {
     let side = |path: &Path| JsonSide {
         path: path.to_path_buf(),
         language: language_for_path(path).map(|lang| stable_name(lang).to_string()),
+        encoding: None,
         hunks: Vec::new(),
     };
     let diff = JsonDiff {
@@ -244,6 +269,10 @@ pub fn binary_diff_json(before: &Path, after: &Path) -> Result<String> {
         large_residual: false,
         summary: None,
         binary: true,
+        picture: content
+            .and_then(crate::diff::content::ContentDiff::as_picture)
+            .cloned(),
+        content: content.cloned(),
     };
     Ok(serde_json::to_string_pretty(&diff)?)
 }
@@ -452,13 +481,117 @@ mod tests {
 
     #[test]
     fn binary_diff_json_keeps_language_but_has_no_hunks_or_summary() -> Result<()> {
-        let json: serde_json::Value =
-            serde_json::from_str(&binary_diff_json(Path::new("a.rs"), Path::new("b.png"))?)?;
+        let json: serde_json::Value = serde_json::from_str(&binary_diff_json(
+            Path::new("a.rs"),
+            Path::new("b.png"),
+            None,
+        )?)?;
         assert_eq!(json["binary"], true);
         assert_eq!(json["before"]["language"], "Rust");
         assert!(json["before"]["hunks"].as_array().unwrap().is_empty());
         assert!(json["after"]["hunks"].as_array().unwrap().is_empty());
         assert!(json.get("summary").is_none(), "{json}");
+        Ok(())
+    }
+
+    #[test]
+    fn a_picture_pair_carries_what_changed_and_where() -> Result<()> {
+        use crate::diff::picture::{Comparison, PictureDiff, PictureInfo, Region};
+        let side = PictureInfo {
+            format: "PNG".to_string(),
+            width: 20,
+            height: 10,
+            color: "RGBA8".to_string(),
+            bytes: 100,
+            frames: 1,
+            duration_ms: 0,
+        };
+        let picture = PictureDiff {
+            before: Some(side.clone()),
+            after: Some(side),
+            comparison: Comparison::Pixels {
+                changed_pixels: 12,
+                total_pixels: 200,
+                regions: vec![Region {
+                    x: 6,
+                    y: 2,
+                    width: 4,
+                    height: 3,
+                    changed_pixels: 12,
+                }],
+                differing_pixels: 12,
+                strong_pixels: 12,
+                layout_kept: true,
+            },
+        };
+        let json: serde_json::Value = serde_json::from_str(&binary_diff_json(
+            Path::new("a.png"),
+            Path::new("b.png"),
+            Some(&crate::diff::content::ContentDiff::Picture(picture)),
+        )?)?;
+        assert_eq!(json["binary"], true);
+        assert_eq!(json["content"]["kind"], "picture");
+        assert_eq!(json["content"]["before"], json["picture"]["before"]);
+        assert_eq!(json["picture"]["before"]["width"], 20);
+        assert_eq!(json["picture"]["comparison"]["kind"], "pixels");
+        assert_eq!(json["picture"]["comparison"]["regions"][0]["height"], 3);
+        Ok(())
+    }
+
+    #[test]
+    fn a_utf16_side_names_its_encoding_and_a_utf8_side_does_not() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let (utf16, utf8) = (dir.path().join("a.xml"), dir.path().join("b.xml"));
+        let text = "\u{feff}<a/>\n";
+        std::fs::write(
+            &utf16,
+            text.encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<u8>>(),
+        )?;
+        std::fs::write(&utf8, text)?;
+        let json = serde_json::to_value(build_side(text, &utf16, &[]))?;
+        assert_eq!(json["encoding"], "UTF-16LE");
+        let json = serde_json::to_value(build_side(text, &utf8, &[]))?;
+        assert!(json.get("encoding").is_none(), "{json}");
+        Ok(())
+    }
+
+    fn assert_matches_the_schema(json: &str) {
+        crate::test::helper::json_schema::check_json_output(json).unwrap();
+    }
+
+    #[test]
+    fn every_output_matches_the_schema() -> Result<()> {
+        let mut moved = sample_data();
+        moved.before_ranges[1].operation = TextOperation::Move;
+        moved.before_ranges[1].destination = TextRange::new(5, 0, 6, 0);
+        let mut same = sample_data();
+        same.after_contents = same.before_contents.clone();
+        same.before_ranges = vec![same.before_ranges[0].clone()];
+        same.after_ranges = same.before_ranges.clone();
+        for data in [sample_data(), moved, same] {
+            assert_matches_the_schema(&serde_json::to_string(&build_diff(&data, true))?);
+        }
+        assert_matches_the_schema(&binary_diff_json(
+            Path::new("a.rs"),
+            Path::new("b.png"),
+            None,
+        )?);
+
+        let dir = tempfile::tempdir()?;
+        let utf16 = dir.path().join("a.xml");
+        std::fs::write(
+            &utf16,
+            "\u{feff}<a/>\n"
+                .encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<u8>>(),
+        )?;
+        let side = serde_json::to_value(build_side("<a/>\n", &utf16, &[]))?;
+        let mut diff = serde_json::to_value(build_diff(&sample_data(), false))?;
+        diff["before"] = side;
+        assert_matches_the_schema(&diff.to_string());
         Ok(())
     }
 

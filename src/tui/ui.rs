@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,7 +26,9 @@ use crossterm::{
     event::{
         DisableMouseCapture, EnableMouseCapture, Event as CrosstermEvent, EventStream, KeyEventKind,
     },
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{
+        BeginSynchronizedUpdate, EndSynchronizedUpdate, EnterAlternateScreen, LeaveAlternateScreen,
+    },
 };
 use futures::StreamExt;
 use ratatui::{Frame, backend::CrosstermBackend as Backend, layout::Rect};
@@ -100,11 +101,10 @@ impl UI {
         render: impl FnOnce(&mut Frame),
     ) -> std::io::Result<()> {
         let color_depth = self.color_depth;
-        self.terminal.draw(|frame| {
+        draw_synchronized(&mut self.terminal, |frame| {
             render(frame);
             color_depth.fit(frame.buffer_mut(), palette);
-        })?;
-        Ok(())
+        })
     }
 
     /// Call after a resize event.
@@ -208,7 +208,7 @@ pub fn install_panic_hook() {
         restore_terminal();
         default_hook(info);
         eprintln!(
-            "\ncodediff {} crashed. Please report this, with the lines above and the two files \
+            "\nomnidiff {} crashed. Please report this, with the lines above and the two files \
              being diffed if you can share them, at {}",
             env!("CARGO_PKG_VERSION"),
             crate::tui::ISSUE_TRACKER_URL
@@ -227,6 +227,20 @@ fn map_crossterm_event(event: CrosstermEvent) -> Option<Event> {
         CrosstermEvent::Resize(w, h) => Some(Event::Resize(w, h)),
         _ => None,
     }
+}
+
+/// `Terminal::draw` as one synchronized update (mode 2026): the terminal shows the frame only once
+/// all of it has arrived. A picture drawn over sixel is sent as an erase of its cells followed by
+/// the new image, and without this a terminal can show the erased cells in between - every frame
+/// of a playing animation flickers. Terminals that do not know the mode ignore it.
+pub fn draw_synchronized(
+    terminal: &mut ratatui::Terminal<Backend<Stdout>>,
+    render: impl FnOnce(&mut Frame),
+) -> std::io::Result<()> {
+    crossterm::queue!(terminal.backend_mut(), BeginSynchronizedUpdate)?;
+    let drawn = terminal.draw(render).map(|_| ());
+    crossterm::execute!(terminal.backend_mut(), EndSynchronizedUpdate)?;
+    drawn
 }
 
 #[cfg(test)]

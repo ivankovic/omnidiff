@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,20 +32,23 @@ fn mapping() -> Result<()> {
     // sibling-order-consistency check.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-nginx-add-typedef",
-        50,
-        32,
+        46,
+        28,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 9, both presets and both sides: 14 bytes on before rows 479 and 574 and after rows
-    // 490 and 591 are painted Move where the tree mapping deletes and inserts them. Invariant 11,
-    // both presets: the first `identifier` `pwd` on after row 548 is removed but left unpainted.
-    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 6)
+    // Invariant 28, once: the `binary_expression` on after row 241 is inserted, but it is made of
+    // the children of the `binary_expression` on before row 232, which is paired with the code
+    // around this one instead: the two should pair, and the code around be new.
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
+    //   after row 241: the space before the insert `|| data == NGX_SSL_CACHE_DI...` is not painted
+    //     with it
+    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 2)
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.65)
+    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.53)
 }

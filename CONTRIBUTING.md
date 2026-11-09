@@ -7,7 +7,7 @@
 The product is written in Rust. The showcase's browser viewer (`assets/viewer/`) is plain
 JavaScript, and the research and analysis scripts are Python.
 
-CodeDiff stores user configuration, for example the active theme, on disk with `confy`. The
+OmniDiff stores user configuration, for example the active theme, on disk with `confy`. The
 dataset-analysis tools in `src/bin/` use a separate SQLite database to store the stats that they
 collect.
 
@@ -146,7 +146,7 @@ The README's "Accurate" principle states the painting targets, compared byte by 
 `make update-painting-attribution` measures them, one row per fixture and preset in
 `research/data/quality/painting_attribution.csv`, and `make check-painting-attribution` fails CI if
 any fixture gets worse. Each row carries two numbers that answer different questions:
-`real_bytes` renders codediff's own mapping, which is what a reader sees, and `renderer_bytes`
+`real_bytes` renders omnidiff's own mapping, which is what a reader sees, and `renderer_bytes`
 renders the *human* tree mapping, so it holds no matcher error at all - what is left there only a
 change to `diff::text` can fix. Steer painting work by the second. `painting_disagreement_detail`
 (`src/test/helper/human_mapping/tests/exploratory.rs`, `MAPPING=human` for the second column)
@@ -158,7 +158,7 @@ The tree mapping behind the painting has targets of its own:
 * **99% of test cases with at most 1% of visible nodes mismatched.**
 
 Both are stated in *visible* nodes - the ones carrying text of their own, per
-`codediff::diff::nodes::is_structurally_visible` - not all AST nodes. A wrongly-matched `block` or
+`omnidiff::diff::nodes::is_structurally_visible` - not all AST nodes. A wrongly-matched `block` or
 `argument_list`, whose every readable byte belongs to a child, is not the same defect as a
 wrongly-matched identifier. About 68% of nodes are visible corpus-wide, so the two counts differ.
 The benchmark prints both (`Mismatches` / `Vis Mism`), and every clamped `fixtures` test
@@ -177,6 +177,12 @@ room to spare, so a change may cost some speed but not an order of magnitude. `m
 benchmark-quality` prints the total runtime and the time per fixture; `make check-quality` prints
 the p50/p90/p99 distribution against the committed baseline, and warns, never fails, on a runtime
 above 2x the baseline.
+
+Times are only comparable on one machine, so each machine keeps its own baseline. A machine is
+registered in `research/data/machines.csv` by its CPU's model name, and `scripts/machine.py` tells
+the Makefile which one it is on; `MACHINE=<name>` overrides. On a machine new to the project, add
+its row, then run `make update-timing-baseline` (and `make benchmark-content` for the content
+figures). A machine without a baseline, such as a CI runner, skips the runtime comparison.
 
 ## Code structure
 
@@ -222,7 +228,7 @@ documented there.
 
 ### Build, test, quality
 
-* `test` - `cargo nextest run --release --all-features`, plus `test-mapping-site-js`,
+* `test` - `cargo nextest run --cargo-profile ci --all-features`, plus `test-mapping-site-js`,
   `test-viewer-js` and `test-showcase-js` (plain-Node tests of the human-mapping site's and the
   showcase's vanilla JS, which cargo's suite cannot cover - see the root Makefile) and
   `test-python` (`pytest` over the research and script helpers, in `research/`'s uv environment).
@@ -236,12 +242,19 @@ documented there.
 * `coverage` - line coverage of the suite over this repository's own code, via `cargo-llvm-cov`
   driving nextest (`cargo install cargo-llvm-cov`, plus `rustup component add llvm-tools-preview`).
   See "Coverage" above for what it reports and why it is not a gate.
+* `test-quick` - the edit loop's Rust suite, about 12 s warm against `test-rust`'s two minutes:
+  every test outside the fixtures but the corpus sweeps, and the fixtures
+  `src/test/data/quick_fixtures.txt` names, the cheapest set reaching every line the whole fixture
+  corpus reaches beyond those tests, plus any fixture added since that list was measured. Not a
+  gate; `test` and CI run everything.
+* `update-quick-fixtures` - rewrites that list from per-test coverage, measured first with
+  `make -C research measure-per-test-coverage` (about ten minutes). Re-run after engine changes.
 * `lint-python` - `ruff check` then `ruff format --check` over `research`, `scripts` and `assets`,
   the same three directories CI's python job covers. Requires `ruff`
   (`uv tool install ruff@0.16.4`, one-time - see "Code quality" above).
 * `build` - `cargo build --release --features stats` (the `stats` feature builds the
   dataset-analysis binaries in `src/bin/`). It does not run the tests.
-* `install` - `cargo install --path . --force`, so `codediff` on `PATH` matches this checkout.
+* `install` - `cargo install --path . --force`, so `omnidiff` on `PATH` matches this checkout.
 * `install-hooks` - one-time setup that points git at `.githooks/`. `pre-commit` formats the Rust
   and Python a commit stages (`cargo fmt`, `ruff format`) and regenerates `src/test/data/diffs.csv`
   when a commit touches the fixture corpus. `pre-push` runs the fast subset of what CI checks
@@ -258,12 +271,12 @@ documented there.
 
 Three verbs, and which file a target lives in follows from them:
 
-* **`benchmark-`** measures **codediff**, and lives in the root Makefile. `benchmark-quality`
+* **`benchmark-`** measures **omnidiff**, and lives in the root Makefile. `benchmark-quality`
   answers both questions a change raises - is it right, and is it fast - in one run over the
   fixture corpus. Production QA, and it needs nothing a bare checkout lacks.
 * **`check-`** gates. Runs in CI on every push and fails the build. `check-quality` gates on
   precisely what `benchmark-quality` measures - the pairing is the point.
-* **`measure-`** measures anything that is not codediff alone: other people's tools, or the cloned
+* **`measure-`** measures anything that is not omnidiff alone: other people's tools, or the cloned
   upstream corpus at `REPOSITORIES_DIR`. Lives in `research/Makefile`, never the root one. A number
   that moves when someone else ships a GumTree release is a study of the field, not product QA.
 
@@ -275,7 +288,8 @@ Three verbs, and which file a target lives in follows from them:
 * `check-quality` - the gate. What CI runs on every push and what `deploy` runs before it tags a
   release. Fails hard on an accuracy regression against the checked-in baseline; only warns on a
   runtime jump of more than 2x.
-* `update-quality-baseline` - re-cuts both baselines after a reviewed change. `deploy` never runs
+* `update-quality-baseline` - re-cuts the accuracy baseline and this machine's timing baseline
+  after a reviewed change; `update-timing-baseline` re-cuts the timing alone. `deploy` never runs
   it automatically. It cannot lower the accuracy bar: a test pins `quality_baseline.csv`'s
   per-fixture accuracy columns to the `fixtures` stubs' limits, so raising a limit means editing
   that fixture's stub - the same file that holds the prose explaining why.
@@ -297,7 +311,7 @@ Three verbs, and which file a target lives in follows from them:
 * `deploy-github` - tags the current commit `v<Cargo.toml version>` and pushes the tag. This push
   triggers `.github/workflows/release.yml`, which creates a draft GitHub Release whose notes are
   the version's section of `CHANGELOG.md` (it fails if that section is missing or still says
-  `unreleased`), attaches the cross-platform `codediff` binaries, the `.deb`s, completions and
+  `unreleased`), attaches the cross-platform `omnidiff` binaries, the `.deb`s, completions and
   checksums, and publishes the release once every asset is there.
 
 ## CI
@@ -307,8 +321,8 @@ Every push and pull request runs (see `.github/workflows/ci.yml`):
 * `cargo fmt --check`
 * `cargo clippy --tests -- -D warnings`, once each for the three Cargo feature configs (default,
   `test-fixtures`, `stats` - see Cargo.toml's `[features]`)
-* `cargo build --release` + `cargo nextest run --release`, once each for the same three feature
-  configs; the fixture-corpus tests, which no feature changes, run once, split three ways across
+* `cargo build` + `cargo nextest run` under the `ci` profile, once each for the same three
+  feature configs; the fixture-corpus tests, which no feature changes, run once, split three ways across
   those jobs
 * `cargo audit` (checks Cargo.lock against the RustSec advisory database)
 * The vanilla-JS tests of the `human_mapping` site, the showcase viewer and the showcase shim

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,8 +16,8 @@
  */
 
 use anyhow::{Context, Result, bail};
-use codediff::code::Code;
-use codediff::diff::text_range::TextRange;
+use omnidiff::code::Code;
+use omnidiff::diff::text_range::TextRange;
 use std::collections::HashMap;
 use std::io::Write;
 use std::process::Command;
@@ -42,7 +41,7 @@ pub(crate) fn bdiff_python() -> Result<std::path::PathBuf> {
 /// `(before_touched, after_touched)` from BDiff's edit script.
 ///
 /// Every mode carries 1-indexed `src_line`/`dest_line`; block modes add `block_length`. Which side
-/// a mode touches matches how codediff is scored (a moved line counts as changed):
+/// a mode touches matches how omnidiff is scored (a moved line counts as changed):
 ///
 /// * `insert` - after side only; its `src_line` is an anchor. `delete` is the mirror.
 /// * `update`, `m_update`, `c_update` - both sides.

@@ -37,7 +37,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "preproc_def:1"
@@ -45,32 +45,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "preproc_def:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_def:1",
-        "#define:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_def:1",
-        "#define:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_def:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_def:1",
-        "identifier:1"
       ]
     },
     {
@@ -85,7 +59,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "preproc_include:1"
@@ -96,33 +70,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:1",
-        "#include:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:1",
-        "#include:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:1",
-        "system_lib_string:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:1",
-        "system_lib_string:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "preproc_include:2"
@@ -133,33 +81,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:2",
-        "#include:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:2",
-        "#include:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:2",
-        "system_lib_string:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:2",
-        "system_lib_string:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "preproc_include:3"
@@ -170,33 +92,7 @@
       ]
     },
     {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:3",
-        "#include:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:3",
-        "#include:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:3",
-        "system_lib_string:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:3",
-        "system_lib_string:1"
-      ]
-    },
-    {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "preproc_include:4"
@@ -204,32 +100,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "preproc_include:4"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:4",
-        "#include:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:4",
-        "#include:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "preproc_include:4",
-        "system_lib_string:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "preproc_include:4",
-        "system_lib_string:1"
       ]
     },
     {
@@ -581,7 +451,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "struct_specifier:1"
@@ -589,32 +459,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "struct_specifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:1",
-        "struct:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:1",
-        "struct:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:1",
-        "type_identifier:1"
       ]
     },
     {
@@ -629,7 +473,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "struct_specifier:2"
@@ -637,32 +481,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "struct_specifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:2",
-        "struct:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:2",
-        "struct:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:2",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "struct_specifier:2",
-        "type_identifier:1"
       ]
     },
     {
@@ -1984,7 +1802,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "declaration:1"
@@ -1992,58 +1810,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "declaration:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "comment:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "comment:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        ";:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:1",
-        ";:1"
       ]
     },
     {
@@ -5851,7 +5617,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "declaration:10"
@@ -5859,45 +5625,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "declaration:10"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        "identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        ";:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:10",
-        ";:1"
       ]
     },
     {
@@ -8436,7 +8163,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "declaration:20"
@@ -8444,45 +8171,6 @@
       "after_path": [
         "preproc_ifdef:1",
         "declaration:20"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        "identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        ";:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:20",
-        ";:1"
       ]
     },
     {
@@ -9923,7 +9611,7 @@
       ]
     },
     {
-      "operation": "identical",
+      "operation": "identical_with_children",
       "before_path": [
         "preproc_ifdef:1",
         "declaration:25"
@@ -9937,45 +9625,6 @@
       "operation": "identical",
       "before_path": [
         "preproc_ifdef:1",
-        "declaration:25",
-        "type_identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:28",
-        "type_identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:25",
-        "identifier:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:28",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
-        "declaration:25",
-        ";:1"
-      ],
-      "after_path": [
-        "preproc_ifdef:1",
-        "declaration:28",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "preproc_ifdef:1",
         "#endif:1"
       ],
       "after_path": [
@@ -9990,6 +9639,712 @@
       ],
       "after_path": [
         "comment:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 209,
+              "start_column": 0,
+              "end_row": 209,
+              "end_column": 2
+            },
+            {
+              "start_row": 210,
+              "start_column": 1,
+              "end_row": 210,
+              "end_column": 110
+            },
+            {
+              "start_row": 211,
+              "start_column": 1,
+              "end_row": 211,
+              "end_column": 19
+            },
+            {
+              "start_row": 212,
+              "start_column": 1,
+              "end_row": 212,
+              "end_column": 97
+            },
+            {
+              "start_row": 213,
+              "start_column": 1,
+              "end_row": 213,
+              "end_column": 73
+            },
+            {
+              "start_row": 214,
+              "start_column": 1,
+              "end_row": 214,
+              "end_column": 9
+            },
+            {
+              "start_row": 215,
+              "start_column": 1,
+              "end_row": 215,
+              "end_column": 112
+            },
+            {
+              "start_row": 216,
+              "start_column": 1,
+              "end_row": 216,
+              "end_column": 88
+            },
+            {
+              "start_row": 217,
+              "start_column": 1,
+              "end_row": 217,
+              "end_column": 100
+            },
+            {
+              "start_row": 218,
+              "start_column": 1,
+              "end_row": 218,
+              "end_column": 46
+            },
+            {
+              "start_row": 219,
+              "start_column": 1,
+              "end_row": 219,
+              "end_column": 2
+            },
+            {
+              "start_row": 220,
+              "start_column": 1,
+              "end_row": 220,
+              "end_column": 55
+            },
+            {
+              "start_row": 221,
+              "start_column": 1,
+              "end_row": 221,
+              "end_column": 73
+            },
+            {
+              "start_row": 222,
+              "start_column": 1,
+              "end_row": 222,
+              "end_column": 64
+            },
+            {
+              "start_row": 223,
+              "start_column": 1,
+              "end_row": 223,
+              "end_column": 47
+            },
+            {
+              "start_row": 224,
+              "start_column": 1,
+              "end_row": 224,
+              "end_column": 60
+            },
+            {
+              "start_row": 225,
+              "start_column": 1,
+              "end_row": 225,
+              "end_column": 2
+            },
+            {
+              "start_row": 226,
+              "start_column": 1,
+              "end_row": 226,
+              "end_column": 74
+            },
+            {
+              "start_row": 227,
+              "start_column": 1,
+              "end_row": 227,
+              "end_column": 3
+            },
+            {
+              "start_row": 228,
+              "start_column": 0,
+              "end_row": 228,
+              "end_column": 14
+            },
+            {
+              "start_row": 229,
+              "start_column": 0,
+              "end_row": 229,
+              "end_column": 45
+            },
+            {
+              "start_row": 230,
+              "start_column": 4,
+              "end_row": 230,
+              "end_column": 39
+            },
+            {
+              "start_row": 231,
+              "start_column": 4,
+              "end_row": 231,
+              "end_column": 20
+            },
+            {
+              "start_row": 232,
+              "start_column": 4,
+              "end_row": 232,
+              "end_column": 27
+            },
+            {
+              "start_row": 233,
+              "start_column": 4,
+              "end_row": 233,
+              "end_column": 36
+            },
+            {
+              "start_row": 234,
+              "start_column": 4,
+              "end_row": 234,
+              "end_column": 29
+            },
+            {
+              "start_row": 236,
+              "start_column": 0,
+              "end_row": 236,
+              "end_column": 2
+            },
+            {
+              "start_row": 237,
+              "start_column": 1,
+              "end_row": 237,
+              "end_column": 94
+            },
+            {
+              "start_row": 238,
+              "start_column": 1,
+              "end_row": 238,
+              "end_column": 19
+            },
+            {
+              "start_row": 239,
+              "start_column": 1,
+              "end_row": 239,
+              "end_column": 2
+            },
+            {
+              "start_row": 240,
+              "start_column": 1,
+              "end_row": 240,
+              "end_column": 55
+            },
+            {
+              "start_row": 241,
+              "start_column": 1,
+              "end_row": 241,
+              "end_column": 73
+            },
+            {
+              "start_row": 242,
+              "start_column": 1,
+              "end_row": 242,
+              "end_column": 64
+            },
+            {
+              "start_row": 243,
+              "start_column": 1,
+              "end_row": 243,
+              "end_column": 47
+            },
+            {
+              "start_row": 244,
+              "start_column": 1,
+              "end_row": 244,
+              "end_column": 60
+            },
+            {
+              "start_row": 245,
+              "start_column": 1,
+              "end_row": 245,
+              "end_column": 2
+            },
+            {
+              "start_row": 246,
+              "start_column": 1,
+              "end_row": 246,
+              "end_column": 74
+            },
+            {
+              "start_row": 247,
+              "start_column": 1,
+              "end_row": 247,
+              "end_column": 3
+            },
+            {
+              "start_row": 248,
+              "start_column": 0,
+              "end_row": 248,
+              "end_column": 14
+            },
+            {
+              "start_row": 249,
+              "start_column": 0,
+              "end_row": 249,
+              "end_column": 35
+            },
+            {
+              "start_row": 250,
+              "start_column": 4,
+              "end_row": 250,
+              "end_column": 39
+            },
+            {
+              "start_row": 251,
+              "start_column": 4,
+              "end_row": 251,
+              "end_column": 20
+            },
+            {
+              "start_row": 252,
+              "start_column": 4,
+              "end_row": 252,
+              "end_column": 27
+            },
+            {
+              "start_row": 253,
+              "start_column": 4,
+              "end_row": 253,
+              "end_column": 36
+            },
+            {
+              "start_row": 254,
+              "start_column": 4,
+              "end_row": 254,
+              "end_column": 29
+            },
+            {
+              "start_row": 256,
+              "start_column": 0,
+              "end_row": 256,
+              "end_column": 2
+            },
+            {
+              "start_row": 257,
+              "start_column": 1,
+              "end_row": 257,
+              "end_column": 85
+            },
+            {
+              "start_row": 258,
+              "start_column": 1,
+              "end_row": 258,
+              "end_column": 66
+            },
+            {
+              "start_row": 259,
+              "start_column": 1,
+              "end_row": 259,
+              "end_column": 3
+            },
+            {
+              "start_row": 260,
+              "start_column": 0,
+              "end_row": 260,
+              "end_column": 14
+            },
+            {
+              "start_row": 261,
+              "start_column": 0,
+              "end_row": 261,
+              "end_column": 61
+            },
+            {
+              "start_row": 262,
+              "start_column": 4,
+              "end_row": 262,
+              "end_column": 39
+            },
+            {
+              "start_row": 263,
+              "start_column": 4,
+              "end_row": 263,
+              "end_column": 20
+            },
+            {
+              "start_row": 264,
+              "start_column": 4,
+              "end_row": 264,
+              "end_column": 27
+            },
+            {
+              "start_row": 265,
+              "start_column": 4,
+              "end_row": 265,
+              "end_column": 26
+            },
+            {
+              "start_row": 266,
+              "start_column": 4,
+              "end_row": 266,
+              "end_column": 36
+            },
+            {
+              "start_row": 267,
+              "start_column": 4,
+              "end_row": 267,
+              "end_column": 29
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 209,
+              "start_column": 0,
+              "end_row": 209,
+              "end_column": 2
+            },
+            {
+              "start_row": 210,
+              "start_column": 0,
+              "end_row": 210,
+              "end_column": 110
+            },
+            {
+              "start_row": 211,
+              "start_column": 0,
+              "end_row": 211,
+              "end_column": 19
+            },
+            {
+              "start_row": 212,
+              "start_column": 0,
+              "end_row": 212,
+              "end_column": 97
+            },
+            {
+              "start_row": 213,
+              "start_column": 0,
+              "end_row": 213,
+              "end_column": 73
+            },
+            {
+              "start_row": 214,
+              "start_column": 0,
+              "end_row": 214,
+              "end_column": 9
+            },
+            {
+              "start_row": 215,
+              "start_column": 0,
+              "end_row": 215,
+              "end_column": 112
+            },
+            {
+              "start_row": 216,
+              "start_column": 0,
+              "end_row": 216,
+              "end_column": 88
+            },
+            {
+              "start_row": 217,
+              "start_column": 0,
+              "end_row": 217,
+              "end_column": 100
+            },
+            {
+              "start_row": 218,
+              "start_column": 0,
+              "end_row": 218,
+              "end_column": 46
+            },
+            {
+              "start_row": 219,
+              "start_column": 0,
+              "end_row": 219,
+              "end_column": 2
+            },
+            {
+              "start_row": 220,
+              "start_column": 0,
+              "end_row": 220,
+              "end_column": 55
+            },
+            {
+              "start_row": 221,
+              "start_column": 0,
+              "end_row": 221,
+              "end_column": 73
+            },
+            {
+              "start_row": 222,
+              "start_column": 0,
+              "end_row": 222,
+              "end_column": 64
+            },
+            {
+              "start_row": 223,
+              "start_column": 0,
+              "end_row": 223,
+              "end_column": 47
+            },
+            {
+              "start_row": 224,
+              "start_column": 0,
+              "end_row": 224,
+              "end_column": 60
+            },
+            {
+              "start_row": 225,
+              "start_column": 0,
+              "end_row": 225,
+              "end_column": 2
+            },
+            {
+              "start_row": 226,
+              "start_column": 0,
+              "end_row": 226,
+              "end_column": 74
+            },
+            {
+              "start_row": 227,
+              "start_column": 0,
+              "end_row": 227,
+              "end_column": 3
+            },
+            {
+              "start_row": 228,
+              "start_column": 0,
+              "end_row": 228,
+              "end_column": 14
+            },
+            {
+              "start_row": 229,
+              "start_column": 0,
+              "end_row": 229,
+              "end_column": 45
+            },
+            {
+              "start_row": 230,
+              "start_column": 0,
+              "end_row": 230,
+              "end_column": 39
+            },
+            {
+              "start_row": 231,
+              "start_column": 0,
+              "end_row": 231,
+              "end_column": 20
+            },
+            {
+              "start_row": 232,
+              "start_column": 0,
+              "end_row": 232,
+              "end_column": 27
+            },
+            {
+              "start_row": 233,
+              "start_column": 0,
+              "end_row": 233,
+              "end_column": 36
+            },
+            {
+              "start_row": 234,
+              "start_column": 0,
+              "end_row": 234,
+              "end_column": 29
+            },
+            {
+              "start_row": 236,
+              "start_column": 0,
+              "end_row": 236,
+              "end_column": 2
+            },
+            {
+              "start_row": 237,
+              "start_column": 0,
+              "end_row": 237,
+              "end_column": 94
+            },
+            {
+              "start_row": 238,
+              "start_column": 0,
+              "end_row": 238,
+              "end_column": 19
+            },
+            {
+              "start_row": 239,
+              "start_column": 0,
+              "end_row": 239,
+              "end_column": 2
+            },
+            {
+              "start_row": 240,
+              "start_column": 0,
+              "end_row": 240,
+              "end_column": 55
+            },
+            {
+              "start_row": 241,
+              "start_column": 0,
+              "end_row": 241,
+              "end_column": 73
+            },
+            {
+              "start_row": 242,
+              "start_column": 0,
+              "end_row": 242,
+              "end_column": 64
+            },
+            {
+              "start_row": 243,
+              "start_column": 0,
+              "end_row": 243,
+              "end_column": 47
+            },
+            {
+              "start_row": 244,
+              "start_column": 0,
+              "end_row": 244,
+              "end_column": 60
+            },
+            {
+              "start_row": 245,
+              "start_column": 0,
+              "end_row": 245,
+              "end_column": 2
+            },
+            {
+              "start_row": 246,
+              "start_column": 0,
+              "end_row": 246,
+              "end_column": 74
+            },
+            {
+              "start_row": 247,
+              "start_column": 0,
+              "end_row": 247,
+              "end_column": 3
+            },
+            {
+              "start_row": 248,
+              "start_column": 0,
+              "end_row": 248,
+              "end_column": 14
+            },
+            {
+              "start_row": 249,
+              "start_column": 0,
+              "end_row": 249,
+              "end_column": 35
+            },
+            {
+              "start_row": 250,
+              "start_column": 0,
+              "end_row": 250,
+              "end_column": 39
+            },
+            {
+              "start_row": 251,
+              "start_column": 0,
+              "end_row": 251,
+              "end_column": 20
+            },
+            {
+              "start_row": 252,
+              "start_column": 0,
+              "end_row": 252,
+              "end_column": 27
+            },
+            {
+              "start_row": 253,
+              "start_column": 0,
+              "end_row": 253,
+              "end_column": 36
+            },
+            {
+              "start_row": 254,
+              "start_column": 0,
+              "end_row": 254,
+              "end_column": 29
+            },
+            {
+              "start_row": 256,
+              "start_column": 0,
+              "end_row": 256,
+              "end_column": 2
+            },
+            {
+              "start_row": 257,
+              "start_column": 0,
+              "end_row": 257,
+              "end_column": 85
+            },
+            {
+              "start_row": 258,
+              "start_column": 0,
+              "end_row": 258,
+              "end_column": 66
+            },
+            {
+              "start_row": 259,
+              "start_column": 0,
+              "end_row": 259,
+              "end_column": 3
+            },
+            {
+              "start_row": 260,
+              "start_column": 0,
+              "end_row": 260,
+              "end_column": 14
+            },
+            {
+              "start_row": 261,
+              "start_column": 0,
+              "end_row": 261,
+              "end_column": 61
+            },
+            {
+              "start_row": 262,
+              "start_column": 0,
+              "end_row": 262,
+              "end_column": 39
+            },
+            {
+              "start_row": 263,
+              "start_column": 0,
+              "end_row": 263,
+              "end_column": 20
+            },
+            {
+              "start_row": 264,
+              "start_column": 0,
+              "end_row": 264,
+              "end_column": 27
+            },
+            {
+              "start_row": 265,
+              "start_column": 0,
+              "end_row": 265,
+              "end_column": 26
+            },
+            {
+              "start_row": 266,
+              "start_column": 0,
+              "end_row": 266,
+              "end_column": 36
+            },
+            {
+              "start_row": 267,
+              "start_column": 0,
+              "end_row": 267,
+              "end_column": 29
+            }
+          ]
+        }
       ]
     }
   ]

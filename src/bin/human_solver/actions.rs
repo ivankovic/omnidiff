@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -285,7 +284,7 @@ pub(crate) fn commit_multi_map_group(
         after_root,
     );
     if with_children {
-        // A with-children member's descendants must stay free for codediff to pair however it pairs
+        // A with-children member's descendants must stay free for omnidiff to pair however it pairs
         // them (see `check_subtree_maps_within`), so leftover entries on them go, as for `d`/`i`.
         for &node in &before_nodes {
             clear_before_descendants(&mut mapping.entries, node, before_root);

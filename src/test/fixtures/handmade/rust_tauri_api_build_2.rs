@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,7 +30,7 @@ fn painting() -> Result<()> {
     // not a Move) makes Minimal exact and costs Full 33 bytes: this fixture's Full painting calls
     // `|v| v == "true")` a Move, while fixtures with one painting for both modes do not. Both
     // readings cannot be honoured until those get Full paintings of their own.
-    assert_matches_human_painting_within_limit("rust-tauri-api-build-2", 0.93)
+    assert_matches_human_painting_within_limit("rust-tauri-api-build-2", 0.88)
 }
 
 #[test]

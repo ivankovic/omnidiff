@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,13 +15,18 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 pub mod code_viewer;
+pub mod content_viewer;
 pub mod diff_viewer;
 pub mod file_dialog;
 pub mod help_modal;
 pub mod line_prompt;
+pub mod member_viewer;
+pub mod picture_viewer;
 pub mod render_options_dialog;
 pub mod review_dialog;
 pub mod search_modal;
+pub mod settings_menu;
+pub mod text_pair_view;
 pub mod theme_dialog;
 
 use anyhow::Result;

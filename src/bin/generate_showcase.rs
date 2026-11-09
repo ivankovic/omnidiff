@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,8 +19,13 @@
 //!
 //! The viewer (`assets/viewer/`) only paints the JSON it is sent, so this bakes that JSON for the
 //! cases in [`CASES`] and serves the viewer with a `fetch` shim (`assets/showcase/showcase.js`)
-//! answering `/api/*` from files. Each case is baked twice: as codediff maps it and as GNU `diff`
+//! answering `/api/*` from files. Each case is baked twice: as omnidiff maps it and as GNU `diff`
 //! marks it. Published by `.github/workflows/pages.yml` under `showcase/`; nothing is committed.
+//!
+//! Content that is not code - a PDF, a font, an archive, pictures - has a page of its own,
+//! `content.html`: the GIFs `make content-gif` records into `assets/content/` (committed, as they
+//! take a Python rasterizer CI does not have), each with OmniDiff's report on the pair and its
+//! verdict beside the human's.
 
 use std::collections::HashMap;
 use std::fs;
@@ -31,15 +35,15 @@ use anyhow::{Context, Result, anyhow};
 use clap::Parser;
 use serde::Serialize;
 
-use codediff::diff::text::{RangeMatch, RenderOptions, TextOperation};
-use codediff::diff::text_range::TextRange;
-use codediff::showcase::payload::{DiffPayload, RangePayload, diff_payload};
-use codediff::showcase::state::default_state;
-use codediff::test::helper;
-use codediff::test::helper::human_mapping;
-use codediff::tui::actions::DiffSessionData;
-use codediff::tui::app::compute_diff_with_options;
-use codediff::tui::theme::PanelLayout;
+use omnidiff::diff::text::{RangeMatch, RenderOptions, TextOperation};
+use omnidiff::diff::text_range::TextRange;
+use omnidiff::showcase::payload::{DiffPayload, RangePayload, diff_payload};
+use omnidiff::showcase::state::default_state;
+use omnidiff::test::helper;
+use omnidiff::test::helper::human_mapping;
+use omnidiff::tui::actions::DiffSessionData;
+use omnidiff::tui::app::compute_diff_with_options;
+use omnidiff::tui::theme::PanelLayout;
 
 #[derive(Parser)]
 struct Args {
@@ -51,10 +55,10 @@ struct Args {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum Group {
-    /// `diff` marks whole lines a reader has to re-diff by eye; codediff's mapping matches the
+    /// `diff` marks whole lines a reader has to re-diff by eye; omnidiff's mapping matches the
     /// human one line for line.
     DiffWrong,
-    /// A plain line diff is already the right answer, and codediff says the same thing.
+    /// A plain line diff is already the right answer, and omnidiff says the same thing.
     BothRight,
 }
 
@@ -181,11 +185,11 @@ struct CaseIndex {
     lines: usize,
     /// Lines GNU `diff` marks, both sides together.
     diff_marked: usize,
-    /// What codediff paints under the default options, per operation. Counted from the baked
+    /// What omnidiff paints under the default options, per operation. Counted from the baked
     /// ranges, not the payload's `change_counts`, which says "0 updates" for a pure in-line
     /// deletion like `buffer` -> `buf`.
-    codediff: PaintedCounts,
-    /// codediff's one-line reading of the whole change, e.g. "Whitespace changes only".
+    omnidiff: PaintedCounts,
+    /// omnidiff's one-line reading of the whole change, e.g. "Whitespace changes only".
     summary: Option<String>,
     /// The upstream commit the change was taken from, when the fixture is a sampled one.
     upstream: Option<String>,
@@ -222,7 +226,7 @@ fn main() -> Result<()> {
     }
 
     // What `/api/state` answers: the defaults, never the local config, so CI and a laptop generate
-    // the same site. Dual, not Auto: Auto's 220-column cut-over is single-panel on most browser
+    // the same site. Dual, not Auto: Auto's 200-column cut-over is single-panel on most browser
     // windows. The paths are placeholders; the shim answers with the selected case.
     let mut state = default_state();
     state.before = Some("before".to_string());
@@ -238,7 +242,7 @@ fn main() -> Result<()> {
         let baked = bake(case, &provenance, &repository_urls)
             .with_context(|| format!("baking {}", case.name))?;
         for (suffix, payload) in [
-            ("codediff", &baked.codediff),
+            ("omnidiff", &baked.omnidiff),
             ("minimal", &baked.minimal),
             ("full", &baked.full),
             ("diff", &baked.unix),
@@ -251,15 +255,119 @@ fn main() -> Result<()> {
         index.push(baked.index);
     }
     fs::write(args.out.join("cases.json"), serde_json::to_vec(&index)?)?;
+    let content = write_content_page(&args.out, &provenance, &repository_urls)?;
 
-    println!("Showcase written to {:?}: {} cases", args.out, index.len());
+    println!(
+        "Showcase written to {:?}: {} cases, {content} content examples",
+        args.out,
+        index.len()
+    );
     Ok(())
 }
 
+/// One content example, as `scripts/record_content_gif.py` lists it in `assets/content/cases.json`.
+#[derive(Debug, serde::Deserialize)]
+struct ContentCase {
+    family: String,
+    fixture: String,
+    title: String,
+    /// The file's path in its repository.
+    path: String,
+    /// The GIF's file name in `assets/content/`.
+    gif: String,
+    /// `omnidiff --headless`'s report on the pair.
+    report: String,
+}
+
+/// `assets/content/`, where `make content-gif` records the examples.
+fn content_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("assets")
+        .join("content")
+}
+
+fn content_cases() -> Result<Vec<ContentCase>> {
+    let path = content_dir().join("cases.json");
+    let json = fs::read_to_string(&path).with_context(|| format!("reading {path:?}"))?;
+    serde_json::from_str(&json).with_context(|| format!("parsing {path:?}"))
+}
+
+/// What OmniDiff and the human call content fixture `case`: `(omnidiff, human)`, the human's
+/// `None` while it is unjudged.
+fn content_verdicts(case: &ContentCase) -> Result<(String, Option<String>)> {
+    use omnidiff::test::helper::human_content;
+    let family = omnidiff::diff::content::Family::from_name(&case.family)
+        .ok_or_else(|| anyhow!("{} is not a content family", case.family))?;
+    let engine = human_content::engine_diff(family, &case.fixture)?.verdict();
+    let human = human_content::load(family, &case.fixture)?
+        .verdict
+        .map(|judgement| judgement.label());
+    Ok((engine.label(), human))
+}
+
+/// Writes `content.html` and copies the examples' GIFs beside it; returns how many there are.
+fn write_content_page(
+    out: &Path,
+    provenance: &HashMap<String, helper::SampleProvenance>,
+    repository_urls: &HashMap<String, String>,
+) -> Result<usize> {
+    let cases = content_cases()?;
+    let gifs = out.join("content");
+    fs::create_dir_all(&gifs)?;
+    fs::write(
+        out.join("content.css"),
+        include_str!("../../assets/showcase/content.css"),
+    )?;
+    let mut sections = String::new();
+    for case in &cases {
+        fs::copy(content_dir().join(&case.gif), gifs.join(&case.gif))
+            .with_context(|| format!("copying {}", case.gif))?;
+        let (engine, human) = content_verdicts(case)?;
+        let human = human.unwrap_or_else(|| "not judged yet".to_string());
+        let upstream = provenance
+            .get(&case.fixture)
+            .and_then(|sample| helper::upstream_commit_url(sample, repository_urls))
+            .map(|url| format!(r#" · <a href="{}">upstream commit</a>"#, escape(&url)))
+            .unwrap_or_default();
+        sections.push_str(&format!(
+            r#"<section class="example" id="{id}">
+  <h2>{title}</h2>
+  <p class="source"><code>{path}</code>{upstream} · OmniDiff calls it <b>{engine}</b>; a human, <b>{human}</b></p>
+  <img src="content/{gif}" width="1104" height="664" loading="lazy" alt="{alt}">
+  <details><summary>What <code>git diff</code> prints with OmniDiff</summary><pre>{report}</pre></details>
+</section>
+"#,
+            id = escape(&case.fixture),
+            title = escape(&case.title),
+            path = escape(&case.path),
+            engine = escape(&engine),
+            human = escape(&human),
+            gif = escape(&case.gif),
+            alt = escape(&format!(
+                "{}: git's \"Binary files differ\", OmniDiff's report, then OmniDiff's viewer",
+                case.title
+            )),
+            report = escape(&case.report),
+        ));
+    }
+    let page =
+        include_str!("../../assets/showcase/content.html").replace("{{examples}}", &sections);
+    fs::write(out.join("content.html"), page)?;
+    Ok(cases.len())
+}
+
+/// `text` safe inside HTML text and double-quoted attributes.
+fn escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
 struct Baked {
-    /// codediff's diff under the default render options and under each preset the `M` panel
+    /// omnidiff's diff under the default render options and under each preset the `M` panel
     /// can switch to.
-    codediff: DiffPayload,
+    omnidiff: DiffPayload,
     minimal: DiffPayload,
     full: DiffPayload,
     /// The same two files as GNU `diff` marks them.
@@ -284,7 +392,7 @@ fn bake(
     // The diff `/api/diff` and `/api/render_options` answer with, under each preset.
     let (data, large_residual) =
         compute_diff_with_options(&before_path, &after_path, RenderOptions::default())?;
-    let codediff = diff_payload(&data, large_residual, RenderOptions::default(), None);
+    let omnidiff = diff_payload(&data, large_residual, RenderOptions::default(), None);
     let minimal = diff_payload(&data, large_residual, RenderOptions::MINIMAL, None);
     let full = diff_payload(&data, large_residual, RenderOptions::FULL, None);
 
@@ -312,16 +420,16 @@ fn bake(
         group: case.group,
         title: case.title,
         dataset,
-        language: codediff.after.language.clone(),
-        lines: codediff.after.lines.len(),
+        language: omnidiff.after.language.clone(),
+        lines: omnidiff.after.lines.len(),
         diff_marked,
-        codediff: PaintedCounts::of(&codediff),
-        summary: codediff.summary.as_ref().map(|s| s.label.to_string()),
+        omnidiff: PaintedCounts::of(&omnidiff),
+        summary: omnidiff.summary.as_ref().map(|s| s.label.to_string()),
         upstream,
     };
 
     Ok(Baked {
-        codediff,
+        omnidiff,
         minimal,
         full,
         unix,
@@ -329,7 +437,7 @@ fn bake(
     })
 }
 
-/// codediff's painted ranges by operation. Updates and moves count the larger side, not the sum:
+/// omnidiff's painted ranges by operation. Updates and moves count the larger side, not the sum:
 /// they paint both sides, except a pure in-line deletion (`buffer` -> `buf`), which paints only
 /// the before side.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -468,6 +576,28 @@ mod tests {
     }
 
     #[test]
+    fn every_content_example_has_its_fixture_and_its_gif() {
+        let cases = content_cases().unwrap();
+        assert!(!cases.is_empty());
+        for case in &cases {
+            assert!(
+                content_dir().join(&case.gif).is_file(),
+                "{}: no GIF; run make content-gif",
+                case.fixture
+            );
+            content_verdicts(case).unwrap();
+        }
+    }
+
+    #[test]
+    fn escape_makes_text_safe_in_html() {
+        assert_eq!(
+            escape(r#"<a href="x">&</a>"#),
+            "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;"
+        );
+    }
+
+    #[test]
     fn case_names_are_unique() {
         let mut names: Vec<_> = CASES.iter().map(|c| c.name).collect();
         names.sort_unstable();
@@ -516,7 +646,7 @@ mod tests {
             source: [0; 4],
             destination: [0; 4],
         };
-        let side = |ops: &[&'static str], lines: usize| codediff::showcase::payload::SidePayload {
+        let side = |ops: &[&'static str], lines: usize| omnidiff::showcase::payload::SidePayload {
             path: String::new(),
             name: String::new(),
             language: String::new(),
@@ -578,7 +708,7 @@ mod tests {
 
     #[test]
     fn baking_every_case_matches_the_published_scores() {
-        // The list promises codediff matches the human mapping on every case; a matcher
+        // The list promises omnidiff matches the human mapping on every case; a matcher
         // regression must fail here before it is published.
         let provenance = helper::sample_provenance().unwrap();
         let repository_urls = helper::repository_urls().unwrap();
@@ -595,7 +725,7 @@ mod tests {
             assert_eq!(
                 mismatches.len(),
                 0,
-                "{}: codediff disagrees with the human mapping",
+                "{}: omnidiff disagrees with the human mapping",
                 case.name
             );
         }

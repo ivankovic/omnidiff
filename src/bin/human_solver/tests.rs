@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -792,6 +791,7 @@ fn render_modal_prompt_search_shows_the_prefilled_query_and_instructions() {
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -831,6 +831,7 @@ fn render_modal_prompt_promote_name_shows_the_actual_target_dataset_not_a_fixed_
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -927,7 +928,11 @@ fn sample_diff_line_count_is_nonzero_for_a_real_sample_on_disk() {
     let Ok(names) = list_dir_names(&samples_root()) else {
         return;
     };
-    let Some(name) = names.first() else {
+    // A picture sample's pair is binary, and has no lines to count.
+    let Some(name) = names
+        .iter()
+        .find(|name| content::sample_family(name).is_none())
+    else {
         return;
     };
     assert!(
@@ -1599,9 +1604,10 @@ fn the_two_branched_paintings_satisfy_their_own_preset_rules() {
     );
 }
 
-/// A partly changed line's indentation stays unpainted under both presets.
+/// A partly changed line's indentation stays unpainted under both presets; only the blank between
+/// the surviving `let` and the deletion is taken.
 #[test]
-fn branching_leaves_a_partly_changed_line_alone() {
+fn branching_leaves_a_partly_changed_lines_indentation_alone() {
     let source = indented_block();
     // `a = 1` out of `    let a = 1;`.
     let state = TextPaintState {
@@ -1615,8 +1621,208 @@ fn branching_leaves_a_partly_changed_line_alone() {
 
     assert_eq!(
         painted_entries(&app).remove(0).1[0].start_column,
+        7,
+        "the blank after `let` joins the deletion, `let` and the indentation survive"
+    );
+}
+
+/// `,    gone`: a deleted list element takes the blanks between it and the surviving `,`, and an
+/// inserted one does the same on its side.
+#[test]
+fn branching_widens_a_removal_over_the_blanks_before_it() {
+    let (before_src, after_src) = ("f(a,    gone);\n", "f(a,  new);\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 8,
+                end_row: 0,
+                end_column: 12,
+            }],
+            after: vec![],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Insert,
+            before: vec![],
+            after: vec![HumanTextSpan {
+                start_row: 0,
+                start_column: 6,
+                end_row: 0,
+                end_column: 9,
+            }],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 4,
+        "from the blank after `,`"
+    );
+    assert_eq!(full[1].after[0].start_column, 4, "on the after side too");
+    assert_eq!(
+        solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
         8,
-        "`let` and the indentation before it both survive, so nothing widens"
+        "the Minimal painting is untouched"
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .contains("2 ranges widened over the whitespace before them"),
+        "got {:?}",
+        app.status
+    );
+}
+
+/// Whitespace another range already paints, and a `Match`, are left as they are.
+#[test]
+fn branching_does_not_widen_over_painted_whitespace_or_a_match() {
+    let source = "f(a,    b);\n";
+    let span = |start_column, end_column| HumanTextSpan {
+        start_row: 0,
+        start_column,
+        end_row: 0,
+        end_column,
+    };
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        HumanTextEntry {
+            operation: HumanTextOperation::Match,
+            before: vec![span(3, 6)],
+            after: vec![span(3, 6)],
+        },
+        HumanTextEntry {
+            operation: HumanTextOperation::Delete,
+            before: vec![span(8, 9)],
+            after: vec![],
+        },
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, source, source);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 3,
+        "a match keeps its columns"
+    );
+    assert_eq!(
+        full[1].before[0].start_column, 6,
+        "the deletion stops where the match's range ends"
+    );
+}
+
+/// One painting entry with a span per side on row 0.
+fn one_row_entry(
+    operation: HumanTextOperation,
+    before: Option<(usize, usize)>,
+    after: Option<(usize, usize)>,
+) -> HumanTextEntry {
+    let span = |(start_column, end_column)| HumanTextSpan {
+        start_row: 0,
+        start_column,
+        end_row: 0,
+        end_column,
+    };
+    HumanTextEntry {
+        operation,
+        before: before.map(span).into_iter().collect(),
+        after: after.map(span).into_iter().collect(),
+    }
+}
+
+/// `Minimal` marks the differing word of a renamed member, `Full` the member entire with its dot.
+#[test]
+fn branching_widens_an_updated_identifier_whole_with_its_dot() {
+    let (before_src, after_src) = ("f(this.minIndex);\n", "f(this.maxIndex);\n");
+    let mut app = test_app();
+    // `min` -> `max`, columns 7..10 on both sides.
+    solution_entries_mut(&mut app.mapping, "Minimal").push(one_row_entry(
+        HumanTextOperation::Match,
+        Some((7, 10)),
+        Some((7, 10)),
+    ));
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = &solution_entries(&app.mapping, "Full")[0];
+    assert_eq!(
+        (full.before[0].start_column, full.before[0].end_column),
+        (6, 15),
+        "`.minIndex`"
+    );
+    assert_eq!(
+        (full.after[0].start_column, full.after[0].end_column),
+        (6, 15),
+        "`.maxIndex`"
+    );
+    assert_eq!(
+        solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
+        7,
+        "the Minimal painting is untouched"
+    );
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .contains("2 update ranges widened to whole identifiers"),
+        "got {:?}",
+        app.status
+    );
+}
+
+/// Without a dot the identifier alone is taken; a number's `.` is not a member's.
+#[test]
+fn branching_widens_a_plain_identifier_and_leaves_a_numbers_dot() {
+    let (before_src, after_src) = ("x = fooBar + 1.5;\n", "x = fooBaz + 1.6;\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        // `r` -> `z`.
+        one_row_entry(HumanTextOperation::Match, Some((9, 10)), Some((9, 10))),
+        // `5` -> `6`.
+        one_row_entry(HumanTextOperation::Match, Some((15, 16)), Some((15, 16))),
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        (full[0].before[0].start_column, full[0].before[0].end_column),
+        (4, 10),
+        "`fooBar`, no dot to take"
+    );
+    assert_eq!(
+        (full[1].before[0].start_column, full[1].before[0].end_column),
+        (15, 16),
+        "`5` stays: `1.5`'s dot belongs to the number"
+    );
+}
+
+/// A move (identical text) and a widening onto another range's bytes are left as they are.
+#[test]
+fn branching_leaves_a_moved_or_crowded_identifier_alone() {
+    let (before_src, after_src) = ("a.fooBar;\n", "a.fooBaz;\n");
+    let mut app = test_app();
+    solution_entries_mut(&mut app.mapping, "Minimal").extend([
+        // `foo` stays where it is but is painted as a move.
+        one_row_entry(HumanTextOperation::Match, Some((2, 5)), Some((2, 5))),
+        // `Bar` -> `Baz`, which would widen onto the move's `foo`.
+        one_row_entry(HumanTextOperation::Match, Some((5, 8)), Some((5, 8))),
+    ]);
+
+    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+
+    let full = solution_entries(&app.mapping, "Full");
+    assert_eq!(
+        full[0].before[0].start_column, 2,
+        "a move keeps its columns"
+    );
+    assert_eq!(
+        full[1].before[0].start_column, 5,
+        "the update stops short of the move's bytes"
     );
 }
 
@@ -1780,21 +1986,21 @@ fn ranges_painted_under_one_name_stay_out_of_another() {
 }
 
 #[test]
-fn the_text_overlay_cycles_human_codediff_disagreements() {
+fn the_text_overlay_cycles_human_omnidiff_disagreements() {
     assert_eq!(TextOverlay::default(), TextOverlay::Human);
-    assert_eq!(TextOverlay::Human.next(), TextOverlay::CodeDiff);
-    assert_eq!(TextOverlay::CodeDiff.next(), TextOverlay::Disagreements);
+    assert_eq!(TextOverlay::Human.next(), TextOverlay::OmniDiff);
+    assert_eq!(TextOverlay::OmniDiff.next(), TextOverlay::Disagreements);
     assert_eq!(TextOverlay::Disagreements.next(), TextOverlay::Human);
 }
 
-/// codediff's side comes from `TextDiff`, the projection the TUI draws, not a second reading of
+/// omnidiff's side comes from `TextDiff`, the projection the TUI draws, not a second reading of
 /// its node mapping.
 #[test]
-fn codediff_text_spans_reports_the_changed_regions_of_a_real_diff() {
+fn omnidiff_text_spans_reports_the_changed_regions_of_a_real_diff() {
     let before = Code::from_string("fn main() {\n    foo();\n}\n", &Language::Rust);
     let after = Code::from_string("fn main() {\n    bar();\n}\n", &Language::Rust);
 
-    let [before_spans, after_spans] = codediff_text_spans(&before, &after, None);
+    let [before_spans, after_spans] = omnidiff_text_spans(&before, &after, None);
 
     assert!(
         !before_spans.is_empty(),
@@ -1845,7 +2051,7 @@ fn the_disagreement_overlay_is_empty_when_the_two_accounts_match() {
     );
 }
 
-/// The shared overlay palette, so a range looks as it does in the `codediff` TUI.
+/// The shared overlay palette, so a range looks as it does in the `omnidiff` TUI.
 #[test]
 fn painted_ranges_use_the_shared_overlay_palette() {
     let palette = OverlayTheme::default().palette();
@@ -1921,7 +2127,7 @@ fn span_covers_uses_the_exact_end_column_on_the_last_row() {
     assert!(!span_covers(span, 0, 3, 5));
 }
 
-/// Unset means Dracula, which keeps render tests independent of the machine's `.codediff.toml`.
+/// Unset means Dracula, which keeps render tests independent of the machine's `.omnidiff.toml`.
 #[test]
 fn the_palette_falls_back_to_the_default_theme_when_none_was_installed() {
     assert_eq!(
@@ -2006,9 +2212,10 @@ fn the_live_selection_commits_together_with_banked_ranges() {
     assert_eq!(state.committable(0, source).len(), 2);
 }
 
-/// Refused at the keystroke, while the selection is still on screen, not at save time.
+/// Spans that read differently on one side (an extraction: several spellings, one helper) are
+/// one match, recorded as an update as a whole.
 #[test]
-fn m_refuses_a_group_whose_spans_differ_within_a_side() {
+fn m_records_a_group_whose_spans_differ_within_a_side_as_an_update() {
     let (before_src, after_src) = ("foo\nqux\n", "bar\n");
     let mut app = test_app();
     let mut state = TextPaintState::default();
@@ -2025,24 +2232,15 @@ fn m_refuses_a_group_whose_spans_differ_within_a_side() {
 
     action_paint_match(&mut app, &mut state, before_src, after_src);
 
-    assert!(
-        app.mapping.text_mappings.is_empty(),
-        "nothing should have been stored"
-    );
-    assert!(!app.dirty);
-    assert!(
-        app.status
-            .as_deref()
-            .unwrap_or("")
-            .contains("identical text"),
-        "the reason has to reach the human: {:?}",
-        app.status
-    );
+    let entries = solution_entries(&app.mapping, &app.text_solution);
+    assert_eq!(entries.len(), 1, "{:?}", app.status);
+    assert_eq!((entries[0].before.len(), entries[0].after.len()), (2, 1));
+    assert!(app.dirty);
     assert_eq!(
-        state.pending[0].len(),
-        1,
-        "the selection must survive so it can be corrected"
+        app.status.as_deref(),
+        Some("Matched 2:1: text differs, recorded as an update")
     );
+    assert!(state.pending[0].is_empty(), "the bank is spent");
 }
 
 #[test]
@@ -2852,7 +3050,7 @@ fn o_cycles_the_overlay_and_p_no_longer_does() {
         TextPaintState::default(),
         KeyCode::Char('o'),
     );
-    assert_eq!(app.text_overlay, TextOverlay::CodeDiff);
+    assert_eq!(app.text_overlay, TextOverlay::OmniDiff);
 
     // Each press starts a fresh app, so `Human` is the default; the status line (a jump, not an
     // overlay switch) is what rules out `p` cycling.
@@ -3035,7 +3233,7 @@ fn a_selection_includes_the_character_under_the_cursor() {
     let span = spans[0];
 
     assert_eq!(
-        codediff::test::helper::human_mapping::span_text(source, span),
+        omnidiff::test::helper::human_mapping::span_text(source, span),
         Some("foo")
     );
 }
@@ -3061,7 +3259,7 @@ fn a_selection_past_a_multibyte_character_lands_on_the_right_text() {
     let span = state.selection(0, source)[0];
 
     assert_eq!(
-        codediff::test::helper::human_mapping::span_text(source, span),
+        omnidiff::test::helper::human_mapping::span_text(source, span),
         Some("foo")
     );
 }
@@ -3285,12 +3483,12 @@ fn d_and_i_paint_one_sided_ranges_on_their_own_side() {
     let entries = &solution_entries(&app.mapping, &app.text_solution);
     assert_eq!(entries.len(), 2);
     assert_eq!(
-        codediff::test::helper::human_mapping::span_text(before_src, entries[0].before[0]),
+        omnidiff::test::helper::human_mapping::span_text(before_src, entries[0].before[0]),
         Some("gone")
     );
     assert!(entries[0].after.is_empty(), "a delete has no after side");
     assert_eq!(
-        codediff::test::helper::human_mapping::span_text(after_src, entries[1].after[0]),
+        omnidiff::test::helper::human_mapping::span_text(after_src, entries[1].after[0]),
         Some("new")
     );
     assert!(entries[1].before.is_empty(), "an insert has no before side");
@@ -3373,6 +3571,7 @@ fn the_text_view_renders_painted_ranges() {
     let mut terminal = Terminal::new(backend).unwrap();
     let area = Rect::new(0, 0, width, 24);
     let mapping = HumanMapping {
+        embedded: Vec::new(),
         entries: vec![],
         groups: vec![],
         text_mappings: vec![NamedTextMapping {
@@ -3401,6 +3600,7 @@ fn the_text_view_renders_painted_ranges() {
                 "fn new_name() {}",
                 &mapping,
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -3463,6 +3663,7 @@ fn render_open_diff_picker_shows_the_unmarked_column_and_the_sort_and_filter_mar
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData {
@@ -3514,6 +3715,7 @@ fn the_diff_picker_title_keeps_its_filter_list_when_the_terminal_truncates_it() 
                 "",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 DiffPickerData::default(),
@@ -3547,6 +3749,7 @@ fn text_view_modal_renders_both_sides_content() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &TextPaintState::default(),
@@ -3847,7 +4050,7 @@ fn the_name_filter_is_a_case_insensitive_substring() {
 #[test]
 fn value_filters_cycle_through_the_values_present_and_back_to_all() {
     let rows = sample_rows();
-    let languages = sample_language_values(&rows);
+    let languages = sample_language_values(&rows, &SampleFilters::default());
     assert_eq!(languages, vec!["Go", "Rust"]);
     assert_eq!(next_value_filter(None, &languages).as_deref(), Some("Go"));
     assert_eq!(
@@ -3863,6 +4066,24 @@ fn value_filters_cycle_through_the_values_present_and_back_to_all() {
     // Offered smallest-stratum-first, and only for strata some row actually has.
     let buckets = sample_bucket_values(&rows);
     assert_eq!(buckets, vec!["30-100", "1000-3000"]);
+}
+
+#[test]
+fn the_language_filter_skips_languages_the_other_filters_leave_empty() {
+    let rows = sample_rows();
+    // Only alpha (Rust) is Promoted, so Go would show an empty list.
+    let filters = SampleFilters {
+        status: Some(SampleTriageStatus::Promoted),
+        ..SampleFilters::default()
+    };
+    assert_eq!(sample_language_values(&rows, &filters), vec!["Rust"]);
+
+    // The language filter itself does not narrow the choices, or cycling would stick.
+    let filters = SampleFilters {
+        language: Some("Go".to_string()),
+        ..SampleFilters::default()
+    };
+    assert_eq!(sample_language_values(&rows, &filters), vec!["Go", "Rust"]);
 }
 
 #[test]
@@ -4533,14 +4754,189 @@ fn the_cmpl_and_unmarked_filters_select_the_same_rows() {
 }
 
 #[test]
-fn next_dataset_filter_cycles_through_diff_datasets_and_back_to_all() {
-    // Walks every entry, so a new dataset needs no edit here.
+fn next_dataset_filter_cycles_through_diff_datasets_then_content_families_and_back_to_all() {
+    // Walks every entry, so a new dataset or family needs no edit here.
     let mut current = None;
-    for &dataset in DIFF_DATASETS {
+    for dataset in DIFF_DATASETS
+        .iter()
+        .copied()
+        .chain(Family::ALL.map(Family::name))
+    {
         current = next_dataset_filter(current);
         assert_eq!(current, Some(dataset));
     }
     assert_eq!(next_dataset_filter(current), None);
+}
+
+/// The picker's rows for the picture tests: one code case, and two pictures, one with a verdict.
+fn mixed_picker_options() -> Vec<(String, &'static str)> {
+    vec![
+        ("alpha".to_string(), "handmade"),
+        ("png-a".to_string(), Family::Pictures.name()),
+        ("png-b".to_string(), Family::Pictures.name()),
+    ]
+}
+
+/// A picture fixture's row with the verdict spelled `verdict`.
+fn picture_row(verdict: &str) -> ContentRow {
+    ContentRow::of(
+        Family::Pictures,
+        Some(human_content::HumanContent {
+            verdict: Some(human_content::Judgement::Verdict(verdict.parse().unwrap())),
+            ..Default::default()
+        }),
+    )
+}
+
+fn mixed_picture_verdicts() -> std::collections::HashMap<String, ContentRow> {
+    std::collections::HashMap::from([
+        ("png-a".to_string(), picture_row("artifacts+resized")),
+        ("png-b".to_string(), ContentRow::of(Family::Pictures, None)),
+    ])
+}
+
+/// A picture is complete once its verdict is recorded; the code case still goes by its unmarked
+/// nodes.
+#[test]
+fn the_cmpl_filter_reads_a_pictures_verdict() {
+    let options = mixed_picker_options();
+    let unmarked = std::collections::HashMap::from([("alpha".to_string(), 4)]);
+    let verdicts = mixed_picture_verdicts();
+    let data = DiffPickerData {
+        unmarked: Some(&unmarked),
+        content: Some(&verdicts),
+        ..DiffPickerData::default()
+    };
+
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Cmpl, FlagFilter::Yes),
+            data
+        ),
+        vec!["alpha", "png-b"]
+    );
+    assert_eq!(
+        visible_diff_options(&options, &flag_view(DiffColumn::Cmpl, FlagFilter::No), data),
+        vec!["png-a"]
+    );
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Unmarked, FlagFilter::No),
+            data
+        ),
+        vec!["png-a", "png-b"],
+        "a picture has no unmarked count, so the Unmarked filter keeps it either way"
+    );
+}
+
+/// Sorting by `Verdict` gathers pictures by verdict; rows without one (code, or a picture not yet
+/// judged) sort last, as unknowns do in every column.
+#[test]
+fn the_verdict_column_sorts_judged_pictures_first() {
+    let mut options = mixed_picker_options();
+    options.push(("png-c".to_string(), Family::Pictures.name()));
+    let mut verdicts = mixed_picture_verdicts();
+    verdicts.insert("png-c".to_string(), picture_row("edited"));
+    let data = DiffPickerData {
+        content: Some(&verdicts),
+        ..DiffPickerData::default()
+    };
+
+    assert_eq!(
+        visible_diff_options(&options, &sort_view(DiffColumn::Verdict), data),
+        vec!["png-a", "png-c", "alpha", "png-b"],
+        "artifacts, then edited"
+    );
+}
+
+/// `f` on `Verdict` filters nothing and says so, rather than doing nothing silently.
+#[test]
+fn open_diff_picker_f_on_the_verdict_column_explains_it_only_sorts() {
+    let view = DiffPickerView {
+        column: DiffColumn::Verdict,
+        ..DiffPickerView::default()
+    };
+    let app = press_in_diff_picker(mixed_picker_options(), view, &[KeyCode::Char('f')]);
+    assert_eq!(picker_view(&app).filters, DiffFilters::default());
+    assert_eq!(
+        app.status.as_deref(),
+        Some("Verdict has no filter: s sorts by it")
+    );
+}
+
+#[test]
+fn render_open_diff_picker_shows_a_pictures_verdict_and_dashes_for_what_only_code_has() {
+    let backend = ratatui::backend::TestBackend::new(160, 14);
+    let mut terminal = Terminal::new(backend).unwrap();
+    let area = Rect::new(0, 0, 160, 14);
+    let verdicts = mixed_picture_verdicts();
+    let modal = Modal::OpenDiffPicker {
+        options: mixed_picker_options(),
+        selected: 0,
+        view: DiffPickerView::default(),
+        name_input: None,
+    };
+
+    terminal
+        .draw(|f| {
+            render_modal(
+                f,
+                area,
+                &modal,
+                "alpha",
+                None,
+                "",
+                "",
+                &HumanMapping::default(),
+                "Minimal",
+                &[],
+                TextOverlay::Human,
+                None,
+                DiffPickerData {
+                    content: Some(&verdicts),
+                    ..DiffPickerData::default()
+                },
+                None,
+            )
+        })
+        .unwrap();
+
+    let text = rendered_text(&terminal);
+    // The buffer is one long line: split it into the terminal's rows.
+    let rows: Vec<String> = text
+        .chars()
+        .collect::<Vec<_>>()
+        .chunks(160)
+        .map(|chunk| chunk.iter().collect())
+        .collect();
+    let row = |name: &str| -> &String {
+        rows.iter()
+            .find(|line| line.contains(name))
+            .unwrap_or_else(|| panic!("no row for {name}: {text}"))
+    };
+    assert!(text.contains("Verdict"), "the Verdict header: {text}");
+    assert!(row("png-a").contains("pictures"), "{}", row("png-a"));
+    assert!(
+        row("png-a").contains("✓"),
+        "a verdict completes it: {}",
+        row("png-a")
+    );
+    assert!(row("png-a").contains("resized"), "{}", row("png-a"));
+    assert!(row("png-a").contains('–'), "{}", row("png-a"));
+    assert!(!row("png-a").contains('?'), "{}", row("png-a"));
+    assert!(
+        row("png-b").contains("•"),
+        "no verdict yet: {}",
+        row("png-b")
+    );
+    assert!(
+        row("alpha").contains('?'),
+        "code columns not scanned: {}",
+        row("alpha")
+    );
+    assert!(!row("alpha").contains('–'), "{}", row("alpha"));
 }
 
 #[test]
@@ -4653,7 +5049,7 @@ fn open_diff_picker_h_and_l_move_the_column_cursor_and_clamp_at_the_ends() {
     );
     assert_eq!(
         picker_view(&app).column,
-        DiffColumn::Size,
+        DiffColumn::Verdict,
         "l must clamp at the last column, not wrap round to Name"
     );
 
@@ -4971,7 +5367,7 @@ fn help_modal_renders_keybindings() {
 
 fn parse_rust(source: &str) -> tree_sitter::Tree {
     let language =
-        codediff::code::language::to_treesitter(&codediff::code::Language::Rust).unwrap();
+        omnidiff::code::language::to_treesitter(&omnidiff::code::Language::Rust).unwrap();
     let mut parser = tree_sitter::Parser::new();
     parser.set_language(&language).unwrap();
     parser.parse(source, None).unwrap()
@@ -6432,8 +6828,8 @@ fn sample_comment_at_is_none_when_comment_is_empty_or_row_is_missing() {
 #[test]
 fn algo_reason_reports_the_pass_that_produced_each_side_of_a_match() {
     let source = "fn f() { a(); }\n";
-    let before = codediff::code::Code::from_string(source, &codediff::code::Language::Rust);
-    let after = codediff::code::Code::from_string(source, &codediff::code::Language::Rust);
+    let before = omnidiff::code::Code::from_string(source, &omnidiff::code::Language::Rust);
+    let after = omnidiff::code::Code::from_string(source, &omnidiff::code::Language::Rust);
     let diff = diff_code(&before, &after);
     let diff_ast = diff.ast.expect("diff has AST");
 
@@ -6453,7 +6849,7 @@ fn algo_reason_reports_the_pass_that_produced_each_side_of_a_match() {
 fn algo_reason_is_none_when_the_diff_has_no_entry_for_the_node() {
     // An empty ASTDiff (before `p`) misses cleanly rather than panicking.
     let source = "fn f() {}\n";
-    let code = codediff::code::Code::from_string(source, &codediff::code::Language::Rust);
+    let code = omnidiff::code::Code::from_string(source, &omnidiff::code::Language::Rust);
     let root = code.ast.as_ref().unwrap().root_node();
     let empty_diff = ASTDiff::default();
 
@@ -7939,11 +8335,11 @@ fn round_tripping_the_real_sample_csv_loses_nothing() {
 }
 
 #[test]
-fn codediff_text_entries_keeps_the_pairing_that_the_span_view_drops() {
+fn omnidiff_text_entries_keeps_the_pairing_that_the_span_view_drops() {
     let before = Code::from_string("fn main() {\n    foo();\n}\n", &Language::Rust);
     let after = Code::from_string("fn main() {\n    bar();\n}\n", &Language::Rust);
 
-    let entries = codediff_text_entries(&before, &after, None).expect("this pair pairs up cleanly");
+    let entries = omnidiff_text_entries(&before, &after, None).expect("this pair pairs up cleanly");
     assert!(!entries.is_empty(), "an edited pair should produce entries");
 
     for entry in &entries {
@@ -7964,9 +8360,9 @@ fn codediff_text_entries_keeps_the_pairing_that_the_span_view_drops() {
     }
 }
 
-/// The seed must *be* codediff's rendering, so it starts at zero disagreement.
+/// The seed must *be* omnidiff's rendering, so it starts at zero disagreement.
 #[test]
-fn seeding_a_painting_reproduces_codediffs_own_spans_on_both_sides() {
+fn seeding_a_painting_reproduces_omnidiffs_own_spans_on_both_sides() {
     let before_src = "fn main() {\n    foo();\n}\n";
     let after_src = "fn main() {\n    bar();\n}\n";
     let before = Code::from_string(before_src, &Language::Rust);
@@ -7981,10 +8377,10 @@ fn seeding_a_painting_reproduces_codediffs_own_spans_on_both_sides() {
         HumanMapping::default(),
     );
 
-    action_paint_seed_from_codediff(&mut app, &before, &after);
+    action_paint_seed_from_omnidiff(&mut app, &before, &after);
     assert!(app.dirty, "seeding is an unsaved change to the mapping");
 
-    let algo = codediff_text_spans(&before, &after, None);
+    let algo = omnidiff_text_spans(&before, &after, None);
     for side in [0usize, 1usize] {
         let mut painted: Vec<_> = painted_spans(
             &app.mapping,
@@ -7998,7 +8394,7 @@ fn seeding_a_painting_reproduces_codediffs_own_spans_on_both_sides() {
         expected.sort_by_key(|(span, _)| (span.start_row, span.start_column));
         assert_eq!(
             painted, expected,
-            "side {side} should read exactly as codediff renders it"
+            "side {side} should read exactly as omnidiff renders it"
         );
     }
 }
@@ -8019,12 +8415,12 @@ fn seeding_refuses_to_overwrite_a_painting_that_already_has_ranges() {
         HumanMapping::default(),
     );
 
-    action_paint_seed_from_codediff(&mut app, &before, &after);
+    action_paint_seed_from_omnidiff(&mut app, &before, &after);
     // `HumanTextEntry` has no `PartialEq`; compare the rendered shape.
     let seeded = format!("{:?}", solution_entries(&app.mapping, &app.text_solution));
     app.dirty = false;
 
-    action_paint_seed_from_codediff(&mut app, &before, &after);
+    action_paint_seed_from_omnidiff(&mut app, &before, &after);
 
     assert_eq!(
         format!("{:?}", solution_entries(&app.mapping, &app.text_solution)),
@@ -8041,24 +8437,24 @@ fn seeding_refuses_to_overwrite_a_painting_that_already_has_ranges() {
     );
 }
 
-/// The overlap guard, against a fixture that trips it: codediff's rendering overlaps on some
+/// The overlap guard, against a fixture that trips it: omnidiff's rendering overlaps on some
 /// corpus fixtures, and a painting cannot represent that (the renderer resolves an overlap by
 /// highest verdict, the scorer by list order).
 #[test]
-fn seeding_refuses_a_pair_whose_codediff_ranges_overlap() {
-    let pair = codediff::test::helper::handmade_test_code_pair("xml-odoo-odoo-add-two-attributes")
+fn seeding_refuses_a_pair_whose_omnidiff_ranges_overlap() {
+    let pair = omnidiff::test::helper::handmade_test_code_pair("xml-odoo-odoo-add-two-attributes")
         .expect("fixture should exist");
     let (before, after) = &*pair;
 
-    let overlapping = codediff_text_spans(before, after, None)
+    let overlapping = omnidiff_text_spans(before, after, None)
         .iter()
         .any(|side| spans_overlap(side));
     assert!(
         overlapping,
-        "this test is pointless unless the fixture still has overlapping codediff ranges"
+        "this test is pointless unless the fixture still has overlapping omnidiff ranges"
     );
 
-    let error = codediff_text_entries(before, after, None)
+    let error = omnidiff_text_entries(before, after, None)
         .expect_err("an overlapping pair must not produce a painting");
     assert!(
         error.contains("overlap"),
@@ -8590,12 +8986,12 @@ fn the_same_key_is_not_explained_away_when_there_is_a_tree() {
     assert_eq!(app.status, before_status);
 }
 
-/// For a pair with no grammar codediff answers with its plain-text fallback, so `p` and `P` have
+/// For a pair with no grammar omnidiff answers with its plain-text fallback, so `p` and `P` have
 /// something to work with.
 #[test]
-fn codediff_text_spans_falls_back_to_the_plain_text_diff() {
+fn omnidiff_text_spans_falls_back_to_the_plain_text_diff() {
     let (before, after) = unparseable_pair();
-    let [before_spans, after_spans] = codediff_text_spans(&before, &after, None);
+    let [before_spans, after_spans] = omnidiff_text_spans(&before, &after, None);
 
     assert!(
         !before_spans.is_empty() && !after_spans.is_empty(),
@@ -9222,11 +9618,29 @@ fn action_promote_refuses_a_sample_whose_recorded_dataset_is_unknown() {
     );
     let name = "rust-promote-refused-for-unknown-dataset";
 
-    let err = action_promote(&mut app, name, b"fn a() {}\n", b"fn b() {}\n").unwrap_err();
+    let err = action_promote(&mut app, name, b"fn a() {}\n", b"fn b() {}\n", false).unwrap_err();
 
     assert!(format!("{err:#}").contains("not-a-dataset"), "{err:#}");
     assert!(diffs_case_dir(name).is_none(), "nothing may be written");
     assert!(matches!(app.origin, CaseOrigin::Sample(_)));
+}
+
+/// A `crosslang` sample keeps each side's extension on promotion; a git-commit case, one path,
+/// gets that path's on both.
+#[test]
+fn promotion_names_each_side_after_the_samples_own_file() {
+    let sample = tempfile::tempdir().unwrap();
+    fs::write(sample.path().join("before.java.test"), "class A {}\n").unwrap();
+    fs::write(sample.path().join("after.kt.test"), "class A\n").unwrap();
+
+    assert_eq!(
+        promoted_file_names(Some(sample.path()), "src/A.kt").unwrap(),
+        ("before.java.test".to_string(), "after.kt.test".to_string())
+    );
+    assert_eq!(
+        promoted_file_names(None, "src/a.rs").unwrap(),
+        ("before.rs.test".to_string(), "after.rs.test".to_string())
+    );
 }
 
 /// Esc in the text view backs out one step at a time - the live selection, then this side's
@@ -9615,7 +10029,7 @@ fn may_edit_mapping_covers_the_marking_keys_and_not_navigation() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// codediff in the background
+// omnidiff in the background
 // ---------------------------------------------------------------------------------------------
 
 /// Polls until the background run lands, or gives up after a few seconds so a broken thread
@@ -9655,7 +10069,7 @@ fn start_algo_diff_lands_through_poll_algo_diff_keyed_by_the_panels_own_node_ids
         app.status
             .as_deref()
             .unwrap_or("")
-            .starts_with("codediff ran"),
+            .starts_with("omnidiff ran"),
         "{:?}",
         app.status
     );
@@ -9666,7 +10080,7 @@ fn start_algo_diff_lands_through_poll_algo_diff_keyed_by_the_panels_own_node_ids
 }
 
 #[test]
-fn compute_frame_state_counts_mismatches_only_once_codediff_has_run() -> Result<()> {
+fn compute_frame_state_counts_mismatches_only_once_omnidiff_has_run() -> Result<()> {
     let source = "fn main() {}\n";
     let before = Code::from_string(source, &Language::Rust);
     let after = Code::from_string(source, &Language::Rust);
@@ -9678,7 +10092,7 @@ fn compute_frame_state_counts_mismatches_only_once_codediff_has_run() -> Result<
         root_id,
         HumanMapping::default(),
     );
-    // The human says the whole file was deleted (`D` on the root); codediff will say it is
+    // The human says the whole file was deleted (`D` on the root); omnidiff will say it is
     // identical.
     let root = before.ast.as_ref().unwrap().root_node();
     press_with_watch(&mut app, root, source, KeyCode::Char('D'));
@@ -9696,7 +10110,7 @@ fn compute_frame_state_counts_mismatches_only_once_codediff_has_run() -> Result<
     assert_eq!(
         state.before_mismatches,
         Some(state.before_flat.len()),
-        "every marked-deleted node is one codediff mapped"
+        "every marked-deleted node is one omnidiff mapped"
     );
     assert_eq!(
         state.after_mismatches,
@@ -9831,7 +10245,7 @@ fn remember_session_keeps_the_last_diffs_case_and_the_picker_view() {
     };
     remember_session(&mut app);
 
-    let path = dir.path().join("codediff").join("human_solver.json");
+    let path = dir.path().join("omnidiff").join("human_solver.json");
     let memory = load_session_memory(&path);
     assert_eq!(memory.last_case.as_deref(), Some("rust-add-if"));
     assert_eq!(memory.diff_view.sort.column, DiffColumn::Unmarked);
@@ -10150,6 +10564,7 @@ fn the_text_view_draws_only_the_focused_side_on_a_narrow_terminal() {
                     "fn new_name() {}",
                     &HumanMapping::default(),
                     "Minimal",
+                    &[],
                     TextOverlay::Human,
                     None,
                     &state,
@@ -10350,7 +10765,7 @@ fn measure_saved_case_reads_a_real_fixture_as_its_tests_do() -> Result<()> {
     assert_eq!(measurement.invariant_violations, 0);
     assert_eq!(
         describe_measurement(&measurement),
-        "codediff: 0 mismatch(es), 0 visible, painting 0.0%, invariants hold"
+        "omnidiff: 0 mismatch(es), 0 visible, painting 0.0%, invariants hold"
     );
     Ok(())
 }
@@ -10712,12 +11127,12 @@ fn scan_corpus_cached_with_rescans_only_cases_whose_stamp_moved() {
 }
 
 #[test]
-fn the_codediff_overlay_from_a_known_diff_matches_a_fresh_run() {
+fn the_omnidiff_overlay_from_a_known_diff_matches_a_fresh_run() {
     let before = Code::from_string("fn main() {\n    a();\n}\n", &Language::Rust);
     let after = Code::from_string("fn main() {\n    b();\n    a();\n}\n", &Language::Rust);
     let known = diff_code(&before, &after).ast.expect("an AST diff");
-    let fresh = codediff_text_spans(&before, &after, None);
-    let reused = codediff_text_spans(&before, &after, Some(&known));
+    let fresh = omnidiff_text_spans(&before, &after, None);
+    let reused = omnidiff_text_spans(&before, &after, Some(&known));
     assert_eq!(reused, fresh);
     assert!(!reused[1].is_empty(), "the insert shows on the after side");
 }
@@ -10996,6 +11411,7 @@ fn the_text_view_title_shows_the_search_prompt_on_the_focused_side() {
                 "fn new_name() {}",
                 &HumanMapping::default(),
                 "Minimal",
+                &[],
                 TextOverlay::Human,
                 None,
                 &state,
@@ -11086,22 +11502,38 @@ fn m_over_full_sweeps_is_one_match_as_drawn() {
     assert_eq!(entries[0].before[0].end_row, 2);
 }
 
+/// A comment rewritten into more lines (`c-x-sqlite-sqlite-c94f97fa-where`: 6 before, 15 after)
+/// is one update; its rows cannot pair one to one.
 #[test]
-fn m_over_minimal_sweeps_of_unequal_length_is_refused() {
+fn m_over_minimal_sweeps_of_unequal_length_is_one_update_over_every_row() {
     let (before, after) = moved_block();
     let mut state = sweeps_over_the_moved_block();
     // Three rows before, two after.
     state.cursor[0] = (3, TextPaintState::row_text(before, 3).len());
     let (app, _) = press_in_text_view_painting("Minimal", before, after, state, KeyCode::Char('m'));
-    assert!(solution_entries(&app.mapping, &app.text_solution).is_empty());
-    assert!(
-        app.status
-            .as_deref()
-            .unwrap_or("")
-            .starts_with("Not matched: 3 line(s) against 2"),
-        "{:?}",
-        app.status
+    let entries = solution_entries(&app.mapping, &app.text_solution);
+    assert_eq!(entries.len(), 1, "{:?}", app.status);
+    let entry = &entries[0];
+    assert_eq!(
+        (entry.before.len(), entry.after.len()),
+        (3, 2),
+        "a span per row"
     );
+    for span in entry.before.iter().chain(&entry.after) {
+        assert_ne!(span.start_column, 0, "no indentation claimed: {span:?}");
+    }
+    assert_eq!(
+        entry.verdict(before, after).unwrap(),
+        HumanTextVerdict::Update
+    );
+    assert_eq!(
+        app.status.as_deref(),
+        Some(
+            "Matched 3:2 line(s) as one update: unequal line counts cannot pair one to one - \
+             indentation left unpainted (Minimal)"
+        )
+    );
+    assert!(app.dirty);
 }
 
 #[test]
@@ -11112,16 +11544,16 @@ fn m_over_a_minimal_vertical_selection_is_untouched() {
     state.anchor = [Some((1, 4)), Some((2, 8))];
     state.cursor = [(2, 9), (3, 13)];
     let (app, _) = press_in_text_view_painting("Minimal", before, after, state, KeyCode::Char('m'));
-    // The old path: a vertical selection is one entry with a span per row, and a Match's spans
-    // on a side must read the same, which `let a` and `let b` do not.
-    assert!(solution_entries(&app.mapping, &app.text_solution).is_empty());
-    assert!(
-        app.status
-            .as_deref()
-            .unwrap_or("")
-            .starts_with("Not matched:"),
-        "{:?}",
-        app.status
+    // The old path: a vertical selection is one entry with a span per row, kept as drawn. `let a`
+    // and `let b` read differently, so the match is an update as a whole.
+    let entries = solution_entries(&app.mapping, &app.text_solution);
+    assert_eq!(entries.len(), 1, "{:?}", app.status);
+    assert_eq!((entries[0].before.len(), entries[0].after.len()), (2, 2));
+    assert_eq!(entries[0].before[0].start_column, 4, "drawn columns kept");
+    assert_eq!(entries[0].after[0].start_column, 8, "drawn columns kept");
+    assert_eq!(
+        app.status.as_deref(),
+        Some("Matched 2:2: text differs, recorded as an update")
     );
 }
 
@@ -11193,4 +11625,513 @@ fn t_opens_the_text_view_on_the_selected_nodes_with_the_focused_side_first() {
     assert_eq!(state.side, 1, "the After panel had the focus");
     assert_eq!(state.cursor[0], (1, 4), "alpha");
     assert_eq!(state.cursor[1], (2, 4), "beta");
+}
+
+// ---- the picture session -----------------------------------------------------------------------
+
+#[test]
+fn a_picture_stub_asserts_the_verdict_or_pins_the_engines_mismatch() {
+    use omnidiff::diff::content::{Level, Tag, Verdict};
+    use omnidiff::test::helper::human_content::Mismatches;
+    let agreeing = content::stub_contents(Family::Pictures, "png-x-a-b-c", &Mismatches::default());
+    assert!(
+        agreeing.contains("fn verdicts() -> Result<()>"),
+        "{agreeing}"
+    );
+    assert!(
+        agreeing.contains("assert_matches_human_verdicts(Family::Pictures, \"png-x-a-b-c\")"),
+        "{agreeing}"
+    );
+    let pinned = content::stub_contents(
+        Family::Pictures,
+        "png-x-a-b-c",
+        &Mismatches {
+            pair: Some(Verdict::new(Level::Artifacts).with(Tag::Resized)),
+            members: Vec::new(),
+        },
+    );
+    assert!(
+        pinned.contains("Recorded as found, not examined."),
+        "{pinned}"
+    );
+    assert!(pinned.contains("Some(\"artifacts+resized\")"), "{pinned}");
+}
+
+#[test]
+fn a_picture_pair_is_found_by_its_before_and_after_files() {
+    let dir = tempfile::tempdir().unwrap();
+    assert!(content::pair_paths(dir.path()).is_none());
+    fs::write(dir.path().join("before.png.test"), b"x").unwrap();
+    fs::write(dir.path().join("after.png.test"), b"y").unwrap();
+    fs::write(dir.path().join("README.md"), b"z").unwrap();
+    let (before, after) = content::pair_paths(dir.path()).unwrap();
+    assert!(before.ends_with("before.png.test") && after.ends_with("after.png.test"));
+}
+
+#[test]
+fn the_review_queue_reads_cases_sites_and_notes_and_skips_what_does_not_parse() {
+    let items = review::parse_queue(
+        "# a comment\n\
+         \n\
+         cli-28\tb290 a290\tbreak -> continue\n\
+         cli-40\tx3\tnot a site\n\
+         zed\ta1\n",
+    );
+    assert_eq!(items.len(), 2, "{items:#?}");
+    assert_eq!(items[0].case, "cli-28");
+    assert_eq!(
+        items[0].sites,
+        vec![(0, 289), (1, 289)],
+        "1-based lines, 0-based rows"
+    );
+    assert_eq!(items[0].note, "break -> continue");
+    assert_eq!(items[1].sites, vec![(1, 0)]);
+    assert_eq!(items[1].note, "", "the note is optional");
+}
+
+#[test]
+fn dropping_a_review_item_removes_only_its_first_copy() {
+    let text = "a\tb1\tx\nb\tb2\ty\na\tb1\tx\n";
+    assert_eq!(
+        review::without_line(text, "a\tb1\tx"),
+        "b\tb2\ty\na\tb1\tx\n"
+    );
+}
+
+/// A review item jumps like a violation: each site is its whole line, from the first code
+/// character, and Enter lands both cursors there.
+#[test]
+fn a_review_item_jumps_to_its_lines() {
+    let source = "fn f() {\n    let x = 1;\n}\n";
+    let code = Code::from_string(source, &Language::Rust);
+    let items = review::parse_queue("case\tb2 a2\tlook here\nother\tb1\tnot this case\n");
+    let entries = review::review_entries(&items, "case", &code, &code);
+    assert_eq!(entries.len(), 1);
+    let entry = &entries[0];
+    assert_eq!(entry.review.as_deref(), Some("case\tb2 a2\tlook here"));
+    assert_eq!(entry.violation.message, "look here");
+    let span = entry.violation.sites[0].span;
+    assert_eq!(
+        (span.start_row, span.start_column, span.end_column),
+        (1, 4, 14)
+    );
+
+    let root = code.ast.as_ref().unwrap().root_node();
+    let mut app = App::new(
+        "case".to_string(),
+        CaseOrigin::Diffs,
+        root.id(),
+        root.id(),
+        HumanMapping::default(),
+    );
+    action_focus_violation(&mut app, entry, &code, &code);
+    let Some(Modal::TextView { state }) = &app.modal else {
+        panic!("Enter should open the text view, got {:?}", app.modal);
+    };
+    assert_eq!(state.cursor, [(1, 4), (1, 4)]);
+    assert!(
+        app.status
+            .as_deref()
+            .is_some_and(|s| s.starts_with("Review item")),
+        "{:?}",
+        app.status
+    );
+}
+
+/// A case the queue does not name has nothing queued - a known 0, not an unscanned `?`.
+#[test]
+fn the_review_filter_keeps_only_queued_cases() {
+    let options = vec![
+        ("queued".to_string(), "handmade"),
+        ("clear".to_string(), "handmade"),
+    ];
+    let counts = std::collections::HashMap::from([("queued".to_string(), 2)]);
+    let data = DiffPickerData {
+        review: Some(&counts),
+        ..DiffPickerData::default()
+    };
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Review, FlagFilter::Yes),
+            data
+        ),
+        vec!["queued"]
+    );
+    assert_eq!(
+        visible_diff_options(
+            &options,
+            &flag_view(DiffColumn::Review, FlagFilter::No),
+            data
+        ),
+        vec!["clear"]
+    );
+}
+
+/// The shadcn registry fixture, opened as `main` opens a case, with omnidiff's diff in place and
+/// any layer saved in it removed, so painting the fixture does not change what these tests see.
+fn shadcn_app() -> (App, Code, Code) {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (before, after) = load_case(name).expect("fixture loads");
+    let mut mapping = human_mapping::load_with(name, &before, &after).expect("mapping loads");
+    mapping.embedded.clear();
+    let mut app = App::new(
+        name.to_string(),
+        CaseOrigin::Diffs,
+        starting_cursor_id(&before),
+        starting_cursor_id(&after),
+        mapping,
+    );
+    app.algo_diff = diff_code(&before, &after).ast;
+    (app, before, after)
+}
+
+/// The JSON string holding the TSX file, in `code`.
+fn shadcn_host_string(code: &Code) -> Node<'_> {
+    let path = [
+        "object:1", "pair:4", "array:1", "object:1", "pair:2", "string:2",
+    ];
+    node_for_path(code.ast.as_ref().expect("parsed").root_node(), &path).expect("host string")
+}
+
+#[test]
+fn enter_on_a_host_string_opens_its_embedded_layer_and_q_closes_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    assert_eq!(request.language, Language::TSX);
+
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(inner_before.contents.starts_with("import * as React"));
+    assert!(inner_after.contents.contains("phosphor=\"CaretLeftIcon\""));
+    assert!(
+        app.mapping.entries.is_empty(),
+        "a new layer starts unmapped"
+    );
+    assert!(
+        app.algo_diff.is_none(),
+        "omnidiff reruns on the decoded pair"
+    );
+    assert!(
+        app.display_name()
+            .ends_with("> TSX in the string at line 10")
+    );
+
+    // What `s` would save: the host mapping, with this layer's work written into it.
+    app.mapping.text_mappings.push(NamedTextMapping {
+        name: "Minimal".to_string(),
+        mapping: HumanTextMapping::default(),
+    });
+    let whole = app.whole_mapping();
+    assert_eq!(whole.embedded.len(), 1);
+    assert_eq!(whole.embedded[0].mapping.text_mappings.len(), 1);
+    assert!(!whole.entries.is_empty(), "the host's own entries are kept");
+
+    leave_layer(&mut app);
+    assert!(app.layers.is_empty());
+    assert_eq!(
+        app.mapping.embedded.len(),
+        1,
+        "a layer with work in it stays"
+    );
+    assert!(
+        app.algo_diff.is_some(),
+        "the host's omnidiff run comes back"
+    );
+}
+
+#[test]
+fn a_layer_opened_and_left_untouched_is_not_kept() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&before),
+        Side::Before,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    leave_layer(&mut app);
+    assert!(app.mapping.embedded.is_empty());
+}
+
+#[test]
+fn enter_on_a_string_with_no_code_says_why() {
+    let (app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let root = before.ast.as_ref().expect("parsed").root_node();
+    let name_value = node_for_path(root, &["object:1", "pair:2", "string:2"]).expect("name");
+    let reason = layer_request(&app, name_value, Side::Before, &caches, &before, &after)
+        .expect_err("no code in the component's name");
+    assert!(
+        reason.contains("partner") || reason.contains("language"),
+        "{reason}"
+    );
+}
+
+#[test]
+fn enter_in_the_text_view_opens_the_string_under_the_cursor_and_esc_comes_back() {
+    let (mut app, before, after) = shadcn_app();
+    let before_root = before.ast.as_ref().expect("parsed").root_node();
+    let after_root = after.ast.as_ref().expect("parsed").root_node();
+    let caches = rebuild_caches(&app.mapping.entries, before_root, after_root);
+    let before_flat = FlatIndex::new(flatten_visible(before_root, &app.before.collapsed, None));
+    let after_flat = FlatIndex::new(flatten_visible(after_root, &app.after.collapsed, None));
+    let line = after.contents.lines().nth(9).expect("line 10");
+    let column = line.find("import").expect("the TSX starts on line 10");
+    let state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (9, column)],
+        ..Default::default()
+    };
+    app.modal = Some(Modal::TextView {
+        state: state.clone(),
+    });
+
+    let request = match handle_modal_key(
+        &mut app,
+        KeyCode::Enter,
+        &before_flat,
+        &after_flat,
+        Some(before_root),
+        Some(after_root),
+        &caches,
+        before.contents.as_bytes(),
+        after.contents.as_bytes(),
+        &before,
+        &after,
+    ) {
+        Some(OpenTarget::EnterLayer(request)) => request,
+        _ => panic!("Enter should open the layer, status {:?}", app.status),
+    };
+    let (inner_before, inner_after) =
+        enter_layer(&mut app, &before, &after, &request).expect("the layer opens");
+    assert!(
+        matches!(&app.modal, Some(Modal::TextView { state }) if *state == TextPaintState::default()),
+        "the layer opens in its own t view"
+    );
+
+    // Esc in the layer's t view goes back the way it came, to the host's t view.
+    let inner_before_root = inner_before.ast.as_ref().expect("parsed").root_node();
+    let inner_after_root = inner_after.ast.as_ref().expect("parsed").root_node();
+    let inner_caches = rebuild_caches(&app.mapping.entries, inner_before_root, inner_after_root);
+    let inner_before_flat = FlatIndex::new(flatten_visible(
+        inner_before_root,
+        &app.before.collapsed,
+        None,
+    ));
+    let inner_after_flat = FlatIndex::new(flatten_visible(
+        inner_after_root,
+        &app.after.collapsed,
+        None,
+    ));
+    let esc = handle_modal_key(
+        &mut app,
+        KeyCode::Esc,
+        &inner_before_flat,
+        &inner_after_flat,
+        Some(inner_before_root),
+        Some(inner_after_root),
+        &inner_caches,
+        inner_before.contents.as_bytes(),
+        inner_after.contents.as_bytes(),
+        &inner_before,
+        &inner_after,
+    );
+    assert!(matches!(esc, Some(OpenTarget::LeaveLayer)));
+    leave_layer(&mut app);
+    assert!(matches!(&app.modal, Some(Modal::TextView { state: back }) if *back == state));
+}
+
+#[test]
+fn a_layers_painting_is_drawn_in_the_host_where_the_string_spells_it() {
+    let (mut app, before, after) = shadcn_app();
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    let (_, inner_after) = enter_layer(&mut app, &before, &after, &request).expect("opens");
+    let attribute = "phosphor=\"CaretLeftIcon\"";
+    let (row, line) = inner_after
+        .contents
+        .lines()
+        .enumerate()
+        .find(|(_, line)| line.contains(attribute))
+        .expect("the TSX has the attribute");
+    let column = line.find(attribute).expect("on that line");
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Insert,
+        before: Vec::new(),
+        after: vec![HumanTextSpan {
+            start_row: row,
+            start_column: column,
+            end_row: row,
+            end_column: column + attribute.len(),
+        }],
+    });
+    leave_layer(&mut app);
+
+    let projected = project_layer_paint(&app.mapping, &before, &after);
+    let spans = projected[0].for_solution("Minimal").expect("painted");
+    assert!(spans[0].is_empty());
+    let [(span, verdict)] = spans[1][..] else {
+        panic!("one span, got {:?}", spans[1]);
+    };
+    assert_eq!(verdict, HumanTextVerdict::Insert);
+    let host_line = after.contents.lines().nth(span.start_row).expect("row");
+    assert_eq!(
+        &host_line[span.start_column..span.end_column],
+        r#"phosphor=\"CaretLeftIcon\""#
+    );
+}
+
+#[test]
+fn a_fixture_painted_only_in_its_layer_counts_as_painted_when_saved() {
+    let name = "json-shadcn-ui-ui-react-code-in-string-constant";
+    let (mut app, before, after) = shadcn_app();
+    app.mapping.text_mappings.clear();
+    assert!(!is_painted(name, &app.mapping).expect("checks"));
+
+    let caches = rebuild_caches(
+        &app.mapping.entries,
+        before.ast.as_ref().expect("parsed").root_node(),
+        after.ast.as_ref().expect("parsed").root_node(),
+    );
+    let request = layer_request(
+        &app,
+        shadcn_host_string(&after),
+        Side::After,
+        &caches,
+        &before,
+        &after,
+    )
+    .expect("omnidiff found the layer");
+    enter_layer(&mut app, &before, &after, &request).expect("opens");
+    action_paint_mark_empty(&mut app);
+    leave_layer(&mut app);
+    assert!(app.mapping.text_mappings.is_empty());
+    assert!(
+        is_painted(name, &app.mapping).expect("checks"),
+        "the JSON reads the same outside the string, so its painting is implied"
+    );
+}
+
+/// One `helper()` call extracted out of two places: a 1:2 match, before row 1 against after rows
+/// 0 and 2.
+fn one_to_two_match() -> (App, &'static str, &'static str) {
+    let before = "a\nhelper()\nb\n";
+    let after = "helper()\nx\nhelper()\n";
+    let mut app = test_app();
+    app.text_solution = "Minimal".to_string();
+    let span = |row| HumanTextSpan {
+        start_row: row,
+        start_column: 0,
+        end_row: row,
+        end_column: 8,
+    };
+    solution_entries_mut(&mut app.mapping, "Minimal").push(HumanTextEntry {
+        operation: HumanTextOperation::Match,
+        before: vec![span(1)],
+        after: vec![span(0), span(2)],
+    });
+    (app, before, after)
+}
+
+#[test]
+fn f_walks_the_other_ranges_of_the_match_under_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(1, 3), (1, 0)],
+        ..Default::default()
+    };
+
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0));
+    assert!(
+        app.status.as_deref().unwrap_or("").contains("1 of 2"),
+        "{:?}",
+        app.status
+    );
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (2, 0));
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[1], (0, 0), "wrapping");
+    assert_eq!(state.side, 0, "the focus stays, so f walks on");
+    assert_eq!(state.cursor[0], (1, 3));
+
+    // From the other side, its one partner.
+    state.side = 1;
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+}
+
+#[test]
+fn f_scrolls_the_partner_level_with_the_cursor() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 1,
+        cursor: [(0, 0), (2, 0)],
+        scroll: [0, 1],
+        ..Default::default()
+    };
+    // The cursor sits on screen row 1; its partner, before row 1, is scrolled to show there too.
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state.cursor[0], (1, 0));
+    assert_eq!(state.scroll[0], 0);
+}
+
+#[test]
+fn f_off_a_painted_match_says_so_and_moves_nothing() {
+    let (mut app, before, after) = one_to_two_match();
+    let mut state = TextPaintState {
+        side: 0,
+        cursor: [(0, 0), (1, 0)],
+        ..Default::default()
+    };
+    let unchanged = state.clone();
+    action_paint_follow_match(&mut app, &mut state, before, after, 20);
+    assert_eq!(state, unchanged);
+    assert!(
+        app.status
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("No painted match"),
+        "{:?}",
+        app.status
+    );
 }

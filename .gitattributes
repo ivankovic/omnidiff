@@ -10,3 +10,9 @@
 # Scoped to `*.test` deliberately: a repo-wide `text=auto` policy would be a far larger blast
 # radius than the hazard warrants.
 *.test -text
+
+# The settings page's examples (`src/tui/settings_examples/`): compiled into the binary with
+# `include_str!` and held by tests to parse cleanly and to paint the same on every platform, so
+# they must stay byte-exact LF. A Windows checkout's CRLF made the Vimscript example fail to parse
+# and changed what the settings paint in the others.
+*.example -text

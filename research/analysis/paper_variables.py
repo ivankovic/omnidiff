@@ -3,14 +3,13 @@
 # requires-python = ">=3.12"
 # dependencies = []
 # ///
-#  This file is part of the CodeDiff code diffing tool.
+#  This file is part of the OmniDiff code diffing tool.
 #
 #  Copyright (C) 2026 Marko Ivankovic
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#  by the Free Software Foundation, version 3 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -100,38 +99,41 @@ STRATIFIED_PER_CELL = 10
 # Ground-truth corpus size and AST-node accuracy.
 # source: cargo run --release --features test-fixtures --bin benchmark_optimal_solutions -- --csv
 #         (research/data/quality/optimal_solutions_benchmark.csv), totalled over solved fixtures.
-# Measured 2026-09-26, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
+# Measured 2026-11-07, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
 # `defects4j` fixtures. The corpus directory also holds 63 `handmade` fixtures, hand-written
 # minimal examples of one change pattern each; the product benchmark scores them and this paper
 # does not, because no rate over cases written to exercise the matcher estimates anything about
 # real changes.
 #
-# `defects4j` contributes 274 solved Java compilation units (113 at the 2026-09-16 refresh), far
-# longer than the corpus median, which is why it carries so much of NodesTotal. Only solved
-# fixtures count - the other 722 Defects4J directories carry no human_mapping.json and are
-# invisible here.
+# `defects4j` contributes 444 solved Java compilation units (440 at the 2026-10-22 refresh, 335 at
+# 2026-10-17, 274 at 2026-09-26, 113 at 2026-09-16), far longer than the corpus median, which is
+# why it carries so much of NodesTotal. Only solved fixtures count - the other 552 Defects4J
+# directories carry no human_mapping.json and are invisible here.
 #
-# In scope: 1217 fixture directories carrying a human_mapping.json (220 small, 232 full, 491
-# stratified, 274 defects4j).
+# In scope: 1687 fixture directories carrying a human_mapping.json (220 small, 232 full, 791
+# stratified, 444 defects4j).
 # `rust-completely-unrelated-main-files`, which is deliberately ground-truth-free (a
 # pathological-latency case, not an accuracy case, reporting `human_unsolved` in the CSV), is a
 # `handmade` fixture and so is out of scope here rather than being an in-scope exception.
 #
-# NumFixtures is the ground-truth-bearing count, 1217, which is the denominator of every per-tool
-# row and the node accuracy below. The ablation study is older and names its own corpus state.
+# NumFixtures is the ground-truth-bearing count, 1687, which is the denominator of the node
+# accuracy below. The per-tool rows are not over it: the 2026-10-17, 2026-10-22 and 2026-11-07
+# refreshes did not re-run the tool comparison, which stays at the 1217 fixtures of 2026-09-26
+# (\UnixDiffFixtures; footnote fn:in-progress in main.tex says so). The ablation study is older and names its own
+# corpus state.
 #
-# Refreshed together, from one corpus state, on 2026-09-26. These four move as a set and must be
+# Refreshed together, from one corpus state, on 2026-11-07. These four move as a set and must be
 # refreshed as a set: re-run the benchmark with --csv, re-run `analyze_human_mappings --csv` so the
 # scope artifact agrees with it, then recompute here. Order matters in one direction: human_mapping_analysis.csv carries a
 # `current_mismatches` column read back from optimal_solutions_benchmark.csv, so the benchmark runs
 # first. The check at the bottom of this file compares NumFixtures against the corpus on disk
 # precisely because the previous values silently outlived the corpus they described.
 CORPUS = {
-    "NumFixtures": 1217,
-    "NodesMatched": 10_325_792,
-    "NodesTotal": 10_333_777,
+    "NumFixtures": 1687,
+    "NodesMatched": 18_616_022,
+    "NodesTotal": 18_623_801,
     # Distinct languages across the fixture corpus, from `analyze_human_mappings`' own "By
-    # language" census restricted to these fixtures (24 as of 2026-09-26; `defects4j` is Java only, and the excluded handmade
+    # language" census restricted to these fixtures (24 as of 2026-11-07; `defects4j` is Java only, and the excluded handmade
     # fixtures cover no language the sampled ones lack).
     # Not the same number as the empirical study's \NumLanguages, which counts languages in the
     # 100-repository measure-file-stats corpus.
@@ -139,12 +141,12 @@ CORPUS = {
 }
 
 # Same corpus, same run, counting only nodes that carry text of their own and therefore reach the
-# screen when the diff is rendered (`codediff::diff::nodes::is_structurally_visible`). Reported
+# screen when the diff is rendered (`omnidiff::diff::nodes::is_structurally_visible`). Reported
 # alongside the all-node figure because the all-node denominator includes every ancestor of every
 # change up to the root, so it partly measures how deep a grammar's tree is.
 CORPUS_VISIBLE = {
-    "VisibleNodesMatched": 7_030_055,
-    "VisibleNodesTotal": 7_035_541,
+    "VisibleNodesMatched": 12_581_856,
+    "VisibleNodesTotal": 12_587_060,
 }
 
 # Leave-one-out ablation deltas, in mismatches, against an all-enabled baseline. A positive number
@@ -315,18 +317,18 @@ RQ_ONE_MACROS = [
 COMPARISON_MACROS = (
     [
         f"{tool}{suffix}"
-        for tool in ("CodeDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
+        for tool in ("OmniDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
         for suffix in ("Fixtures", "LineMismatches", "LineRate", "PerfectPct")
     ]
     + ["CommonFixtures"]
     + [
         f"Common{tool}LineRate"
-        for tool in ("CodeDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
+        for tool in ("OmniDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
     ]
     + [
         f"Speed{tool}{suffix}"
         for tool in (
-            "CodeDiff",
+            "OmniDiff",
             "UnixDiff",
             "GumTreeCold",
             "GumTreeWarm",
@@ -526,7 +528,9 @@ def sampling_provenance(repo_root):
             1 for n in by_language.values() if n > SAMPLE_PER_LANGUAGE
         )
 
-    rejected = [r for r in rows if r["status"] == "REJECTED"]
+    # The paper's datasets only: content families, `encodings` and `crosslang` rows share the file
+    # but not the paper.
+    rejected = [r for r in rows if r["status"] == "REJECTED" and r["dataset"] in PAPER_DATASETS]
     by_language = collections.Counter(r["language"] for r in rejected)
     out["SampleRejectedTotal"] = len(rejected)
     # The paper names these two specifically as the dominant cause; deriving them keeps the claim
@@ -637,7 +641,7 @@ def cost_preference(research_dir):
 # PAPER_MACRO_STEMS: a fixture is in the subset when every one of these scored it. The check at
 # the bottom of `common_subset_concentration` fails loudly if this drifts from \CommonFixtures.
 COMMON_SUBSET_TOOLS = [
-    "codediff",
+    "omnidiff",
     "unix_diff",
     "git_myers",
     "git_minimal",
@@ -651,7 +655,7 @@ COMMON_SUBSET_TOOLS = [
     "srcdiff",
 ]
 
-# How many of CodeDiff's worst fixtures the paper sets aside when showing that its common-subset
+# How many of OmniDiff's worst fixtures the paper sets aside when showing that its common-subset
 # rate is carried by a few long files. Five is a stated editorial choice, not a fitted cutoff:
 # the concentration is visible at any small k, and the macro below reports what share of the
 # mismatches those k hold so a reader can judge the choice.
@@ -659,12 +663,12 @@ COMMON_SUBSET_TOP_K = 5
 
 
 def common_subset_concentration(research_dir):
-    """Why CodeDiff's pooled line rate rises on the common subset, derived from
+    """Why OmniDiff's pooled line rate rises on the common subset, derived from
     `data/comparison/benchmark_accuracy.csv` - the same artifact the COMPARISON block comes from.
 
     A pooled line rate weights a fixture by its length, so a handful of very long fixtures decides
     it. These macros let Section 8 say that in numbers instead of guessing at a cause: the share
-    of CodeDiff's common-subset mismatches held by its `COMMON_SUBSET_TOP_K` worst fixtures, the
+    of OmniDiff's common-subset mismatches held by its `COMMON_SUBSET_TOP_K` worst fixtures, the
     two rates with those set aside, and the per-fixture reading, which does not reorder at all.
 
     `git_myers` is the line-based comparator throughout, because it is the best of the five
@@ -692,36 +696,36 @@ def common_subset_concentration(research_dir):
         lines = sum(int(r["total_lines"]) for r in subset)
         return f"{mismatches(subset, tool) / lines * 100:.3f}" if lines else PLACEHOLDER
 
-    worst = sorted(common, key=lambda r: -int(r["codediff_line_mismatches"]))
+    worst = sorted(common, key=lambda r: -int(r["omnidiff_line_mismatches"]))
     top = worst[:COMMON_SUBSET_TOP_K]
     rest = worst[COMMON_SUBSET_TOP_K:]
-    top_share = mismatches(top, "codediff") / mismatches(common, "codediff") * 100
+    top_share = mismatches(top, "omnidiff") / mismatches(common, "omnidiff") * 100
     top_lines = sum(int(r["total_lines"]) for r in top)
     all_lines = sum(int(r["total_lines"]) for r in common)
 
     better = sum(
         1
         for r in common
-        if int(r["codediff_line_mismatches"]) < int(r["git_myers_line_mismatches"])
+        if int(r["omnidiff_line_mismatches"]) < int(r["git_myers_line_mismatches"])
     )
     worse = sum(
         1
         for r in common
-        if int(r["codediff_line_mismatches"]) > int(r["git_myers_line_mismatches"])
+        if int(r["omnidiff_line_mismatches"]) > int(r["git_myers_line_mismatches"])
     )
     return {
         "CommonTopK": COMMON_SUBSET_TOP_K,
-        "CommonTopKMismatches": latex_number(mismatches(top, "codediff")),
-        "CommonCodeDiffMismatches": latex_number(mismatches(common, "codediff")),
+        "CommonTopKMismatches": latex_number(mismatches(top, "omnidiff")),
+        "CommonOmniDiffMismatches": latex_number(mismatches(common, "omnidiff")),
         "CommonTopKSharePct": f"{top_share:.0f}",
         "CommonTopKLinesPct": f"{top_lines / all_lines * 100:.0f}",
         "CommonExTopKFixtures": len(rest),
-        "CommonExTopKCodeDiffRate": rate(rest, "codediff"),
+        "CommonExTopKOmniDiffRate": rate(rest, "omnidiff"),
         "CommonExTopKGitMyersRate": rate(rest, "git_myers"),
-        "CommonCodeDiffPerfect": sum(1 for r in common if int(r["codediff_line_mismatches"]) == 0),
+        "CommonOmniDiffPerfect": sum(1 for r in common if int(r["omnidiff_line_mismatches"]) == 0),
         "CommonGitMyersPerfect": sum(1 for r in common if int(r["git_myers_line_mismatches"]) == 0),
-        "CommonCodeDiffBetter": better,
-        "CommonCodeDiffWorse": worse,
+        "CommonOmniDiffBetter": better,
+        "CommonOmniDiffWorse": worse,
     }
 
 
@@ -858,11 +862,11 @@ def robustness_full(research_dir):
 
 
 def astdiff_oracle(research_dir):
-    """Section 7's external check: CodeDiff's node mapping scored against an oracle nobody on this
+    """Section 7's external check: OmniDiff's node mapping scored against an oracle nobody on this
     project wrote. DERIVED from `data/comparison/astdiff_oracle_defects4j.csv`.
 
     source: `make measure-astdiff-oracle` from research/ (benchmark_astdiff_oracle). Measured
-            2026-09-15.
+            2026-10-17, against oracle commit 6e926908 as before.
 
     The oracle is Alikhanifard and Tsantalis' AST node-mapping benchmark (TOSEM 2025), Defects4J
     half: 800 bug-fixing changes over 996 Java compilation units, each a complete list of which
@@ -926,13 +930,13 @@ def astdiff_oracle_human(research_dir):
     `data/comparison/astdiff_oracle_defects4j_human.csv`.
 
     source: `make measure-astdiff-oracle-human` from research/ (benchmark_astdiff_oracle
-            --human-mappings src/test/data/diffs/defects4j). Measured 2026-09-15.
+            --human-mappings src/test/data/diffs/defects4j). Measured 2026-10-17, over 335 units.
 
     Two ground truths against each other, which is the only reading of the corpus that does not
     depend on our own annotation discipline. Neither is a verdict on the other, so precision here is
     the share of our pairs the oracle also records and recall the share of the oracle's we do.
 
-    `OracleHumanCodeDiff*` is the control, and the number is unreadable without it: it is codediff's
+    `OracleHumanOmniDiff*` is the control, and the number is unreadable without it: it is omnidiff's
     own agreement with the oracle **over the same units**, so the two rows differ only in whose
     mapping is being scored. Read from the whole-corpus CSV, restricted to the rows the human run
     covers.
@@ -992,8 +996,8 @@ def astdiff_oracle_human(research_dir):
     }
     values.update(scores(human, "all", "OracleHuman"))
     values.update(scores(human, "statement", "OracleHumanStatement"))
-    values.update(scores(control, "all", "OracleHumanCodeDiff"))
-    values.update(scores(control, "statement", "OracleHumanCodeDiffStatement"))
+    values.update(scores(control, "all", "OracleHumanOmniDiff"))
+    values.update(scores(control, "statement", "OracleHumanOmniDiffStatement"))
     return values
 
 
@@ -1090,7 +1094,7 @@ def build(
     out += [
         "",
         "% --- Change-shape census: how often each shape RQ3 asks about occurs in the ground-truth",
-        "% corpus, and how often CodeDiff maps a fixture containing it with zero mismatches.",
+        "% corpus, and how often OmniDiff maps a fixture containing it with zero mismatches.",
         "% Generated by analysis/human_mapping_shapes_report.py from",
         "% data/quality/human_mapping_analysis.csv; refresh with `make shapes-report`.",
     ]
@@ -1160,7 +1164,7 @@ def build(
     out += [
         "",
         "% --- The external AST node-mapping oracle (Alikhanifard & Tsantalis, TOSEM 2025),",
-        "% Defects4J half: CodeDiff scored against ground truth nobody on this project wrote",
+        "% Defects4J half: OmniDiff scored against ground truth nobody on this project wrote",
         "% (DERIVED from data/comparison/astdiff_oracle_defects4j.csv - see `astdiff_oracle`).",
         "% Refresh with `make measure-astdiff-oracle`. Their own per-tool figures below are",
         "% transcribed from their paper.",
@@ -1171,7 +1175,7 @@ def build(
     out += [
         "",
         "% --- The same oracle, with *our own* hand-authored mapping scored against it instead of",
-        "% codediff's, over the units solved so far, plus codediff over the same units as the",
+        "% omnidiff's, over the units solved so far, plus omnidiff over the same units as the",
         "% control (DERIVED from data/comparison/astdiff_oracle_defects4j_human.csv - see",
         "% `astdiff_oracle_human`). Refresh with `make measure-astdiff-oracle-human`.",
     ]
@@ -1209,7 +1213,7 @@ def build(
 
     out += [
         "",
-        "% --- Why CodeDiff's pooled line rate rises on the common subset: the concentration of its",
+        "% --- Why OmniDiff's pooled line rate rises on the common subset: the concentration of its",
         "% mismatches in a few very long fixtures, and the per-fixture reading that does not reorder",
         "% (DERIVED from data/comparison/benchmark_accuracy.csv - see `common_subset_concentration`).",
     ]

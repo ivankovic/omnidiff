@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,12 +22,12 @@ use rand::rngs::StdRng;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use codediff::anomalous_paths;
-use codediff::code::Language;
-use codediff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
-use codediff::stats::filesystem::{find_git_repositories, for_each_repository};
-use codediff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
-use codediff::stats::sampling::{LOC_BUCKETS, Reservoir, loc_bucket};
+use omnidiff::anomalous_paths;
+use omnidiff::code::Language;
+use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
+use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
+use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
+use omnidiff::stats::sampling::{LOC_BUCKETS, Reservoir, loc_bucket};
 
 // The upper bound is the size `stats::expand_from_code` refuses to parse.
 const MIN_BYTES: usize = 1;
@@ -240,7 +239,7 @@ fn write_csv(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codediff::test::helper;
+    use omnidiff::test::helper;
 
     #[test]
     fn samples_real_pairs_from_handmade_repository() -> Result<()> {

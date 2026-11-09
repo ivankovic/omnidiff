@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# This file is part of the CodeDiff code diffing tool.
+# This file is part of the OmniDiff code diffing tool.
 #
 # Copyright (C) 2026 Marko Ivankovic
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,7 +32,7 @@ Two figures:
 * `time_budget`: two panels sharing one axis and one budget line. Whole-tree APTED completion
   time per artifact category (RQ2; the curve's height at the budget *is* the completion rate,
   timeouts being the gap to 100%), and per-tool wall-clock over every repeated run (RQ4.2 and the
-  CodeDiff speed paragraph). Replaces the runtime violin.
+  OmniDiff speed paragraph). Replaces the runtime violin.
 
 Inputs are the committed distribution files the producer scripts write (`file_stats.py`,
 `edit_shape_stats.py`), the RQ2 CSVs, and `benchmark_other.csv`; nothing here measures anything.
@@ -296,7 +295,7 @@ def plot_time_budget(rq1_paths: list[Path], benchmark: Path, out: Path) -> None:
         style = {}
         if id_ == "treesitter_parse":
             style = {"linestyle": (0, (2, 2)), "linewidth": 1.2}
-        elif id_ == "codediff":
+        elif id_ == "omnidiff":
             # Dash-dotted as well as heavier: the paper's own series has to be distinct from the
             # nine solid ones in greyscale, where weight alone does not separate it.
             style = {"linewidth": 2.4, "linestyle": (0, (6, 2, 1, 2))}
@@ -307,7 +306,7 @@ def plot_time_budget(rq1_paths: list[Path], benchmark: Path, out: Path) -> None:
             y,
             where="post",
             color=COLORS[id_],
-            zorder=4 if id_ == "codediff" else 3,
+            zorder=4 if id_ == "omnidiff" else 3,
             label=DISPLAY_NAMES.get(id_, id_),
             **style,
         )

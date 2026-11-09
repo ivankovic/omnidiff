@@ -1,0 +1,591 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "prolog:1"
+      ],
+      "after_path": [
+        "prolog:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1"
+      ],
+      "after_path": [
+        "element:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "STag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "STag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "STag:1",
+        "<:1"
+      ],
+      "after_path": [
+        "element:1",
+        "STag:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "STag:1",
+        "Name:1"
+      ],
+      "after_path": [
+        "element:1",
+        "STag:1",
+        "Name:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:1",
+        "STag:1",
+        "Attribute:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:1",
+        "STag:1",
+        "Attribute:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "STag:1",
+        ">:1"
+      ],
+      "after_path": [
+        "element:1",
+        "STag:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "content:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "Comment:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "Comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:2"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:3"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "Comment:2"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "Comment:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:4"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:4"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "<:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "<:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Name:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Name:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Attribute:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Attribute:1"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Attribute:2"
+      ]
+    },
+    {
+      "operation": "insert_with_children",
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        "Attribute:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        ">:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "STag:1",
+        ">:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "content:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "content:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "ETag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:2",
+        "ETag:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:5"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:5"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "Comment:3"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "Comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:6"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:6"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:3"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:7"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:7"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "Comment:4"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "Comment:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:8"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:8"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "element:4"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "element:4"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "element:1",
+        "content:1",
+        "CharData:9"
+      ],
+      "after_path": [
+        "element:1",
+        "content:1",
+        "CharData:9"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "element:1",
+        "ETag:1"
+      ],
+      "after_path": [
+        "element:1",
+        "ETag:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 92,
+              "end_row": 12,
+              "end_column": 111
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 61,
+              "end_row": 12,
+              "end_column": 91
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 11,
+              "end_row": 8,
+              "end_column": 57
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 58,
+              "end_row": 8,
+              "end_column": 92
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 92,
+              "end_row": 12,
+              "end_column": 111
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 61,
+              "end_row": 12,
+              "end_column": 91
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 11,
+              "end_row": 8,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 91,
+              "end_row": 12,
+              "end_column": 92
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 12,
+              "start_column": 60,
+              "end_row": 12,
+              "end_column": 61
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 8,
+              "start_column": 10,
+              "end_row": 8,
+              "end_column": 11
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

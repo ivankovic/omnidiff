@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,6 +14,8 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+use std::collections::HashMap;
 
 use tree_sitter::{Node, Point, Range};
 
@@ -31,10 +32,12 @@ mod render_options;
 mod summary;
 
 pub use plain_text_diff::{
-    LineDiffCore, WholeFileClass, line_diff_core, plain_text_line_diff, whole_file_text_class,
+    LineDiffCore, WholeFileClass, class_list_diff, line_diff_core, plain_text_line_diff,
+    plain_text_token_diff, text_layer_diff, token_edit_count, whole_file_text_class,
 };
 pub use render_options::{
-    RangeMatch, RenderOptions, TextOperation, is_structural_only, ranges_for_options,
+    OPTION_INFO, OptionInfo, RangeMatch, RenderOptions, TextOperation, is_structural_only,
+    ranges_for_options,
 };
 pub use summary::{
     ChangeCounts, DiffSummary, change_counts, is_comment_only_diff, line_operations,
@@ -98,6 +101,107 @@ fn own_content_span(node: Node) -> Option<(Point, usize, usize)> {
         gap = Some((gap_start_point, pos, node.end_byte()));
     }
     gap
+}
+
+/// One stretch of a node's own text, `from..to` in its file, starting at `start`.
+#[derive(Debug, Clone, Copy)]
+struct Gap {
+    from: usize,
+    to: usize,
+    start: Point,
+}
+
+/// `node`'s gaps in byte order, empty ones included, each with the ids of the children either
+/// side of it (`None` at the node's edges): `gap₀ child₀ gap₁ … childₙ gapₙ₊₁`. The ids are what
+/// [`pair_gaps`] lines the two sides up by.
+fn gaps_between_children(node: Node) -> Vec<(Option<usize>, Gap, Option<usize>)> {
+    let mut gaps = Vec::new();
+    let mut pos = node.start_byte();
+    let mut start = node.start_position();
+    let mut left = None;
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        let to = child.start_byte().max(pos);
+        gaps.push((
+            left,
+            Gap {
+                from: pos,
+                to,
+                start,
+            },
+            Some(child.id()),
+        ));
+        pos = pos.max(child.end_byte());
+        start = child.end_position();
+        left = Some(child.id());
+    }
+    let to = node.end_byte().max(pos);
+    gaps.push((
+        left,
+        Gap {
+            from: pos,
+            to,
+            start,
+        },
+        None,
+    ));
+    gaps
+}
+
+/// `gap` without its leading and trailing whitespace, or `None` if that is all it holds.
+fn trimmed_gap(gap: Gap, source: &str) -> Option<Gap> {
+    let text = &source[gap.from..gap.to];
+    let leading = text.len() - text.trim_start().len();
+    let core = text.trim();
+    if core.is_empty() {
+        return None;
+    }
+    Some(Gap {
+        from: gap.from + leading,
+        to: gap.from + leading + core.len(),
+        start: point_at_byte_offset(text, gap.start, leading),
+    })
+}
+
+/// Each gap of `node` whose text differs beyond whitespace from the counterpart's gap between the
+/// same matched children, in byte order: the pairs [`NodeChange::GapsChanged`] narrows. A gap is
+/// bounded by its two neighbouring children, or the node's edges; it pairs with the counterpart's
+/// gap bounded by those children's partners, so only where both neighbours are matched to
+/// neighbouring children of `other` (or are the same edge). A gap beside an inserted or deleted
+/// child has no counterpart and is left to that child, as
+/// `vimscript-neovim-neovim-add-one-dict-entry`'s `\` continuations are.
+fn pair_gaps(
+    node: Node,
+    other: Node,
+    diff: &ASTDiff,
+    own_text: &str,
+    other_text: &str,
+) -> Vec<(Gap, Gap)> {
+    let partner = |id: Option<usize>| -> Option<Option<usize>> {
+        match id {
+            None => Some(None),
+            Some(id) => diff
+                .mapping_for_node(&id)
+                .map(|(mapped, _)| mapped)
+                .filter(|&mapped| mapped != 0)
+                .map(Some),
+        }
+    };
+    let other_gaps = gaps_between_children(other);
+    gaps_between_children(node)
+        .into_iter()
+        .filter_map(|(left, gap, right)| {
+            let (left, right) = (partner(left)?, partner(right)?);
+            let (_, other_gap, _) = other_gaps
+                .iter()
+                .find(|(l, _, r)| *l == left && *r == right)?;
+            let changed = !whitespace_stripped_equal(
+                &own_text[gap.from..gap.to],
+                &other_text[other_gap.from..other_gap.to],
+            );
+            changed.then_some((gap, *other_gap))
+        })
+        .collect()
 }
 
 /// Byte length of the longest common prefix of `a` and `b`, compared by character, so the result
@@ -167,8 +271,8 @@ struct TextSpan<'a> {
 }
 
 /// Whether a node's own text is content a reader reads (a literal or comment) rather than a name
-/// or grammar glue. Adding a phrase to a docstring is an insertion; `IntBox` becoming `Box` is a
-/// rename and `<=` becoming `<` a changed operator, which painters call updated.
+/// or grammar glue. Content is never a renamed name ([`is_renamed_name`]): `Fetch` becoming
+/// `FetchAll` in a docstring is an insertion even though both read like identifiers.
 fn is_content_node(kind: &str) -> bool {
     // Not folded into `nodes::is_literal_kind`: that list also drives the APTED rename cost and
     // `code::hash`, and widening it for a rendering choice would change matching too. Python's
@@ -227,6 +331,16 @@ fn is_renamed_identifier(kind: &str, a: &str, b: &str) -> bool {
     !is_content_node(kind) && kind != "text" && identifier(a) && identifier(b)
 }
 
+/// Whether a changed node of `kind` reading `a` and `b` is a renamed name: a renamed identifier
+/// ([`is_renamed_identifier`]) or a changed operator, both sides nothing but punctuation (`%%` ->
+/// `%`). [`intra_node_update_ranges`] keeps its changed middle an `Update` even when one side of it
+/// is empty: painters read `IntBox` -> `Box` as a rename, not as `Int` deleted.
+fn is_renamed_name(kind: &str, a: &str, b: &str) -> bool {
+    let operator = |text: &str| !text.is_empty() && text.chars().all(|c| c.is_ascii_punctuation());
+    is_renamed_identifier(kind, a, b)
+        || (!is_content_node(kind) && kind != "text" && operator(a) && operator(b))
+}
+
 /// Whether an affix split of `a` against `b` would cut through one of [`WHOLE_TOKENS`]: `<=` to
 /// `<` is a different comparison, not a kept `<`.
 fn splits_a_whole_token(a: &str, b: &str) -> bool {
@@ -239,9 +353,14 @@ fn splits_a_whole_token(a: &str, b: &str) -> bool {
 /// `Identical` common suffix, so a small edit inside a long string or name paints only what
 /// changed. One whole-span `Update` when there is no common affix or `whole_pair_updates` is set.
 ///
-/// When one side's middle is empty on a content node, nothing was replaced: the middle is an
-/// `Insert`/`Delete`, chosen by `source_is_before`, since the texts alone cannot say which. On a
-/// name or operator it stays `Update`.
+/// When one side's middle is empty, nothing was replaced: the middle is an `Insert`/`Delete`,
+/// chosen by `source_is_before`, since the texts alone cannot say which. That holds for every node
+/// but a renamed name (`renamed_name`, see [`is_renamed_name`]), whose middle stays `Update`. The
+/// line is drawn by the text, not the node kind: a number, a preprocessor argument, a markup value
+/// or a path gaining a part is an insertion, as in a string or comment (`xml-godotengine-godot-
+/// update-element-value`). The painted corpus is split on names: `IDecisionEngineSpecification`
+/// gaining `Download` is one `Update` in `csharp-sonarr-sonarr-many-updates-with-one-insert` and an
+/// insertion in `csharp-sonarr-sonarr-use-a-different-class`, so a name keeps the reading it had.
 ///
 /// Only ever one middle: the painted corpus never marks two separate runs inside one updated node.
 ///
@@ -257,7 +376,7 @@ fn intra_node_update_ranges(
     source: TextSpan,
     destination: TextSpan,
     source_is_before: bool,
-    content_node: bool,
+    renamed_name: bool,
     whole_pair_updates: bool,
 ) -> Vec<RangeMatch> {
     let prefix_len = common_prefix_byte_len(source.text, destination.text);
@@ -292,7 +411,7 @@ fn intra_node_update_ranges(
     // `source` is the painted side: "no text here, text there" is an insertion seen from before
     // and a deletion seen from after.
     let middle_operation = match (source_mid_len, destination_mid_len, source_is_before) {
-        _ if !content_node => TextOperation::Update,
+        _ if renamed_name => TextOperation::Update,
         (0, _, true) | (_, 0, false) => TextOperation::Insert,
         (0, _, false) | (_, 0, true) => TextOperation::Delete,
         _ => TextOperation::Update,
@@ -333,11 +452,11 @@ fn intra_node_update_ranges(
     result
 }
 
-/// How one source node renders, decided from its mapping alone. Shared by [`ranges`] (which turns
+/// How one source node renders, decided from its mapping alone. Shared by [`walk_ranges`] (which turns
 /// it into painted ranges) and `summary::scan` (which only asks whether it is a visible change),
 /// so the two cannot disagree about what counts as one.
 pub(crate) enum NodeChange<'c> {
-    /// Mapped `Identical` - the counterpart, when the cache knows it. [`ranges`] still has to
+    /// Mapped `Identical` - the counterpart, when the cache knows it. [`walk_ranges`] still has to
     /// decide whether the node's *position* makes it a `Move`.
     Identical(Option<Node<'c>>),
     /// The whole subtree was deleted or inserted: one range, never descended.
@@ -350,6 +469,15 @@ pub(crate) enum NodeChange<'c> {
     /// [`own_content`]): the counterpart. A container whose children changed but whose own gaps
     /// did not is [`NodeChange::Descend`] instead, so the walk finds the smaller real change.
     OwnContentChanged(Node<'c>),
+    /// Like [`NodeChange::OwnContentChanged`], but some side's own text is split across several
+    /// gaps (an escape inside a string, an entity in an XML attribute value): the counterpart.
+    /// Each gap is narrowed against the counterpart's gap between the same matched children (see
+    /// [`pair_gaps`]), and the children still decide for themselves.
+    GapsChanged(Node<'c>),
+    /// Deleted or inserted on its own, its children not included, with own text beyond whitespace
+    /// (`InDualCone` between an XML attribute value's quotes, the `100` of a CSS `100%`): each such
+    /// gap is painted with the operation, and the children decide for themselves.
+    GapsPlaced(TextOperation),
     /// Nothing to paint at this node; its children decide.
     Descend,
 }
@@ -363,9 +491,15 @@ pub(crate) enum NodeChange<'c> {
 /// (still `Identical` in the AST) and paints the whole block `Update`.
 ///
 /// `OwnContentChanged` also requires each side's own content to be one contiguous gap, the only
-/// shape it can paint narrowly. A `\`-continued vim `dictionnary` or shell `command` has a marker
-/// in every gap, so gaining a child changes its own content; it must descend to that child rather
-/// than paint the whole container (`vimscript-neovim-neovim-add-one-dict-entry`).
+/// shape it can paint as one span. Own content split across several gaps is `GapsChanged`, painted
+/// gap by gap and still descended into: a `\`-continued vim `dictionnary` or shell `command` has a
+/// marker in every gap, so gaining a child changes its own content, and painting it whole would
+/// bury the new child (`vimscript-neovim-neovim-add-one-dict-entry`).
+///
+/// A leaf matched to a node with children is `Update`: it has no gaps to narrow.
+///
+/// A deleted or inserted node with children is `GapsPlaced` when it has own content beyond
+/// whitespace, so text its children do not cover is painted too; `Descend` otherwise.
 pub(crate) fn classify_node<'c>(
     node: Node,
     mapped_id: usize,
@@ -387,23 +521,102 @@ pub(crate) fn classify_node<'c>(
         }
         ASTMappingOperation::Update => NodeChange::Update(counterpart()),
         ASTMappingOperation::MatchButNotIdentical => match counterpart() {
+            // A leaf paired with a whole construct, the one old token of a replaced-value group
+            // (`c` becoming `"&#xa0;"`, `solve_replaced_atoms`): it has no gaps to narrow against
+            // the construct's, so it changed as a whole.
+            Some(other) if node.child_count() == 0 && other.child_count() > 0 => {
+                NodeChange::Update(Some(other))
+            }
             Some(other)
-                if own_content_span(node).is_some()
-                    && own_content_span(other).is_some()
-                    && !whitespace_stripped_equal(
-                        &own_content(node, own_bytes),
-                        &own_content(other, other_bytes),
-                    ) =>
+                if !whitespace_stripped_equal(
+                    &own_content(node, own_bytes),
+                    &own_content(other, other_bytes),
+                ) =>
             {
-                NodeChange::OwnContentChanged(other)
+                if own_content_span(node).is_some() && own_content_span(other).is_some() {
+                    NodeChange::OwnContentChanged(other)
+                } else {
+                    NodeChange::GapsChanged(other)
+                }
             }
             _ => NodeChange::Descend,
         },
+        ASTMappingOperation::Delete if !own_content(node, own_bytes).trim().is_empty() => {
+            NodeChange::GapsPlaced(TextOperation::Delete)
+        }
+        ASTMappingOperation::Insert if !own_content(node, own_bytes).trim().is_empty() => {
+            NodeChange::GapsPlaced(TextOperation::Insert)
+        }
         _ => NodeChange::Descend,
     }
 }
 
-/// The state of one [`ranges`] traversal.
+/// One item of [`RangeWalk::visit_tree`]'s stack: a node to visit, or a gap of an already visited
+/// node, painted when the walk reaches it in byte order.
+enum Step<'t> {
+    Visit(Node<'t>),
+    /// A changed gap of a [`NodeChange::GapsChanged`] node and its counterpart's gap.
+    NarrowGap {
+        kind: &'static str,
+        source: Gap,
+        destination: Gap,
+    },
+    /// A gap of a [`NodeChange::GapsPlaced`] node.
+    PlaceGap {
+        gap: Gap,
+        operation: TextOperation,
+    },
+}
+
+/// What [`RangeWalk::visit`] has the traversal do after painting a node.
+enum Descent<'t> {
+    No,
+    Children,
+    /// The children, interleaved with the node's gap steps in byte order.
+    ChildrenAndGaps(Vec<Step<'t>>),
+}
+
+/// `node`'s children as [`Step::Visit`]s with `gaps` slotted in by where they start: a gap goes
+/// before the first child starting at or after it.
+fn interleave_gaps<'t, T>(
+    node: Node<'t>,
+    gaps: Vec<T>,
+    to_step: impl Fn(T) -> Step<'t>,
+) -> Vec<Step<'t>>
+where
+    T: GapStart,
+{
+    let mut gaps = gaps.into_iter().peekable();
+    let mut steps = Vec::new();
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        while let Some(gap) = gaps.next_if(|gap| gap.gap_start() <= child.start_byte()) {
+            steps.push(to_step(gap));
+        }
+        steps.push(Step::Visit(child));
+    }
+    steps.extend(gaps.map(to_step));
+    steps
+}
+
+/// Where a gap item starts, for [`interleave_gaps`].
+trait GapStart {
+    fn gap_start(&self) -> usize;
+}
+
+impl GapStart for Gap {
+    fn gap_start(&self) -> usize {
+        self.from
+    }
+}
+
+impl GapStart for (Gap, Gap) {
+    fn gap_start(&self) -> usize {
+        self.0.from
+    }
+}
+
+/// The state of one [`walk_ranges`] traversal.
 struct RangeWalk<'a> {
     source: &'a Code,
     destination: &'a Code,
@@ -425,10 +638,16 @@ struct RangeWalk<'a> {
     last_non_move_range: TextRange,
     ranges: Vec<RangeMatch>,
     current_range: RangeMatch,
+    /// This side's ranges for each host string holding an embedded layer, keyed by the host node
+    /// id and already in this file's coordinates (see [`embedded_ranges`]).
+    embedded: &'a HashMap<usize, Vec<RangeMatch>>,
+    /// Every node [`RangeWalk::identical_or_move`] painted `Move`, so a closing bracket can follow
+    /// its opening one.
+    moved: std::collections::HashSet<usize>,
 }
 
-/// The ranges of `source`, painted against `destination`, before merging in the other side's
-/// insertions (see [`merge_ranges`]).
+/// [`walk_ranges`] for a diff with no embedded layers.
+#[cfg(test)]
 fn ranges(
     source: &Code,
     destination: &Code,
@@ -436,6 +655,29 @@ fn ranges(
     node_cache: &NodeCache,
     source_is_before: bool,
     options: RenderOptions,
+) -> Vec<RangeMatch> {
+    walk_ranges(
+        source,
+        destination,
+        diff,
+        node_cache,
+        source_is_before,
+        options,
+        &HashMap::new(),
+    )
+}
+
+/// The ranges of `source`, painted against `destination`, before merging in the other side's
+/// insertions (see [`merge_ranges`]). `embedded` holds this side's ranges for each host string
+/// with an embedded layer.
+fn walk_ranges(
+    source: &Code,
+    destination: &Code,
+    diff: &ASTDiff,
+    node_cache: &NodeCache,
+    source_is_before: bool,
+    options: RenderOptions,
+    embedded: &HashMap<usize, Vec<RangeMatch>>,
 ) -> Vec<RangeMatch> {
     let mut walk = RangeWalk {
         source,
@@ -451,6 +693,8 @@ fn ranges(
         last_non_move_range: TextRange::zero(),
         ranges: Vec::new(),
         current_range: RangeMatch::zero(),
+        embedded,
+        moved: std::collections::HashSet::new(),
     };
 
     match (&source.ast, &destination.ast) {
@@ -486,15 +730,36 @@ impl RangeWalk<'_> {
     /// Pre-order traversal of the source tree, painting every node with a known mapping and
     /// descending only where [`Self::visit`] says the children still have to decide.
     fn visit_tree(&mut self, root: Node) {
-        let mut stack = vec![root];
-        while let Some(node) = stack.pop() {
-            if !self.visit(node) {
-                continue;
-            }
-            let mut child_cursor = node.walk();
-            let children: Vec<_> = node.children(&mut child_cursor).collect();
-            for child in children.into_iter().rev() {
-                stack.push(child);
+        let mut stack = vec![Step::Visit(root)];
+        while let Some(step) = stack.pop() {
+            let node = match step {
+                Step::Visit(node) => node,
+                Step::NarrowGap {
+                    kind,
+                    source,
+                    destination,
+                } => {
+                    let new_ranges = self.narrowed_gap_ranges(kind, source, destination);
+                    self.push(new_ranges);
+                    continue;
+                }
+                Step::PlaceGap { gap, operation } => {
+                    let new_ranges = self.placed_gap(gap, operation).into_iter().collect();
+                    self.push(new_ranges);
+                    continue;
+                }
+            };
+            match self.visit(node) {
+                Descent::No => {}
+                Descent::Children => {
+                    let mut child_cursor = node.walk();
+                    let children: Vec<_> = node.children(&mut child_cursor).collect();
+                    stack.extend(children.into_iter().rev().map(Step::Visit));
+                }
+                // In byte order, so each gap's range is built when the walk reaches it: a range
+                // pushed ahead of the children before it would corrupt every later
+                // `last_non_move_range` anchor (see `own_gap_ranges`).
+                Descent::ChildrenAndGaps(steps) => stack.extend(steps.into_iter().rev()),
             }
         }
         if !self.current_range.is_zero() {
@@ -503,10 +768,14 @@ impl RangeWalk<'_> {
         }
     }
 
-    /// Paints one node. Returns whether the traversal should descend into its children.
-    fn visit(&mut self, node: Node) -> bool {
+    /// Paints one node, and says what the traversal visits next.
+    fn visit<'t>(&mut self, node: Node<'t>) -> Descent<'t> {
+        if let Some(projected) = self.embedded.get(&node.id()) {
+            self.push_embedded(node, projected);
+            return Descent::No;
+        }
         let Some((mapped_id, mapping)) = self.diff.mapping_for_node(&node.id()) else {
-            return true;
+            return Descent::Children;
         };
         let change = classify_node(
             node,
@@ -535,13 +804,118 @@ impl RangeWalk<'_> {
                 self.own_content_update_ranges(node, destination_node),
                 false,
             ),
-            NodeChange::Descend => match self.whole_content_prune(node, &mapping.operation) {
-                Some(operation) => (self.own_gap_ranges(node, operation), false),
-                None => (Vec::new(), true),
-            },
+            NodeChange::GapsChanged(destination_node) => {
+                return Descent::ChildrenAndGaps(self.narrowed_gap_steps(node, destination_node));
+            }
+            NodeChange::GapsPlaced(operation) => {
+                match self.whole_content_prune(node, &mapping.operation) {
+                    Some(operation) => (self.own_gap_ranges(node, operation), false),
+                    None => {
+                        return Descent::ChildrenAndGaps(self.placed_gap_steps(node, operation));
+                    }
+                }
+            }
+            NodeChange::Descend => (Vec::new(), true),
         };
         self.push(new_ranges);
-        descend
+        if descend {
+            Descent::Children
+        } else {
+            Descent::No
+        }
+    }
+
+    /// A host string's embedded ranges, appended as they are: they are already one walk of a
+    /// finished pair of walks, so merging them with a neighbour would break the matching range
+    /// counts [`merge_ranges`] relies on, as in [`Self::push`]. The host pair is in sequence, so
+    /// its partner becomes the anchor.
+    fn push_embedded(&mut self, node: Node, projected: &[RangeMatch]) {
+        if !self.current_range.is_zero() {
+            let finished = std::mem::replace(&mut self.current_range, RangeMatch::zero());
+            self.ranges.push(finished);
+        }
+        self.ranges.extend(projected.iter().cloned());
+        let destination_nodes = if self.source_is_before {
+            &self.node_cache.after
+        } else {
+            &self.node_cache.before
+        };
+        if let Some((mapped_id, _)) = self.diff.mapping_for_node(&node.id())
+            && let Some(destination_node) = destination_nodes.get(&mapped_id)
+        {
+            self.last_non_move_range = TextRange::from_treesitter_range(
+                destination_node.range(),
+                &self.destination_columns,
+            );
+        }
+    }
+
+    /// `node`'s children interleaved with a [`Step::NarrowGap`] for each gap [`pair_gaps`] pairs
+    /// with `destination_node`'s, in byte order.
+    fn narrowed_gap_steps<'t>(&self, node: Node<'t>, destination_node: Node) -> Vec<Step<'t>> {
+        let pairs = pair_gaps(
+            node,
+            destination_node,
+            self.diff,
+            &self.source.contents,
+            &self.destination.contents,
+        );
+        interleave_gaps(node, pairs, |(source, destination)| Step::NarrowGap {
+            kind: node.kind(),
+            source,
+            destination,
+        })
+    }
+
+    /// `node`'s children interleaved with a [`Step::PlaceGap`] for each gap holding more than
+    /// whitespace, in byte order.
+    fn placed_gap_steps<'t>(&self, node: Node<'t>, operation: TextOperation) -> Vec<Step<'t>> {
+        let gaps = gaps_between_children(node)
+            .into_iter()
+            .filter_map(|(_, gap, _)| trimmed_gap(gap, &self.source.contents))
+            .collect();
+        interleave_gaps(node, gaps, |gap| Step::PlaceGap {
+            gap,
+            operation: operation.clone(),
+        })
+    }
+
+    /// One changed gap of a [`NodeChange::GapsChanged`] node, split like an update into an
+    /// identical prefix, a changed middle and an identical suffix.
+    fn narrowed_gap_ranges(
+        &mut self,
+        kind: &str,
+        source: Gap,
+        destination: Gap,
+    ) -> Vec<RangeMatch> {
+        let source_text = &self.source.contents[source.from..source.to];
+        let destination_text = &self.destination.contents[destination.from..destination.to];
+        let source_end = point_at_byte_offset(source_text, source.start, source_text.len());
+        intra_node_update_ranges(
+            &mut self.last_non_move_range,
+            text_range_from_points(source.start, source_end, &self.source_columns),
+            TextSpan {
+                text: source_text,
+                start: source.start,
+                columns: &self.source_columns,
+            },
+            TextSpan {
+                text: destination_text,
+                start: destination.start,
+                columns: &self.destination_columns,
+            },
+            self.source_is_before,
+            is_renamed_name(kind, source_text, destination_text),
+            self.options.whole_pair_updates
+                || splits_a_whole_token(source_text, destination_text)
+                || (self.options.whole_identifier_updates
+                    && is_renamed_identifier(kind, source_text, destination_text)),
+        )
+    }
+
+    /// One gap of a [`NodeChange::GapsPlaced`] node, painted with the node's operation.
+    fn placed_gap(&mut self, gap: Gap, operation: TextOperation) -> Option<RangeMatch> {
+        self.gap_range(gap.from, gap.to, gap.start, &operation)
     }
 
     /// Whether `node` is a member of an N:M group ([`ASTDiff::add_group`]) on its own side.
@@ -654,9 +1028,22 @@ impl RangeWalk<'_> {
         // `process(int x)` -> `process(const int x)`). A node inside the rewritten part of the row
         // keeps `Move` (`function fetchData(` in `typescript-async-await`). Reindented nodes are
         // excluded so they still reach `paint_reindent_only_moves`. Under `MINIMAL` the row index
-        // may differ, since `node_untouched_on_its_row` compares the rows' content.
+        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under `FULL` it
+        // may differ when the two rows also open on the same text past their indentation, so they
+        // read as one row an edit above pushed down: without that head, a shared tail is a call
+        // relocated into another statement (`return f(x);` -> `y = f(x);`,
+        // `java-defects4j-codec-6-base64inputstream`), which the `Full` paintings mark moved.
+        //
+        // Under `FULL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares its
+        // fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` -> `shape.area()`
+        // leaves the `)` in an untouched tail although its call moved (`kotlin-refactor-function`).
         let shifted_by_an_edit_beside_it = s.end_row == s.start_row
-            && (s.start_row == d.start_row || !self.options.paint_displaced_moves)
+            && (s.start_row == d.start_row
+                || !self.options.paint_displaced_moves
+                || rows_share_a_head(
+                    self.source_text.row(s.start_row).unwrap_or_default(),
+                    self.destination_text.row(d.start_row).unwrap_or_default(),
+                ))
             && node_untouched_on_its_row(
                 &self.source.contents,
                 &self.destination.contents,
@@ -666,7 +1053,8 @@ impl RangeWalk<'_> {
             );
         let column_shift_is_meaningful = s.start_column != d.start_column
             && !shifted_within_its_own_line
-            && !shifted_by_an_edit_beside_it;
+            && (!shifted_by_an_edit_beside_it
+                || (self.options.paint_displaced_moves && self.opening_bracket_moved(node)));
         // These reasons are verified pure reindents (see their solvers). Trusted by reason only:
         // position alone cannot tell a reindent from a relocation (`rust-add-if`).
         let known_pure_reindent = !self.options.paint_reindent_only_moves
@@ -684,6 +1072,7 @@ impl RangeWalk<'_> {
             self.last_non_move_range = d.clone();
             TextOperation::Identical
         } else {
+            self.moved.insert(node.id());
             TextOperation::Move
         };
         RangeMatch {
@@ -691,6 +1080,26 @@ impl RangeWalk<'_> {
             destination: d,
             operation,
         }
+    }
+
+    /// Whether `node` is a closing bracket whose opening bracket, the nearest earlier sibling of
+    /// the matching kind, was painted `Move`: a pair shares its fate, so the closing half moved
+    /// too however untouched its row reads.
+    fn opening_bracket_moved(&self, node: Node) -> bool {
+        let opener = match node.kind() {
+            ")" => "(",
+            "]" => "[",
+            "}" => "{",
+            _ => return false,
+        };
+        let mut sibling = node.prev_sibling();
+        while let Some(candidate) = sibling {
+            if candidate.kind() == opener {
+                return self.moved.contains(&candidate.id());
+            }
+            sibling = candidate.prev_sibling();
+        }
+        false
     }
 
     /// An `Update` node, split by [`intra_node_update_ranges`].
@@ -715,7 +1124,7 @@ impl RangeWalk<'_> {
                 columns: &self.destination_columns,
             },
             self.source_is_before,
-            is_content_node(node.kind()),
+            is_renamed_name(node.kind(), source_text, destination_text),
             self.options.whole_pair_updates
                 || splits_a_whole_token(source_text, destination_text)
                 || (self.options.whole_identifier_updates
@@ -743,7 +1152,11 @@ impl RangeWalk<'_> {
                         columns: &self.destination_columns,
                     },
                     self.source_is_before,
-                    is_content_node(node.kind()),
+                    is_renamed_name(
+                        node.kind(),
+                        &self.source.contents[s_from..s_to],
+                        &self.destination.contents[d_from..d_to],
+                    ),
                     self.options.whole_pair_updates
                         || splits_a_whole_token(
                             &self.source.contents[s_from..s_to],
@@ -873,8 +1286,14 @@ fn node_untouched_on_its_row(
         .min(source_row.len() - prefix)
         .min(destination_row.len() - prefix);
     let in_prefix = s.end_column <= prefix && d.end_column <= prefix;
-    let in_suffix = s.start_column + suffix >= source_row.len()
-        && d.start_column + suffix >= destination_row.len();
+    // The suffix is capped so it never overlaps the prefix, which can leave a node in a repeated
+    // tail outside it (`f(a)` -> `f(a, a)`); under `MINIMAL` an identical tail from the node on
+    // reads the same. Not under `FULL`: `rust-tauri-apps-tauri-add-use-and-function` paints
+    // `PhysicalSize` moved when `PhysicalRect, ` lands before it in the same import list.
+    let in_suffix = (s.start_column + suffix >= source_row.len()
+        && d.start_column + suffix >= destination_row.len())
+        || (read_rows_carrying_several_edits
+            && node_first_row_tail_untouched(source, destination, s, d));
     in_prefix
         || in_suffix
         // Same row index required: uniqueness places the node within each row but cannot say the
@@ -884,6 +1303,17 @@ fn node_untouched_on_its_row(
             && s.start_row == d.start_row
             && row_was_edited_rather_than_rewritten(&source_row, &destination_row, prefix, suffix)
             && node_uniquely_placed_on_its_row(&source_row, &destination_row, s, d))
+}
+
+/// True if two rows open on the same text past their indentation.
+fn rows_share_a_head(source_row: &str, destination_row: &str) -> bool {
+    let prefix = source_row
+        .bytes()
+        .zip(destination_row.bytes())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let indentation = |row: &str| row.len() - row.trim_start().len();
+    prefix > indentation(source_row).max(indentation(destination_row))
 }
 
 /// True if the two rows read as one edited row rather than one row replaced by another: the
@@ -1159,6 +1589,173 @@ fn reconcile_moves(before: &mut [RangeMatch], after: &mut [RangeMatch], options:
     }
 }
 
+/// Both sides' walks, reconciled but not yet merged ([`merge_ranges`]): the form an embedded
+/// layer's ranges are spliced into its host's walks in.
+fn plain_ranges(
+    before: &Code,
+    after: &Code,
+    diff: &ASTDiff,
+    node_cache: &NodeCache,
+    options: RenderOptions,
+) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    let (before_embedded, after_embedded) = embedded_ranges(before, after, diff, options);
+    let mut before_ranges = walk_ranges(
+        before,
+        after,
+        diff,
+        node_cache,
+        true,
+        options,
+        &before_embedded,
+    );
+    let mut after_ranges = walk_ranges(
+        after,
+        before,
+        diff,
+        node_cache,
+        false,
+        options,
+        &after_embedded,
+    );
+    reconcile_moves(&mut before_ranges, &mut after_ranges, options);
+    (before_ranges, after_ranges)
+}
+
+/// Each side's ranges for every embedded layer of `diff` (`diff::embedded`), keyed by host node
+/// id: the layer's own walks, built from its own diff and text, projected into the host files
+/// through the decoded text's byte maps.
+///
+/// A source range loses any newline it ends on before it is projected: the renderer never paints
+/// a line break, and an escaped one (`\n`) would otherwise be painted as two visible characters.
+fn embedded_ranges(
+    before: &Code,
+    after: &Code,
+    diff: &ASTDiff,
+    options: RenderOptions,
+) -> (
+    HashMap<usize, Vec<RangeMatch>>,
+    HashMap<usize, Vec<RangeMatch>>,
+) {
+    let mut before_map = HashMap::new();
+    let mut after_map = HashMap::new();
+    if diff.embedded.is_empty() {
+        return (before_map, after_map);
+    }
+    let before_starts = line_starts(&before.contents);
+    let after_starts = line_starts(&after.contents);
+    for layer in &diff.embedded {
+        // A plain-text layer has no trees: it is painted as a file without a grammar is.
+        let (inner_before, inner_after) = if layer.before.ast.is_none() || layer.after.ast.is_none()
+        {
+            text_layer_ranges(layer, options)
+        } else {
+            let node_cache = NodeCache::build(&layer.before, &layer.after);
+            plain_ranges(
+                &layer.before,
+                &layer.after,
+                &layer.diff,
+                &node_cache,
+                options,
+            )
+        };
+        let before_side = Projection {
+            inner: &layer.before.contents,
+            inner_starts: line_starts(&layer.before.contents),
+            offsets: &layer.before_offsets,
+            outer_starts: &before_starts,
+        };
+        let after_side = Projection {
+            inner: &layer.after.contents,
+            inner_starts: line_starts(&layer.after.contents),
+            offsets: &layer.after_offsets,
+            outer_starts: &after_starts,
+        };
+        let project = |ranges: Vec<RangeMatch>, source: &Projection, destination: &Projection| {
+            ranges
+                .into_iter()
+                .map(|range_match| RangeMatch {
+                    source: source.range(&range_match.source, true),
+                    destination: destination.range(&range_match.destination, false),
+                    operation: range_match.operation,
+                })
+                .collect::<Vec<_>>()
+        };
+        before_map.insert(
+            layer.before_id,
+            project(inner_before, &before_side, &after_side),
+        );
+        after_map.insert(
+            layer.after_id,
+            project(inner_after, &after_side, &before_side),
+        );
+    }
+    (before_map, after_map)
+}
+
+/// A plain-text layer's ranges, by its tokens: a class list class by class, other text by
+/// [`text_layer_diff`].
+pub fn text_layer_ranges(
+    layer: &crate::diff::embedded::EmbeddedDiff,
+    options: RenderOptions,
+) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    let (before, after) = (&layer.before.contents, &layer.after.contents);
+    match layer.tokens {
+        crate::diff::embedded::TextTokens::Classes => class_list_diff(before, after, options)
+            .unwrap_or_else(|| text_layer_diff(before, after)),
+        crate::diff::embedded::TextTokens::Lines => text_layer_diff(before, after),
+    }
+}
+
+/// Byte offset of each row's first byte.
+fn line_starts(text: &str) -> Vec<usize> {
+    std::iter::once(0)
+        .chain(text.match_indices('\n').map(|(at, _)| at + 1))
+        .collect()
+}
+
+/// One side of an embedded layer: its decoded text and how it maps into the host file.
+struct Projection<'a> {
+    inner: &'a str,
+    inner_starts: Vec<usize>,
+    offsets: &'a [usize],
+    outer_starts: &'a [usize],
+}
+
+impl Projection<'_> {
+    /// `range`, in the decoded text's rows and columns, in the host file's.
+    fn range(&self, range: &TextRange, trim_newline: bool) -> TextRange {
+        let start = self.inner_offset(range.start_row, range.start_column);
+        let mut end = self
+            .inner_offset(range.end_row, range.end_column)
+            .max(start);
+        if trim_newline {
+            let bytes = self.inner.as_bytes();
+            while end > start && matches!(bytes[end - 1], b'\n' | b'\r') {
+                end -= 1;
+            }
+        }
+        let (start_row, start_column) = self.outer_point(start);
+        let (end_row, end_column) = self.outer_point(end);
+        TextRange::new(start_row, start_column, end_row, end_column)
+    }
+
+    fn inner_offset(&self, row: usize, column: usize) -> usize {
+        match self.inner_starts.get(row) {
+            Some(&row_start) => (row_start + column).min(self.inner.len()),
+            None => self.inner.len(),
+        }
+    }
+
+    fn outer_point(&self, inner_offset: usize) -> (usize, usize) {
+        let offset = crate::diff::embedded::project_offset(self.offsets, inner_offset);
+        let row = self
+            .outer_starts
+            .partition_point(|&row_start| row_start <= offset)
+            .saturating_sub(1);
+        (row, offset - self.outer_starts[row])
+    }
+}
+
 impl TextDiff {
     /// [`Self::from_with_options`] under [`RenderOptions::FULL`], for callers with no opinion on
     /// the construction-time options.
@@ -1176,10 +1773,8 @@ impl TextDiff {
         node_cache: &NodeCache,
         options: RenderOptions,
     ) -> Self {
-        let mut before_ranges_plain = ranges(before, after, diff, node_cache, true, options);
-        let mut after_ranges_plain = ranges(after, before, diff, node_cache, false, options);
-
-        reconcile_moves(&mut before_ranges_plain, &mut after_ranges_plain, options);
+        let (before_ranges_plain, after_ranges_plain) =
+            plain_ranges(before, after, diff, node_cache, options);
 
         let before_ranges = merge_ranges(&before_ranges_plain, &after_ranges_plain);
         let after_ranges = merge_ranges(&after_ranges_plain, &before_ranges_plain);

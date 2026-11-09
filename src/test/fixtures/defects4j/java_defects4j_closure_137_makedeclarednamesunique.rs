@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,8 +25,8 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        196,
-        135,
+        162,
+        111,
     )
 }
 
@@ -35,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        11.29,
+        10.53,
     )
 }
 
@@ -45,8 +44,12 @@ fn invariants() -> Result<()> {
     // Full leaves the whitespace at columns 47..48 of after row 318 unpainted between two painted
     // regions. Invariant 16, twice: the `AbstractPostOrderCallback` <-> `ScopedCallback` rename on
     // row 26 is not painted entire under Full.
+    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
+    //   before row 235: the space before the delete `extends AbstractPostOrderCa...` is not painted
+    //     with it
+    //   after row 237: the space before the insert `ScopedCallback,` is not painted with it
     assert_ground_truth_invariants_with_known_violations(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        5,
+        7,
     )
 }

@@ -1,0 +1,44 @@
+from collections import namedtuple
+
+
+Volume = namedtuple("Volume", "title author pages")
+
+
+def make_book(name, writer, count):
+    return Volume(name, writer, count)
+
+
+class Shelf:
+    def __init__(self, name, books):
+        self.name = name
+        self.books = books
+
+    def page_count(self):
+        return sum(book.pages for book in self.books)
+
+    def is_empty(self):
+        return not self.books
+
+    def describe(self, unit):
+        total_pages = self.page_count()
+        return f"{self.name}: {total_pages} {unit} unread"
+
+
+def main():
+    sizes = [120, 340]
+    dune = make_book("Dune", "Herbert", sizes[0])
+    odes = make_book("Odes", "Keats", sizes[1])
+    shelves = [
+        Shelf("empty", []),
+        Shelf("novels", [dune]),
+        Shelf("poetry", [odes]),
+    ]
+    if __debug__:
+        for shelf in shelves:
+            print(shelf.describe("pages"))
+    most_pages = max(s.page_count() for s in shelves)
+    print(len(shelves), most_pages)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,8 +16,8 @@
  */
 
 use anyhow::{Context, Result, bail};
-use codediff::code::{Code, Language};
-use codediff::diff::text_range::TextRange;
+use omnidiff::code::{Code, Language};
+use omnidiff::diff::text_range::TextRange;
 use quick_xml::events::Event;
 use std::process::Command;
 
@@ -33,7 +32,7 @@ pub(crate) fn srcdiff_bin() -> Result<std::path::PathBuf> {
 }
 
 /// `(-l value, file extension)` for `language`: the languages srcML marks up (`srcml --version`).
-/// `None` everywhere else; srcDiff has no fallback parser. Objective-C is left out because codediff
+/// `None` everywhere else; srcDiff has no fallback parser. Objective-C is left out because omnidiff
 /// has no Objective-C language to map it from.
 pub(crate) fn srcdiff_language(language: Language) -> Option<(&'static str, &'static str)> {
     match language {

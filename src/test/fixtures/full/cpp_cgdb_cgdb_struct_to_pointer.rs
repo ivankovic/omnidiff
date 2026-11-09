@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,12 +20,13 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Which nodes of different kinds may map to each other. Nearly all in the `qualified_name`
-    // bucket: the human matches differently-kinded nodes across the struct-to-pointer rewrite.
+    // Which nodes of different kinds may map to each other. Two are left, in the parameter
+    // rewritten from `struct ... *` to `const ... &`: the human pairs `struct` with `const` and `*`
+    // with `&`, `APTED("qualified_name")` deletes and inserts them.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-cgdb-cgdb-struct-to-pointer",
-        110,
-        73,
+        2,
+        2,
     )
 }
 

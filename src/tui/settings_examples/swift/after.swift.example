@@ -1,0 +1,45 @@
+struct Reading {
+    let city: String, celsius: Double
+}
+
+func reading(city: String, temp: Double) -> Reading {
+    return Reading(city: city, celsius: temp)
+}
+
+struct Forecast {
+    let city: String
+    var highs: [Double]
+
+    func name() -> String { return city }
+
+    func average() -> Double {
+        return highs.reduce(0, +) / Double(highs.count)
+    }
+
+    func peak() -> Double {
+        return highs.max() ?? 0
+    }
+
+    func summary(unit: String) -> String {
+        let meanHigh = average()
+        return "\(name()): around \(meanHigh) \(unit)"
+    }
+}
+
+func main() {
+    let range = [18.5, 24.0]
+    let week = [
+        Forecast(city: "Bern", highs: [9.5]),
+        Forecast(city: "Oslo", highs: [range[0], range[1]]),
+        Forecast(city: "Lima", highs: [21.0, 23.5]),
+    ]
+    if CommandLine.arguments.count > 1 {
+        for day in week {
+            print(day.summary(unit: "C"))
+        }
+    }
+    let hottest = week.map { $0.average() }
+    print(week.count, hottest)
+}
+
+main()

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,13 +20,7 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // New <button> elements at scattered points: byte-identical whitespace `CharData` downstream
-    // of each insertion matches another sibling (see xml-nextcloud-android-add-few-translations).
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "xml-odoo-odoo-add-button-roles",
-        109,
-        71,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("xml-odoo-odoo-add-button-roles")
 }
 
 #[test]

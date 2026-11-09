@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 //! This fixture's language has no tree-sitter grammar, so there is no tree to map
-//! and no `mapping()` test here. codediff renders the pair with its plain-text
+//! and no `mapping()` test here. omnidiff renders the pair with its plain-text
 //! fallback diff (`plain_text_line_diff`), and that is what the `painting()` test
 //! below is graded against - see `PaintingDiff::PlainText`.
 

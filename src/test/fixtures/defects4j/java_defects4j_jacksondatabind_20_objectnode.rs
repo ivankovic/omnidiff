@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,8 +42,11 @@ fn invariants() -> Result<()> {
     //    `com....JsonAutoDetect` import unpainted on row 3, while the mapping says they are gone.
     //  - [16] x3: the `JsonAutoDetect` <-> `JsonIgnore` rename is painted whole under Minimal on
     //    both sides, where only the differing words should be, and not whole under Full before.
+    //  - [22] x2: both paintings paint `com.fasterxml.jackson.annotation` of the new `JsonIgnore`
+    //    import on after row 4 as inserted, while the mapping pairs those four identifiers with
+    //    the `JsonAutoDetect` import's on before row 3.
     assert_ground_truth_invariants_with_known_violations(
         "java-defects4j-jacksondatabind-20-objectnode",
-        5,
+        7,
     )
 }

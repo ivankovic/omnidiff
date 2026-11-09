@@ -1,11 +1,10 @@
-# This file is part of the CodeDiff code diffing tool.
+# This file is part of the OmniDiff code diffing tool.
 #
 # Copyright (C) 2026 Marko Ivankovic
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,10 +16,10 @@
 
 # Product-side targets: build, test, install, benchmarks, the quality gate, and release.
 #
-#   benchmark-   measures codediff alone, against src/test/data/ (accuracy and speed in one run).
+#   benchmark-   measures omnidiff alone, against src/test/data/ (accuracy and speed in one run).
 #   check-       gates that fail CI, each on exactly what a benchmark- target measures. Not in
 #                .githooks/pre-push: a slow hook is worse than none.
-#   measure-     anything beyond codediff alone (other diff tools, the upstream corpus): lives in
+#   measure-     anything beyond omnidiff alone (other diff tools, the upstream corpus): lives in
 #                research/Makefile, never here.
 #
 # Corpus fetching, sampling, analysis and paper builds are research/'s too
@@ -34,11 +33,17 @@ FEATURES ?= stats
 # Usage: make benchmark-ablation [OUT_DIR=path]
 OUT_DIR ?= research/data/ablation
 
-.PHONY: coverage test test-rust test-mapping-site-js test-python build install install-hooks \
-	benchmark-quality diff-inventory lint-python ci benchmark-ablation check-quality \
-	update-quality-baseline check-painting-attribution update-painting-attribution diff-gif \
-	readme-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
-	deploy-github deploy third-party-notices check-third-party-notices
+# Wall-clock figures belong to the machine that measured them, so each registered machine
+# (research/data/machines.csv, recognised by its CPU) keeps its own: timing baselines in
+# research/data/quality/timing/<machine>.*, content speed in
+# research/data/performance/content_speed/<machine>.csv. MACHINE=<name> times a run as that one.
+which-machine = python3 scripts/machine.py $(MACHINE)
+
+.PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python build install install-hooks \
+	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
+	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
+	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
+	deploy-github deploy third-party-notices check-third-party-notices test-graphics
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
 # scripts/coverage_report.py). On demand, not a gate: a threshold teaches touching lines. Rebuilds
@@ -59,11 +64,42 @@ coverage: test
 # Every test, JS, Python and Rust. `--all-features` because several features gate their own tests.
 # Not a substitute for `make ci`, which also proves each feature compiles alone and runs the
 # clippy matrix and baseline gates. Release, because the fixture tests run real diffs.
-test: test-mapping-site-js test-viewer-js test-showcase-js test-python test-rust
+test: test-mapping-site-js test-viewer-js test-showcase-js test-python test-rust test-graphics
+
+# The picture view's graphics detection end to end (scripts/graphics_e2e.py): a real tmux with
+# two clients attached, a kitty that answers the graphics query and a terminal that does not, and
+# `omnidiff util graphics` typed through each. On the host when tmux is installed, otherwise in
+# podman, in the Ubuntu the release binaries are built on.
+test-graphics:
+	cargo build --bin omnidiff
+	@if command -v tmux >/dev/null 2>&1; then \
+		python3 scripts/graphics_e2e.py target/debug/omnidiff; \
+	else \
+		podman run --rm -v "$(CURDIR)":/src:Z -w /src docker.io/library/ubuntu:24.04 sh -c \
+			'apt-get update -qq >/dev/null && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq tmux python3 >/dev/null 2>&1 && python3 scripts/graphics_e2e.py target/debug/omnidiff'; \
+	fi
 
 # The Rust suite alone, every feature on.
 test-rust:
-	cargo nextest run --release --all-features
+	cargo nextest run --cargo-profile ci --all-features
+
+# The edit loop's suite: every Rust test outside the fixtures but the corpus sweeps, and the
+# fixtures src/test/data/quick_fixtures.txt names - the cheapest set that reaches every line the
+# whole fixture corpus reaches beyond those tests, one per language at least - plus any fixture
+# added since that list was measured (scripts/quick_fixtures_filter.py). Not a gate: `make test`
+# and CI run everything.
+test-quick:
+	@filter=$$(python3 scripts/quick_fixtures_filter.py) || exit 1; \
+	cargo nextest run --cargo-profile ci --all-features -E "$$filter"
+
+# Rewrites src/test/data/quick_fixtures.txt from per-test coverage, measured first, at this commit
+# and with a clean src/, by `make -C research measure-per-test-coverage` (a systemd unit, about ten
+# minutes; start from an empty research/data/coverage/per_test/, keeping its PROVENANCE.md, so
+# nothing stale is resumed). Re-run after engine changes; between runs the quick tier picks up new
+# fixtures by itself.
+update-quick-fixtures:
+	cd research && uv run ./analysis/coverage_sets.py --area all quick \
+		--write ../src/test/data/quick_fixtures.txt --measured-at $$(git rev-parse --short HEAD)
 
 # The unit tests of research/analysis/ and scripts/, in research/'s uv environment.
 test-python:
@@ -90,7 +126,7 @@ test-showcase-js:
 build:
 	cargo build --release --features $(FEATURES)
 
-# Installs this working tree, uncommitted changes included, over whatever `codediff` is on PATH.
+# Installs this working tree, uncommitted changes included, over whatever `omnidiff` is on PATH.
 install:
 	cargo install --path . --force
 
@@ -108,16 +144,30 @@ install-hooks:
 benchmark-quality:
 	$(BENCH_QUALITY) --csv
 
+# Speed and accuracy of content diffs per family, the README's figures for content other than code.
+# Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
+# materialize_test_diffs) and writes research/data/performance/content_speed/<machine>.csv.
+benchmark-content:
+	@machine=$$($(which-machine)) || exit 1; \
+	echo "Timing content on $$machine"; \
+	cargo run --release --features $(FEATURES) --bin benchmark_content -- \
+		--csv research/data/performance/content_speed/$$machine.csv
+
 # Regenerates the checked-in src/test/data/diffs.csv fixture inventory; re-run after changing
 # fixtures or their ground truths.
 diff-inventory:
-	cargo run --release --features $(FEATURES) --bin diff_inventory
+	cargo run --profile ci --features $(FEATURES) --bin diff_inventory
 
-# Records the README's assets/diff-vs-codediff.gif from the showcase bake, painted by the viewer's
+# Opens human_solver, the TUI that builds the ground truth under src/test/data/diffs/; `O` lists
+# the sampled candidates in src/test/data/samples/. CASE=<fixture> opens that fixture directly.
+human-solver:
+	cargo run --release --features $(FEATURES) --bin human_solver -- $(CASE)
+
+# Records the README's assets/diff-vs-omnidiff.gif from the showcase bake, painted by the viewer's
 # own model.js, so it cannot drift from the product. Committed, so it resolves on crates.io; re-run
 # after painting changes. Needs Node and research/'s uv environment.
 DIFF_GIF_CASE ?= python-refactoring
-DIFF_GIF_OUT ?= assets/diff-vs-codediff.gif
+DIFF_GIF_OUT ?= assets/diff-vs-omnidiff.gif
 diff-gif:
 	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT; \
 	cargo run --release --features test-fixtures --bin generate_showcase -- --out "$$tmp" >/dev/null && \
@@ -137,6 +187,16 @@ readme-screenshot:
 		"$$dir"/before.* "$$dir"/after.* --out "$$tmp/still.json" && \
 	cd research && uv run python ../scripts/render_tui_screenshot.py \
 		--still "$$tmp/still.json" --out ../$(README_SCREENSHOT_OUT)
+
+# Records assets/content/: one GIF per content example (a PDF, a font, an archive, pictures, ...)
+# in scripts/record_content_gif.py, and cases.json, which the showcase reads. Each is git's
+# "Binary files differ", omnidiff's headless report, then the viewer drawn by the TUI's own widgets
+# (render_content_stills) with its pictures pasted in as a kitty terminal shows them. Committed;
+# re-run after viewer changes. Needs research/'s uv environment.
+content-gif:
+	cargo build --release --features test-fixtures --bin render_content_stills --bin omnidiff
+	cd research && uv run python ../scripts/record_content_gif.py \
+		--omnidiff ../target/release/omnidiff --stills ../target/release/render_content_stills
 
 # Regenerates THIRD-PARTY-NOTICES.md, the licenses of every crate the product binary links, from
 # Cargo.lock (cargo-about, `cargo install cargo-about --features cli`). Ships beside the binary in
@@ -188,7 +248,7 @@ benchmark-ablation:
 	FEATURES=$(FEATURES) ./scripts/ablation_study.sh $(OUT_DIR)
 
 QUALITY_BASELINE := research/data/quality/quality_baseline.csv
-RUNTIME_BASELINE := research/data/quality/quality_baseline.txt
+TIMING_DIR := research/data/quality/timing
 BENCH_OUTPUT := target/benchmark_optimal_output.txt
 # The one invocation behind benchmark-quality, check-quality and update-quality-baseline.
 BENCH_QUALITY := cargo run --release --features $(FEATURES) --bin benchmark_optimal_solutions --
@@ -199,7 +259,8 @@ extract-ms = grep -oE '[0-9.]+ms/fixture' $(BENCH_OUTPUT) | grep -oE '[0-9.]+'
 #
 # Accuracy is compared per fixture, never aggregated: the corpus grows toward hard cases, so any
 # aggregate reads new data as a regression. Fixtures without a baseline row pass. Runtime only warns
-# (>2x), because wall-clock varies too much between machines to gate on.
+# (>2x), and only against this machine's own timing baseline: a CI runner or an unregistered
+# machine has none, and skips the comparison.
 #
 # bash with `pipefail`, or the `| tee` would report tee's status and a red gate would pass (dash has
 # no pipefail). `mkdir -p` first: tee opens its file at once and would lose the race with cargo
@@ -208,11 +269,21 @@ check-quality: SHELL := /bin/bash
 check-quality: .SHELLFLAGS := -o pipefail -c
 check-quality:
 	@mkdir -p $(dir $(BENCH_OUTPUT))
-	$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) | tee $(BENCH_OUTPUT)
-	@ms=$$($(extract-ms)); \
-	baseline_ms=$$(grep '^MS_PER_FIXTURE=' $(RUNTIME_BASELINE) | cut -d= -f2); \
+	@machine=$$($(which-machine)) || machine=; \
+	timing=; \
+	if [ -n "$$machine" ] && [ -f $(TIMING_DIR)/$$machine.csv ]; then \
+		timing="--compare-timing $(TIMING_DIR)/$$machine.csv"; \
+	fi; \
+	echo "$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) $$timing"; \
+	$(BENCH_QUALITY) --compare $(QUALITY_BASELINE) $$timing | tee $(BENCH_OUTPUT) || exit 1; \
+	ms=$$($(extract-ms)); \
 	echo ""; \
-	echo "Runtime: $$ms ms/fixture (baseline: $$baseline_ms)"; \
+	if [ -z "$$timing" ]; then \
+		echo "Runtime: $$ms ms/fixture (no timing baseline for this machine: not compared)"; \
+		exit 0; \
+	fi; \
+	baseline_ms=$$(grep '^MS_PER_FIXTURE=' $(TIMING_DIR)/$$machine.txt | cut -d= -f2); \
+	echo "Runtime: $$ms ms/fixture (baseline on $$machine: $$baseline_ms)"; \
 	over_2x=$$(awk -v ms="$$ms" -v base="$$baseline_ms" 'BEGIN { print (ms > base * 2) ? 1 : 0 }'); \
 	if [ "$$over_2x" = "1" ]; then \
 		echo "warning: runtime is more than 2x the baseline ($$ms ms/fixture vs $$baseline_ms ms/fixture) - investigate before deploying" >&2; \
@@ -223,35 +294,56 @@ check-quality:
 # moves it legitimately, so re-run update-painting-attribution and name the ground truth that changed.
 # A move with no such change is a regression.
 check-painting-attribution:
-	PAINTING_ATTRIBUTION_CHECK=1 cargo test --release --lib --features test-fixtures \
+	PAINTING_ATTRIBUTION_CHECK=1 cargo test --profile ci --lib --features test-fixtures \
 		painting_failure_census -- --ignored --nocapture
 
 update-painting-attribution:
-	cargo test --release --lib --features test-fixtures \
+	cargo test --profile ci --lib --features test-fixtures \
 		painting_failure_census -- --ignored --nocapture
 
-# Rewrites both baselines; never done by `deploy`. A test pins the accuracy columns to the
-# `src/test/fixtures/` stubs' limits, so this cannot re-baseline an accuracy regression away.
-# Not gated on check-quality, which is red exactly after a reviewed trade-off this exists for.
-# `mkdir -p` for check-quality's tee race; without pipefail it would write an empty MS_PER_FIXTURE.
+# Rewrites the accuracy baseline and this machine's timing baseline; never done by `deploy`. A test
+# pins the accuracy columns to the `src/test/fixtures/` stubs' limits, so this cannot re-baseline an
+# accuracy regression away. Not gated on check-quality, which is red exactly after a reviewed
+# trade-off this exists for. Needs a registered machine, so no timing lands in another's files.
+update-quality-baseline: SHELL := /bin/bash
+update-quality-baseline: .SHELLFLAGS := -o pipefail -c
 update-quality-baseline:
-	@mkdir -p $(dir $(BENCH_OUTPUT))
-	$(BENCH_QUALITY) --write-baseline $(QUALITY_BASELINE) | tee $(BENCH_OUTPUT)
-	@ms=$$($(extract-ms)); \
+	@mkdir -p $(dir $(BENCH_OUTPUT)) $(TIMING_DIR)
+	@machine=$$($(which-machine)) || exit 1; \
+	$(BENCH_QUALITY) --write-baseline $(QUALITY_BASELINE) \
+		--write-timing $(TIMING_DIR)/$$machine.csv | tee $(BENCH_OUTPUT) || exit 1; \
+	$(write-runtime-baseline)
+
+# Rewrites this machine's timing baseline alone, the accuracy baseline untouched: for a machine
+# timed for the first time, or after a change that moved only the speed.
+update-timing-baseline: SHELL := /bin/bash
+update-timing-baseline: .SHELLFLAGS := -o pipefail -c
+update-timing-baseline:
+	@mkdir -p $(dir $(BENCH_OUTPUT)) $(TIMING_DIR)
+	@machine=$$($(which-machine)) || exit 1; \
+	$(BENCH_QUALITY) --write-timing $(TIMING_DIR)/$$machine.csv | tee $(BENCH_OUTPUT) || exit 1; \
+	$(write-runtime-baseline)
+
+# The tail of both update- recipes, with `$$machine` set: $(BENCH_OUTPUT)'s ms/fixture, written as
+# the machine's runtime baseline.
+write-runtime-baseline = \
+	ms=$$($(extract-ms)); \
 	{ \
-		echo "# Runtime baseline for \`make check-quality\` - see Makefile."; \
-		echo "#"; \
-		echo "# MS_PER_FIXTURE: benchmark_optimal_solutions' own \"Runtime: ... ms/fixture\" line."; \
-		echo "# Informational only: a >2x jump warns, it never fails a deploy, because wall-clock"; \
-		echo "# time varies by machine far more than any real regression would."; \
-		echo "#"; \
-		echo "# The accuracy gate does NOT live here. It is per-fixture, in quality_baseline.csv"; \
-		echo "# beside this file, because no single number over a corpus that keeps gaining hard"; \
-		echo "# fixtures can tell a real regression apart from new data - measured, see the"; \
-		echo "# quality-gate section in src/bin/benchmark_optimal_solutions.rs."; \
+		echo "\# Runtime baseline for \`make check-quality\` on $$machine - see Makefile."; \
+		echo "\#"; \
+		echo "\# MS_PER_FIXTURE: benchmark_optimal_solutions' own \"Runtime: ... ms/fixture\" line: the diffs"; \
+		echo "\# alone, timed one at a time after the parallel grading pass."; \
+		echo "\# Informational only: a >2x jump warns, it never fails a deploy. Compared only on the"; \
+		echo "\# machine that recorded it, since wall-clock time varies by machine far more than any"; \
+		echo "\# real regression would. Per-fixture times are in $$machine.csv beside this file."; \
+		echo "\#"; \
+		echo "\# The accuracy gate does NOT live here. It is per-fixture, in ../quality_baseline.csv,"; \
+		echo "\# because no single number over a corpus that keeps gaining hard fixtures can tell a"; \
+		echo "\# real regression apart from new data - measured, see the quality-gate section in"; \
+		echo "\# src/bin/benchmark_optimal_solutions.rs."; \
 		echo "MS_PER_FIXTURE=$$ms"; \
-	} > $(RUNTIME_BASELINE); \
-	echo "Updated $(QUALITY_BASELINE) and $(RUNTIME_BASELINE) (MS_PER_FIXTURE=$$ms)"
+	} > $(TIMING_DIR)/$$machine.txt; \
+	echo "Updated $(TIMING_DIR)/$$machine.csv and $$machine.txt (MS_PER_FIXTURE=$$ms)"
 
 # Every packaging recipe names the version Cargo.toml does - see scripts/check_version_sync.py for
 # which files repeat it by hand. Part of deploy-checks and of CI's python job.

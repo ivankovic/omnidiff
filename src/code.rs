@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,6 +18,10 @@
 //! tree-sitter AST, the detected [`Language`], and per-node [`ASTMetadata`] (hashes, depths,
 //! parents) that the diff passes read. [`Code::from_string`] parses; [`language`] maps file names
 //! to languages and languages to grammars.
+//!
+//! The two sides of a diff are built independently - nothing in a parse or its metadata reads the
+//! other side - so the product's entry points build them on two threads ([`build_sides`]) once a
+//! pair is big enough to pay for one. The diff itself stays on one thread.
 #[cfg(test)]
 mod gap_survey;
 pub mod hash;
@@ -146,13 +149,29 @@ impl Code {
         code
     }
 
-    /// Reads and parses `path`, detecting the language from its path and content (`Unknown` if
-    /// unrecognized). Errors if the file cannot be read as UTF-8 text.
-    pub fn from_file(path: &std::path::Path) -> Result<Self> {
-        use std::fs;
+    /// Like [`from_string`](Self::from_string), but stops after the parse: `ast` is set where the
+    /// language has a grammar and `ast_metadata` is left `None`. For readers of the tree alone,
+    /// such as a hunk's enclosing-declaration breadcrumb; the metadata costs about as much again
+    /// as the parse.
+    pub fn parse_only(contents: &str, language: &Language) -> Self {
+        let mut code = Code {
+            contents: contents.to_string(),
+            metadata: Metadata {
+                path: None,
+                tip: Some(Type::Code("Code".to_string())),
+                language: Some(*language),
+                ast_metadata: None,
+            },
+            ..Default::default()
+        };
+        code.parse(&mut tree_sitter::Parser::new());
+        code
+    }
 
-        let contents = fs::read_to_string(path)
-            .map_err(|e| anyhow!("Failed to read file {}: {}", path.display(), e))?;
+    /// Reads and parses `path`, detecting the language from its path and content (`Unknown` if
+    /// unrecognized). Errors if the file cannot be read as text ([`read_text`]).
+    pub fn from_file(path: &std::path::Path) -> Result<Self> {
+        let contents = read_text(path)?;
 
         let language =
             language::language_for_path_and_content(path, &contents).unwrap_or(Language::Unknown);
@@ -164,14 +183,134 @@ impl Code {
     }
 }
 
+/// The smaller side of a pair, in bytes, from which [`build_sides`] builds the two sides on two
+/// threads. Parsing and metadata run at a few megabytes a second, so this much text is a couple of
+/// milliseconds of work per side, well above the tens of microseconds a thread costs.
+pub const PARALLEL_SIDES_MIN_BYTES: usize = 8 * 1024;
+
+/// Stack size of the thread [`build_sides`] spawns. Parsing and metadata are iterative, so this
+/// is headroom (an address-space reservation, committed only as used) for a grammar's external
+/// scanner on deep input, not a measured need.
+const SIDE_THREAD_STACK_SIZE: usize = 64 * 1024 * 1024;
+
+/// Runs `before` and `after` - building the two sides of a diff, which share nothing - and returns
+/// both results: concurrently, `before` on a scoped thread and `after` on the caller's, when
+/// `parallel`; one after the other otherwise, where a thread would cost more than it saves (see
+/// [`PARALLEL_SIDES_MIN_BYTES`]). A panic on either side is re-raised on the caller's thread.
+pub fn build_sides<A: Send, B>(
+    parallel: bool,
+    before: impl FnOnce() -> A + Send,
+    after: impl FnOnce() -> B,
+) -> (A, B) {
+    if !parallel {
+        return (before(), after());
+    }
+    std::thread::scope(|scope| {
+        let handle = std::thread::Builder::new()
+            .name("omnidiff-side".to_string())
+            .stack_size(SIDE_THREAD_STACK_SIZE)
+            .spawn_scoped(scope, before)
+            .expect("failed to spawn a side-building thread");
+        let after = after();
+        let before = handle
+            .join()
+            .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+        (before, after)
+    })
+}
+
+/// Whether a pair of texts is big enough for [`build_sides`] to build in parallel.
+pub fn worth_building_in_parallel(before: &str, after: &str) -> bool {
+    before.len().min(after.len()) >= PARALLEL_SIDES_MIN_BYTES
+}
+
+/// The encodings text is read in besides UTF-8: each announced by its byte order mark, without
+/// which nothing tells UTF-16 from binary. A Windows tool's `.rc`, `.reg` or `.xml` and Apple's
+/// `.strings` are often UTF-16; git calls them binary, and so did OmniDiff until it read them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Encoding {
+    Utf8,
+    Utf16Le,
+    Utf16Be,
+    Utf32Le,
+    Utf32Be,
+}
+
+impl Encoding {
+    /// The encoding the byte order mark at the start of `bytes` announces; UTF-8 without one.
+    pub fn of(bytes: &[u8]) -> Encoding {
+        // UTF-32LE's mark starts with UTF-16LE's, so it is checked first.
+        match bytes {
+            [0xFF, 0xFE, 0x00, 0x00, ..] => Encoding::Utf32Le,
+            [0x00, 0x00, 0xFE, 0xFF, ..] => Encoding::Utf32Be,
+            [0xFF, 0xFE, ..] => Encoding::Utf16Le,
+            [0xFE, 0xFF, ..] => Encoding::Utf16Be,
+            _ => Encoding::Utf8,
+        }
+    }
+
+    /// The encoding's usual name (`"UTF-16LE"`).
+    pub fn name(self) -> &'static str {
+        match self {
+            Encoding::Utf8 => "UTF-8",
+            Encoding::Utf16Le => "UTF-16LE",
+            Encoding::Utf16Be => "UTF-16BE",
+            Encoding::Utf32Le => "UTF-32LE",
+            Encoding::Utf32Be => "UTF-32BE",
+        }
+    }
+}
+
+/// `bytes` as text, in the encoding their byte order mark names (see [`Encoding`]); `None` if
+/// they are not valid text in it. The mark is kept, as U+FEFF, as a UTF-8 file's is: a file that
+/// only changed encoding then diffs as unchanged text.
+pub fn decode_text(bytes: &[u8]) -> Option<String> {
+    let encoding = Encoding::of(bytes);
+    let width = match encoding {
+        Encoding::Utf8 => return std::str::from_utf8(bytes).ok().map(str::to_string),
+        Encoding::Utf16Le | Encoding::Utf16Be => 2,
+        Encoding::Utf32Le | Encoding::Utf32Be => 4,
+    };
+    if !bytes.len().is_multiple_of(width) {
+        return None;
+    }
+    let units = bytes.chunks_exact(width).map(|c| match encoding {
+        Encoding::Utf16Le => u32::from(u16::from_le_bytes([c[0], c[1]])),
+        Encoding::Utf16Be => u32::from(u16::from_be_bytes([c[0], c[1]])),
+        Encoding::Utf32Le => u32::from_le_bytes([c[0], c[1], c[2], c[3]]),
+        _ => u32::from_be_bytes([c[0], c[1], c[2], c[3]]),
+    });
+    if width == 2 {
+        char::decode_utf16(units.map(|unit| unit as u16))
+            .collect::<Result<String, _>>()
+            .ok()
+    } else {
+        units.map(char::from_u32).collect()
+    }
+}
+
+/// Reads `path` as text ([`decode_text`]): UTF-8, or UTF-16 or UTF-32 with a byte order mark.
+pub fn read_text(path: &std::path::Path) -> Result<String> {
+    let bytes = std::fs::read(path)
+        .map_err(|e| anyhow!("Failed to read file {}: {}", path.display(), e))?;
+    decode_text(&bytes).ok_or_else(|| {
+        anyhow!(
+            "Failed to read file {}: not valid {} text",
+            path.display(),
+            Encoding::of(&bytes).name()
+        )
+    })
+}
+
 /// Whether `path` holds bytes `Code::from_file` cannot read as text. I/O failures propagate.
 ///
-/// Deliberately `from_file`'s own failure condition (invalid UTF-8), not git's NUL-byte heuristic:
-/// the two must agree on every input, and a Latin-1 source file has no NUL yet fails to decode.
+/// Deliberately `from_file`'s own failure condition ([`decode_text`]), not git's NUL-byte
+/// heuristic: the two must agree on every input, and a Latin-1 source file has no NUL yet fails
+/// to decode, while a UTF-16 one is full of NULs and decodes.
 pub fn is_binary_file(path: &std::path::Path) -> Result<bool> {
     let bytes = std::fs::read(path)
         .map_err(|e| anyhow!("Failed to read file {}: {}", path.display(), e))?;
-    Ok(std::str::from_utf8(&bytes).is_err())
+    Ok(decode_text(&bytes).is_none())
 }
 
 /// What diffing needs to know about the code, beyond the code itself. Statistics and test data do
@@ -341,6 +480,7 @@ pub enum Language {
     Lisp,
     MarkDown,
     PHP,
+    Perl,
     ProtoBuf,
     Python,
     R,
@@ -382,6 +522,65 @@ impl std::fmt::Display for Type {
 
 #[cfg(test)]
 mod tests {
+    fn encoded(text: &str, encoding: Encoding) -> Vec<u8> {
+        let text = format!("\u{feff}{text}");
+        match encoding {
+            Encoding::Utf8 => text.into_bytes(),
+            Encoding::Utf16Le => text.encode_utf16().flat_map(u16::to_le_bytes).collect(),
+            Encoding::Utf16Be => text.encode_utf16().flat_map(u16::to_be_bytes).collect(),
+            Encoding::Utf32Le => text
+                .chars()
+                .flat_map(|c| (c as u32).to_le_bytes())
+                .collect(),
+            Encoding::Utf32Be => text
+                .chars()
+                .flat_map(|c| (c as u32).to_be_bytes())
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn text_with_a_byte_order_mark_decodes_in_every_encoding() {
+        let text = "<a x=\"ü\"/>\n😀\n";
+        for encoding in [
+            Encoding::Utf8,
+            Encoding::Utf16Le,
+            Encoding::Utf16Be,
+            Encoding::Utf32Le,
+            Encoding::Utf32Be,
+        ] {
+            let bytes = encoded(text, encoding);
+            assert_eq!(Encoding::of(&bytes), encoding);
+            assert_eq!(
+                decode_text(&bytes).as_deref(),
+                Some(format!("\u{feff}{text}").as_str()),
+                "{}",
+                encoding.name()
+            );
+        }
+    }
+
+    #[test]
+    fn a_utf16_file_is_text_and_parses() {
+        let mut file = tempfile::Builder::new()
+            .suffix(".xml")
+            .tempfile()
+            .expect("temp file");
+        let bytes = encoded("<a><b/></a>\n", Encoding::Utf16Le);
+        std::io::Write::write_all(&mut file, &bytes).expect("write");
+        assert!(!is_binary_file(file.path()).expect("classify"));
+        let code = Code::from_file(file.path()).expect("reads as text");
+        assert!(code.contents.ends_with("<a><b/></a>\n"));
+    }
+
+    #[test]
+    fn a_broken_utf16_file_is_binary() {
+        // A lone high surrogate, and an odd byte count.
+        for bytes in [&[0xFF, 0xFE, 0x00, 0xD8][..], &[0xFF, 0xFE, 0x41][..]] {
+            assert_eq!(decode_text(bytes), None);
+        }
+    }
+
     #[test]
     fn is_binary_file_agrees_with_from_file_on_valid_utf8() {
         let mut file = tempfile::NamedTempFile::new().expect("create temp file");
@@ -436,6 +635,47 @@ mod tests {
     }
 
     #[test]
+    fn parse_only_sets_the_tree_but_not_the_metadata() {
+        let code = Code::parse_only("fn main() {}", &Language::Rust);
+
+        assert!(code.ast.is_some());
+        assert!(code.metadata.ast_metadata.is_none());
+        assert_eq!(code.metadata.language, Some(Language::Rust));
+    }
+
+    #[test]
+    fn build_sides_returns_both_results_in_order_either_way() {
+        for parallel in [false, true] {
+            let (before, after) = build_sides(
+                parallel,
+                || Code::from_string("fn a() {}", &Language::Rust),
+                || Code::from_string("fn b() {}", &Language::Rust),
+            );
+            assert_eq!(before.contents, "fn a() {}");
+            assert_eq!(after.contents, "fn b() {}");
+            assert!(before.metadata.ast_metadata.is_some());
+            assert!(after.metadata.ast_metadata.is_some());
+        }
+    }
+
+    #[test]
+    fn build_sides_reraises_a_panic_on_the_spawned_side() {
+        let result = std::panic::catch_unwind(|| {
+            build_sides(true, || panic!("before side"), || 1);
+        });
+        let panic = result.expect_err("the before side's panic reaches the caller");
+        assert_eq!(panic.downcast_ref::<&str>(), Some(&"before side"));
+    }
+
+    #[test]
+    fn worth_building_in_parallel_looks_at_the_smaller_side() {
+        let big = "x".repeat(PARALLEL_SIDES_MIN_BYTES);
+        assert!(worth_building_in_parallel(&big, &big));
+        assert!(!worth_building_in_parallel(&big, "x"));
+        assert!(!worth_building_in_parallel("x", &big));
+    }
+
+    #[test]
     fn cloning_code_drops_ast_metadata_so_its_ids_cannot_outlive_the_tree() -> Result<()> {
         let code = Code::from_string("fn main() { let x = 1; }", &Language::Rust);
         assert!(code.metadata.ast_metadata.is_some());
@@ -483,7 +723,7 @@ mod tests {
             .as_ref()
             .expect("Language should be set");
 
-        let ts_language = crate::code::language::to_treesitter(language).expect("Unable to convert CodeDiff language to TreeSitter language in tests. Something is wrong with the test infrastructure.");
+        let ts_language = crate::code::language::to_treesitter(language).expect("Unable to convert OmniDiff language to TreeSitter language in tests. Something is wrong with the test infrastructure.");
 
         let mut parser = tree_sitter::Parser::new();
         parser.set_language(&ts_language)?;

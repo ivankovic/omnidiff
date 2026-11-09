@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 #
-#  This file is part of the CodeDiff code diffing tool.
+#  This file is part of the OmniDiff code diffing tool.
 #
 #  Copyright (C) 2026 Marko Ivankovic
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#  by the Free Software Foundation, version 3 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -79,7 +78,7 @@ for name, rows in (("small", small), ("big", big), ("timeouts", timed)):
 PY
 
 run() {  # run <csv> <output part> <MemoryMax> <timeout-secs>
-  systemd-run --user --scope --quiet --collect --slice=codediff-r48.slice \
+  systemd-run --user --scope --quiet --collect --slice=omnidiff-r48.slice \
     -p MemoryMax="$3" -p MemorySwapMax=0 \
     ../target/release/benchmark_diff_pairs \
       --csv "$1" --repo-root "$REPOS" --output "$2" \

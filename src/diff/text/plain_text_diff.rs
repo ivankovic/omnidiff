@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -105,6 +104,350 @@ pub fn whole_file_text_class(before: &str, after: &str) -> WholeFileClass {
         Some(core) => core.whole_file_class(),
         None => WholeFileClass::Mixed,
     }
+}
+
+/// The diff of an embedded text layer (`diff::embedded`): [`plain_text_line_diff`] for text of
+/// several lines, [`plain_text_token_diff`] for one line, where a line diff can only paint one span
+/// from the first change to the last.
+pub fn text_layer_diff(before: &str, after: &str) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
+    if before.contains('\n') || after.contains('\n') {
+        return plain_text_line_diff(before, after);
+    }
+    plain_text_token_diff(before, after).unwrap_or_else(|| plain_text_line_diff(before, after))
+}
+
+/// How many separate edits [`plain_text_token_diff`] finds between two one-line texts: changed
+/// runs with unchanged text between them that holds both whitespace and something else. Changes
+/// with only a word or punctuation between them are one edit to a reader - `3.0.2` -> `4.0.0` is a
+/// version bump, `swc-napi` -> `napi-bindings` one renamed word - and so are changes that keep only
+/// the spaces between them (`Did you mean` -> `The most similar command`), however many tokens
+/// they touch. `None` past `PLAIN_TEXT_MAX_EDIT`.
+pub fn token_edit_count(before: &str, after: &str) -> Option<usize> {
+    token_diff(before, after).map(|(_, edits)| edits)
+}
+
+/// A token diff of two one-line texts: Myers LCS over tokens - a run of letters, digits and `_`, a
+/// run of whitespace, or any other single character - so that two edits far apart in one long line
+/// (`'  no' ... '  yes'` -> `'--no---' ... '--yes--'`) are painted apart, with the text between
+/// them `Identical`. A changed run between kept tokens is one `Update` of the characters that
+/// differ when neither side of it is empty or only whitespace; otherwise its sides are a `Delete`
+/// and an `Insert`, since whitespace replaced by `--` is not that whitespace edited. `None` past
+/// `PLAIN_TEXT_MAX_EDIT`.
+pub fn plain_text_token_diff(
+    before: &str,
+    after: &str,
+) -> Option<(Vec<RangeMatch>, Vec<RangeMatch>)> {
+    token_diff(before, after).map(|(ranges, _)| (ranges.before, ranges.after))
+}
+
+/// [`plain_text_token_diff`]'s ranges, and how many separate edits they hold.
+fn token_diff(before: &str, after: &str) -> Option<(TokenRanges, usize)> {
+    let (before_tokens, after_tokens) = (tokens(before), tokens(after));
+    let hashes = |text: &str, tokens: &[(usize, usize)]| {
+        let spelled: Vec<&str> = tokens.iter().map(|&(from, to)| &text[from..to]).collect();
+        hash_lines(&spelled)
+    };
+    let pairs = crate::diff::apted::myers_lcs(
+        &hashes(before, &before_tokens),
+        &hashes(after, &after_tokens),
+        PLAIN_TEXT_MAX_EDIT,
+    )?;
+    // Runs of kept tokens, `(before index, after index, length)`, then a sentinel at both ends.
+    let mut kept: Vec<(usize, usize, usize)> = Vec::new();
+    for &(b, a) in &pairs {
+        match kept.last_mut() {
+            Some((kb, ka, length)) if *kb + *length == b && *ka + *length == a => *length += 1,
+            _ => kept.push((b, a, 1)),
+        }
+    }
+    kept.push((before_tokens.len(), after_tokens.len(), 0));
+    let byte = |tokens: &[(usize, usize)], index: usize, text: &str| {
+        tokens.get(index).map_or(text.len(), |&(from, _)| from)
+    };
+
+    let mut ranges = TokenRanges::default();
+    // Whether unchanged whitespace has been passed since the last edit counted.
+    let (mut edits, mut apart) = (0, true);
+    let (mut before_at, mut after_at) = (0, 0);
+    for (b, a, length) in kept {
+        let (gap_before, gap_after) = (
+            before_at..byte(&before_tokens, b, before),
+            after_at..byte(&after_tokens, a, after),
+        );
+        let (old, new) = (&before[gap_before.clone()], &after[gap_after.clone()]);
+        if (!old.is_empty() || !new.is_empty()) && apart {
+            edits += 1;
+            apart = false;
+        }
+        if !old.trim().is_empty() && !new.trim().is_empty() {
+            // Only the characters that differ: `21` -> `22` is `1` -> `2`, as a line's update is.
+            let prefix = common_prefix_byte_len(old, new);
+            let suffix = common_suffix_byte_len(&old[prefix..], &new[prefix..]);
+            let (b, a) = (gap_before.start + prefix, gap_after.start + prefix);
+            let (b_end, a_end) = (gap_before.end - suffix, gap_after.end - suffix);
+            if prefix > 0 {
+                ranges.pair(
+                    gap_before.start..b,
+                    gap_after.start..a,
+                    TextOperation::Identical,
+                );
+            }
+            ranges.pair(b..b_end, a..a_end, TextOperation::Update);
+            if suffix > 0 {
+                ranges.pair(
+                    b_end..gap_before.end,
+                    a_end..gap_after.end,
+                    TextOperation::Identical,
+                );
+            }
+        } else {
+            if !old.is_empty() {
+                ranges.before.push(RangeMatch {
+                    source: one_row(gap_before.clone()),
+                    destination: one_row(gap_after.start..gap_after.start),
+                    operation: TextOperation::Delete,
+                });
+            }
+            if !new.is_empty() {
+                ranges.after.push(RangeMatch {
+                    source: one_row(gap_after.clone()),
+                    destination: one_row(gap_before.start..gap_before.start),
+                    operation: TextOperation::Insert,
+                });
+            }
+        }
+        before_at = byte(&before_tokens, b + length, before);
+        after_at = byte(&after_tokens, a + length, after);
+        if length > 0 {
+            let between = &before[gap_before.end..before_at];
+            apart |= between.contains(char::is_whitespace) && !between.trim().is_empty();
+            ranges.pair(
+                gap_before.end..before_at,
+                gap_after.end..after_at,
+                TextOperation::Identical,
+            );
+        }
+    }
+    Some((ranges, edits))
+}
+
+/// Both sides' ranges of [`plain_text_token_diff`], built together.
+#[derive(Default)]
+struct TokenRanges {
+    before: Vec<RangeMatch>,
+    after: Vec<RangeMatch>,
+}
+
+impl TokenRanges {
+    /// One range on each side, each the other's destination.
+    fn pair(
+        &mut self,
+        before: std::ops::Range<usize>,
+        after: std::ops::Range<usize>,
+        operation: TextOperation,
+    ) {
+        self.before.push(RangeMatch {
+            source: one_row(before.clone()),
+            destination: one_row(after.clone()),
+            operation: operation.clone(),
+        });
+        self.after.push(RangeMatch {
+            source: one_row(after),
+            destination: one_row(before),
+            operation,
+        });
+    }
+}
+
+/// Byte columns `columns` of row 0.
+fn one_row(columns: std::ops::Range<usize>) -> TextRange {
+    TextRange::new(0, columns.start, 0, columns.end)
+}
+
+/// `text`'s tokens as byte ranges: runs of letters, digits and `_`, runs of whitespace, and every
+/// other character alone.
+fn tokens(text: &str) -> Vec<(usize, usize)> {
+    #[derive(PartialEq)]
+    enum Class {
+        Word,
+        Space,
+        Other,
+    }
+    let class = |c: char| {
+        if c.is_alphanumeric() || c == '_' {
+            Class::Word
+        } else if c.is_whitespace() {
+            Class::Space
+        } else {
+            Class::Other
+        }
+    };
+    let mut tokens: Vec<(usize, usize)> = Vec::new();
+    let mut previous: Option<Class> = None;
+    for (at, c) in text.char_indices() {
+        let current = class(c);
+        let extends = current != Class::Other && previous.as_ref() == Some(&current);
+        match tokens.last_mut() {
+            Some(last) if extends => last.1 = at + c.len_utf8(),
+            _ => tokens.push((at, at + c.len_utf8())),
+        }
+        previous = Some(current);
+    }
+    tokens
+}
+
+/// The diff of a CSS class list (`diff::embedded::TextTokens::Classes`), on one row: each
+/// whitespace-separated class is one token, never cut at its `:`, `-` or `/`
+/// (`data-checked:bg-primary` is added or not, whole). Classes kept in order (Myers LCS over the
+/// names) are `Identical`; a class on both sides but out of that order was reordered; the rest were
+/// removed or added, `Delete` and `Insert`.
+///
+/// A reordered class is a `Move` under both presets: the paintings show a class taken out of its
+/// place even though order means nothing to CSS. One that crossed a single kept class swapped with
+/// it, and that class moved too (`tsx-shadcn-ui-ui-order-of-class-names`). Under
+/// `paint_displaced_moves` (`FULL`) so is every kept class that sits inside the edited stretch of
+/// either side - between that side's first and last changed class - as the `Full` paintings mark a
+/// rearranged run (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
+pub fn class_list_diff(
+    before: &str,
+    after: &str,
+    options: super::RenderOptions,
+) -> Option<(Vec<RangeMatch>, Vec<RangeMatch>)> {
+    let words = |text: &str| -> Vec<(usize, usize)> {
+        let mut words = Vec::new();
+        let mut start = None;
+        for (at, c) in text.char_indices() {
+            match (c.is_whitespace(), start) {
+                (true, Some(from)) => {
+                    words.push((from, at));
+                    start = None;
+                }
+                (false, None) => start = Some(at),
+                _ => {}
+            }
+        }
+        if let Some(from) = start {
+            words.push((from, text.len()));
+        }
+        words
+    };
+    let (before_words, after_words) = (words(before), words(after));
+    let spelled = |text: &'_ str, words: &[(usize, usize)]| -> Vec<u64> {
+        let names: Vec<&str> = words.iter().map(|&(from, to)| &text[from..to]).collect();
+        hash_lines(&names)
+    };
+    let kept = crate::diff::apted::myers_lcs(
+        &spelled(before, &before_words),
+        &spelled(after, &after_words),
+        PLAIN_TEXT_MAX_EDIT,
+    )?;
+    let mut before_kept = vec![false; before_words.len()];
+    let mut after_kept = vec![false; after_words.len()];
+    for &(b, a) in &kept {
+        before_kept[b] = true;
+        after_kept[a] = true;
+    }
+    // A class left over on both sides was reordered: pair each with the first unused one of its name.
+    let name = |text: &'_ str, word: (usize, usize)| text[word.0..word.1].to_string();
+    let mut reordered = Vec::new();
+    let mut after_used = after_kept.clone();
+    for b in (0..before_words.len()).filter(|&b| !before_kept[b]) {
+        let wanted = name(before, before_words[b]);
+        if let Some(a) = (0..after_words.len())
+            .find(|&a| !after_used[a] && name(after, after_words[a]) == wanted)
+        {
+            after_used[a] = true;
+            reordered.push((b, a));
+        }
+    }
+    let before_moved: Vec<bool> = (0..before_words.len())
+        .map(|b| reordered.iter().any(|&(rb, _)| rb == b))
+        .collect();
+    let after_moved: Vec<bool> = (0..after_words.len())
+        .map(|a| reordered.iter().any(|&(_, ra)| ra == a))
+        .collect();
+    // Each side's edited stretch: from its first changed class to its last.
+    let stretch = |kept: &[bool]| {
+        let changed: Vec<usize> = (0..kept.len()).filter(|&i| !kept[i]).collect();
+        changed.first().copied().zip(changed.last().copied())
+    };
+    let (before_stretch, after_stretch) = (stretch(&before_kept), stretch(&after_kept));
+    let inside = |stretch: Option<(usize, usize)>, i: usize| {
+        stretch.is_some_and(|(first, last)| first < i && i < last)
+    };
+
+    let span = |word: (usize, usize)| TextRange::new(0, word.0, 0, word.1);
+    let point = |at: usize| TextRange::new(0, at, 0, at);
+    let displaced = options.paint_displaced_moves;
+    let mut before_ranges = Vec::new();
+    let mut after_ranges = Vec::new();
+    let mut pair = |b: usize, a: usize, operation: TextOperation| {
+        before_ranges.push(RangeMatch {
+            source: span(before_words[b]),
+            destination: span(after_words[a]),
+            operation: operation.clone(),
+        });
+        after_ranges.push(RangeMatch {
+            source: span(after_words[a]),
+            destination: span(before_words[b]),
+            operation,
+        });
+    };
+    // A reordered class that crossed exactly one kept class swapped places with it: neither stayed.
+    let swapped: Vec<(usize, usize)> = reordered
+        .iter()
+        .filter_map(|&(b, a)| {
+            let mut crossed = kept.iter().filter(|&&(kb, ka)| (kb < b) != (ka < a));
+            let only = crossed.next().copied();
+            crossed.next().is_none().then_some(only).flatten()
+        })
+        .collect();
+    for &(b, a) in &kept {
+        let shifted = inside(before_stretch, b) || inside(after_stretch, a);
+        let operation = if swapped.contains(&(b, a)) || (displaced && shifted) {
+            TextOperation::Move
+        } else {
+            TextOperation::Identical
+        };
+        pair(b, a, operation);
+    }
+    for &(b, a) in &reordered {
+        pair(b, a, TextOperation::Move);
+    }
+    // A removed or added class points at where the other side's list continues.
+    let continues_at = |kept_pairs: &[(usize, usize)], i: usize, mine_before: bool| {
+        let other_words = if mine_before {
+            &after_words
+        } else {
+            &before_words
+        };
+        let other_text = if mine_before { after } else { before };
+        kept_pairs
+            .iter()
+            .filter(|&&(b, a)| if mine_before { b < i } else { a < i })
+            .map(|&(b, a)| if mine_before { a } else { b })
+            .max()
+            .map_or(0, |o| other_words[o].1)
+            .min(other_text.len())
+    };
+    for b in (0..before_words.len()).filter(|&b| !before_kept[b] && !before_moved[b]) {
+        before_ranges.push(RangeMatch {
+            source: span(before_words[b]),
+            destination: point(continues_at(&kept, b, true)),
+            operation: TextOperation::Delete,
+        });
+    }
+    for a in (0..after_words.len()).filter(|&a| !after_kept[a] && !after_moved[a]) {
+        after_ranges.push(RangeMatch {
+            source: span(after_words[a]),
+            destination: point(continues_at(&kept, a, false)),
+            operation: TextOperation::Insert,
+        });
+    }
+    let by_start = |range: &RangeMatch| (range.source.start_row, range.source.start_column);
+    before_ranges.sort_by_key(by_start);
+    after_ranges.sort_by_key(by_start);
+    Some((before_ranges, after_ranges))
 }
 
 /// Runs `myers_lcs` over hashed lines. `None` when it gave up past `max_edit`, which callers must

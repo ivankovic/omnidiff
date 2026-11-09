@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ivankovic/omnidiff/main/src/tui/json_output.schema.json",
+  "title": "OmniDiff JSON output",
+  "description": "What `omnidiff --mode json BEFORE AFTER` prints: one diff as one JSON object, for editors and tools that place highlights on their own buffers. JSON output is never chosen automatically: only `--mode json` selects it, so a pipe never receives it by surprise. Rows and columns are 0-indexed, and columns are byte offsets within their row, as tree-sitter reports them: Neovim takes them directly, while VS Code and LSP need UTF-16 code units, which a consumer computes per line from the line's text. File contents are not embedded: both paths are real files the caller can open.",
+  "type": "object",
+  "required": ["before", "after", "large_residual"],
+  "additionalProperties": false,
+  "properties": {
+    "before": { "$ref": "#/$defs/side" },
+    "after": { "$ref": "#/$defs/side" },
+    "large_residual": {
+      "description": "The diff left an unusually large unmatched residual; headless mode prints this to stderr instead.",
+      "type": "boolean"
+    },
+    "summary": {
+      "description": "The diff's overall shape, as the TUI's status bar names it. Absent for an ordinary mix of edits.",
+      "enum": [
+        "no_changes",
+        "new_file",
+        "deleted_file",
+        "whitespace_only",
+        "comment_only",
+        "refactor_moved_only"
+      ]
+    },
+    "binary": {
+      "description": "At least one side is binary, so no text diff was computed: both sides' hunks are empty and there is no summary. A flag, because empty hunks alone look like identical files. Absent for a text diff.",
+      "const": true
+    },
+    "content": {
+      "description": "For a binary pair OmniDiff diffs by content (pictures, archives, fonts, cursors, message catalogs, PDFs): what changed in it. Absent otherwise.",
+      "$ref": "#/$defs/content"
+    },
+    "picture": {
+      "description": "For a picture pair: the same as `content`, without its `kind`. Kept for consumers written before `content`.",
+      "$ref": "#/$defs/picture"
+    }
+  },
+  "$defs": {
+    "side": {
+      "description": "One side of the diff.",
+      "type": "object",
+      "required": ["path", "language", "hunks"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "language": {
+          "description": "The language detected from the path (and, for some, the contents); null for plain text. Present for a binary side too, since it describes the file, not the diff.",
+          "type": ["string", "null"]
+        },
+        "encoding": {
+          "description": "The file's encoding when it is not UTF-8, from its byte order mark. The hunks are ranges in the UTF-8 text it decodes to.",
+          "enum": ["UTF-16LE", "UTF-16BE", "UTF-32LE", "UTF-32BE"]
+        },
+        "hunks": {
+          "description": "Every changed range in this side's own file. Unchanged text gets no hunk.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/hunk" }
+        }
+      }
+    },
+    "hunk": {
+      "type": "object",
+      "required": ["operation", "range"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "enum": ["delete", "insert", "update", "move"] },
+        "range": { "$ref": "#/$defs/range" },
+        "move_target": {
+          "description": "For a move only: where the moved text is in the other file.",
+          "$ref": "#/$defs/range"
+        },
+        "reference_line": {
+          "description": "The row of the nearest enclosing named declaration (function, class, struct), when there is one.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "range": {
+      "description": "A range from (start_row, start_column) up to, not including, (end_row, end_column).",
+      "type": "object",
+      "required": ["start_row", "start_column", "end_row", "end_column"],
+      "additionalProperties": false,
+      "properties": {
+        "start_row": { "type": "integer", "minimum": 0 },
+        "start_column": { "type": "integer", "minimum": 0 },
+        "end_row": { "type": "integer", "minimum": 0 },
+        "end_column": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "content": {
+      "description": "A content diff, tagged with its `kind`.",
+      "oneOf": [
+        { "$ref": "#/$defs/tagged_picture" },
+        { "$ref": "#/$defs/container" }
+      ]
+    },
+    "picture": {
+      "description": "Two pictures: what each side is and what changed. A side is null for an added or deleted picture.",
+      "type": "object",
+      "required": ["before", "after", "comparison"],
+      "additionalProperties": false,
+      "properties": {
+        "before": { "$ref": "#/$defs/picture_side" },
+        "after": { "$ref": "#/$defs/picture_side" },
+        "comparison": { "$ref": "#/$defs/comparison" }
+      }
+    },
+    "tagged_picture": {
+      "description": "`picture`, tagged with its `kind`.",
+      "type": "object",
+      "required": ["kind", "before", "after", "comparison"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "picture" },
+        "before": { "$ref": "#/$defs/picture_side" },
+        "after": { "$ref": "#/$defs/picture_side" },
+        "comparison": { "$ref": "#/$defs/comparison" }
+      }
+    },
+    "picture_side": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/picture_info" }]
+    },
+    "picture_info": {
+      "description": "One side of a picture pair, as the file says it is.",
+      "type": "object",
+      "required": ["format", "width", "height", "color", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "description": "The format the bytes are in, whatever the extension says (\"PNG\").",
+          "type": "string"
+        },
+        "width": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 0 },
+        "color": {
+          "description": "The stored color type (\"RGBA8\", \"L8\"): a palette or bit-depth change shows here when the pixels did not change.",
+          "type": "string"
+        },
+        "bytes": { "description": "The file's size in bytes.", "type": "integer", "minimum": 0 },
+        "frames": {
+          "description": "How many frames an animation has. Absent for a still picture.",
+          "type": "integer",
+          "minimum": 2
+        },
+        "duration_ms": {
+          "description": "An animation's running time, its frames' delays added up. Absent for a still picture.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "comparison": {
+      "description": "What changed between two pictures, tagged with its `kind`.",
+      "oneOf": [
+        {
+          "description": "One side is missing (an added or deleted file): nothing to compare.",
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "one_sided" } }
+        },
+        { "$ref": "#/$defs/pixels" },
+        {
+          "description": "Different sizes.",
+          "type": "object",
+          "required": ["kind", "aspect_kept"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "resized" },
+            "aspect_kept": {
+              "description": "Both sides have one aspect ratio, to a pixel.",
+              "type": "boolean"
+            },
+            "scaled": {
+              "description": "Two still pictures of one aspect ratio, compared at the smaller one's size with the larger scaled down to it, in the smaller one's pixels.",
+              "$ref": "#/$defs/pixels"
+            }
+          }
+        },
+        {
+          "description": "Animations of the same size (or an animation and a still), compared frame by frame.",
+          "type": "object",
+          "required": ["kind", "steps", "total_pixels", "retimed", "faint"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "frames" },
+            "steps": {
+              "description": "The aligned frames, in order: runs of frames that look the same, single changed frames, and runs only one side has.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/frame_step" }
+            },
+            "total_pixels": { "description": "Pixels in one frame.", "type": "integer", "minimum": 0 },
+            "retimed": {
+              "description": "Frames that look the same show for different times.",
+              "type": "boolean"
+            },
+            "faint": {
+              "description": "Frames that look the same differ in their pixels nonetheless.",
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "pixels": {
+      "description": "Two pictures of the same size, compared pixel by pixel. No region means no visible change, even if the bytes differ (a re-encoding, a metadata change).",
+      "type": "object",
+      "required": [
+        "kind",
+        "changed_pixels",
+        "total_pixels",
+        "regions",
+        "differing_pixels",
+        "strong_pixels",
+        "layout_kept"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "pixels" },
+        "changed_pixels": {
+          "description": "Pixels that pass pixelmatch's test for a visible difference.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_pixels": { "type": "integer", "minimum": 0 },
+        "regions": {
+          "description": "Where the changed pixels are, largest first.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/region" }
+        },
+        "differing_pixels": {
+          "description": "Pixels that differ at all, fully transparent ones alike whatever their color.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "strong_pixels": {
+          "description": "Changed pixels that differ clearly, past pixelmatch's threshold 0.3.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "layout_kept": {
+          "description": "The two keep one layout: their coarse brightness patterns correlate.",
+          "type": "boolean"
+        }
+      }
+    },
+    "region": {
+      "description": "A rectangle of changed pixels, in the pixel coordinates both pictures share.",
+      "type": "object",
+      "required": ["x", "y", "width", "height", "changed_pixels"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 0 },
+        "changed_pixels": {
+          "description": "How many of the rectangle's pixels changed.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "frame_step": {
+      "description": "One step of an animation diff. Frame numbers count from 0, in each side's own frames.",
+      "oneOf": [
+        {
+          "description": "`frames` frames that look the same, before's from `before` on and after's from `after` on.",
+          "type": "object",
+          "required": ["kind", "before", "after", "frames"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "same" },
+            "before": { "type": "integer", "minimum": 0 },
+            "after": { "type": "integer", "minimum": 0 },
+            "frames": { "type": "integer", "minimum": 1 }
+          }
+        },
+        {
+          "description": "Before's frame `before` became after's frame `after`, with these pixels changed.",
+          "type": "object",
+          "required": ["kind", "before", "after", "changed_pixels", "regions", "strong_pixels"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "changed" },
+            "before": { "type": "integer", "minimum": 0 },
+            "after": { "type": "integer", "minimum": 0 },
+            "changed_pixels": { "type": "integer", "minimum": 0 },
+            "regions": { "type": "array", "items": { "$ref": "#/$defs/region" } },
+            "strong_pixels": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "description": "`frames` frames only after has, from its frame `after` on.",
+          "type": "object",
+          "required": ["kind", "after", "frames"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "inserted" },
+            "after": { "type": "integer", "minimum": 0 },
+            "frames": { "type": "integer", "minimum": 1 }
+          }
+        },
+        {
+          "description": "`frames` frames only before has, from its frame `before` on.",
+          "type": "object",
+          "required": ["kind", "before", "frames"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "deleted" },
+            "before": { "type": "integer", "minimum": 0 },
+            "frames": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "container": {
+      "description": "Two files that hold members (an archive's files, a font's glyphs and tables, a PDF's pages, a catalog's messages, a cursor's sizes): the members that changed, were added or were removed.",
+      "type": "object",
+      "required": ["kind", "family", "before", "after", "unchanged", "members"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "container" },
+        "family": { "enum": ["archives", "cursors", "fonts", "catalogs", "documents"] },
+        "before": { "$ref": "#/$defs/container_side" },
+        "after": { "$ref": "#/$defs/container_side" },
+        "unchanged": {
+          "description": "How many members both sides have unchanged; they are not listed.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "members": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/member" }
+        }
+      }
+    },
+    "container_side": {
+      "description": "One side of a container pair; null for an added or deleted file.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["format", "bytes", "members"],
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "description": "The format the bytes are in (\"ZIP\", \"TAR.GZ\").",
+              "type": "string"
+            },
+            "bytes": { "description": "The file's size in bytes.", "type": "integer", "minimum": 0 },
+            "members": { "description": "How many members it has.", "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "member": {
+      "type": "object",
+      "required": ["key", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "description": "What names the member on both sides: a path in an archive, a glyph's code point or name, a page number, a message's context and id.",
+          "type": "string"
+        },
+        "status": { "enum": ["same", "changed", "added", "removed"] },
+        "detail": {
+          "description": "For a changed member: what changed, if it opened.",
+          "$ref": "#/$defs/member_detail"
+        }
+      }
+    },
+    "member_detail": {
+      "description": "What changed in a member both sides have, tagged with its `kind`.",
+      "oneOf": [
+        { "$ref": "#/$defs/tagged_picture" },
+        {
+          "description": "A member that is content of another kind: an archive in an archive.",
+          "type": "object",
+          "required": ["kind", "content"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "content" },
+            "content": { "$ref": "#/$defs/content" }
+          }
+        },
+        {
+          "description": "Text, compared by lines: how many each side has, and how many only it has.",
+          "type": "object",
+          "required": ["kind", "before_lines", "after_lines", "removed", "added", "words_kept"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "text" },
+            "before_lines": { "type": "integer", "minimum": 0 },
+            "after_lines": { "type": "integer", "minimum": 0 },
+            "removed": { "type": "integer", "minimum": 0 },
+            "added": { "type": "integer", "minimum": 0 },
+            "whitespace": {
+              "description": "When lines changed but only in their whitespace: at their ends only, or anywhere.",
+              "enum": ["trailing", "anywhere"]
+            },
+            "words_kept": {
+              "description": "The two sides share at least half their words, counted with repeats: text rewritten rather than replaced.",
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "description": "Bytes nothing more is known about.",
+          "type": "object",
+          "required": ["kind", "before_bytes", "after_bytes"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "binary" },
+            "before_bytes": { "type": "integer", "minimum": 0 },
+            "after_bytes": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    }
+  }
+}

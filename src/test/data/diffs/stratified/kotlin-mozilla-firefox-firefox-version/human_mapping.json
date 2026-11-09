@@ -1,0 +1,205 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "block_comment:1"
+      ],
+      "after_path": [
+        "block_comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "line_comment:1"
+      ],
+      "after_path": [
+        "line_comment:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "property_declaration:1"
+      ],
+      "after_path": [
+        "property_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "property_declaration:1",
+        "val:1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "val:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "property_declaration:1",
+        "variable_declaration:1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "variable_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "property_declaration:1",
+        "=:1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "=:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "property_declaration:1",
+        "string_literal:1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "string_literal:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "\":1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "\":1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "string_content:1"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "string_content:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "\":2"
+      ],
+      "after_path": [
+        "property_declaration:1",
+        "string_literal:1",
+        "\":2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "property_declaration:2"
+      ],
+      "after_path": [
+        "property_declaration:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "object_declaration:1"
+      ],
+      "after_path": [
+        "object_declaration:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "block_comment:2"
+      ],
+      "after_path": [
+        "block_comment:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1"
+      ],
+      "after_path": [
+        "class_declaration:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 5,
+              "start_column": 25,
+              "end_row": 5,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 5,
+              "start_column": 25,
+              "end_row": 5,
+              "end_column": 33
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 5,
+              "start_column": 19,
+              "end_row": 5,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 5,
+              "start_column": 19,
+              "end_row": 5,
+              "end_column": 33
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

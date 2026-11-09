@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 #
-#  This file is part of the CodeDiff code diffing tool.
+#  This file is part of the OmniDiff code diffing tool.
 #
 #  Copyright (C) 2026 Marko Ivankovic
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#  by the Free Software Foundation, version 3 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,6 +41,10 @@ Examples:
   uv run ./analysis/coverage_sets.py unique '::mapping$' --show 5
   uv run ./analysis/coverage_sets.py signatures '::mapping$'
   uv run ./analysis/coverage_sets.py similarity '::mapping$' --out similarity.png
+  uv run ./analysis/coverage_sets.py --area all quick --write ../src/test/data/quick_fixtures.txt
+
+`quick` chooses the fixtures `make test-quick` runs (see `select_quick`), and is what `make
+update-quick-fixtures` calls.
 """
 
 from __future__ import annotations
@@ -252,6 +255,108 @@ def cmd_set(coverage: Coverage, args) -> None:
     show(coverage, "only B (in B's union, no A reaches it)", union_b & ~union_a, args.show)
 
 
+# The quick tier runs every test outside the fixtures except the corpus-wide sweeps, which take
+# a minute and more each (`make test-quick`, `scripts/quick_fixtures_filter.py`, which repeats this
+# pattern as a nextest filter).
+QUICK_EXCLUDED = re.compile(r"corpus")
+
+
+def language_of(fixture: str) -> str:
+    """The language a fixture stub names first: `test::fixtures::small::cpp_foo` -> `cpp`."""
+    return fixture.rsplit("::", 1)[-1].split("_", 1)[0]
+
+
+def select_quick(
+    fixtures: dict[str, int], seconds: dict[str, float], already: int
+) -> tuple[list[str], int]:
+    """The fixtures the quick tier runs, and the lines they cover between them.
+
+    Greedy weighted set cover over what the always-run tests (`already`) leave: repeatedly the
+    fixture adding the most new lines per second of its own tests, until every line some fixture
+    reaches is covered. Weighted, so a line reached by a 0.1 s fixture and a 20 s one goes with the
+    0.1 s one, and of two adding lines as fast, the one adding more. A pick that the later ones made
+    redundant is then dropped, the most expensive first. The cover is not minimal (that is NP-hard)
+    but within a logarithmic factor of the cheapest. Then the cheapest fixture of every language
+    nothing chosen yet speaks: tree-sitter's
+    grammars are C, outside the Rust coverage, so a language with no Rust lines of its own would
+    otherwise go untested. Ties break by name, so a re-run over the same data picks the same list.
+    """
+    goal = union(fixtures.values()) & ~already
+    covered = 0
+    chosen: list[str] = []
+    remaining = dict(fixtures)
+    while covered & goal != goal:
+
+        def value(name: str) -> tuple[float, int, str]:
+            gain = (remaining[name] & goal & ~covered).bit_count()
+            return (gain / max(seconds.get(name, 0.0), 0.001), gain, name)
+
+        best = max(sorted(remaining), key=value)
+        if (remaining[best] & goal & ~covered) == 0:
+            break
+        covered |= remaining.pop(best)
+        chosen.append(best)
+    for name in sorted(chosen, key=lambda name: (-seconds.get(name, 0.0), name)):
+        others = union(fixtures[other] for other in chosen if other != name)
+        if (others & goal) == (covered & goal):
+            chosen.remove(name)
+            remaining[name] = fixtures[name]
+    spoken = {language_of(name) for name in chosen}
+    for name in sorted(remaining, key=lambda name: (seconds.get(name, 0.0), name)):
+        if language_of(name) not in spoken:
+            chosen.append(name)
+            spoken.add(language_of(name))
+            covered |= remaining[name]
+    return chosen, covered & goal
+
+
+def cmd_quick(coverage: Coverage, args) -> None:
+    seconds_by_test: dict[str, float] = {}
+    with open(args.data / "records.jsonl") as handle:
+        for raw in handle:
+            if raw.strip():
+                record = json.loads(raw)
+                seconds_by_test[record["name"]] = float(record.get("seconds") or 0.0)
+    fixtures: dict[str, int] = defaultdict(int)
+    seconds: dict[str, float] = defaultdict(float)
+    already = 0
+    for name, bits in coverage.sets.items():
+        fixture = fixture_of(name)
+        if fixture != name:
+            fixtures[fixture] |= bits
+            seconds[fixture] += seconds_by_test.get(name, 0.0)
+        elif not QUICK_EXCLUDED.search(name):
+            already |= bits
+    chosen, covered = select_quick(dict(fixtures), dict(seconds), already)
+    goal = union(fixtures.values()) & ~already
+    cost = sum(seconds[name] for name in chosen)
+    total = sum(seconds.values())
+    print(
+        f"{len(chosen)} of {len(fixtures)} fixtures cover {covered.bit_count()} of the"
+        f" {goal.bit_count()} lines the fixtures reach and the always-run tests do not, in"
+        f" {cost:.0f} of {total:.0f} measured test-seconds ({100 * cost / max(total, 1):.1f}%)"
+    )
+    if not args.write:
+        for name in chosen:
+            print(f"  {seconds[name]:7.2f}s  {name}")
+        return
+    measured_at = args.measured_at or "unknown"
+    with open(args.write, "w") as handle:
+        handle.write(
+            "# The fixtures `make test-quick` runs, beside every test outside the fixtures but the\n"
+            "# corpus sweeps. Written by `make update-quick-fixtures` from per-test line coverage\n"
+            "# (research/analysis/coverage_sets.py, `select_quick`); do not edit by hand. Fixtures\n"
+            "# added after the measured commit are run too (scripts/quick_fixtures_filter.py).\n"
+            f"# measured-at: {measured_at}\n"
+            f"# {len(chosen)} of {len(fixtures)} fixtures, {covered.bit_count()} of"
+            f" {goal.bit_count()} lines beyond the always-run tests,"
+            f" {cost:.0f} of {total:.0f} test-seconds when measured\n"
+        )
+        for name in chosen:
+            handle.write(name.removeprefix("test::fixtures::") + "\n")
+    print(f"wrote {args.write}")
+
+
 def cmd_cover(coverage: Coverage, args) -> None:
     """Greedy set cover: repeatedly take the set that adds the most lines not yet covered. Not
     minimal - that problem is NP-hard - but within a logarithmic factor of it, and it is what any
@@ -416,6 +521,10 @@ def main() -> int:
     p.add_argument("select", nargs="?")
     p.add_argument("--top", type=int, default=15)
 
+    p = sub.add_parser("quick", help="the fixtures `make test-quick` runs (see select_quick)")
+    p.add_argument("--write", type=Path, help="the list to write; prints the picks otherwise")
+    p.add_argument("--measured-at", help="the commit the coverage was measured at, for the header")
+
     p = sub.add_parser("similarity", help="pairwise Jaccard similarity, one pixel per pair (PNG)")
     p.add_argument("select", nargs="?")
     p.add_argument("--out", required=True, help="the PNG to write; a .tsv beside it names the rows")
@@ -430,6 +539,7 @@ def main() -> int:
         "unique": cmd_unique,
         "signatures": cmd_signatures,
         "similarity": cmd_similarity,
+        "quick": cmd_quick,
     }[args.command](coverage, args)
     return 0
 

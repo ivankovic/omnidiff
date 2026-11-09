@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,22 +15,28 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
     // Two strings should map to one (N:M), and a version list changes in ways that need logical
-    // analysis. Fewer decisions than the count suggests: the human deletes 28 whole string
-    // literals codediff keeps matched (identical bytes, same order), each counting its subtree.
+    // analysis. What is left is an f-string assignment and a `yield from` the human keeps (the
+    // latter inside a new `for`), which `APTED("qualified_name")` deletes.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "python-aboutcode-org-license-expression-excellent-test-case",
-        251,
-        186,
+        12,
+        7,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("python-aboutcode-org-license-expression-excellent-test-case")
+    // Invariant 28, once: the `expression_statement` on before row 1487 is deleted, but it is made
+    // of the children of the `expression_statement` on after row 1489, which is itself inserted:
+    // the two are one pair.
+    assert_ground_truth_invariants_with_known_violations(
+        "python-aboutcode-org-license-expression-excellent-test-case",
+        1,
+    )
 }

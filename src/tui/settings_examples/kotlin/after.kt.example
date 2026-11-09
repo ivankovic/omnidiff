@@ -1,0 +1,32 @@
+import kotlin.math.max
+
+data class Person(val name: String, val age: Int)
+
+fun createPerson(name: String, age: Int) = Person(name, age)
+
+class Rectangle(val width: Int, val height: Int) {
+    fun area() = width * height
+
+    fun perimeter() = 2 * (width + height)
+
+    fun describe(label: String): String {
+        val totalArea = area()
+        return "$label: $totalArea square metres"
+    }
+}
+
+fun main() {
+    val size = intArrayOf(3, 4)
+    val shapes = listOf(
+        Rectangle(1, 1),
+        Rectangle(size[0], size[1]),
+        Rectangle(5, 2),
+    )
+    if (System.getenv("DEBUG") != null) {
+        for (shape in shapes) {
+            println(shape.describe("box"))
+        }
+    }
+    var biggest = shapes.maxOf { it.area() }
+    println("${shapes.size} $biggest")
+}

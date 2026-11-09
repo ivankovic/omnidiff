@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,19 +38,21 @@ use crate::review::{self, ChangeSet, ChangedFile, ReviewTarget};
 use crate::tui::actions::{Action, DiffOutcome, DiffSessionData};
 use crate::tui::components::{
     Component,
+    content_viewer::ContentViewer,
     diff_viewer::{DiffViewer, Panel},
     file_dialog::FileDialog,
     help_modal::HelpModal,
     line_prompt::LinePrompt,
-    render_options_dialog::RenderOptionsDialog,
+    picture_viewer::PictureColors,
+    render_options_dialog::{PageContent, RenderOptionsDialog},
     review_dialog::ReviewDialog,
     search_modal::SearchModal,
+    settings_menu::{LayoutSettings, SettingsMenu, SettingsTab},
     theme_dialog::ThemeDialog,
 };
 use crate::tui::events::Event;
 use crate::tui::theme::{self, OverlayTheme};
 use crate::tui::ui::UI;
-use crate::tui::widgets::code_viewer::DEFAULT_SYNTAX_THEME;
 
 /// Which top-level screen is currently shown.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -61,9 +62,8 @@ pub enum AppScreen {
     Viewer,
     /// A file dialog is picking a file for `dialog_target`.
     SelectFile,
-    SelectTheme,
-    /// The `M` render-options panel.
-    RenderOptions,
+    /// The settings menu (`c` opens it on Colors, `M` on Highlighting).
+    Settings,
     Diffing,
     /// The `?` keybinding reference.
     Help,
@@ -80,6 +80,8 @@ pub enum AppScreen {
 /// any other way.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ReviewPosition {
+    /// The repository the set was read from, so stepping never asks the working directory again.
+    root: PathBuf,
     set: ChangeSet,
     files: Vec<ChangedFile>,
     index: usize,
@@ -102,8 +104,7 @@ fn esc_should_quit(screen: AppScreen) -> bool {
         AppScreen::Viewer => true,
         AppScreen::Diffing
         | AppScreen::SelectFile
-        | AppScreen::SelectTheme
-        | AppScreen::RenderOptions
+        | AppScreen::Settings
         | AppScreen::Help
         | AppScreen::Search
         | AppScreen::JumpToLine
@@ -118,8 +119,7 @@ pub struct App {
 
     diff_viewer: DiffViewer,
     file_dialog: Option<FileDialog>,
-    theme_dialog: Option<ThemeDialog>,
-    render_options_dialog: Option<RenderOptionsDialog>,
+    settings_menu: Option<SettingsMenu>,
     help_modal: Option<HelpModal>,
     search_modal: Option<SearchModal>,
     line_prompt: Option<LinePrompt>,
@@ -143,13 +143,16 @@ pub struct App {
     /// the `UI` needed to release and re-acquire the terminal.
     pending_editor: Option<(PathBuf, usize)>,
     pending_suspend: bool,
+    /// Characters the last mouse selection put on the clipboard, shown in the footer until the
+    /// next key.
+    copied_chars: Option<usize>,
     /// Most recent first; offered on the empty-start screen as digit shortcuts.
     recent_pairs: Vec<(PathBuf, PathBuf)>,
 
     screen: AppScreen,
     dialog_target: Option<Panel>,
     current_theme: OverlayTheme,
-    /// `None` until picked in the theme dialog; the code viewer keeps its built-in default.
+    /// `None` until picked in the settings menu; the code viewer keeps its built-in default.
     syntax_theme: Option<String>,
     before_path: Option<PathBuf>,
     after_path: Option<PathBuf>,
@@ -164,6 +167,16 @@ pub struct App {
     /// difftool the first keystroke is usually `n` or `q`, and swallowing it would trade a missed
     /// notification for a stolen one, so any key clears the toast and still does its own job.
     summary_toast_ticks: u8,
+    /// Whether the screen may differ from the last frame drawn. The frame clock fires 60 times a
+    /// second, and an idle viewer redrawn on every one costs CPU in proportion to its size and its
+    /// file, and a terminal that repaints on every synchronized update costs more (issue #72). So a
+    /// frame is drawn only when this is set - by input, by any action other than the clock's own
+    /// ticks, and by a tick that changes what is shown - or when something animates on its own
+    /// (see [`App::frame_needed`]). Cleared by [`App::render`].
+    needs_redraw: bool,
+    /// Where the diff viewer's wide threshold came from (`theme::load_wide_columns`), for the
+    /// settings menu: a value from the environment is not what its row edits.
+    wide_columns_source: theme::WideColumnsSource,
     /// Read at draw time, so the counter's resolution is the frame rate rather than the 4Hz tick -
     /// which is what makes tenths of a second worth showing.
     diff_started_at: Option<std::time::Instant>,
@@ -176,6 +189,16 @@ pub struct App {
     /// Render options from the command line (`--minimal`, `--full`, ...), used instead of the
     /// saved ones for this run and not saved. `None` without such a flag.
     render_options_override: Option<RenderOptions>,
+    /// The view of a pair diffed by content (a picture pair, ...), shown instead of the diff
+    /// viewer while it is `Some`.
+    content_viewer: Option<ContentViewer>,
+    /// The content view a text member was opened from (`Enter` in an archive), with its pair's
+    /// paths: `Backspace` in the member's diff goes back to it.
+    parked_content: Option<(ContentViewer, Option<PathBuf>, Option<PathBuf>)>,
+    /// Where opened members' texts are written for the diff viewer, removed when dropped.
+    member_workspace: Option<review::Workspace>,
+    /// The terminal's graphics protocol, once asked (see `run`); half blocks until then.
+    graphics: Option<ratatui_image::picker::Picker>,
 }
 
 /// A free function so it can be tested without reaching `App::suspend`, which would stop the test
@@ -251,14 +274,15 @@ impl App {
             frame_rate,
             diff_viewer: DiffViewer::new(),
             file_dialog: None,
-            theme_dialog: None,
-            render_options_dialog: None,
+            settings_menu: None,
             help_modal: None,
             search_modal: None,
             review_dialog: None,
             review_workspace: None,
             review_position: None,
             summary_toast_ticks: 0,
+            needs_redraw: true,
+            wide_columns_source: theme::WideColumnsSource::Default,
             diff_started_at: None,
             line_prompt: None,
             action_tx,
@@ -268,6 +292,7 @@ impl App {
             last_search_query: None,
             pending_editor: None,
             pending_suspend: false,
+            copied_chars: None,
             recent_pairs: Vec::new(),
             screen: AppScreen::default(),
             syntax_theme: None,
@@ -281,6 +306,10 @@ impl App {
             plain_text_fallback: false,
             should_exit: false,
             render_options_override: None,
+            content_viewer: None,
+            parked_content: None,
+            member_workspace: None,
+            graphics: None,
         })
     }
 
@@ -290,6 +319,9 @@ impl App {
         self.diff_viewer.set_overlay_theme(self.current_theme);
         self.diff_viewer
             .set_layout_override(theme::load_panel_layout());
+        let (wide_columns, wide_columns_source) = theme::load_wide_columns();
+        self.diff_viewer.set_wide_columns(wide_columns);
+        self.wide_columns_source = wide_columns_source;
         self.diff_viewer
             .set_node_highlight(theme::load_node_highlight());
         self.diff_viewer.set_render_options(
@@ -317,6 +349,15 @@ impl App {
         // Terminal-native selection stays available through the terminal's modifier (Shift-drag).
         ui.mouse = true;
         ui.enter()?;
+        // The terminal answers a graphics query on stdin, so it is asked now, before the event
+        // stream reads it, and only when the pair on the command line is diffed by content: no
+        // other startup waits for the answer. Pairs opened later are drawn in half blocks.
+        if let Some(viewer) = self.content_viewer.as_mut()
+            && let Some(picker) = crate::tui::components::picture_viewer::query_graphics()
+        {
+            viewer.set_picker(picker.clone());
+            self.graphics = Some(picker);
+        }
 
         self.diff_viewer
             .register_action_handler(self.action_tx.clone())?;
@@ -327,9 +368,12 @@ impl App {
             self.handle_actions(&mut ui)?;
             if let Some((path, line)) = self.pending_editor.take() {
                 self.run_editor(&mut ui, &path, line)?;
+                // The terminal was handed over and cleared; nothing on it is ours any more.
+                self.needs_redraw = true;
             }
             if std::mem::take(&mut self.pending_suspend) {
                 self.suspend(&mut ui)?;
+                self.needs_redraw = true;
             }
             if self.should_exit {
                 break;
@@ -356,9 +400,16 @@ impl App {
         // key, and `/` would seed SearchModal's query.
         let mut globally_handled = false;
 
+        // Input may change anything on screen, whether or not it turns into an action: a
+        // component that handles a key itself only mutates its own state.
+        if matches!(event, Event::Key(_) | Event::Mouse(_) | Event::Resize(..)) {
+            self.needs_redraw = true;
+        }
+
         // Before dispatch, so the same key still does its own job (see `summary_toast_ticks`).
         if matches!(event, Event::Key(_)) {
             self.dismiss_summary_toast();
+            self.copied_chars = None;
         }
 
         if let Event::Key(key) = &event {
@@ -389,6 +440,37 @@ impl App {
                     self.restore_after_reload = None;
                     self.screen = AppScreen::Viewer;
                     self.diff_started_at = None;
+                    action_tx.send(Action::Render)?;
+                    globally_handled = true;
+                }
+                code if self.screen == AppScreen::Viewer
+                    && self
+                        .content_viewer
+                        .as_mut()
+                        .is_some_and(|viewer| viewer.handle_key(code)) =>
+                {
+                    if let Some(request) = self
+                        .content_viewer
+                        .as_mut()
+                        .and_then(ContentViewer::take_open_request)
+                        && let Err(err) = self.open_member(request)
+                    {
+                        self.last_error = Some(format!("{err:#}"));
+                    }
+                    action_tx.send(Action::Render)?;
+                    globally_handled = true;
+                }
+                KeyCode::Backspace
+                    if self.screen == AppScreen::Viewer
+                        && self.content_viewer.is_none()
+                        && self.parked_content.is_some() =>
+                {
+                    let (viewer, before, after) =
+                        self.parked_content.take().expect("checked just above");
+                    self.content_viewer = Some(viewer);
+                    self.before_path = before;
+                    self.after_path = after;
+                    self.last_error = None;
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
@@ -451,18 +533,12 @@ impl App {
                     globally_handled = true;
                 }
                 KeyCode::Char('c') if self.screen == AppScreen::Viewer => {
-                    self.theme_dialog = Some(ThemeDialog::with_syntax_theme(
-                        self.current_theme,
-                        self.syntax_theme.as_deref(),
-                    ));
-                    self.screen = AppScreen::SelectTheme;
+                    self.open_settings(SettingsTab::Colors);
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
                 KeyCode::Char('M') if self.screen == AppScreen::Viewer => {
-                    self.render_options_dialog =
-                        Some(RenderOptionsDialog::new(self.diff_viewer.render_options()));
-                    self.screen = AppScreen::RenderOptions;
+                    self.open_settings(SettingsTab::Highlighting);
                     action_tx.send(Action::Render)?;
                     globally_handled = true;
                 }
@@ -499,7 +575,8 @@ impl App {
 
         match event {
             Event::Tick => action_tx.send(Action::Tick)?,
-            Event::Render => action_tx.send(Action::Render)?,
+            Event::Render if self.frame_needed() => action_tx.send(Action::Render)?,
+            Event::Render => {}
             Event::Resize(x, y) => action_tx.send(Action::Resize(x, y))?,
             Event::Key(_) | Event::Mouse(_) => {}
         }
@@ -519,12 +596,8 @@ impl App {
                 Some(dialog) => dialog.handle_events(Some(event)),
                 None => Ok(None),
             },
-            AppScreen::SelectTheme => match self.theme_dialog.as_mut() {
-                Some(dialog) => dialog.handle_events(Some(event)),
-                None => Ok(None),
-            },
-            AppScreen::RenderOptions => match self.render_options_dialog.as_mut() {
-                Some(dialog) => dialog.handle_events(Some(event)),
+            AppScreen::Settings => match self.settings_menu.as_mut() {
+                Some(menu) => menu.handle_events(Some(event)),
                 None => Ok(None),
             },
             AppScreen::Diffing => Ok(None),
@@ -547,10 +620,15 @@ impl App {
         }
     }
 
-    /// Failure (not a repository, no `git`) goes to the banner, since there is nothing to pick.
+    /// The review of the repository the process runs in.
     fn open_review(&mut self) {
         let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        match review::load(&cwd, review::DEFAULT_COMMIT_LIMIT) {
+        self.open_review_in(&cwd);
+    }
+
+    /// Failure (not a repository, no `git`) goes to the banner, since there is nothing to pick.
+    fn open_review_in(&mut self, dir: &Path) {
+        match review::load(dir, review::DEFAULT_COMMIT_LIMIT) {
             Ok(review) => {
                 self.review_dialog = Some(ReviewDialog::new(review));
                 self.screen = AppScreen::Review;
@@ -578,12 +656,7 @@ impl App {
             set: position.set.clone(),
             file,
         };
-        let root = match self.review_dialog.as_ref() {
-            Some(dialog) => dialog.review().root.clone(),
-            None => review::repository_root(
-                &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
-            )?,
-        };
+        let root = position.root.clone();
         if self.review_workspace.is_none() {
             self.review_workspace = Some(review::Workspace::new()?);
         }
@@ -592,6 +665,10 @@ impl App {
         self.review_position = Some(position);
         match workspace.materialize(&root, &target) {
             Ok((before, after)) => {
+                self.content_viewer = None;
+                if self.open_content_pair(&before, &after) {
+                    return Ok(());
+                }
                 // Named by its repository path; the temp path says nothing the reader can use.
                 if Self::unshowable(&before)
                     .or_else(|| Self::unshowable(&after))
@@ -622,12 +699,20 @@ impl App {
     }
 
     fn handle_review_file_selected(&mut self, target: ReviewTarget, index: usize) -> Result<()> {
-        let files = self
-            .review_dialog
-            .as_ref()
-            .map(|dialog| dialog.review().files_of(&target.set).to_vec())
-            .unwrap_or_else(|| vec![target.file.clone()]);
+        let (root, files) = match self.review_dialog.as_ref() {
+            Some(dialog) => (
+                dialog.review().root.clone(),
+                dialog.review().files_of(&target.set).to_vec(),
+            ),
+            None => (
+                review::repository_root(
+                    &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+                )?,
+                vec![target.file.clone()],
+            ),
+        };
         let position = ReviewPosition {
+            root,
             set: target.set,
             files,
             index,
@@ -680,10 +765,19 @@ impl App {
             if action != Action::Tick && action != Action::Render {
                 debug!("{action:?}");
             }
+            self.note_action_for_redraw(&action);
             match &action {
                 Action::Tick => self.tick_summary_toast(),
                 Action::Quit => self.should_exit = true,
                 Action::Suspend => self.pending_suspend = true,
+                Action::CopyToClipboard(text) => {
+                    use std::io::Write;
+                    // Straight to the terminal, between frames: the sequence draws nothing.
+                    let backend = ui.terminal.backend_mut();
+                    backend.write_all(crate::tui::clipboard::osc52(text).as_bytes())?;
+                    backend.flush()?;
+                    self.copied_chars = Some(text.chars().count());
+                }
                 Action::Resize(w, h) => self.handle_resize(ui, *w, *h)?,
                 Action::Render => self.render(ui)?,
                 Action::FileSelected(path) => self.handle_file_selected(path.clone())?,
@@ -726,16 +820,14 @@ impl App {
                     error!("{message}");
                     self.last_error = Some(message.clone());
                 }
-                Action::ThemeSelected(selected_theme) => {
-                    self.apply_theme_selection(*selected_theme)
-                }
-                // Not persisted or recorded as `current_theme`; Esc reverts to it.
-                Action::ThemePreviewed(previewed) => {
-                    self.diff_viewer.set_overlay_theme(*previewed);
-                }
-                Action::SyntaxThemePreviewed(name) => {
-                    self.diff_viewer.set_syntax_theme(name.clone());
-                }
+                Action::ThemeChanged(_)
+                | Action::SyntaxThemeChanged(_)
+                | Action::SyntaxHighlightingChanged(_)
+                | Action::NodeHighlightChanged(_)
+                | Action::PanelLayoutChanged(_)
+                | Action::WideColumnsChanged(_)
+                | Action::RenderOptionsChanged(_)
+                | Action::SettingsClosed => self.apply_setting(&action)?,
                 Action::SearchSubmitted(query) => self.handle_search_submitted(query.clone()),
                 Action::SearchQueryChanged(query) => self.handle_search_query_changed(query),
                 Action::JumpToLineSubmitted(line) => {
@@ -743,8 +835,7 @@ impl App {
                     self.line_prompt = None;
                     self.screen = AppScreen::Viewer;
                 }
-                Action::RenderOptionsChanged(options) => self.apply_render_options(*options)?,
-                Action::RenderOptionsAccepted => self.handle_render_options_accepted(),
+
                 _ => {}
             }
 
@@ -875,7 +966,38 @@ impl App {
         self.select_file_for_panel(Panel::After, after)
     }
 
-    /// Why a file cannot be shown, in the words `codediff a.pdf b.pdf` uses, or `None` when it
+    /// Opens an archive's text member (`request`: key, before, after) in the diff viewer, parking
+    /// the content view it came from for `Backspace`. The texts are written to a temp workspace
+    /// under the member's own name, so its language is detected as a file's would be.
+    fn open_member(&mut self, (key, before, after): (String, String, String)) -> Result<()> {
+        if self.member_workspace.is_none() {
+            self.member_workspace = Some(review::Workspace::new()?);
+        }
+        let workspace = self.member_workspace.as_ref().expect("created just above");
+        // A member's path is the archive's say: no `..` or root may leave the workspace.
+        let safe: String = key
+            .split('/')
+            .filter(|part| !part.is_empty() && *part != "." && *part != "..")
+            .collect::<Vec<_>>()
+            .join("/");
+        let safe = if safe.is_empty() {
+            "member".to_string()
+        } else {
+            safe
+        };
+        let before_path = workspace.write("before", &safe, before.as_bytes())?;
+        let after_path = workspace.write("after", &safe, after.as_bytes())?;
+        let viewer = self
+            .content_viewer
+            .take()
+            .expect("a member comes from a content view");
+        let parked = (viewer, self.before_path.clone(), self.after_path.clone());
+        self.open_files(before_path, after_path)?;
+        self.parked_content = Some(parked);
+        Ok(())
+    }
+
+    /// Why a file cannot be shown, in the words `omnidiff a.pdf b.pdf` uses, or `None` when it
     /// can. Checked before loading a panel, whose `read_to_string` UTF-8 error would otherwise
     /// take the whole TUI down.
     fn unshowable(path: &Path) -> Option<String> {
@@ -889,8 +1011,44 @@ impl App {
         }
     }
 
+    /// Shows `before` and `after` by their content if they are a pair diffed by content; false,
+    /// and nothing changed, if not.
+    fn open_content_pair(&mut self, before: &Path, after: &Path) -> bool {
+        let picker = self
+            .graphics
+            .clone()
+            .unwrap_or_else(ratatui_image::picker::Picker::halfblocks);
+        match ContentViewer::open(before, after, picker) {
+            Some(viewer) => {
+                self.content_viewer = Some(viewer);
+                self.last_error = None;
+                self.before_path = Some(before.to_path_buf());
+                self.after_path = Some(after.to_path_buf());
+                true
+            }
+            None => false,
+        }
+    }
+
     fn select_file_for_panel(&mut self, panel: Panel, path: PathBuf) -> Result<()> {
         self.review_position = None;
+        // Another file is not the archive member `Backspace` would go back from.
+        self.parked_content = None;
+        self.content_viewer = None;
+        // Content is not shown as text; once both sides are content of one kind, the pair is shown
+        // as one.
+        if is_content_file(&path) {
+            match panel {
+                Panel::Before => self.before_path = Some(path),
+                Panel::After => self.after_path = Some(path),
+            }
+            if let (Some(before), Some(after)) = (self.before_path.clone(), self.after_path.clone())
+                && !self.open_content_pair(&before, &after)
+            {
+                self.last_error = Self::unshowable(&before).or_else(|| Self::unshowable(&after));
+            }
+            return Ok(());
+        }
         if let Some(problem) = Self::unshowable(&path) {
             self.last_error = Some(problem);
             return Ok(());
@@ -915,25 +1073,13 @@ impl App {
     }
 
     fn handle_dialog_cancelled(&mut self) -> Result<()> {
-        if self.theme_dialog.is_some() {
-            // Everything the dialog previews: the overlay, the syntax theme, and a color edit,
-            // which installs the process-global custom palette as it is typed.
-            self.diff_viewer.set_overlay_theme(self.current_theme);
-            self.diff_viewer.set_syntax_theme(
-                self.syntax_theme
-                    .clone()
-                    .unwrap_or_else(|| DEFAULT_SYNTAX_THEME.to_string()),
-            );
-            theme::set_custom_palette(theme::load_custom_palette());
-        }
         if self.search_modal.is_some() {
             let last = self.last_search_query.clone().unwrap_or_default();
             self.diff_viewer.preview_search(&last);
         }
         self.file_dialog = None;
-        self.theme_dialog = None;
-        // The render-options panel has nothing to restore: every toggle is final as pressed.
-        self.render_options_dialog = None;
+        // The settings menu has nothing to restore: every change is final as made.
+        self.settings_menu = None;
         self.help_modal = None;
         self.search_modal = None;
         self.line_prompt = None;
@@ -966,20 +1112,80 @@ impl App {
         }
     }
 
-    fn apply_theme_selection(&mut self, selected_theme: OverlayTheme) {
-        self.current_theme = selected_theme;
-        // The dialog saved it; kept here too, or the next open and the next Esc would use a stale
-        // one.
-        self.syntax_theme = theme::load_syntax_theme();
-        self.diff_viewer.set_overlay_theme(selected_theme);
-        theme::save_overlay_theme(selected_theme);
-        self.theme_dialog = None;
-        self.screen = AppScreen::Viewer;
+    /// One of the settings menu's actions: applied to the viewer and saved at once (syntax
+    /// highlighting on or off for this run only, as its `S` key), or the menu closed.
+    fn apply_setting(&mut self, action: &Action) -> Result<()> {
+        match action {
+            Action::ThemeChanged(theme) => self.apply_theme(*theme),
+            Action::SyntaxThemeChanged(name) => {
+                self.diff_viewer.set_syntax_theme(name.clone());
+                self.syntax_theme = Some(name.clone());
+                theme::save_syntax_theme(name);
+            }
+            Action::SyntaxHighlightingChanged(enabled) => {
+                self.diff_viewer.set_syntax_highlighting(*enabled);
+            }
+            Action::NodeHighlightChanged(enabled) => {
+                self.diff_viewer.set_node_highlight(*enabled);
+                theme::save_node_highlight(*enabled);
+            }
+            Action::PanelLayoutChanged(layout) => {
+                self.diff_viewer.set_layout_override(*layout);
+                theme::save_panel_layout(*layout);
+            }
+            Action::WideColumnsChanged(columns) => {
+                self.diff_viewer.set_wide_columns(*columns);
+                self.wide_columns_source = theme::WideColumnsSource::Config;
+                theme::save_wide_columns(*columns);
+            }
+            Action::RenderOptionsChanged(options) => self.apply_render_options(*options)?,
+            Action::SettingsClosed => self.close_settings(),
+            _ => {}
+        }
+        Ok(())
     }
 
-    /// `Enter` or `Esc`: closing is all that is left (see `RenderOptionsDialog`).
-    fn handle_render_options_accepted(&mut self) {
-        self.render_options_dialog = None;
+    /// The Colors tab's overlay theme, applied and saved; the menu stays open, and its
+    /// Highlighting tab draws its example in the new colors.
+    fn apply_theme(&mut self, selected_theme: OverlayTheme) {
+        self.current_theme = selected_theme;
+        self.diff_viewer.set_overlay_theme(selected_theme);
+        theme::save_overlay_theme(selected_theme);
+        if let Some(menu) = self.settings_menu.as_mut() {
+            menu.set_overlay_theme(selected_theme);
+        }
+    }
+
+    /// The settings menu on `tab`, every tab showing the viewer's settings as they are now.
+    fn open_settings(&mut self, tab: SettingsTab) {
+        let content = if self.content_viewer.is_some() {
+            PageContent::NonCode
+        } else {
+            PageContent::Example(crate::tui::settings_examples::example_for(
+                self.diff_viewer.example_language(),
+            ))
+        };
+        let highlighting = RenderOptionsDialog::for_content(
+            self.diff_viewer.render_options(),
+            content,
+            self.diff_viewer.overlay_theme(),
+        )
+        .with_node_highlight(self.diff_viewer.node_highlight());
+        let layout = LayoutSettings::new(
+            self.diff_viewer.layout_override(),
+            self.diff_viewer.wide_columns(),
+            self.wide_columns_source,
+        );
+        let colors =
+            ThemeDialog::with_syntax_theme(self.current_theme, self.syntax_theme.as_deref())
+                .with_syntax_highlighting(self.diff_viewer.syntax_highlighting());
+        self.settings_menu = Some(SettingsMenu::new(tab, highlighting, layout, colors));
+        self.screen = AppScreen::Settings;
+    }
+
+    /// `Enter` or `Esc`: closing is all that is left (see `settings_menu`).
+    fn close_settings(&mut self) {
+        self.settings_menu = None;
         self.screen = AppScreen::Viewer;
     }
 
@@ -1019,6 +1225,8 @@ impl App {
     }
 
     fn render(&mut self, ui: &mut UI) -> Result<()> {
+        // Before drawing: a draw that reports an error sends an action, which sets it again.
+        self.needs_redraw = false;
         let palette = self.diff_viewer.overlay_theme().palette();
         ui.draw(&palette, |frame| {
             let area = frame.area();
@@ -1028,8 +1236,7 @@ impl App {
                     Some(dialog) => dialog.draw(frame, area),
                     None => Ok(()),
                 },
-                AppScreen::SelectTheme => self.draw_theme_dialog(frame, area),
-                AppScreen::RenderOptions => self.draw_render_options_dialog(frame, area),
+                AppScreen::Settings => self.draw_settings(frame, area),
                 AppScreen::Diffing => {
                     let elapsed = self.diff_started_at.map(|start| start.elapsed());
                     frame.render_widget(diffing_status_paragraph(elapsed), area);
@@ -1047,6 +1254,20 @@ impl App {
             }
         })?;
         Ok(())
+    }
+
+    /// The graphics protocol pictures are drawn with, for an offscreen render
+    /// (`tui::screenshot`), which has no terminal to ask.
+    pub(crate) fn set_graphics(&mut self, picker: ratatui_image::picker::Picker) {
+        self.graphics = Some(picker);
+    }
+
+    /// A key for the content viewer, as the live viewer would hand it one; false if there is no
+    /// content viewer or it does not take the key. For an offscreen render (`tui::screenshot`).
+    pub(crate) fn content_key(&mut self, code: KeyCode) -> bool {
+        self.content_viewer
+            .as_mut()
+            .is_some_and(|viewer| viewer.handle_key(code))
     }
 
     /// Everything an offscreen render needs before `draw_viewer` (`tui::screenshot`): the themes
@@ -1067,6 +1288,9 @@ impl App {
             self.syntax_theme = Some(name);
         }
         self.diff_viewer.init(area)?;
+        if self.open_content_pair(before, after) {
+            return Ok(());
+        }
         // As every caller of `start_diff` does; without a current pair, the recent-pairs prompt
         // draws over the panels.
         self.before_path = Some(before.to_path_buf());
@@ -1083,7 +1307,7 @@ impl App {
     /// user who has not pressed `?` learns that keybindings exist.
     pub(crate) fn draw_viewer(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
         let mut constraints = Vec::with_capacity(4);
-        if self.diff_summary.is_some() {
+        if self.diff_summary.is_some() || self.content_viewer.is_some() {
             constraints.push(Constraint::Length(1));
         }
         constraints.push(Constraint::Min(1));
@@ -1097,13 +1321,22 @@ impl App {
             .split(area);
 
         let mut next = 0;
-        if let Some(summary) = self.diff_summary {
-            frame.render_widget(status_bar_paragraph(summary), layout[next]);
+        if let Some(viewer) = self.content_viewer.as_mut() {
+            let palette = self.diff_viewer.overlay_theme().palette();
+            let colors = PictureColors::from_theme(palette.search_bg);
+            frame.render_widget(Paragraph::new(viewer.status()), layout[next]);
+            next += 1;
+            viewer.draw(frame, layout[next], colors);
+            next += 1;
+        } else {
+            if let Some(summary) = self.diff_summary {
+                frame.render_widget(status_bar_paragraph(summary), layout[next]);
+                next += 1;
+            }
+            self.diff_viewer.draw(frame, layout[next])?;
+            self.draw_recent_pairs(frame, layout[next]);
             next += 1;
         }
-        self.diff_viewer.draw(frame, layout[next])?;
-        self.draw_recent_pairs(frame, layout[next]);
-        next += 1;
         if let Some(message) = &self.last_error {
             frame.render_widget(
                 Paragraph::new(message.as_str()).style(Style::new().fg(Color::Red)),
@@ -1130,7 +1363,32 @@ impl App {
     }
 
     fn tick_summary_toast(&mut self) {
+        let was_up = self.summary_toast_ticks > 0;
         self.summary_toast_ticks = self.summary_toast_ticks.saturating_sub(1);
+        // The toast fading is the only thing a tick changes on screen.
+        if was_up && self.summary_toast_ticks == 0 {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Any action may change what is shown; the clock's own ticks and frames do not, except where
+    /// a tick fades the toast (`tick_summary_toast`). An explicit `Action::Render` draws at once.
+    fn note_action_for_redraw(&mut self, action: &Action) {
+        if !matches!(action, Action::Tick | Action::Render) {
+            self.needs_redraw = true;
+        }
+    }
+
+    /// Whether the frame clock's next frame should be drawn: the screen changed since the last
+    /// one, or something on it changes by itself - the "Diffing…" counter, which reads the clock at
+    /// draw time, and a playing animation, which advances when drawn.
+    fn frame_needed(&self) -> bool {
+        self.needs_redraw
+            || self.screen == AppScreen::Diffing
+            || self
+                .content_viewer
+                .as_ref()
+                .is_some_and(|viewer| viewer.is_playing())
     }
 
     fn dismiss_summary_toast(&mut self) {
@@ -1159,6 +1417,9 @@ impl App {
         }
         if self.plain_text_fallback {
             left_parts.push("[plain text]".to_string());
+        }
+        if let Some(chars) = self.copied_chars {
+            left_parts.push(format!("[copied {chars} chars]"));
         }
         let layout = self.diff_viewer.layout_override();
         if layout != crate::tui::theme::PanelLayout::Auto {
@@ -1226,25 +1487,12 @@ impl App {
         );
     }
 
-    fn draw_theme_dialog(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
-        self.draw_viewer(frame, area)?;
-        let Some(dialog) = self.theme_dialog.as_mut() else {
-            return Ok(());
+    /// Full screen: the menu shows its own example, not the diff.
+    fn draw_settings(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
+        let Some(menu) = self.settings_menu.as_mut() else {
+            return self.draw_viewer(frame, area);
         };
-        let popup = dialog.popup_area(area);
-        frame.render_widget(Clear, popup);
-        dialog.draw(frame, popup)
-    }
-
-    /// Over the viewer, so the diff repaints live as options toggle.
-    fn draw_render_options_dialog(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
-        self.draw_viewer(frame, area)?;
-        let Some(dialog) = self.render_options_dialog.as_mut() else {
-            return Ok(());
-        };
-        let popup = dialog.popup_area(area);
-        frame.render_widget(Clear, popup);
-        dialog.draw(frame, popup)
+        menu.draw(frame, area)
     }
 
     fn draw_line_prompt(&mut self, frame: &mut ratatui::Frame, area: Rect) -> Result<()> {
@@ -1300,7 +1548,7 @@ pub(crate) const FOOTER_HINTS: &str =
 
 /// The footer's render-options badge: `None` for `FULL`, `[minimal]`, or the options that differ
 /// from `FULL` by name. An option turned off leaves something unpainted, and the setting persists
-/// across runs, so without a badge missing highlights read as codediff having missed them.
+/// across runs, so without a badge missing highlights read as omnidiff having missed them.
 ///
 /// Compared against `FULL` rather than against "everything on": `FULL` has whole-pair updates
 /// off, so an "is it off" list names that option whenever anything else is off, and has nothing
@@ -1318,8 +1566,9 @@ fn render_options_badge(options: RenderOptions) -> Option<String> {
             .options()
             .into_iter()
             .zip(full)
-            .filter(|((_, on), (_, on_in_full))| on != on_in_full && *on == state)
-            .map(|((label, _), _)| label)
+            .zip(crate::diff::text::OPTION_INFO)
+            .filter(|(((_, on), (_, on_in_full)), _)| on != on_in_full && *on == state)
+            .map(|(_, info)| info.short)
             .collect()
     };
     let (off, on) = (differing(false), differing(true));
@@ -1415,8 +1664,11 @@ fn status_bar_paragraph(summary: DiffSummary) -> Paragraph<'static> {
 /// a plain-text diff: under `GIT_EXTERNAL_DIFF` a non-zero exit for one file aborts the whole
 /// multi-file `git diff`.
 fn parse_before_after(before: &Path, after: &Path) -> Result<(Code, Code)> {
-    let mut before_code = Code::from_file(before)?;
-    let mut after_code = Code::from_file(after)?;
+    // Always in parallel: the sizes are only known once read, and a thread costs a fraction of
+    // a process start.
+    let (before_code, after_code) =
+        crate::code::build_sides(true, || Code::from_file(before), || Code::from_file(after));
+    let (mut before_code, mut after_code) = (before_code?, after_code?);
 
     // git hands over `/dev/null` for the missing side of an added or deleted file. Parsed in the
     // other side's language, it shows as a whole-file insert/delete rather than a plain-text diff.
@@ -1517,7 +1769,7 @@ pub const DIFF_COMPUTE_STACK_SIZE: usize = 256 * 1024 * 1024;
 
 /// The name of that thread, which the TUI's panic hook uses to tell a diff-computation panic
 /// (caught, shown in the error banner) from one that takes the app down.
-pub const DIFF_THREAD_NAME: &str = "codediff-diff";
+pub const DIFF_THREAD_NAME: &str = "omnidiff-diff";
 
 /// Parses, diffs and builds the display ranges, honouring `render_options`' construction-time
 /// options. The `bool` is `PendingDiff::large_residual`, always `false` for the plain-text
@@ -1550,6 +1802,59 @@ fn compute_diff_with_options_inner(
     render_options: RenderOptions,
 ) -> Result<(DiffSessionData, bool)> {
     let (before_code, after_code) = parse_before_after(before, after)?;
+    diff_parsed(before, after, before_code, after_code, render_options)
+}
+
+/// [`compute_diff_with_options`] of two texts already in memory (a member of an archive, see
+/// `components::member_viewer`), each named by `before_path`/`after_path` for its language, as a
+/// file would be. Nothing is read from those paths.
+pub fn compute_diff_of_texts(
+    before_path: &Path,
+    before_text: &str,
+    after_path: &Path,
+    after_text: &str,
+    render_options: RenderOptions,
+) -> Result<(DiffSessionData, bool)> {
+    let code = |path: &Path, text: &str| {
+        let language = crate::code::language::language_for_path_and_content(path, text)
+            .unwrap_or(Language::Unknown);
+        let mut code = Code::from_string(text, &language);
+        code.metadata.path = Some(path.to_path_buf());
+        code
+    };
+    let (mut before_code, mut after_code) = crate::code::build_sides(
+        crate::code::worth_building_in_parallel(before_text, after_text),
+        || code(before_path, before_text),
+        || code(after_path, after_text),
+    );
+    let (before, after) = (before_path.to_path_buf(), after_path.to_path_buf());
+    match std::thread::Builder::new()
+        .name(DIFF_THREAD_NAME.to_string())
+        .stack_size(DIFF_COMPUTE_STACK_SIZE)
+        .spawn(move || {
+            let (before_language, after_language) =
+                (before_code.metadata.language, after_code.metadata.language);
+            substitute_missing_language(&mut before_code, after_language, &before);
+            substitute_missing_language(&mut after_code, before_language, &after);
+            diff_parsed(&before, &after, before_code, after_code, render_options)
+        })
+        .expect("failed to spawn diff-computation thread")
+        .join()
+    {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
+/// The diff of two parsed sides: the AST diff, or the plain-text fallback when either side has no
+/// grammar.
+fn diff_parsed(
+    before: &Path,
+    after: &Path,
+    before_code: Code,
+    after_code: Code,
+    render_options: RenderOptions,
+) -> Result<(DiffSessionData, bool)> {
     if before_code.ast.is_none() || after_code.ast.is_none() {
         let data = assemble_plain_text_diff_session_data(before, after, &before_code, &after_code);
         return Ok((data, false));
@@ -1588,6 +1893,12 @@ fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {
     } else {
         "unknown panic".to_string()
     }
+}
+
+/// True if `path` holds content diffed by content, by its bytes (see
+/// [`crate::diff::content::sniff`]).
+fn is_content_file(path: &Path) -> bool {
+    std::fs::read(path).is_ok_and(|bytes| crate::diff::content::sniff(&bytes).is_some())
 }
 
 #[cfg(test)]
@@ -1725,9 +2036,10 @@ mod tests {
         Ok(())
     }
 
-    /// A repository with two unstaged modifications, and the process moved into it. nextest runs
-    /// every test in its own process, so `set_current_dir` cannot leak into another test.
-    fn enter_sample_repository() -> tempfile::TempDir {
+    /// A repository with two unstaged modifications. Tests open it by path with `open_review_in`,
+    /// never by moving the process into it: `cargo test` runs tests as threads of one process, and
+    /// a shared working directory would leave the others inside this one once it is deleted.
+    fn sample_repository() -> tempfile::TempDir {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         let git = |args: &[&str]| {
@@ -1754,15 +2066,14 @@ mod tests {
         git(&["commit", "-q", "-m", "first"]);
         std::fs::write(root.join("a.rs"), "fn a() { 1 }\n").unwrap();
         std::fs::write(root.join("b.rs"), "fn b() { 2 }\n").unwrap();
-        std::env::set_current_dir(root).unwrap();
         dir
     }
 
     #[test]
     fn opening_a_reviewed_file_sets_the_position_and_stepping_walks_its_set() -> Result<()> {
-        let dir = enter_sample_repository();
+        let dir = sample_repository();
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         assert_eq!(app.screen, AppScreen::Review);
         let review = app.review_dialog.as_ref().unwrap().review().clone();
         assert_eq!(review.working_tree.len(), 2);
@@ -1823,10 +2134,11 @@ mod tests {
 
     #[test]
     fn a_binary_reviewed_file_is_a_banner_not_a_crash_and_stepping_moves_past_it() -> Result<()> {
-        let dir = enter_sample_repository();
-        std::fs::write(dir.path().join("a.rs"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+        let dir = sample_repository();
+        // Not UTF-8, and no byte order mark to read it as UTF-16 by.
+        std::fs::write(dir.path().join("a.rs"), [0xff, 0x00, 0x41]).unwrap();
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         let review = app.review_dialog.as_ref().unwrap().review().clone();
         assert_eq!(review.working_tree[0].path, "a.rs");
         let target = ReviewTarget {
@@ -1864,6 +2176,119 @@ mod tests {
         Ok(())
     }
 
+    /// Two 6x4 PNGs in `dir`, the second with one pixel changed.
+    fn picture_pair(dir: &tempfile::TempDir) -> (PathBuf, PathBuf) {
+        let before = image::RgbaImage::from_pixel(6, 4, image::Rgba([255, 255, 255, 255]));
+        let mut after = before.clone();
+        after.put_pixel(2, 1, image::Rgba([0, 0, 0, 255]));
+        let (a, b) = (dir.path().join("a.png"), dir.path().join("b.png"));
+        before.save(&a).expect("writes");
+        after.save(&b).expect("writes");
+        (a, b)
+    }
+
+    #[test]
+    fn a_picture_pair_opens_the_picture_view_not_a_binary_banner() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let (before, after) = picture_pair(&dir);
+        let mut app = App::new(4.0, 60.0)?;
+        app.open_files(before, after)?;
+        assert!(app.last_error.is_none(), "{:?}", app.last_error);
+
+        let backend = ratatui::backend::TestBackend::new(100, 20);
+        let mut terminal = ratatui::Terminal::new(backend)?;
+        terminal.draw(|f| {
+            let area = f.area();
+            app.draw_viewer(f, area).unwrap();
+        })?;
+        let screen = rendered_text(&terminal);
+        assert!(
+            screen.contains("PNG 6x4 RGBA8 -> PNG 6x4 RGBA8"),
+            "{screen}"
+        );
+        assert!(screen.contains("in 1 region"), "{screen}");
+        assert!(screen.contains("view: side by side"), "{screen}");
+
+        let area = terminal.get_frame().area();
+        app.handle_event(
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('t'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            area,
+        )?;
+        terminal.draw(|f| {
+            let area = f.area();
+            app.draw_viewer(f, area).unwrap();
+        })?;
+        assert!(rendered_text(&terminal).contains("view: changed areas"));
+        Ok(())
+    }
+
+    /// `Enter` on an archive's text member opens it in the diff viewer; `Backspace` goes back.
+    #[test]
+    fn enter_opens_an_archive_member_as_a_diff_and_backspace_returns() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let zip = |text: &str| {
+            let mut bytes = Vec::new();
+            let mut writer = zip::ZipWriter::new(std::io::Cursor::new(&mut bytes));
+            writer.start_file("src/lib.rs", zip::write::SimpleFileOptions::default())?;
+            std::io::Write::write_all(&mut writer, text.as_bytes())?;
+            writer.finish()?;
+            anyhow::Ok(bytes)
+        };
+        let (before, after) = (dir.path().join("a.zip"), dir.path().join("b.zip"));
+        std::fs::write(&before, zip("fn a() {}\n")?)?;
+        std::fs::write(&after, zip("fn a() { b(); }\n")?)?;
+        let mut app = App::new(4.0, 60.0)?;
+        app.open_files(before.clone(), after.clone())?;
+        assert!(app.content_viewer.is_some());
+
+        let backend = ratatui::backend::TestBackend::new(100, 20);
+        let mut terminal = ratatui::Terminal::new(backend)?;
+        terminal.draw(|f| {
+            let area = f.area();
+            app.draw_viewer(f, area).unwrap();
+        })?;
+        let area = terminal.get_frame().area();
+        let press = |app: &mut App, code| {
+            app.handle_event(
+                Event::Key(crossterm::event::KeyEvent::new(
+                    code,
+                    crossterm::event::KeyModifiers::NONE,
+                )),
+                area,
+            )
+        };
+        press(&mut app, KeyCode::Char('j'))?;
+        press(&mut app, KeyCode::Enter)?;
+        assert!(app.content_viewer.is_none(), "{:?}", app.last_error);
+        assert!(
+            app.after_path
+                .as_ref()
+                .is_some_and(|path| path.ends_with("after/src/lib.rs")),
+            "{:?}",
+            app.after_path
+        );
+        press(&mut app, KeyCode::Backspace)?;
+        assert!(app.content_viewer.is_some());
+        assert_eq!(app.after_path, Some(after));
+        Ok(())
+    }
+
+    #[test]
+    fn a_picture_against_a_text_file_is_still_a_binary_banner() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let (picture, _) = picture_pair(&dir);
+        let text = dir.path().join("a.txt");
+        std::fs::write(&text, "text\n")?;
+        let mut app = App::new(4.0, 60.0)?;
+        app.select_file_for_panel(Panel::Before, picture)?;
+        app.select_file_for_panel(Panel::After, text)?;
+        assert!(app.content_viewer.is_none());
+        Ok(())
+    }
+
     #[test]
     fn picking_a_binary_file_by_hand_is_a_banner_not_a_crash() -> Result<()> {
         let mut app = App::new(4.0, 60.0)?;
@@ -1878,7 +2303,7 @@ mod tests {
         );
         assert!(app.before_path.is_none());
 
-        let missing = std::env::temp_dir().join("codediff-no-such-file-ever.rs");
+        let missing = std::env::temp_dir().join("omnidiff-no-such-file-ever.rs");
         app.select_file_for_panel(Panel::After, missing)?;
         assert!(
             app.last_error
@@ -1897,9 +2322,8 @@ mod tests {
     #[test]
     fn opening_the_review_outside_a_repository_goes_to_the_banner() -> Result<()> {
         let dir = tempfile::tempdir()?;
-        std::env::set_current_dir(dir.path())?;
         let mut app = App::new(4.0, 60.0)?;
-        app.open_review();
+        app.open_review_in(dir.path());
         assert_eq!(app.screen, AppScreen::Viewer);
         assert!(
             app.last_error
@@ -1913,7 +2337,7 @@ mod tests {
     #[test]
     fn esc_should_quit_is_false_for_every_screen_with_its_own_dialog() {
         assert!(!esc_should_quit(AppScreen::SelectFile));
-        assert!(!esc_should_quit(AppScreen::SelectTheme));
+        assert!(!esc_should_quit(AppScreen::Settings));
         assert!(!esc_should_quit(AppScreen::Help));
         assert!(!esc_should_quit(AppScreen::Search));
         assert!(!esc_should_quit(AppScreen::JumpToLine));
@@ -1927,8 +2351,7 @@ mod tests {
         assert!(q_should_quit(AppScreen::Diffing));
         for screen in [
             AppScreen::SelectFile,
-            AppScreen::SelectTheme,
-            AppScreen::RenderOptions,
+            AppScreen::Settings,
             AppScreen::Help,
             AppScreen::Search,
             AppScreen::JumpToLine,
@@ -2057,7 +2480,7 @@ mod tests {
             press(&mut app, KeyCode::Char('c'), KeyModifiers::CONTROL)?.contains(&Action::Quit),
             "Ctrl-C must quit"
         );
-        assert_eq!(app.screen, AppScreen::Viewer, "not open the theme dialog");
+        assert_eq!(app.screen, AppScreen::Viewer, "not open the settings menu");
 
         press(&mut app, KeyCode::Char('e'), KeyModifiers::CONTROL)?;
         assert!(
@@ -2068,7 +2491,11 @@ mod tests {
         press(&mut app, KeyCode::Char('e'), KeyModifiers::NONE)?;
         assert!(app.pending_editor.is_some(), "a bare e opens the editor");
         press(&mut app, KeyCode::Char('c'), KeyModifiers::NONE)?;
-        assert_eq!(app.screen, AppScreen::SelectTheme);
+        assert_eq!(app.screen, AppScreen::Settings);
+        assert_eq!(
+            app.settings_menu.as_ref().map(SettingsMenu::tab),
+            Some(SettingsTab::Colors)
+        );
         Ok(())
     }
 
@@ -2086,38 +2513,54 @@ mod tests {
         Ok(())
     }
 
-    /// Every toggle is saved the moment it is pressed, and closing the panel by any route keeps
-    /// it: what the viewer shows and what the config file holds are the same thing.
+    /// Every change is saved the moment it is made, and closing the menu by any route keeps it:
+    /// what the viewer shows and what the config file holds are the same thing.
     #[test]
-    fn closing_the_render_options_panel_keeps_what_was_toggled_and_persisted() -> Result<()> {
+    fn closing_the_settings_menu_keeps_what_was_changed_and_persisted() -> Result<()> {
         // `apply_render_options` persists, so redirect the write - see the note on
-        // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
+        // `a_theme_from_the_menu_applies_and_saves_and_the_menu_stays_open`.
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
+        let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
         app.diff_viewer.set_render_options(RenderOptions::FULL);
-        app.screen = AppScreen::RenderOptions;
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::FULL));
+        app.open_settings(SettingsTab::Highlighting);
 
         // What a preset key does: applied and persisted immediately.
         app.apply_render_options(RenderOptions::MINIMAL)?;
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert_eq!(theme::load_render_options(), RenderOptions::MINIMAL);
 
-        // Esc and Enter both arrive as `RenderOptionsAccepted`; a stray `DialogCancelled` must
-        // not revert either.
+        // Esc and Enter both arrive as `SettingsClosed`; a stray `DialogCancelled` must not revert
+        // either.
         app.handle_dialog_cancelled()?;
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
+        assert!(app.settings_menu.is_none());
 
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::MINIMAL));
-        app.handle_render_options_accepted();
+        app.open_settings(SettingsTab::Layout);
+        app.close_settings();
         assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
         assert_eq!(theme::load_render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
+        assert!(app.settings_menu.is_none());
+        assert_eq!(app.screen, AppScreen::Viewer);
+        Ok(())
+    }
 
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
+    #[test]
+    fn m_opens_the_settings_menu_on_highlighting() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.handle_event(
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('M'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            Rect::new(0, 0, 80, 24),
+        )?;
+        assert_eq!(app.screen, AppScreen::Settings);
+        assert_eq!(
+            app.settings_menu.as_ref().map(SettingsMenu::tab),
+            Some(SettingsTab::Highlighting)
+        );
         Ok(())
     }
 
@@ -2148,7 +2591,8 @@ mod tests {
 
     #[test]
     fn apply_render_options_reloads_for_every_construction_time_field() -> Result<()> {
-        let construction_time = RenderOptions::default().options().len();
+        // The first two options and the last, `interior_whitespace`, are post-filters.
+        let construction_time = RenderOptions::default().options().len() - 1;
         for index in 2..construction_time {
             let mut app = App::new(4.0, 60.0)?;
             app.before_path = Some(PathBuf::from("before.rs"));
@@ -2182,6 +2626,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         })?;
 
         let queued: Vec<_> = std::iter::from_fn(|| app.action_rx.try_recv().ok()).collect();
@@ -2321,47 +2766,69 @@ mod tests {
         Ok(())
     }
 
+    /// The saved settings would otherwise land in the developer's own config, so this test
+    /// thread's config points at a temp file (`theme::use_config_for_this_thread`).
     #[test]
-    fn accepting_the_render_options_panel_keeps_what_it_applied() -> Result<()> {
-        // `apply_render_options` persists, so redirect the write - see the note on
-        // `apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen`.
+    fn a_theme_from_the_menu_applies_and_saves_and_the_menu_stays_open() {
         let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
-
-        let mut app = App::new(4.0, 60.0)?;
-        app.diff_viewer.set_render_options(RenderOptions::FULL);
-        app.screen = AppScreen::RenderOptions;
-        app.render_options_dialog = Some(RenderOptionsDialog::new(RenderOptions::FULL));
-        app.apply_render_options(RenderOptions::MINIMAL)?;
-
-        app.handle_render_options_accepted();
-
-        assert_eq!(app.diff_viewer.render_options(), RenderOptions::MINIMAL);
-        assert!(app.render_options_dialog.is_none());
-        assert_eq!(app.screen, AppScreen::Viewer);
-
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
-        Ok(())
-    }
-
-    /// The saved theme would otherwise land in the developer's own config, so `$CODEDIFF_CONFIG`
-    /// points at a temp file. Safe under nextest, which runs each test in its own process.
-    #[test]
-    fn apply_theme_selection_updates_viewer_and_returns_to_the_viewer_screen() {
-        let config = tempfile::NamedTempFile::new().expect("temp config");
-        unsafe { std::env::set_var(theme::CONFIG_ENV, config.path()) };
+        let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
-        app.screen = AppScreen::SelectTheme;
-        app.theme_dialog = Some(ThemeDialog::new(app.current_theme));
+        app.open_settings(SettingsTab::Colors);
 
-        app.apply_theme_selection(OverlayTheme::SolarizedLight);
+        app.apply_theme(OverlayTheme::SolarizedLight);
 
         assert_eq!(app.current_theme, OverlayTheme::SolarizedLight);
-        assert_eq!(app.screen, AppScreen::Viewer);
-        assert!(app.theme_dialog.is_none());
+        assert_eq!(
+            app.diff_viewer.overlay_theme(),
+            OverlayTheme::SolarizedLight
+        );
+        assert_eq!(theme::load_overlay_theme(), OverlayTheme::SolarizedLight);
+        assert_eq!(
+            app.screen,
+            AppScreen::Settings,
+            "applying does not close the menu"
+        );
+    }
 
-        unsafe { std::env::remove_var(theme::CONFIG_ENV) };
+    /// The rows for the `v`, `H` and `S` keys do what the keys do, `S` for this run only.
+    #[test]
+    fn the_menus_layout_and_highlight_rows_apply_like_their_keys() -> Result<()> {
+        let config = tempfile::NamedTempFile::new().expect("temp config");
+        let _config = theme::use_config_for_this_thread(config.path());
+        let mut app = App::new(4.0, 60.0)?;
+        app.open_settings(SettingsTab::Layout);
+        for action in [
+            Action::PanelLayoutChanged(theme::PanelLayout::Single),
+            Action::NodeHighlightChanged(true),
+            Action::SyntaxHighlightingChanged(false),
+            Action::WideColumnsChanged(180),
+            Action::SyntaxThemeChanged("Solarized (dark)".to_string()),
+        ] {
+            app.apply_setting(&action)?;
+        }
+        assert_eq!(
+            app.diff_viewer.layout_override(),
+            theme::PanelLayout::Single
+        );
+        assert_eq!(theme::load_panel_layout(), theme::PanelLayout::Single);
+        assert!(app.diff_viewer.node_highlight());
+        assert!(theme::load_node_highlight());
+        assert!(!app.diff_viewer.syntax_highlighting());
+        assert_eq!(app.diff_viewer.wide_columns(), 180);
+        assert_eq!(theme::load_wide_columns().0, 180);
+        assert_eq!(
+            theme::load_syntax_theme().as_deref(),
+            Some("Solarized (dark)")
+        );
+        assert_eq!(
+            app.screen,
+            AppScreen::Settings,
+            "none of them closes the menu"
+        );
+        app.apply_setting(&Action::SettingsClosed)?;
+        assert_eq!(app.screen, AppScreen::Viewer);
+        Ok(())
     }
 
     fn rendered_text(terminal: &ratatui::Terminal<ratatui::backend::TestBackend>) -> String {
@@ -2425,6 +2892,7 @@ mod tests {
             paint_displaced_moves: true,
             paint_resized_moves: true,
             whole_identifier_updates: true,
+            interior_whitespace: true,
         });
 
         let backend = ratatui::backend::TestBackend::new(120, 24);
@@ -2436,7 +2904,7 @@ mod tests {
 
         let text = rendered_text(&terminal);
         assert!(!text.contains("[minimal]"), "got: {text}");
-        assert!(text.contains("Leading whitespace"), "got: {text}");
+        assert!(text.contains("indentation"), "got: {text}");
         Ok(())
     }
 
@@ -2733,7 +3201,7 @@ mod tests {
         };
         assert_eq!(
             render_options_badge(no_leading_whitespace).as_deref(),
-            Some("[Leading whitespace off]")
+            Some("[indentation off]")
         );
         // Turning on the one option FULL leaves off is a difference too.
         let whole_pairs = RenderOptions {
@@ -2742,7 +3210,7 @@ mod tests {
         };
         assert_eq!(
             render_options_badge(whole_pairs).as_deref(),
-            Some("[Whole-pair updates on]")
+            Some("[whole updates on]")
         );
         assert_eq!(
             render_options_badge(RenderOptions {
@@ -2750,7 +3218,7 @@ mod tests {
                 ..no_leading_whitespace
             })
             .as_deref(),
-            Some("[Leading whitespace off; Whole-pair updates on]")
+            Some("[indentation off; whole updates on]")
         );
     }
 
@@ -3123,5 +3591,147 @@ mod tests {
     fn display_safe_keeps_a_crlf_terminator_and_substitutes_a_lone_carriage_return() {
         assert_eq!(display_safe("a\r\nb\rc\n"), "a\r\nb c\n");
         assert_eq!(display_safe("trailing\r"), "trailing ");
+    }
+
+    // ── Drawing only what changed (issue #72) ──────────────────────────────────────────────
+
+    /// The `Action::Render` the frame clock's tick queued, if any.
+    fn frame_drawn(app: &mut App) -> Result<bool> {
+        app.handle_event(Event::Render, Rect::new(0, 0, 80, 24))?;
+        let mut drawn = false;
+        while let Ok(action) = app.action_rx.try_recv() {
+            drawn |= action == Action::Render;
+        }
+        Ok(drawn)
+    }
+
+    #[test]
+    fn the_first_frame_is_drawn_and_an_idle_one_is_not() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(frame_drawn(&mut app)?, "nothing has been drawn yet");
+        // What `render` does after drawing.
+        app.needs_redraw = false;
+        assert!(
+            !frame_drawn(&mut app)?,
+            "an idle frame redraws an unchanged screen"
+        );
+        assert!(!frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn input_makes_the_next_frame_draw() -> Result<()> {
+        let area = Rect::new(0, 0, 80, 24);
+        let inputs = [
+            Event::Key(crossterm::event::KeyEvent::new(
+                KeyCode::Char('j'),
+                crossterm::event::KeyModifiers::NONE,
+            )),
+            Event::Mouse(crossterm::event::MouseEvent {
+                kind: crossterm::event::MouseEventKind::ScrollDown,
+                column: 1,
+                row: 1,
+                modifiers: crossterm::event::KeyModifiers::NONE,
+            }),
+            Event::Resize(100, 30),
+        ];
+        for input in inputs {
+            let mut app = App::new(4.0, 60.0)?;
+            app.needs_redraw = false;
+            app.handle_event(input.clone(), area)?;
+            assert!(
+                frame_drawn(&mut app)?,
+                "{input:?} left the screen as it was"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn every_action_but_the_clocks_own_marks_the_screen_changed() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        for clock in [Action::Tick, Action::Render] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&clock);
+            assert!(
+                !app.needs_redraw,
+                "{clock:?} alone changes nothing on screen"
+            );
+        }
+        for action in [
+            Action::Error("boom".to_string()),
+            Action::Resize(80, 24),
+            Action::SettingsClosed,
+            Action::DialogCancelled,
+        ] {
+            app.needs_redraw = false;
+            app.note_action_for_redraw(&action);
+            assert!(
+                app.needs_redraw,
+                "{action:?} did not mark the screen changed"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn only_the_tick_that_fades_the_toast_redraws() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.summary_toast_ticks = 2;
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "the toast is still up and unchanged");
+        app.tick_summary_toast();
+        assert!(
+            app.needs_redraw,
+            "the toast faded and must disappear from the screen"
+        );
+
+        app.needs_redraw = false;
+        app.tick_summary_toast();
+        assert!(!app.needs_redraw, "no toast, nothing to fade");
+        Ok(())
+    }
+
+    #[test]
+    fn the_diffing_counter_keeps_frames_coming() -> Result<()> {
+        let mut app = App::new(4.0, 60.0)?;
+        app.needs_redraw = false;
+        app.screen = AppScreen::Diffing;
+        assert!(
+            frame_drawn(&mut app)?,
+            "the counter reads the clock at draw time"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
+    }
+
+    #[test]
+    fn a_playing_animation_keeps_frames_coming() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let gif = |frames: &[u32]| {
+            crate::diff::picture::test_gif(
+                &frames
+                    .iter()
+                    .map(|&k| (crate::diff::picture::test_frame(k), 100))
+                    .collect::<Vec<_>>(),
+            )
+        };
+        let (before, after) = (dir.path().join("a.gif"), dir.path().join("b.gif"));
+        std::fs::write(&before, gif(&[0, 1, 2]))?;
+        std::fs::write(&after, gif(&[0, 5, 1, 2]))?;
+        let mut app = App::new(4.0, 60.0)?;
+        assert!(app.open_content_pair(&before, &after), "a picture pair");
+        app.needs_redraw = false;
+        assert!(!frame_drawn(&mut app)?, "a paused animation is a still");
+
+        assert!(app.content_key(KeyCode::Char(' ')), "space plays");
+        app.needs_redraw = false;
+        assert!(
+            frame_drawn(&mut app)?,
+            "a playing animation advances when drawn"
+        );
+        assert!(frame_drawn(&mut app)?);
+        Ok(())
     }
 }

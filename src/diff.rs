@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +22,7 @@
 //! order below is the code's; the call-site comments in `Diff::pending_with_config` and
 //! [`PendingDiff::finish`] say why each pass sits where it does, and each pass's `solve` doc
 //! explains its mechanism. The right-hand column maps the code's phase numbers to the paper's
-//! ("CodeDiff", `research/papers/introductory-paper`); the code's numbering has gaps (there is no
+//! ("OmniDiff", `research/papers/introductory-paper`); the code's numbering has gaps (there is no
 //! phase 3 or 5).
 //!
 //! | Code phase | Pass | Paper |
@@ -49,10 +48,13 @@
 //! in a way a pass could detect (AGENT_LOG, N:M Phase 0), so today only a human mapping's
 //! all-to-all groups arrive here, through `test::helper::human_mapping`.
 pub mod apted;
+pub mod content;
 pub mod cost;
+pub mod embedded;
 pub(crate) mod grouped_greedy_matcher;
 pub(crate) mod hash_tree_matching;
 pub mod nodes;
+pub mod picture;
 pub(crate) mod solve_bottom_up_propagation;
 pub(crate) mod solve_greedy_anchor_blocks;
 pub(crate) mod solve_hash_descent;
@@ -62,9 +64,15 @@ pub(crate) mod solve_large_flat_subtrees;
 pub(crate) mod solve_leading_siblings;
 pub(crate) mod solve_leaf_neighbour_agreement;
 pub(crate) mod solve_moved_subtrees;
+pub(crate) mod solve_multi_maps;
 pub(crate) mod solve_mutual_ancestors;
 pub(crate) mod solve_nested_condition_collapse;
 pub(crate) mod solve_orphaned_leaves;
+pub(crate) mod solve_renamed_twins;
+pub(crate) mod solve_replaced_atoms;
+pub(crate) mod solve_statement_shells;
+pub(crate) mod solve_stray_renames;
+pub(crate) mod solve_stray_terminators;
 pub(crate) mod solve_syntax_aware_matching;
 pub(crate) mod solve_unique_type_matching;
 pub(crate) mod solve_unresolved_nodes;
@@ -81,8 +89,8 @@ use crate::diff::text::TextDiff;
 /// from, so it cannot outlive them:
 ///
 /// ```compile_fail
-/// use codediff::code::{Code, Language};
-/// use codediff::diff::NodeCache;
+/// use omnidiff::code::{Code, Language};
+/// use omnidiff::diff::NodeCache;
 ///
 /// let cache = {
 ///     let code = Code::from_string("fn main() { let x = 1; }", &Language::Rust);
@@ -101,33 +109,47 @@ pub struct NodeCache<'code> {
 }
 
 impl<'code> NodeCache<'code> {
-    /// A side without an AST gets an empty map.
+    /// A side without an AST gets an empty map. The two sides are built concurrently when big
+    /// enough (`code::build_sides`): this runs twice per diff, once for the passes and once for
+    /// the text ranges.
     pub fn build(before: &'code Code, after: &'code Code) -> Self {
+        let (before_cache, after_cache) = crate::code::build_sides(
+            crate::code::worth_building_in_parallel(&before.contents, &after.contents),
+            || Self::cache_for(before),
+            || Self::cache_for(after),
+        );
         NodeCache {
-            before: Self::cache_for(before),
-            after: Self::cache_for(after),
+            before: before_cache,
+            after: after_cache,
         }
     }
 
+    /// Every node of `code`'s tree by id, from one cursor walk (a cursor per node costs more
+    /// than the insert), into a map sized from the metadata's node count when there is one.
     fn cache_for(code: &'code Code) -> rustc_hash::FxHashMap<usize, tree_sitter::Node<'code>> {
-        code.ast
-            .as_ref()
-            .map(|ast| {
-                let mut cache = rustc_hash::FxHashMap::default();
-                let mut stack = vec![ast.root_node()];
-
-                while let Some(node) = stack.pop() {
-                    cache.insert(node.id(), node);
-
-                    let mut cursor = node.walk();
-                    for child in node.children(&mut cursor) {
-                        stack.push(child);
-                    }
+        let Some(ast) = code.ast.as_ref() else {
+            return Default::default();
+        };
+        let mut cache = rustc_hash::FxHashMap::default();
+        if let Some(metadata) = &code.metadata.ast_metadata {
+            cache.reserve(metadata.node_info.len());
+        }
+        let mut cursor = ast.root_node().walk();
+        loop {
+            let node = cursor.node();
+            cache.insert(node.id(), node);
+            if cursor.goto_first_child() {
+                continue;
+            }
+            loop {
+                if cursor.goto_next_sibling() {
+                    break;
                 }
-
-                cache
-            })
-            .unwrap_or_default()
+                if !cursor.goto_parent() {
+                    return cache;
+                }
+            }
+        }
     }
 
     pub fn get_in_any(&self, node_id: &usize) -> Option<&Node<'_>> {
@@ -382,9 +404,31 @@ impl<'code> PendingDiff<'code> {
         // and it finds no ancestor to climb to and silently does nothing.
         solve_wrap_growth::solve(&ctx, &mut ast_diff);
 
+        // Phase 9b: after every pass that can pair a leaf, so no later one re-pairs what it unpairs;
+        // before phase 10, which records the delete and insert.
+        solve_stray_renames::solve(&ctx, &mut ast_diff);
+        // Beside stray renames and for the same reason: after every pass that can pair a leaf.
+        solve_stray_terminators::solve(&ctx, &mut ast_diff);
+        // After stray renames, so only a rename that stayed in its construct is weighed against a
+        // twin; after every pass that can pair a leaf, so the twin is truly unpaired.
+        solve_renamed_twins::solve(&ctx, &mut ast_diff);
+        // After the leaf re-pairings, so a slot it reads as wholly unpaired really is.
+        solve_replaced_atoms::solve(&ctx, &mut ast_diff);
+        // After every pass that can pair a leaf, so a statement it reads as removed is gone, and
+        // the moved value it takes as evidence is final.
+        solve_statement_shells::solve(&ctx, &mut ast_diff);
+
+        // Phase 9c: after every matching pass, so "unpaired" means gone and a twin's parent that
+        // a late pass pairs (an `if` that grew an `else`) is not mistaken for a displaced one.
+        solve_multi_maps::solve(&ctx, &mut ast_diff);
+
         // Phase 10 must be last: it records a delete/insert for every undecided node, so a pass
         // after it would find every node claimed.
         solve_unresolved_nodes::solve(&ctx, &mut ast_diff);
+
+        // After the host mapping is final, which it reads and never changes: each changed pair of
+        // host strings holding code of another language gets a diff of its own.
+        embedded::solve(&ctx, &mut ast_diff);
 
         Diff {
             ast: Some(ast_diff),
@@ -435,6 +479,9 @@ pub struct ASTDiff {
     /// N:M correspondences, each member also in the node maps with a representative partner; see
     /// the module docs.
     pub groups: Vec<NodeGroup>,
+    /// Code of another language in the host's strings, one diff per changed pair (see
+    /// [`embedded`]), in the before host strings' document order.
+    pub embedded: Vec<embedded::EmbeddedDiff>,
     /// Member id to its index in `groups`, per side.
     before_group: rustc_hash::FxHashMap<usize, usize>,
     after_group: rustc_hash::FxHashMap<usize, usize>,
@@ -480,7 +527,8 @@ impl ASTDiff {
     }
 
     /// Whether every real pair joins two nodes that exist and are of the same kind, or of a
-    /// cross-kind pair `nodes::kinds_update_allowed` permits; every group member's partner lies in
+    /// cross-kind pair `nodes::kinds_update_allowed` permits or `solve_replaced_atoms` made (a
+    /// [`ASTMappingReason::ReplacedAtom`]); every group member's partner lies in
     /// its group; and the node maps agree outside groups ([`Self::node_map_disagreements`]). Null
     /// mappings always pass. `before` gives the language; `node_cache` holds both sides' nodes.
     pub fn is_valid(&self, before: &Code, node_cache: &NodeCache) -> bool {
@@ -500,7 +548,12 @@ impl ASTDiff {
 
             let before_node = before_node.unwrap();
             let after_node = after_node.unwrap();
+            // A value replaced in place pairs across kinds on purpose (`FLAG` becoming `0`); the
+            // kind rule guards the tree edit distance's relabelling, not that judgement.
+            let replaced_atom =
+                self.mapping[&(*before_id, *after_id)].reason == ASTMappingReason::ReplacedAtom;
             if before_node.kind() != after_node.kind()
+                && !replaced_atom
                 && !crate::diff::nodes::kinds_update_allowed(
                     before_node.kind(),
                     after_node.kind(),
@@ -821,6 +874,17 @@ pub enum ASTMappingReason {
     /// A deleted and an inserted leaf with the same text under a matched parent pair, re-paired.
     /// See `solve_orphaned_leaves`.
     OrphanedLeafUnderMatchedParent,
+    /// A member of an N:M group of identical copies. See `solve_multi_maps`.
+    MultiMap,
+    /// A leaf re-paired with its unpaired same-text twin in the same construct, instead of
+    /// renamed or dropped. See `solve_renamed_twins`.
+    RenamedTwin,
+    /// A value replaced by another in the same slot of a matched construct, paired or grouped.
+    /// See `solve_replaced_atoms`.
+    ReplacedAtom,
+    /// A statement whose value moved out of it, paired with the one of its kind that took its
+    /// place, with the keywords and punctuation they share. See `solve_statement_shells`.
+    StatementShell,
 }
 
 impl ASTMappingReason {
@@ -848,6 +912,10 @@ impl ASTMappingReason {
             ASTMappingReason::WrapGrowth => "WrapGrowth",
             ASTMappingReason::OrphanedLeafUnderMatchedParent => "OrphanLeaf",
             ASTMappingReason::LeafBetweenMatchedNeighbours => "NeighbourLeaf",
+            ASTMappingReason::MultiMap => "MultiMap",
+            ASTMappingReason::RenamedTwin => "RenamedTwin",
+            ASTMappingReason::ReplacedAtom => "ReplacedAtom",
+            ASTMappingReason::StatementShell => "StatementShell",
         }
     }
 }

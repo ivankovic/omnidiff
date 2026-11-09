@@ -1,0 +1,44 @@
+local Item = { __name = "item" }
+
+local function item(...)
+  return setmetatable({ ... }, Item)
+end
+
+local function make_item(name, count)
+  return item(name, count)
+end
+
+local Box = {}
+Box.__index = Box
+
+function Box.new(width, depth)
+  local box = { width = width, depth = depth }
+  return setmetatable(box, Box)
+end
+
+function Box:area()
+  return self.width * self.depth
+end
+
+function Box:describe(label)
+  local total_area = self:area()
+  return label .. ": " .. total_area .. " square metres"
+end
+
+local function main()
+  local size = { 3, 4 }
+  local boxes = {
+    Box.new(1, 1),
+    Box.new(size[1], size[2]),
+    Box.new(5, 2),
+  }
+  if os.getenv("DEBUG") then
+    for _, box in ipairs(boxes) do
+      print(box:describe("crate"))
+    end
+  end
+  local biggest <const> = boxes[#boxes]:area()
+  print(#boxes, biggest)
+end
+
+main()

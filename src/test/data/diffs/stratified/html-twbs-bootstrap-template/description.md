@@ -1,0 +1,1 @@
+Note pure HTML. Template.

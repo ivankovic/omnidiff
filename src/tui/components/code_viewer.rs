@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,6 +14,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+use std::cell::RefCell;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -38,6 +38,14 @@ pub struct CodeViewer {
     /// vertical moves, so `k k k j j j` does not drift left. A display column, so the cursor keeps
     /// its place on screen across rows indented differently. Any other cursor movement clears it.
     desired_col: Option<usize>,
+    /// [`CodeViewer::change_bands`]' last answer, with the band count it was for. The minimap is
+    /// drawn on every frame and walks every changed row of the file, so it is computed once per
+    /// diff and strip height. Cleared wherever the ranges or the file change (`reset_state`,
+    /// `set_ranges`, `replace_ranges`).
+    bands_cache: RefCell<Option<(usize, Vec<Option<TextOperation>>)>>,
+    /// Where a mouse selection started, as `(row, byte column)` of a character; `None` when no
+    /// drag is under way. The other end is wherever the pointer is now (`extend_selection`).
+    selection_anchor: Option<(usize, usize)>,
 }
 
 impl CodeViewer {
@@ -62,6 +70,8 @@ impl CodeViewer {
         self.state.scroll_col = 0;
         self.state.load_ranges(Vec::new());
         self.desired_col = None;
+        self.bands_cache.take();
+        self.clear_selection();
     }
 
     pub fn line_count(&self) -> usize {
@@ -89,6 +99,7 @@ impl CodeViewer {
     /// non-zero-width range.
     pub fn set_ranges(&mut self, ranges: Vec<RangeMatch>) {
         self.state.load_ranges(ranges);
+        self.bands_cache.take();
         self.desired_col = None;
         self.scroll_to_cursor();
     }
@@ -98,6 +109,7 @@ impl CodeViewer {
     pub fn replace_ranges(&mut self, ranges: Vec<RangeMatch>) {
         let line_count = self.line_count();
         self.state.replace_ranges(ranges, line_count);
+        self.bands_cache.take();
         self.desired_col = None;
     }
 
@@ -258,6 +270,86 @@ impl CodeViewer {
         self.set_cursor_position(row, col);
     }
 
+    /// The `(row, byte column)` of the character drawn in screen cell `(column, row)` of `area`
+    /// (the area passed to `draw`), clamped to the file: a cell in the gutter means the first
+    /// visible column, one past the end of a row means its end.
+    pub fn text_position_at(&self, area: Rect, column: u16, row: u16) -> (usize, usize) {
+        let row = (self.state.scroll + row.saturating_sub(area.y) as usize)
+            .min(self.line_count().saturating_sub(1));
+        let display_col = self.state.scroll_col
+            + (column.saturating_sub(area.x) as usize).saturating_sub(self.gutter_width());
+        let line = self.widget.line_text(row);
+        (
+            row,
+            display_columns::byte_column_at_display(&line, display_col),
+        )
+    }
+
+    /// Start a mouse selection at a character; nothing is selected until it is extended.
+    pub fn start_selection(&mut self, position: (usize, usize)) {
+        self.selection_anchor = Some(position);
+        self.state.selection = None;
+    }
+
+    /// Select from the anchor through the character at `position`, both ends included, as a
+    /// terminal's own selection does. Back at the anchor nothing is selected, so a click without a
+    /// drag copies nothing.
+    pub fn extend_selection(&mut self, position: (usize, usize)) {
+        let Some(anchor) = self.selection_anchor else {
+            return;
+        };
+        if anchor == position {
+            self.state.selection = None;
+            return;
+        }
+        let (start, end) = (anchor.min(position), anchor.max(position));
+        let end_line = self.widget.line_text(end.0);
+        let end_col = end_line[end.1..]
+            .chars()
+            .next()
+            .map_or(end_line.len(), |c| end.1 + c.len_utf8());
+        self.state.selection = Some(TextRange::new(start.0, start.1, end.0, end_col));
+    }
+
+    /// Whether a drag started in this panel is under way.
+    pub fn is_selecting(&self) -> bool {
+        self.selection_anchor.is_some()
+    }
+
+    /// End the drag, keeping what it selected painted until the next click.
+    pub fn finish_selection(&mut self) {
+        self.selection_anchor = None;
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.selection_anchor = None;
+        self.state.selection = None;
+    }
+
+    /// The selected text, rows joined with `\n`; `None` when nothing is selected.
+    pub fn selection_text(&self) -> Option<String> {
+        let selection = self.state.selection.as_ref()?;
+        let mut text = String::new();
+        for row in selection.start_row..=selection.end_row {
+            let line = self.widget.line_text(row);
+            let start = if row == selection.start_row {
+                selection.start_column.min(line.len())
+            } else {
+                0
+            };
+            let end = if row == selection.end_row {
+                selection.end_column.min(line.len())
+            } else {
+                line.len()
+            };
+            text.push_str(&line[start..end.max(start)]);
+            if row < selection.end_row {
+                text.push('\n');
+            }
+        }
+        (!text.is_empty()).then_some(text)
+    }
+
     /// The cursor's display column: where on its row it is drawn.
     fn cursor_display_col(&self) -> usize {
         let line = self.widget.line_text(self.state.cursor_row);
@@ -323,6 +415,15 @@ impl CodeViewer {
         self.widget.language_name()
     }
 
+    /// See [`crate::tui::widgets::code_viewer::CodeViewerWidget::language`].
+    pub fn language(&self) -> Option<crate::code::Language> {
+        self.widget.language()
+    }
+
+    pub fn has_file(&self) -> bool {
+        self.widget.has_file()
+    }
+
     pub fn scroll_to_show_row(&mut self, row: usize) {
         let row = row.min(self.line_count().saturating_sub(1));
         if row < self.state.scroll {
@@ -366,6 +467,17 @@ impl CodeViewer {
     /// The minimap cells: the file's rows split into `bands` equal slices, each holding the
     /// highest-`band_priority` change touching it, or `None`.
     pub fn change_bands(&self, bands: usize) -> Vec<Option<TextOperation>> {
+        if let Some((cached_for, cached)) = self.bands_cache.borrow().as_ref()
+            && *cached_for == bands
+        {
+            return cached.clone();
+        }
+        let out = self.compute_change_bands(bands);
+        *self.bands_cache.borrow_mut() = Some((bands, out.clone()));
+        out
+    }
+
+    fn compute_change_bands(&self, bands: usize) -> Vec<Option<TextOperation>> {
         let total = self.line_count();
         let mut out = vec![None; bands];
         if bands == 0 || total == 0 {
@@ -819,6 +931,53 @@ mod tests {
             source: TextRange::new(start_row, 0, end_row, end_col),
             destination: TextRange::new(start_row, 0, end_row, end_col),
             operation: op,
+        }
+    }
+
+    /// The minimap is cached per strip height; every way the file or its ranges change must show.
+    #[test]
+    fn change_bands_follow_every_change_to_the_ranges_and_the_file() {
+        let mut viewer = viewer_with(&(0..10).map(|i| format!("l{i}\n")).collect::<String>());
+        viewer.set_ranges(vec![range(2, 2, 2, TextOperation::Update)]);
+        let update = viewer.change_bands(5);
+        assert_eq!(update[1], Some(TextOperation::Update));
+        assert_eq!(viewer.change_bands(5), update, "the cached answer");
+
+        viewer.set_ranges(vec![range(8, 8, 2, TextOperation::Insert)]);
+        assert_eq!(
+            viewer.change_bands(5),
+            vec![None, None, None, None, Some(TextOperation::Insert)],
+            "set_ranges"
+        );
+
+        viewer.replace_ranges(vec![range(0, 0, 2, TextOperation::Delete)]);
+        assert_eq!(
+            viewer.change_bands(5),
+            vec![Some(TextOperation::Delete), None, None, None, None],
+            "replace_ranges"
+        );
+
+        viewer.load_contents(PathBuf::from("test.txt"), "only\n".to_string());
+        assert_eq!(
+            viewer.change_bands(5),
+            vec![None; 5],
+            "a new file, no ranges yet"
+        );
+    }
+
+    #[test]
+    fn change_bands_are_recomputed_for_another_strip_height() {
+        let mut viewer = viewer_with(&(0..10).map(|i| format!("l{i}\n")).collect::<String>());
+        viewer.set_ranges(vec![
+            range(2, 2, 2, TextOperation::Update),
+            range(8, 8, 2, TextOperation::Insert),
+        ]);
+        for bands in [5, 3, 10, 1, 0, 5] {
+            assert_eq!(
+                viewer.change_bands(bands),
+                viewer.compute_change_bands(bands),
+                "{bands} bands"
+            );
         }
     }
 

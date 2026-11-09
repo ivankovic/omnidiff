@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,17 +36,35 @@
 //! orders of magnitude; lower it when a change earns it, and treat a rise as a regression.
 //!
 //! **What a stub comment says.** The fixture's `description.md` says what the fixture *demands*
-//! (a fact about the data). A stub comment says why codediff *falls short* of it (a fact about this
+//! (a fact about the data). A stub comment says why omnidiff *falls short* of it (a fact about this
 //! implementation, false once fixed), and is the only justification a clamp gets.
 //! `the_clamped_stubs_explain_their_limits` enforces that every clamped `mapping()` has one.
 
-// One `#[cfg(test)] mod <name>;` per fixture, per dataset (see `test::helper::DIFF_DATASETS`).
+// One `#[cfg(test)] mod <name>;` per fixture, per dataset (see `test::helper::DIFF_DATASETS`), and
+// one per content family (`diff::content::Family`, see `test::helper::human_content`), whose stubs
+// assert verdicts rather than the four tests above.
+#[cfg(test)]
+mod archives;
+#[cfg(test)]
+mod catalogs;
+#[cfg(test)]
+mod crosslang;
+#[cfg(test)]
+mod cursors;
 #[cfg(test)]
 mod defects4j;
+#[cfg(test)]
+mod documents;
+#[cfg(test)]
+mod encodings;
+#[cfg(test)]
+mod fonts;
 #[cfg(test)]
 mod full;
 #[cfg(test)]
 mod handmade;
+#[cfg(test)]
+mod pictures;
 #[cfg(test)]
 mod small;
 #[cfg(test)]

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,9 +33,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
-use codediff::code::Code;
-use codediff::code::language::language_for_path;
-use codediff::stats::count_nodes;
+use omnidiff::code::Code;
+use omnidiff::code::language::language_for_path;
+use omnidiff::stats::count_nodes;
 
 #[derive(Parser)]
 struct Args {
@@ -116,7 +115,7 @@ fn open_repo<'a>(
 
 fn blob_content(repo: &Repository, treeish: &str, path: &str) -> Result<Vec<u8>> {
     let tree = repo.revparse_single(treeish)?.peel_to_tree()?;
-    codediff::stats::git::blob_bytes(repo, &tree, Path::new(path))
+    omnidiff::stats::git::blob_bytes(repo, &tree, Path::new(path))
 }
 
 /// Runs `apted_only_worker`, killing it after `timeout`. Returns `(status, elapsed_ms)`, with

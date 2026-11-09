@@ -1,0 +1,44 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+record Person(string Name, int Age);
+
+static class Program
+{
+    static Person CreatePerson(string name, int age)
+    {
+        return new Person(name, age);
+    }
+
+    static void Main()
+    {
+        int[] size = [3, 4];
+        var shapes = new List<Rectangle>
+        {
+            new(1, 1),
+            new(size[0], size[1]),
+            new(5, 2),
+        };
+        if (Environment.UserInteractive)
+        {
+            foreach (var shape in shapes)
+                Console.WriteLine(shape.Describe("box"));
+        }
+        long biggest = shapes.Max(s => s.Area());
+        Console.WriteLine($"{shapes.Count} {biggest}");
+    }
+}
+
+record Rectangle(int Width, int Height)
+{
+    public int Area() => Width * Height;
+
+    public int Perimeter() => 2 * (Width + Height);
+
+    public string Describe(string label)
+    {
+        int totalArea = Area();
+        return $"{label}: {totalArea} square metres";
+    }
+}

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,7 +23,7 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // One `<test/>` appended, so the closing whitespace `CharData` now separates two elements and
-    // carries a new indent. The pairing agrees; the human calls that pair `Update`, codediff
+    // carries a new indent. The pairing agrees; the human calls that pair `Update`, omnidiff
     // `Identical`.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "xml-microsoft-terminal-add-one-element",
@@ -35,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-microsoft-terminal-add-one-element", 1.40)
+    assert_matches_human_painting_within_limit("xml-microsoft-terminal-add-one-element", 0.07)
 }
 
 #[test]

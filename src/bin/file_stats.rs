@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,8 +23,8 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tree_sitter::Parser as TSParser;
 
-use codediff::stats::CodeStats;
-use codediff::stats::filesystem;
+use omnidiff::stats::CodeStats;
+use omnidiff::stats::filesystem;
 
 #[derive(Parser)]
 struct Args {
@@ -165,7 +164,7 @@ fn worker_loop(path_rx: Receiver<PathBuf>, stats_tx: Sender<(PathBuf, CodeStats)
     let mut parser = TSParser::new();
 
     while let Ok(path) = path_rx.recv() {
-        let mut s = codediff::stats::for_path(&path, &mut parser);
+        let mut s = omnidiff::stats::for_path(&path, &mut parser);
         // Drop the raw contents before the item crosses the channel.
         s.code.contents = String::new();
         if stats_tx.send((path, s)).is_err() {
@@ -400,7 +399,7 @@ fn write_batch(conn: &mut Connection, batch: &mut Vec<(PathBuf, CodeStats)>) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codediff::test::helper;
+    use omnidiff::test::helper;
     use rusqlite::Connection;
     use std::path::Path;
     use tempfile::NamedTempFile;

@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 //! Attribution for a sample taken from a third-party repository: it is someone else's code, not
-//! under codediff's AGPL, so its provenance and license travel with it. `render_readme` records a
+//! under omnidiff's AGPL, so its provenance and license travel with it. `render_readme` records a
 //! commit-pinned link to the license file plus a best-effort label, not the license text. See
 //! `README.md`'s "Third-party test fixtures".
 
@@ -178,13 +177,18 @@ fn blob_url(repo_url: &str, commit: &str, path: &str) -> Option<String> {
 /// Renders the `README.md` of a sample (and its promoted fixture): provenance plus a
 /// commit-pinned license link and label, not the license text.
 ///
+/// `before_path` is the before side's path when it differs from `path` (a file moved to another
+/// language, the `crosslang` dataset); `None` when both sides are `path`.
+///
 /// `unverifiable_reason` means the commit could not be inspected (e.g. it left a shallow clone's
 /// window), unlike an empty `license_files`, which means it was and has none. When set,
 /// `license_files` is ignored.
+#[allow(clippy::too_many_arguments)]
 pub fn render_readme(
     repo_url: Option<&str>,
     repository: &str,
     commit: &str,
+    before_path: Option<&str>,
     path: &str,
     dataset: &str,
     license_files: &[LicenseFile],
@@ -205,15 +209,24 @@ pub fn render_readme(
         }
     }
     let _ = writeln!(out, "- **Commit:** `{commit}`");
+    // Before `File`, which stays the after side's: `test::helper::readme_provenance` reads it.
+    if let Some(before_path) = before_path {
+        let _ = writeln!(out, "- **Before file:** `{before_path}`");
+    }
     let _ = writeln!(out, "- **File:** `{path}`");
     let _ = writeln!(out, "- **Research dataset:** {dataset}");
     let _ = writeln!(out);
+    let files = if before_path.is_some() {
+        "the files above"
+    } else {
+        "the file above"
+    };
     let _ = writeln!(
         out,
-        "`before.*.test`/`after.*.test` in this directory are an unmodified excerpt of the file \
-         above, copied verbatim from the source repository at the commit above (and its single \
-         parent) for use as codediff test-fixture input. This content is **not** part of \
-         codediff's own codebase and is **not** covered by codediff's own AGPL-3.0 license - it \
+        "`before.*.test`/`after.*.test` in this directory are an unmodified excerpt of {files}, \
+         copied verbatim from the source repository at the commit above (and its single \
+         parent) for use as omnidiff test-fixture input. This content is **not** part of \
+         omnidiff's own codebase and is **not** covered by omnidiff's own AGPL-3.0 license - it \
          remains under whatever license the source repository itself applies, linked below \
          exactly as it read in that repository at this commit."
     );
@@ -228,7 +241,7 @@ pub fn render_readme(
              This is very likely a shallow-clone gap (the commit has aged out of the checkout's \
              `--depth` window since this sample was originally promoted), not evidence the \
              repository lacks a license. Check the repository above directly before reusing this \
-             sample outside codediff's own test suite."
+             sample outside omnidiff's own test suite."
         );
         return out;
     }
@@ -238,7 +251,7 @@ pub fn render_readme(
             out,
             "No LICENSE/COPYING/NOTICE file was found at the repository root at this commit. \
              Licensing terms are unknown from this checkout alone - check the repository above \
-             directly before reusing this sample outside codediff's own test suite."
+             directly before reusing this sample outside omnidiff's own test suite."
         );
         return out;
     }
@@ -317,6 +330,7 @@ mod tests {
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "full",
             &[],
@@ -338,6 +352,7 @@ mod tests {
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &files,
@@ -360,6 +375,7 @@ mod tests {
             Some("https://example.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &files,
@@ -369,11 +385,28 @@ mod tests {
     }
 
     #[test]
+    fn render_readme_names_both_files_of_a_move_to_another_language() {
+        let readme = render_readme(
+            Some("https://github.com/example/repo"),
+            "example-repo.git",
+            "abc123",
+            Some("src/Main.java"),
+            "src/Main.kt",
+            "crosslang",
+            &[],
+            None,
+        );
+        assert!(readme.contains("- **Before file:** `src/Main.java`\n- **File:** `src/Main.kt`\n"));
+        assert!(readme.contains("an unmodified excerpt of the files above"));
+    }
+
+    #[test]
     fn render_readme_with_an_unverifiable_reason_explains_why_instead_of_claiming_no_license() {
         let readme = render_readme(
             Some("https://github.com/example/repo"),
             "example-repo.git",
             "abc123",
+            None,
             "src/main.rs",
             "small",
             &[],

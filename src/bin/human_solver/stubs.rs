@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,14 +26,13 @@ use crate::{case_dataset, legacy_dataset};
 
 // ---------------------------------------------------------------------------------------------
 
-pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the CodeDiff code diffing tool.
+pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,8 +44,19 @@ pub(crate) const LICENSE_HEADER: &str = "/*  This file is part of the CodeDiff c
  */
 ";
 
+/// A fixture's stub module: its name lowercased (rustc's `non_snake_case` lint rejects the `URL`
+/// of `csharp-waf-csharprepl-update-string-URL`), with every character a Rust identifier cannot
+/// hold (`-`, and the `@` of `logo@2x`) as `_`.
 pub(crate) fn module_name(name: &str) -> String {
-    name.replace('-', "_")
+    name.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 /// `fixtures/` mirrors `diffs/`'s split by dataset (see `DIFF_DATASETS`).
@@ -109,7 +118,7 @@ pub(crate) fn stub_test_contents(name: &str, comment: Option<&str>, text_only: b
         // lands inside the string. The name is left out so a long one cannot overflow the width.
         let module_doc = [
             "//! This fixture's language has no tree-sitter grammar, so there is no tree to map",
-            "//! and no `mapping()` test here. codediff renders the pair with its plain-text",
+            "//! and no `mapping()` test here. omnidiff renders the pair with its plain-text",
             "//! fallback diff (`plain_text_line_diff`), and that is what the `painting()` test",
             "//! below is graded against - see `PaintingDiff::PlainText`.",
         ]
@@ -160,6 +169,29 @@ pub(crate) fn wrap_comment_lines_with_prefix(comment: &str, prefix: &str) -> Str
         .into_iter()
         .map(|line| format!("{prefix}{line}\n"))
         .collect()
+}
+
+/// Whether a save of `mapping` under `name` has a painting to test: its own, or the empty one its
+/// painted embedded layers imply (`human_mapping::implied_host_painting`). Only that second case
+/// reads the fixture's files.
+pub(crate) fn is_painted(
+    name: &str,
+    mapping: &omnidiff::test::helper::human_mapping::HumanMapping,
+) -> Result<bool> {
+    if !mapping.text_mappings.is_empty() {
+        return Ok(true);
+    }
+    if mapping
+        .embedded
+        .iter()
+        .all(|layer| layer.mapping.text_mappings.is_empty())
+    {
+        return Ok(false);
+    }
+    let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;
+    Ok(omnidiff::test::helper::human_mapping::has_painting(
+        mapping, before, after,
+    ))
 }
 
 /// Appends a `painting()` test to the file [`ensure_stub_test`] created; a missing file is an
@@ -303,11 +335,11 @@ pub(crate) fn insert_mod_declaration(dataset: &str, module: &str) -> Result<()> 
 // ---------------------------------------------------------------------------------------------
 
 /// What `s` measures about the saved fixture, for the stub and the status line. Measuring is the
-/// checker direction - codediff against the human's decisions - so nothing here feeds back into
+/// checker direction - omnidiff against the human's decisions - so nothing here feeds back into
 /// the ground truth.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct SaveMeasurement {
-    /// `(total, visible)` mismatches between the human mapping and codediff's diff; `None` for a
+    /// `(total, visible)` mismatches between the human mapping and omnidiff's diff; `None` for a
     /// text-only fixture, which has no `mapping()` test.
     pub(crate) mismatches: Option<(usize, usize)>,
     /// The limit `painting()` needs: the larger disagreement of the two presets, as a percentage
@@ -319,11 +351,10 @@ pub(crate) struct SaveMeasurement {
 /// Measures `name` as its fixture tests would, from what is on disk, so a save is followed by the
 /// numbers the stub needs instead of a `cargo test` round trip to find them out.
 pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeasurement> {
-    use codediff::diff::text::RenderOptions;
-    use codediff::test::helper::human_mapping::{
-        codediff_diff_for_painting, compare_painting_with_diff,
-        compute_visible_mismatches_with_config, invariants::ground_truth_invariant_violations,
-        load,
+    use omnidiff::diff::text::RenderOptions;
+    use omnidiff::test::helper::human_mapping::{
+        compare_painting_with_diff, compute_visible_mismatches_with_config,
+        invariants::ground_truth_invariant_violations, load, omnidiff_diff_for_painting,
     };
 
     let mismatches = if text_only {
@@ -331,7 +362,7 @@ pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeas
     } else {
         let visible = compute_visible_mismatches_with_config(
             name,
-            &codediff::diff::HeuristicConfig::default(),
+            &omnidiff::diff::HeuristicConfig::default(),
         )?;
         Some((
             visible.visible.len() + visible.invisible.len(),
@@ -339,11 +370,11 @@ pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeas
         ))
     };
 
-    let painting_percent = if load(name)?.text_mappings.is_empty() {
+    let painting_percent = if !is_painted(name, &load(name)?)? {
         None
     } else {
-        let (before, after) = &*codediff::test::helper::handmade_test_code_pair(name)?;
-        let diff = codediff_diff_for_painting(before, after)?;
+        let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;
+        let diff = omnidiff_diff_for_painting(before, after)?;
         let mut worst: f64 = 0.0;
         for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
             let comparison = compare_painting_with_diff(name, options, before, after, &diff)?;

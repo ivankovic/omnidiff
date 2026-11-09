@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,7 +18,7 @@
 //! and how to turn any one of those changes into the two files on disk the diff engine reads.
 //! The TUI's review picker (`tui::components::review_dialog`) is its caller.
 //!
-//! Talks to the `git` binary, not `git2`, whose OpenSSL/libssh2 build `cargo install codediff`
+//! Talks to the `git` binary, not `git2`, whose OpenSSL/libssh2 build `cargo install omnidiff`
 //! should not pay for; anyone reviewing has `git` on `PATH`.
 //!
 //! A side is materialized at `<workspace>/<revision>/<path>`: the basename picks the grammar, and
@@ -411,7 +410,7 @@ impl Workspace {
         std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
         for attempt in 0..100 {
             let dir = std::env::temp_dir().join(format!(
-                "codediff-review-{}-{nanos}-{attempt}",
+                "omnidiff-review-{}-{nanos}-{attempt}",
                 std::process::id()
             ));
             match builder.create(&dir) {
@@ -434,7 +433,7 @@ impl Workspace {
 
     /// Writes `bytes` to `<workspace>/<label>/<path>`, creating the directories, and returns the
     /// file's path.
-    fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
+    pub(crate) fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
         let target = self.dir.join(label).join(path);
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)

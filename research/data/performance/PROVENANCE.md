@@ -6,6 +6,41 @@ the `size_bucket` column). `../samples/` has since been re-drawn under the LOC b
 DIFFERENT pair set than these files - do not mix rows across that boundary. `baselines/` snapshots
 are pinned to whatever corpus was current at their date; that is their point.
 
+## `content_speed/<machine>.csv`
+
+One file per machine registered in `../machines.csv`, written by `make benchmark-content` on it.
+Compare figures within one file, never across two.
+
+### `content_speed/laptop.csv` (2026-11-07)
+
+The same samples as `server.csv`, timed by `make benchmark-content` on the laptop
+(`../machines.csv`), first on 2026-10-11 on AC power with the `performance` platform profile and
+nothing else running, and re-timed 2026-10-17 with nothing else running (power profile not
+recorded). Pairs timed per family are identical (230/100/22/100/81/100; the same two pictures
+fail).
+
+Re-timed 2026-11-07, on AC power with the `performance` profile and nothing else running, three
+runs of `make benchmark-content`; each pair's `elapsed_ms` is its median over the three, since
+single runs moved a family's p50 by up to a third. The same pairs timed and judged (131 pictures
+judged, one more than before). Fonts and PDFs now miss the 99th-percentile goal (p99 1,109 and
+1,330 ms, from 826 and 985): consistent across all three runs, not noise.
+
+### `content_speed/server.csv` (2026-10-06)
+
+The README's speed figures for content other than code. Written by `make benchmark-content`
+(`benchmark_content --csv`) on the Intel Xeon E3-1275 v5 the code figures were measured on, with
+nothing else running. One row per sampled content pair under `src/test/data/samples/` (git-ignored;
+the draw is `src/test/data/sample.csv`, seed 20261004, at most 4 pairs per repository and family,
+pictures from the earlier 250-pair draw), grouped by the `dataset` in each pair's `source.json`.
+`elapsed_ms` is one single-shot `content::diff` from the bytes in memory, decoding included.
+`outcome` is `diffed`, `not_content` or `failed`; only `diffed` rows are timed into the figures.
+Two pictures fail (`ico-x-exeldro-obs-3d-effect-6aca6c46-icon`,
+`ico-x-krtirtho-spotube-0e48b7a3-favicon`: the ICO decoder refuses them).
+
+The same run prints the accuracy figures (verdicts against `human_content.json` in
+`src/test/data/<family>/`), which are not written to a file: 39 judged pictures, 6 judged cursors,
+nothing judged in the other families yet.
+
 ## `robustness_fixtures.csv` (2026-09-26)
 
 The paper's robustness run, over the fixture corpus rather than a sampled pair set. Written by
@@ -31,7 +66,7 @@ thread heap 56.6 MB.
 The paper's Robust target exercised on the whole Full corpus: every modified code file in the
 corpus's recent history - the population `../corpus_stats/edit_shape.csv` summarises - pushed
 through `diff_code` with no node cap. The 2026-09-18 review of the introductory paper asked for it:
-can codediff run on every diff in the Full corpus?
+can omnidiff run on every diff in the Full corpus?
 
 | | |
 |---|---|
@@ -50,7 +85,7 @@ which is where the finding is.
 
 ### What did not complete
 
-* **Unreadable (1,669).** Files with an extension the lister maps to a language but codediff has no
+* **Unreadable (1,669).** Files with an extension the lister maps to a language but omnidiff has no
   grammar for (`.zsh`, 60 in the first 50k), files that are not valid UTF-8, and a few blobs git
   could not serve. Never reached the diff; excluded from the rate.
 * **Past the 120 s budget (96).** Median combined size 1.3 M AST nodes. The budget was applied with
@@ -83,8 +118,8 @@ The first launch (05:21) ran the eight shards unconfined. Four minutes in, one s
 more memory than the machine has, the kernel OOM-killed it, and systemd stopped the whole scope
 the launching shell lived in - the other shards, the orchestrator and the interactive session
 that had started them (`setsid` leaves the cgroup alone). Since then the chain runs as its own unit
-(`systemd-run --user --unit codediff-overnight`), every shard in its own capped scope inside
-`codediff-r48.slice`, and a killed shard resumes from its own output with the offending pair
+(`systemd-run --user --unit omnidiff-overnight`), every shard in its own capped scope inside
+`omnidiff-r48.slice`, and a killed shard resumes from its own output with the offending pair
 recorded with the exit status it died with.
 
 The restarts then surfaced three harness bugs, each fixed before the run that counts:

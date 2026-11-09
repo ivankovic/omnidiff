@@ -1,0 +1,343 @@
+{
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [],
+      "after_path": []
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:1"
+      ],
+      "after_path": [
+        "comment:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:2"
+      ],
+      "after_path": [
+        "comment:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:3"
+      ],
+      "after_path": [
+        "comment:3"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "comment:4"
+      ],
+      "after_path": [
+        "comment:4"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "comment:5"
+      ],
+      "after_path": [
+        "comment:5"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:1"
+      ],
+      "after_path": [
+        "if_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "let_statement:1"
+      ],
+      "after_path": [
+        "let_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "let_statement:2"
+      ],
+      "after_path": [
+        "let_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "set_statement:1"
+      ],
+      "after_path": [
+        "set_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "setlocal_statement:1"
+      ],
+      "after_path": [
+        "setlocal_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "let_statement:3"
+      ],
+      "after_path": [
+        "let_statement:3"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "if_statement:2"
+      ],
+      "after_path": [
+        "if_statement:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:2",
+        "if:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "if:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "binary_operation:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "binary_operation:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "if_statement:2",
+        "body:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1"
+      ]
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_attribute:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_attribute:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_attribute:2"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_attribute:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_name:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command_name:1"
+      ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command:2"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "command_statement:1",
+        "command:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "setlocal_statement:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "setlocal_statement:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "setlocal_statement:2"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "setlocal_statement:2"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "if_statement:2",
+        "body:1",
+        "let_statement:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "body:1",
+        "let_statement:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "if_statement:2",
+        "endif:1"
+      ],
+      "after_path": [
+        "if_statement:2",
+        "endif:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "let_statement:4"
+      ],
+      "after_path": [
+        "let_statement:4"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "unlet_statement:1"
+      ],
+      "after_path": [
+        "unlet_statement:1"
+      ]
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 4,
+              "start_column": 24,
+              "end_row": 4,
+              "end_column": 52
+            }
+          ],
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 24,
+              "end_row": 4,
+              "end_column": 41
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 19,
+              "start_column": 60,
+              "end_row": 19,
+              "end_column": 63
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

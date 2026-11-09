@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,7 +23,7 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // Several mappings are defensible depending on which node kinds are preferred to match, and
-    // codediff takes a different one than the human did.
+    // omnidiff takes a different one than the human did.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-caddyserver-caddy-multiple-solutions-interesting-case",
         3,
@@ -36,7 +35,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-caddyserver-caddy-multiple-solutions-interesting-case",
-        0.03,
+        0.02,
     )
 }
 

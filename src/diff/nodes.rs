@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -200,6 +199,15 @@ pub fn is_reference(node_kind: &str, language: &Language) -> bool {
         }
         Language::R => node_kind == "program" || node_kind == "function_definition",
         Language::ShellScript => node_kind == "program" || node_kind == "function_definition",
+        // Unvalidated: no Perl fixture yet.
+        Language::Perl => {
+            node_kind == "source_file"
+                || node_kind == "package_statement"
+                || node_kind == "class_statement"
+                || node_kind == "subroutine_declaration_statement"
+                || node_kind == "method_declaration_statement"
+                || node_kind == "use_statement"
+        }
         Language::Swift => {
             node_kind == "source_file"
                 || node_kind == "function_declaration"
@@ -285,6 +293,7 @@ pub fn is_import_kind(node_kind: &str, language: &Language) -> bool {
         Language::Scala => node_kind == "import_declaration",
         Language::CSharp => node_kind == "using_directive",
         Language::CSS => node_kind == "import_statement",
+        Language::Perl => node_kind == "use_statement",
         _ => false,
     }
 }
@@ -298,9 +307,30 @@ pub(crate) fn has_local_identity_coverage(language: &Language) -> bool {
     )
 }
 
-/// The `(kind, name)` of a container member (Java method, constructor or field; C/C++ field or
-/// function definition), for anchoring members whose bodies changed. Overloads are not a concern:
-/// the caller only trusts a name unique among the leftovers on both sides.
+/// `kind` as the `'static` label [`member_identity_name`] keys on.
+fn member_kind_label(kind: &str) -> &'static str {
+    match kind {
+        "function_item" => "function_item",
+        "mod_item" => "mod_item",
+        "macro_definition" => "macro_definition",
+        "struct_item" => "struct_item",
+        "enum_item" => "enum_item",
+        "trait_item" => "trait_item",
+        "function_declaration" => "function_declaration",
+        "function_definition" => "function_definition",
+        "class_definition" => "class_definition",
+        "class_declaration" => "class_declaration",
+        "method_declaration" => "method_declaration",
+        "constructor_declaration" => "constructor_declaration",
+        _ => "member",
+    }
+}
+
+/// The `(kind, name)` of a container member, for anchoring members whose bodies changed: a Java
+/// method, constructor or field; a C/C++ field, function definition or `#define`; a JS/TS class
+/// method or field; a JSON object's pair (by key); a Vim `hi` statement (by group); a Rust
+/// `const`, function, type or module; a function, method or class in Go, Python, Kotlin, JS/TS,
+/// Scala, PHP and C#. Overloads are not a concern: the caller pairs only equal holder counts.
 pub(crate) fn member_identity_name(
     node_id: usize,
     meta: &ASTMetadata,
@@ -338,6 +368,19 @@ pub(crate) fn member_identity_name(
         None
     };
     let text_of = |id: usize| meta.node_info.get(&id).map(|i| i.text.clone());
+    // Only leaves carry text, so a composite name (`Document::~Document`, `operator==`) is the
+    // concatenation of its leaves.
+    fn leaf_text(id: usize, meta: &ASTMetadata, out: &mut String) {
+        let Some(info) = meta.node_info.get(&id) else {
+            return;
+        };
+        if info.children.is_empty() {
+            out.push_str(&info.text);
+        }
+        for &child in &info.children {
+            leaf_text(child, meta, out);
+        }
+    }
     match (language, info.kind.as_str()) {
         (Language::Java, "method_declaration") => Some((
             "method_declaration",
@@ -358,10 +401,114 @@ pub(crate) fn member_identity_name(
             "field_declaration",
             text_of(through_declarators(node_id, "field_identifier")?)?,
         )),
-        (Language::C | Language::CPP, "function_definition") => Some((
-            "function_definition",
-            text_of(through_declarators(node_id, "identifier")?)?,
+        // The name a definition outside its class carries is qualified (`Document::foo`), and
+        // keeps the scope: `A::foo` and `B::foo` in one file are different members. One defined
+        // in a class body is a `field_identifier`.
+        (Language::C | Language::CPP, "function_definition") => {
+            let name = [
+                "identifier",
+                "field_identifier",
+                "qualified_identifier",
+                "destructor_name",
+                "operator_name",
+            ]
+            .into_iter()
+            .find_map(|kind| through_declarators(node_id, kind))?;
+            let mut text = String::new();
+            leaf_text(name, meta, &mut text);
+            (!text.is_empty()).then_some(("function_definition", text))
+        }
+        (Language::JavaScript | Language::TypeScript | Language::TSX, "method_definition") => {
+            let name_id = first_child_of_kind(node_id, "property_identifier")
+                .or_else(|| first_child_of_kind(node_id, "private_property_identifier"))?;
+            let name = text_of(name_id)?;
+            // A getter and a setter share their property's name.
+            let accessor = ["get", "set"]
+                .into_iter()
+                .find(|keyword| first_child_of_kind(node_id, keyword).is_some());
+            Some((
+                "method_definition",
+                match accessor {
+                    Some(keyword) => format!("{keyword} {name}"),
+                    None => name,
+                },
+            ))
+        }
+        (
+            Language::JavaScript | Language::TypeScript | Language::TSX,
+            "public_field_definition" | "field_definition",
+        ) => {
+            let name_id = first_child_of_kind(node_id, "property_identifier")
+                .or_else(|| first_child_of_kind(node_id, "private_property_identifier"))?;
+            Some(("field_definition", text_of(name_id)?))
+        }
+        // The key's text; `""` has no `string_content`.
+        (Language::JSON, "pair") => {
+            let key_id = *info.children.first()?;
+            let content = first_child_of_kind(key_id, "string_content")
+                .and_then(text_of)
+                .unwrap_or_default();
+            Some(("pair", content))
+        }
+        (Language::C | Language::CPP, "preproc_def" | "preproc_function_def") => Some((
+            "preproc_def",
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
         )),
+        // `hi Group ...` and `hi link Group Other` both name `Group` first.
+        (Language::Vimscript, "highlight_statement") => Some((
+            "highlight_statement",
+            text_of(first_child_of_kind(node_id, "hl_group")?)?,
+        )),
+        (Language::Rust, "const_item") => Some((
+            "const_item",
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
+        )),
+        // Every type in these signatures is a `type_identifier`, so the first `identifier` child
+        // is the name.
+        (Language::Rust, "function_item" | "mod_item" | "macro_definition")
+        | (Language::Go, "function_declaration")
+        | (Language::Python, "function_definition" | "class_definition")
+        | (Language::Kotlin, "function_declaration" | "class_declaration")
+        | (
+            Language::JavaScript | Language::TypeScript | Language::TSX,
+            "function_declaration" | "class_declaration",
+        )
+        | (Language::Scala, "function_definition") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "identifier")?)?,
+        )),
+        (Language::Rust, "struct_item" | "enum_item" | "trait_item") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "type_identifier")?)?,
+        )),
+        (Language::Go, "method_declaration") => Some((
+            "method_declaration",
+            text_of(first_child_of_kind(node_id, "field_identifier")?)?,
+        )),
+        (Language::PHP, "method_declaration" | "function_definition") => Some((
+            member_kind_label(&info.kind),
+            text_of(first_child_of_kind(node_id, "name")?)?,
+        )),
+        // A return type can be a bare `identifier` too; the name is the one right before the
+        // parameters (or their type parameters).
+        (Language::CSharp, "method_declaration" | "constructor_declaration") => {
+            let children = &info.children;
+            let at = children.iter().position(|&c| {
+                meta.node_info
+                    .get(&c)
+                    .is_some_and(|i| i.kind == "parameter_list" || i.kind == "type_parameter_list")
+            })?;
+            let name = *children.get(at.checked_sub(1)?)?;
+            let name_info = meta.node_info.get(&name)?;
+            (name_info.kind == "identifier")
+                .then(|| (member_kind_label(&info.kind), name_info.text.clone()))
+        }
+        // A decorator does not change which definition it is.
+        (Language::Python, "decorated_definition") => info
+            .children
+            .iter()
+            .rev()
+            .find_map(|&c| member_identity_name(c, meta, language)),
         _ => None,
     }
 }
@@ -715,6 +862,13 @@ pub fn is_semantically_structural<'a>(
             | "function_definition" => named_child_text(node, bytes, "name", None),
             _ => None,
         },
+        // `package Foo;` is left out: a file may switch back to a package it already named.
+        Language::Perl => match node_kind {
+            "subroutine_declaration_statement" | "method_declaration_statement" => {
+                named_child_text(node, bytes, "name", None)
+            }
+            _ => None,
+        },
         Language::R | Language::ShellScript | Language::LUA | Language::Vimscript => {
             match node_kind {
                 "function_definition" | "function_declaration" => {
@@ -836,7 +990,7 @@ const COMPARISON_OPS: &[&str] = &[
 
 const ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "//", "@"];
 
-/// PHP's `.` concatenation sits in the arithmetic slot.
+/// PHP's and Perl's `.` concatenation sits in the arithmetic slot.
 const PHP_ARITHMETIC_OPS: &[&str] = &["+", "-", "*", "/", "%", "**", "."];
 
 const BITWISE_OPS: &[&str] = &[
@@ -858,9 +1012,47 @@ const RUST_RANGE_OPS: &[&str] = &["..", "..=", "..."];
 /// `foo.bar` -> `foo?.bar`, `s.x` -> `s->x`. Not given to PHP, where `.` is concatenation.
 const MEMBER_ACCESS_OPS: &[&str] = &[".", "?.", "->", "?->", "&."];
 
-// No C/C++ `type_identifier`/`primitive_type` family: the ground truth contradicts itself.
-// `cpp-tensorflow-switch-to-primitive-types` pairs the two as an update; `cpp-add-templates` and
-// `c-linux-small-change-struct-to-char` delete one and insert the other in the same slot.
+// No C/C++ `type_identifier`/`primitive_type`/`sized_type_specifier` family: the ground truth
+// contradicts itself. `cpp-tensorflow-switch-to-primitive-types` and
+// `cpp-libreoffice-fraction-type-to-double` pair the two as an update; `cpp-add-templates` and
+// `c-linux-small-change-struct-to-char` delete one and insert the other in the same slot (measured
+// 2026-10-13: 8 visible gained, 8 lost, and `c-ffmpeg-added-typedef-to-enum` not fixed).
+
+/// Java's primitive types and `void` (`void` -> `boolean`, `java-genymobile-scrcpy-add`). No
+/// `type_identifier`: a class name in a type slot is a different type, not an edited one.
+const JAVA_PRIMITIVE_TYPE_KINDS: &[&str] = &[
+    "void_type",
+    "boolean_type",
+    "integral_type",
+    "floating_point_type",
+];
+
+/// `NULL` -> `nullptr` under the same `null` node (`c-freeciv-freeciv-null-to-nullptr`).
+const NULL_POINTER_KINDS: &[&str] = &["NULL", "nullptr"];
+
+/// Java's number and boolean literals: a value edit across literal kinds (`false` -> `0`,
+/// `java-defects4j-codec-4-base64`). No `character_literal`: `java-defects4j-csv-14-csvformat`
+/// updates `'\n'` -> `0x0A`, but `java-defects4j-jsoup-17-treebuilderstate`'s painting deletes
+/// `0x0000` and inserts `'\u0000'` (its mapping updates them; questionable ground truth).
+const JAVA_VALUE_LITERAL_KINDS: &[&str] = &[
+    "decimal_integer_literal",
+    "hex_integer_literal",
+    "octal_integer_literal",
+    "binary_integer_literal",
+    "decimal_floating_point_literal",
+    "hex_floating_point_literal",
+    "true",
+    "false",
+];
+
+/// A YAML scalar whose resolved type changed (`node` -> `14`, `yaml-axios-axios-node-to-number`).
+const YAML_SCALAR_KINDS: &[&str] = &[
+    "string_scalar",
+    "integer_scalar",
+    "float_scalar",
+    "boolean_scalar",
+    "null_scalar",
+];
 
 /// `1` -> `1.0` is a value edit; human mappings pair these without exception.
 const NUMERIC_LITERAL_KINDS: &[&str] = &[
@@ -987,6 +1179,10 @@ const ALL_OPERATOR_FAMILIES: &[&[&str]] = &[
     NULL_LITERAL_KINDS,
     BOOLEAN_LITERAL_KINDS,
     SHELL_STRING_BODY_KINDS,
+    JAVA_PRIMITIVE_TYPE_KINDS,
+    NULL_POINTER_KINDS,
+    JAVA_VALUE_LITERAL_KINDS,
+    YAML_SCALAR_KINDS,
 ];
 
 /// A family past the mask's width would wrap silently in release; fail to compile instead.
@@ -1061,6 +1257,7 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             ASSIGNMENT_OPS,
             INCREMENT_OPS,
             MEMBER_ACCESS_OPS,
+            NULL_POINTER_KINDS,
         ],
         Language::CPP => &[
             COMPARISON_OPS,
@@ -1071,6 +1268,7 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             INCREMENT_OPS,
             MEMBER_ACCESS_OPS,
             ACCESS_MODIFIERS,
+            NULL_POINTER_KINDS,
         ],
         Language::Java => &[
             COMPARISON_OPS,
@@ -1082,6 +1280,8 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             NUMERIC_LITERAL_KINDS,
             ACCESS_MODIFIERS,
             BOOLEAN_LITERAL_KINDS,
+            JAVA_PRIMITIVE_TYPE_KINDS,
+            JAVA_VALUE_LITERAL_KINDS,
         ],
         Language::Go => &[
             COMPARISON_OPS,
@@ -1198,7 +1398,17 @@ fn families_for_language(language: &Language) -> &'static [&'static [&'static st
             NUMERIC_LITERAL_KINDS,
         ],
         Language::ShellScript => &[SHELL_TEST_OPS, SHELL_STRING_BODY_KINDS],
+        // `.` is concatenation, as in PHP. Unvalidated: no Perl fixture yet.
+        Language::Perl => &[
+            COMPARISON_OPS,
+            PHP_ARITHMETIC_OPS,
+            BITWISE_OPS,
+            LOGICAL_OPS,
+            ASSIGNMENT_OPS,
+            INCREMENT_OPS,
+        ],
         Language::HTML | Language::XML => &[HTML_TAG_END],
+        Language::YAML => &[YAML_SCALAR_KINDS],
         Language::CSS => &[NUMERIC_LITERAL_KINDS],
         _ => &[],
     }

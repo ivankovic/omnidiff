@@ -1,11 +1,10 @@
-# This file is part of the CodeDiff code diffing tool.
+# This file is part of the OmniDiff code diffing tool.
 #
 # Copyright (C) 2026 Marko Ivankovic
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# by the Free Software Foundation, version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,7 +25,7 @@ with the binary that runs it.
 BDiff internally shells out to `git diff --no-index --diff-algorithm=... --unified=0 --numstat`
 for raw change detection, which is why `benchmark_other` runs this driver with GIT_CONFIG_GLOBAL
 and GIT_CONFIG_SYSTEM pointed at /dev/null. Without that, a user-level `diff.external` (this
-project's own README recommends setting exactly that, to codediff itself) replaces git's diff
+project's own README recommends setting exactly that, to omnidiff itself) replaces git's diff
 output, BDiff parses no `@@` headers, and it returns a **0-entry edit script with exit code 0** -
 a silently perfect-looking score rather than an error. See data/comparison/PROVENANCE.md.
 

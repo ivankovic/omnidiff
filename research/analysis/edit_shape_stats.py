@@ -3,14 +3,13 @@
 # requires-python = ">=3.12"
 # dependencies = []
 # ///
-#  This file is part of the CodeDiff code diffing tool.
+#  This file is part of the OmniDiff code diffing tool.
 #
 #  Copyright (C) 2026 Marko Ivankovic
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+#  by the Free Software Foundation, version 3 of the License.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -129,7 +128,7 @@ def shallow_boundary_commits(repo):
         return set()
 
 
-def numstat_rows(repo, max_commits):
+def numstat_rows(repo, max_commits, keep_binary=False):
     """Every (commit, path, added, removed) in `repo`'s cloned history, non-merge commits only.
 
     Streams `git log`'s stdout line by line rather than capturing it. The clones here are depth-
@@ -142,7 +141,8 @@ def numstat_rows(repo, max_commits):
     is long consists mostly of them.
 
     `--numstat` reports `-\t-\t<path>` for a binary file; those carry no line counts and are
-    skipped. A rename is reported with a brace-expanded path (`a/{b => c}/d`); the post-rename
+    skipped, unless `keep_binary`, which yields them with `None` for both counts (the change
+    census counts files, not lines). A rename is reported with a brace-expanded path (`a/{b => c}/d`); the post-rename
     path is what the row is attributed to, since that is the file the edit produced.
     """
     shallow = shallow_boundary_commits(repo)
@@ -168,7 +168,8 @@ def numstat_rows(repo, max_commits):
             if len(parts) != 3:
                 continue
             added, removed, path = parts
-            if added == "-" or removed == "-":
+            binary = added == "-" or removed == "-"
+            if binary and not keep_binary:
                 continue
             if " => " in path:
                 # A rename, as either "before => after" or "dir/{before => after}/file". Rewriting
@@ -179,7 +180,10 @@ def numstat_rows(repo, max_commits):
                     group, _, tail = rest.partition("}")
                     path = head + group.split(" => ")[-1] + tail
                 path = path.split(" => ")[-1]
-            yield commit, path.strip(), int(added), int(removed)
+            if binary:
+                yield commit, path.strip(), None, None
+            else:
+                yield commit, path.strip(), int(added), int(removed)
     finally:
         proc.stdout.close()
         if proc.wait() != 0:

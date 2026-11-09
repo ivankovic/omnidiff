@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -337,7 +336,7 @@ fn blend_toward_base(accent: (u8, u8, u8), base: (u8, u8, u8), base_weight: f32)
 /// How the before/after panels are laid out. Lives here because this module owns the config file.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PanelLayout {
-    /// Pick dual/single from the terminal width (`SINGLE_PANEL_THRESHOLD`).
+    /// Pick dual/single from the terminal width (see [`load_wide_columns`]).
     #[default]
     Auto,
     /// Always side-by-side, regardless of width.
@@ -354,6 +353,11 @@ impl PanelLayout {
             PanelLayout::Dual => PanelLayout::Single,
             PanelLayout::Single => PanelLayout::Auto,
         }
+    }
+
+    /// The step back through the same cycle: the settings menu's ← on the layout row.
+    pub fn previous(self) -> Self {
+        self.next().next()
     }
 
     /// Short label for the footer/title, e.g. `[layout: dual]`.
@@ -392,6 +396,10 @@ struct ThemeConfig {
     /// The `M` key; defaults to `RenderOptions::FULL`.
     #[serde(default)]
     render_options: crate::diff::text::RenderOptions,
+    /// The width from which the `Auto` layout shows two panels; unset means
+    /// [`DEFAULT_WIDE_COLUMNS`] (see [`load_wide_columns`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    wide_columns: Option<u16>,
 }
 
 /// Deserialize a theme name, falling back to the default for anything this build does not know.
@@ -411,23 +419,55 @@ where
 }
 
 /// The environment variable that overrides every other config layer.
-pub const CONFIG_ENV: &str = "CODEDIFF_CONFIG";
+pub const CONFIG_ENV: &str = "OMNIDIFF_CONFIG";
+
+/// Overrides the config file's `wide_columns` (see [`load_wide_columns`]).
+pub const WIDE_COLUMNS_ENV: &str = "OMNIDIFF_WIDE_COLUMNS";
+
+/// The terminal width from which the `Auto` layout shows the two panels side by side: two 80-column
+/// panels. Below it each would be narrower than the 80 columns code is written for.
+pub const DEFAULT_WIDE_COLUMNS: u16 = 160;
+
+/// The range a width setting is held to: below 40 columns even one panel is barely readable, and
+/// above 1000 no terminal would ever show two.
+pub const WIDE_COLUMNS_RANGE: std::ops::RangeInclusive<u16> = 40..=1000;
 
 /// The project-level config file's name, looked for at or above the current directory.
-const PROJECT_CONFIG: &str = ".codediff.toml";
+const PROJECT_CONFIG: &str = ".omnidiff.toml";
+
+/// The names from before the rename to OmniDiff (v0.2.0), still read for one release so an
+/// upgrade keeps its settings: the variable and the project file as fallbacks, the user config
+/// moved to the new directory the first time it is needed. Remove in v0.3.
+const LEGACY_CONFIG_ENV: &str = "CODEDIFF_CONFIG";
+const LEGACY_PROJECT_CONFIG: &str = ".codediff.toml";
+const LEGACY_CONFIG_DIR: &str = "codediff";
 
 /// The config file to read and write, resolved in this order:
 ///
-/// 1. `$CODEDIFF_CONFIG`, if set and non-empty. Authoritative: no walk-up, no fallback.
-/// 2. The nearest `.codediff.toml` at or above the current directory, **if one already exists**.
-///    It is never created, so codediff does not litter the directories it runs in. The walk-up
+/// 1. `$OMNIDIFF_CONFIG`, if set and non-empty. Authoritative: no walk-up, no fallback.
+/// 2. The nearest `.omnidiff.toml` at or above the current directory, **if one already exists**.
+///    It is never created, so omnidiff does not litter the directories it runs in. The walk-up
 ///    matters because git runs difftools from the repository root.
-/// 3. `$XDG_CONFIG_HOME/codediff/config.toml`, else `$HOME/.config/codediff/config.toml`.
+/// 3. `$XDG_CONFIG_HOME/omnidiff/config.toml`, else `$HOME/.config/omnidiff/config.toml`.
+///
+/// Each layer also accepts its pre-rename name (see [`LEGACY_CONFIG_ENV`]).
 pub(crate) fn config_path() -> PathBuf {
-    if let Ok(explicit) = std::env::var(CONFIG_ENV)
-        && !explicit.is_empty()
-    {
-        return PathBuf::from(explicit);
+    #[cfg(test)]
+    if let Some(path) = TEST_CONFIG.with(|path| path.borrow().clone()) {
+        return path;
+    }
+    config_path_from(|variable| std::env::var(variable).ok())
+}
+
+/// [`config_path`] with the environment read through `lookup`, so the order can be tested without
+/// setting a process-wide variable under threads that read it.
+fn config_path_from(lookup: impl Fn(&str) -> Option<String>) -> PathBuf {
+    for variable in [CONFIG_ENV, LEGACY_CONFIG_ENV] {
+        if let Some(explicit) = lookup(variable)
+            && !explicit.is_empty()
+        {
+            return PathBuf::from(explicit);
+        }
     }
     #[cfg(test)]
     {
@@ -435,20 +475,77 @@ pub(crate) fn config_path() -> PathBuf {
     }
     #[cfg(not(test))]
     {
-        nearest_project_config().unwrap_or_else(user_config_path)
+        nearest_project_config().unwrap_or_else(|| {
+            let path = user_config_path();
+            adopt_legacy_user_config(&path);
+            path
+        })
+    }
+}
+
+/// Moves a pre-rename `.../codediff/config.toml` to `path`, when `path` is `.../omnidiff/config.toml`
+/// and does not exist yet. Best effort: a failure leaves the defaults, as a fresh machine has.
+fn adopt_legacy_user_config(path: &Path) {
+    if path.exists() {
+        return;
+    }
+    let Some(directory) = path.parent() else {
+        return;
+    };
+    let Some(config_home) = directory.parent() else {
+        return;
+    };
+    if directory.file_name() != Some("omnidiff".as_ref()) {
+        return;
+    }
+    let legacy = config_home.join(LEGACY_CONFIG_DIR).join("config.toml");
+    if legacy.is_file() && std::fs::create_dir_all(directory).is_ok() {
+        let _ = std::fs::rename(&legacy, path);
     }
 }
 
 /// A throwaway config for the test build. Many tests reach the persisting setters incidentally,
 /// so redirecting here is the only way no test writes a developer's real settings. Done in code
 /// because nextest ignores an `[env]` table and a Makefile variable misses a bare `cargo test`;
-/// keyed by process id so threaded `cargo test` runs do not share a file.
+/// keyed by process and thread, since `cargo test` runs tests as threads of one process and one
+/// test's saved setting must not be read back by another.
 #[cfg(test)]
 fn test_config_path() -> PathBuf {
-    std::env::temp_dir().join(format!("codediff-test-config-{}.toml", std::process::id()))
+    let thread = format!("{:?}", std::thread::current().id());
+    let thread: String = thread.chars().filter(char::is_ascii_digit).collect();
+    std::env::temp_dir().join(format!(
+        "omnidiff-test-config-{}-{thread}.toml",
+        std::process::id()
+    ))
 }
 
-/// The nearest existing `.codediff.toml` at or above the current directory. Unreachable in the
+#[cfg(test)]
+thread_local! {
+    /// The config this test thread reads and writes, set by [`use_config_for_this_thread`].
+    static TEST_CONFIG: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Points this test thread's config at `path` until the guard drops. Per thread rather than
+/// through `$OMNIDIFF_CONFIG`: setting a process-wide variable races every test running beside it
+/// under `cargo test`, which runs tests as threads of one process.
+#[cfg(test)]
+pub(crate) fn use_config_for_this_thread(path: &Path) -> TestConfigGuard {
+    TEST_CONFIG.with(|config| *config.borrow_mut() = Some(path.to_path_buf()));
+    TestConfigGuard
+}
+
+/// Restores [`use_config_for_this_thread`]'s default when dropped.
+#[cfg(test)]
+pub(crate) struct TestConfigGuard;
+
+#[cfg(test)]
+impl Drop for TestConfigGuard {
+    fn drop(&mut self) {
+        TEST_CONFIG.with(|config| *config.borrow_mut() = None);
+    }
+}
+
+/// The nearest existing `.omnidiff.toml` at or above the current directory. Unreachable in the
 /// test build; the walk is tested through `nearest_project_config_from`.
 #[cfg_attr(test, allow(dead_code))]
 fn nearest_project_config() -> Option<PathBuf> {
@@ -457,14 +554,16 @@ fn nearest_project_config() -> Option<PathBuf> {
 
 fn nearest_project_config_from(start: &Path) -> Option<PathBuf> {
     start.ancestors().find_map(|directory| {
-        let candidate = directory.join(PROJECT_CONFIG);
-        candidate.is_file().then_some(candidate)
+        [PROJECT_CONFIG, LEGACY_PROJECT_CONFIG]
+            .into_iter()
+            .map(|name| directory.join(name))
+            .find(|candidate| candidate.is_file())
     })
 }
 
 /// Resolved from the environment rather than a `dirs` crate: a new dependency costs every Gentoo
 /// ebuild bump a regenerated `CRATES=` block. With neither variable set it falls back to
-/// `./.codediff.toml` rather than a path under the filesystem root.
+/// `./.omnidiff.toml` rather than a path under the filesystem root.
 #[cfg_attr(test, allow(dead_code))]
 fn user_config_path() -> PathBuf {
     user_config_path_from(
@@ -475,12 +574,12 @@ fn user_config_path() -> PathBuf {
 
 fn user_config_path_from(xdg_config_home: Option<String>, home: Option<String>) -> PathBuf {
     if let Some(xdg) = xdg_config_home.filter(|value| !value.is_empty()) {
-        return PathBuf::from(xdg).join("codediff").join("config.toml");
+        return PathBuf::from(xdg).join("omnidiff").join("config.toml");
     }
     if let Some(home) = home.filter(|value| !value.is_empty()) {
         return PathBuf::from(home)
             .join(".config")
-            .join("codediff")
+            .join("omnidiff")
             .join("config.toml");
     }
     PathBuf::from(PROJECT_CONFIG)
@@ -586,6 +685,44 @@ pub fn save_syntax_theme(name: &str) {
     update_config(|config| config.syntax_theme = name.to_string());
 }
 
+/// The width from which the `Auto` layout shows two panels, and where it came from:
+/// `$OMNIDIFF_WIDE_COLUMNS`, else the config file's `wide_columns` (the settings menu's Layout
+/// tab), else [`DEFAULT_WIDE_COLUMNS`]. A value that is not a number in [`WIDE_COLUMNS_RANGE`] is
+/// passed over, as if unset.
+pub fn load_wide_columns() -> (u16, WideColumnsSource) {
+    wide_columns_from(
+        std::env::var(WIDE_COLUMNS_ENV).ok().as_deref(),
+        load_from(config_path()).wide_columns,
+    )
+}
+
+/// Where [`load_wide_columns`]' answer came from: the settings menu says so, since a value from
+/// the environment is not what its row edits.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WideColumnsSource {
+    Environment,
+    Config,
+    Default,
+}
+
+fn wide_columns_from(environment: Option<&str>, config: Option<u16>) -> (u16, WideColumnsSource) {
+    let valid = |columns: u16| WIDE_COLUMNS_RANGE.contains(&columns);
+    if let Some(columns) = environment
+        .and_then(|value| value.trim().parse::<u16>().ok())
+        .filter(|&columns| valid(columns))
+    {
+        return (columns, WideColumnsSource::Environment);
+    }
+    match config.filter(|&columns| valid(columns)) {
+        Some(columns) => (columns, WideColumnsSource::Config),
+        None => (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default),
+    }
+}
+
+pub fn save_wide_columns(columns: u16) {
+    update_config(|config| config.wide_columns = Some(columns));
+}
+
 /// Whether the node highlight (the `H` key) is on. Off by default: it repaints on every cursor
 /// move, which reads as flicker and hides the diff colors; it answers an occasional question.
 pub fn load_node_highlight() -> bool {
@@ -679,13 +816,19 @@ mod tests {
         );
     }
 
-    /// Tests rely on this to stay off a real user's settings.
+    /// A user, or a script, relies on this to point omnidiff at a config of their choosing.
     #[test]
     fn the_environment_override_wins_over_every_other_layer() {
         let file = tempfile::NamedTempFile::new().expect("temp file");
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        assert_eq!(config_path(), file.path());
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let path = file.path().to_string_lossy().into_owned();
+        let lookup = |variable: &str| (variable == CONFIG_ENV).then(|| path.clone());
+        assert_eq!(config_path_from(lookup), file.path());
+        let empty = |variable: &str| (variable == CONFIG_ENV).then(String::new);
+        assert_ne!(
+            config_path_from(empty),
+            PathBuf::new(),
+            "an empty value is not a path"
+        );
     }
 
     #[test]
@@ -706,12 +849,68 @@ mod tests {
             },
         );
 
-        unsafe { std::env::set_var(CONFIG_ENV, file.path()) };
-        let pairs = load_recent_pairs();
-        unsafe { std::env::remove_var(CONFIG_ENV) };
+        let pairs = {
+            let _config = use_config_for_this_thread(file.path());
+            load_recent_pairs()
+        };
 
         assert_eq!(pairs.len(), 1);
         assert_eq!(pairs[0].0, alive.path());
+    }
+
+    #[test]
+    fn the_wide_threshold_comes_from_the_environment_then_the_config_then_the_default() {
+        assert_eq!(
+            wide_columns_from(Some("200"), Some(180)),
+            (200, WideColumnsSource::Environment)
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(180)),
+            (180, WideColumnsSource::Config)
+        );
+        assert_eq!(
+            wide_columns_from(None, None),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+        assert_eq!(DEFAULT_WIDE_COLUMNS, 2 * 80, "two 80-column panels");
+    }
+
+    #[test]
+    fn an_unusable_wide_threshold_is_passed_over() {
+        // Not a number, empty, or outside the range: the next layer answers.
+        for bad in ["wide", "", "-5", "39", "1001", "99999999"] {
+            assert_eq!(
+                wide_columns_from(Some(bad), Some(180)),
+                (180, WideColumnsSource::Config),
+                "{bad:?}"
+            );
+        }
+        assert_eq!(
+            wide_columns_from(Some(" 120 "), None).0,
+            120,
+            "spaces around it"
+        );
+        assert_eq!(
+            wide_columns_from(None, Some(5000)),
+            (DEFAULT_WIDE_COLUMNS, WideColumnsSource::Default)
+        );
+    }
+
+    #[test]
+    fn the_wide_threshold_is_saved_and_read_back() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        let saved = {
+            let _config = use_config_for_this_thread(file.path());
+            save_wide_columns(220);
+            load_from(config_path()).wide_columns
+        };
+        assert_eq!(saved, Some(220));
+        // An unset value is not written, so a config without the setting stays without it.
+        let other = tempfile::NamedTempFile::new().unwrap();
+        let _config = use_config_for_this_thread(other.path());
+        save_node_highlight(true);
+        let text = std::fs::read_to_string(other.path()).unwrap();
+        assert!(!text.contains("wide_columns"), "{text}");
     }
 
     #[test]
@@ -764,7 +963,7 @@ mod tests {
         assert!(!nested.join(PROJECT_CONFIG).exists());
     }
 
-    /// `~/.config/codediff/` does not exist on a fresh machine, and the user config is the
+    /// `~/.config/omnidiff/` does not exist on a fresh machine, and the user config is the
     /// default destination.
     #[test]
     fn saving_creates_the_directories_the_user_config_lives_in() {
@@ -772,7 +971,7 @@ mod tests {
         let path = home
             .path()
             .join(".config")
-            .join("codediff")
+            .join("omnidiff")
             .join("config.toml");
         assert!(!path.exists());
 
@@ -793,20 +992,54 @@ mod tests {
     }
 
     #[test]
+    fn a_pre_rename_project_config_is_still_found_but_the_new_name_wins() {
+        let root = tempfile::tempdir().expect("temp dir");
+        let nested = root.path().join("a").join("b");
+        std::fs::create_dir_all(&nested).expect("mkdir");
+        let legacy = root.path().join(LEGACY_PROJECT_CONFIG);
+        std::fs::write(&legacy, "").expect("write");
+        assert_eq!(nearest_project_config_from(&nested), Some(legacy));
+
+        let current = root.path().join(PROJECT_CONFIG);
+        std::fs::write(&current, "").expect("write");
+        assert_eq!(nearest_project_config_from(&nested), Some(current));
+    }
+
+    #[test]
+    fn a_pre_rename_user_config_moves_to_the_new_directory_once() {
+        let home = tempfile::tempdir().expect("temp dir");
+        let legacy = home.path().join(LEGACY_CONFIG_DIR).join("config.toml");
+        std::fs::create_dir_all(legacy.parent().unwrap()).expect("mkdir");
+        std::fs::write(&legacy, "node_highlight = true\n").expect("write");
+        let path = home.path().join("omnidiff").join("config.toml");
+
+        adopt_legacy_user_config(&path);
+        assert!(!legacy.exists(), "the old file was moved, not copied");
+        assert!(load_from(path.clone()).node_highlight);
+
+        // Once the new file exists, a stray old one is left alone.
+        std::fs::create_dir_all(legacy.parent().unwrap()).expect("mkdir");
+        std::fs::write(&legacy, "").expect("write");
+        adopt_legacy_user_config(&path);
+        assert!(legacy.exists());
+        assert!(load_from(path).node_highlight);
+    }
+
+    #[test]
     fn the_user_config_path_follows_xdg_then_home() {
         assert_eq!(
             user_config_path_from(Some("/x/config".into()), Some("/home/me".into())),
-            PathBuf::from("/x/config/codediff/config.toml"),
+            PathBuf::from("/x/config/omnidiff/config.toml"),
             "XDG_CONFIG_HOME wins when it is set"
         );
         assert_eq!(
             user_config_path_from(None, Some("/home/me".into())),
-            PathBuf::from("/home/me/.config/codediff/config.toml")
+            PathBuf::from("/home/me/.config/omnidiff/config.toml")
         );
         // An empty variable is not a choice.
         assert_eq!(
             user_config_path_from(Some(String::new()), Some("/home/me".into())),
-            PathBuf::from("/home/me/.config/codediff/config.toml")
+            PathBuf::from("/home/me/.config/omnidiff/config.toml")
         );
         // No HOME at all: a relative path rather than one under `/`.
         assert_eq!(

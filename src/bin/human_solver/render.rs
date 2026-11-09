@@ -1,11 +1,10 @@
-/*  This file is part of the CodeDiff code diffing tool.
+/*  This file is part of the OmniDiff code diffing tool.
  *
  *  Copyright (C) 2026 Marko Ivankovic
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  by the Free Software Foundation, version 3 of the License.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,13 +17,13 @@
 //! Drawing the two AST panels, the modals and the status line.
 
 use crate::*;
-use codediff::diff::text_range::{ScreenColumn, SourceRow, cell_width_of, row_cells_of};
+use omnidiff::diff::text_range::{ScreenColumn, SourceRow, cell_width_of, row_cells_of};
 
 // ---------------------------------------------------------------------------------------------
 // Rendering
 // ---------------------------------------------------------------------------------------------
 
-pub(crate) use codediff::test::helper::human_mapping::Side;
+pub(crate) use omnidiff::test::helper::human_mapping::Side;
 
 pub(crate) fn node_label(node: Node, src: &[u8]) -> String {
     if node.child_count() == 0 {
@@ -42,7 +41,7 @@ pub(crate) fn node_label(node: Node, src: &[u8]) -> String {
 /// space, not a tab stop, and C0 only (a C1 control is two bytes): a character's screen column
 /// must keep matching its byte offset, because paint cursors and `HumanTextSpan`s are stored in
 /// those coordinates. The product viewer keeps the tab instead and maps byte columns to tab
-/// stops where it draws a row (`codediff::tui::display_columns`).
+/// stops where it draws a row (`omnidiff::tui::display_columns`).
 pub(crate) fn display_safe_char(ch: char) -> char {
     if ch.is_ascii_control() { ' ' } else { ch }
 }
@@ -118,7 +117,7 @@ pub(crate) fn render_panel(
     algo_diff: Option<&ASTDiff>,
     show_reason: bool,
     total_unmarked: usize,
-    // `None` until codediff's diff is in; see `FrameState::before_mismatches`.
+    // `None` until omnidiff's diff is in; see `FrameState::before_mismatches`.
     mismatches: Option<usize>,
     multi_selected: &std::collections::BTreeSet<usize>,
     groups: &[MultiMapGroup],
@@ -235,7 +234,7 @@ pub(crate) fn render_panel(
 /// Below this width `draw_ui` shows only the focused panel: two half-width panels wrap almost every
 /// line. Shared with the main TUI's `DiffViewer`.
 pub(crate) const SINGLE_PANEL_WIDTH_THRESHOLD: u16 =
-    codediff::tui::components::diff_viewer::SINGLE_PANEL_THRESHOLD;
+    omnidiff::tui::components::diff_viewer::SINGLE_PANEL_THRESHOLD;
 
 /// The Before/After panels for a language with no tree-sitter grammar: one row saying why they are
 /// empty. Drawn in the panels, not the status line, because two empty panels otherwise read as
@@ -286,7 +285,7 @@ fn render_unsupported_language_panels(
 
 pub(crate) const NO_GRAMMAR_MESSAGE: &str = "<Language not supported by TreeSitter>\n\nThere is \
     no AST for this file pair, so there is no tree mapping to record. Press t to paint the text \
-    (which is graded against codediff's own plain-text fallback diff), T for a unix diff, s to \
+    (which is graded against omnidiff's own plain-text fallback diff), T for a unix diff, s to \
     save, o to open another case.";
 
 // A params struct would only relocate these fields.
@@ -418,7 +417,7 @@ pub(crate) fn draw_ui(
     }
 
     let footer = format!(
-        "{}{}{}\nm/M match[+children]  x select for multi-map  X flip all-to-all  c clear selection  f match to EOF  d/D delete[+children]  i/I insert[+children]  a/A align (human/codediff)  p run codediff  r toggle reason  n/N next/prev mismatch  t text view  T unix diff  H hide solved  u unmark  h/l ←/→ collapse/expand  j/k ↑/↓ move  g/G top/bottom  Tab switch  s save  ? help  q quit",
+        "{}{}{}\nm/M match[+children]  x select for multi-map  X flip all-to-all  c clear selection  f match to EOF  d/D delete[+children]  i/I insert[+children]  a/A align (human/omnidiff)  p run omnidiff  r toggle reason  n/N next/prev mismatch  t text view  T unix diff  H hide solved  u unmark  h/l ←/→ collapse/expand  j/k ↑/↓ move  g/G top/bottom  Tab switch  s save  ? help  q quit",
         app.status.clone().unwrap_or_default(),
         if app.dirty { "  [UNSAVED]" } else { "" },
         if caches.unresolved > 0 {
@@ -443,6 +442,7 @@ pub(crate) fn draw_ui(
             std::str::from_utf8(after_src).unwrap_or(""),
             &app.mapping,
             &app.text_solution,
+            &app.layer_paint,
             app.text_overlay,
             app.algo_text_spans.as_ref(),
             DiffPickerData::from_app(app),
@@ -501,6 +501,7 @@ pub(crate) fn render_modal(
     after_src: &str,
     mapping: &HumanMapping,
     text_solution: &str,
+    layer_paint: &[LayerPaint],
     text_overlay: TextOverlay,
     algo_text_spans: Option<&[Vec<(HumanTextSpan, HumanTextVerdict)>; 2]>,
     diff_data: DiffPickerData<'_>,
@@ -662,6 +663,7 @@ pub(crate) fn render_modal(
                 after_src,
                 mapping,
                 text_solution,
+                layer_paint,
                 text_overlay,
                 algo_text_spans,
                 state,
@@ -759,7 +761,7 @@ pub(crate) fn painted_spans(
         .collect()
 }
 
-/// From the shared overlay palette, so a painted range looks as it does in the `codediff` TUI.
+/// From the shared overlay palette, so a painted range looks as it does in the `omnidiff` TUI.
 pub(crate) fn verdict_style(verdict: HumanTextVerdict) -> Style {
     let palette = overlay_palette();
     let color = match verdict {
@@ -1023,6 +1025,7 @@ pub(crate) fn render_text_view_modal(
     after_src: &str,
     mapping: &HumanMapping,
     solution: &str,
+    layer_paint: &[LayerPaint],
     overlay: TextOverlay,
     algo_spans: Option<&[Vec<(HumanTextSpan, HumanTextVerdict)>; 2]>,
     state: &TextPaintState,
@@ -1049,15 +1052,23 @@ pub(crate) fn render_text_view_modal(
     let others = mapping.text_mappings.len().saturating_sub(1);
 
     // The disagreement overlay needs both sides' human and algo spans together.
-    let human_spans = [
+    let mut human_spans = [
         painted_spans(mapping, solution, 0, before_src, after_src),
         painted_spans(mapping, solution, 1, before_src, after_src),
     ];
+    // Each painted layer's painting where its string spells it (see `layers`).
+    for layer in layer_paint {
+        if let Some(spans) = layer.for_solution(solution) {
+            for side in 0..2 {
+                human_spans[side].extend(spans[side].iter().copied());
+            }
+        }
+    }
     let empty = [Vec::new(), Vec::new()];
     let algo = algo_spans.unwrap_or(&empty);
     let shown = match overlay {
         TextOverlay::Human => human_spans,
-        TextOverlay::CodeDiff => algo.clone(),
+        TextOverlay::OmniDiff => algo.clone(),
         TextOverlay::Disagreements => {
             overlay_disagreement_spans(&human_spans, algo, before_src, after_src)
         }
@@ -1319,8 +1330,16 @@ pub(crate) fn render_invariant_list(
     let block = Block::default()
         .borders(Borders::ALL)
         .title(format!(
-            "Invariants — {} violation(s), j/k move, Enter jumps, Esc closes",
-            entries.len()
+            "Invariants — {} violation(s), {} review item(s), j/k move, Enter jumps, x drops a \
+             review item, Esc closes",
+            entries
+                .iter()
+                .filter(|entry| entry.review.is_none())
+                .count(),
+            entries
+                .iter()
+                .filter(|entry| entry.review.is_some())
+                .count()
         ))
         .border_style(
             Style::default()
@@ -1354,11 +1373,16 @@ pub(crate) fn render_invariant_list(
                 Style::default()
             };
             Row::new(vec![
-                Cell::from(entry.violation.invariant.to_string()),
-                Cell::from(entry.violation.painting.clone().unwrap_or_else(|| {
+                Cell::from(match entry.review {
+                    Some(_) => "R".to_string(),
+                    None => entry.violation.invariant.to_string(),
+                }),
+                Cell::from(match (&entry.review, &entry.violation.painting) {
+                    (Some(_), _) => "(review)".to_string(),
+                    (None, Some(painting)) => painting.clone(),
                     // The rules that read only the tree mapping have no painting to name.
-                    "(mapping)".to_string()
-                })),
+                    (None, None) => "(mapping)".to_string(),
+                }),
                 Cell::from(entry.violation.message.clone()),
             ])
             .style(style)
@@ -1467,33 +1491,35 @@ pub(crate) fn render_open_diff_picker(
                 Style::default()
             };
             let noted = comments.is_some_and(|map| map.contains_key(name));
-            let unmarked = data.unmarked_of(name);
-            let complete_mark = match unmarked {
-                Some(0) => "✓",
-                Some(_) => "•",
+            let complete_mark = match data.incomplete_of(name) {
+                Some(false) => "✓",
+                Some(true) => "•",
                 None => "?",
             };
-            let unmarked_cell = match unmarked {
+            // Content has no mapping, painting or text diff to measure: `–`, not `?`, which
+            // would read as "not scanned yet".
+            let picture = data.is_content(name);
+            let measured = |value: Option<String>| match value {
+                _ if picture => "–".to_string(),
+                Some(value) => value,
+                None => "?".to_string(),
+            };
+            let unmarked_cell = measured(data.unmarked_of(name).map(|count| count.to_string()));
+            let painted_mark = measured(
+                data.painted_of(name)
+                    .map(|painted| if painted { "✓" } else { "•" }.to_string()),
+            );
+            let disagree_cell = measured(data.disagreement_of(name).map(|bytes| bytes.to_string()));
+            let invariant_cell = measured(data.invariants_of(name).map(|count| count.to_string()));
+            let review_cell = match data.review_of(name) {
+                Some(0) | None => String::new(),
                 Some(count) => count.to_string(),
-                None => "?".to_string(),
             };
-            let painted_mark = match data.painted_of(name) {
-                Some(true) => "✓",
-                Some(false) => "•",
-                None => "?",
-            };
-            let disagree_cell = match data.disagreement_of(name) {
-                Some(bytes) => bytes.to_string(),
-                None => "?".to_string(),
-            };
-            let invariant_cell = match data.invariants_of(name) {
-                Some(count) => count.to_string(),
-                None => "?".to_string(),
-            };
-            let size_cell = match data.size_of(name) {
-                Some(lines) => lines.to_string(),
-                None => "?".to_string(),
-            };
+            let size_cell = measured(data.size_of(name).map(|lines| lines.to_string()));
+            let verdict_cell = data
+                .content_of(name)
+                .map(|row| row.label.as_str())
+                .unwrap_or_default();
             Row::new(vec![
                 Cell::from(if noted {
                     format!("* {name}")
@@ -1506,7 +1532,9 @@ pub(crate) fn render_open_diff_picker(
                 Cell::from(painted_mark),
                 Cell::from(disagree_cell),
                 Cell::from(invariant_cell),
+                Cell::from(review_cell),
                 Cell::from(size_cell),
+                Cell::from(verdict_cell),
             ])
             .style(style)
         })
@@ -1570,7 +1598,9 @@ pub(crate) fn render_open_diff_picker(
             Constraint::Length(7),
             Constraint::Length(10),
             Constraint::Length(11),
+            Constraint::Length(8),
             Constraint::Length(7),
+            Constraint::Length(17),
         ],
     )
     .header(header)
