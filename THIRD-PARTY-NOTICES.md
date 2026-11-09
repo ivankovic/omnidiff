@@ -6553,7 +6553,7 @@ Used by:
 - ident_case 1.0.1 (https://github.com/TedDriggs/ident_case)
 - image-webp 0.2.4 (https://github.com/image-rs/image-webp)
 - image 0.25.10 (https://github.com/image-rs/image)
-- indoc 2.0.7 (https://github.com/dtolnay/indoc)
+- indoc 2.0.8 (https://github.com/dtolnay/indoc)
 - itoa 1.0.18 (https://github.com/dtolnay/itoa)
 - libc 0.2.189 (https://github.com/rust-lang/libc)
 - linebender_resource_handle 0.1.1 (https://github.com/linebender/raw_resource_handle)
