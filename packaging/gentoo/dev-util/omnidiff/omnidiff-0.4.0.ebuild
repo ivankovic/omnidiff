@@ -101,7 +101,7 @@ CRATES="
 	fearless_simd@0.4.1
 	filedescriptor@0.8.3
 	filetime@0.2.29
-	find-msvc-tools@0.1.13
+	find-msvc-tools@0.1.12
 	finl_unicode@1.5.0
 	fixedbitset@0.4.2
 	flate2@1.1.10

@@ -173,7 +173,9 @@ tree-sitter-scala = "0.24"
 # corpus .sql files it parsed 37% without errors (48% leaving out psql scripts), level with its T-SQL
 # fork and ahead of tree-sitter-mssql (21%) and tree-sitter-sqlite3 (34%); so a SQL file is diffed as a
 # tree only when it parses cleanly (`language::requires_clean_parse`). It pins `cc ~1.2`, which holds
-# every other crate's `cc` at 1.2.x too.
+# every other crate's `cc` at 1.2.x too, and cc 1.2.x does not build on Windows against
+# find-msvc-tools 0.1.13 or later (`FILE_ATTRIBUTE_TEMPORARY` became an `i32`), so Cargo.lock keeps
+# find-msvc-tools at 0.1.12: `cargo update` must not move it until the grammar's pin is lifted.
 tree-sitter-sequel = "0.3.11"
 tree-sitter-swift = "0.7"
 tree-sitter-typescript = "0.23"
