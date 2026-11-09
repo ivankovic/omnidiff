@@ -167,7 +167,7 @@ CRATES="
 	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
-	libsqlite3-sys@0.38.2
+	libsqlite3-sys@0.39.1
 	libz-sys@1.1.31
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
@@ -274,7 +274,7 @@ CRATES="
 	roff@1.1.1
 	roxmltree@0.21.1
 	rsqlite-vfs@0.1.1
-	rusqlite@0.40.2
+	rusqlite@0.41.1
 	rustc-hash@2.1.3
 	rustc_version@0.4.1
 	rustix@0.38.44
