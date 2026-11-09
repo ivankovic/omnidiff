@@ -384,7 +384,7 @@ CRATES="
 	unicode-ident@1.0.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
-	unicode-width@0.2.2
+	unicode-width@0.2.3
 	usvg@0.48.1
 	utf8parse@0.2.2
 	uuid@1.26.1
