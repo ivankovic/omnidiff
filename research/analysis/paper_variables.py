@@ -1593,7 +1593,7 @@ def build(
     out += [
         "",
         "% --- Ground-truth corpus and AST-node accuracy (AUTHORED - see script's CORPUS block).",
-        command("NumFixtures", CORPUS["NumFixtures"]),
+        command("NumFixtures", latex_number(CORPUS["NumFixtures"])),
         command("NumFixtureLanguages", CORPUS["NumFixtureLanguages"]),
         command("NodesMatched", latex_number(matched)),
         command("NodesTotal", latex_number(total)),

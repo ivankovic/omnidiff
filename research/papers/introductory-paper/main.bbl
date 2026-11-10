@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{36}
+\begin{thebibliography}{68}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -94,6 +94,22 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Asaduzzaman et~al\mbox{.}(2013)]%
+        {asaduzzaman-lhdiff-2013}
+\bibfield{author}{\bibinfo{person}{Muhammad Asaduzzaman},
+  \bibinfo{person}{Chanchal~K. Roy}, \bibinfo{person}{Kevin~A. Schneider},
+  {and} \bibinfo{person}{Massimiliano Di~Penta}.}
+  \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{{LHDiff}: A Language-Independent Hybrid Approach
+  for Tracking Source Code Lines}. In \bibinfo{booktitle}{\emph{2013 IEEE
+  International Conference on Software Maintenance}}.
+  \bibinfo{pages}{230--239}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/ICSM.2013.34}
+\showDOI{\tempurl}
+
+
 \bibitem[Bacchelli and Bird(2013)]%
         {bacchelli-bird-2013}
 \bibfield{author}{\bibinfo{person}{Alberto Bacchelli} {and}
@@ -141,6 +157,35 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Bille(2005)]%
+        {bille-2005}
+\bibfield{author}{\bibinfo{person}{Philip Bille}.}
+  \bibinfo{year}{2005}\natexlab{}.
+\newblock \showarticletitle{A Survey on Tree Edit Distance and Related
+  Problems}.
+\newblock \bibinfo{journal}{\emph{Theoretical Computer Science}}
+  \bibinfo{volume}{337}, \bibinfo{number}{1--3} (\bibinfo{year}{2005}),
+  \bibinfo{pages}{217--239}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1016/j.tcs.2004.12.030}
+\showDOI{\tempurl}
+
+
+\bibitem[Borges and Valente(2018)]%
+        {borges-stars-2018}
+\bibfield{author}{\bibinfo{person}{Hudson Borges} {and}
+  \bibinfo{person}{Marco~Tulio Valente}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{What's in a {GitHub} Star? {Understanding}
+  Repository Starring Practices in a Social Coding Platform}.
+\newblock \bibinfo{journal}{\emph{Journal of Systems and Software}}
+  \bibinfo{volume}{146} (\bibinfo{year}{2018}), \bibinfo{pages}{112--129}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1016/j.jss.2018.09.016}
+\showDOI{\tempurl}
+
+
 \bibitem[Braunstein et~al\mbox{.}(2022)]%
         {meta-review-time-2022}
 \bibfield{author}{\bibinfo{person}{Louise Braunstein}, \bibinfo{person}{Brendan
@@ -167,6 +212,47 @@
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1109/ICPC52881.2021.00033}
+\showDOI{\tempurl}
+
+
+\bibitem[Brunsfeld et~al\mbox{.}(2026)]%
+        {tree-sitter}
+\bibfield{author}{\bibinfo{person}{Max Brunsfeld} {et~al\mbox{.}}}
+  \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{Tree-sitter: A Parser Generator Tool and an
+  Incremental Parsing Library}.
+\newblock
+  \bibinfo{howpublished}{\url{https://tree-sitter.github.io/tree-sitter/}}.
+\newblock
+\newblock
+\shownote{Accessed: 2026-11-10}.
+
+
+\bibitem[Canfora et~al\mbox{.}(2009)]%
+        {canfora-ldiff-2009}
+\bibfield{author}{\bibinfo{person}{Gerardo Canfora}, \bibinfo{person}{Luigi
+  Cerulo}, {and} \bibinfo{person}{Massimiliano Di~Penta}.}
+  \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Ldiff: An Enhanced Line Differencing Tool}. In
+  \bibinfo{booktitle}{\emph{2009 IEEE 31st International Conference on Software
+  Engineering}}. \bibinfo{pages}{595--598}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/ICSE.2009.5070564}
+\showDOI{\tempurl}
+
+
+\bibitem[Chawathe et~al\mbox{.}(1996)]%
+        {chawathe-1996}
+\bibfield{author}{\bibinfo{person}{Sudarshan~S. Chawathe},
+  \bibinfo{person}{Anand Rajaraman}, \bibinfo{person}{Hector Garcia-Molina},
+  {and} \bibinfo{person}{Jennifer Widom}.} \bibinfo{year}{1996}\natexlab{}.
+\newblock \showarticletitle{Change Detection in Hierarchically Structured
+  Information}. In \bibinfo{booktitle}{\emph{Proceedings of the 1996 ACM SIGMOD
+  International Conference on Management of Data}}. \bibinfo{pages}{493--504}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/233269.233366}
 \showDOI{\tempurl}
 
 
@@ -202,6 +288,19 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Dotzler and Philippsen(2016)]%
+        {mtdiff-2016}
+\bibfield{author}{\bibinfo{person}{Georg Dotzler} {and}
+  \bibinfo{person}{Michael Philippsen}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Move-Optimized Source Code Tree Differencing}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 31st IEEE/ACM International
+  Conference on Automated Software Engineering}}. \bibinfo{pages}{660--671}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/2970276.2970315}
+\showDOI{\tempurl}
+
+
 \bibitem[Dyer et~al\mbox{.}(2014)]%
         {ast-api-1}
 \bibfield{author}{\bibinfo{person}{Robert Dyer}, \bibinfo{person}{Hridesh
@@ -233,10 +332,23 @@
 \shownote{Accessed 2026-07-31}.
 
 
-\bibitem[Falleri and Martinez(2024)]%
+\bibitem[Falleri and Martinez(2024a)]%
+        {falleri-2024}
+\bibfield{author}{\bibinfo{person}{Jean-R{\'e}my Falleri} {and}
+  \bibinfo{person}{Matias Martinez}.} \bibinfo{year}{2024}\natexlab{a}.
+\newblock \showarticletitle{Fine-grained, Accurate and Scalable Source
+  Differencing}. In \bibinfo{booktitle}{\emph{Proceedings of the IEEE/ACM 46th
+  International Conference on Software Engineering}}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3597503.3639148}
+\showDOI{\tempurl}
+
+
+\bibitem[Falleri and Martinez(2024b)]%
         {gumtreesimple}
 \bibfield{author}{\bibinfo{person}{Jean-R{\'e}my Falleri} {and}
-  \bibinfo{person}{Matias Martinez}.} \bibinfo{year}{2024}\natexlab{}.
+  \bibinfo{person}{Matias Martinez}.} \bibinfo{year}{2024}\natexlab{b}.
 \newblock \bibinfo{title}{Replication package of ``Fine-grained, accurate and
   scalable source differencing''}.
 \newblock \bibinfo{howpublished}{Zenodo}.
@@ -263,6 +375,38 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Fan et~al\mbox{.}(2021)]%
+        {fan-2021}
+\bibfield{author}{\bibinfo{person}{Yuanrui Fan}, \bibinfo{person}{Xin Xia},
+  \bibinfo{person}{David Lo}, \bibinfo{person}{Ahmed~E. Hassan},
+  \bibinfo{person}{Yuan Wang}, {and} \bibinfo{person}{Shanping Li}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{A Differential Testing Approach for Evaluating
+  Abstract Syntax Tree Mapping Algorithms}. In \bibinfo{booktitle}{\emph{2021
+  IEEE/ACM 43rd International Conference on Software Engineering (ICSE)}}.
+  \bibinfo{pages}{1174--1185}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/ICSE43902.2021.00108}
+\showDOI{\tempurl}
+
+
+\bibitem[Fluri et~al\mbox{.}(2007)]%
+        {changedistiller-2007}
+\bibfield{author}{\bibinfo{person}{Beat Fluri}, \bibinfo{person}{Michael
+  W{\"u}rsch}, \bibinfo{person}{Martin Pinzger}, {and} \bibinfo{person}{Harald
+  Gall}.} \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{Change Distilling: Tree Differencing for
+  Fine-Grained Source Code Change Extraction}.
+\newblock \bibinfo{journal}{\emph{IEEE Transactions on Software Engineering}}
+  \bibinfo{volume}{33}, \bibinfo{number}{11} (\bibinfo{year}{2007}),
+  \bibinfo{pages}{725--743}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/TSE.2007.70731}
+\showDOI{\tempurl}
+
+
 \bibitem[Fregnan et~al\mbox{.}(2022)]%
         {fregnan-2022}
 \bibfield{author}{\bibinfo{person}{Enrico Fregnan}, \bibinfo{person}{Larissa
@@ -281,6 +425,21 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Frick et~al\mbox{.}(2018)]%
+        {ijm-2018}
+\bibfield{author}{\bibinfo{person}{Veit Frick}, \bibinfo{person}{Thomas
+  Grassauer}, \bibinfo{person}{Fabian Beck}, {and} \bibinfo{person}{Martin
+  Pinzger}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Generating Accurate and Compact Edit Scripts Using
+  Tree Differencing}. In \bibinfo{booktitle}{\emph{2018 IEEE International
+  Conference on Software Maintenance and Evolution (ICSME)}}.
+  \bibinfo{pages}{264--274}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/ICSME.2018.00036}
+\showDOI{\tempurl}
+
+
 \bibitem[Ge et~al\mbox{.}(2017)]%
         {ge-2017}
 \bibfield{author}{\bibinfo{person}{Xi Ge}, \bibinfo{person}{Saurabh Sarkar},
@@ -293,6 +452,20 @@
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1109/VLHCC.2017.8103453}
+\showDOI{\tempurl}
+
+
+\bibitem[Heckel(1978)]%
+        {heckel-1978}
+\bibfield{author}{\bibinfo{person}{Paul Heckel}.}
+  \bibinfo{year}{1978}\natexlab{}.
+\newblock \showarticletitle{A Technique for Isolating Differences Between
+  Files}.
+\newblock \bibinfo{journal}{\emph{Commun. ACM}} \bibinfo{volume}{21},
+  \bibinfo{number}{4} (\bibinfo{year}{1978}), \bibinfo{pages}{264--268}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/359460.359467}
 \showDOI{\tempurl}
 
 
@@ -310,6 +483,22 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Huang et~al\mbox{.}(2018)]%
+        {cldiff-2018}
+\bibfield{author}{\bibinfo{person}{Kaifeng Huang}, \bibinfo{person}{Bihuan
+  Chen}, \bibinfo{person}{Xin Peng}, \bibinfo{person}{Daihong Zhou},
+  \bibinfo{person}{Ying Wang}, \bibinfo{person}{Yang Liu}, {and}
+  \bibinfo{person}{Wenyun Zhao}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{{ClDiff}: Generating Concise Linked Code
+  Differences}. In \bibinfo{booktitle}{\emph{Proceedings of the 33rd ACM/IEEE
+  International Conference on Automated Software Engineering}}.
+  \bibinfo{pages}{679--690}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3238147.3238219}
+\showDOI{\tempurl}
+
+
 \bibitem[Hughes(2018)]%
         {difftastic}
 \bibfield{author}{\bibinfo{person}{Wilfred Hughes}.}
@@ -320,6 +509,33 @@
 \newblock
 \newblock
 \shownote{Accessed 2026-07-31}.
+
+
+\bibitem[Hunt et~al\mbox{.}(1998)]%
+        {hunt-vo-tichy-1998}
+\bibfield{author}{\bibinfo{person}{James~J. Hunt}, \bibinfo{person}{Kiem-Phong
+  Vo}, {and} \bibinfo{person}{Walter~F. Tichy}.}
+  \bibinfo{year}{1998}\natexlab{}.
+\newblock \showarticletitle{Delta Algorithms: An Empirical Analysis}.
+\newblock \bibinfo{journal}{\emph{ACM Transactions on Software Engineering and
+  Methodology}} \bibinfo{volume}{7}, \bibinfo{number}{2}
+  (\bibinfo{year}{1998}), \bibinfo{pages}{192--214}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/279310.279321}
+\showDOI{\tempurl}
+
+
+\bibitem[Hunt and McIlroy(1976)]%
+        {hunt-mcilroy-1976}
+\bibfield{author}{\bibinfo{person}{J.~W. Hunt} {and} \bibinfo{person}{M.~D.
+  McIlroy}.} \bibinfo{year}{1976}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{An Algorithm for Differential File
+  Comparison}}.
+\newblock \bibinfo{type}{Computing Science Technical Report}~41.
+  \bibinfo{institution}{Bell Laboratories}, \bibinfo{address}{Murray Hill, New
+  Jersey}.
+\newblock
 
 
 \bibitem[Just et~al\mbox{.}(2014)]%
@@ -339,6 +555,19 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Kim and Notkin(2009)]%
+        {kim-notkin-2009}
+\bibfield{author}{\bibinfo{person}{Miryung Kim} {and} \bibinfo{person}{David
+  Notkin}.} \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Discovering and Representing Systematic Code
+  Changes}. In \bibinfo{booktitle}{\emph{2009 IEEE 31st International
+  Conference on Software Engineering}}. \bibinfo{pages}{309--319}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/ICSE.2009.5070531}
+\showDOI{\tempurl}
+
+
 \bibitem[Kononenko et~al\mbox{.}(2016)]%
         {kononenko-2016}
 \bibfield{author}{\bibinfo{person}{Oleksii Kononenko}, \bibinfo{person}{Olga
@@ -355,6 +584,37 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Korn et~al\mbox{.}(2002)]%
+        {vcdiff-rfc3284}
+\bibfield{author}{\bibinfo{person}{D. Korn}, \bibinfo{person}{J. MacDonald},
+  \bibinfo{person}{J. Mogul}, {and} \bibinfo{person}{K. Vo}.}
+  \bibinfo{year}{2002}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{The {VCDIFF} Generic Differencing and
+  Compression Data Format}}.
+\newblock \bibinfo{type}{RFC} 3284. \bibinfo{institution}{Internet Engineering
+  Task Force}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.17487/RFC3284}
+\showDOI{\tempurl}
+
+
+\bibitem[Kotsarenko and Ramos-Quintana(2010)]%
+        {kotsarenko-2010}
+\bibfield{author}{\bibinfo{person}{Yuriy Kotsarenko} {and}
+  \bibinfo{person}{Fernando Ramos-Quintana}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Medici{\'o}n de la diferencia de color percibida
+  utilizando el espacio de color de transmisi{\'o}n {YIQ} {NTSC} en
+  aplicaciones m{\'o}viles}.
+\newblock \bibinfo{journal}{\emph{Programaci{\'o}n Matem{\'a}tica y Software}}
+  \bibinfo{volume}{2}, \bibinfo{number}{2} (\bibinfo{year}{2010}),
+  \bibinfo{pages}{27--43}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.30973/progmat/2010.2.2/3}
+\showDOI{\tempurl}
+
+
 \bibitem[Kudrjavets and Rastogi(2023)]%
         {kudrjavets-2023}
 \bibfield{author}{\bibinfo{person}{Gunnar Kudrjavets} {and}
@@ -366,6 +626,20 @@
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1007/s10664-023-10401-z}
+\showDOI{\tempurl}
+
+
+\bibitem[Lamb and Zacchiroli(2022)]%
+        {lamb-reproducible-2022}
+\bibfield{author}{\bibinfo{person}{Chris Lamb} {and} \bibinfo{person}{Stefano
+  Zacchiroli}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Reproducible Builds: Increasing the Integrity of
+  Software Supply Chains}.
+\newblock \bibinfo{journal}{\emph{IEEE Software}} \bibinfo{volume}{39},
+  \bibinfo{number}{2} (\bibinfo{year}{2022}), \bibinfo{pages}{62--70}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/MS.2021.3073045}
 \showDOI{\tempurl}
 
 
@@ -395,6 +669,21 @@
 \newblock
 \newblock
 \shownote{Accessed 2026-08-23}.
+
+
+\bibitem[Matsumoto et~al\mbox{.}(2019)]%
+        {matsumoto-2019}
+\bibfield{author}{\bibinfo{person}{Junnosuke Matsumoto},
+  \bibinfo{person}{Yoshiki Higo}, {and} \bibinfo{person}{Shinji Kusumoto}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Beyond {GumTree}: A Hybrid Approach to Generate
+  Edit Scripts}. In \bibinfo{booktitle}{\emph{2019 IEEE/ACM 16th International
+  Conference on Mining Software Repositories (MSR)}}.
+  \bibinfo{pages}{550--554}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/MSR.2019.00082}
+\showDOI{\tempurl}
 
 
 \bibitem[McIntosh et~al\mbox{.}(2016)]%
@@ -454,6 +743,21 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Pawlik and Augsten(2011)]%
+        {rted-2011}
+\bibfield{author}{\bibinfo{person}{Mateusz Pawlik} {and}
+  \bibinfo{person}{Nikolaus Augsten}.} \bibinfo{year}{2011}\natexlab{}.
+\newblock \showarticletitle{{RTED}: A Robust Algorithm for the Tree Edit
+  Distance}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the VLDB Endowment}}
+  \bibinfo{volume}{5}, \bibinfo{number}{4} (\bibinfo{year}{2011}),
+  \bibinfo{pages}{334--345}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.14778/2095686.2095692}
+\showDOI{\tempurl}
+
+
 \bibitem[Pawlik and Augsten(2015)]%
         {apted-2015}
 \bibfield{author}{\bibinfo{person}{Mateusz Pawlik} {and}
@@ -466,6 +770,17 @@
 \urldef\tempurl%
 \url{https://doi.org/10.1145/2699485}
 \showDOI{\tempurl}
+
+
+\bibitem[Percival(2003)]%
+        {percival-bsdiff}
+\bibfield{author}{\bibinfo{person}{Colin Percival}.}
+  \bibinfo{year}{2003}\natexlab{}.
+\newblock \bibinfo{title}{Naive Differences of Executable Code}.
+\newblock \bibinfo{howpublished}{\url{http://www.daemonology.net/bsdiff/}}.
+\newblock
+\newblock
+\shownote{Unpublished}.
 
 
 \bibitem[Rahman et~al\mbox{.}(2026)]%
@@ -513,6 +828,19 @@
 \showDOI{\tempurl}
 
 
+\bibitem[Tai(1979)]%
+        {tai-1979}
+\bibfield{author}{\bibinfo{person}{Kuo-Chung Tai}.}
+  \bibinfo{year}{1979}\natexlab{}.
+\newblock \showarticletitle{The Tree-to-Tree Correction Problem}.
+\newblock \bibinfo{journal}{\emph{J. ACM}} \bibinfo{volume}{26},
+  \bibinfo{number}{3} (\bibinfo{year}{1979}), \bibinfo{pages}{422--433}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/322139.322143}
+\showDOI{\tempurl}
+
+
 \bibitem[Tao et~al\mbox{.}(2012)]%
         {tao-2012}
 \bibfield{author}{\bibinfo{person}{Yida Tao}, \bibinfo{person}{Yingnong Dang},
@@ -543,6 +871,98 @@
   binary files''. Accessed 2026-11-09}.
 
 
+\bibitem[{The Git Project}(2026)]%
+        {git-pack-format}
+\bibfield{author}{\bibinfo{person}{{The Git Project}}.}
+  \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{gitformat-pack: {Git} Pack Format}.
+\newblock
+  \bibinfo{howpublished}{\url{https://git-scm.com/docs/gitformat-pack}}.
+\newblock
+\newblock
+\shownote{Accessed: 2026-11-10}.
+
+
+\bibitem[Tichy(1984)]%
+        {tichy-1984}
+\bibfield{author}{\bibinfo{person}{Walter~F. Tichy}.}
+  \bibinfo{year}{1984}\natexlab{}.
+\newblock \showarticletitle{The String-to-String Correction Problem with Block
+  Moves}.
+\newblock \bibinfo{journal}{\emph{ACM Transactions on Computer Systems}}
+  \bibinfo{volume}{2}, \bibinfo{number}{4} (\bibinfo{year}{1984}),
+  \bibinfo{pages}{309--321}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/357401.357404}
+\showDOI{\tempurl}
+
+
+\bibitem[Tridgell and Mackerras(1996)]%
+        {tridgell-rsync}
+\bibfield{author}{\bibinfo{person}{Andrew Tridgell} {and} \bibinfo{person}{Paul
+  Mackerras}.} \bibinfo{year}{1996}\natexlab{}.
+\newblock \bibinfo{booktitle}{\emph{The rsync Algorithm}}.
+\newblock \bibinfo{type}{{T}echnical {R}eport} TR-CS-96-05.
+  \bibinfo{institution}{Department of Computer Science, The Australian National
+  University}.
+\newblock
+
+
+\bibitem[Tsantalis et~al\mbox{.}(2022)]%
+        {refactoringminer-2022}
+\bibfield{author}{\bibinfo{person}{Nikolaos Tsantalis}, \bibinfo{person}{Ameya
+  Ketkar}, {and} \bibinfo{person}{Danny Dig}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{{RefactoringMiner} 2.0}.
+\newblock \bibinfo{journal}{\emph{IEEE Transactions on Software Engineering}}
+  \bibinfo{volume}{48}, \bibinfo{number}{3} (\bibinfo{year}{2022}),
+  \bibinfo{pages}{930--950}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/TSE.2020.3007722}
+\showDOI{\tempurl}
+
+
+\bibitem[Vy{\v{s}}niauskas(2009)]%
+        {vysniauskas-2009}
+\bibfield{author}{\bibinfo{person}{V. Vy{\v{s}}niauskas}.}
+  \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Anti-aliased Pixel and Intensity Slope Detector}.
+\newblock \bibinfo{journal}{\emph{Elektronika ir Elektrotechnika}}
+  \bibinfo{volume}{95}, \bibinfo{number}{7} (\bibinfo{year}{2009}),
+  \bibinfo{pages}{107--110}.
+\newblock
+
+
+\bibitem[Wagner and Fischer(1974)]%
+        {wagner-fischer-1974}
+\bibfield{author}{\bibinfo{person}{Robert~A. Wagner} {and}
+  \bibinfo{person}{Michael~J. Fischer}.} \bibinfo{year}{1974}\natexlab{}.
+\newblock \showarticletitle{The String-to-String Correction Problem}.
+\newblock \bibinfo{journal}{\emph{J. ACM}} \bibinfo{volume}{21},
+  \bibinfo{number}{1} (\bibinfo{year}{1974}), \bibinfo{pages}{168--173}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1145/321796.321811}
+\showDOI{\tempurl}
+
+
+\bibitem[Wang et~al\mbox{.}(2004)]%
+        {ssim-2004}
+\bibfield{author}{\bibinfo{person}{Zhou Wang}, \bibinfo{person}{Alan~C. Bovik},
+  \bibinfo{person}{Hamid~R. Sheikh}, {and} \bibinfo{person}{Eero~P.
+  Simoncelli}.} \bibinfo{year}{2004}\natexlab{}.
+\newblock \showarticletitle{Image Quality Assessment: From Error Visibility to
+  Structural Similarity}.
+\newblock \bibinfo{journal}{\emph{IEEE Transactions on Image Processing}}
+  \bibinfo{volume}{13}, \bibinfo{number}{4} (\bibinfo{year}{2004}),
+  \bibinfo{pages}{600--612}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1109/TIP.2003.819861}
+\showDOI{\tempurl}
+
+
 \bibitem[Wurzel~Gon{\c{c}}alves et~al\mbox{.}(2022)]%
         {goncalves-2022}
 \bibfield{author}{\bibinfo{person}{Pavl{\'\i}na Wurzel~Gon{\c{c}}alves},
@@ -557,6 +977,34 @@
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1007/s10664-022-10123-8}
+\showDOI{\tempurl}
+
+
+\bibitem[Yang(1991)]%
+        {yang-1991}
+\bibfield{author}{\bibinfo{person}{Wuu Yang}.} \bibinfo{year}{1991}\natexlab{}.
+\newblock \showarticletitle{Identifying Syntactic Differences Between Two
+  Programs}.
+\newblock \bibinfo{journal}{\emph{Software: Practice and Experience}}
+  \bibinfo{volume}{21}, \bibinfo{number}{7} (\bibinfo{year}{1991}),
+  \bibinfo{pages}{739--755}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1002/spe.4380210706}
+\showDOI{\tempurl}
+
+
+\bibitem[Yee(2004)]%
+        {yee-2004}
+\bibfield{author}{\bibinfo{person}{Hector Yee}.}
+  \bibinfo{year}{2004}\natexlab{}.
+\newblock \showarticletitle{Perceptual Metric for Production Testing}.
+\newblock \bibinfo{journal}{\emph{Journal of Graphics Tools}}
+  \bibinfo{volume}{9}, \bibinfo{number}{4} (\bibinfo{year}{2004}),
+  \bibinfo{pages}{33--40}.
+\newblock
+\urldef\tempurl%
+\url{https://doi.org/10.1080/10867651.2004.10504900}
 \showDOI{\tempurl}
 
 

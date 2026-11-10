@@ -86,7 +86,7 @@ ISSUE_FIXTURE_PREFIXES = {69: ("sql-",)}
 # Issues in the tracker on 2026-11-10 (`gh issue list --state all`, pull requests excluded), and
 # how many of them were filed by someone other than the paper's authors.
 ISSUES_TOTAL = 18
-ISSUES_EXTERNAL = 11
+ISSUES_EXTERNAL = 10
 
 DATA_ROOT = "src/test/data"
 
@@ -323,7 +323,7 @@ def macros(s: dict) -> dict:
         "GrowthCodeFixtures": latex_number(s["code"]),
         "GrowthContentFixtures": latex_number(s["content"]),
         "GrowthPaintedFixtures": latex_number(s["painted"]),
-        "GrowthFirstMonth": f"{MONTH_NAMES[first.month - 1]} {first.year}",
+        "GrowthFirstMonth": f"{first.strftime('%B')} {first.year}",
         "GrowthWeeks": s["weeks"],
         "GrowthActiveWeeks": s["active_weeks"],
         "GrowthMedianPerWeek": s["median_week"],

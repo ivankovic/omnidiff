@@ -733,7 +733,7 @@ def test_growth_summary_counts_per_month_and_leaves_handmade_out():
         "languages": 2,
     }
     assert s["issue_fixtures"] == 1 and s["issues_with_fixtures"] == 1
-    assert dataset_growth.macros(s)["GrowthFirstMonth"] == "Aug 2026"
+    assert dataset_growth.macros(s)["GrowthFirstMonth"] == "August 2026"
 
 
 def test_growth_cumulative_steps_once_per_date():

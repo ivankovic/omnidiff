@@ -541,7 +541,7 @@ measure-astdiff-oracle-human: fetch-external
 		--human-mappings src/test/data/diffs/defects4j \
 		--csv research/data/comparison/astdiff_oracle_defects4j_human.csv $(ASTDIFF_ORACLE_ARGS)
 
-# ── RQ1 (the paper's RQ2): whole-tree APTED against a 1-second budget ───────────────────────────
+# ── RQ1 (the paper's RQ4): whole-tree APTED against a 1-second budget ───────────────────────────
 
 # Same slow/fast split as measure-tools-timing above: `apted-budget-report` re-renders from whatever
 # data/rq1/apted_only_group*.csv already holds, `measure-apted-budget` re-measures first.

@@ -18,7 +18,7 @@
 \input{figures/variables.tex}
 
 %% Result boxes. Each research question stated in the introduction is answered by a correspondingly
-%% numbered research answer, RA1.1--RA4.2, set in one of these at the point where its supporting
+%% numbered research answer, RA1.1--RA5.3, set in one of these at the point where its supporting
 %% measurement is reported. A box holds the answer statement only - two or three sentences, every
 %% measured number a macro from figures/variables.tex - with the argument behind it following as
 %% ordinary prose. Keeping the boxes short is a two-column-layout constraint, not a style
@@ -72,9 +72,10 @@
 \ccsdesc[500]{Software and its engineering~Software maintenance tools}
 \ccsdesc[300]{Software and its engineering~Empirical software validation}
 
-\keywords{source code differencing, syntax-aware diffing, content-aware diffing, binary file differencing, empirical software engineering, source code tree edit distance}
 
-\title{OmniDiff: A Fast, Robust, Content-Aware Diffing Tool for Code and Other Files}
+\keywords{content-aware diffing, edit scripts, diff visualisation, source code differencing, binary file differencing, ground-truth dataset, empirical software engineering}
+
+\title{Content-Aware Diffing: Edit Scripts, Visualisations, and a Living Ground Truth}
 
 \author{Marko Ivankovi\'{c}}
 \affiliation{%
@@ -111,43 +112,43 @@
 \begin{document}
 
 \begin{abstract}
-Diffing, the process of comparing two versions of a file and computing the set of operations that
-transforms one into the other, underlies modern version control and, especially, modern code
-review. During a review, developers read the diff to see what changed and what stayed the
-same, so the quality of the diff directly shapes the ease and quality of the review. For source
-code, a syntax-aware diff maps one abstract syntax tree (AST) onto another. AST diffing algorithms assume the following: that the best
-diff can be expressed with the four standard operations (insert, delete, update, move) and is
-the cheapest one under a unit cost model with a free move, that computing it is possible within
-an interactive wall-clock budget, and that the AST node mapping can be
-visualised without losing quality. We test each assumption on a corpus of real code changes, to measure the viability of AST
-diffing.
+Diffing, the process of comparing two versions of a file and showing what changed between them,
+underlies version control and code review. The files that commits change hold content of many
+types: text, code, pictures, archives, documents, fonts. For each type a diffing tool does two
+things that are usually treated as one. It computes a \emph{delta}, an edit script by which a
+machine converts one version into the other, which is judged by its correctness and its cost. It
+also produces a \emph{visualisation}, an account that a human reads in order to understand what
+happened, which can be judged only against human reading. We study the distance between the two on
+real changes to all content, with code as the content type that has the deepest ground truth.
 
-We built a corpus of \NumFixtures{} real-world changes in \NumFixtureLanguages{} languages, each
-carrying a human-authored AST mapping and \PaintingFixtures{} of them a human-painted text rendering.
-On \AmbiguityListPct{}\% of changes the best possible correspondence requires a mapping that the
-common operations (insert, delete, update and move) cannot express; on at least \CostHumanHigherPct{}\%
-the human-preferred mapping is strictly costlier than the cheapest AST diff; and
-\PaintingDualPct{}\% of painted changes admit at least two equally correct text renderings of one
-settled node mapping. \InvisibleNodeShare{}\% of AST nodes carry no text of their own and never reach
-the screen, so a node-level metric gives a third of its weight where no user can see. A
-whole-tree tree-edit-distance computation completes within one second for only \RqOneCodePct{}\%
-of \RqOnePairsAttempted{} code file pairs stratified-sampled by size. Against this corpus, no
-configuration of eight established tools renders more than \SrcDiffPerfectPct{}\% of changes
-perfectly, and the one that reaches it, srcDiff, parses five of the corpus's languages; of the tools
-that parse most of it, none renders more than \DifftasticPerfectPct{}\%, and
-\texttt{diff}, the most popular tool, renders only \UnixDiffPerfectPct{}\%. Code is not all
-a commit changes: git judges \ChangeCensusBinaryPct{}\% of the \ChangeCensusChanges{} files the
-corpus's recent commits change to be binary, and shows a developer only that they differ.
+We built a living ground-truth dataset, the test corpus of an open-source project with
+\ProjectStars{} GitHub stars, to which ground truth was added in each of the \GrowthWeeks{} weeks
+since its first hand mapping. It holds \NumFixtures{} real code changes in \NumFixtureLanguages{}
+languages with a human-authored node mapping, \PresetPainted{} of them with human-painted
+renderings, and \ContentAccAllJudged{} changes to pictures, cursors, fonts, archives, message
+catalogs and PDFs judged by hand, together with \InvariantCount{} invariants that a visualisation
+has to obey and a delta does not. Git judges \ChangeCensusBinaryPct{}\% of the
+\ChangeCensusChanges{} files that recent commits of \NumRepos{} repositories change to be binary,
+and shows a developer only that they differ. Painted as it stands, the line edit script of
+\texttt{diff} breaks at least one invariant on \InvariantLineScriptFixturesPct{}\% of changes, and
+the human-preferred tree mapping, painted node by node, still does on
+\InvariantTreeScriptFixturesPct{}\%. On \AmbiguityListPct{}\% of code changes the preferred
+correspondence cannot be expressed by the common operations (insert, delete, update and move);
+\InvisibleNodeShare{}\% of syntax-tree nodes never reach the screen; and
+\ContentVerdictNothingPct{}\% of the judged changes to other content, every one a non-empty byte
+delta, show a reader nothing that anyone chose to change. A visualisation is also not unique:
+\PresetBothPct{}\% of painted changes have a sparse and a generous correct rendering, the generous
+one painting \PresetFullOverMinimal{} times the bytes. A whole-tree tree-edit-distance computation
+completes within one second for only \RqOneCodePct{}\% of \RqOnePairsAttempted{} sampled code file
+pairs, and no configuration of eight established tools renders more than \SrcDiffPerfectPct{}\% of
+code changes perfectly.
 
-As a tool contribution, we present \textsc{OmniDiff}, which combines existing state-of-the-art
-algorithms into one robust tool for code and for six families of other content: pictures,
-cursors, fonts, archives, compiled message catalogs and PDFs. On code, it maps \NodeAccuracyPct{}\% of AST nodes correctly and renders
-\OmniDiffPerfectPct{}\% of changes perfectly, at a median of \SpeedOmniDiffPFifty{}\,ms per diff
-including its parse. We tested it on \RobustnessFullAttempted{} diffs
-in \NumRepos{} repositories, and it completes \RobustnessFullCompletedPct{}\% of them
-successfully. Of every file changed in the same commits, it diffs \ContentCensusShownPct{}\% as
-text or by what the file holds, and on \ContentAccAllJudged{} judged changes to other content,
-its verdict of how much changed matches a human's on \ContentAccAllPerfectPct{}\%.
+As a tool contribution, we present \textsc{OmniDiff}, which diffs a file by what it holds: text,
+code in \NumSupportedLanguages{} languages, and six families of other content. It diffs
+\ContentCensusShownPct{}\% of the changed files as text or by their content. On code, it maps
+every visible node as the human did on \MappingZeroVisiblePct{}\% of changes, and on
+\ContentAccAllJudged{} judged changes to other content its verdict of how much changed matches a
+human's on \ContentAccAllPerfectPct{}\%.
 \end{abstract}
 
 \maketitle
@@ -185,15 +186,14 @@ def save(rec):
   \label{fig:motivation}
 \end{figure}
 
-Diffing, the process of comparing two versions of a file and computing the set of operations
-that transforms one into the other, underlies modern version control and, especially, modern code
-review. During a review, developers read the diff to see what changed and what
-stayed the same, so the quality of the diff directly shapes the ease and quality of the review.
-Whether that reading succeeds depends on how the change is shown, not only on the change.
-Reviewers name understanding the change as the main challenge of code
-review~\cite{bacchelli-bird-2013}, and ask for tools that show a change's structure rather than
-its text delta~\cite{tao-2012}. Controlled experiments show the presentation alone affecting the
-outcome. Files shown later in a review receive fewer comments, and a seeded defect in the last
+Diffing, the process of comparing two versions of a file and showing what changed between them,
+underlies modern version control and, especially, modern code review. During a review, developers
+read the diff to see what changed and what stayed the same, so the quality of the diff directly
+shapes the ease and quality of the review. Whether that reading succeeds depends on how the change
+is shown, not only on the change. Reviewers name understanding the change as the main challenge of
+code review~\cite{bacchelli-bird-2013}, and ask for tools that show a change's structure rather
+than its text delta~\cite{tao-2012}. Controlled experiments show the presentation alone affecting
+the outcome. Files shown later in a review receive fewer comments, and a seeded defect in the last
 file has 64\% lower odds of being found than the same defect in the
 first~\cite{fregnan-2022,rahman-2026}. The unified view of a diff costs less visual effort and
 finds more bugs than the split view of the same diff~\cite{alcocer-2023}. A change decomposed
@@ -214,221 +214,440 @@ than as deleted and inserted lines, reviewers report lower cognitive effort and 
 lines~\cite{ge-2017,brito-2021}, and syntactic deltas modelled on how developers edit are judged
 more understandable than the cheapest tree edit~\cite{decker-2020}.
 
-The standard diff used by almost all developers and platforms today is line-based: the file is
-treated as a sequence of text lines, and the tool computes an edit script between the two
-sequences using three operations, insert, delete, and update. This approach is computationally
-cheap and fast even on modest hardware, but most implementations offer no move operation, and the
-tools that do support move use it only in limited ways. A whole class of common
-changes—extracting code into a reusable function, wrapping a block in a condition, reordering
-declarations—is a move of existing code, and without a move operation every such
-change must be rendered as a full deletion plus a full insertion. Reconstructing the
-correspondence between the deleted and inserted halves is then left to the reviewer, by eye,
-which is the kind of mechanical, attention-taxing work humans make mistakes when doing.
-Figure~\ref{fig:motivation} shows a small example of the problem: wrapping three unchanged
-lines in a conditional, which a line-based tool reports as six lines deleted and seven
-inserted, and which a reader has to diff again in their head to see that only the wrapper is new.
+What a commit changes is content of many types. In the corpus of Section~\ref{sec:dataset}, the
+files that recent commits change are text of every kind (code, data, configuration and
+documentation), and they are also pictures, which change in \ContentCensusPicturesRepos{} of
+\ContentCensusRepos{} repositories, archives, PDFs, fonts, compiled translation catalogs and
+cursor themes. The diff that almost all developers and platforms use today treats every one of
+them the same way. A file is a sequence of text lines, and the tool computes an edit script
+between the two sequences. A file whose bytes git judges binary, chiefly by a NUL byte, is
+reported as \texttt{Binary files differ} and nothing more~\cite{gitattributes}; that is
+\ChangeCensusBinaryPct{}\% of the files the commits change, and a reviewer of such a change learns
+that it happened and not what it was. For text the line edit script is cheap to compute and
+correct, and it is still a poor account of many changes. A whole class of common code
+changes—extracting code into a function, wrapping a block in a condition, reordering
+declarations—is a move of existing code, which a line script can state only as a deletion plus an
+insertion. Figure~\ref{fig:motivation} shows a small example: wrapping three unchanged lines in a
+conditional, which a line-based tool reports as three lines deleted and four inserted, and which a
+reader has to diff again in their head to see that only the wrapper is new.
 
-One way to compute diffs with a move operation is to compare the code's abstract syntax
-tree (AST) instead of its raw text. An AST diff maps nodes of one tree onto nodes of the other; a
-move is a mapping whose nodes match but whose ancestry changed. Tree diffing is a well-studied
-field, and Section~\ref{sec:background} surveys the work this paper builds on. In practice,
-however, tree diffing has seen little adoption, and two obstacles stand between the algorithms and
-a tool developers use. The first is runtime: pure exact tree-diffing algorithms are $O(n^3)$ in the number of nodes. The second is that an AST diff is not directly usable by a developer. It has
-to be visualised, usually overlaid over the textual representation of the source code, and for any
-given AST diff there are several possible visualisations---so a tool must choose one, and the quality of
-that choice determines adoption as much as the mapping underneath it does.
+We argue that these are two faces of one problem, and that it is not specific to code. An edit
+script, which we call a \emph{delta}, is a recipe by which a machine converts one version of a
+file into the other. It is judged by whether it is correct and by how little it costs, and a line
+script, a tree edit script and a binary delta are all good at exactly that. A \emph{visualisation}
+is what a human needs in order to understand what happened, and it is judged against human
+reading. The two come apart for every content type. The cheapest tree edit script pairs two
+unrelated \texttt{return} keywords; the smallest byte delta between two PNG files says nothing a
+viewer can use; a picture re-encoded without loss has a large delta and no visible change. A
+visualisation may even be an account that is not minimal and cannot be executed: a move shown as a
+move, a rename shown word by word, whitespace suppressed, a picture's change described by how much
+of it a viewer would see. Section~\ref{sec:background} develops the distinction, and the rest of
+the paper measures it.
 
-The line-based diff has a second blind spot, and it lies outside code. A file whose bytes git
-judges binary, chiefly by a NUL byte, is reported as \texttt{Binary files differ} and nothing
-more~\cite{gitattributes}. In the corpus of Section~\ref{sec:dataset}, that is
-\ChangeCensusBinaryPct{}\% of the files commits change: pictures, which change in
-\ContentCensusPicturesRepos{} of \ContentCensusRepos{} repositories, then archives, PDFs, fonts,
-compiled translation catalogs and cursor themes. A reviewer of such a change learns that it
-happened and not what it was. Code also hides inside files of other languages, such as a TSX
-component held in a JSON string or a shell script under a YAML \texttt{run:} key. An AST diff of
-the host sees one changed string, and where the host escapes newlines, a line-based diff sees one
-changed line.
+Measuring it needs a ground truth that records what humans consider the right account of a
+change, for more than one content type, and that can be kept honest as it grows. We built one as
+the test corpus of an open-source diffing tool that is under active development and in use, so the
+dataset is not a snapshot: it grows by sampling, by hand curation and from the issues users
+report, and \InvariantCount{} machine-checked invariants hold its hand-made answers to one
+convention.
 
-We examined four groups of research questions. Each group is answered in its own section, in
-the order listed here.
+We examined five groups of research questions. Each group is answered in its own section, in the
+order listed here. Wherever a question can be asked of all content we ask it of all content and
+report code as one content type among the others; where our data exists only for code, which has
+the deepest ground truth, the question says so.
 
-%% The RQ statements below are restated in full in Sections 4-7 next to their answers, with the
-%% sub-numbers RQ1.1, RQ1.2, RQ2, RQ3.1-RQ3.3, RQ4.1 and RQ4.2. Edit both or neither.
+%% The RQ statements below are restated in full in Sections 4-8 next to their answers. Edit both
+%% or neither.
 \begin{itemize}
-  \item \textbf{Research Question Group 1 (Viability):} What percentage of real-world
-    code changes have an optimal AST node mapping that cannot be expressed using common AST diff
-    operations (Insert, Delete, Update, Move)? What percentage of real-world code changes
-    have solutions that humans prefer whose cost is higher than the lowest cost AST diff, using
-    the commonly accepted costs of AST diff operations?
-  \item \textbf{Research Question Group 2 (Speed):} What percentage of real-world
-    source-code changes can a single, whole-tree tree-edit-distance computation complete within one
-    second?\footnote{One second is where Nielsen's response-time limits put the boundary between an
-    interaction that keeps a user's train of thought and one that visibly interrupts
+  \item \textbf{Research Question Group 1 (Content):} What content do real-world changes touch?
+    How large are real-world changes?
+  \item \textbf{Research Question Group 2 (Delta versus visualisation):} How often does a
+    delta, painted as it stands, break the rules that a visualisation obeys? How much of a delta
+    reaches the reader? What percentage of real-world code changes have a human-preferred node
+    mapping that the common edit operations (Insert, Delete, Update, Move) cannot express? What
+    percentage have a human-preferred mapping whose cost is higher than that of the cheapest
+    mapping found?
+  \item \textbf{Research Question Group 3 (Uniqueness):} What percentage of real-world code
+    changes have multiple optimal node mappings? What percentage have multiple equally correct
+    visualisations, and how do those differ?
+  \item \textbf{Research Question Group 4 (Exactness):} What percentage of real-world
+    source-code changes can a single, whole-tree tree-edit-distance computation complete within
+    one second?\footnote{One second is where Nielsen's response-time limits put the boundary
+    between an interaction that keeps a user's train of thought and one that visibly interrupts
     it~\cite{nielsen-usability}.}
-  \item \textbf{Research Question Group 3 (Uniqueness):} What percentage of real-world
-    code changes have multiple optimal AST node mappings? What percentage of real-world
-    code changes have multiple equally correct textual visualisations of the diff? What
-    percentage of the AST influences the textual visualisation?
-  \item \textbf{Research Question Group 4 (State of the Art):} How accurately do current
-    state-of-the-art code diffing tools find optimal visualisations? How fast are
-    real-world state-of-the-art tools?
+  \item \textbf{Research Question Group 5 (State of the art):} What do established tools show
+    for each type of content? How accurately do current state-of-the-art code diffing tools find
+    the human-preferred visualisation? How fast are they?
 \end{itemize}
-
-The four groups are about code, where the ground truth of a change is a node mapping.
-Section~\ref{sec:beyond-code} measures how much of what commits change is not code, and
-Section~\ref{sec:omnidiff-content} how \textsc{OmniDiff} diffs it.
 
 This paper makes the following contributions:
 
 \begin{itemize}
-  \item \textbf{Dataset:} A set of \NumFixtures{} real-world code changes. The changes cover
-    \NumFixtureLanguages{} languages and were selected using 3 different selection algorithms from
-    \NumRepos{} open source repositories.
-    The repositories themselves are a combination of a curated list and every repository used by the Gentoo
-    Linux distribution. Every change was solved by hand and the optimal map between the two ASTs
-    was found, or if the optimal map is impossible using the common AST diff operations, a best-possible
-    solution with a comment explaining the missing part. Additionally, \PaintingFixtures{} of those
-    solutions also have the optimal visualisations: the spans of text a developer should see marked,
-    independently of which AST nodes carry them. Often, two visualisations are provided: the minimal one
-    and the maximal one, covering human preferences between equally valid solutions.
-    The dataset, the tool used to create the dataset and the entire history of the dataset is available
-    freely for future research. To allow comparison with existing research, the dataset has a
-    fourth part: the Defects4J~\cite{defects4j} changes of the AST node-mapping oracle of
-    Alikhanifard and Tsantalis~\cite{astdiffbenchmark}, solved by us by hand for comparison with
-    prior work. A fifth part is content other than code: \ContentAccAllJudged{} real-world changes
-    to pictures, cursors, fonts, archives, compiled message catalogs and PDFs, each judged by hand
-    for how much it changed. The dataset is described in detail in Section~\ref{sec:dataset}.
-  \item \textbf{Evaluation:} An analysis of the real-world code change
-    data shape, irrespective of any concrete implementation, a quantified comparison of several
-    state-of-the-art code diffing tools on the human annotated dataset, and a census of all
-    \ContentCensusChanges{} files the corpus's recent commits change, by what each file holds.
-  \item \textbf{Tool:} \textsc{OmniDiff}, a new state-of-the-art tool for code and for six
-    families of other content, each diffed by what it holds. Combining all current research
-    with strict engineering principles and carefully implemented to maximise performance, based on
-    the collected data.
+  \item \textbf{Theory:} It separates the delta from the visualisation of a change, defines
+    delta, mapping, painting and the projection from a mapping to a painting for content in
+    general, and states which properties each has to satisfy
+    (Section~\ref{sec:background}).
+  \item \textbf{Dataset:} It presents a living ground-truth dataset: \NumFixtures{} real-world
+    code changes in \NumFixtureLanguages{} languages, each with a hand-made node mapping,
+    \PresetPainted{} of them with hand-painted renderings in up to two presets, and
+    \ContentAccAllJudged{} changes to pictures, cursors, fonts, archives, compiled message
+    catalogs and PDFs, each judged by hand for how much it changed. The changes were drawn from
+    \NumRepos{} open-source repositories by three sampling methods, and a fourth part is the
+    Defects4J~\cite{defects4j} changes of the node-mapping oracle of Alikhanifard and
+    Tsantalis~\cite{astdiffbenchmark}, solved again by us for comparison with prior work. The
+    dataset, the tool used to create it and its entire history are freely available
+    (Section~\ref{sec:dataset}).
+  \item \textbf{Invariants:} It states \InvariantCount{} invariants that every ground-truth
+    answer obeys, checked by machine. They are rules of visualisation that no delta needs, so the
+    number of them an account of a change breaks measures its distance from a visualisation
+    (Sections~\ref{sec:invariants} and~\ref{sec:gap}).
+  \item \textbf{Evaluation:} It reports a census of all \ContentCensusChanges{} files the
+    corpus's recent commits change, by what each file holds, an analysis of the shape of
+    real-world changes that is independent of any implementation, and a quantified comparison of
+    eight established diffing tools against the human ground truth
+    (Sections~\ref{sec:content}--\ref{sec:tools}).
+  \item \textbf{Tool:} It presents \textsc{OmniDiff}, a tool that diffs text, code and six
+    families of other content, each by what it holds, built from the results above
+    (Section~\ref{sec:omnidiff}).
 \end{itemize}
 
-\section{Background}
+\section{Background: Deltas and Visualisations}
 \label{sec:background}
 
-This section lists three types of existing work: pure algorithms, implemented tools for code,
-and tools for content that is not code.
+A diffing tool produces two artifacts that the literature and most tools treat as one: a delta,
+which a machine executes, and a visualisation, which a human reads. This section reviews the work
+on each, defines both for content in general, and lists the tools the paper measures.
 
-\subsection{Algorithms}
+\subsection{Deltas}
+\label{sec:deltas}
 
-\textbf{Zhang-Shasha}~\cite{zhang-shasha-1989} gives the classic dynamic-programming algorithm for
-ordered tree edit distance. Given two rooted, ordered trees, it computes the minimum-cost sequence
-of node insertions, deletions, and relabelings that transforms one tree into the other. It is
-exact, but its keyroot decomposition does repeated work across overlapping subproblems.
+\textbf{Sequences.} The string-to-string correction problem of Wagner and
+Fischer~\cite{wagner-fischer-1974} asks for the cheapest sequence of character insertions,
+deletions and changes that turns one string into another, and solves it by dynamic programming.
+Unix \texttt{diff} applies the same idea to lines: Hunt and McIlroy~\cite{hunt-mcilroy-1976}
+compute a longest common subsequence of the two files' lines and report the rest as deleted and
+inserted. Myers' $O(ND)$ algorithm~\cite{myers-1986} finds a shortest such script in time that
+scales with the size of the script rather than of the inputs, and underlies most line-based tools
+in use today.
 
-\textbf{APTED}~\cite{apted-2015} is the state-of-the-art exact tree-edit-distance algorithm. It
-improves on Zhang-Shasha by choosing, for each subproblem, the cheapest of three decomposition
-strategies (left path, right path, or heaviest inner path), rather than a single fixed strategy.
-This choice provably minimises the total work across the whole computation. APTED still costs
-$O(n^3)$ in the worst case for general trees, the same asymptotic bound as Zhang-Shasha, but its
-real-world runtime is markedly lower.
+\textbf{Block moves.} A shortest insert-and-delete script is not the shortest recipe once copying
+is allowed. Tichy~\cite{tichy-1984} extends string correction with block moves and shows that the
+resulting scripts are shorter than those based on a longest common subsequence, and
+Heckel~\cite{heckel-1978} anchors a comparison on the lines that occur exactly once in both files,
+which detects blocks that moved.
 
-\textbf{Myers' O(ND) algorithm}~\cite{myers-1986} solves a different, more restricted problem: the
-shortest edit script between two flat sequences, not two trees. It underlies most line-based diff
-tools, including Unix \texttt{diff}. Its cost scales with the size of the edit script, not the size
-of the inputs, so it is fast when two sequences are similar.
+\textbf{Trees.} Tai~\cite{tai-1979} generalises string correction to ordered labelled trees, with
+node relabelling, deletion and insertion as the operations. Zhang and
+Shasha~\cite{zhang-shasha-1989} give the classic dynamic-programming algorithm for this tree edit
+distance; it is exact, but its keyroot decomposition repeats work across overlapping subproblems.
+RTED~\cite{rted-2011} and its successor APTED~\cite{apted-2015} choose a decomposition strategy
+per subproblem, which keeps the $O(n^3)$ worst case and lowers the runtime on real trees
+markedly; Bille~\cite{bille-2005} surveys the field. Chawathe et al.~\cite{chawathe-1996} split
+the problem in two, a split this paper builds on: first find a good \emph{matching} between the
+nodes of the two trees, then derive a minimum-cost edit script of insert, delete, update and
+\emph{move} operations that conforms to it. Source-code differencing follows that split.
+ChangeDistiller~\cite{changedistiller-2007} adapts the matching to abstract syntax trees (ASTs),
+and GumTree~\cite{gumtreediff-2014} matches large isomorphic subtrees top-down and containers
+bottom-up. Later work shortens the scripts further by finding more moves~\cite{mtdiff-2016}, by
+matching names and partial subtrees~\cite{ijm-2018}, by letting unchanged lines constrain the node
+matching~\cite{matsumoto-2019}, or by replacing GumTree's costly recovery phase with a simpler
+heuristic~\cite{falleri-2024}. Most of this work measures quality by the length of the edit
+script; Fan et al.~\cite{fan-2021} compare three of the algorithms differentially and find that
+each produces inaccurate mappings for a sizeable share of file revisions.
+
+\textbf{Bytes.} Delta compression drops the reader altogether. The rsync
+algorithm~\cite{tridgell-rsync} sends only the parts of a file the receiver lacks,
+VCDIFF~\cite{vcdiff-rfc3284} is a portable format of copy and add instructions,
+bsdiff~\cite{percival-bsdiff} finds approximately matching regions of two executables by suffix
+sorting, and git stores the objects of a packfile as chains of such deltas~\cite{git-pack-format}.
+Hunt et al.~\cite{hunt-vo-tichy-1998} compare delta algorithms on real releases by the two
+criteria that matter for a delta, size and speed, and report that a byte-level algorithm produces
+smaller deltas than line-based \texttt{diff}.
+
+\textbf{Other content.} Content that is not a sequence of characters has deltas of its own kind.
+The delta of two pictures is the set of pixels that differ, the delta of two archives is the list
+of members added, removed and changed, and the delta of two fonts is a list of tables or glyphs.
+Each is as mechanical as a line script, and each is correct by construction.
+
+\subsection{Visualisations}
+\label{sec:visualisations}
+
+\textbf{Text and code.} That the display of a difference is a problem of its own is as old as
+syntactic differencing: Yang's program comparison tool~\cite{yang-1991} matches two parse trees
+and then pretty-prints both programs side by side with the differing parts highlighted. Later
+work moves the account of a change further from the edit script and closer to the reader.
+Ldiff~\cite{canfora-ldiff-2009} and LHDiff~\cite{asaduzzaman-lhdiff-2013} tell changed lines from
+added and deleted ones and follow lines that moved. srcDiff~\cite{decker-2020} decides by rules
+modelled on how developers edit whether two differing elements are one construct changed or one
+construct replaced by another, and reports deltas that developers judge more understandable than
+the cheapest ones. ClDiff~\cite{cldiff-2018} groups fine-grained differences into statement-level
+ones and links related ones, LSdiff~\cite{kim-notkin-2009} summarises systematic changes as rules
+with exceptions, and refactoring-aware review tools show a detected
+refactoring~\cite{refactoringminer-2022} as a refactoring rather than as deleted and inserted
+lines~\cite{ge-2017,brito-2021}. The options of everyday tools are visualisation devices over an
+unchanged line script: ignoring whitespace, highlighting changed words inside a line, colouring
+moved lines.
+
+\textbf{Pictures.} For images the distinction is established. The mean squared error of two
+images is a property of their pixel delta, and Wang et al.~\cite{ssim-2004} show that a measure
+of structural similarity agrees with human ratings of image quality better than it does. Yee's
+perceptual metric~\cite{yee-2004} decides whether two renderings differ \emph{visibly}, for
+regression tests of rendering software, and pixelmatch~\cite{pixelmatch}, written to compare
+screenshots in tests, counts a pixel as changed only when its perceptual colour
+difference~\cite{kotsarenko-2010} passes a threshold and ignores anti-aliased
+pixels~\cite{vysniauskas-2009}.
+
+\textbf{Containers.} The diffoscope tool~\cite{diffoscope} of the Reproducible Builds
+project~\cite{lamb-reproducible-2022} recursively unpacks archives, transforms binary formats
+into a human-readable form and compares the results. It serves a setting in which the delta
+itself is the object of interest, because every byte that differs between two builds matters; a
+reviewer of a commit asks a different question, namely what was changed on purpose.
+
+\subsection{Definitions}
+\label{sec:definitions}
+
+Let $A$ and $B$ be the two versions of a file. A \emph{content model} reads a version as a set of
+\emph{elements}, $E(A)$, each of which owns a part of what the file holds: the lines of a text,
+the tokens and nodes of a syntax tree, the pixels of a picture, the members of an archive, the
+glyphs of a font, the pages of a document, the messages of a catalog.
+
+\textbf{Delta.} A delta from $A$ to $B$ is a sequence $\delta$ of operations from a fixed set
+such that applying it to $A$ yields $B$: $\mathit{apply}(\delta, A) = B$. Correctness is its only
+requirement. Among correct deltas, quality is a cost $c(\delta)$, the number of operations or the
+size of their encoding, and the best delta is a cheapest one.
+
+\textbf{Mapping.} A mapping is a relation $M \subseteq E(A) \times E(B)$ that says which element
+of one version corresponds to which element of the other. An element of $A$ that $M$ leaves out is
+deleted and one of $B$ is inserted; a pair whose two elements differ is an update, and a pair
+whose position among the other pairs differs is a move. A one-to-one mapping and a delta carry the
+same information up to the order of execution~\cite{chawathe-1996}, so a mapping is a delta with
+its order forgotten, and every cost model on deltas ranks mappings as well. A mapping that a human
+writes down need not be one-to-one: Section~\ref{sec:gap} measures how often it is not.
+
+\textbf{Painting.} A painting is what the reader of a diff sees. For text it is a pair of
+labellings $P = (p_A, p_B)$ that give every byte of each version either no label or one of
+\emph{delete}, \emph{insert}, \emph{update} and \emph{move}, with \emph{delete} only in $A$ and
+\emph{insert} only in $B$. For content that is not text it is a set of regions or members with
+such labels together with a \emph{verdict}, a statement of how much a viewer would see of the
+change (Section~\ref{sec:ground-truth}). A painting is not executable: it labels both versions and
+presupposes both.
+
+\textbf{Projection.} A projection $\pi_\theta$ takes a mapping to a painting. Its parameter
+$\theta$ is the reader's preference, for which this paper uses two presets: \emph{Minimal}, which
+paints only what changed, and \emph{Full}, which also paints the brackets, separators, leading
+whitespace and whole identifiers that a change brings with it. The \emph{literal} projection
+paints exactly the bytes owned by each deleted, inserted or updated element and nothing else; it
+is what a tool does that colours an edit script as it stands.
+
+\begin{table}
+  \caption{A delta and a visualisation of the same change.}
+  \label{tab:delta-vs-vis}
+  \small
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.19\linewidth}>{\raggedright\arraybackslash}p{0.37\linewidth}>{\raggedright\arraybackslash}p{0.37\linewidth}@{}}
+    \toprule
+    & Delta & Visualisation \\
+    \midrule
+    Consumer & A machine, which executes it & A human, who reads it \\ \addlinespace
+    Must be & Correct: applying it to one version yields the other & Faithful: what it leaves
+      unmarked is unchanged for this reader \\ \addlinespace
+    Judged by & Cost: the number of operations or encoded size & Agreement with what a human
+      would mark \\ \addlinespace
+    Unit & An operation on an element & A marked region of what is displayed \\ \addlinespace
+    Executable & Yes & No: it presupposes both versions \\ \addlinespace
+    Minimal & By definition & Not necessarily: a move, a whole renamed identifier \\ \addlinespace
+    Depends on the reader & No & Yes: \emph{Minimal} and \emph{Full} \\ \addlinespace
+    Text & Line edit script & Marked lines and words \\ \addlinespace
+    Code & Tree edit script & Marked tokens, moves shown as moves \\ \addlinespace
+    Pictures & Differing pixels & Changed regions, and how visible the change is \\ \addlinespace
+    Containers & Differing bytes or members & Changed members, each shown by what it holds \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{What each has to satisfy.} Table~\ref{tab:delta-vs-vis} compares the two. A delta has to
+be correct and should be cheap, and nothing else is asked of it: many different cheapest scripts
+convert $A$ into $B$, and to the machine that applies them they are interchangeable. A
+visualisation answers to a reader, and we state its requirements as four properties.
+\emph{Faithfulness}: text that the painting leaves unmarked is unchanged and in place, up to what
+the reader's preference declares insignificant, such as indentation under \emph{Minimal}.
+\emph{Agreement}: the painting does not contradict the mapping it shows, so a token that the
+mapping pairs with an identical token is not painted as deleted on one side and inserted on the
+other. \emph{Form}: what is marked follows the units a reader perceives, so a token is marked
+whole, a statement takes its terminator, and no highlight ends in trailing whitespace.
+\emph{Preference}: the paintings for different readers are ordered and consistent, so
+\emph{Full} marks everything \emph{Minimal} marks, and the two never disagree about what
+survived. None of the four follows from correctness and minimal cost, and some contradict
+minimality: a rename painted as one whole identifier marks bytes that did not change.
+Section~\ref{sec:invariants} turns the four properties into \InvariantCount{} checkable
+invariants, and Section~\ref{sec:gap} uses them to measure how far a delta is from a
+visualisation.
+
+\begin{figure}
+  \small
+  \setlength{\fboxsep}{0pt}
+  \newcommand{\Ins}[1]{\colorbox{black!22}{\strut\texttt{#1}}}
+  \newcommand{\Del}[1]{\fbox{\strut\texttt{#1}}}
+  \newcommand{\Sp}{\mbox{\ \ }}
+  \begin{tabular}{@{}p{0.46\linewidth}@{\hspace{0.06\linewidth}}p{0.46\linewidth}@{}}
+    \textsc{Line edit script} & \textsc{Tree edit script} \\
+    \midrule
+    \begin{minipage}[t]{\linewidth}\ttfamily
+      def save(rec):\\
+      \Ins{\Sp if rec.dirty:}\\
+      \Ins{\Sp\Sp db.begin()}\\
+      \Ins{\Sp\Sp db.put(rec)}\\
+      \Ins{\Sp\Sp db.commit()}
+    \end{minipage}
+    &
+    \begin{minipage}[t]{\linewidth}\ttfamily
+      def save(rec):\\
+      \Sp\Ins{if}\ \Ins{rec}\Ins{.}\Ins{dirty}\Ins{:}\\
+      \Sp\Sp db.begin()\\
+      \Sp\Sp db.put(rec)\\
+      \Sp\Sp db.commit()
+    \end{minipage} \\
+  \end{tabular}
+
+  \vspace{0.8em}
+  \begin{tabular}{@{}p{0.46\linewidth}@{\hspace{0.06\linewidth}}p{0.46\linewidth}@{}}
+    \textsc{Minimal painting} & \textsc{Full painting} \\
+    \midrule
+    \begin{minipage}[t]{\linewidth}\ttfamily
+      def save(rec):\\
+      \Sp\Ins{if rec.dirty:}\\
+      \Sp\Sp db.begin()\\
+      \Sp\Sp db.put(rec)\\
+      \Sp\Sp db.commit()
+    \end{minipage}
+    &
+    \begin{minipage}[t]{\linewidth}\ttfamily
+      def save(rec):\\
+      \Ins{\Sp if rec.dirty:}\\
+      \Sp\Sp db.begin()\\
+      \Sp\Sp db.put(rec)\\
+      \Sp\Sp db.commit()
+    \end{minipage} \\
+  \end{tabular}
+  \caption{Four accounts of the change of Figure~\ref{fig:motivation}, on its after side; a
+  shaded span is marked as inserted. The line script also marks three lines of the before side
+  as deleted. The tree script inserts five tokens and moves the block, which costs nothing and
+  is not shown.}
+  \label{fig:accounts}
+\end{figure}
+
+Figure~\ref{fig:accounts} shows the four accounts for the change of Figure~\ref{fig:motivation}.
+The line script is correct and marks three statements that did not change. The tree script is
+the cheapest correct one and marks five separate tokens, with the space between two of them left
+out. The two paintings follow the conventions of the ground truth of Section~\ref{sec:dataset}: the
+condition is one insertion, under \emph{Full} together with the indentation of its line, and the
+three statements stay unmarked, because being indented further is all that happened to them.
 
 \subsection{Tools}
+\label{sec:background-tools}
 
-\textbf{Unix \texttt{diff}} is the golden standard. It treats each file as a sequence of lines,
-computes an edit script between the two sequences with Myers' algorithm, and reports it as hunks of
-deleted and inserted whole lines. GNU \texttt{diff} caps the algorithm's cost with a heuristic by
-default, so on large inputs with many differences the script it reports can be longer than the
-shortest one. It has no move operation and no sub-line detail.
+The tools measured in Section~\ref{sec:tools} are listed here by the content they address.
 
-\textbf{\texttt{git diff}} defaults to the \texttt{xdiff} engine, which offers four
-algorithms: Myers, the default; \emph{minimal}, which spends more time to find a shortest script; \emph{patience}, which
-anchors on lines unique to both sides before recursing; and \emph{histogram}, a faster
-generalisation of patience. All four emit the same output form as Unix \texttt{diff}.
+\textbf{Text.} \textbf{Unix \texttt{diff}} is the gold standard. It treats each file as a
+sequence of lines, computes an edit script between the two sequences with Myers' algorithm, and
+reports it as hunks of deleted and inserted whole lines. GNU \texttt{diff} caps the algorithm's
+cost with a heuristic by default, so on large inputs with many differences the script it reports
+can be longer than the shortest one. It has no move operation and no sub-line detail.
+\textbf{\texttt{git diff}} defaults to the \texttt{xdiff} engine, which offers four algorithms:
+Myers, the default; \emph{minimal}, which spends more time to find a shortest script;
+\emph{patience}, which anchors on lines unique to both sides before recursing; and
+\emph{histogram}, a faster generalisation of patience. All four emit the same output form as Unix
+\texttt{diff}. \textbf{Neovim's diff mode} (\texttt{nvim -d}) runs the same \texttt{xdiff} line
+pass and then a second, character-level pass that highlights what changed inside each paired
+line. \textbf{BDiff}~\cite{bdiff} reasons about blocks of lines rather than single lines and
+reports character ranges within changed lines.
 
-\textbf{Neovim's diff mode} (\texttt{nvim -d}) runs the same \texttt{xdiff} line pass as
-\texttt{git} and then a second, character-level pass that highlights what changed inside
-each paired line.
+\textbf{Code.} \textbf{GumTree}~\cite{gumtreediff-2014} is an AST diff. Instead of one global
+tree-edit-distance computation, it runs a top-down phase that greedily matches large isomorphic
+subtrees, then a bottom-up phase that matches remaining container nodes by a Dice coefficient of
+their already-matched descendants, and a recovery pass that pairs up deleted and inserted
+identical subtrees the first two phases missed. \textbf{difftastic}~\cite{difftastic} and
+\textbf{diffsitter}~\cite{diffsitter} are a newer generation of tools built on
+tree-sitter~\cite{tree-sitter} grammars. Both prioritise a diff a human reads comfortably over an
+exact node-to-node mapping: difftastic reduces the parse tree to an s-expression and aligns it
+with its own structural algorithm, and diffsitter applies a related alignment over a smaller,
+hand-picked set of compiled-in grammars. \textbf{srcDiff}~\cite{decker-2020} diffs the srcML
+markup of C, C++, C\#, Java and Python source, detects moves, and writes one merged document in
+which the text of each side is marked as deleted, inserted or common.
 
-\textbf{BDiff}~\cite{bdiff} is a text-based tool that reasons about blocks of lines rather
-than single lines and reports character ranges within changed lines.
+\textbf{Other content.} Git judges a file binary by its bytes, chiefly by a NUL byte, and for a
+binary file prints that the two versions differ and nothing more. A user can configure a
+\texttt{textconv} driver per path pattern, a program that converts each side to text before the
+line diff runs. The conversion is lossy, and each format needs its own program and its own
+configuration~\cite{gitattributes}. diffoscope and pixelmatch, introduced in
+Section~\ref{sec:visualisations}, are the two tools of this kind that \textsc{OmniDiff} builds
+on.
 
-\textbf{GumTree}~\cite{gumtreediff-2014} is a source code AST diff. Instead of one global
-tree-edit-distance computation, it runs a top-down phase that greedily matches large
-isomorphic subtrees, then a bottom-up phase that matches remaining container nodes by a Dice
-coefficient of their already-matched descendants, and a recovery pass that pairs up deleted and
-inserted identical subtrees the top-down and bottom-up phases missed. For performance, it also introduces InsertTree and DeleteTree operations
-that are equivalent to repeatedly calling Insert or Delete operations on all children in the given
-subtree.
-
-\textbf{difftastic}~\cite{difftastic} and \textbf{diffsitter}~\cite{diffsitter} are a newer
-generation of tree-sitter-based diffing tools. Both prioritise a diff a human reads
-comfortably over an exact node-to-node mapping: difftastic reduces the parse tree to an s-expression
-and aligns it with its own structural algorithm, and diffsitter applies a related tree-sitter-based
-alignment over a smaller, hand-picked set of compiled-in grammars.
-
-\textbf{srcDiff}~\cite{decker-2020} diffs the srcML markup of C, C++, C\#, Java and Python
-source. It aligns the two files with a sequence difference and then applies syntactic rules,
-modelled on how developers edit code, to decide which differing elements are changes to one
-construct and which are a construct replaced by another. It detects moves, and it writes one merged
-srcML document in which the text of each side is marked as deleted, inserted or common.
-
-\subsection{Content other than code}
-
-\textbf{Binary files in \texttt{git}.} Git judges a file binary by its bytes, chiefly by a NUL
-byte, and for a binary file prints that the two versions differ and nothing more. A user can
-configure a \texttt{textconv} driver per path pattern, a program that converts each side to text
-before the line diff runs. The conversion is lossy, and each format needs its own program and its
-own configuration~\cite{gitattributes}.
-
-\textbf{diffoscope}~\cite{diffoscope}, from the Reproducible Builds project, compares files,
-archives and directories in depth. It recursively unpacks archives, transforms binary formats
-into a human-readable form, compares the results as text, and falls back on a hexdump comparison.
-It serves reproducible builds, where every byte that differs between two builds matters.
-
-\textbf{pixelmatch}~\cite{pixelmatch} is a pixel-level image comparison library, written to
-compare screenshots in tests. It counts a pixel as changed only when its perceptual colour
-difference passes a threshold, and it detects anti-aliased pixels, so rendering noise is not
-reported as change.
-
-\section{Empirical Dataset}
+\section{A Living Ground-Truth Dataset}
 \label{sec:dataset}
 
-To understand the real-world environment diffing tools are used in, we built a dataset of \NumFiles{}
-files in \NumLanguages{} languages. Of these, we sampled \NumFixtures{} real open source code
-changes and \ContentAccAllJudged{} changes to other content, and examined them in depth.
+This section describes the dataset the research questions are answered on: the project it belongs
+to, the corpus of repositories it is drawn from, how changes were sampled, what ground truth each
+content type carries, the invariants that hold the ground truth together, and how the dataset
+grows. No research question is answered here.
 
-To ensure good coverage, we built two sets of open-source repositories:
+\subsection{The project and the corpus}
+\label{sec:project}
+
+The dataset is the test corpus of \textsc{OmniDiff}, the tool of Section~\ref{sec:omnidiff},
+which is developed in the open. On \ProjectStatsDate{} its repository, created in
+\ProjectCreated{}, had \ProjectStars{} GitHub stars and \ProjectForks{} forks. Developers star a
+repository to show appreciation and to bookmark it~\cite{borges-stars-2018}, so we report the
+count as a signal of interest, not of use. The tool is
+released as source on crates.io, as prebuilt binaries for Linux, macOS and Windows, through
+Homebrew, a signed apt repository and a Nix flake, and with editor integrations for VS~Code and
+Neovim. Every fixture of the dataset is also a regression test of the tool, and a release is gated on
+the tool's accuracy over all of them. This is what makes the dataset a
+living one. It is not frozen for a paper and then left; it is the thing the project's daily
+development is measured against, and Section~\ref{sec:growth} shows how it has grown.
+
+To understand the environment diffing tools are used in, we built a corpus of \NumFiles{} files
+in \NumLanguages{} languages from two sets of open-source repositories:
 
 \begin{itemize}
-  \item The Curated list - 100 open source repositories, selected manually from several lists of
-    most popular repositories, enhanced further by repositories we were already aware of. This biased the list towards active, widely used codebases, with good coverage in
-    many programming languages. The Curated list was also used as a smaller list to repeatedly
-    test the paper's own codebase, including in automated test infrastructure.
-  \item The Full List - \NumRepos{} repositories, created by expanding the Curated list
-    with all repositories present in the Gentoo Linux distribution's package list. This includes
-    a wide array of codebases of different activity, code quality, userbase and programming language
-    mixes.
+  \item The Curated list consists of 100 open-source repositories, selected manually from several
+    lists of the most popular repositories and extended by repositories we were already aware of.
+    This biases the list towards active, widely used codebases, with good coverage of many
+    programming languages. The Curated list is also the smaller list the project's automated
+    test infrastructure runs over.
+  \item The Full list consists of \NumRepos{} repositories, created by expanding the Curated
+    list with all repositories present in the Gentoo Linux distribution's package list. It
+    includes codebases of widely different activity, code quality, user base and mix of
+    languages.
 \end{itemize}
 
-We cloned each repository to a depth of \CorpusCloneDepth{} commits from every main branch. While we cannot guarantee that all repositories
-remain accessible, the entire list of repositories, the cloning script and all analysis is available from the paper's repository and can be replicated by readers, if desired.
+We cloned each repository to a depth of \CorpusCloneDepth{} commits from every main branch. While
+we cannot guarantee that all repositories remain accessible, the list of repositories, the cloning
+script and all analysis are available from the paper's repository and can be replicated.
 
-We fetched, parsed and measured the corpus on a single machine: an \MachineCpu{} with \MachineRamGb{}\,GB of RAM, running \MachineOs{}. The checkouts and the measurement database sit on \MachineDiskCount{} \MachineDiskSizeTb{}\,TB \MachineDiskModel{} drives in \MachineDiskArray{}. We record this because some results are hardware-bound, notably the wall-clock budget we hold whole-tree APTED to in Section~\ref{sec:speed} and the per-tool wall-clock timing of Section~\ref{sec:tools}.
+We fetched, parsed and measured the corpus on a single machine: an \MachineCpu{} with
+\MachineRamGb{}\,GB of RAM, running \MachineOs{}. The checkouts and the measurement database sit
+on \MachineDiskCount{} \MachineDiskSizeTb{}\,TB \MachineDiskModel{} drives in \MachineDiskArray{}.
+We record this because some results are hardware-bound, notably the wall-clock budget we hold
+whole-tree APTED to in Section~\ref{sec:speed} and the per-tool timing of
+Section~\ref{sec:tools}.
 
-This section describes the overall shape of the resulting dataset.
+\subsection{What the repositories hold}
+\label{sec:files}
 
-\subsection{Shape of real-world files}
-
-We used a simple extension- and content-based method to categorise the files. The first thing to note about the dataset is that only two thirds of all files are code (Figure~\ref{fig:tips}). The rest is data, configuration, documentation, and a residual of unknown type, which limited manual inspection suggests is mostly data. Any ``code'' diffing tool therefore still has to show changes to the other third, and Section~\ref{sec:beyond-code} measures how often those files change and what they hold.
+We categorised the files by extension and content. Only two thirds of all files are code
+(Figure~\ref{fig:tips}). The rest is data, configuration, documentation, and a residual of
+unknown type, which limited manual inspection suggests is mostly data. A tool that diffs only
+code leaves a third of the files to something else.
 
 Restricted to code files, the top row of Figure~\ref{fig:corpus-shape} shows the distribution of
 bytes, lines of code and AST nodes per file. The median code file has \LocPFifty{} lines, the
 99th percentile \LocPNinetyNine{} and the largest \LocMax{}. The node counts are over the
-\ParsedCodeFilesPct{}\% of code files that can be parsed (\ParsedCodeFiles{} of \CodeFiles{}); the rest
-are in a language without a grammar, flagged as generated and not parsed, or empty. Of those
+\ParsedCodeFilesPct{}\% of code files that can be parsed (\ParsedCodeFiles{} of \CodeFiles{}); the
+rest are in a language without a grammar, flagged as generated and not parsed, or empty. Of those
 that parse, the median has \AstPFifty{} AST nodes, the 99th percentile \AstPNinetyNine{} and the
-largest \AstMax{}.
+largest \AstMax{}. Byte size and AST node count are strongly correlated for files within the 99th
+percentile of both, Pearson $r = \CorrelationRTrimmed{}$, which simplifies to $|\text{AST}|
+\approx \text{bytes} / 5$ for quick estimates.
 
 \begin{figure}
   \centering
@@ -450,48 +669,208 @@ largest \AstMax{}.
   \label{fig:corpus-shape}
 \end{figure*}
 
-Byte size and AST node count are strongly correlated for files within the 99th percentile of
-both, Pearson $r = \CorrelationRTrimmed{}$, which simplifies to $|\text{AST}| \approx \text{bytes} /
-5$ for quick estimates.
+\subsection{Sampling changes}
+\label{sec:diff-shape}
 
-\subsection{Shape of real-world file edits}
-\label{sec:edit-shape}
+\textbf{Code.} From both the Curated and the Full list of repositories, we randomly sampled
+\SampleDiffsPerLanguage{} diffs per language. That gave \SampleCuratedSampled{} diffs from the
+Curated list across \SampleCuratedLanguages{} languages, and \SampleFullSampled{} from the Full
+list across \SampleFullLanguages{} languages. The two language counts differ because the Curated
+list's repositories hold almost no R or Scala code, so those two languages are drawn from the Full
+list only. The Full list's count exceeds \SampleDiffsPerLanguage{} per language because some
+languages were drawn a second time after their first rounds were largely rejected. Every sampled
+diff was manually inspected for sampling errors. At this stage, \SampleRejectedTotal{} diffs were
+rejected, mostly because language detection detected the wrong language: in particular TypeScript
+(\SampleRejectedTypeScript{} rejected) and R (\SampleRejectedR{}) file extensions were used for
+other languages or data. This resulted in a dataset of \SampleCuratedPromoted{} diffs from the
+Curated and \SampleFullPromoted{} diffs from the Full list. As Section~\ref{sec:content} shows, a
+pure random sample is heavily slanted towards small changes. To account for this, the sample was
+augmented by a stratified sample based on the lines of code of the files being changed. The
+strata were 1 to 10 lines, 11 to 30, 31 to 100, 101 to 300, 301 to 1000, 1001 to 3000 and more
+than 3000 lines of code, and the larger of the two sizes was used. In each stratum,
+\SampleStratifiedPerCell{} diffs were randomly sampled per language, and inspected as
+above.\footnote{\label{fn:in-progress}The dataset and this paper are being written in parallel.
+Drawing and solving the stratified sample, and hand-annotating the Defects4J list below, are both
+still in progress, and the ambiguity pass over those two is not finished. Every figure in this
+paper is over the \NumFixtures{} changes solved so far, except the cost comparison of
+Section~\ref{sec:gap}, the tool comparison of Section~\ref{sec:tools} and the line-level, speed
+and robustness figures of Section~\ref{sec:omnidiff}, which were measured at an earlier stage of
+the dataset, over the \UnixDiffFixtures{} changes solved then, and, for \textsc{OmniDiff}'s own
+rows in them, with an earlier version of the tool. Every figure that depends on the ambiguity
+pass is a lower bound for those two datasets.}
 
-Across both repository lists we analysed \EditsCommits{} commits. To stop large repositories,
-notably the Linux kernel, from skewing the results, each repository was analysed at most
-\CorpusCloneDepth{} commits deep. \EditsCodeSharePct{}\% of the files those commits touched
-were code files, giving \EditsCodeFileEdits{} code-file edits, of which
-\EditsModifiedSharePct{}\% were modifications; the remainder created or deleted a file and so
-present no pair of versions to map between.
+A fourth list extends the dataset. The AST node-mapping oracle of Alikhanifard and
+Tsantalis~\cite{astdiffbenchmark} contains the \OracleUnits{} AST mappings for \OracleCases{}
+bug-fixing changes of Defects4J~\cite{defects4j}. The file contents its offsets index into come
+from Falleri and Martinez' replication package~\cite{gumtreesimple}. We solve those same
+\OracleUnits{} diffs, so that our mappings can be compared against an independently authored
+reference on a corpus that other AST-differencing evaluations already
+use.\textsuperscript{\ref{fn:in-progress}}
 
-To allow for comparison with existing research, \texttt{git diff} was used to compute the number of
-changed lines.
+\textbf{Other content.} From the Full list we sampled changed pairs per content family:
+pictures, cursors, fonts, archives, compiled message catalogs and PDFs. Diffing several files at
+once and detecting moves across files are out of scope of this paper.
 
+\subsection{Ground truth}
+\label{sec:ground-truth}
 
-The bottom row of Figure~\ref{fig:corpus-shape} shows the sizes of real-world edits. The
-median file edit changes \EditsLinesPerFilePFifty{} lines and the median commit
-\EditsLinesPerCommitPFifty{}; \EditsFileEditsUnderTenPct{}\% of file edits and
-\EditsCommitsUnderTenPct{}\% of commits change ten lines or fewer, while the 99th percentiles are
-\EditsLinesPerFilePNinetyNine{} and \EditsLinesPerCommitPNinetyNine{} lines. Our results are
-broadly aligned with existing research, among them Arafat and Riehle, who report that 47.5\% of
-all commits touch 10 lines or fewer~\cite{commit-size-distribution-paper}, with the long tail
-stretching to tens of thousands of lines. The median edit rewrites only
-\EditsChurnPFiftyPct{}\% of the file it touches, and \EditsChurnUnderFivePct{}\% of edits rewrite
-under 5\%. In the 99th percentile, an edit rewrites the file entirely
-(\EditsChurnPNinetyNinePct{}\%). A diffing tool therefore has to be good at two
-unrelated jobs---finding a handful of changed lines in an otherwise untouched file, which is the
-overwhelming majority of edits, and staying usable when nothing is left to anchor on.
+The ground truth of a change depends on what the file holds. Code has the deepest one, with two
+layers that correspond to the mapping and the painting of Section~\ref{sec:definitions}; other
+content has a verdict. The annotators are the authors, who each have at least 15 years of
+experience in software development and have reviewed tens of thousands of real-world code changes
+in industrial environments.
 
-\subsection{Shape of real-world changes beyond code}
-\label{sec:beyond-code}
+\textbf{Mappings.} Each code change was solved by hand. Solving a change means writing down, for
+every node of one AST, which node of the other AST it corresponds to, or that it has none. Where
+the annotator judged several nodes of one side interchangeable with several of the other, the
+correspondence is recorded as a \emph{multi-map group}, a set of nodes on each side of which any
+consistent pairing is equally correct.
 
-The edits above are to code files, and code is not all a commit changes. Over the same window, the
-\CorpusCloneDepth{} most recent commits of each repository, we counted every changed file,
-binary ones included: \ChangeCensusChanges{} changes. Git judges \ChangeCensusBinaryPct{}\% of
-them (\ChangeCensusBinary{}) binary, and for those \texttt{git diff} prints only that the two
-versions differ. We then classified by its bytes each of the \ContentCensusChanges{} changed
-files the commits' trees still hold, leaving out submodule entries, with the content recognition
-of Section~\ref{sec:omnidiff-content}.
+\textbf{Paintings.} For \PresetPainted{} of the changes the annotator additionally painted the
+rendering: the spans of text a reader should see marked as deleted, inserted, updated or moved,
+chosen independently of which nodes carry them. A painted change is one of three cases. In the
+first, it carries a \emph{Minimal} and a \emph{Full} painting, the annotator's finding that the
+change has a sparse and a generous correct rendering; a tool's sparse output is compared with the
+first and its generous output with the second. In the second, it carries a single painting that
+names no preset, the finding that the change has one right rendering, which every preset of a
+tool has to produce. In the third, it carries a single painting named for one preset, and only
+that preset is compared. Section~\ref{sec:uniqueness} counts the cases.
+
+\textbf{Verdicts.} Content other than code has no AST to map, so its ground truth answers a
+different question: how much did the change change? The annotators judged \ContentAccAllJudged{}
+of the sampled pairs on a six-level scale. Three levels are strengths of ``nothing'':
+\emph{invisible}, where only bytes differ (metadata, a lossless re-encoding);
+\emph{imperceptible}, visible only once a tool highlights it; and \emph{artifacts}, visible but
+chosen by no one, as compression or resampling leaves it. Three are kinds of ``something'':
+\emph{edited}, where a part changed deliberately and the rest stayed the same; \emph{redrawn},
+where the whole changed and is still a version of the same thing; and \emph{replaced}, where the
+after side is not a version of the before side. An archive, a font, a PDF, a catalog or a cursor
+of several pictures is judged as a whole and per changed member, \ContentAccVerdicts{} verdicts in
+all.
+
+\textbf{Embedded code.} Code also changes inside files of other languages. \EmbeddedFixtures{} of
+the \NumFixtures{} code changes edit code held in a string of the host language, in
+\EmbeddedLanguages{} embedded languages, and their ground truth maps and paints the embedded
+code's own AST as well as the host's.
+
+\subsection{Invariants}
+\label{sec:invariants}
+
+A hand-made ground truth of this size is made by several people over months, and its answers
+drift: the same kind of change is painted one way in one fixture and another way in the next. We
+therefore state the conventions of the ground truth as \emph{invariants}, properties that the
+mapping and the paintings of every fixture have to satisfy, each checked by a program that reads
+the ground truth alone and runs as a test of every fixture. There are \InvariantCount{} of them.
+They were added one at a time, as annotating and reviewing real changes turned up a contradiction
+inside a fixture or two fixtures answering one question differently, and each was decided by the
+annotators, not derived from a tool's output.
+
+\input{figures/invariants_table.tex}
+
+Table~\ref{tab:invariants} shows the invariants in five families, which make the four properties
+of Section~\ref{sec:definitions} concrete. Three rules concern the \emph{form} of any painting:
+no highlight ends in a row's trailing whitespace, no two painted ranges claim the same byte, and
+a token such as \texttt{<=} or \texttt{private} is painted whole. Nine state what each
+\emph{preset} paints and how the two relate: \emph{Full} covers everything \emph{Minimal} covers;
+a line that is inserted or deleted whole is painted whole under \emph{Full}; \emph{Minimal} never
+paints a line's indentation; a renamed identifier is painted at its differing words under
+\emph{Minimal} and entire under \emph{Full}; the space before an insertion inside a line goes
+with the insertion exactly when the insertion changed how many spaces are there; and the two
+presets never disagree about what survived. Ten require the painting to \emph{agree} with the
+mapping: a leaf that the mapping pairs with an identical leaf is never painted deleted on one
+side and inserted on the other, a leaf the mapping deletes has at least one painted byte, and a
+byte painted as moved is never one the mapping leaves unmatched. Four keep \emph{syntactic units}
+together: a \texttt{;} goes with its statement in the mapping and in the painting, a bracket with
+its partner, and the dot of a call with the member called. Five concern the \emph{form of a
+mapping}, for example that two subtrees recorded as identical carry the same tokens. All but the
+\InvariantMappingOnlyCount{} rules that read the mapping alone are rules about a painting, and
+none is needed for an edit script to be correct. We return to this in Section~\ref{sec:gap}.
+
+The invariants also repair the ground truth. When the set reached \InvariantCount{} rules, the
+ground truth of all fixtures, including the hand-written regression fixtures that this paper
+does not report on, broke them \InvariantRepairBeforeViolations{} times in
+\InvariantRepairBeforeFixtures{} fixtures. We repaired \InvariantRepairedFixtures{} fixtures, each
+change being queued for review by an annotator, which left \InvariantRepairAfterViolations{}
+violations in \InvariantRepairAfterFixtures{} fixtures. Over the \InvariantHumanAllScored{}
+changes this paper reports on, \InvariantHumanAllFixtures{} still carry a violation
+(\InvariantHumanAllViolations{} in all), each recorded in the fixture as a known one, and
+\InvariantHumanAllCleanPct{}\% carry none. The remainder includes cases in which two rules ask for
+different things of the same bytes and cases that await a decision of the annotators.
+
+\subsection{Growth}
+\label{sec:growth}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{figures/dataset_growth}
+  \caption{Growth of the ground truth, by the date each change's ground truth was first
+  committed to the project's repository.}
+  \label{fig:growth}
+\end{figure}
+
+\input{figures/dataset_growth_table.tex}
+
+The dataset grows in three ways. Sampling rounds over the corpus are drawn, inspected and solved,
+as described above. Hand-written fixtures pin one change pattern each; they are regression tests
+rather than a sample, and no figure in this paper includes them. Third, a misbehaviour that a
+user reports becomes a fixture with a hand-made ground truth, so that the dataset accumulates the
+cases that users of the tool find hard.
+
+Figure~\ref{fig:growth} and Table~\ref{tab:growth} show the growth, read from the history of the
+project's repository. The first hand mapping in the present format was committed in
+\GrowthFirstMonth{}. In the \GrowthWeeks{} weeks since, ground truth was added or painted in
+\GrowthActiveWeeks{} of them, at a median of \GrowthMedianPerWeek{} new changes per week and at
+most \GrowthMaxPerWeek{} in one week, to \GrowthCodeFixtures{} mapped code changes,
+\GrowthPaintedFixtures{} painted ones and \GrowthContentFixtures{} judged changes to other
+content. The dates are those of the first commit of a fixture under its current name, so a
+renamed fixture is dated late.
+
+The third way is the newest and the smallest. Of the \GrowthIssuesTotal{} issues in the project's
+tracker on \ProjectStatsDate{}, \GrowthIssuesExternal{} were filed by people other than the
+authors; most of those ask for features of the viewer or for packaging, and two ask for a further
+content type. So far
+\GrowthIssuesWithFixtures{} of them has led to ground truth: a request for structural diffing of
+SQL led to SQL support in the tool and to \GrowthIssueFixtures{} SQL changes, sampled from the
+corpus and solved by hand, which is the last row of Table~\ref{tab:growth} and the dataset's
+\NumFixtureLanguages{}th language. The project's mapping viewer also lets a reader file a disagreement with one
+node of one fixture's mapping as an issue against that fixture, and two such issues are open. We report the count as it is: the dataset is open to growth from reports, and
+almost all of its growth so far is from sampling.
+
+\subsection{Cross-validation with existing datasets}
+\label{sec:oracle}
+
+The AST node-mapping oracle of Alikhanifard and Tsantalis~\cite{astdiffbenchmark} records, for
+\OracleCases{} bug-fixing changes of Defects4J over \OracleUnits{} Java compilation units, which
+before-side node each after-side node corresponds to: \OracleRecords{} node correspondences in
+all, built by running six tools, inspecting every diff by hand against six stated criteria, and
+resolving disagreements by vote. It was authored by different people, for a different tool, on a
+different AST, before \textsc{OmniDiff} existed.
+
+Their oracle uses Eclipse JDT nodes and ours tree-sitter nodes, so the two can be compared only
+where a record's character span is one some tree-sitter node also has. \OracleResolutionRate{}\%
+of records resolve; the remainder are JDT constructs tree-sitter does not model separately,
+chiefly the elements inside a Javadoc comment, which tree-sitter reads as a single token.
+
+The \AmbiguityDefectsFourJTotal{} compilation units we have solved so far are reported as a fourth
+dataset, Defects4J, beside the Curated, Full and Stratified samples throughout, and are included
+in every pooled total. Over the \OracleHumanUnits{} of them for which the comparison has been
+run, our mapping and the oracle's agree to \OracleHumanPrecision{}\%: \OracleHumanDisagreements{}
+disagreeing node pairs out of \OracleHumanMappings{}, and \OracleHumanStatementDisagreements{} of
+\OracleHumanStatementMappings{} at statement level.
+
+\section{Content of Real-World Changes}
+\label{sec:content}
+
+This section measures what a diffing tool is asked to show: which content commits change, and how
+large the changes are.
+
+\textbf{RQ1.1.} What content do real-world changes touch?
+
+Over the \CorpusCloneDepth{} most recent commits of each repository of the Full list, we counted
+every changed file, binary ones included: \ChangeCensusChanges{} changes. Git judges
+\ChangeCensusBinaryPct{}\% of them (\ChangeCensusBinary{}) binary. We then classified by its
+bytes each of the \ContentCensusChanges{} changed files that the commits' trees still hold,
+leaving out submodule entries; Section~\ref{sec:omnidiff-content} describes the recognition.
 
 \begin{table}
   \caption{Changed files over the corpus's recent history, by what they hold. \emph{Repos.} is
@@ -521,123 +900,163 @@ repositories: fonts come from \ContentCensusFontsRepos{} repositories and cursor
 is. By it, pictures are the most widespread content other than text by far, changed in
 \ContentCensusPicturesRepos{} repositories, followed by archives and PDFs. The \emph{Other} row,
 \ContentCensusLeftPct{}\% of changes, is mostly text in legacy encodings, compiled objects, audio,
-and EOT fonts compressed with MicroType Express.
+and EOT fonts compressed with MicroType Express. Within text, code is one kind among several:
+\EditsCodeSharePct{}\% of the files the commits touched were code files, and the rest of the text
+is data, configuration and documentation.
 
-Code also changes inside files of other languages. \EmbeddedFixtures{} of the \NumFixtures{}
-code changes of Section~\ref{sec:diff-shape} edit code held in a string of the host language, in
-\EmbeddedLanguages{} embedded languages, and their ground truth maps the embedded code's own AST
-as well as the host's.
+\begin{resultbox}{RA1.1 (Content)}
+  \ContentCensusTextPct{}\% of the \ContentCensusChanges{} changed files hold text, of which code
+  is one kind, and \ContentCensusFamiliesPct{}\% hold pictures, archives, PDFs, fonts, message
+  catalogs or cursors. Pictures change in \ContentCensusPicturesRepos{} of the
+  \ContentCensusRepos{} repositories.
+\end{resultbox}
 
-\subsection{Shape of optimal file diffs}
-\label{sec:diff-shape}
+\textbf{RQ1.2.} How large are real-world changes?
+\label{sec:edit-shape}
 
-From both Curated and Full list of repositories, we fully randomly sampled \SampleDiffsPerLanguage{}
-diffs per language. That gave \SampleCuratedSampled{} diffs from the Curated list across
-\SampleCuratedLanguages{} languages, and \SampleFullSampled{} from the Full list across
-\SampleFullLanguages{} languages. The two language counts differ because the Curated list's
-repositories hold almost no R or Scala code, so those two languages are drawn from the Full list
-only. The Full list's count exceeds \SampleDiffsPerLanguage{} per
-language because some languages were drawn a second time after their first rounds were largely
-rejected. Every sampled diff was manually inspected for
-sampling errors.
-At this stage, \SampleRejectedTotal{} diffs were rejected, mostly because programming language detection detected
-the wrong language. In particular TypeScript (\SampleRejectedTypeScript{} rejected) and R (\SampleRejectedR{}) file
-extensions were used for other languages or data. This resulted in a dataset of \SampleCuratedPromoted{} diffs from the
-Curated and \SampleFullPromoted{} diffs from the Full list. As shown in Section~\ref{sec:edit-shape}, a pure random
-sample is heavily slanted towards small changes. To account for this, the sample was further
-augmented by a stratified sample based on the lines of code of the files being changed.
-The strata were: 1 to 10 lines, 11 to 30, 31 to 100, 101 to 300, 301 to 1000, 1001 to 3000 and
-more than 3000 lines of code, and the larger of the two sizes was used. In each stratum, \SampleStratifiedPerCell{} diffs were randomly
-sampled per language, and inspected as above.\footnote{\label{fn:in-progress}The corpus and this
-paper are being written in parallel. Drawing and solving the stratified sample, and hand-annotating
-the Defects4J list below, are both still in progress, and the ambiguity pass over those two has not
-been made at all. Every figure in this paper is over the \NumFixtures{} changes solved so far,
-except the tool comparison of Section~\ref{sec:tools} and the line-level, speed and robustness
-figures of Section~\ref{sec:omnidiff}, which were measured at an earlier stage of the corpus, over
-the \UnixDiffFixtures{} changes solved then. Every figure that depends on the ambiguity pass is a
-lower bound for those two datasets.}
+We have size data for one content type, code, where size can be counted in lines. Across both
+repository lists we analysed \EditsCommits{} commits, at most \CorpusCloneDepth{} commits deep
+per repository, so that large repositories, notably the Linux kernel, do not skew the results.
+They hold \EditsCodeFileEdits{} code-file edits, of which \EditsModifiedSharePct{}\% were
+modifications; the remainder created or deleted a file and so present no pair of versions to
+compare. To allow for comparison with existing research, \texttt{git diff} was used to count
+changed lines.
 
-A fourth list further extends the corpus. The AST node-mapping oracle of Alikhanifard and
-Tsantalis~\cite{astdiffbenchmark} contains the \OracleUnits{} AST mappings for \OracleCases{}
-bug-fixing changes of Defects4J~\cite{defects4j}. The file contents its offsets index into come
-from Falleri and Martinez' replication package~\cite{gumtreesimple}. We solve those same
-\OracleUnits{} diffs, so that our mappings can be compared against an
-independently authored reference on a corpus that other AST-differencing evaluations already
-use.\textsuperscript{\ref{fn:in-progress}}
+The bottom row of Figure~\ref{fig:corpus-shape} shows the sizes of the edits. The median file
+edit changes \EditsLinesPerFilePFifty{} lines and the median commit
+\EditsLinesPerCommitPFifty{}; \EditsFileEditsUnderTenPct{}\% of file edits and
+\EditsCommitsUnderTenPct{}\% of commits change ten lines or fewer, while the 99th percentiles are
+\EditsLinesPerFilePNinetyNine{} and \EditsLinesPerCommitPNinetyNine{} lines. Our results are
+broadly aligned with existing research, among them Arafat and Riehle, who report that 47.5\% of
+all commits touch 10 lines or fewer~\cite{commit-size-distribution-paper}, with the long tail
+stretching to tens of thousands of lines. The median edit rewrites only \EditsChurnPFiftyPct{}\%
+of the file it touches, and \EditsChurnUnderFivePct{}\% of edits rewrite under 5\%. In the 99th
+percentile, an edit rewrites the file entirely (\EditsChurnPNinetyNinePct{}\%).
 
-Each diff was solved by hand. Solving a diff means writing down, for every node of the
-AST, which node of the other AST it corresponds to, or that it has none. For
-\PaintingFixtures{} changes the
-annotator additionally painted the rendering: the spans of text a reader should see marked, chosen
-independently of which nodes carry them. The annotators are the authors, who each have at least
-15 years of experience in software development and have reviewed tens of thousands of real-world
-code changes in industrial environments.
+\begin{resultbox}{RA1.2 (Size)}
+  The median code-file edit changes \EditsLinesPerFilePFifty{} lines and rewrites
+  \EditsChurnPFiftyPct{}\% of its file; \EditsFileEditsUnderTenPct{}\% of edits change ten lines
+  or fewer, and at the 99th percentile an edit rewrites its file entirely.
+\end{resultbox}
 
-Content other than code has no AST to map, so its ground truth answers a different question: how
-much did the change change? From the Full list we sampled changed pairs per content family, and
-the annotators judged \ContentAccAllJudged{} of them on a six-level scale. Three levels are
-strengths of ``nothing'': \emph{invisible}, where only bytes differ (metadata, a lossless
-re-encoding); \emph{imperceptible}, visible only once a tool highlights it; and
-\emph{artifacts}, visible but chosen by no one, as compression or resampling leaves it. Three
-are kinds of ``something'': \emph{edited}, where a part changed deliberately and the rest stayed
-the same; \emph{redrawn}, where the whole changed and is still a version of the same thing; and
-\emph{replaced}, where the after side is not a version of the before side. An archive, a font, a
-PDF, a catalog or a cursor of several pictures is judged as a whole and per changed member,
-\ContentAccVerdicts{} verdicts in all.
+A diffing tool therefore has to be good at two unrelated jobs: finding a handful of changed lines
+in an otherwise untouched file, which is the overwhelming majority of edits, and staying usable
+when nothing is left to anchor on. We did not measure the size of changes to other content, for
+which a line count has no meaning; the verdicts of Section~\ref{sec:gap} are the closest
+measure we have.
 
+\section{Delta versus Visualisation}
+\label{sec:gap}
 
-Please note, diffing multiple files and detecting cross-file code moves is out of scope of this paper.
+Section~\ref{sec:background} argues that a delta and a visualisation answer to different
+requirements. This section measures the distance between them in four ways: by the invariants a
+painted delta breaks, by how much of a delta reaches the reader, by the mappings no delta can
+express, and by the mappings a cost model ranks below the cheapest.
 
-\subsection{Cross-validation with existing datasets}
-\label{sec:oracle}
+\textbf{RQ2.1.} How often does a delta, painted as it stands, break the rules that a
+visualisation obeys?
 
-The AST node-mapping oracle of Alikhanifard and Tsantalis~\cite{astdiffbenchmark} records, for
-\OracleCases{} bug-fixing changes of Defects4J over
-\OracleUnits{} Java compilation units, which before-side node each after-side node corresponds to:
-\OracleRecords{} node correspondences in all, built by running six tools, inspecting every diff by
-hand against six stated criteria, and resolving disagreements by vote. It was authored by different people, for a
-different tool, on a different AST, before \textsc{OmniDiff} existed. The file contents its
-character offsets index into come from Falleri and Martinez' replication
-package~\cite{gumtreesimple}.
+The invariants of Section~\ref{sec:invariants} are rules of visualisation, so we hold three
+accounts of each change against them. The first is the hand painting itself. The second is the
+\emph{line script}: the edit script of GNU \texttt{diff}, with every deleted line painted as
+deleted and every inserted line as inserted, from its first column to its last character. The
+third is the \emph{tree script}: the human node mapping read as a tree edit script and painted by
+the literal projection of Section~\ref{sec:definitions}, that is, every deleted or inserted leaf
+painted whole and every leaf paired with a differently reading leaf painted as an update. A move
+is free in the cost model and the script does not mention it. The tree script is the most
+favourable delta we can construct, because its mapping is the human's own and so has no mapping
+error. A delta has no presets, so each script is filed as the \emph{Minimal} and as the
+\emph{Full} painting alike. The population is the \InvariantFixtures{} painted changes whose two
+files parse and that hold no embedded code, and each script is judged by the
+\InvariantPaintingCount{} invariants that read a painting.
 
-Their prior art uses Eclipse JDT nodes and ours tree-sitter nodes, so the two can be compared only where
-a record's character span is one some tree-sitter node also has. \OracleResolutionRate{}\% of
-records resolve; the remainder are JDT constructs tree-sitter does not model separately, chiefly
-the elements inside a Javadoc comment, which tree-sitter reads as a single token.
+The right-hand columns of Table~\ref{tab:invariants} show the result. The line script breaks an
+invariant on \InvariantLineScriptFixturesPct{}\% of the changes
+(\InvariantLineScriptFixtures{}), \InvariantLineScriptViolations{} times in all. Most of its
+violations come from one of two sources. On \InvariantLineScriptSurvivorFixturesPct{}\% of the
+changes it marks as deleted and inserted, or as removed, a token that the human mapping keeps,
+which is the cost of a script without updates or moves. Most of the rest is indentation, which a
+line script always marks and \emph{Minimal} never does. The tree script breaks an invariant on
+\InvariantTreeScriptFixturesPct{}\% of the changes (\InvariantTreeScriptFixtures{}),
+\InvariantTreeScriptViolations{} times. It almost never contradicts its own mapping: it breaks an
+agreement rule on \InvariantTreeScriptAgreementFixturesPct{}\% of the changes. What it lacks is
+everything between the nodes: on \InvariantTreeScriptWhitespaceFixturesPct{}\% of the changes it
+breaks one of the four rules about which whitespace a painting covers, and most of the remainder are
+rules of granularity, such as a renamed identifier painted entire under both presets. The hand
+paintings break a painting rule on \InvariantHumanFixturesPct{}\% of the changes.
 
-The \AmbiguityDefectsFourJTotal{} compilation units we have solved so far are reported as a fourth
-dataset, Defects4J, beside the Curated, Full and Stratified samples throughout, and are included in
-every pooled total. Over the \OracleHumanUnits{} changes we
-have mapped by hand so far, our mapping and the oracle's agree to \OracleHumanPrecision{}\%: \OracleHumanDisagreements{} disagreeing node pairs out of
-\OracleHumanMappings{}, and \OracleHumanStatementDisagreements{} of
-\OracleHumanStatementMappings{} at statement level.
+\begin{resultbox}{RA2.1 (Invariants)}
+  Painted as it stands, a line edit script breaks at least one of the \InvariantPaintingCount{}
+  painting invariants on \InvariantLineScriptFixturesPct{}\% of \InvariantFixtures{} changes, and
+  a tree edit script built from the human-preferred mapping on
+  \InvariantTreeScriptFixturesPct{}\%, against \InvariantHumanFixturesPct{}\% for the hand
+  paintings.
+\end{resultbox}
 
-\section{Viability}
-\label{sec:viability}
+The two scripts fail differently, and the difference is the argument of this paper in small. The
+line script has the wrong correspondence, and no rendering can repair that. The tree script has
+the right correspondence and is still not a visualisation on
+\InvariantTreeScriptFixturesPct{}\% of the changes, because the
+correspondence is over nodes and the reader sees text: which whitespace, which separator and how
+much of a changed word to mark is decided by a projection, not by the mapping.
 
-In Section~\ref{sec:diff-shape} we note that human solvers were not able to solve all diffs using
-the four standard AST diff operations. We used that information to answer the following research question:
+\textbf{RQ2.2.} How much of a delta reaches the reader?
 
-\textbf{RQ1.1.} What percentage of real-world code changes have an optimal AST node mapping that
-cannot be expressed using common AST diff operations (Insert, Delete, Update, Move)?
+For code, we count the nodes that can be displayed at all. A syntax tree contains two kinds of
+nodes. Some carry text of their own, such as an identifier, an operator, a literal or a comment.
+Others are pure structure: a \texttt{block} whose extent is exactly its children's, an
+\texttt{expression\_statement} wrapping one expression, the chain of single-child nodes a grammar
+interposes between a statement and the name inside it. A rendered diff highlights regions of
+source text, so a structural node does not appear in the output on its own. We call a node
+visible if any byte inside its extent lies outside every one of its children. A tool that maps
+every displayed token correctly and every structural wrapper wrongly produces a diff that is
+correct, and it scores badly on a metric that counts all nodes equally.
 
-\AmbiguityListWith{} of \AmbiguityListScored{} solved diffs (\AmbiguityListPct{}\%) require an
-$N{:}M$ mapping: one or more nodes from one side map to one or more nodes from the
-other.\footnote{The most common cause of an $N{:}M$ mapping is a refactoring, where two or more
-similar blocks of code are moved into a common function. The correct solution is the one that maps
-all of them as moved.} That rate is over the \AmbiguityListScored{} changes of the Curated and Full
-lists. The two lists agree within sampling noise, at \AmbiguityCuratedPct{}\% of \AmbiguityCuratedTotal{}
-changes on the Curated list and \AmbiguityFullPct{}\% of \AmbiguityFullTotal{} on the Full list
+For other content, we count the changes that have nothing to show. Every judged pair of
+Section~\ref{sec:ground-truth} differs in its bytes, so each has a non-empty byte delta. Of the
+\ContentVerdictPairs{} pairs, the annotators judged \ContentVerdictInvisible{} invisible,
+\ContentVerdictImperceptible{} imperceptible and \ContentVerdictArtifacts{} to hold only
+artifacts, \ContentVerdictNothing{} in all, and of the \ContentVerdictMembers{} changed members
+of containers that they judged separately, \ContentVerdictMembersNothing{}
+(\ContentVerdictMembersNothingPct{}\%) fall in the same three levels. The remaining pairs are
+\ContentVerdictEdited{} edited, \ContentVerdictRedrawn{} redrawn and \ContentVerdictReplaced{}
+replaced.
+
+\begin{resultbox}{RA2.2 (What reaches the reader)}
+  \InvisibleNodeShare{}\% of the AST nodes in \NumFixtures{} code changes carry no text of their
+  own and cannot appear in a rendered diff. Of \ContentVerdictPairs{} judged changes to other
+  content, all of which differ in their bytes, \ContentVerdictNothingPct{}\% show a viewer no
+  deliberate change.
+\end{resultbox}
+
+The consequence for code is not that node-level metrics should be abandoned. It is that a rate
+over all nodes and a rate over visible nodes answer different questions, and any paper reporting
+one should state which. This paper reports both. The consequence for other content is that a
+tool which reports every pair with a non-empty delta as changed misreports
+\ContentVerdictNothingPct{}\% of them.
+
+\textbf{RQ2.3.} What percentage of real-world code changes have a human-preferred node mapping
+that the common edit operations (Insert, Delete, Update, Move) cannot express?
+
+The human solvers of Section~\ref{sec:ground-truth} were not able to solve all changes with a
+one-to-one mapping. \AmbiguityListWith{} of \AmbiguityListScored{} solved changes
+(\AmbiguityListPct{}\%) require an $N{:}M$ mapping: one or more nodes from one side map to one or
+more nodes from the other.\footnote{The most common cause of an $N{:}M$ mapping is a refactoring,
+where two or more similar blocks of code are moved into a common function. The preferred solution
+is the one that maps all of them as moved.} That rate is over the \AmbiguityListScored{} changes
+of the Curated and Full lists. The two lists agree within sampling noise, at
+\AmbiguityCuratedPct{}\% of \AmbiguityCuratedTotal{} changes on the Curated list and
+\AmbiguityFullPct{}\% of \AmbiguityFullTotal{} on the Full list
 (Table~\ref{tab:expressibility}). Those two are the datasets whose ambiguity pass is finished, and
-the pooled rate RA1.1 states is over them. The table also carries the Stratified sample
-(\AmbiguityStratifiedPct{}\%) and the Defects4J changes (\AmbiguityDefectsFourJPct{}\%), and a rate
-over all \AmbiguityScored{} changes, but all three are lower bounds: those two passes are still
-running, and a change nobody has reviewed for ambiguity is recorded as having none. Read the gap
-between \AmbiguityListPct{}\% and \AmbiguityAnyPct{}\% as the distance annotation still has to
-travel, not as a difference between the datasets.
+the pooled rate RA2.3 states is over them. The table also carries the Stratified sample
+(\AmbiguityStratifiedPct{}\%) and the Defects4J changes (\AmbiguityDefectsFourJPct{}\%), and a
+rate over all \AmbiguityScored{} changes, but all three are lower bounds: those two passes are
+still running, and a change nobody has reviewed for ambiguity is recorded as having none. The gap
+between \AmbiguityListPct{}\% and \AmbiguityAnyPct{}\% is the distance annotation still has to
+travel, not a difference between the datasets.
 
 \begin{table}
-  \caption{Changes whose optimal mapping needs an $N{:}M$ site, per dataset of
+  \caption{Changes whose human-preferred mapping needs an $N{:}M$ site, per dataset of
   Section~\ref{sec:dataset} and pooled.}
   \label{tab:expressibility}
   \begin{tabular}{lrrr}
@@ -661,115 +1080,56 @@ travel, not as a difference between the datasets.
   \footnotesize\textsuperscript{*}The ambiguity pass over the Stratified and Defects4J changes is
   not finished, so these three figures are lower bounds: a change nobody has reviewed for ambiguity
   is recorded as having none. \emph{Curated + Full} is the rate over the two datasets whose pass is
-  complete, and is the figure RA1.1 states.
+  complete, and is the figure RA2.3 states.
 \end{table}
 
-\begin{resultbox}{RA1.1 (Expressibility)}
-  \AmbiguityListPct{}\% of changes (\AmbiguityListWith{} of \AmbiguityListScored{}) have optimal
-  solutions that cannot be expressed at all using the common AST diff operations (Insert, Delete,
-  Update, Move).
+\begin{resultbox}{RA2.3 (Expressibility)}
+  \AmbiguityListPct{}\% of code changes (\AmbiguityListWith{} of \AmbiguityListScored{}) have a
+  human-preferred mapping that cannot be expressed at all using the common edit operations
+  (Insert, Delete, Update, Move).
 \end{resultbox}
 
-This result bears on how tools are scored, because no existing tool can produce these mappings.
-\textsc{OmniDiff}'s node-level accuracy (Section~\ref{sec:omnidiff}) counts a group as correct
-whenever its mapping is any of the pairings the group allows. The line-level comparison of
+This result bears on how tools are scored, because no established tool can produce these
+mappings. The node-level accuracy of Section~\ref{sec:omnidiff} counts a group as correct whenever
+a tool's mapping is any of the pairings the group allows. The line-level comparison of
 Section~\ref{sec:tools} needs one answer per node, so it projects each group through a single
 representative pairing, members paired in source order; a tool that chose a different, equally
 correct pairing can be charged for the lines on which the two differ.
 
-Tree diffing algorithms find the lowest cost diff, i.e. smallest number of operations needed to
-transform one tree into another. However, this does not necessarily correspond to the optimal
-visualisation of the diff overlayed over the text of the source code.
+\textbf{RQ2.4.} What percentage of real-world code changes have a human-preferred mapping whose
+cost is higher than that of the cheapest mapping found?
 
-\textbf{RQ1.2.} What percentage of real-world code changes have solutions that humans prefer
-whose cost is higher than the lowest cost AST diff, using the commonly accepted costs of AST
-diff operations?
+Tree differencing algorithms look for the cheapest mapping, the one with the smallest number of
+operations needed to transform one tree into the other. We computed, for each change, the cost of
+the human mapping and the cost of a mapping found by a state-of-the-art matcher, under unit costs
+for insert, delete and update and a free move. Of the \CostScored{} changes
+compared,\textsuperscript{\ref{fn:in-progress}} the two costs are equal \CostTieFixtures{} times.
+In \CostHumanHigherFixtures{} (\CostHumanHigherPct{}\%) the human solution is strictly costlier.
+The most common reason is that humans treat groups of tokens as one unit, not by their syntax but
+by higher-level logic. A common example is the \texttt{return} keyword: if one function was added
+and another deleted, matching the two \texttt{return}s lowers the tree edit distance, but a human
+finds the match confusing, because the keyword belongs to the logic of the function that contains
+it. Existing tools take notice of this: GumTree~\cite{gumtreediff-2014} does not match subtrees
+below a threshold size, to avoid such spurious mappings.
 
-The lowest edit distance was computed using a state of the art implementation. Of the \CostScored{} fixtures with a human mapping, the
-two costs are equal \CostTieFixtures{} times. In \CostHumanHigherFixtures{} (\CostHumanHigherPct{}\%) the human solution is strictly costlier. The most common reason for this is that humans treat groups of tokens
-as one unit, not based on their syntax or semantical meaning, but rather based on higher-level logic.
-A common example is the \texttt{return} keyword; if one function was added and another deleted,
-matching the two \texttt{return}s leads to an optimal tree edit distance, but a human would find the match confusing because they typically
-treat the keyword as ``belonging'' to the logic of the function containing it. Existing tools do take
-notice of this. GumTree~\cite{gumtreediff-2014} avoids matching subtrees smaller than a
-threshold size to avoid such spurious mappings.
-
-\begin{resultbox}{RA1.2 (Cost)}
-  On at least \CostHumanHigherPct{}\% of the changes in the corpus (\CostHumanHigherFixtures{} of
+\begin{resultbox}{RA2.4 (Cost)}
+  On at least \CostHumanHigherPct{}\% of code changes (\CostHumanHigherFixtures{} of
   \CostScored{}), the human-authored mapping costs strictly more, under unit costs for insert,
-  delete and update and a free move, than a mapping a tree edit distance algorithm found for the
+  delete and update and a free move, than a mapping a tree-differencing algorithm found for the
   same change.
-\end{resultbox}
-
-\section{Speed}
-\label{sec:speed}
-
-This section explores the speed of the exact algorithm.
-The asymptotic complexity of APTED and Zhang-Shasha both is $O(n^3)$ for general trees, where $n$
-is the number of nodes in the tree. However, APTED performs considerably better in real trees
-because it is less sensitive to the tree shape. Given this existing direction in the literature,
-we wanted to further focus on source-code trees specifically and ask the following question:
-
-\textbf{RQ2.} What percentage of real-world source-code changes can a single, whole-tree
-tree-edit-distance computation complete within one second?
-
-One second was chosen as a budget because it is a practical limit that can be computed,
-and because it is where interaction stops feeling immediate. Nielsen's response-time
-limits~\cite{nielsen-usability} put one second at the boundary at which a user's flow of thought
-stays uninterrupted but the delay becomes noticeable; below about 100\,ms a response reads as
-instantaneous. From an industry perspective, practitioners rate the reaction time of review
-tooling as very important~\cite{kudrjavets-2023}, and developer satisfaction with code review falls
-as changes wait longer~\cite{meta-review-time-2022}; one second is the high end of acceptable.
-Developers have had decades to get used to instant diffs from line-based tools, so any AST diffing tool that expects to be adopted must meet a similar bar.
-
-We sampled \RqOnePairsAttempted{} real (before, after) file pairs from single-parent commits in the
-dataset, stratified per language and per size bucket, with the buckets defined in
-Section~\ref{sec:diff-shape}: up to \RqOnePerCell{} pairs in each of the \RqOneCells{} cells of
-\RqOneLanguages{} languages and \RqOneBuckets{} buckets. \RqOneFullCells{} cells reached that
-target; the rest hold every pair the corpus had. On each pair, we ran our highly optimised,
-state of the art APTED implementation, with a one second runtime budget enforced using common operating
-system runtime limits.
-
-\begin{figure*}
-  \centering
-  \includegraphics[width=\linewidth]{figures/time_budget}
-  \caption{The one-second budget, read the same way twice. Left: the share of sampled file pairs
-  whose whole-tree APTED computation completes within the time on the axis, per artifact
-  category; the height of each curve at the dashed line is RA2, and the pairs the budget killed
-  are the gap to 100\%. Right: wall-clock per diff for every tool configuration of
-  Section~\ref{sec:tools}, every repeated run over every fixture, with \textsc{OmniDiff} charged
-  for its parse and drawn dash-dotted; the dotted curve is the tree-sitter parse alone, the floor
-  every AST-aware tool pays first. The dashed line is the same one second in both panels.}
-  \label{fig:time-budget}
-\end{figure*}
-
-The left panel of Figure~\ref{fig:time-budget} shows, for each artifact category, the share of
-pairs completed as a function of the time allowed. Size decides the outcome: within one second the
-computation finishes for \RqOneCodeThirtyToHundredPct{}\% of code file pairs at 31 to 100 lines
-and for \RqOneCodeHundredToThreeHundredPct{}\% at 101 to 300. The shape
-of the input matters as well: scripting languages complete more often than code, and data files
-less often.
-
-\begin{resultbox}{RA2 (Speed)}
-  Within one second, pure tree edit distance algorithms find the diff for only
-  \RqOneCodePct{}\% of code pairs.
 \end{resultbox}
 
 \section{Uniqueness}
 \label{sec:uniqueness}
 
-This section measures how often a change has more than one correct answer, first in the mapping
-and then in its rendering. Existing tools all provide a single diff. Line based tools mark lines as inserted, deleted or match lines
-1:1. Tree based tools and algorithms have 4 basic operations: insert node, delete node, update node
-and match nodes 1:1. Some algorithms extend the basic operations with tree equivalents, e.g. insert tree or
-delete tree. No tool allows for multiple solutions.
+A delta is one of many: any cheapest script will do. This section measures how often the
+human-preferred account of a change is not unique either, first in the mapping and then in its
+visualisation. Existing tools all provide a single diff. Line-based tools mark lines as inserted
+or deleted or match lines one to one, and tree-based tools match nodes one to one. No tool
+reports several solutions.
 
-Manually examining real-world inputs, we found that some diffs have multiple equally correct
-solutions: multiple equally correct 1:1 mappings within a given many-to-many node mapping must
-cover one side of the mapping completely, and the remaining nodes on the other side should be
-marked as inserted or deleted, as appropriate.
-
-Figure~\ref{fig:ambiguous-example} is a motivating example.
+Manually examining real-world changes, we found that some have several equally correct
+solutions. Figure~\ref{fig:ambiguous-example} is a motivating example.
 \begin{figure}
   \small
   \begin{tabular}{@{}p{0.46\linewidth}@{\hspace{0.04\linewidth}}p{0.46\linewidth}@{}}
@@ -811,101 +1171,205 @@ def is_even(x):
 \end{figure}
 The AST of the before snippet contains one \texttt{boolean\_operator} node. The after snippet
 contains two, one a direct child of the other. There is no objective way to determine which of the
-two is added and which one should be matched. The edit distance cost of both mappings is exactly
+two is added and which one should be matched. The edit distance of both mappings is exactly
 equal, and since \texttt{boolean\_operator} is an internal node with no rendering of its own, both
-also produce the same visualisation---so human judgement cannot break the tie either.
+also produce the same visualisation, so human judgement cannot break the tie either.
 
-\textbf{RQ3.1.} What percentage of real-world code changes have multiple optimal AST node
-mappings?
+\textbf{RQ3.1.} What percentage of real-world code changes have multiple optimal node mappings?
 
 We count a change as admitting several optimal mappings when its ground truth records at least one
-\emph{multi-map group}: a set of nodes on one side and a set on the other that the annotator judged
-interchangeable, so that any consistent pairing within the group is equally correct. Across the corpus the annotators recorded \AmbiguityGroups{} such groups.
+multi-map group (Section~\ref{sec:ground-truth}). Within a group, any one-to-one pairing that
+covers the smaller side is equally correct, and the nodes left over on the other side are deleted
+or inserted. Across the dataset the annotators recorded \AmbiguityGroups{} such groups.
 
-Even without such groups, multiple solutions can exist. Where the annotator's mapping and the
-matcher's mapping for one change cost exactly the same under the unit cost model and still disagree
-about which nodes pair with which, the cost function cannot separate two different answers. That happens on \CostTieDifferentFixtures{} changes (\CostTieDifferentPct{}\%).
+Even without such groups, several solutions can exist. Where the annotator's mapping and a
+matcher's mapping for one change cost exactly the same under the unit cost model and still
+disagree about which nodes pair with which, the cost function cannot separate two different
+answers. That happens on \CostTieDifferentFixtures{} of the \CostScored{} changes compared in
+Section~\ref{sec:gap} (\CostTieDifferentPct{}\%).
 
 \begin{resultbox}{RA3.1 (Mapping uniqueness)}
-  In at least \AmbiguityListPct{}\% of changes (\AmbiguityListWith{} of \AmbiguityListScored{}), humans found that some set of nodes admits several equally correct pairings. Independently of that annotation, on
-  \CostTieDifferentPct{}\% of changes the human and algorithmic mappings tie on cost while
-  disagreeing on the mapping, so the cost function alone cannot pick between them.
+  In at least \AmbiguityListPct{}\% of code changes (\AmbiguityListWith{} of
+  \AmbiguityListScored{}), humans found that some set of nodes admits several equally correct
+  pairings. Independently of that annotation, on \CostTieDifferentPct{}\% of changes the human
+  and an algorithmic mapping tie on cost while disagreeing on the mapping, so the cost function
+  alone cannot pick between them.
 \end{resultbox}
 
-\textbf{RQ3.2.} What percentage of real-world code changes have multiple equally correct textual
-visualisations of the diff?
+\textbf{RQ3.2.} What percentage of real-world code changes have multiple equally correct
+visualisations, and how do those differ?
 
-Settling the mapping does not settle what the reader sees. Of the \PaintingFixtures{} painted
-changes, \PaintingDual{}---\PaintingDualPct{}\%---carry at least two paintings, the annotator's
-finding that there are multiple correct renderings of the same change.
+Settling the mapping does not settle what the reader sees. Of the \PresetPainted{} painted
+changes, \PresetBothFixtures{} (\PresetBothPct{}\%) carry a \emph{Minimal} and a \emph{Full}
+painting, the annotator's finding that a reader who wants only what changed and a reader who wants
+its surroundings marked are both right. \PresetSingleFixtures{} (\PresetSinglePct{}\%) carry one
+painting that names no preset: for these a human considers the rendering settled,
+whatever the reader's preference. The remaining \PresetMinimalOnlyFixtures{} changes
+carry only a \emph{Minimal} painting and \PresetFullOnlyFixtures{} only a \emph{Full} one so far.
+
+\input{figures/preset_table.tex}
+
+\begin{figure*}
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/preset_difference}
+  \caption{The \emph{Full} hand painting against the \emph{Minimal} one, over the changes painted
+  both ways. Left: per change, the share of the bytes \emph{Full} paints that \emph{Minimal}
+  paints as well, as a cumulative distribution. Right: per language with at least fifteen such
+  changes (count in parentheses), the share of the bytes \emph{Full} paints that \emph{Minimal}
+  leaves unpainted, by what those bytes hold.}
+  \label{fig:presets}
+\end{figure*}
+
+We compared the two paintings byte by byte on the \PresetCensusFixtures{} changes that carry
+both.\footnote{One change with two paintings is left out: its paintings are two alternatives
+that name no preset.} \emph{Minimal} paints \PresetMinimalBytes{} bytes and \emph{Full}
+\PresetFullBytes{}, \PresetFullOverMinimal{} times as many. \emph{Full} never leaves unpainted a
+byte that \emph{Minimal} paints (\PresetMinimalOnlyBytes{} such bytes), which is one of the
+invariants, and the two give \PresetRelabelledBytes{} bytes different labels. The two paintings
+are byte-identical on \PresetIdenticalFixtures{} of the changes, as expected: an annotator who
+would paint both alike records a single painting instead. Table~\ref{tab:presets} shows what the
+\PresetAddedBytes{} bytes that only \emph{Full} paints hold. \PresetAddedWhitespacePct{}\% of
+them are whitespace, almost all of it the indentation and spacing of inserted and deleted lines.
+\PresetAddedCodePct{}\% are code: the unchanged part of a renamed identifier or a changed number,
+which \emph{Full} paints as part of the update, and code that moved, which \emph{Full} marks as
+moved in more cases than \emph{Minimal} does. Punctuation alone, the brackets and separators that
+a change brings with it, is \PresetAddedPunctuationPct{}\%.
+
+The difference is small for most changes and large for a few. The median change has
+\PresetExtraMedian{} bytes that only \emph{Full} paints, the 90th percentile
+\PresetExtraPNinety{} and the largest \PresetExtraMax{}. The left panel of
+Figure~\ref{fig:presets} shows the distribution relative to the size of the painting: in the
+median change, \emph{Minimal} paints \PresetKeptMedianPct{}\% of the bytes \emph{Full} paints.
+The right panel shows that the share differs by language, and that what is added differs as
+well: mostly whitespace in most languages, mostly code in shell scripts and CSS. We conjecture
+that in those two a changed word or value is short and the unchanged remainder that \emph{Full}
+paints with it is long by comparison.
 
 \begin{resultbox}{RA3.2 (Visualisation uniqueness)}
-Of the \PaintingFixtures{} painted changes taken from real commits, \PaintingDual{} (\PaintingDualPct{}\%) admit at least two equally correct renderings.
+  Of the \PresetPainted{} painted changes, \PresetBothFixtures{} (\PresetBothPct{}\%) admit a
+  sparse and a generous correct rendering, and \PresetSingleFixtures{} (\PresetSinglePct{}\%)
+  have one rendering only. Where both exist, the generous one paints \PresetFullOverMinimal{}
+  times the bytes, and \PresetAddedWhitespacePct{}\% of what it adds is whitespace.
 \end{resultbox}
 
+For Section~\ref{sec:background} this is the last piece of evidence: even the visualisation of a
+change is a family, with the reader's preference as its parameter, and the family has a single
+member for \PresetSinglePct{}\% of the painted changes. A delta has no such parameter.
 
+\section{Exact Deltas within an Interactive Budget}
+\label{sec:speed}
 
-\subsection{How much of the mapping reaches the reader}
+This section asks what the exact delta costs to compute. The data is for code, the content whose
+exact delta is expensive: a line script or a pixel difference is computed in time that is close
+to linear for typical inputs. The asymptotic complexity of APTED and Zhang--Shasha is $O(n^3)$
+for general trees, where $n$ is the number of nodes. APTED performs considerably better on real
+trees because it is less sensitive to the tree shape. Given this direction in the literature, we
+focus on source-code trees and ask the following question:
 
-\textbf{RQ3.3.} What percentage of the AST influences the textual visualisation?
+\textbf{RQ4.} What percentage of real-world source-code changes can a single, whole-tree
+tree-edit-distance computation complete within one second?
 
-A syntax tree contains two kinds of nodes. Some carry text of their own---an identifier, an
-operator, a literal, a comment. Others are pure structure: a \texttt{block} whose extent is
-exactly its children's, an \texttt{expression\_statement} wrapping one expression, the chain of
-single-child nodes a grammar interposes between a statement and the name inside it. A rendered diff highlights regions of source text, so a structural node does not appear in the output on its own. A tool that maps every displayed token correctly and every structural wrapper wrongly produces a diff that is correct; such a tool scores badly on a metric that counts all nodes equally. A node is visible if any byte
-inside its extent lies outside every one of its children---that is, if it contributes text of its own to the rendering.
+One second was chosen as a budget because it is where interaction stops feeling immediate.
+Nielsen's response-time limits~\cite{nielsen-usability} put one second at the boundary at which a
+user's flow of thought stays uninterrupted but the delay becomes noticeable; below about 100\,ms
+a response reads as instantaneous. Practitioners rate the reaction time of review tooling as very
+important~\cite{kudrjavets-2023}, and developer satisfaction with code review falls as changes
+wait longer~\cite{meta-review-time-2022}. Developers have had decades to get used to instant
+diffs from line-based tools, so any tool that expects to be adopted has to meet a similar bar.
 
-\begin{resultbox}{RA3.3 (Visible share of the AST)}
-\InvisibleNodeShare{}\% of the AST nodes in \NumFixtures{} fixtures carry no text of their own and cannot appear in a rendered diff at all: \VisibleNodeShare{}\% are visible. Roughly one AST node in three is scaffolding.
+We sampled \RqOnePairsAttempted{} real (before, after) file pairs from single-parent commits in
+the corpus, stratified per language and per size bucket, with the buckets defined in
+Section~\ref{sec:diff-shape}: up to \RqOnePerCell{} pairs in each of the \RqOneCells{} cells of
+\RqOneLanguages{} languages and \RqOneBuckets{} buckets. \RqOneFullCells{} cells reached that
+target; the rest hold every pair the corpus had. On each pair, we ran our optimised APTED
+implementation, with a one-second budget enforced by operating-system limits.
+
+\begin{figure*}
+  \centering
+  \includegraphics[width=\linewidth]{figures/time_budget}
+  \caption{The one-second budget, read the same way twice. Left: the share of sampled file pairs
+  whose whole-tree APTED computation completes within the time on the axis, per artifact
+  category; the height of each curve at the dashed line is RA4, and the pairs the budget killed
+  are the gap to 100\%. Right: wall-clock per diff for every tool configuration of
+  Section~\ref{sec:tools}, every repeated run over every fixture, with \textsc{OmniDiff} charged
+  for its parse and drawn dash-dotted; the dotted curve is the tree-sitter parse alone, the floor
+  every AST-aware tool pays first. The dashed line is the same one second in both panels.}
+  \label{fig:time-budget}
+\end{figure*}
+
+The left panel of Figure~\ref{fig:time-budget} shows, for each artifact category, the share of
+pairs completed as a function of the time allowed. Size decides the outcome: within one second
+the computation finishes for \RqOneCodeThirtyToHundredPct{}\% of code file pairs at 31 to 100
+lines and for \RqOneCodeHundredToThreeHundredPct{}\% at 101 to 300. The shape of the input
+matters as well: scripting languages complete more often than code, and data files less often.
+
+\begin{resultbox}{RA4 (Exactness)}
+  Within one second, a whole-tree tree-edit-distance computation finds the delta for only
+  \RqOneCodePct{}\% of code file pairs.
 \end{resultbox}
-
-The consequence is not that node-level metrics should be abandoned. It is that a rate over all
-nodes and a rate over visible nodes answer different questions, and any paper reporting one should
-state which. This paper reports both.
 
 \section{State of the Art}
 \label{sec:tools}
 
-We run every established diffing tool we could obtain over the corpus of
-Section~\ref{sec:dataset}, score each against the same human mapping, and time each on the same
-machine.
+This section measures what established tools do with real changes: what they show for each type
+of content, and, for code, how accurately and how fast.
 
-%% RQ4.1 and RQ4.2 are stated here, next to the measurements that answer them. Section 1 names
-%% them by number under the property each one tests; keep the numbers in step.
-\textbf{RQ4.1.} How accurately do current state-of-the-art code diffing tools find optimal
-visualisations?
+%% RQ5.1-RQ5.3 are stated here, next to the measurements that answer them. Section 1 names them
+%% by group; keep the wording in step.
+\textbf{RQ5.1.} What do established tools show for each type of content?
 
-\textbf{RQ4.2.} How fast are real-world state-of-the-art tools?
+For text, \texttt{diff} and \texttt{git diff} show a line script, and they do so for every text
+file, whatever it holds. For the \ChangeCensusBinaryPct{}\% of changed files that git judges
+binary (RA1.1), git shows that the two versions differ and nothing else, unless a user has
+configured a converter for the format. The tools that go further each cover a part of the
+content. The AST-aware tools read code in the languages they have a grammar for: of the
+\UnixDiffFixtures{} code changes of the comparison below, diffsitter's compiled-in grammar set
+processes \DiffsitterFixtures{}, GumTree's generator set \GumTreeFixtures{}, difftastic's
+\DifftasticFixtures{}, and srcDiff, which parses five languages, \SrcDiffFixtures{}. diffoscope
+unpacks containers and compares what is inside them as text or as bytes, and pixelmatch counts
+the pixels of two pictures that differ visibly. None of the tools we know of states for a
+changed picture, font or archive how much of the change a viewer would see, which is what the
+verdicts of Section~\ref{sec:ground-truth} record, so we could score no established tool against
+them.
+
+\begin{resultbox}{RA5.1 (Coverage)}
+  Git shows a line script for the \ChangeCensusTextPct{}\% of changed files it reads as text and
+  only a notice for the \ChangeCensusBinaryPct{}\% it judges binary. Of four AST-aware tools, the
+  broadest reads \DifftasticFixtures{} of \UnixDiffFixtures{} sampled code changes and the
+  narrowest \SrcDiffFixtures{}.
+\end{resultbox}
+
+\textbf{RQ5.2.} How accurately do current state-of-the-art code diffing tools find the
+human-preferred visualisation?
+
+\textbf{RQ5.3.} How fast are they?
 
 \textbf{Comparison tools.} We measure eight established tools, all introduced in
-Section~\ref{sec:background}, on \UnixDiffFixtures{} of the fixtures described in
+Section~\ref{sec:background-tools}, on \UnixDiffFixtures{} of the code changes of
 Section~\ref{sec:dataset}.\textsuperscript{\ref{fn:in-progress}} \texttt{git diff} is measured
-under each of its four algorithms, Myers, minimal, patience and histogram, giving eleven configurations in all. Five configurations report at line granularity only: Unix
-\texttt{diff} and the four \texttt{git} algorithms. Six report sub-line detail: BDiff~\cite{bdiff},
-Neovim's diff mode, and the four AST-aware tools, GumTree (\GumTreeVersion{})~\cite{gumtreediff-2014},
-difftastic~\cite{difftastic}, diffsitter~\cite{diffsitter} and srcDiff~\cite{decker-2020}. Our own tool's figures are reported in Section~\ref{sec:omnidiff}, on the same basis and against the same ground truth.
+under each of its four algorithms, Myers, minimal, patience and histogram, giving eleven
+configurations in all. Five configurations report at line granularity only: Unix \texttt{diff}
+and the four \texttt{git} algorithms. Six report sub-line detail: BDiff~\cite{bdiff}, Neovim's
+diff mode, and the four AST-aware tools, GumTree (\GumTreeVersion{})~\cite{gumtreediff-2014},
+difftastic~\cite{difftastic}, diffsitter~\cite{diffsitter} and srcDiff~\cite{decker-2020}. Our
+own tool's figures are reported in Section~\ref{sec:omnidiff}, on the same basis and against the
+same ground truth.
 
+\textbf{Line-level agreement.} None of the eleven configurations reports a node mapping or a
+painting in a form that can be compared directly, so we compare them on a common ground: which
+source lines each marks as touched, against the lines the human mapping touches. Because the
+tools cover different subsets of the changes (RA5.1), percentages are used.
 
-
-\textbf{Line-level agreement.} None of the eleven configurations reports an AST-node mapping in a
-form that can be compared directly, so we compare them on a common ground: which
-source lines each marks as touched, against the lines the human mapping touches. Coverage varies
-widely: of the \UnixDiffFixtures{} fixtures this comparison was run over, the text-based tools
-cover all of them, while diffsitter's compiled-in grammar set can process \DiffsitterFixtures{},
-GumTree's generator set \GumTreeFixtures{}, difftastic's \DifftasticFixtures{}, and srcDiff,
-which parses five languages, \SrcDiffFixtures{}. Because those subsets differ, percentages are
-used.
-
-We report agreement per fixture rather than pooled over lines in
+We report agreement per change rather than pooled over lines in
 Table~\ref{tab:agreement-buckets}, and Figure~\ref{fig:agreement-by-dataset} splits the same
-reading by the dataset each fixture was sampled from.
-\emph{Perfect} means zero mismatched lines. $\ge$99\% is ``a developer has to look twice'';
-95--99\% is ``a developer has to check''. Below 95\% the tool is no longer usable.
+reading by the dataset each change was sampled from. \emph{Perfect} means zero mismatched lines.
+$\ge$99\% is ``a developer has to look twice''; 95--99\% is ``a developer has to check''. Below
+95\% the tool is no longer usable.
 
-\begin{resultbox}{RA4.1 (Tool accuracy)}
-srcDiff renders \SrcDiffPerfectPct{}\% of the changes it parses perfectly, but it parses five
-languages; no tool that parses most of the corpus renders much more than three fifths of it
-perfectly, the best being difftastic at \DifftasticPerfectPct{}\%.
+\begin{resultbox}{RA5.2 (Tool accuracy)}
+srcDiff renders \SrcDiffPerfectPct{}\% of the code changes it parses perfectly, but it parses
+five languages; no tool that parses most of the changes renders much more than three fifths of
+them perfectly, the best being difftastic at \DifftasticPerfectPct{}\%.
 \end{resultbox}
 
 \input{figures/benchmark_other_buckets_combined.tex}
@@ -926,11 +1390,12 @@ changes, and all five line-granularity configurations do best on Defects4J. Bug 
 localised edits, which is the shape a line-based diff recovers most reliably, so the ordering is a
 property of the datasets rather than of any tool.
 
-\textbf{Cost.} Table~\ref{tab:speed-vs-others} reports wall-clock percentiles, sorted fastest to slowest by median. Each tool is measured over
-the fixtures it supports rather than over one common subset, so the populations behind these rows
-differ---the text-based tools draw on every fixture, while an AST tool draws only on the languages
-its grammars cover. Two tools are reported twice: GumTree once invoked as a fresh process per fixture, the realistic cost of a single CLI
-invocation, and once run inside one persistent JVM across all fixtures, isolating JVM startup from
+\textbf{Cost.} Table~\ref{tab:speed-vs-others} shows wall-clock percentiles, sorted fastest to
+slowest by median. Each tool is measured over the changes it supports rather than over one common
+subset, so the populations behind these rows differ: the text-based tools draw on every change,
+while an AST tool draws only on the languages its grammars cover. Two tools are reported twice:
+GumTree once invoked as a fresh process per change, the realistic cost of a single command-line
+invocation, and once run inside one persistent JVM across all changes, isolating JVM startup from
 GumTree's own matching cost; and BDiff likewise per process and inside one persistent Python
 interpreter, for the same reason.
 
@@ -965,32 +1430,32 @@ interpreter, for the same reason.
   \end{tabular}
 \end{table}
 
-\begin{resultbox}{RA4.2 (Tool cost)}
+\begin{resultbox}{RA5.3 (Tool cost)}
 The eleven configurations span more than two orders of magnitude at the median, from Unix
 \texttt{diff}'s \SpeedUnixDiffPFifty{}\,ms to GumTree's \SpeedGumTreeColdPFifty{}\,ms per
 invocation. At the 99th percentile the same range runs from \SpeedUnixDiffPNinetyNine{}\,ms to
 \SpeedGumTreeColdPNinetyNine{}\,ms, three orders of magnitude apart.
 \end{resultbox}
 
-We report both a cold and a warm figure for GumTree and BDiff because they answer different questions: the cold number is what a developer running a diff from the command line waits for, and the warm number is the matching cost once process startup is amortised away.
-
-Every timing number in this paper is the result of repeated runs rather than a single
-measurement. Each tool is run \TimingRepeats{} times on every fixture, and the percentiles are
-taken over every individual run pooled across fixtures rather than over per-fixture means: the
-repeat count is uniform, so no fixture is over-weighted.
-
-
+We report both a cold and a warm figure for GumTree and BDiff because they answer different
+questions: the cold number is what a developer running a diff from the command line waits for,
+and the warm number is the matching cost once process startup is amortised away. Every timing
+number in this paper is the result of repeated runs rather than a single measurement. Each tool
+is run \TimingRepeats{} times on every change, and the percentiles are taken over every
+individual run pooled across changes rather than over per-change means: the repeat count is
+uniform, so no change is over-weighted.
 
 \section{\textsc{OmniDiff}}
 \label{sec:omnidiff}
 
-This section is the paper's tool contribution. \textsc{OmniDiff} diffs a file by what it holds:
-code with a grammar by matching its AST (Section~\ref{sec:omnidiff-code}), binary content by
-one of two content engines (Section~\ref{sec:omnidiff-content}), and any other file as text,
-line by line. Table~\ref{tab:findings-to-design} lists what
-each empirical result decided in \textsc{OmniDiff}'s design; the phases that follow are the
-same list read top to bottom, and the tool is then evaluated against the same ground truth and on
-the same basis as Section~\ref{sec:tools}'s eleven configurations.
+This section is the paper's tool contribution. \textsc{OmniDiff} diffs a file by what it holds.
+It recognises the content of a pair from its bytes (Section~\ref{sec:omnidiff-recognition}),
+diffs code with a grammar by mapping its AST and projecting the mapping to a painting, and any
+other text line by line (Section~\ref{sec:omnidiff-code}), and diffs binary content by one of
+two content engines (Section~\ref{sec:omnidiff-content}). Table~\ref{tab:findings-to-design}
+shows what each empirical result decided in its design, and Section~\ref{sec:omnidiff-evaluation}
+evaluates the tool against the same ground truth and on the same basis as the tools of
+Section~\ref{sec:tools}.
 
 \begin{table}
   \caption{What each empirical result decided in \textsc{OmniDiff}'s design.}
@@ -1000,31 +1465,36 @@ the same basis as Section~\ref{sec:tools}'s eleven configurations.
     \toprule
     Finding & Consequence \\
     \midrule
-    The median edit rewrites \EditsChurnPFiftyPct{}\% of its file (Section~\ref{sec:edit-shape})
+    \ChangeCensusBinaryPct{}\% of changed files are binary to git, and pictures change in
+      \ContentCensusPicturesRepos{} repositories (RA1.1)
+      & Content is recognised by its bytes and diffed by what it holds \\ \addlinespace
+    The median edit rewrites \EditsChurnPFiftyPct{}\% of its file (RA1.2)
       & Phase 1 settles the unchanged majority by hashing before any edit-distance computation
         runs \\ \addlinespace
-    Whole-tree APTED finishes within one second for only \RqOneCodePct{}\% of code pairs (RA2)
-      & APTED runs only inside one already-matched pair (Phase 3), never over the whole tree \\ \addlinespace
-    On \CostHumanHigherPct{}\% of changes the human mapping costs more than the cheapest one
-      (RA1.2)
-      & Phases 2 and 3 encode reader preferences that cost more than the optimum: comments and
-        modifiers follow their node, names beat cost, diagnostics are held back \\ \addlinespace
-    \AmbiguityListPct{}\% of changes have no expressible optimum and \CostTieDifferentPct{}\%
-      tie at different mappings (RA1.1, RA3.1)
+    A tree script with the right mapping breaks a painting invariant on
+      \InvariantTreeScriptFixturesPct{}\% of changes (RA2.1)
+      & The renderer is a projection with rules of its own, not a colouring of the mapping \\ \addlinespace
+    \InvisibleNodeShare{}\% of nodes never reach the screen, and \ContentVerdictNothingPct{}\%
+      of content changes show nothing deliberate (RA2.2)
+      & Accuracy is reported on visible nodes and painted bytes; every content change is named
+        by how much of it a viewer sees \\ \addlinespace
+    \AmbiguityListPct{}\% of code changes have no expressible optimum and
+      \CostTieDifferentPct{}\% tie at different mappings (RA2.3, RA3.1)
       & The phase order is the tie-break: the earliest phase to claim a node wins, and the
         closing step marks what no phase claimed \\ \addlinespace
-    \InvisibleNodeShare{}\% of nodes never reach the screen (RA3.3)
-      & Accuracy is reported on visible nodes and on rendered lines, not on the node count alone \\ \addlinespace
-    No established tool that parses most of the corpus renders more than
-      \DifftasticPerfectPct{}\% of changes perfectly, and srcDiff \SrcDiffPerfectPct{}\% of the
-      five languages it parses (RA4.1)
+    On \CostHumanHigherPct{}\% of changes the human mapping costs more than the cheapest one
+      (RA2.4)
+      & Phases 2 and 3 encode reader preferences that cost more than the optimum: comments and
+        modifiers follow their node, names beat cost, diagnostics are held back \\ \addlinespace
+    \PresetBothPct{}\% of painted changes have a sparse and a generous rendering (RA3.2)
+      & Two render presets, \emph{Minimal} and \emph{Full}, over one mapping \\ \addlinespace
+    Whole-tree APTED finishes within one second for only \RqOneCodePct{}\% of code pairs (RA4)
+      & APTED runs only inside one already-matched pair (Phase 3), never over the whole tree \\ \addlinespace
+    No established tool that parses most code changes renders more than
+      \DifftasticPerfectPct{}\% of them perfectly (RA5.2)
       & The bar the evaluation has to clear, on the same basis \\ \addlinespace
-    Files reach \AstMax{} nodes (Section~\ref{sec:dataset})
-      & The Robust target below \\ \addlinespace
-    \ChangeCensusBinaryPct{}\% of changed files are binary to git
-      (Section~\ref{sec:beyond-code})
-      & Content is recognised by its bytes and diffed by what it holds
-        (Section~\ref{sec:omnidiff-content}) \\
+    Files reach \AstMax{} nodes (Section~\ref{sec:files})
+      & The Robust target below \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1035,124 +1505,90 @@ the same basis as Section~\ref{sec:tools}'s eleven configurations.
   \item \textbf{Robust:} \textsc{OmniDiff} must handle every file up to the measured maximum,
     \AstMax{} AST nodes, with headroom above that number.
   \item \textbf{Fast:} \textsc{OmniDiff} must compute a diff in under \SpeedTargetMs{}\,ms for
-    \SpeedTargetPct{}\% of real-world changes, RQ2's one second applied to the population of
-    real changes rather than to a corpus of hard cases.
+    \SpeedTargetPct{}\% of real-world changes, RQ4's one second applied to the population of
+    real changes rather than to a sample of hard cases.
 \end{itemize}
 
-\subsection{Code}
+\subsection{Recognising content}
+\label{sec:omnidiff-recognition}
+
+A content kind is recognised from the file's bytes, never from its name: under \texttt{git diff}
+both sides are temporary files, and an X cursor is an extensionless file named after the cursor.
+A pair is diffed as one kind or not at all, and a pair that does not decode is reported as any
+other binary pair rather than as an error, so that, run as git's external diff, one bad file does
+not abandon every file after it. Text needs no such recognition, but two kinds of it are widened:
+XML formats such as SVG are parsed with the XML grammar, and text in UTF-16 or UTF-32 with a byte
+order mark is decoded and diffed as text rather than as binary. Text in one of
+\NumSupportedLanguages{} languages with a tree-sitter grammar~\cite{tree-sitter} is diffed as
+code; any other text is diffed line by line, with the changed part of a paired line marked.
+
+\subsection{Text and code}
 \label{sec:omnidiff-code}
 
-\textsc{OmniDiff} matches two ASTs in \NumPhasesWord{} phases. Each phase either resolves part of the
-mapping directly or narrows the residual left for the next phase. Later phases only ever see
-nodes earlier phases left unmatched. A sixth step closes the mapping, recording the deletion or
-insertion implied by whatever every phase above left undecided.
+For code, \textsc{OmniDiff} first computes a mapping and then projects it to a painting, the two
+steps of Section~\ref{sec:definitions}. It matches two ASTs in \NumPhasesWord{} phases. Each
+phase either resolves part of the mapping directly or narrows the residual left for the next
+phase. Later phases only ever see nodes earlier phases left unmatched. A sixth step closes the
+mapping, recording the deletion or insertion implied by whatever every phase above left
+undecided.
 
 \textbf{Phase 1, hash-based descent.} \textsc{OmniDiff} matches subtrees by two hash variants, in
 order: byte-identical subtrees, then same-shape subtrees with any leaf value. This phase is
-motivated directly
-by the commit-size data of Section~\ref{sec:dataset}: since most commits touch a small fraction of
-a file's lines, most of a typical file's AST is byte-identical between before and after. Resolving
-that identical majority with cheap hashing, before any tree-edit-distance computation runs at all,
-avoids paying $O(n^3)$ on content that never changed.
+motivated directly by RA1.2: since most commits touch a small fraction of a file's lines, most
+of a typical file's AST is byte-identical between before and after. Resolving that identical
+majority with cheap hashing, before any tree-edit-distance computation runs at all, avoids paying
+$O(n^3)$ on content that never changed.
 
 \textbf{Phase 2, contextual exact matching.} Comments and modifiers (attributes, decorators) that
 immediately precede an already-matched node, and diagnostic statements (logging calls, assertions,
-panics) that are byte-identical on both sides, get matched directly. Neither is reachable by phase 1's structural hashing: comments and modifiers are not part of the hashed AST
-shape, and diagnostic statements are held back deliberately, so that matching one does not
-fragment a larger match around it. These are the preferences RA1.2 measures: each of them can
-cost more than the cheapest mapping.
+panics) that are byte-identical on both sides, get matched directly. Neither is reachable by
+phase 1's structural hashing: comments and modifiers are not part of the hashed AST shape, and
+diagnostic statements are held back deliberately, so that matching one does not fragment a larger
+match around it. These are the preferences RA2.4 measures: each of them can cost more than the
+cheapest mapping.
 
 \textbf{Phase 3, syntax-aware subtree matching.} This phase generalises three matching strategies:
-matching by fully-resolved name (handling overloads and duplicate names across
-scopes), a greedy cost-estimate matcher for containers with no name structure, such as an
-\texttt{if} block or a loop body, and an overlap matcher pairing import statements that share a
-base path. Before any of these run, large flat subtrees, such as a macro's token list or a big
-flat argument list, are pre-matched directly with Myers' algorithm~\cite{myers-1986}, since a flat sequence has no tree structure worth exploiting. Each accepted pair is then handed to
-APTED~\cite{apted-2015}, scoped to that pair alone, to compute its exact internal edit script.
-This is RA2 applied: the exact computation is affordable inside one matched pair, and only there.
+matching by fully-resolved name (handling overloads and duplicate names across scopes), a greedy
+cost-estimate matcher for containers with no name structure, such as an \texttt{if} block or a
+loop body, and an overlap matcher pairing import statements that share a base path. Before any of
+these run, large flat subtrees, such as a macro's token list or a big flat argument list, are
+pre-matched directly with Myers' algorithm~\cite{myers-1986}, since a flat sequence has no tree
+structure worth exploiting. Each accepted pair is then handed to APTED~\cite{apted-2015}, scoped
+to that pair alone, to compute its exact internal edit script. This is RA4 applied: the exact
+computation is affordable inside one matched pair, and only there.
 
 \textbf{Phase 4, residual alignment.} Whatever remains unmatched after phases 1 through 3 is
 resolved by a Myers-LCS alignment~\cite{myers-1986} over the residual forest, bracketed by two
 passes of strict bottom-up propagation: a node whose children all match the children of exactly
-one node on the other side is matched to it, which shrinks the residual, and is run again afterward so that pockets the alignment just resolved can still bubble up to
-their now-complete ancestors.
+one node on the other side is matched to it, which shrinks the residual, and is run again
+afterward so that pockets the alignment just resolved can still bubble up to their now-complete
+ancestors.
 
-
-
-\textbf{Phase 5, move-detection recovery.} The final matching pass. Ordered tree edit distance cannot
-express a subtree that relocated across a matched boundary as anything but a delete plus an
-insert. This phase, adapted directly from GumTree's recovery-mappings
+\textbf{Phase 5, move-detection recovery.} The final matching pass. Ordered tree edit distance
+cannot express a subtree that relocated across a matched boundary as anything but a delete plus
+an insert. This phase, adapted directly from GumTree's recovery-mappings
 phase~\cite{gumtreediff-2014}, pairs up whole subtrees left fully deleted on one side and fully
 inserted on the other, when they are byte-identical and large enough to rule out coincidence.
 
+\textbf{Projection.} The renderer turns the mapping into a painting under one of two presets,
+\emph{Minimal} and \emph{Full}, the two the ground truth is painted in. It is not the literal
+projection: following RA2.1, it decides separately which whitespace, separators and brackets go
+with a change, whether a relocated node is shown as moved or left unmarked as a pure reindent,
+and how much of a changed word to mark. Its rules follow the painting invariants of
+Section~\ref{sec:invariants}, and where they can the two share code: the list of tokens that are
+painted whole is read by the renderer and by the invariant alike.
+
 \textbf{Code inside strings.} After the five phases, every matched pair of host strings that
-changed is examined for code of another language. Where the string's context names a
-language---a sibling \texttt{"path"} naming a file, a YAML \texttt{run:} key, a \texttt{css}
-template tag---and both sides parse without an error, the decoded strings are diffed by the
-whole pipeline as files of their own, and the result is painted back onto the host file through a
-map from each decoded byte to its source. A changed string whose language is not detected is
-still diffed as text, line by line, so two edits far apart in one long string are painted apart
-rather than as one span from the first change to the last.
+changed is examined for code of another language. Where the string's context names a language
+(a sibling \texttt{"path"} naming a file, a YAML \texttt{run:} key, a \texttt{css} template tag)
+and both sides parse without an error, the decoded strings are diffed by the whole pipeline as
+files of their own, and the result is painted back onto the host file through a map from each
+decoded byte to its source. A changed string whose language is not detected is still diffed as
+text, line by line, so two edits far apart in one long string are painted apart rather than as
+one span from the first change to the last.
 
-\textbf{Result.} \textsc{OmniDiff} renders \OmniDiffPerfectPct{}\% of the corpus perfectly,
-against \DifftasticPerfectPct{}\% for the best established tool that parses most of it, at a
-median of \SpeedOmniDiffPFifty{}\,ms including its parse, and it completes every fixture. On the
-\SrcDiffFixtures{} changes srcDiff parses, it renders \SrcDiffSubsetOmniDiffPerfectPct{}\% perfectly
-against srcDiff's \SrcDiffPerfectPct{}\%.
-
-\textbf{Accuracy.} Against the human mapping, \textsc{OmniDiff} maps \NodeAccuracyPct{}\% of AST
-nodes correctly (\NodeMismatches{} mismatches in \NodesTotal{}), and \VisibleNodeAccuracyPct{}\% of
-the \VisibleNodeShare{}\% of nodes that carry text and can reach the screen
-(\VisibleNodeMismatches{} in \VisibleNodesTotal{}). On the line-level basis of
-Section~\ref{sec:tools} it marks \OmniDiffLineMismatches{} lines differently from the human
-mapping over \OmniDiffFixtures{} fixtures, a rate of \OmniDiffLineRate{}\%, the lowest of any tool
-measured. Table~\ref{tab:omnidiff-by-dataset} splits the result by dataset.
-
-\input{figures/benchmark_omnidiff_by_dataset.tex}
-
-\textbf{Robustness.} Run over the \RobustnessFixtures{} fixtures with a
-\RobustnessTimeoutSeconds{}-second budget per fixture and no cap on tree size,
-\textsc{OmniDiff} completes every one. The largest fixture holds \RobustnessMaxNodes{}
-AST nodes per side, the slowest takes \RobustnessSlowestMs{}\,ms, and peak heap use is
-\RobustnessPeakMemoryMb{}\,MB. The same measurement over the whole Full corpus reaches the files
-the fixture corpus does not. Every modified code file in the corpus's recent history
-(Section~\ref{sec:edit-shape}), \RobustnessFullAttempted{} pairs across
-\RobustnessFullLanguages{} languages, was diffed with no node cap under a
-\RobustnessFullTimeoutSeconds{}-second budget and a \RobustnessFullMemoryCapGb{}\,GB memory cap
-per process. \textsc{OmniDiff} completes \RobustnessFullCompletedPct{}\% of them with
-\RobustnessFullPanicked{} panics, at a median of \RobustnessFullPFiftyMs{}\,ms and a 99th
-percentile of \RobustnessFullPNinetyNineMs{}\,ms; the largest completed pair holds
-\RobustnessFullMaxSideNodes{} AST nodes on each side, against the \AstMax{} of the largest file
-in the corpus that the Robust target names. The remainder is \RobustnessFullTimedOut{} pairs past
-the budget and \RobustnessFullKilled{} past the memory cap. The killed pairs are commits of
-\RobustnessFullKilledFiles{} distinct files, all but one of them generated parser tables,
-minified bundles or embedded binary data; the exception is one commit of a 40,000-line
-single-header C++ library. Given \RobustnessFullBigMemoryCapGb{}\,GB and a five-minute budget, one
-commit of each memory-killed file was tried again: \RobustnessFullKilledFilesCompletedUnderBigCap{}
-completed, one needed more memory still, and the rest ran past even that five-minute budget.
-
-\textbf{Speed.} Over the \OmniDiffFixtures{} fixtures, \textsc{OmniDiff}'s median wall-clock time
-is \SpeedOmniDiffPFifty{}\,ms, its 90th percentile \SpeedOmniDiffPNinety{}\,ms and its 99th
-percentile \SpeedOmniDiffPNinetyNine{}\,ms, parse included. The right panel of
-Figure~\ref{fig:time-budget} places that curve among the eleven configurations of
-Table~\ref{tab:speed-vs-others}: at the median the line-based tools sit to its left and the
-AST-aware tools to its right, and besides diffsitter, over the \DiffsitterFixtures{} fixtures its
-grammars cover, it is the only AST-aware curve that reaches 100\% before the budget line.
-
-\subsection{Content other than code}
+\subsection{Other content}
 \label{sec:omnidiff-content}
-
-Section~\ref{sec:beyond-code} measured that git shows \ChangeCensusBinaryPct{}\% of changed
-files only as differing. \textsc{OmniDiff} diffs those by what they hold, under the same Fast
-target as code, and without a converter configured per format.
-
-\textbf{Recognition by bytes.} A content kind is recognised from the file's bytes, never from its
-name: under \texttt{git diff} both sides are temporary files, and an X cursor is an extensionless
-file named after the cursor. A pair is diffed as one kind or not at all, and a pair that does not
-decode is reported as any other binary pair rather than as an error, so that, run as git's
-external diff, one bad file does not abandon every file after it. Text needs no such recognition,
-but two kinds of it are widened: XML formats such as SVG are parsed with the XML grammar, and text
-in UTF-16 or UTF-32 with a byte order mark is decoded and diffed as text rather than as binary.
 
 \textbf{Two engines.} A picture is pixels. Which pixels changed is decided by pixelmatch's
 perceptual test~\cite{pixelmatch}, so that re-encoding noise is not reported as change; changed
@@ -1167,9 +1603,112 @@ translates, and a Java class file in a jar is listed as its fields and methods a
 method's bytecode refers to, which diffs as text.
 
 \textbf{Verdicts.} Each change, and each changed member of a container, is named by one of the
-six levels of Section~\ref{sec:diff-shape}. We argue that this is the content counterpart of
-RA3.3: most of the bytes a binary change touches never reach the eye, and a diff that reports a
-lossless re-encoding the way it reports a redrawn icon hides the one among the other.
+six levels of Section~\ref{sec:ground-truth}. This is RA2.2 applied to content: the byte delta of
+such a pair is never empty, and a diff that reports a lossless re-encoding the way it reports a
+redrawn icon hides the one among the other.
+
+\subsection{Evaluation}
+\label{sec:omnidiff-evaluation}
+
+\textbf{Coverage of content.} Of the \ContentCensusChanges{} changed files of RA1.1,
+\textsc{OmniDiff} diffs \ContentCensusShownPct{}\% as text or by their content, against the
+\ChangeCensusTextPct{}\% git diffs as text. Counting at most \ContentCensusCapPerRepo{} changes
+per repository, so that a few very large repositories do not decide it, the share is
+\ContentCensusShownCappedPct{}\%, and \ContentCensusReposEntirely{} of the \ContentCensusRepos{}
+repositories are diffed entirely.
+
+\begin{table}
+  \caption{\textsc{OmniDiff} against the code ground truth, per change. \emph{Exact}: no visible
+  node mapped differently from the human mapping, or no byte painted differently from the hand
+  painting. \emph{Within 1\%}: at most 1\% of the visible nodes, or of the bytes of the two
+  files. \emph{Human mapping}: exact when the renderer is given the human mapping.}
+  \label{tab:omnidiff-accuracy}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Compared & $n$ & Exact & Within 1\% & Human mapping \\
+    \midrule
+    Node mapping & \MappingFixtures{} & \MappingZeroVisiblePct{}\% & \MappingWithinOnePct{}\% & -- \\
+    Painting, \emph{Minimal} & \PaintingMinimalFixtures{} & \PaintingMinimalZeroPct{}\% & \PaintingMinimalWithinOnePct{}\% & \PaintingMinimalIdealZeroPct{}\% \\
+    Painting, \emph{Full} & \PaintingFullFixtures{} & \PaintingFullZeroPct{}\% & \PaintingFullWithinOnePct{}\% & \PaintingFullIdealZeroPct{}\% \\
+    Painting, one rendering & \PaintingSingleFixtures{} & \PaintingSingleZeroPct{}\% & \PaintingSingleWithinOnePct{}\% & \PaintingSingleIdealZeroPct{}\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Code: mapping.} Against the human mapping, \textsc{OmniDiff} maps \NodeAccuracyPct{}\% of
+AST nodes correctly (\NodeMismatches{} mismatches in \NodesTotal{}), and
+\VisibleNodeAccuracyPct{}\% of the \VisibleNodeShare{}\% of nodes that carry text and can reach
+the screen (\VisibleNodeMismatches{} in \VisibleNodesTotal{}). Per change,
+Table~\ref{tab:omnidiff-accuracy} shows that it maps every visible node as the human did on
+\MappingZeroVisiblePct{}\% of the \MappingFixtures{} changes (\MappingZeroVisible{}).
+
+\textbf{Code: painting.} The painting is compared byte by byte with the hand painting, in the
+three cases of Section~\ref{sec:ground-truth}; where a change has one rendering, both presets
+have to produce it, and a byte counts as wrong when either does not.
+Table~\ref{tab:omnidiff-accuracy} shows the result. \textsc{OmniDiff} paints every byte as the
+human did on \PaintingMinimalZeroPct{}\% of the changes under \emph{Minimal}, on
+\PaintingFullZeroPct{}\% under \emph{Full}, and on \PaintingSingleZeroPct{}\% of the changes with
+one rendering. The last column separates the two steps: given the human mapping instead of its
+own, the renderer is exact on \PaintingMinimalIdealZeroPct{}\%, \PaintingFullIdealZeroPct{}\% and
+\PaintingSingleIdealZeroPct{}\%. Most of what is left is therefore the projection's and not the
+matcher's, and it is largest where RA3.2 puts the reader's preference: in what \emph{Full} adds.
+
+\textbf{Code: invariants.} We also hold \textsc{OmniDiff}'s output against the
+\InvariantLabelCount{} invariants that can be checked on a painting's labels alone, on the
+\InvariantFixtures{} changes of RA2.1. Its rendering of its own mapping breaks one of them on
+\InvariantLabelToolRenderedFixturesPct{}\% of the changes, and its rendering of the human mapping
+on \InvariantLabelHumanRenderedFixturesPct{}\%. By the same rules the tree script, which is that
+same human mapping under the literal projection, breaks one on
+\InvariantLabelTreeScriptFixturesPct{}\%, the line script on
+\InvariantLabelLineScriptFixturesPct{}\% and the hand paintings on
+\InvariantLabelHumanFixturesPct{}\%. The projection thus closes most of the distance between a
+correct mapping and a visualisation, and the matcher's errors account for the difference between
+the first two figures.
+
+\textbf{Code: comparison with established tools.} On the line-level basis of
+Section~\ref{sec:tools} and its \OmniDiffFixtures{} changes,\textsuperscript{\ref{fn:in-progress}}
+\textsc{OmniDiff} renders \OmniDiffPerfectPct{}\% of the changes perfectly, against
+\DifftasticPerfectPct{}\% for the best established tool that parses most of them, and it
+completes every one. It marks \OmniDiffLineMismatches{} lines differently from the human mapping,
+a rate of \OmniDiffLineRate{}\%, the lowest of any tool measured. On the \SrcDiffFixtures{}
+changes srcDiff parses, it renders \SrcDiffSubsetOmniDiffPerfectPct{}\% perfectly against
+srcDiff's \SrcDiffPerfectPct{}\%. Table~\ref{tab:omnidiff-by-dataset} splits the result by
+dataset. A line is a coarser unit than a painted byte, which is why this figure is higher than
+those of Table~\ref{tab:omnidiff-accuracy}.
+
+\input{figures/benchmark_omnidiff_by_dataset.tex}
+
+\textbf{Code: robustness.} Run over the \RobustnessFixtures{} fixtures with a
+\RobustnessTimeoutSeconds{}-second budget per fixture and no cap on tree size,
+\textsc{OmniDiff} completes every one. The largest fixture holds \RobustnessMaxNodes{}
+AST nodes per side, the slowest takes \RobustnessSlowestMs{}\,ms, and peak heap use is
+\RobustnessPeakMemoryMb{}\,MB. The same measurement over the whole Full corpus reaches the files
+the fixtures do not. Every modified code file in the corpus's recent history
+(Section~\ref{sec:content}), \RobustnessFullAttempted{} pairs across
+\RobustnessFullLanguages{} languages, was diffed with no node cap under a
+\RobustnessFullTimeoutSeconds{}-second budget and a \RobustnessFullMemoryCapGb{}\,GB memory cap
+per process. \textsc{OmniDiff} completes \RobustnessFullCompletedPct{}\% of them with
+\RobustnessFullPanicked{} panics, at a median of \RobustnessFullPFiftyMs{}\,ms and a 99th
+percentile of \RobustnessFullPNinetyNineMs{}\,ms; the largest completed pair holds
+\RobustnessFullMaxSideNodes{} AST nodes on each side, against the \AstMax{} of the largest file
+in the corpus that the Robust target names. The remainder is \RobustnessFullTimedOut{} pairs past
+the budget and \RobustnessFullKilled{} past the memory cap. The killed pairs are commits of
+\RobustnessFullKilledFiles{} distinct files, all but one of them generated parser tables,
+minified bundles or embedded binary data; the exception is one commit of a 40,000-line
+single-header C++ library. Given \RobustnessFullBigMemoryCapGb{}\,GB and a five-minute budget, one
+commit of each memory-killed file was tried again: \RobustnessFullKilledFilesCompletedUnderBigCap{}
+completed, one needed more memory still, and the rest ran past even that five-minute budget.
+
+\textbf{Code: speed.} Over the \OmniDiffFixtures{} changes of the tool comparison,
+\textsc{OmniDiff}'s median wall-clock time is \SpeedOmniDiffPFifty{}\,ms, its 90th percentile
+\SpeedOmniDiffPNinety{}\,ms and its 99th percentile \SpeedOmniDiffPNinetyNine{}\,ms, parse
+included. The right panel of Figure~\ref{fig:time-budget} places that curve among the eleven
+configurations of Table~\ref{tab:speed-vs-others}: at the median the line-based tools sit to its
+left and the AST-aware tools to its right, and besides diffsitter, over the \DiffsitterFixtures{}
+changes its grammars cover, it is the only AST-aware curve that reaches 100\% before the budget
+line.
 
 \begin{table}
   \caption{Speed and accuracy per content family. Speed is milliseconds per sampled pair,
@@ -1195,16 +1734,9 @@ lossless re-encoding the way it reports a redrawn icon hides the one among the o
   \end{tabular}
 \end{table}
 
-\textbf{Coverage.} Of the \ContentCensusChanges{} changed files of
-Section~\ref{sec:beyond-code}, \textsc{OmniDiff} diffs \ContentCensusShownPct{}\% as text or by
-their content, against the \ChangeCensusTextPct{}\% git diffs as text. Counting at most
-\ContentCensusCapPerRepo{} changes per repository, so that a few very large repositories do not
-decide it, the share is \ContentCensusShownCappedPct{}\%, and \ContentCensusReposEntirely{} of the
-\ContentCensusRepos{} repositories are diffed entirely.
-
-\textbf{Speed.} Table~\ref{tab:content} shows speed and accuracy per family. Speed is timed over
-\ContentSpeedPairs{} pairs sampled from the Full list, on the machine of
-Section~\ref{sec:dataset}, one diff per pair from the bytes in memory, decoding included:
+\textbf{Other content: speed.} Table~\ref{tab:content} shows speed and accuracy per content
+family. Speed is timed over \ContentSpeedPairs{} pairs sampled from the Full list, on the machine
+of Section~\ref{sec:project}, one diff per pair from the bytes in memory, decoding included:
 unpacking an archive, drawing a font's glyphs or a PDF's pages. Pictures, catalogs and cursors meet
 the Fast target, with \ContentSpeedPicturesUnderSecondPct{}\% of pictures under one second.
 Archives, fonts and PDFs do not: \ContentSpeedArchivesUnderSecondPct{}\% of archives,
@@ -1213,7 +1745,7 @@ finish within one second, because each changed member is decoded in turn and a f
 draws every changed glyph or page. Over all families, \ContentSpeedUnderSecondPct{}\% of pairs
 finish within one second, against the \SpeedTargetPct{}\% the target asks.
 
-\textbf{Accuracy.} \textsc{OmniDiff}'s verdicts equal every human verdict on
+\textbf{Other content: accuracy.} \textsc{OmniDiff}'s verdicts equal every human verdict on
 \ContentAccAllPerfectPct{}\% of the \ContentAccAllJudged{} judged changes
 (\ContentAccAllPerfect{}), and are all within one level on \ContentAccAllNearPerfectPct{}\%.
 Pictures, the largest set, are the weakest, at \ContentAccPicturesPerfectPct{}\% perfect. We
@@ -1224,20 +1756,38 @@ PDF figure rests on \ContentAccPdfsJudged{} changes.
 \section{Threats to Validity}
 \label{sec:threats}
 
-\textbf{Construct validity.} Every rate this paper reports about ambiguity is a floor rather than
-an estimate. A multi-map group exists where an annotator noticed that two pairings were equally
-correct and recorded it; a change whose alternative mapping nobody saw is filed as unique. The
-same holds for the paintings. We report these as existence results and lower bounds throughout, and RA3.1's second reading---cost ties at differing mappings, which needs no annotation to detect---exists precisely because it does not depend on annotator attention. For the same reason we score RA1.1 and RA3.1 over the \AmbiguityListScored{} changes whose ambiguity pass is complete rather than over all \NumFixtures{}. That pass covers the Curated and Full lists in full, so for those two lists the bound is one on annotator attention rather than one on coverage. The Stratified sample (\AmbiguityStratifiedWith{} of \AmbiguityStratifiedTotal{} changes) runs far under the rate the two finished lists show, and the Defects4J units (\AmbiguityDefectsFourJWith{} of \AmbiguityDefectsFourJTotal{}) under it, which is an annotation gap rather than a finding about those changes; Table~\ref{tab:expressibility} prints both rows and its \emph{All} row under that caveat.
+\textbf{Construct validity.} The invariants were written by the people who made the paintings,
+and the paintings were then repaired to obey them (Section~\ref{sec:invariants}). The low rate
+at which the hand paintings break them is therefore partly by construction, and RA2.1 measures
+the distance of a script from this convention of visualisation, not from every possible one. Two
+choices in that measurement favour or disfavour the scripts and are stated with it: the tree
+script is given the human mapping, which no algorithm produces, and both scripts are filed under
+both presets, so that the line script is charged for indentation under \emph{Minimal}. The share
+of changes on which the line script marks surviving code as removed does not depend on the second
+choice.
 
-Because no whole-file exact computation is affordable at these sizes (RA2), RA1.2 compares the
-human mapping's cost to a heuristics-augmented computation's rather than to a proven optimum. Its
+Every rate this paper reports about ambiguity is a floor rather than an estimate. A multi-map
+group exists where an annotator noticed that two pairings were equally correct and recorded it; a
+change whose alternative mapping nobody saw is filed as unique. The same holds for the paintings:
+a change with a single painting is one for which the annotator saw one rendering. RA3.1's second
+reading, cost ties at differing mappings, needs no annotation to detect and exists for that
+reason. We score RA2.3 and RA3.1 over the \AmbiguityListScored{} changes whose ambiguity pass is
+complete rather than over all \NumFixtures{}. That pass covers the Curated and Full lists in
+full, so for those two lists the bound is one on annotator attention rather than one on coverage.
+The Stratified sample (\AmbiguityStratifiedWith{} of \AmbiguityStratifiedTotal{} changes) runs
+far under the rate the two finished lists show, which is an annotation gap rather than a finding
+about those changes; Table~\ref{tab:expressibility} prints its row and the \emph{All} row under
+that caveat.
+
+Because no whole-file exact computation is affordable at these sizes (RA4), RA2.4 compares the
+cost of the human mapping to that of a heuristic computation rather than to a proven optimum. Its
 rate is therefore a lower bound.
 
 Section~\ref{sec:tools} scores tools at the line level because that is the only granularity all
 eleven configurations share. A line-level projection of a node mapping discards detail that the
 AST-aware tools compute and the line-based ones never had, which if anything favours the
-line-based tools. It also means the paintings---the only place the corpus records a second correct
-rendering---never enter that comparison, so RA3.2's error term sits in those tables unremoved.
+line-based tools. It also means the paintings never enter that comparison, so RA3.2's error term
+sits in those tables unremoved.
 
 The content ground truth is a verdict, not a painting. A matching verdict says that
 \textsc{OmniDiff} judged how much a change changed as the annotator did, not that it found where:
@@ -1249,83 +1799,111 @@ verdict and a perfect code rendering are not the same achievement.
 timed as a whole process, so it pays no process-startup cost that the others pay in full. We state
 this rather than correct for it, and report GumTree and BDiff both cold and warm so that a reader
 can see how large the effect is for the two tools where it dominates. Per-tool mean runtimes are
-additionally distorted by run order, whichever tool runs first per fixture absorbing cold-cache
-cost; to minimise this effect we quote percentiles rather than means throughout, and every timing number is the result of repeated runs.
+additionally distorted by run order, whichever tool runs first per change absorbing cold-cache
+cost; to minimise this effect we quote percentiles rather than means throughout, and every timing
+number is the result of repeated runs.
+
+The parts of this paper were not all measured at one state of the dataset and the tool. The tool
+comparison, the cost comparison and \textsc{OmniDiff}'s line-level, speed and robustness figures
+are over the \UnixDiffFixtures{} changes solved at an earlier stage and, for
+\textsc{OmniDiff}, an earlier version; the node-level, painting-level and invariant figures are
+over the \NumFixtures{} changes and the current version (footnote~\ref{fn:in-progress}). We keep
+the two apart in the text rather than mix them in one table.
 
 The ground truth is authored by the same people who built \textsc{OmniDiff}, which is a real risk
-of bias in its favour. Three things limit it: the mappings are authored against the change itself in
-a dedicated annotation tool with no tool output shown, the full annotation history is published
-with the corpus so that any individual mapping can be inspected and disputed, and
+of bias in its favour. Three things limit it: the mappings are authored against the change itself
+in a dedicated annotation tool with no tool output shown, the full annotation history is published
+with the dataset so that any individual mapping can be inspected and disputed, and
 Section~\ref{sec:oracle} compares our annotation against ground truth authored by other people,
-for a different tool, before this one existed. That last check is the only one of the three that does not
-depend on our own discipline, and it is the reason the corpus was extended with Defects4J at all.
-The content verdicts have no such check: they are judged by the same people, and we know of no
-external ground truth for how much a change to a picture, a font or an archive changed.
+for a different tool, before this one existed. That last check is the only one of the three that
+does not depend on our own discipline, and it is the reason the dataset was extended with
+Defects4J at all. The paintings and the content verdicts have no such check: they are made by the
+same people, and we know of no external ground truth for how a code change should be painted or
+for how much a change to a picture, a font or an archive changed.
 
 The content timings are a single run per pair, where every code timing is repeated, so a content
 percentile carries the noise of one measurement.
 
-\textbf{External validity.} The fixture corpus is deliberately not a fully random sample of
-real commits. It concentrates hard, structurally interesting changes, because easy ones exercise
-nothing worth measuring---so every tail figure in this paper is a stress reading rather than an
-estimate of what a developer waits for on a typical commit. Every accuracy result is also reported per dataset (Figure~\ref{fig:agreement-by-dataset},
+\textbf{External validity.} The fixtures are deliberately not a fully random sample of real
+commits. They concentrate hard, structurally interesting changes, because easy ones exercise
+nothing worth measuring, so every tail figure in this paper is a stress reading rather than an
+estimate of what a developer waits for on a typical commit. Every accuracy result is also
+reported per dataset (Figure~\ref{fig:agreement-by-dataset},
 Table~\ref{tab:omnidiff-by-dataset}), so a reader can separate the two random samples, the
-stratified one, and the Defects4J bug fixes from each other. The Defects4J rows carry the
-selection caveat of Section~\ref{sec:diff-shape}: the units solved so far are how far annotation
-has reached, not a draw, and they run shorter than the ones still unsolved.
+stratified one, and the Defects4J bug fixes from each other. The Defects4J units solved so far
+are how far annotation has reached, not a draw, and they run shorter than the ones still
+unsolved.
 
-The painted subset is smaller still and is not randomly drawn: painting is manual, and which
-changes have been painted is an artifact of the order the annotators worked in. It runs to
-shorter changes than the corpus as a whole, so RA3.2's rate may move in either direction as
-painting reaches larger changes.
+The painted subset is not randomly drawn either: painting is manual, and which changes have been
+painted is an artifact of the order the annotators worked in. It runs to shorter changes than the
+dataset as a whole, so the rates of RA2.1 and RA3.2 may move in either direction as painting
+reaches larger changes. A living dataset also means that the figures of this paper describe one
+day of it; the scripts that produce them are published with it and re-run on any later state.
 
-Finally, the fixture corpus's largest file holds \RobustnessMaxNodes{} AST nodes, well short of
-the Robust target's \AstMax{}. The target is exercised only by the whole-corpus run of
-Section~\ref{sec:omnidiff}, whose budget and memory cap were applied with eight processes
-sharing the machine, so a pair near either limit may have crossed it for want of a core rather
-than of an algorithm. Re-running the timeouts on a quiet machine moved two of them into the
-completed set and no more, and the memory kills recur across every commit of the same files,
-so neither limit looks like an artefact of the sharing. The empirical-study
-numbers of Section~\ref{sec:dataset} do cover the full \NumRepos{}-repository list, but the
-\NumFixtures{} solved changes are drawn from it by the sampling of
-Section~\ref{sec:diff-shape} rather than being representative of it by construction.
+The project's popularity says nothing about the quality of its ground truth, and its growth from
+user reports is so far one content type (Section~\ref{sec:growth}).
+
+Finally, the largest fixture holds \RobustnessMaxNodes{} AST nodes, well short of the Robust
+target's \AstMax{}. The target is exercised only by the whole-corpus run of
+Section~\ref{sec:omnidiff-evaluation}, whose budget and memory cap were applied with eight
+processes sharing the machine, so a pair near either limit may have crossed it for want of a core
+rather than of an algorithm. Re-running the timeouts on a quiet machine moved two of them into the
+completed set and no more, and the memory kills recur across every commit of the same files, so
+neither limit looks like an artefact of the sharing.
 
 The judged content changes are fewer and less evenly spread than the code ones. They are the
 sampled pairs annotation has reached so far, not a draw from them, and the families differ widely
 in size: \ContentAccPicturesJudged{} pictures but \ContentAccPdfsJudged{} PDFs. We measured no
-established tool on content, so the content results have no counterpart of
-Section~\ref{sec:tools}: diffoscope reports differing bytes and git a binary notice, and neither
-names how much a change changed, which is what the content ground truth records.
+established tool on content (RA5.1), so the content results of Section~\ref{sec:omnidiff} have
+no counterpart among the established tools.
 
 \section{Related Work}
 \label{sec:related}
 
-\textbf{Tree-diffing tools.} Section~\ref{sec:background} describes what each of the tools
+\textbf{Deltas and their quality.} Section~\ref{sec:deltas} reviews the work on edit scripts.
+What it shares is its criterion: a script is better when it is shorter, whether through block
+moves~\cite{tichy-1984}, through more detected moves~\cite{mtdiff-2016}, or through more
+compact tree scripts~\cite{ijm-2018,matsumoto-2019,falleri-2024}. This paper does not propose a better delta.
+It measures, on changes with a human answer, how far the best delta is from what a reader should
+be shown (RA2.1--RA2.4), and it finds that the distance is not closed by a better mapping alone.
+
+\textbf{Visualisations and their quality.} The work closest in intent is the work that judges a
+diff by its reader. srcDiff~\cite{decker-2020} argues that a delta should follow how developers
+edit rather than minimise cost and supports this with a user study; ClDiff~\cite{cldiff-2018},
+LSdiff~\cite{kim-notkin-2009} and the refactoring-aware review
+tools~\cite{ge-2017,brito-2021,refactoringminer-2022} summarise a change at a higher level than
+its edit script. We add to this line a statement of what a visualisation has to satisfy that is
+independent of any tool (the invariants), a ground truth of the visualisation itself (the
+paintings), and the observation that the same distinction governs content that is not code,
+where perceptual image comparison~\cite{ssim-2004,yee-2004} has made it for pictures already.
+
+\textbf{Tree-diffing tools.} Section~\ref{sec:background-tools} describes what each of the tools
 compared here does; what matters for positioning this work is where each one's goal differs from
 ours. GumTree~\cite{gumtreediff-2014} remains the reference point, and \textsc{OmniDiff}'s
-move-recovery phase adapts its recovery-mappings heuristic directly: the difference is that GumTree
-targets research use, with broad language and backend flexibility that stays valuable well beyond
-what RA4.1's single corpus measures, while \textsc{OmniDiff} narrows to a tree-sitter-only frontend
-and spends the saved generality on production targets. difftastic~\cite{difftastic} and
-diffsitter~\cite{diffsitter} share that parsing layer but optimise for a diff a human reads
-comfortably rather than for fidelity of the underlying node mapping, so RA4.1 measures them against
-an objective they did not choose. Against all of them, Unix \texttt{diff} and \texttt{git
-diff}~\cite{myers-1986} remain the baseline: on our corpus they are the fastest measured and, at
-the line level, more accurate than every pre-existing AST-aware tool compared. BDiff's~\cite{bdiff}
-block awareness does not move that metric, and neither does the choice among \texttt{git}'s four
+move-recovery phase adapts its recovery-mappings heuristic directly: the difference is that
+GumTree targets research use, with broad language and backend flexibility that stays valuable
+well beyond what RA5.2's single dataset measures, while \textsc{OmniDiff} narrows to a
+tree-sitter-only frontend and spends the saved generality on production targets.
+difftastic~\cite{difftastic} and diffsitter~\cite{diffsitter} share that parsing layer but
+optimise for a diff a human reads comfortably rather than for fidelity of the underlying node
+mapping, so RA5.2 measures them against an objective they did not choose. Against all of them,
+Unix \texttt{diff} and \texttt{git diff}~\cite{myers-1986} remain the baseline: on our dataset
+they are the fastest measured, and at the line level they render \UnixDiffPerfectPct{}\% of the
+changes perfectly, against \DifftasticPerfectPct{}\% for difftastic. BDiff's~\cite{bdiff} block
+awareness does not move that metric, and neither does the choice among \texttt{git}'s four
 algorithms~\cite{nugroho-histogram}.
 
 \textbf{Ground truth and its ambiguity.} GumTree's own evaluation, and most that followed it,
-score a tool against a single reference mapping per change. RA1.1, RA3.1 and RA3.2 are an argument
-that this default understates what a corpus can be asked: on the changes where the correspondence
-is not one-to-one, where several mappings are equally correct, or where several renderings are, a
-fixed reference records a correct answer as wrong. The corpus here departs from the default in two
-ways---a multi-map group, which records an $N{:}M$ site and admits any consistent one-to-one
-pairing of it, and a second, independently authored painting where the rendering is not
-unique---and both were added because annotating real changes forced them, not by design. We are
-not aware of a code-diffing ground truth that records either. RA1.2 adds a third departure from
-the usual assumptions: the unit cost model that ranks candidate mappings disagrees with the
-annotators on a measurable minority of changes.
+score a tool against a single reference mapping per change, and the oracle of Alikhanifard and
+Tsantalis~\cite{astdiffbenchmark} is the most carefully built of these. RA2.3, RA3.1 and RA3.2 are
+an argument that this default understates what a ground truth can be asked: on the changes where
+the correspondence is not one-to-one, where several mappings are equally correct, or where several
+renderings are, a fixed reference records a correct answer as wrong. The dataset here departs from
+the default in three ways---a multi-map group, which records an $N{:}M$ site and admits any
+consistent one-to-one pairing of it; paintings in two presets, with the single painting as the
+recorded finding that a change has one rendering; and invariants that hold all of it to one
+convention---and all three were added because annotating real changes forced them, not by design.
+We are not aware of a code-diffing ground truth that records any of the three.
 
 \textbf{Empirical studies.} Dyer et al.~\cite{ast-api-1} and L\"{a}mmel et al.~\cite{ast-api-2}
 mine AST nodes at scale to study API usage; Arafat and
@@ -1334,43 +1912,62 @@ software, the distribution \textsc{OmniDiff}'s Fast target is stated against; an
 Defects4J~\cite{defects4j} collects real, reproducible bug fixes from open-source Java projects,
 each a before/after file pair, and has since served as the file-pair corpus behind most
 evaluations of AST differencing on Java. This paper's empirical study differs from these in
-purpose rather than method: it measures file- and AST-size
-distributions specifically to set, and then evaluate, the engineering targets of a diffing tool.
+purpose rather than method: it measures what commits change, by content, and how large the
+changes are, in order to set and then evaluate the targets of a diffing tool.
 
 \textbf{Diffing content other than code.} \textsc{OmniDiff}'s container engine takes the model of
 diffoscope~\cite{diffoscope}, a file as members, each compared by what it is, and applies it to a
-different end. diffoscope reports every byte that differs, because for a reproducible build every
-byte matters; \textsc{OmniDiff} decodes only the members whose hash changed and names each change
-by how much of it a reader would see, so a re-compressed archive or a re-hinted font shows as
-unchanged. Git's \texttt{textconv}~\cite{gitattributes} reaches the same formats through a
-converter per format that a user configures by path pattern; \textsc{OmniDiff} recognises the
-format by its bytes, with no configuration, and diffs a picture as pixels rather than as text. Its
-picture engine uses pixelmatch's perceptual test~\cite{pixelmatch} per pixel and adds what a diff
-needs beyond a count of changed pixels: where the changed regions are, and how the frames of an
-animation align. We are not aware of a ground truth for content diffs that records how much a
-change changed; the judged changes published with this paper are one.
+different end. diffoscope reports every byte that differs, because for a reproducible
+build~\cite{lamb-reproducible-2022} every byte matters; \textsc{OmniDiff} decodes only the members
+whose hash changed and names each change by how much of it a reader would see, so a re-compressed
+archive or a re-hinted font shows as unchanged. Git's \texttt{textconv}~\cite{gitattributes}
+reaches the same formats through a converter per format that a user configures by path pattern;
+\textsc{OmniDiff} recognises the format by its bytes, with no configuration, and diffs a picture
+as pixels rather than as text. Its picture engine uses pixelmatch's perceptual
+test~\cite{pixelmatch} per pixel and adds what a diff needs beyond a count of changed pixels:
+where the changed regions are, and how the frames of an animation align. We are not aware of a
+ground truth for content diffs that records how much a change changed; the judged changes
+published with this paper are one.
 
 \section{Conclusions}
 \label{sec:conclusion}
 
-Line-based and AST-based diffing tools can meet developers' speed requirements: the line-based
-tools answer within tens of milliseconds at every percentile measured, and the fastest AST-aware
-tools stay inside the one-second bound across the corpus (RA4.2). Current algorithms and implementations fall short of meeting the
-full quality requirements that real changes impose. On \AmbiguityListPct{}\% of changes the
-best possible correspondence cannot be expressed with the four standard operations at all
-(RA1.1), on \CostHumanHigherPct{}\% the cheapest mapping is not the one humans judge correct
-(RA1.2), the mapping and its rendering are not unique (RA3.1, RA3.2), and no established tool
-that parses most of the corpus maps much more than three fifths of it perfectly (RA4.1). Closing that gap needs a ground truth
-that records the correspondence itself, a cost model that agrees with readers, and tools that
-are measured against both; the corpus published with this paper and the \textsc{OmniDiff} tool
-are a first step towards all three.
-
-Beyond code, the line-based diff misses more than a move operation: git shows
-\ChangeCensusBinaryPct{}\% of the files commits change only as differing. Diffing them by what
-they hold, pixels for a picture and members for an archive, a font, a PDF or a catalog, leaves
-\ContentCensusLeftPct{}\% of changed files that a reader sees only as differing bytes, at a speed
-that meets the Fast target for pictures, catalogs and cursors and not yet for archives, fonts and
+This paper separated the delta of a change, which a machine executes, from its visualisation,
+which a human reads, and measured the distance between the two on a living ground-truth dataset
+of changes to code and to six families of other content. The distance is large for every content
+type we measured. Git shows \ChangeCensusBinaryPct{}\% of the files commits change only as
+differing (RA1.1), and \ContentVerdictNothingPct{}\% of judged changes to such content have a
+byte delta and nothing deliberate to show (RA2.2). For code, a line script painted as it stands
+breaks an invariant of visualisation on \InvariantLineScriptFixturesPct{}\% of changes, and a
+tree script with the human's own mapping on \InvariantTreeScriptFixturesPct{}\% (RA2.1); on
+\AmbiguityListPct{}\% of changes the preferred correspondence cannot be expressed with the four
+standard operations at all (RA2.3), and on \CostHumanHigherPct{}\% the cheapest mapping is not
+the one humans prefer (RA2.4). Neither the mapping nor its rendering is unique (RA3.1, RA3.2).
+Established tools meet developers' speed requirements, the line-based ones within tens of
+milliseconds (RA5.3), and fall short of the human-preferred rendering: no established tool that
+parses most code changes renders much more than three fifths of them perfectly (RA5.2).
+\textsc{OmniDiff} diffs \ContentCensusShownPct{}\% of changed files as text or by their content,
+which leaves \ContentCensusLeftPct{}\% that a reader sees only as differing bytes, at a speed
+that meets its target for pictures, catalogs and cursors and not yet for archives, fonts and
 PDFs.
+
+Based on the results reported in this paper, we recommend the following:
+
+\begin{itemize}
+  \item Evaluate a diffing tool against what a human would mark, not against the length of its
+    edit script: a cheapest script and a preferred account differ measurably.
+  \item Treat the projection from a mapping to what is displayed as a component of its own, with
+    stated rules; a correct mapping does not make a readable diff.
+  \item State the conventions of a hand-made ground truth as machine-checked invariants, and run
+    them on every answer; they find the ground truth's own errors as well as a tool's.
+  \item Record more than one correct answer where there is more than one, in the mapping and in
+    the rendering, and record explicitly where there is exactly one.
+  \item Report accuracy on what reaches the reader: visible nodes and painted bytes for code, and
+    how much of a change is visible for other content.
+  \item Diff a file by what it holds. \ChangeCensusBinaryPct{}\% of changed files are binary
+    to git, and for those files a notice that the bytes differ is the whole of today's standard
+    diff.
+\end{itemize}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}

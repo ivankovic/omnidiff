@@ -30,12 +30,12 @@ Two figures:
   every code-file modification in the corpus's history. Replaces the paper's Tables 1 and 2 as
   the primary presentation; the tables' numbers are still generated and still quoted in prose.
 * `time_budget`: two panels sharing one axis and one budget line. Whole-tree APTED completion
-  time per artifact category (RQ2; the curve's height at the budget *is* the completion rate,
-  timeouts being the gap to 100%), and per-tool wall-clock over every repeated run (RQ4.2 and the
+  time per artifact category (RQ4; the curve's height at the budget *is* the completion rate,
+  timeouts being the gap to 100%), and per-tool wall-clock over every repeated run (RQ5.3 and the
   OmniDiff speed paragraph). Replaces the runtime violin.
 
 Inputs are the committed distribution files the producer scripts write (`file_stats.py`,
-`edit_shape_stats.py`), the RQ2 CSVs, and `benchmark_other.csv`; nothing here measures anything.
+`edit_shape_stats.py`), the RQ4 CSVs, and `benchmark_other.csv`; nothing here measures anything.
 """
 
 import argparse
@@ -277,7 +277,7 @@ def plot_time_budget(rq1_paths: list[Path], benchmark: Path, out: Path) -> None:
     )
     ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda v, _: compact(v)))
     ax1.set_xlabel("Whole-tree APTED wall-clock, ms", fontsize=9, color=INK_SECONDARY)
-    ax1.set_title("Sampled file pairs completed (RQ2)", fontsize=9.5, color=INK_PRIMARY, loc="left")
+    ax1.set_title("Sampled file pairs completed (RQ4)", fontsize=9.5, color=INK_PRIMARY, loc="left")
     ax1.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK_SECONDARY)
 
     # Panel 2: every tool configuration, every repeated run, one curve each.
@@ -330,7 +330,7 @@ def plot_time_budget(rq1_paths: list[Path], benchmark: Path, out: Path) -> None:
         color=INK_SECONDARY,
     )
     ax2.set_title(
-        "Diff tools on the fixture corpus (RQ4.2)", fontsize=9.5, color=INK_PRIMARY, loc="left"
+        "Diff tools on the code changes (RQ5.3)", fontsize=9.5, color=INK_PRIMARY, loc="left"
     )
     ax2.legend(
         frameon=False,

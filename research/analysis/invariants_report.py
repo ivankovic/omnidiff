@@ -234,7 +234,8 @@ def table_tex(s: dict) -> str:
         r"them: the hand paintings, the line edit script of \texttt{diff} painted as it stands, "
         r"and the human tree mapping painted leaf by leaf as a tree edit script. \emph{V} is "
         r"violations and \emph{C} the changes with at least one. The scripts are not judged by "
-        r"the " + str(len(MAPPING_ONLY)) + r" rules that read the mapping alone.}",
+        r"the " + str(len(MAPPING_ONLY)) + r" rules that read the mapping alone, which the last "
+        r"row leaves out for all three.}",
         r"  \label{tab:invariants}",
         r"  \small",
         r"  \begin{tabular}{@{}lr>{\raggedright\arraybackslash}p{0.36\linewidth}rrrrrr@{}}",
