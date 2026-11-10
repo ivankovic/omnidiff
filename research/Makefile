@@ -57,7 +57,8 @@ RESEARCH_DIR = /var/tmp/research/$(MODE)/
 	shapes-report measure-edit-shape measure-change-census measure-content-census ambiguity-report rendering-report measure-tools-timing \
 	measure-tools-accuracy timing-report install-bdiff install-srcdiff apted-budget-report measure-apted-budget \
 	paper-variables introductory-paper introductory-paper-empirical fetch-external \
-	measure-astdiff-oracle measure-astdiff-oracle-human measure-robustness-fixtures
+	measure-astdiff-oracle measure-astdiff-oracle-human measure-robustness-fixtures \
+	measure-presets preset-report measure-invariants invariants-report measure-dataset-growth dataset-growth-report
 
 build:
 	$(MAKE) -C .. build
@@ -348,6 +349,43 @@ ambiguity-report:
 # first if fixtures were added.
 rendering-report:
 	uv run ./analysis/rendering_report.py
+
+# Minimal against Full: what the generous hand painting adds to the sparse one, and how many
+# painted changes have one rendering only. `measure-presets` runs the `preset_census` test, which
+# reads the ground truth alone (no diff is computed) and writes data/quality/preset_census.csv;
+# `preset-report` turns that file into plots/preset_difference.pdf, plots/preset_table.tex and
+# plots/variables_presets.tex. See analysis/preset_report.py.
+PAPER_CENSUS := CARGO_BUILD_JOBS=6 cargo test --profile ci --lib --features test-fixtures
+measure-presets:
+	cd .. && $(PAPER_CENSUS) preset_census -- --ignored --nocapture
+	$(MAKE) preset-report
+
+preset-report:
+	uv run ./analysis/preset_report.py
+
+# The 31 ground-truth invariants held against five accounts of each change: the hand paintings,
+# GNU diff's line script and the human tree mapping painted as they stand, and the human and
+# OmniDiff mappings through the renderer. `measure-invariants` runs the `invariant_gap_census`
+# test (a few minutes; needs GNU diff on PATH) and writes data/quality/invariant_gap_census.csv;
+# `invariants-report` turns it into plots/invariants_table.tex and plots/variables_invariants.tex.
+# See analysis/invariants_report.py.
+measure-invariants:
+	cd .. && $(PAPER_CENSUS) invariant_gap_census -- --ignored --nocapture
+	$(MAKE) invariants-report
+
+invariants-report:
+	uv run ./analysis/invariants_report.py
+
+# How the ground-truth dataset grew, from this repository's own history: when each fixture's
+# ground truth and its first painting were committed. `measure-dataset-growth` walks the history
+# (about ten minutes: the pickaxe reads every version of every mapping file; needs a full clone)
+# and writes data/quality/dataset_growth.csv; `dataset-growth-report` turns it into
+# plots/dataset_growth.pdf, plots/dataset_growth_table.tex and plots/variables_growth.tex.
+measure-dataset-growth:
+	uv run ./analysis/dataset_growth.py --measure
+
+dataset-growth-report:
+	uv run ./analysis/dataset_growth.py
 
 # Line coverage of every test in the library's test binary, each measured alone, so the results
 # can be combined with set operations (analysis/coverage_sets.py). Builds an instrumented release

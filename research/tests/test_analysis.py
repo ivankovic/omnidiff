@@ -28,9 +28,12 @@ import change_census
 import ci_local
 import coverage_report
 import coverage_sets
+import dataset_growth
 import edit_shape_stats
+import invariants_report
 import numpy as np
 import per_test_coverage
+import preset_report
 import pytest
 import render_homebrew_formula
 import yaml
@@ -668,3 +671,193 @@ def test_the_homebrew_formula_refuses_an_asset_the_release_lacks():
     sums = render_homebrew_formula.checksums("aaaa  omnidiff-aarch64-apple-darwin.tar.gz\n")
     with pytest.raises(KeyError, match="x86_64-apple-darwin"):
         render_homebrew_formula.render(render_homebrew_formula.TEMPLATE.read_text(), "0.1.0", sums)
+
+
+# --- dataset_growth ---------------------------------------------------------------------------
+
+
+def test_earliest_by_fixture_keeps_the_first_add_of_a_name_across_layouts():
+    log = "\n".join(
+        [
+            "@2026-09-02",
+            "",
+            "src/test/data/diffs/small/go-a/human_mapping.json",
+            "src/test/data/diffs/small/go-a/README.md",
+            "@2026-08-01",
+            "",
+            "src/test/data/diffs/go-a/human_mapping.json",
+            "src/test/data/pictures/png-b/human_content.json",
+        ]
+    )
+    earliest = dataset_growth.earliest_by_fixture(
+        log, ("/human_mapping.json", "/human_content.json")
+    )
+    assert earliest == {"go-a": "2026-08-01", "png-b": "2026-08-01"}
+
+
+def test_week_start_is_the_monday():
+    assert dataset_growth.week_start("2026-11-10").isoformat() == "2026-11-09"
+    assert dataset_growth.week_start("2026-11-09").isoformat() == "2026-11-09"
+
+
+def _growth_row(fixture, kind, dataset, solved, painted=""):
+    return {
+        "fixture": fixture,
+        "kind": kind,
+        "dataset": dataset,
+        "language": fixture.split("-")[0] if kind == "code" else "",
+        "solved": solved,
+        "painted": painted,
+    }
+
+
+def test_growth_summary_counts_per_month_and_leaves_handmade_out():
+    rows = [
+        _growth_row("go-a", "code", "small", "2026-08-03", "2026-09-01"),
+        _growth_row("sql-b", "code", "full", "2026-09-10"),
+        _growth_row("rust-c", "code", "handmade", "2026-07-01"),
+        _growth_row("png-d", "content", "pictures", "2026-09-11"),
+    ]
+    s = dataset_growth.summarize(rows)
+    assert (s["code"], s["content"], s["painted"]) == (2, 1, 1)
+    assert [m["month"] for m in s["monthly"]] == ["2026-08", "2026-09"]
+    assert s["monthly"][0]["small"] == 1 and s["monthly"][0]["languages"] == 1
+    assert s["monthly"][1] | {"month": ""} == {
+        "month": "",
+        "small": 0,
+        "full": 1,
+        "stratified": 0,
+        "defects4j": 0,
+        "painted": 1,
+        "content": 1,
+        "languages": 2,
+    }
+    assert s["issue_fixtures"] == 1 and s["issues_with_fixtures"] == 1
+    assert dataset_growth.macros(s)["GrowthFirstMonth"] == "Aug 2026"
+
+
+def test_growth_cumulative_steps_once_per_date():
+    xs, ys = dataset_growth.cumulative(["2026-09-02", "2026-09-01", "2026-09-02"])
+    assert [x.isoformat() for x in xs] == ["2026-09-01", "2026-09-02"]
+    assert ys == [1, 3]
+
+
+def test_growth_table_prints_a_dash_for_an_empty_cell():
+    s = dataset_growth.summarize([_growth_row("go-a", "code", "small", "2026-08-03")])
+    table = dataset_growth.table_tex(s)
+    assert "Aug 2026 & 1 & -- & -- & -- & -- & -- & 1 \\\\" in table
+
+
+# --- preset_report ----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("names", "case"),
+    [
+        ([], None),
+        (["Only one solution"], "single"),
+        (["Left"], "single"),
+        (["Minimal"], "minimal"),
+        (["Full (outer)"], "full"),
+        (["Fuller"], "single"),
+        (["Minimal", "Full"], "both"),
+    ],
+)
+def test_graded_case_follows_the_painting_names(names, case):
+    assert preset_report.graded_case(names) == case
+
+
+def _preset_rows():
+    def row(fixture, minimal, full, text_class, runs, size):
+        return {
+            "fixture": fixture,
+            "minimal": minimal,
+            "full": full,
+            "class": text_class,
+            "runs": str(runs),
+            "bytes": str(size),
+        }
+
+    return [
+        row("go-a", "*", "*", "total", 0, 1000),
+        row("go-a", "insert", "insert", "code", 2, 30),
+        row("go-a", "-", "insert", "whitespace", 3, 8),
+        row("go-a", "-", "move", "code", 1, 2),
+        row("go-a", "delete", "update", "code", 1, 5),
+        row("rust-b", "*", "*", "total", 0, 500),
+        row("rust-b", "delete", "delete", "code", 1, 10),
+    ]
+
+
+def test_preset_summary_separates_added_relabelled_and_identical():
+    s = preset_report.summarize(preset_report.per_fixture(_preset_rows()))
+    assert s["fixtures"] == 2
+    assert (s["minimal_bytes"], s["full_bytes"]) == (45, 55)
+    assert s["added_bytes"] == 10
+    assert s["added"][("whitespace", "insert")] == 8
+    assert s["relabelled"] == 5
+    assert s["minimal_only"] == 0
+    assert s["identical"] == 1
+    assert s["kept"] == [pytest.approx(100 * 35 / 45), 100.0]
+    assert s["languages"]["go"]["added"]["whitespace"] == 8
+
+
+def test_preset_macros_give_shares_of_what_full_adds():
+    s = preset_report.summarize(preset_report.per_fixture(_preset_rows()))
+    values = preset_report.macros(s, {"both": 2, "single": 1, "minimal": 1, "unpainted": 5})
+    assert values["PresetPainted"] == "4"
+    assert values["PresetSinglePct"] == "25.0"
+    assert values["PresetAddedWhitespacePct"] == "80.0"
+    assert values["PresetAddedMovePct"] == "20.0"
+    assert values["PresetIdenticalPct"] == "50.0"
+
+
+# --- invariants_report ------------------------------------------------------------------------
+
+
+def test_invariant_groups_partition_the_31_rules():
+    rules = sorted(i for _, _, group, _ in invariants_report.GROUPS for i in group)
+    assert rules == list(invariants_report.INVARIANTS)
+    assert set(invariants_report.MAPPING_ONLY) < set(rules)
+
+
+def _gap_row(fixture, subject, counts, painted="1", embedded="0", judged=None):
+    row = {"fixture": fixture, "subject": subject, "painted": painted, "embedded": embedded}
+    for i in invariants_report.INVARIANTS:
+        row[f"i{i}"] = "" if judged is not None and i not in judged else str(counts.get(i, 0))
+    return row
+
+
+def test_invariant_summary_scopes_scripts_to_the_painting_rules():
+    label_rules = (1, 6, 10)
+    rows = [
+        _gap_row("a", "human", {3: 2}),
+        _gap_row("a", "line_script", {3: 2, 6: 4, 10: 1}),
+        _gap_row("a", "tree_script", {3: 2, 5: 7}),
+        _gap_row("a", "human_mapping_rendered", {6: 1}, judged=label_rules),
+        _gap_row("a", "tool_mapping_rendered", {6: 1, 10: 3}, judged=label_rules),
+        _gap_row("b", "human", {}),
+        _gap_row("b", "line_script", {}),
+        _gap_row("b", "tree_script", {}),
+        _gap_row("b", "human_mapping_rendered", {}, judged=label_rules),
+        _gap_row("b", "tool_mapping_rendered", {}, judged=label_rules),
+        _gap_row("unpainted", "human", {28: 1}, painted="0"),
+    ]
+    s = invariants_report.summarize(rows)
+    assert s["fixtures"] == 2
+    assert s["human_all"] == (3, 2)
+    # Rule 3 reads the mapping alone: it is the hand painting's, not the scripts'.
+    assert s["scripts"]["human"] == (0, 0)
+    assert s["scripts"]["line_script"] == (5, 1)
+    assert s["scripts"]["tree_script"] == (7, 1)
+    assert s["groups"][("human", "Units")] == (2, 1)
+    assert s["groups"][("line_script", "Units")] == (0, 0)
+    assert s["groups"][("line_script", "Mapping")] is None
+    assert s["label_rules"] == label_rules
+    assert s["label"]["tool_mapping_rendered"] == (4, 1)
+    assert s["label"]["line_script"] == (5, 1)
+    assert s["line_survivors"] == (1, 1)
+    values = invariants_report.macros(s)
+    assert values["InvariantLineScriptFixturesPct"] == "50.0"
+    assert values["InvariantLabelCount"] == 3
+    assert "-- & --" in invariants_report.table_tex(s)

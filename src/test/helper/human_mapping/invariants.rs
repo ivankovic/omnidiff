@@ -1765,7 +1765,7 @@ fn without_whitespace(text: &str) -> String {
 /// The mirror of invariant 9, asked of the tree's pairs. `Identical` says one text; `Delete` and
 /// `Insert` say it left and something new arrived. A line painted whole leaves the mapper's
 /// tokens under `Update` ancestors, which [`LeafStatus::Undecided`] skips.
-fn paired_leaves_are_not_deleted_and_inserted(
+pub(crate) fn paired_leaves_are_not_deleted_and_inserted(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,
@@ -1784,7 +1784,7 @@ fn paired_leaves_are_not_deleted_and_inserted(
 /// the `:` inserted contradicts it (`tsx-mui-material-ui-move-colour-to-a-new-attribute`). One of
 /// the two is wrong: the mapping should delete and insert them too, or the painting mark them as
 /// one edit.
-fn updated_leaves_are_not_deleted_and_inserted(
+pub(crate) fn updated_leaves_are_not_deleted_and_inserted(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,
@@ -1862,7 +1862,7 @@ fn leaf_pairs_painted_deleted_and_inserted(
 ///
 /// Unpainted text claims "unchanged, and in place". Named leaves only ([`is_named_leaf`]): a
 /// deleted `}` whose partner the painter kept instead is the ordinary brace-identity difference.
-fn removed_leaves_are_painted(
+pub(crate) fn removed_leaves_are_painted(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,
@@ -1919,7 +1919,7 @@ fn removed_leaves_are_painted(
 ///
 /// *At least one side*: `Minimal` paints a rename's deleted prefix and nothing on the after side,
 /// which is exact. Whitespace-only differences are exempt, as in invariant 14.
-fn edited_leaves_are_painted(
+pub(crate) fn edited_leaves_are_painted(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,
@@ -2572,7 +2572,7 @@ fn painted_updates_are_not_removed(
 /// Named leaves only: which of two identical delimiters survives is each ground truth's choice. A
 /// partner that reads differently is not this rule's: whether a paired replacement (`nextLineTabStop`
 /// -> `0`) may be painted gone and new is an open convention.
-fn identical_pairs_are_not_painted_removed(
+pub(crate) fn identical_pairs_are_not_painted_removed(
     painting: &str,
     labels: &PaintedLabels,
     context: &TreeContext,
@@ -2969,7 +2969,7 @@ fn is_identifier_leaf(leaf: Node, contents: &str) -> bool {
 /// The presets are two conventions (`text_painting_findings.md`, rule 1), and a rename is the edit
 /// where they must differ. Only paintings named for a preset are checked: a lone painting is held
 /// to both presets, whose halves of this rule contradict each other.
-fn identifier_updates_are_painted_by_preset(
+pub(crate) fn identifier_updates_are_painted_by_preset(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,
@@ -3121,7 +3121,7 @@ fn opposite_boolean(text: &str) -> Option<&'static str> {
 ///   co-occurrence: a `true` deleted in one method and a `false` added in another is fine.
 /// * **painting** - a boolean pair the mapping pairs, painted `Delete` on one side and `Insert`
 ///   on the other. Invariant 10 cannot reach these, since the two sides differ.
-fn boolean_flips_are_one_edit(
+pub(crate) fn boolean_flips_are_one_edit(
     paintings: &[(&str, PaintedLabels)],
     context: &TreeContext,
     before: &Code,
@@ -3237,7 +3237,7 @@ fn boolean_flips_are_one_edit(
 /// comparison, not a surviving `<`; `private` becoming `protected` keeps no `pr`. The presets may
 /// disagree about *whether* such a token is painted, never about painting part of one. The list
 /// is the renderer's own, which follows the same rule.
-fn tokens_are_painted_whole(
+pub(crate) fn tokens_are_painted_whole(
     painting: &str,
     painted: &PaintedLabels,
     context: &TreeContext,

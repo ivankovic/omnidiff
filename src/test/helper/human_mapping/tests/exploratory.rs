@@ -4529,3 +4529,535 @@ fn pair_census() -> Result<()> {
     println!("wrote {path}");
     Ok(())
 }
+
+/// The fixture names of every dataset, sorted: what the paper censuses below walk.
+#[cfg(feature = "test-fixtures")]
+fn paper_census_fixture_names() -> Result<Vec<String>> {
+    let mut names: Vec<String> = crate::test::helper::handmade_test_case_dirs()?
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect();
+    names.sort();
+    Ok(names)
+}
+
+/// Runs `measure` over `names` on a few threads and returns the results in `names`' order, so
+/// the artifact is the same as a serial pass's. Six workers at most: each holds a parsed pair,
+/// and the censuses are run under a memory cap.
+#[cfg(feature = "test-fixtures")]
+fn paper_census_map<T: Send>(
+    names: &[String],
+    measure: impl Fn(&String) -> Result<T> + Sync,
+) -> Result<Vec<T>> {
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let results: Vec<std::sync::Mutex<Option<Result<T>>>> =
+        names.iter().map(|_| std::sync::Mutex::new(None)).collect();
+    let threads = std::thread::available_parallelism().map_or(1, |n| n.get().min(6));
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            std::thread::Builder::new()
+                // As deep as the diff recurses; `tui::app::DIFF_COMPUTE_STACK_SIZE` is the same.
+                .stack_size(256 * 1024 * 1024)
+                .spawn_scoped(scope, || {
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(name) = names.get(i) else { break };
+                        *results[i].lock().expect("no worker panics holding it") =
+                            Some(measure(name));
+                    }
+                })
+                .expect("spawn census worker");
+        }
+    });
+    results
+        .into_iter()
+        .map(|result| {
+            result
+                .into_inner()
+                .expect("no worker panics holding it")
+                .expect("every fixture measured")
+        })
+        .collect()
+}
+
+/// `whitespace` (nothing visible), `punctuation` (every visible character is one
+/// [`crate::diff::text::is_structural_only`] drops), or `code`.
+#[cfg(feature = "test-fixtures")]
+fn painted_text_class(text: &str) -> &'static str {
+    if text.chars().all(char::is_whitespace) {
+        "whitespace"
+    } else if crate::diff::text::is_structural_only(text) {
+        "punctuation"
+    } else {
+        "code"
+    }
+}
+
+/// CENSUS: what the `Full` hand painting adds to the `Minimal` one, for every fixture that
+/// carries both. Reads the ground truth alone; nothing here runs `diff_code`.
+///
+/// Writes `research/data/quality/preset_census.csv`, one row per fixture and per combination of
+/// (`Minimal` label, `Full` label, text class): how many maximal runs of bytes carry that
+/// combination, over both sides, and how many bytes they hold. `-` is an unpainted byte, and a
+/// byte neither painting paints is not counted. A row whose class is `total` gives the fixture's
+/// size, both files together. A preset with several candidate paintings is read through its
+/// first. Embedded layers are not read: the rows describe the host painting.
+/// `research/analysis/preset_report.py` turns the file into the paper's table and macros.
+///
+/// `cargo test --profile ci --lib --features test-fixtures preset_census -- --ignored --nocapture`
+#[test]
+#[ignore]
+// `csv` is only linked under `test-fixtures`.
+#[cfg(feature = "test-fixtures")]
+fn preset_census() -> Result<()> {
+    use crate::diff::text::RenderOptions;
+    use crate::test::helper::human_mapping::invariants::painted_labels;
+    use crate::test::helper::human_mapping::{GradedCase, graded_cases, paintings_for_mode};
+    use std::collections::BTreeMap;
+
+    type Key = (&'static str, &'static str, &'static str);
+    let label_name = |label: Option<TextLabel>| label.map_or("-", TextLabel::name);
+
+    let names = paper_census_fixture_names()?;
+    let measured = paper_census_map(
+        &names,
+        |name| -> Result<Option<(usize, BTreeMap<Key, [usize; 2]>)>> {
+            let Some(Ok(Some(pair))) = crate::test::helper::diffs_case_dir(name)
+                .map(|dir| crate::test::helper::code_pair_from_dir(&dir))
+            else {
+                return Ok(None);
+            };
+            let (before, after) = (&pair.0, &pair.1);
+            let Ok(mapping) = load_with(name, before, after) else {
+                return Ok(None);
+            };
+            if mapping.text_mappings.len() < 2
+                || graded_cases(&mapping) != [GradedCase::Minimal, GradedCase::Full]
+            {
+                return Ok(None);
+            }
+            let (Ok(minimal), Ok(full)) = (
+                paintings_for_mode(&mapping, RenderOptions::MINIMAL),
+                paintings_for_mode(&mapping, RenderOptions::FULL),
+            ) else {
+                return Ok(None);
+            };
+            let (Some(minimal), Some(full)) = (minimal.first(), full.first()) else {
+                return Ok(None);
+            };
+            if std::ptr::eq(*minimal, *full) {
+                // Paintings that name no preset are alternatives, not a Minimal and a Full.
+                return Ok(None);
+            }
+            let minimal = painted_labels(minimal, before, after)?;
+            let full = painted_labels(full, before, after)?;
+            let mut tally: BTreeMap<Key, [usize; 2]> = BTreeMap::new();
+            for (side, contents) in [&before.contents, &after.contents].into_iter().enumerate() {
+                let (minimal, full) = (&minimal[side], &full[side]);
+                let mut index = 0usize;
+                while index < contents.len() {
+                    let pair = (minimal[index], full[index]);
+                    if pair == (None, None) {
+                        index += 1;
+                        continue;
+                    }
+                    let start = index;
+                    while index < contents.len() && (minimal[index], full[index]) == pair {
+                        index += 1;
+                    }
+                    let text = String::from_utf8_lossy(&contents.as_bytes()[start..index]);
+                    let entry = tally
+                        .entry((
+                            label_name(pair.0),
+                            label_name(pair.1),
+                            painted_text_class(&text),
+                        ))
+                        .or_default();
+                    entry[0] += 1;
+                    entry[1] += index - start;
+                }
+            }
+            Ok(Some((before.contents.len() + after.contents.len(), tally)))
+        },
+    )?;
+
+    let csv_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("research")
+        .join("data")
+        .join("quality")
+        .join("preset_census.csv");
+    let mut writer = csv::Writer::from_path(&csv_path)?;
+    writer.write_record(["fixture", "minimal", "full", "class", "runs", "bytes"])?;
+    let mut fixtures = 0usize;
+    for (name, measured) in names.iter().zip(measured) {
+        let Some((total, tally)) = measured else {
+            continue;
+        };
+        fixtures += 1;
+        writer.write_record([name.as_str(), "*", "*", "total", "0", &total.to_string()])?;
+        for ((minimal, full, class), [runs, bytes]) in tally {
+            writer.write_record([
+                name.as_str(),
+                minimal,
+                full,
+                class,
+                &runs.to_string(),
+                &bytes.to_string(),
+            ])?;
+        }
+    }
+    writer.flush()?;
+    eprintln!(
+        "{fixtures} fixture(s) with a Minimal and a Full painting -> {}",
+        csv_path.display()
+    );
+    Ok(())
+}
+
+/// CENSUS: the ground-truth invariants held against five accounts of each change, to measure how
+/// far an edit script is from a visualization, beside the fixture's human tree mapping:
+///
+/// * `human` - the fixture's own hand paintings, as stored.
+/// * `line_script` - GNU `diff`'s edit script painted as it stands: every deleted line `Delete`,
+///   every inserted line `Insert`, from column 0 to the line's end.
+/// * `tree_script` - the human tree mapping read as an edit script and painted leaf by leaf: a
+///   deleted or inserted leaf whole, a leaf paired with one that reads differently as an update,
+///   nothing else. Moves are free in the cost model, so the script does not mention them.
+/// * `human_mapping_rendered` - the human tree mapping through omnidiff's renderer, per preset.
+/// * `tool_mapping_rendered` - omnidiff's own mapping through the same renderer.
+///
+/// The first three are paintings in the ground truth's own format, judged by
+/// [`ground_truth_invariant_violations_for`] unchanged. An edit script has no presets, so both
+/// scripts are filed as the `Minimal` and the `Full` painting alike. The rendered accounts are
+/// not converted to paintings: a painting's move-or-update verdict is derived from its text,
+/// which a rendered range does not always survive. They are judged on their per-byte labels by
+/// the rules that read labels (`LABEL_INVARIANTS`), and their other columns are left empty.
+/// Embedded layers are judged only for `human`.
+///
+/// Writes `research/data/quality/invariant_gap_census.csv`: one row per fixture and account, with
+/// whether the fixture is painted, how many embedded layers it has, and the violation count of
+/// each invariant. `research/analysis/invariants_report.py` turns it into the paper's table.
+///
+/// `cargo test --profile ci --lib --features test-fixtures invariant_gap_census -- --ignored
+/// --nocapture`
+#[test]
+#[ignore]
+// `csv` is only linked under `test-fixtures`.
+#[cfg(feature = "test-fixtures")]
+fn invariant_gap_census() -> Result<()> {
+    use crate::diff::text::{RenderOptions, TextDiff, ranges_for_options};
+    use crate::test::helper::human_mapping::invariants::{
+        GroundTruthViolation, LeafStatus, PaintedLabels, TreeContext, boolean_flips_are_one_edit,
+        call_dots_go_with_their_member, edited_leaves_are_painted,
+        full_paints_a_wholly_changed_line_whole, ground_truth_invariant_violations_for,
+        identical_pairs_are_not_painted_removed, identifier_updates_are_painted_by_preset,
+        minimal_never_paints_leading_whitespace, no_unpainted_whitespace_between_painted_regions,
+        paired_leaves_are_not_deleted_and_inserted, removed_leaves_are_painted,
+        removed_statements_take_their_terminator, rows_end_on_visible_characters,
+        spaces_before_edits_follow_their_count_in, tokens_are_painted_whole,
+        updated_leaves_are_not_deleted_and_inserted,
+    };
+    use crate::test::helper::human_mapping::{
+        HumanTextEntry, HumanTextMapping, HumanTextOperation, HumanTextSpan, NamedTextMapping,
+    };
+
+    const INVARIANTS: usize = 31;
+    /// The invariants the rendered accounts are judged by: the ones that read per-byte labels.
+    const LABEL_INVARIANTS: [usize; 15] = [1, 4, 5, 6, 10, 11, 12, 16, 17, 19, 22, 24, 25, 27, 30];
+
+    struct Row {
+        subject: &'static str,
+        /// `None` where the account is not judged by the invariant.
+        counts: [Option<usize>; INVARIANTS],
+    }
+    struct Fixture {
+        painted: bool,
+        embedded: usize,
+        rows: Vec<Row>,
+    }
+
+    fn entry(
+        operation: HumanTextOperation,
+        before: Vec<HumanTextSpan>,
+        after: Vec<HumanTextSpan>,
+    ) -> HumanTextEntry {
+        HumanTextEntry {
+            operation,
+            before,
+            after,
+        }
+    }
+    fn node_span(node: Node) -> HumanTextSpan {
+        HumanTextSpan {
+            start_row: node.start_position().row,
+            start_column: node.start_position().column,
+            end_row: node.end_position().row,
+            end_column: node.end_position().column,
+        }
+    }
+    fn named(name: &str, entries: Vec<HumanTextEntry>) -> NamedTextMapping {
+        NamedTextMapping {
+            name: name.to_string(),
+            mapping: HumanTextMapping { entries },
+        }
+    }
+    fn tally(
+        violations: Vec<GroundTruthViolation>,
+        judged_by: &dyn Fn(usize) -> bool,
+    ) -> Result<[Option<usize>; INVARIANTS]> {
+        let mut counts: [Option<usize>; INVARIANTS] =
+            std::array::from_fn(|index| judged_by(index + 1).then_some(0));
+        for violation in violations {
+            let index = usize::from(violation.invariant);
+            ensure!(
+                (1..=INVARIANTS).contains(&index),
+                "invariant {index} is outside 1..={INVARIANTS}: widen the census"
+            );
+            *counts[index - 1].get_or_insert(0) += 1;
+        }
+        Ok(counts)
+    }
+
+    let names = paper_census_fixture_names()?;
+    let measured = paper_census_map(&names, |name| -> Result<Option<Fixture>> {
+        let Some(Ok(Some(pair))) = crate::test::helper::diffs_case_dir(name)
+            .map(|dir| crate::test::helper::code_pair_from_dir(&dir))
+        else {
+            return Ok(None);
+        };
+        let (before, after) = (&pair.0, &pair.1);
+        let Ok(mapping) = load_with(name, before, after) else {
+            return Ok(None);
+        };
+        let (Some(before_tree), Some(after_tree)) = (before.ast.as_ref(), after.ast.as_ref())
+        else {
+            return Ok(None);
+        };
+        let mut fixture = Fixture {
+            painted: !mapping.text_mappings.is_empty(),
+            embedded: mapping.embedded.len(),
+            rows: Vec::new(),
+        };
+        let context = TreeContext::build(&mapping, before_tree.root_node(), after_tree.root_node());
+        let mut judge =
+            |subject: &'static str, paintings: Option<Vec<NamedTextMapping>>| -> Result<()> {
+                let mut judged = mapping.clone();
+                if let Some(paintings) = paintings {
+                    judged.text_mappings = paintings;
+                    judged.embedded.clear();
+                }
+                let Ok(violations) = ground_truth_invariant_violations_for(&judged, before, after)
+                else {
+                    return Ok(());
+                };
+                fixture.rows.push(Row {
+                    subject,
+                    counts: tally(violations, &|_| true)?,
+                });
+                Ok(())
+            };
+
+        judge("human", None)?;
+
+        // GNU diff's edit script, each touched line painted whole.
+        if let Ok((before_lines, after_lines)) =
+            crate::test::helper::human_mapping::unix_diff_line_labels(before, after)
+        {
+            let mut entries = Vec::new();
+            for (side, touched) in [&before_lines, &after_lines].into_iter().enumerate() {
+                let contents = [&before.contents, &after.contents][side];
+                for (row, line) in contents.split('\n').enumerate() {
+                    let line = line.strip_suffix('\r').unwrap_or(line);
+                    if line.is_empty() || !touched.get(row).copied().unwrap_or(false) {
+                        continue;
+                    }
+                    let span = HumanTextSpan {
+                        start_row: row,
+                        start_column: 0,
+                        end_row: row,
+                        end_column: line.len(),
+                    };
+                    entries.push(if side == 0 {
+                        entry(HumanTextOperation::Delete, vec![span], Vec::new())
+                    } else {
+                        entry(HumanTextOperation::Insert, Vec::new(), vec![span])
+                    });
+                }
+            }
+            judge(
+                "line_script",
+                Some(vec![
+                    named("Minimal", entries.clone()),
+                    named("Full", entries),
+                ]),
+            )?;
+        }
+
+        // The human tree mapping as an edit script, painted leaf by leaf.
+        let mut entries = Vec::new();
+        for side in 0..2 {
+            for &leaf in &context.leaves[side] {
+                if leaf.start_byte() == leaf.end_byte() {
+                    continue;
+                }
+                match context.status(leaf, side) {
+                    LeafStatus::Removed if side == 0 => entries.push(entry(
+                        HumanTextOperation::Delete,
+                        vec![node_span(leaf)],
+                        Vec::new(),
+                    )),
+                    LeafStatus::Removed => entries.push(entry(
+                        HumanTextOperation::Insert,
+                        Vec::new(),
+                        vec![node_span(leaf)],
+                    )),
+                    LeafStatus::Paired(partner)
+                        if side == 0
+                            && partner.start_byte() != partner.end_byte()
+                            && before.contents.get(leaf.byte_range())
+                                != after.contents.get(partner.byte_range()) =>
+                    {
+                        entries.push(entry(
+                            HumanTextOperation::Match,
+                            vec![node_span(leaf)],
+                            vec![node_span(partner)],
+                        ))
+                    }
+                    _ => {}
+                }
+            }
+        }
+        judge(
+            "tree_script",
+            Some(vec![
+                named("Minimal", entries.clone()),
+                named("Full", entries),
+            ]),
+        )?;
+
+        // Both mappings through the renderer, under each preset, judged on their labels.
+        let node_cache = crate::diff::NodeCache::build(before, after);
+        let real = crate::diff::diff_code(before, after).ast;
+        let mut human = as_ast_diff_for_mapping(&mapping, before, after).ok();
+        // The human format records no `ASTMappingReason`, which the renderer reads: shared pairs
+        // borrow omnidiff's, as in `painting_failure_census`.
+        if let (Some(human), Some(real)) = (human.as_mut(), real.as_ref()) {
+            for (key, pair) in human.mapping.iter_mut() {
+                if let Some(real) = real.mapping.get(key) {
+                    pair.reason = real.reason;
+                }
+            }
+        }
+        for (subject, ast) in [
+            ("human_mapping_rendered", human.as_ref()),
+            ("tool_mapping_rendered", real.as_ref()),
+        ] {
+            let Some(ast) = ast else { continue };
+            let mut violations = Vec::new();
+            let mut paintings: Vec<(&str, PaintedLabels)> = Vec::new();
+            for (preset, options) in [
+                ("Minimal", RenderOptions::MINIMAL),
+                ("Full", RenderOptions::FULL),
+            ] {
+                let text_diff =
+                    TextDiff::from_with_options(before, after, ast, &node_cache, options);
+                let labels: PaintedLabels = [
+                    label_bytes_from_ranges(
+                        &before.contents,
+                        &ranges_for_options(&text_diff.all(0), &before.contents, options),
+                    ),
+                    label_bytes_from_ranges(
+                        &after.contents,
+                        &ranges_for_options(&text_diff.all(1), &after.contents, options),
+                    ),
+                ];
+                violations.extend(rows_end_on_visible_characters(
+                    preset, &labels, before, after,
+                ));
+                if preset == "Full" {
+                    violations.extend(full_paints_a_wholly_changed_line_whole(
+                        preset, &labels, before, after,
+                    ));
+                    violations.extend(no_unpainted_whitespace_between_painted_regions(
+                        preset, &labels, before, after,
+                    ));
+                    violations.extend(spaces_before_edits_follow_their_count_in(
+                        &[(preset, labels.clone())],
+                        before,
+                        after,
+                    ));
+                } else {
+                    violations.extend(minimal_never_paints_leading_whitespace(
+                        preset, &labels, before, after,
+                    ));
+                }
+                type LabelRule = fn(
+                    &str,
+                    &PaintedLabels,
+                    &TreeContext,
+                    &crate::code::Code,
+                    &crate::code::Code,
+                ) -> Vec<GroundTruthViolation>;
+                let rules: [LabelRule; 9] = [
+                    paired_leaves_are_not_deleted_and_inserted,
+                    updated_leaves_are_not_deleted_and_inserted,
+                    removed_leaves_are_painted,
+                    edited_leaves_are_painted,
+                    identical_pairs_are_not_painted_removed,
+                    identifier_updates_are_painted_by_preset,
+                    tokens_are_painted_whole,
+                    call_dots_go_with_their_member,
+                    removed_statements_take_their_terminator,
+                ];
+                for rule in rules {
+                    violations.extend(rule(preset, &labels, &context, before, after));
+                }
+                paintings.push((preset, labels));
+            }
+            violations.extend(boolean_flips_are_one_edit(
+                &paintings, &context, before, after,
+            ));
+            fixture.rows.push(Row {
+                subject,
+                counts: tally(violations, &|invariant| {
+                    LABEL_INVARIANTS.contains(&invariant)
+                })?,
+            });
+        }
+        Ok(Some(fixture))
+    })?;
+
+    let csv_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("research")
+        .join("data")
+        .join("quality")
+        .join("invariant_gap_census.csv");
+    let mut writer = csv::Writer::from_path(&csv_path)?;
+    let mut header: Vec<String> = ["fixture", "subject", "painted", "embedded"]
+        .map(str::to_string)
+        .to_vec();
+    header.extend((1..=INVARIANTS).map(|invariant| format!("i{invariant}")));
+    writer.write_record(&header)?;
+    let mut fixtures = 0usize;
+    for (name, fixture) in names.iter().zip(measured) {
+        let Some(fixture) = fixture else { continue };
+        fixtures += 1;
+        for row in &fixture.rows {
+            let mut record = vec![
+                name.clone(),
+                row.subject.to_string(),
+                u8::from(fixture.painted).to_string(),
+                fixture.embedded.to_string(),
+            ];
+            record.extend(
+                row.counts
+                    .iter()
+                    .map(|count| count.map_or(String::new(), |count| count.to_string())),
+            );
+            writer.write_record(&record)?;
+        }
+    }
+    writer.flush()?;
+    eprintln!("{fixtures} fixture(s) -> {}", csv_path.display());
+    Ok(())
+}
