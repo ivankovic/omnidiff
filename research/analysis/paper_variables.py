@@ -1423,9 +1423,7 @@ def rendering_accuracy(research_dir):
             if not of_case:
                 continue
             zero = sum(int(r["real_bytes"]) == 0 for r in of_case)
-            within = sum(
-                int(r["real_bytes"]) * 100 <= int(r["total_bytes"]) for r in of_case
-            )
+            within = sum(int(r["real_bytes"]) * 100 <= int(r["total_bytes"]) for r in of_case)
             # What the renderer alone leaves: the human mapping, rendered, against the painting.
             ideal = sum(int(r["renderer_bytes"]) == 0 for r in of_case)
             stem = f"Painting{case.capitalize()}"
