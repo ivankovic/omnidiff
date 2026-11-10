@@ -1426,7 +1426,7 @@
           "before": [
             {
               "start_row": 21,
-              "start_column": 17,
+              "start_column": 24,
               "end_row": 21,
               "end_column": 25
             }
@@ -1434,20 +1434,9 @@
           "after": [
             {
               "start_row": 22,
-              "start_column": 23,
+              "start_column": 30,
               "end_row": 22,
               "end_column": 31
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 22,
-              "start_column": 17,
-              "end_row": 22,
-              "end_column": 23
             }
           ]
         },
@@ -1459,6 +1448,17 @@
               "start_column": 54,
               "end_row": 36,
               "end_column": 60
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 22,
+              "start_column": 17,
+              "end_row": 22,
+              "end_column": 23
             }
           ]
         }

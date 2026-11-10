@@ -599,7 +599,9 @@ pub fn is_semantically_structural<'a>(
 
     match language {
         Language::Rust => match node_kind {
-            "function_item" | "mod_item" => {
+            // A `const` or `static` is named like a function, and often holds a large literal
+            // whose edits would otherwise leave it to the whole-file fallback.
+            "function_item" | "mod_item" | "const_item" | "static_item" => {
                 named_child_text(node, bytes, "name", Some("identifier"))
             }
             "struct_item" | "enum_item" | "trait_item" => {

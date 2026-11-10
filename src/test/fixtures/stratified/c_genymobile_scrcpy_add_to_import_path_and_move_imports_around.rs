@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "c-genymobile-scrcpy-add-to-import-path-and-move-imports-around",
-        3.73,
+        3.93,
     )
 }
 

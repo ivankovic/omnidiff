@@ -22,19 +22,15 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // A `throw new ...` becomes an assignment. The mapping replaces both statements whole;
-    // omnidiff pairs the class name across (`type_identifier` against `identifier`,
-    // `APTED("large_flat_subtree")`).
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "java-defects4j-cli-24-helpformatter",
-        2,
-        2,
-    )
+    // A `throw new ...` becomes an assignment, and the mapping replaces both statements whole.
+    // Pins `solve_stray_renames` undoing APTED's cross-kind pair of the class name
+    // (`type_identifier` against `identifier`).
+    test::helper::human_mapping::assert_matches_human_mapping("java-defects4j-cli-24-helpformatter")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-24-helpformatter", 0.11)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-24-helpformatter", 0.01)
 }
 
 #[test]

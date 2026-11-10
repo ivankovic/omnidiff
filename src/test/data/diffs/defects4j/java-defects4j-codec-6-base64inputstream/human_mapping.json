@@ -2056,17 +2056,6 @@
           "operation": "Insert",
           "after": [
             {
-              "start_row": 181,
-              "start_column": 18,
-              "end_row": 181,
-              "end_column": 19
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
               "start_row": 179,
               "start_column": 0,
               "end_row": 179,

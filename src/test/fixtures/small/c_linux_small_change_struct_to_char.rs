@@ -16,23 +16,26 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping("c-linux-small-change-struct-to-char")
+    // Invariant 28 convention: the mapping pairs the wrapped node with the new inner one, and
+    // omnidiff pairs it with the new wrapper - two nodes either way.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+        "c-linux-small-change-struct-to-char",
+        2,
+        0,
+    )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `field_expression` on after row 1375 is inserted, but it is made of
-    // the children of the `field_expression` on before row 1375, which is paired with the code
-    // around this one instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations("c-linux-small-change-struct-to-char", 1)
+    assert_ground_truth_invariants("c-linux-small-change-struct-to-char")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-linux-small-change-struct-to-char", 0.01)
+    assert_matches_human_painting_within_limit("c-linux-small-change-struct-to-char", 0.0)
 }

@@ -27,8 +27,8 @@ fn mapping() -> Result<()> {
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "tsx-excalidraw-excalidraw-huge-file-with-real-logic-change",
         // Includes the N:M floor: 13 all-to-all group members a one-to-one output cannot reach.
-        69,
-        57,
+        62,
+        52,
     )
 }
 

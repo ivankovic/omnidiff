@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,11 +32,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
-    // separator (awaiting a repaint):
-    //   before row 79 paints the `.` between the changed `0` and `2` move (it goes with the right-
-    //     hand part: update)
-    //   after row 79 paints the `.` between the changed `1` and `3` move (it goes with the right-
-    //     hand part: update)
-    assert_ground_truth_invariants_with_known_violations("json-excalidraw-excalidraw-version", 2)
+    assert_ground_truth_invariants("json-excalidraw-excalidraw-version")
 }

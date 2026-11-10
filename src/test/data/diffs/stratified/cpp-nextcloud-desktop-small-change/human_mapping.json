@@ -4024,44 +4024,6 @@
       "name": "Minimal",
       "entries": [
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 593,
-              "start_column": 16,
-              "end_row": 593,
-              "end_column": 31
-            }
-          ],
-          "after": [
-            {
-              "start_row": 593,
-              "start_column": 16,
-              "end_row": 593,
-              "end_column": 31
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 595,
-              "start_column": 16,
-              "end_row": 595,
-              "end_column": 31
-            }
-          ],
-          "after": [
-            {
-              "start_row": 595,
-              "start_column": 16,
-              "end_row": 595,
-              "end_column": 31
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -4080,6 +4042,44 @@
               "start_column": 76,
               "end_row": 595,
               "end_column": 118
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 593,
+              "start_column": 21,
+              "end_row": 593,
+              "end_column": 31
+            }
+          ],
+          "after": [
+            {
+              "start_row": 593,
+              "start_column": 21,
+              "end_row": 593,
+              "end_column": 31
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 595,
+              "start_column": 21,
+              "end_row": 595,
+              "end_column": 31
+            }
+          ],
+          "after": [
+            {
+              "start_row": 595,
+              "start_column": 21,
+              "end_row": 595,
+              "end_column": 31
             }
           ]
         }

@@ -33,11 +33,11 @@ fn invariants() -> Result<()> {
     // change.
     assert_ground_truth_invariants_with_known_violations(
         "css-lassekongo83-zuki-themes-fails-to-parse",
-        3,
+        2,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("css-lassekongo83-zuki-themes-fails-to-parse", 0.36)
+    assert_matches_human_painting_within_limit("css-lassekongo83-zuki-themes-fails-to-parse", 0.35)
 }

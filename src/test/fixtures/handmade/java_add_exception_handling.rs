@@ -21,20 +21,20 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // The method body is wrapped in a new `try`, whose inner `block` is byte-identical to the
-    // before body. The hash matcher pairs the before body with that inner block; the human pairs
-    // outer with outer and calls the inner block new. The "container added around moved code" gap;
-    // compare `kotlin_refactor_function`, where the human wants the opposite.
+    // The method body is wrapped in a new `try`. `solve_wrapped_blocks` pairs outer body with
+    // outer body, as the human does, and keeps the statements paired inside the wrapper. Left: the
+    // human marks the wrapped `while` and its block `MatchButNotIdentical`, omnidiff `Identical`
+    // (their text is byte-identical); both invisible.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-add-exception-handling",
-        6,
-        4,
+        2,
+        0,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-add-exception-handling", 4.58)
+    assert_matches_human_painting_within_limit("java-add-exception-handling", 4.03)
 }
 
 #[test]

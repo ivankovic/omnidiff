@@ -498,10 +498,43 @@ fn collect_qualified_name_groups(
     language: &Language,
     code: &Code,
 ) -> HashMap<(String, String), Vec<usize>> {
-    let mut out = HashMap::new();
+    let mut out: HashMap<(String, String), Vec<usize>> = HashMap::new();
     let mut scope: Vec<String> = Vec::new();
-    collect_qualified_name_groups_rec(root, language, code, &mut scope, &mut out);
-    out
+    // Preorder over one cursor, a cursor per node costing more than the visit. `pushed` holds, for
+    // each node on the cursor's path, whether it opened a scope.
+    let mut pushed: Vec<bool> = Vec::new();
+    let mut cursor = root.walk();
+    loop {
+        let node = cursor.node();
+        let opens_scope = match nodes::is_semantically_structural(&node, language, code) {
+            Some((kind, name)) => {
+                let full_name = if scope.is_empty() {
+                    name.clone()
+                } else {
+                    format!("{}::{}", scope.join("::"), name)
+                };
+                out.entry((kind, full_name)).or_default().push(node.id());
+                scope.push(name);
+                true
+            }
+            None => false,
+        };
+        pushed.push(opens_scope);
+        if cursor.goto_first_child() {
+            continue;
+        }
+        loop {
+            if pushed.pop() == Some(true) {
+                scope.pop();
+            }
+            if cursor.goto_next_sibling() {
+                break;
+            }
+            if !cursor.goto_parent() {
+                return out;
+            }
+        }
+    }
 }
 
 /// [`collect_qualified_name_groups`] without `root_id` itself; the root still qualifies its
@@ -518,35 +551,6 @@ fn collect_qualified_name_groups_excluding_root(
     }
     groups.retain(|_, ids| !ids.is_empty());
     groups
-}
-
-fn collect_qualified_name_groups_rec(
-    node: Node,
-    language: &Language,
-    code: &Code,
-    scope: &mut Vec<String>,
-    out: &mut HashMap<(String, String), Vec<usize>>,
-) {
-    let mut pushed_scope = false;
-    if let Some((kind, name)) = nodes::is_semantically_structural(&node, language, code) {
-        let full_name = if scope.is_empty() {
-            name.clone()
-        } else {
-            format!("{}::{}", scope.join("::"), name)
-        };
-        out.entry((kind, full_name)).or_default().push(node.id());
-        scope.push(name);
-        pushed_scope = true;
-    }
-
-    let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
-        collect_qualified_name_groups_rec(child, language, code, scope, out);
-    }
-
-    if pushed_scope {
-        scope.pop();
-    }
 }
 
 /// Minimum Jaccard overlap of imported-symbol sets for [`solve_import_list_overlap`].
@@ -735,7 +739,7 @@ fn import_paths_have_no_rival(
 
 /// Language keywords dropped before scoring; kept, they lift every pair in a file by a fixed
 /// amount. Matched case-insensitively against whole tokens only.
-const IMPORT_KEYWORD_TOKENS: &[&str] = &[
+pub(crate) const IMPORT_KEYWORD_TOKENS: &[&str] = &[
     "import", "include", "use", "using", "from", "require", "package",
 ];
 
@@ -750,6 +754,8 @@ fn collect_unmapped_imports<'a>(
     let bytes = code.contents.as_bytes();
     let mut out = Vec::new();
     let mut stack = vec![root];
+    // One cursor for the whole walk: `children` resets it to each node.
+    let mut cursor = root.walk();
     while let Some(node) = stack.pop() {
         if nodes::is_import_kind(node.kind(), language) {
             if !mapped.contains_key(&node.id())
@@ -770,10 +776,7 @@ fn collect_unmapped_imports<'a>(
             }
             continue;
         }
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            stack.push(child);
-        }
+        stack.extend(node.children(&mut cursor));
     }
     out
 }
@@ -788,6 +791,8 @@ fn collect_rust_grouped_use_declarations<'a>(
     let bytes = code.contents.as_bytes();
     let mut out = Vec::new();
     let mut stack = vec![root];
+    // One cursor for the whole walk: `children` resets it to each node.
+    let mut cursor = root.walk();
     while let Some(node) = stack.pop() {
         if node.kind() == "use_declaration" && !mapped.contains_key(&node.id()) {
             if let Some(scoped_use_list) = node.child_by_field_name("argument")
@@ -798,7 +803,6 @@ fn collect_rust_grouped_use_declarations<'a>(
                 && let Ok(path_text) = path_node.utf8_text(bytes)
             {
                 let mut symbols = HashSet::new();
-                let mut cursor = list_node.walk();
                 for child in list_node.named_children(&mut cursor) {
                     if let Ok(text) = child.utf8_text(bytes) {
                         symbols.insert(text);
@@ -810,10 +814,7 @@ fn collect_rust_grouped_use_declarations<'a>(
             }
             continue;
         }
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            stack.push(child);
-        }
+        stack.extend(node.children(&mut cursor));
     }
     out
 }

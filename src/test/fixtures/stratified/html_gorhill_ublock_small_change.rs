@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("html-gorhill-ublock-small-change", 3.35)
+    assert_matches_human_painting_within_limit("html-gorhill-ublock-small-change", 2.12)
 }
 
 #[test]

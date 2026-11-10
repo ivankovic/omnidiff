@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "css-microsoft-vscode-add-with-whitespace-change",
-        0.01,
+        0.0,
     )
 }
 

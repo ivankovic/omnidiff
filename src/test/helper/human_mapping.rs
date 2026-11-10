@@ -856,6 +856,108 @@ pub fn paintings_for_mode(
     }
 }
 
+/// What a fixture's paintings grade omnidiff's rendering as. A painting named for a preset grades
+/// that preset. A lone painting that names no preset (`Only one solution`) says the change has
+/// one right rendering, whatever the preset: that is its own case, [`GradedCase::Single`], counted
+/// apart from both presets, because it asks something neither preset does - that `Minimal` and
+/// `Full` render the same thing, and that it is the painting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GradedCase {
+    Minimal,
+    Full,
+    /// Both presets against the one painting; a byte is mismatched when either disagrees.
+    Single,
+}
+
+impl GradedCase {
+    /// The presets whose renderings the case reads.
+    pub fn presets(self) -> &'static [crate::diff::text::RenderOptions] {
+        use crate::diff::text::RenderOptions;
+        match self {
+            GradedCase::Minimal => &[RenderOptions::MINIMAL],
+            GradedCase::Full => &[RenderOptions::FULL],
+            GradedCase::Single => &[RenderOptions::MINIMAL, RenderOptions::FULL],
+        }
+    }
+
+    /// The name reports and `painting_attribution.csv`'s `preset` column use.
+    pub fn label(self) -> &'static str {
+        match self {
+            GradedCase::Minimal => "minimal",
+            GradedCase::Full => "full",
+            GradedCase::Single => "single",
+        }
+    }
+}
+
+/// The cases `mapping`'s paintings grade. Two or more paintings, or none stored (an embedded
+/// host's implied painting, see [`implied_host_painting`]), grade both presets. A lone painting
+/// named for a preset grades that preset alone; any other lone painting is the
+/// [`GradedCase::Single`] case.
+pub fn graded_cases(mapping: &HumanMapping) -> Vec<GradedCase> {
+    match mapping.text_mappings.as_slice() {
+        [lone] if designates_full(&lone.name) => vec![GradedCase::Full],
+        [lone] if designates_minimal(&lone.name) => vec![GradedCase::Minimal],
+        [_] => vec![GradedCase::Single],
+        _ => vec![GradedCase::Minimal, GradedCase::Full],
+    }
+}
+
+/// How closely omnidiff's rendering matches the painting for one [`GradedCase`].
+#[derive(Debug, Clone)]
+pub struct CaseComparison {
+    pub case: GradedCase,
+    /// The painting compared against, by name (the closest, when a preset has several).
+    pub solution: String,
+    /// Bytes some preset of the case renders differently from the painting, over both sides.
+    pub mismatched_bytes: usize,
+    pub total_bytes: usize,
+}
+
+impl CaseComparison {
+    /// Disagreement as a percentage of the fixture's bytes. `0.0` is exact agreement.
+    pub fn percent(&self) -> f64 {
+        if self.total_bytes == 0 {
+            return 0.0;
+        }
+        100.0 * self.mismatched_bytes as f64 / self.total_bytes as f64
+    }
+}
+
+/// Compares omnidiff's rendering with `name`'s painting for `case`, over an already computed diff.
+pub fn compare_case_with_diff(
+    name: &str,
+    case: GradedCase,
+    before: &crate::code::Code,
+    after: &crate::code::Code,
+    diff: &PaintingDiff,
+) -> Result<CaseComparison> {
+    let mapping = load_with(name, before, after)?;
+    let mut wrong = [
+        vec![false; before.contents.len()],
+        vec![false; after.contents.len()],
+    ];
+    let mut solution = String::new();
+    for &options in case.presets() {
+        let (painting, ours, theirs) =
+            closest_painting_labels(&mapping, options, before, after, diff)?;
+        solution = painting;
+        for side in 0..2 {
+            for ((wrong, ours), theirs) in
+                wrong[side].iter_mut().zip(&ours[side]).zip(&theirs[side])
+            {
+                *wrong |= ours != theirs;
+            }
+        }
+    }
+    Ok(CaseComparison {
+        case,
+        solution,
+        mismatched_bytes: wrong.iter().flatten().filter(|&&wrong| wrong).count(),
+        total_bytes: before.contents.len() + after.contents.len(),
+    })
+}
+
 /// Whether a painting named `name` is an answer for the `preset` preset: exactly the preset, or
 /// the preset, a space and a qualifier (`Minimal (left)`). The qualified form records several
 /// defensible renderings under one preset; any of them passes.
@@ -975,6 +1077,37 @@ pub fn compare_painting_for_mapping(
     after: &crate::code::Code,
     diff: &PaintingDiff,
 ) -> Result<PaintingComparison> {
+    let (solution, ours, theirs) = closest_painting_labels(mapping, options, before, after, diff)?;
+    let mismatched_bytes = (0..2)
+        .map(|side| {
+            ours[side]
+                .iter()
+                .zip(&theirs[side])
+                .filter(|(ours, theirs)| ours != theirs)
+                .count()
+        })
+        .sum();
+    Ok(PaintingComparison {
+        options,
+        solution,
+        mismatched_bytes,
+        total_bytes: before.contents.len() + after.contents.len(),
+    })
+}
+
+/// Per-byte labels of both sides, `[before, after]`; `None` where nothing paints a byte.
+type ByteLabels = [Vec<Option<TextLabel>>; 2];
+
+/// omnidiff's per-byte labels under `options` and those of the painting `options` answers to that
+/// they disagree on least (several paintings under one preset are alternatives), with that
+/// painting's name: `(name, ours, theirs)`, `[before, after]` each, embedded layers written in.
+fn closest_painting_labels(
+    mapping: &HumanMapping,
+    options: crate::diff::text::RenderOptions,
+    before: &crate::code::Code,
+    after: &crate::code::Code,
+    diff: &PaintingDiff,
+) -> Result<(String, ByteLabels, ByteLabels)> {
     let implied;
     let mapping = match implied_host_painting(mapping, before, after) {
         Some(painting) => {
@@ -989,20 +1122,18 @@ pub fn compare_painting_for_mapping(
     let candidates = paintings_for_mode(mapping, options)?;
 
     let mut ours = omnidiff_painting_labels(diff, before, after, options);
-    let total_bytes = before.contents.len() + after.contents.len();
     let regions = embedded_regions(mapping, before, after, diff, options)?;
     for region in &regions {
         region.write(&mut ours, |region| &region.ours);
     }
 
-    // Several paintings under one preset are alternatives: the closest one is the verdict.
-    let mut best: Option<PaintingComparison> = None;
+    let mut best: Option<(String, ByteLabels, usize)> = None;
     for painting in candidates {
         let mut theirs = human_painting_labels(painting, &before.contents, &after.contents)?;
         for region in &regions {
             region.write(&mut theirs, |region| &region.theirs);
         }
-        let mismatched_bytes = (0..2)
+        let mismatched_bytes: usize = (0..2)
             .map(|side| {
                 ours[side]
                     .iter()
@@ -1011,22 +1142,16 @@ pub fn compare_painting_for_mapping(
                     .count()
             })
             .sum();
-
-        let comparison = PaintingComparison {
-            options,
-            solution: painting.name.clone(),
-            mismatched_bytes,
-            total_bytes,
-        };
         if best
             .as_ref()
-            .is_none_or(|best| comparison.mismatched_bytes < best.mismatched_bytes)
+            .is_none_or(|(_, _, best)| mismatched_bytes < *best)
         {
-            best = Some(comparison);
+            best = Some((painting.name.clone(), theirs, mismatched_bytes));
         }
     }
-
-    best.context("a preset with no candidate paintings should have been rejected above")
+    let (name, theirs, _) =
+        best.context("a preset with no candidate paintings should have been rejected above")?;
+    Ok((name, ours, theirs))
 }
 
 /// Per-byte labels of both sides of `painting`.
@@ -1162,20 +1287,19 @@ fn project_labels(labels: &[Option<TextLabel>], offsets: &[usize]) -> Vec<Option
     projected
 }
 
-/// Asserts omnidiff's rendering matches the human painting under **both** presets, within
-/// `max_percent` of the fixture's bytes - a recorded distance, not a target.
+/// Asserts omnidiff's rendering matches the human painting in every case the fixture grades
+/// ([`graded_cases`]: both presets, or the lone painting's `Single` case), within `max_percent`
+/// of the fixture's bytes - a recorded distance, not a target.
 pub fn assert_matches_human_painting_within_limit(name: &str, max_percent: f64) -> Result<()> {
-    use crate::diff::text::RenderOptions;
-
     let (before, after) = &*super::handmade_test_code_pair(name)?;
     let diff = omnidiff_diff_for_painting(before, after)?;
     let mut failures = Vec::new();
-    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
-        let comparison = compare_painting_with_diff(name, options, before, after, &diff)?;
+    for case in graded_cases(&load_with(name, before, after)?) {
+        let comparison = compare_case_with_diff(name, case, before, after, &diff)?;
         if comparison.percent() > max_percent {
             failures.push(format!(
                 "  {} vs '{}': {:.3}% ({} of {} bytes) exceeds the {:.3}% limit",
-                preset_name(comparison.options).unwrap_or("<custom>"),
+                comparison.case.label(),
                 comparison.solution,
                 comparison.percent(),
                 comparison.mismatched_bytes,
@@ -4159,6 +4283,29 @@ mod tests {
             assert_eq!(found.len(), 1);
             assert_eq!(found[0].name, "Only one solution");
         }
+    }
+
+    #[test]
+    fn a_lone_painting_naming_no_preset_is_graded_as_its_own_case() {
+        assert_eq!(
+            graded_cases(&named(&["Only one solution"])),
+            vec![GradedCase::Single]
+        );
+        assert_eq!(
+            graded_cases(&named(&["Minimal"])),
+            vec![GradedCase::Minimal]
+        );
+        assert_eq!(graded_cases(&named(&["Full"])), vec![GradedCase::Full]);
+        assert_eq!(
+            graded_cases(&named(&["Minimal", "Full"])),
+            vec![GradedCase::Minimal, GradedCase::Full]
+        );
+        // No stored painting: an embedded host's implied one, which both presets answer to.
+        assert_eq!(
+            graded_cases(&named(&[])),
+            vec![GradedCase::Minimal, GradedCase::Full]
+        );
+        assert_eq!(GradedCase::Single.presets().len(), 2);
     }
 
     #[test]

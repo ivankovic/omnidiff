@@ -2655,20 +2655,8 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
+      "operation": "delete",
       "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_definition:139",
-        "statement_block:1",
-        "if_statement:1",
-        "statement_block:1",
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "call_expression:1",
-        "member_expression:1"
-      ],
-      "after_path": [
         "class_declaration:1",
         "class_body:1",
         "method_definition:139",
@@ -2779,7 +2767,7 @@
       ]
     },
     {
-      "operation": "delete",
+      "operation": "match_but_not_identical",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
@@ -2793,6 +2781,18 @@
         "member_expression:1",
         "call_expression:1",
         "arguments:1",
+        "member_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
         "member_expression:1"
       ]
     },

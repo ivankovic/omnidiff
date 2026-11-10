@@ -16,32 +16,22 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Cost-model optimal, not a bug. `assert(session):stop()` gets wrapped in a new `if`. omnidiff
-    // matches the outer function-body `block` to the inner if-block (both holding just that call)
-    // and inserts the wrapper: outer-to-outer would need the call's whole subtree deleted and
-    // reinserted, since `expression_statement` vs `if_statement` cannot update. Tree edit
-    // distance is built to find such cross-depth reuse; compare `c-nginx-add-typedef`.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    // `assert(session):stop()` gets wrapped in a new `if`. The old function-body `block` pairs with
+    // the inner if-block (both hold just that call) and the wrapper is inserted, invariant 28's
+    // convention.
+    test::helper::human_mapping::assert_matches_human_mapping(
         "lua-neovim-neovim-add-if-around-one-line",
-        2,
-        0,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `block` on after row 324 is inserted, but it is made of the children
-    // of the `block` on before row 323, which is paired with the code around this one instead: the
-    // two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations(
-        "lua-neovim-neovim-add-if-around-one-line",
-        1,
-    )
+    assert_ground_truth_invariants("lua-neovim-neovim-add-if-around-one-line")
 }
 
 #[test]

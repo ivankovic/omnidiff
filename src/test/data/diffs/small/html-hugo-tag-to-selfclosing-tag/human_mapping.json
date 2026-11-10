@@ -619,7 +619,7 @@
           "before": [
             {
               "start_row": 5,
-              "start_column": 26,
+              "start_column": 25,
               "end_row": 6,
               "end_column": 0
             }
@@ -630,17 +630,6 @@
               "start_column": 25,
               "end_row": 6,
               "end_column": 0
-            }
-          ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 5,
-              "start_column": 25,
-              "end_row": 5,
-              "end_column": 26
             }
           ]
         }

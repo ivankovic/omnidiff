@@ -33,5 +33,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("swift-swiftlang-swift-comment-change-2", 0.1)
+    assert_matches_human_painting_within_limit("swift-swiftlang-swift-comment-change-2", 0.0)
 }

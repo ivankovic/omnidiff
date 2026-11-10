@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-33-helpformatter", 0.1)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-33-helpformatter", 0.05)
 }
 
 #[test]
@@ -36,5 +36,5 @@ fn invariants() -> Result<()> {
     // `type_identifier` `IOException`. Invariant 16, twice: the `renderWrappedText` <->
     // `renderWrappedTextBlock` rename on row 730 is not painted as its differing word `Block` under
     // Minimal.
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-cli-33-helpformatter", 4)
+    assert_ground_truth_invariants_with_known_violations("java-defects4j-cli-33-helpformatter", 2)
 }

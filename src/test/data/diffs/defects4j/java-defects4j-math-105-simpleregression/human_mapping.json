@@ -1583,17 +1583,6 @@
               "end_column": 57
             }
           ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 263,
-              "start_column": 14,
-              "end_row": 263,
-              "end_column": 15
-            }
-          ]
         }
       ]
     }

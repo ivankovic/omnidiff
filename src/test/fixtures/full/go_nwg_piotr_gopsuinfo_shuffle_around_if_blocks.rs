@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // `if`/`else` scaffolding, which `APTED("qualified_name")` pairs by position or deletes.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-nwg-piotr-gopsuinfo-shuffle-around-if-blocks",
-        14,
-        9,
+        13,
+        8,
     )
 }
 

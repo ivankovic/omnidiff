@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -29,16 +29,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-closure-149-compileroptions", 0.01)
+    assert_matches_human_painting_within_limit("java-defects4j-closure-149-compileroptions", 0.0)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
-    //   before row 588: the indentation before `public Charset` is painted, though it did not change
-    //   after row 588: the indentation before `String` is painted, though it did not change
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-149-compileroptions",
-        2,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-149-compileroptions")
 }

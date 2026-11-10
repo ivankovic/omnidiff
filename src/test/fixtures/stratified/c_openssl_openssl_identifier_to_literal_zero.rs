@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-openssl-openssl-identifier-to-literal-zero", 0.01)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-identifier-to-literal-zero", 0.0)
 }
 
 #[test]

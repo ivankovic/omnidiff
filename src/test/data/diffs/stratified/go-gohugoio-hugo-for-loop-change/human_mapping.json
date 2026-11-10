@@ -2490,28 +2490,6 @@
               "end_column": 16
             }
           ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 220,
-              "start_column": 13,
-              "end_row": 220,
-              "end_column": 14
-            }
-          ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 211,
-              "start_column": 13,
-              "end_row": 211,
-              "end_column": 14
-            }
-          ]
         }
       ]
     }

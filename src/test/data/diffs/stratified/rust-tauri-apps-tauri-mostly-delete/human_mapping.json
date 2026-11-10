@@ -5576,7 +5576,7 @@
           "before": [
             {
               "start_row": 24,
-              "start_column": 31,
+              "start_column": 30,
               "end_row": 24,
               "end_column": 47
             }
@@ -5679,25 +5679,6 @@
           ]
         },
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 256,
-              "start_column": 0,
-              "end_row": 256,
-              "end_column": 4
-            }
-          ],
-          "after": [
-            {
-              "start_row": 256,
-              "start_column": 0,
-              "end_row": 256,
-              "end_column": 4
-            }
-          ]
-        },
-        {
           "operation": "Delete",
           "before": [
             {
@@ -5773,25 +5754,6 @@
               "start_column": 6,
               "end_row": 732,
               "end_column": 15
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 733,
-              "start_column": 0,
-              "end_row": 733,
-              "end_column": 6
-            }
-          ],
-          "after": [
-            {
-              "start_row": 732,
-              "start_column": 0,
-              "end_row": 732,
-              "end_column": 6
             }
           ]
         },

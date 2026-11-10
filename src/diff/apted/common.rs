@@ -598,7 +598,7 @@ pub(crate) fn compute_edit_mapping(
                 .collect::<Vec<_>>(),
         )
     });
-    let ren = |di: usize, dj: usize, _: &ASTNodeMetadata, _: &ASTNodeMetadata| {
+    let price = |di: usize, dj: usize| {
         let cost_ren = cost_model.ren_keyed(&before_keys[di - 1], &after_keys[dj - 1]);
         match (containment, &containment_keys) {
             (Some(ctx), Some((before_containment, after_containment))) => ctx.adjust_keyed(
@@ -610,6 +610,14 @@ pub(crate) fn compute_edit_mapping(
             ),
             _ => cost_ren,
         }
+    };
+    // Every pair priced once: the first `forest_dist_from` below covers all of them and each
+    // backtracked tree pair covers its own again.
+    let prices: Vec<u64> = (1..=size1)
+        .flat_map(|di| (1..=size2).map(move |dj| price(di, dj)))
+        .collect();
+    let ren = |di: usize, dj: usize, _: &ASTNodeMetadata, _: &ASTNodeMetadata| {
+        prices[(di - 1) * size2 + (dj - 1)]
     };
 
     let mut forestdist = ForestDist::new(size1 + 1, size2 + 1, 0);

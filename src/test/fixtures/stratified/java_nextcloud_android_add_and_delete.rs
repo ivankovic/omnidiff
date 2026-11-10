@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,8 +37,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   after row 689: the space before the insert `// TODO: menu event already...` is not painted
-    //     with it
-    assert_ground_truth_invariants_with_known_violations("java-nextcloud-android-add-and-delete", 1)
+    assert_ground_truth_invariants("java-nextcloud-android-add-and-delete")
 }

@@ -15,25 +15,17 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "csharp-cyanfish-naps2-add-condition-to-if",
-        3,
-        0,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `binary_expression` on after row 137 is inserted, but it is made of
-    // the children of the `binary_expression` on before row 137, which is paired with the code
-    // around this one instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations(
-        "csharp-cyanfish-naps2-add-condition-to-if",
-        1,
-    )
+    assert_ground_truth_invariants("csharp-cyanfish-naps2-add-condition-to-if")
 }

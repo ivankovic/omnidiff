@@ -1083,7 +1083,7 @@
           "before": [
             {
               "start_row": 18,
-              "start_column": 17,
+              "start_column": 24,
               "end_row": 18,
               "end_column": 25
             }
@@ -1091,20 +1091,9 @@
           "after": [
             {
               "start_row": 19,
-              "start_column": 23,
+              "start_column": 30,
               "end_row": 19,
               "end_column": 31
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 19,
-              "start_column": 17,
-              "end_row": 19,
-              "end_column": 23
             }
           ]
         },
@@ -1116,6 +1105,17 @@
               "start_column": 36,
               "end_row": 66,
               "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 19,
+              "start_column": 17,
+              "end_row": 19,
+              "end_column": 23
             }
           ]
         }

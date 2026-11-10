@@ -713,17 +713,6 @@
               "end_column": 7
             }
           ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 35,
-              "start_column": 0,
-              "end_row": 35,
-              "end_column": 1
-            }
-          ]
         }
       ]
     }

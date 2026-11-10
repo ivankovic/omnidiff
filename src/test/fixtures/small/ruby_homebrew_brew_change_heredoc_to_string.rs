@@ -27,8 +27,8 @@ fn mapping() -> Result<()> {
     // leaves unmatched.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-homebrew-brew-change-heredoc-to-string",
-        5,
-        3,
+        4,
+        2,
     )
 }
 
@@ -39,5 +39,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("ruby-homebrew-brew-change-heredoc-to-string", 0.83)
+    assert_matches_human_painting_within_limit("ruby-homebrew-brew-change-heredoc-to-string", 0.81)
 }

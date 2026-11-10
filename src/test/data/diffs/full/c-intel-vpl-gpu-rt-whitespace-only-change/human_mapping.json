@@ -8,8 +8,24 @@
   ],
   "text_mappings": [
     {
-      "name": "Only one solution",
+      "name": "Minimal",
       "entries": []
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 402,
+              "start_column": 32,
+              "end_row": 402,
+              "end_column": 47
+            }
+          ]
+        }
+      ]
     }
   ]
 }

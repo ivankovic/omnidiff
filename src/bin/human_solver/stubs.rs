@@ -342,8 +342,8 @@ pub(crate) struct SaveMeasurement {
     /// `(total, visible)` mismatches between the human mapping and omnidiff's diff; `None` for a
     /// text-only fixture, which has no `mapping()` test.
     pub(crate) mismatches: Option<(usize, usize)>,
-    /// The limit `painting()` needs: the larger disagreement of the two presets, as a percentage
-    /// rounded up to two decimals. `None` when the fixture is unpainted.
+    /// The limit `painting()` needs: the largest disagreement of the cases the fixture grades
+    /// (`graded_cases`), as a percentage rounded up to two decimals. `None` when the fixture is unpainted.
     pub(crate) painting_percent: Option<f64>,
     pub(crate) invariant_violations: usize,
 }
@@ -351,9 +351,8 @@ pub(crate) struct SaveMeasurement {
 /// Measures `name` as its fixture tests would, from what is on disk, so a save is followed by the
 /// numbers the stub needs instead of a `cargo test` round trip to find them out.
 pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeasurement> {
-    use omnidiff::diff::text::RenderOptions;
     use omnidiff::test::helper::human_mapping::{
-        compare_painting_with_diff, compute_visible_mismatches_with_config,
+        compare_case_with_diff, compute_visible_mismatches_with_config, graded_cases,
         invariants::ground_truth_invariant_violations, load, omnidiff_diff_for_painting,
     };
 
@@ -376,8 +375,8 @@ pub(crate) fn measure_saved_case(name: &str, text_only: bool) -> Result<SaveMeas
         let (before, after) = &*omnidiff::test::helper::handmade_test_code_pair(name)?;
         let diff = omnidiff_diff_for_painting(before, after)?;
         let mut worst: f64 = 0.0;
-        for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
-            let comparison = compare_painting_with_diff(name, options, before, after, &diff)?;
+        for case in graded_cases(&load(name)?) {
+            let comparison = compare_case_with_diff(name, case, before, after, &diff)?;
             worst = worst.max(comparison.percent());
         }
         Some(round_up_percent(worst))

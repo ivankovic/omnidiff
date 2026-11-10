@@ -10,8 +10,8 @@
 
 .card h3 {
   margin: 0 0 8px;
-  font-size: 1.5rem;
   font-weight: bolder;
+  font-size: 1.5rem;
 }
 
 .card-body {

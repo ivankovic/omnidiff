@@ -423,6 +423,10 @@ pub(crate) struct EngineCtx<'a> {
     /// call makes zeroing it dominate the run. Reuse is sound because `sweep_forest_distances`
     /// writes every cell it reads. `RefCell` because the borrow never spans a `gted` re-entry.
     forestdist_scratch: std::cell::RefCell<[Option<ForestDist>; 2]>,
+    /// [`Self::ren_adjusted`] of every `(before_pre, after_pre)` pair, row-major by `before_pre`.
+    /// The DP prices each pair many times over, once per single-path sweep that covers it, and
+    /// the table is at most `APTED_MAX_CELLS` entries, so it is computed once up front.
+    ren: Vec<u64>,
 }
 
 impl<'a> EngineCtx<'a> {
@@ -466,7 +470,7 @@ impl<'a> EngineCtx<'a> {
         };
         let before_keys = keys_of(&before_nodes);
         let after_keys = keys_of(&after_nodes);
-        EngineCtx {
+        let mut ctx = EngineCtx {
             before_idx,
             after_idx,
             cost_model,
@@ -478,7 +482,16 @@ impl<'a> EngineCtx<'a> {
             before_containment,
             after_containment,
             forestdist_scratch: std::cell::RefCell::new([None, None]),
-        }
+            ren: Vec::new(),
+        };
+        let ren = (0..before_idx.size)
+            .flat_map(|before_pre| {
+                let ctx = &ctx;
+                (0..after_idx.size).map(move |after_pre| ctx.compute_ren(before_pre, after_pre))
+            })
+            .collect();
+        ctx.ren = ren;
+        ctx
     }
 
     /// [`vnode`] for the before side's virtual preorder index `pre`.
@@ -503,6 +516,11 @@ impl<'a> EngineCtx<'a> {
     /// `vren` at virtual preorder ids `(before_pre, after_pre)`, with `containment` applied as
     /// `forest_dist` applies it; the virtual root is left unadjusted.
     pub(crate) fn ren_adjusted(&self, before_pre: usize, after_pre: usize) -> u64 {
+        self.ren[before_pre * self.after_idx.size + after_pre]
+    }
+
+    /// [`Self::ren_adjusted`] computed from the keys, which fills its table.
+    fn compute_ren(&self, before_pre: usize, after_pre: usize) -> u64 {
         // `vren`, on the interned keys.
         let base = match (
             self.before_nodes[before_pre].is_some(),
@@ -1284,6 +1302,25 @@ pub(crate) fn sweep_forest_distances(
         forestdist[(lld_i, dj)] = forestdist[(lld_i, dj - 1)] + cost;
     }
 
+    // `(preorder id, extreme-leaf postorder, insertion cost)` of every column, which the rows
+    // below all read: worked out once per sweep rather than once per cell.
+    let columns: Vec<(usize, usize, u64)> = ((lld_j + 1)..=j)
+        .map(|dj| {
+            let other_pre = post_to_pre(other_idx, dir, dj - 1);
+            let other_node = ctx.node(!path_is_before, other_pre);
+            let ins_cost = if path_is_before {
+                vins(ctx.cost_model, other_node)
+            } else {
+                vdel(ctx.cost_model, other_node)
+            };
+            (
+                other_pre,
+                post_to_extreme_leaf_post(other_idx, dir, dj - 1),
+                ins_cost,
+            )
+        })
+        .collect();
+
     for di in (lld_i + 1)..=i {
         let path_pre = post_to_pre(path_idx, dir, di - 1);
         let path_node = ctx.node(path_is_before, path_pre);
@@ -1293,15 +1330,7 @@ pub(crate) fn sweep_forest_distances(
         } else {
             vins(ctx.cost_model, path_node)
         };
-        for dj in (lld_j + 1)..=j {
-            let other_pre = post_to_pre(other_idx, dir, dj - 1);
-            let other_node = ctx.node(!path_is_before, other_pre);
-            let other_lld = post_to_extreme_leaf_post(other_idx, dir, dj - 1);
-            let ins_cost = if path_is_before {
-                vins(ctx.cost_model, other_node)
-            } else {
-                vdel(ctx.cost_model, other_node)
-            };
+        for (dj, &(other_pre, other_lld, ins_cost)) in ((lld_j + 1)..=j).zip(&columns) {
             let (before_pre, after_pre) = if path_is_before {
                 (path_pre, other_pre)
             } else {

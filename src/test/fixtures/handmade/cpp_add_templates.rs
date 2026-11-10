@@ -31,14 +31,13 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `MINIMAL` sets the limit.
-    assert_matches_human_painting_within_limit("cpp-add-templates", 3.66)
+    assert_matches_human_painting_within_limit("cpp-add-templates", 1.83)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the rename split is not painted (`IntBox` against `Box`, four times).
-    // Invariant 18, three more: `int` becomes `T` in `field_declaration.type`,
+    // Invariant 18, three times: `int` becomes `T` in `field_declaration.type`,
     // `parameter_declaration.type` and `function_definition.type`. Each parent is matched and each
     // field holds one child, yet the mapping deletes `int` and inserts `T`.
-    assert_ground_truth_invariants_with_known_violations("cpp-add-templates", 9)
+    assert_ground_truth_invariants_with_known_violations("cpp-add-templates", 3)
 }

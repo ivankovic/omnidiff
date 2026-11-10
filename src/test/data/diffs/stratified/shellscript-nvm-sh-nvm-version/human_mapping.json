@@ -2621,32 +2621,13 @@
               "start_row": 3973,
               "start_column": 20,
               "end_row": 3973,
-              "end_column": 21
-            }
-          ],
-          "after": [
-            {
-              "start_row": 3973,
-              "start_column": 20,
-              "end_row": 3973,
-              "end_column": 21
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 3973,
-              "start_column": 21,
-              "end_row": 3973,
               "end_column": 22
             }
           ],
           "after": [
             {
               "start_row": 3973,
-              "start_column": 21,
+              "start_column": 20,
               "end_row": 3973,
               "end_column": 22
             }

@@ -4273,25 +4273,6 @@
       "name": "Minimal",
       "entries": [
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 729,
-              "start_column": 8,
-              "end_row": 729,
-              "end_column": 25
-            }
-          ],
-          "after": [
-            {
-              "start_row": 729,
-              "start_column": 8,
-              "end_row": 729,
-              "end_column": 30
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -4400,6 +4381,17 @@
               "start_column": 8,
               "end_row": 912,
               "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 729,
+              "start_column": 25,
+              "end_row": 729,
+              "end_column": 30
             }
           ]
         }

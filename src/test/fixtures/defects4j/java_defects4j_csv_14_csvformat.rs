@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-csv-14-csvformat", 0.08)
+    assert_matches_human_painting_within_limit("java-defects4j-csv-14-csvformat", 0.05)
 }
 
 #[test]

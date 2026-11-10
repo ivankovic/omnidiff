@@ -775,25 +775,6 @@
           "before": [
             {
               "start_row": 14,
-              "start_column": 6,
-              "end_row": 14,
-              "end_column": 16
-            }
-          ],
-          "after": [
-            {
-              "start_row": 14,
-              "start_column": 6,
-              "end_row": 14,
-              "end_column": 15
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 14,
               "start_column": 16,
               "end_row": 14,
               "end_column": 19
@@ -876,6 +857,25 @@
               "start_column": 45,
               "end_row": 15,
               "end_column": 46
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 14,
+              "start_column": 6,
+              "end_row": 14,
+              "end_column": 11
+            }
+          ],
+          "after": [
+            {
+              "start_row": 14,
+              "start_column": 6,
+              "end_row": 14,
+              "end_column": 10
             }
           ]
         }

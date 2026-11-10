@@ -774,7 +774,7 @@
           "after": [
             {
               "start_row": 12,
-              "start_column": 36,
+              "start_column": 37,
               "end_row": 12,
               "end_column": 41
             }
@@ -807,7 +807,7 @@
           "before": [
             {
               "start_row": 7,
-              "start_column": 36,
+              "start_column": 37,
               "end_row": 7,
               "end_column": 38
             }

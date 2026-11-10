@@ -37,6 +37,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "vimscript-neovim-neovim-i-have-no-idea-what-this-diff-does",
-        0.03,
+        0.02,
     )
 }

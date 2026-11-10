@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-twbs-bootstrap-add-the-same-attribute-in-many-places",
-        0.04,
+        0.0,
     )
 }

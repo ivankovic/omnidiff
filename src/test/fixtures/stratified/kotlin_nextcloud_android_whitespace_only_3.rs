@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -35,10 +35,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 29: the files differ only in whitespace, and the lone painting is named 'Full', so
-    // Minimal is held to it too; awaiting an empty `Minimal` beside it.
-    assert_ground_truth_invariants_with_known_violations(
-        "kotlin-nextcloud-android-whitespace-only-3",
-        1,
-    )
+    assert_ground_truth_invariants("kotlin-nextcloud-android-whitespace-only-3")
 }

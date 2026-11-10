@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("json-louislam-uptime-kuma-big-add-only", 0.04)
+    assert_matches_human_painting_within_limit("json-louislam-uptime-kuma-big-add-only", 0.01)
 }
 
 #[test]

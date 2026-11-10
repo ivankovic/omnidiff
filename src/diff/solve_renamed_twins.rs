@@ -100,7 +100,7 @@ fn unpaired_copies(
 /// The nearest ancestor of `id` (inclusive) that is a statement, declaration or function: the
 /// unit a reader takes a leaf's role from. Rust's `generic_function` is a call with type
 /// arguments, not a function.
-fn enclosing_statement(meta: &ASTMetadata, id: usize) -> Option<usize> {
+pub(crate) fn enclosing_statement(meta: &ASTMetadata, id: usize) -> Option<usize> {
     let mut current = id;
     loop {
         let kind = meta.node_info.get(&current)?.kind.as_str();
@@ -282,7 +282,7 @@ fn better_copy_elsewhere(
 }
 
 /// Whether `id` is an operand of a binary operator.
-fn is_operand(meta: &ASTMetadata, id: usize) -> bool {
+pub(crate) fn is_operand(meta: &ASTMetadata, id: usize) -> bool {
     meta.node_to_parent
         .get(&id)
         .and_then(|parent| meta.node_info.get(parent))

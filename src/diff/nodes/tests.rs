@@ -433,6 +433,18 @@ fn collect_semantic_matches(
     out
 }
 
+/// A `const` or `static` holding a long literal is found by its name, so an edit inside the
+/// literal stays inside the item (rust-real-logic-change-in-a-huge-75k-node-file).
+#[test]
+fn rust_consts_and_statics_are_matched_by_name() {
+    let matches = collect_matches(
+        "const HELP: &str = \"usage\"; \
+         static mut COUNT: u32 = 0;",
+    );
+    assert!(matches.contains(&("const_item".to_string(), "HELP".to_string())));
+    assert!(matches.contains(&("static_item".to_string(), "COUNT".to_string())));
+}
+
 #[test]
 fn rust_public_items_are_matched() {
     let matches = collect_matches(

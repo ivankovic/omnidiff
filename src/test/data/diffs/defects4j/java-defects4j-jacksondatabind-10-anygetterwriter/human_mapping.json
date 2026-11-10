@@ -2427,25 +2427,6 @@
           ]
         },
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 28,
-              "start_column": 38,
-              "end_row": 28,
-              "end_column": 51
-            }
-          ],
-          "after": [
-            {
-              "start_row": 29,
-              "start_column": 38,
-              "end_row": 29,
-              "end_column": 52
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -2585,25 +2566,6 @@
           "before": [
             {
               "start_row": 81,
-              "start_column": 81,
-              "end_row": 81,
-              "end_column": 95
-            }
-          ],
-          "after": [
-            {
-              "start_row": 88,
-              "start_column": 76,
-              "end_row": 88,
-              "end_column": 87
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 81,
               "start_column": 95,
               "end_row": 81,
               "end_column": 107
@@ -2648,6 +2610,44 @@
               "start_column": 49,
               "end_row": 91,
               "end_column": 52
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 28,
+              "start_column": 38,
+              "end_row": 28,
+              "end_column": 41
+            }
+          ],
+          "after": [
+            {
+              "start_row": 29,
+              "start_column": 38,
+              "end_row": 29,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 81,
+              "start_column": 82,
+              "end_row": 81,
+              "end_column": 95
+            }
+          ],
+          "after": [
+            {
+              "start_row": 88,
+              "start_column": 77,
+              "end_row": 88,
+              "end_column": 87
             }
           ]
         }

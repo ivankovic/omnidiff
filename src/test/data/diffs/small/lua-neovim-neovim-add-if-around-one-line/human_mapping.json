@@ -741,11 +741,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "function_declaration:12",
-        "block:1"
-      ],
+      "operation": "insert",
       "after_path": [
         "function_declaration:12",
         "block:1"
@@ -787,7 +783,11 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "function_declaration:12",
+        "block:1"
+      ],
       "after_path": [
         "function_declaration:12",
         "block:1",

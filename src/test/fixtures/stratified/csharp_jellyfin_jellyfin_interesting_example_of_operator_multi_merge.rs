@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "csharp-jellyfin-jellyfin-interesting-example-of-operator-multi-merge",
-        0.1,
+        0.06,
     )
 }
 

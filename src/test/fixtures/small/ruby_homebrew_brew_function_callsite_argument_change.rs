@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "ruby-homebrew-brew-function-callsite-argument-change",
-        0.15,
+        0.14,
     )
 }

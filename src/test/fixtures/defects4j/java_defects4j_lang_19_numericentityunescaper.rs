@@ -33,7 +33,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-lang-19-numericentityunescaper", 2.9)
+    assert_matches_human_painting_within_limit(
+        "java-defects4j-lang-19-numericentityunescaper",
+        2.89,
+    )
 }
 
 #[test]

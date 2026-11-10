@@ -21862,11 +21862,21 @@
       ]
     },
     {
-      "operation": "delete",
+      "operation": "identical",
       "before_path": [
         "class_declaration:1",
         "class_body:1",
         "method_declaration:7",
+        "block:1",
+        "local_variable_declaration:1",
+        ";:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_declaration:7",
+        "block:1",
+        "if_statement:1",
         "block:1",
         "local_variable_declaration:1",
         ";:1"
@@ -89882,19 +89892,6 @@
         "method_declaration:11",
         "block:1",
         "do_statement:1",
-        "block:1",
-        "local_variable_declaration:1",
-        ";:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "method_declaration:7",
-        "block:1",
-        "if_statement:1",
         "block:1",
         "local_variable_declaration:1",
         ";:1"

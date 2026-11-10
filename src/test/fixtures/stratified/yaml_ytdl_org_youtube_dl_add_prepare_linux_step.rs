@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "yaml-ytdl-org-youtube-dl-add-prepare-linux-step",
-        1.98,
+        1.77,
     )
 }
 

@@ -301,6 +301,13 @@ path = "src/bin/benchmark_optimal_solutions.rs"
 required-features = ["test-fixtures"]
 
 [[bin]]
+# Stage-by-stage cost of the whole pipeline over the fixture corpus, and a fingerprint of its
+# output, for speed work that must leave the output unchanged.
+name = "benchmark_pipeline"
+path = "src/bin/benchmark_pipeline.rs"
+required-features = ["test-fixtures"]
+
+[[bin]]
 name = "benchmark_content"
 path = "src/bin/benchmark_content.rs"
 required-features = ["test-fixtures"]

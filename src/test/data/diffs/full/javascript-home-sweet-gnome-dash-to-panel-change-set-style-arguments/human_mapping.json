@@ -1850,25 +1850,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "export_statement:3",
-        "lexical_declaration:1",
-        "variable_declarator:1",
-        "call_expression:1",
-        "arguments:1",
-        "class:1",
-        "class_body:1",
-        "method_definition:20",
-        "statement_block:1",
-        "if_statement:1",
-        "statement_block:1",
-        "expression_statement:1",
-        "assignment_expression:1",
-        "template_string:1",
-        "template_substitution:1",
-        "binary_expression:1"
-      ],
+      "operation": "insert",
       "after_path": [
         "export_statement:3",
         "lexical_declaration:1",
@@ -2967,7 +2949,25 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "export_statement:3",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "arguments:1",
+        "class:1",
+        "class_body:1",
+        "method_definition:20",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "expression_statement:1",
+        "assignment_expression:1",
+        "template_string:1",
+        "template_substitution:1",
+        "binary_expression:1"
+      ],
       "after_path": [
         "export_statement:3",
         "lexical_declaration:1",

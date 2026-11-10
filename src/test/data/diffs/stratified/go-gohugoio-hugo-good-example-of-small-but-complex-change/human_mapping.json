@@ -4344,6 +4344,25 @@
               "end_column": 32
             }
           ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 316,
+              "start_column": 28,
+              "end_row": 316,
+              "end_column": 39
+            }
+          ],
+          "after": [
+            {
+              "start_row": 316,
+              "start_column": 25,
+              "end_row": 316,
+              "end_column": 38
+            }
+          ]
         }
       ]
     },
@@ -4686,6 +4705,25 @@
               "start_column": 0,
               "end_row": 319,
               "end_column": 2
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 316,
+              "start_column": 19,
+              "end_row": 316,
+              "end_column": 39
+            }
+          ],
+          "after": [
+            {
+              "start_row": 316,
+              "start_column": 16,
+              "end_row": 316,
+              "end_column": 38
             }
           ]
         }

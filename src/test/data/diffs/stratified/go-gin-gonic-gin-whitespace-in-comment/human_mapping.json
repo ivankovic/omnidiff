@@ -80,7 +80,11 @@
   ],
   "text_mappings": [
     {
-      "name": "Only one solution",
+      "name": "Minimal",
+      "entries": []
+    },
+    {
+      "name": "Full",
       "entries": [
         {
           "operation": "Delete",

@@ -8,6 +8,10 @@
   ],
   "text_mappings": [
     {
+      "name": "Minimal",
+      "entries": []
+    },
+    {
       "name": "Full",
       "entries": [
         {

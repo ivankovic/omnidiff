@@ -25,14 +25,14 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-gohugoio-hugo-complex",
-        48,
-        30,
+        46,
+        28,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-gohugoio-hugo-complex", 1.14)
+    assert_matches_human_painting_within_limit("go-gohugoio-hugo-complex", 1.07)
 }
 
 #[test]

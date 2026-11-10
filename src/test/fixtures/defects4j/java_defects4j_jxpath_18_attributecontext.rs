@@ -25,14 +25,14 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-jxpath-18-attributecontext",
-        44,
-        33,
+        40,
+        29,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jxpath-18-attributecontext", 5.74)
+    assert_matches_human_painting_within_limit("java-defects4j-jxpath-18-attributecontext", 5.28)
 }
 
 #[test]

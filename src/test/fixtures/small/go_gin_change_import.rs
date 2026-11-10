@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -26,12 +26,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   before row 10: the indentation before `validator` is painted, though it did not change
-    assert_ground_truth_invariants_with_known_violations("go-gin-change-import", 1)
+    assert_ground_truth_invariants("go-gin-change-import")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-gin-change-import", 0.05)
+    assert_matches_human_painting_within_limit("go-gin-change-import", 0.0)
 }

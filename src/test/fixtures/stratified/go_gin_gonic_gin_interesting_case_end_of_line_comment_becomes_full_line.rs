@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-gin-gonic-gin-interesting-case-end-of-line-comment-becomes-full-line",
-        1.56,
+        1.51,
     )
 }
 

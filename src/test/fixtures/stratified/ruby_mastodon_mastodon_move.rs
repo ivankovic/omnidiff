@@ -22,19 +22,14 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Three neighbouring comments are rotated. `StructurallyIdenticalAncestor` pairs them by
-    // position and calls all three `Update`; the human follows each comment's text. Position is
-    // the only signal inside a run of same-kind siblings, so a rotation mis-pairs every member.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "ruby-mastodon-mastodon-move",
-        3,
-        3,
-    )
+    // Three neighbouring comments are rotated, and the human follows each comment's text. Pins
+    // `solve_permuted_leaves`: pairing by position inside the run would call all three `Update`.
+    test::helper::human_mapping::assert_matches_human_mapping("ruby-mastodon-mastodon-move")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("ruby-mastodon-mastodon-move", 13.39)
+    assert_matches_human_painting_within_limit("ruby-mastodon-mastodon-move", 0.39)
 }
 
 #[test]

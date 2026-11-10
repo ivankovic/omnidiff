@@ -869,6 +869,7 @@ fn cross_fixture_convention_census() -> Result<()> {
 #[cfg(feature = "test-fixtures")]
 fn painting_failure_census() -> Result<()> {
     use crate::diff::text::{RangeMatch, RenderOptions};
+    use crate::test::helper::human_mapping::GradedCase;
     use std::collections::{BTreeMap, HashSet};
 
     /// One classified disagreement run.
@@ -1101,10 +1102,28 @@ fn painting_failure_census() -> Result<()> {
             census.violating = true;
         }
 
+        // A lone painting is the `single` case: one row, a byte counting as mismatched when
+        // either preset's rendering disagrees with the painting (see `GradedCase::Single`).
+        let cases = crate::test::helper::human_mapping::graded_cases(&mapping);
+        let single = cases == [GradedCase::Single];
+        let total_bytes = before.contents.len() + after.contents.len();
+        // Per stream (real vs theirs, ideal vs theirs, real vs ideal) and side, the bytes either
+        // preset got wrong: the `single` row's counts.
+        let mut single_masks: [[Vec<bool>; 2]; 3] = std::array::from_fn(|_| {
+            [
+                vec![false; before.contents.len()],
+                vec![false; after.contents.len()],
+            ]
+        });
+        let mut single_measured = false;
         for (preset, options) in [
             ("minimal", RenderOptions::MINIMAL),
             ("full", RenderOptions::FULL),
         ] {
+            if !cases.iter().any(|case| case.presets().contains(&options)) {
+                continue;
+            }
+            let preset: &'static str = if single { "single" } else { preset };
             let Ok(candidates) = paintings_for_mode(&mapping, options) else {
                 continue;
             };
@@ -1165,6 +1184,21 @@ fn painting_failure_census() -> Result<()> {
             let Some((theirs, _)) = best else { continue };
 
             census.measured = true;
+            if single {
+                single_measured = true;
+                for side in 0..2 {
+                    let streams = [
+                        (&ours[0][side], &theirs[side]),
+                        (&ours[1][side], &theirs[side]),
+                        (&ours[0][side], &ours[1][side]),
+                    ];
+                    for (mask, (left, right)) in single_masks.iter_mut().zip(streams) {
+                        for ((wrong, left), right) in mask[side].iter_mut().zip(left).zip(right) {
+                            *wrong |= left != right;
+                        }
+                    }
+                }
+            }
             let per_fixture = {
                 let mut counts = [0usize; 3];
                 for (index, side) in (0..2).flat_map(|side| [(0usize, side), (1usize, side)]) {
@@ -1183,35 +1217,33 @@ fn painting_failure_census() -> Result<()> {
                 }
                 counts
             };
-            census.rows.push([
-                name.clone(),
-                preset.to_string(),
-                (before.contents.len() + after.contents.len()).to_string(),
-                per_fixture[0].to_string(),
-                per_fixture[1].to_string(),
-                per_fixture[2].to_string(),
-                mapping.text_mappings.len().to_string(),
-                usize::from(census.violating).to_string(),
-            ]);
-            let entry = census.totals.entry(preset).or_insert([0; 4]);
-            entry[3] += before.contents.len() + after.contents.len();
-            for (real, ideal) in ours[0].iter().zip(&ours[1]) {
-                entry[2] += real
-                    .iter()
-                    .zip(ideal)
-                    .filter(|(real, ideal)| real != ideal)
-                    .count();
+            if !single {
+                census.rows.push([
+                    name.clone(),
+                    preset.to_string(),
+                    total_bytes.to_string(),
+                    per_fixture[0].to_string(),
+                    per_fixture[1].to_string(),
+                    per_fixture[2].to_string(),
+                    mapping.text_mappings.len().to_string(),
+                    usize::from(census.violating).to_string(),
+                ]);
+                let entry = census.totals.entry(preset).or_insert([0; 4]);
+                entry[3] += total_bytes;
+                entry[2] += per_fixture[2];
             }
 
             for (stream, index, ast) in [("real", 0usize, real_ast), ("ideal", 1usize, &human_ast)]
             {
                 for side in 0..2 {
                     let (ours, theirs) = (&ours[index][side], &theirs[side]);
-                    census.totals.get_mut(preset).unwrap()[index] += ours
-                        .iter()
-                        .zip(theirs)
-                        .filter(|(ours, theirs)| ours != theirs)
-                        .count();
+                    if !single {
+                        census.totals.get_mut(preset).unwrap()[index] += ours
+                            .iter()
+                            .zip(theirs)
+                            .filter(|(ours, theirs)| ours != theirs)
+                            .count();
+                    }
                     let mut offset = 0usize;
                     while offset < ours.len() {
                         if ours[offset] == theirs[offset] {
@@ -1282,6 +1314,28 @@ fn painting_failure_census() -> Result<()> {
                     }
                 }
             }
+        }
+        if single_measured {
+            let counts = single_masks.map(|mask| {
+                mask.iter()
+                    .map(|side| side.iter().filter(|&&wrong| wrong).count())
+                    .sum::<usize>()
+            });
+            census.rows.push([
+                name.clone(),
+                "single".to_string(),
+                total_bytes.to_string(),
+                counts[0].to_string(),
+                counts[1].to_string(),
+                counts[2].to_string(),
+                mapping.text_mappings.len().to_string(),
+                usize::from(census.violating).to_string(),
+            ]);
+            let entry = census.totals.entry("single").or_insert([0; 4]);
+            for (total, count) in entry.iter_mut().zip(counts) {
+                *total += count;
+            }
+            entry[3] += total_bytes;
         }
         Ok(census)
     };
@@ -1453,8 +1507,7 @@ fn painting_failure_census() -> Result<()> {
         errors.len()
     );
     eprintln!(
-        "{} of the measured fixtures break a ground-truth invariant, {} carry a single painting \
-         held to both presets",
+        "{} of the measured fixtures break a ground-truth invariant, {} carry a single painting",
         measured.intersection(&violating).count(),
         measured.intersection(&single_painting).count(),
     );
@@ -3228,9 +3281,11 @@ fn painting_convention_census() -> Result<()> {
     Ok(())
 }
 
-/// EXPLORATORY: invariants 24 (call dot) and 25 (statement end) held against omnidiff's *own*
-/// painting under each preset, with the human tree mapping deciding which statements were removed.
-/// Prints each break as `fixture  preset  message` and a count per invariant and preset.
+/// EXPLORATORY: the painting invariants held against omnidiff's *own* painting under each preset:
+/// 1 (rows end on visible characters), 4 and 5 (`Full` whitespace), 6 (`Minimal` indentation), 24
+/// (call dot), 25 (statement end, with the human tree mapping deciding which statements were
+/// removed) and 30 (`Full` spacing before an edit). Prints each break as `fixture  preset
+/// message` and a count per invariant and preset.
 ///
 /// `cargo test --profile ci --lib --features test-fixtures painting_convention_engine_census --
 /// --ignored --nocapture`
@@ -3240,7 +3295,9 @@ fn painting_convention_engine_census() -> Result<()> {
     use crate::diff::text::RenderOptions;
     use crate::test::helper::human_mapping::invariants::{
         PaintedLabels, TreeContext, call_dots_go_with_their_member,
-        removed_statements_take_their_terminator,
+        full_paints_a_wholly_changed_line_whole, minimal_never_paints_leading_whitespace,
+        no_unpainted_whitespace_between_painted_regions, removed_statements_take_their_terminator,
+        rows_end_on_visible_characters, spaces_before_edits_follow_their_count_in,
     };
     use std::collections::BTreeMap;
 
@@ -3264,11 +3321,30 @@ fn painting_convention_engine_census() -> Result<()> {
                 crate::test::helper::human_mapping::omnidiff_painting_labels(
                     &diff, &before, &after, options,
                 );
+            let by_preset = if preset == "Full" {
+                full_paints_a_wholly_changed_line_whole(preset, &labels, &before, &after)
+                    .into_iter()
+                    .chain(no_unpainted_whitespace_between_painted_regions(
+                        preset, &labels, &before, &after,
+                    ))
+                    .chain(spaces_before_edits_follow_their_count_in(
+                        &[(preset, labels.clone())],
+                        &before,
+                        &after,
+                    ))
+                    .collect::<Vec<_>>()
+            } else {
+                minimal_never_paints_leading_whitespace(preset, &labels, &before, &after)
+            };
             let found = call_dots_go_with_their_member(preset, &labels, &context, &before, &after)
                 .into_iter()
                 .chain(removed_statements_take_their_terminator(
                     preset, &labels, &context, &before, &after,
-                ));
+                ))
+                .chain(rows_end_on_visible_characters(
+                    preset, &labels, &before, &after,
+                ))
+                .chain(by_preset);
             for violation in found {
                 // For 25: what omnidiff's own mapping does with the `;`, and why.
                 let mut ours = String::new();
@@ -4237,5 +4313,219 @@ fn removed_parent_of_kept_children_census() -> Result<()> {
     for (kind, count) in kinds.iter().take(40) {
         println!("{count:>6}  {kind}");
     }
+    Ok(())
+}
+
+/// EXPLORATORY: every node the human mapping and omnidiff decide differently, one TSV row each,
+/// with both partners spelled out (kind, row, text) and whether the parents are paired - the
+/// node-level view `mismatch_census` (message-level) cannot give. Written to `PAIR_CENSUS_TSV`.
+///
+/// `PAIR_CENSUS_TSV=/tmp/pairs.tsv cargo test --profile ci --lib --features test-fixtures
+/// pair_census -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn pair_census() -> Result<()> {
+    use std::io::Write;
+
+    let path = std::env::var("PAIR_CENSUS_TSV").context("set PAIR_CENSUS_TSV")?;
+    let only: Option<Vec<String>> = std::env::var("FIXTURES").ok().map(|names| {
+        names
+            .split(',')
+            .map(|name| name.trim().to_string())
+            .collect()
+    });
+    let mut out = std::io::BufWriter::new(fs::File::create(&path)?);
+    writeln!(
+        out,
+        "fixture\tside\tvisible\tclass\tkind\tparent_kind\trow\ttext\thuman\tomni\treason\tparents_h\tparents_o\tsame_text\tleaf"
+    )?;
+
+    fn describe(code: &crate::code::Code, node: Option<&Node>) -> String {
+        match node {
+            None => "0".to_string(),
+            Some(node) => {
+                let text = code.contents.get(node.byte_range()).unwrap_or("");
+                let text: String = text.chars().take(40).collect();
+                format!(
+                    "{}@{}:{:?}",
+                    node.kind(),
+                    node.start_position().row + 1,
+                    text
+                )
+            }
+        }
+    }
+
+    /// The human decision for `id`: its partners, or empty when removed; `None` when undecided.
+    fn human_partners(
+        human: &ASTDiff,
+        node: Node,
+        before_side: bool,
+        parents: &rustc_hash::FxHashMap<usize, usize>,
+    ) -> Option<Vec<usize>> {
+        let map = if before_side {
+            &human.before_node_map
+        } else {
+            &human.after_node_map
+        };
+        if map.contains_key(&node.id()) {
+            let partners = if before_side {
+                human.before_partners(node.id())
+            } else {
+                human.after_partners(node.id())
+            };
+            return Some(partners.to_vec());
+        }
+        let mut current = parents.get(&node.id()).copied();
+        while let Some(ancestor) = current {
+            if let Some(&partner) = map.get(&ancestor) {
+                let key = if before_side {
+                    (ancestor, partner)
+                } else {
+                    (partner, ancestor)
+                };
+                let with_children = human.mapping.get(&key).is_some_and(|entry| {
+                    matches!(
+                        entry.operation,
+                        ASTMappingOperation::DeleteWithChildren
+                            | ASTMappingOperation::InsertWithChildren
+                    )
+                });
+                return with_children.then(Vec::new);
+            }
+            current = parents.get(&ancestor).copied();
+        }
+        None
+    }
+
+    let pairs = crate::test::helper::handmade_test_code_pairs()?;
+    let mut names: Vec<&String> = pairs.keys().collect();
+    names.sort();
+    for name in names {
+        if only.as_ref().is_some_and(|only| !only.contains(name)) {
+            continue;
+        }
+        let (before, after) = &pairs[name];
+        let Ok(mapping) = load_with(name, before, after) else {
+            continue;
+        };
+        let Ok(human) = as_ast_diff_for_mapping(&mapping, before, after) else {
+            continue;
+        };
+        let diff = crate::diff::diff_code(before, after);
+        let Some(omni) = diff.ast.as_ref() else {
+            continue;
+        };
+        let node_cache = NodeCache::build(before, after);
+        let side_parents = [
+            crate::code::metadata::metadata_of(before)
+                .node_to_parent
+                .clone(),
+            crate::code::metadata::metadata_of(after)
+                .node_to_parent
+                .clone(),
+        ];
+        let visible = [
+            crate::diff::nodes::structurally_visible_node_ids(before),
+            crate::diff::nodes::structurally_visible_node_ids(after),
+        ];
+        for before_side in [true, false] {
+            let (code, other_code, nodes, other_nodes, omni_map, side) = if before_side {
+                (
+                    before,
+                    after,
+                    &node_cache.before,
+                    &node_cache.after,
+                    &omni.before_node_map,
+                    0,
+                )
+            } else {
+                (
+                    after,
+                    before,
+                    &node_cache.after,
+                    &node_cache.before,
+                    &omni.after_node_map,
+                    1,
+                )
+            };
+            let mut ordered: Vec<&Node> = nodes.values().collect();
+            ordered.sort_by_key(|node| (node.start_byte(), std::cmp::Reverse(node.end_byte())));
+            for node in ordered {
+                let parent_of = |id: usize| side_parents[side].get(&id).copied();
+                let Some(parent) = parent_of(node.id()) else {
+                    continue;
+                };
+                let Some(expected) =
+                    human_partners(&human, *node, before_side, &side_parents[side])
+                else {
+                    continue;
+                };
+                let chosen = omni_map.get(&node.id()).copied().unwrap_or(0);
+                let agrees = if expected.is_empty() {
+                    chosen == 0
+                } else {
+                    expected.contains(&chosen)
+                };
+                if agrees {
+                    continue;
+                }
+                let class = match (expected.is_empty(), chosen == 0) {
+                    (false, true) => "missed",
+                    (true, false) => "spurious",
+                    _ => "wrong",
+                };
+                let reason = omni
+                    .mapping_for_node(&node.id())
+                    .map(|(_, entry)| format!("{:?}/{:?}", entry.operation, entry.reason))
+                    .unwrap_or_default();
+                let human_node = expected.first().and_then(|id| other_nodes.get(id));
+                let omni_node = other_nodes.get(&chosen);
+                // Whether the node's parent is paired with the human partner's parent, in each
+                // mapping.
+                let partner_parent = human_node
+                    .and_then(|partner| side_parents[1 - side].get(&partner.id()).copied());
+                let parents = |paired: &ASTDiff| -> &'static str {
+                    let Some(partner_parent) = partner_parent else {
+                        return "-";
+                    };
+                    let partners = if before_side {
+                        paired.before_partners(parent)
+                    } else {
+                        paired.after_partners(parent)
+                    };
+                    if partners.contains(&partner_parent) {
+                        "paired"
+                    } else {
+                        "apart"
+                    }
+                };
+                let text = code.contents.get(node.byte_range()).unwrap_or("");
+                let same_text = human_node.is_some_and(|partner| {
+                    other_code.contents.get(partner.byte_range()) == Some(text)
+                });
+                writeln!(
+                    out,
+                    "{name}\t{}\t{}\t{class}\t{}\t{}\t{}\t{:?}\t{}\t{}\t{reason}\t{}\t{}\t{same_text}\t{}",
+                    ["before", "after"][side],
+                    visible[side].contains(&node.id()),
+                    node.kind(),
+                    nodes
+                        .get(&parent)
+                        .map(|parent| parent.kind())
+                        .unwrap_or("-"),
+                    node.start_position().row + 1,
+                    text.chars().take(40).collect::<String>(),
+                    describe(other_code, human_node),
+                    describe(other_code, omni_node),
+                    parents(&human),
+                    parents(omni),
+                    node.child_count() == 0,
+                )?;
+            }
+        }
+    }
+    out.flush()?;
+    println!("wrote {path}");
     Ok(())
 }

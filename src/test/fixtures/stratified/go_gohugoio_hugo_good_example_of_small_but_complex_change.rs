@@ -18,15 +18,15 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        3,
-        3,
+        1,
+        1,
     )
 }
 
@@ -34,17 +34,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        0.42,
+        0.3,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariants 12 and 16: the `GetMethodIndexByName` -> `GetMethodByNameForType` rename (row 317
-    // on both sides) is painted under neither preset (12, twice), not as just its differing words
-    // under Minimal and not whole under Full (16, four times).
-    assert_ground_truth_invariants_with_known_violations(
-        "go-gohugoio-hugo-good-example-of-small-but-complex-change",
-        6,
-    )
+    assert_ground_truth_invariants("go-gohugoio-hugo-good-example-of-small-but-complex-change")
 }

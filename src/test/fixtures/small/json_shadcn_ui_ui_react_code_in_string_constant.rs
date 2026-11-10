@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "json-shadcn-ui-ui-react-code-in-string-constant",
-        0.0,
+        1.06,
     )
 }

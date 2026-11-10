@@ -25,14 +25,14 @@ fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-closure-175-functioninjector",
-        57,
-        41,
+        53,
+        37,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-closure-175-functioninjector", 0.48)
+    assert_matches_human_painting_within_limit("java-defects4j-closure-175-functioninjector", 0.42)
 }
 
 #[test]

@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("go-prometheus-single-comment-change", 0.05)
+    assert_matches_human_painting_within_limit("go-prometheus-single-comment-change", 0.0)
 }

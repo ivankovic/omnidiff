@@ -240,17 +240,6 @@
               "end_column": 10
             }
           ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 9,
-              "start_column": 0,
-              "end_row": 9,
-              "end_column": 1
-            }
-          ]
         }
       ]
     }

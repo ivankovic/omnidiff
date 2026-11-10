@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-protocolbuffers-protobuf-add-tests", 0.09)
+    assert_matches_human_painting_within_limit("cpp-protocolbuffers-protobuf-add-tests", 0.0)
 }
 
 #[test]

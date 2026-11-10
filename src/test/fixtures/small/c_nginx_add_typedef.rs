@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -32,23 +32,17 @@ fn mapping() -> Result<()> {
     // sibling-order-consistency check.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-nginx-add-typedef",
-        46,
+        48,
         28,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `binary_expression` on after row 241 is inserted, but it is made of
-    // the children of the `binary_expression` on before row 232, which is paired with the code
-    // around this one instead: the two should pair, and the code around be new.
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   after row 241: the space before the insert `|| data == NGX_SSL_CACHE_DI...` is not painted
-    //     with it
-    assert_ground_truth_invariants_with_known_violations("c-nginx-add-typedef", 2)
+    assert_ground_truth_invariants("c-nginx-add-typedef")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.53)
+    assert_matches_human_painting_within_limit("c-nginx-add-typedef", 0.5)
 }

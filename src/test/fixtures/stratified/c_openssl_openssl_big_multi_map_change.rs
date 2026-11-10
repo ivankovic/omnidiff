@@ -32,18 +32,17 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-openssl-openssl-big-multi-map-change", 1.18)
+    assert_matches_human_painting_within_limit("c-openssl-openssl-big-multi-map-change", 1.16)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Pending Marko's review: ten of invariant 16 (the Minimal painting marks whole identifiers,
-    // e.g. `evp_md` / `md`, where the invariant expects only the differing word `evp_`) and two of
-    // invariant 9 (one byte on before row 444 painted Move that the tree mapping deletes).
+    // Pending Marko's review: two of invariant 9 (one byte on before row 444 painted Move that the
+    // tree mapping deletes).
     // Invariant 25: the deleted `declaration` on before row 445 starts delete but its `;` is
     // unpainted ('Minimal').
     assert_ground_truth_invariants_with_known_violations(
         "c-openssl-openssl-big-multi-map-change",
-        13,
+        3,
     )
 }

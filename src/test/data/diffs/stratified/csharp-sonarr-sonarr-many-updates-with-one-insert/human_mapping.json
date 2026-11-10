@@ -1843,7 +1843,7 @@
           "before": [
             {
               "start_row": 6,
-              "start_column": 39,
+              "start_column": 67,
               "end_row": 7,
               "end_column": 0
             }
@@ -1851,85 +1851,9 @@
           "after": [
             {
               "start_row": 6,
-              "start_column": 39,
+              "start_column": 75,
               "end_row": 7,
               "end_column": 0
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 18,
-              "start_column": 15,
-              "end_row": 18,
-              "end_column": 23
-            }
-          ],
-          "after": [
-            {
-              "start_row": 18,
-              "start_column": 15,
-              "end_row": 18,
-              "end_column": 35
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 22,
-              "start_column": 23,
-              "end_row": 22,
-              "end_column": 31
-            }
-          ],
-          "after": [
-            {
-              "start_row": 22,
-              "start_column": 23,
-              "end_row": 22,
-              "end_column": 43
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 30,
-              "start_column": 23,
-              "end_row": 30,
-              "end_column": 31
-            }
-          ],
-          "after": [
-            {
-              "start_row": 30,
-              "start_column": 23,
-              "end_row": 30,
-              "end_column": 43
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 33,
-              "start_column": 19,
-              "end_row": 33,
-              "end_column": 27
-            }
-          ],
-          "after": [
-            {
-              "start_row": 33,
-              "start_column": 19,
-              "end_row": 33,
-              "end_column": 39
             }
           ]
         },
@@ -1941,6 +1865,61 @@
               "start_column": 51,
               "end_row": 30,
               "end_column": 87
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 6,
+              "start_column": 40,
+              "end_row": 6,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 15,
+              "end_row": 18,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 22,
+              "start_column": 23,
+              "end_row": 22,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 30,
+              "start_column": 23,
+              "end_row": 30,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 33,
+              "start_column": 19,
+              "end_row": 33,
+              "end_column": 31
             }
           ]
         }

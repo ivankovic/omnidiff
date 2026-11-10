@@ -39,6 +39,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "javascript-microsoft-typescript-broken-js-remove-string-fragment",
-        0.01,
+        0.0,
     )
 }

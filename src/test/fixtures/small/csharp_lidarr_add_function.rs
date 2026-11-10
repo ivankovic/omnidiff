@@ -36,5 +36,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("csharp-lidarr-add-function", 1.13)
+    assert_matches_human_painting_within_limit("csharp-lidarr-add-function", 1.12)
 }

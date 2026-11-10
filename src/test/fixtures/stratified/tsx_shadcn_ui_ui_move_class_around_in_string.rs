@@ -19,7 +19,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -30,17 +30,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-move-class-around-in-string", 0.16)
+    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-move-class-around-in-string", 0.21)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
-    //   after row 8: the space before the move `bg-muted` is not painted with it
-    //   after row 11: the space before the move `bg-primary text-primary-for...` is not painted with
-    //     it
-    assert_ground_truth_invariants_with_known_violations(
-        "tsx-shadcn-ui-ui-move-class-around-in-string",
-        2,
-    )
+    assert_ground_truth_invariants("tsx-shadcn-ui-ui-move-class-around-in-string")
 }

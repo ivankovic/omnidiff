@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -25,17 +25,14 @@ fn mapping() -> Result<()> {
     // delimiters.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-godot-small-bugfix",
-        13,
+        11,
         7,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `binary_expression` on before row 120 is deleted, but it is made of
-    // the children of the `binary_expression` on after row 120, which is paired with the code
-    // around this one instead: the two should pair, and the code around be removed.
-    assert_ground_truth_invariants_with_known_violations("cpp-godot-small-bugfix", 1)
+    assert_ground_truth_invariants("cpp-godot-small-bugfix")
 }
 
 #[test]

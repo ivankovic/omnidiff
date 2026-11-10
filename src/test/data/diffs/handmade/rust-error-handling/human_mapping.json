@@ -1469,7 +1469,7 @@
           "after": [
             {
               "start_row": 10,
-              "start_column": 10,
+              "start_column": 9,
               "end_row": 10,
               "end_column": 39
             }

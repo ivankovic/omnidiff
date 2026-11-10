@@ -7554,17 +7554,6 @@
           ]
         },
         {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 352,
-              "start_column": 0,
-              "end_row": 352,
-              "end_column": 2
-            }
-          ]
-        },
-        {
           "operation": "Match",
           "before": [
             {

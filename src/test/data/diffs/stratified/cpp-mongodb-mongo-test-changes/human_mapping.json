@@ -8155,17 +8155,6 @@
           ]
         },
         {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 277,
-              "start_column": 0,
-              "end_row": 277,
-              "end_column": 8
-            }
-          ]
-        },
-        {
           "operation": "Match",
           "before": [
             {

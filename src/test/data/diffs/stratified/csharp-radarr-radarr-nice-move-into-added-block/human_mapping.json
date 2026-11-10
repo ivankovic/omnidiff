@@ -5557,7 +5557,7 @@
           "before": [
             {
               "start_row": 37,
-              "start_column": 49,
+              "start_column": 53,
               "end_row": 37,
               "end_column": 55
             }
@@ -5565,7 +5565,7 @@
           "after": [
             {
               "start_row": 40,
-              "start_column": 58,
+              "start_column": 62,
               "end_row": 40,
               "end_column": 64
             }
@@ -5583,17 +5583,6 @@
           ]
         },
         {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 37,
-              "start_column": 43,
-              "end_row": 37,
-              "end_column": 49
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -5601,6 +5590,17 @@
               "start_column": 44,
               "end_row": 40,
               "end_column": 58
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 37,
+              "start_column": 43,
+              "end_row": 37,
+              "end_column": 49
             }
           ]
         }
@@ -5704,7 +5704,7 @@
           "before": [
             {
               "start_row": 35,
-              "start_column": 64,
+              "start_column": 63,
               "end_row": 35,
               "end_column": 74
             },
@@ -5865,7 +5865,7 @@
           "before": [
             {
               "start_row": 37,
-              "start_column": 49,
+              "start_column": 53,
               "end_row": 37,
               "end_column": 55
             }
@@ -5873,7 +5873,7 @@
           "after": [
             {
               "start_row": 40,
-              "start_column": 58,
+              "start_column": 62,
               "end_row": 40,
               "end_column": 64
             }
@@ -6046,13 +6046,21 @@
           ]
         },
         {
-          "operation": "Delete",
+          "operation": "Match",
           "before": [
             {
               "start_row": 37,
               "start_column": 43,
               "end_row": 37,
-              "end_column": 49
+              "end_column": 53
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 58,
+              "end_row": 40,
+              "end_column": 62
             }
           ]
         }

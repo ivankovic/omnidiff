@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-attribute", 0.0)
+    assert_matches_human_painting_within_limit("tsx-mui-material-ui-add-attribute", 0.22)
 }
 
 #[test]

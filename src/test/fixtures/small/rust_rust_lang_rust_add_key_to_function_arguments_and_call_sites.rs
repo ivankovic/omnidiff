@@ -37,6 +37,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-rust-lang-rust-add-key-to-function-arguments-and-call-sites",
-        0.03,
+        0.0,
     )
 }

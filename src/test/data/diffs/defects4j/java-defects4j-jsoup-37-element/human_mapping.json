@@ -2904,17 +2904,6 @@
           ]
         },
         {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 1100,
-              "start_column": 14,
-              "end_row": 1100,
-              "end_column": 15
-            }
-          ]
-        },
-        {
           "operation": "Match",
           "before": [
             {

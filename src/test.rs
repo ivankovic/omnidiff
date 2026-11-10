@@ -27,7 +27,6 @@ mod tests {
     /// exemption: shrink it by writing the explanation or tightening the limit; never grow it.
     #[cfg(feature = "test-fixtures")]
     const CLAMPS_WITHOUT_AN_EXPLANATION: &[&str] = &[
-        "c-linux-small-change-struct-to-char",
         "cpp-ladybird-refactor-variables-if-changes",
         "cpp-tensorflow-switch-to-primitive-types",
         "csharp-cyanfish-naps2-add-condition-to-if",

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -27,12 +27,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-7-patternbuilder", 0.53)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-7-patternbuilder", 0.41)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16, twice: the `HashSet` <-> `LinkedHashSet` rename (before row 19, after row 20) is
-    // not painted as its differing word `Linked` under Minimal.
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-cli-7-patternbuilder", 2)
+    assert_ground_truth_invariants("java-defects4j-cli-7-patternbuilder")
 }

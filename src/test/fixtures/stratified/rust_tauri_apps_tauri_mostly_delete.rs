@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,11 +32,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 3 time(s): the space before an edit (awaiting a repaint):
-    //   before row 25: the space before the delete `InvokeResponder,` is not painted with it
-    //   before row 257: the indentation before `(invoke_responder, invoke_i...` is painted, though
-    //     it did not change
-    //   before row 734: the indentation before `(None, "".into())` is painted, though it did not
-    //     change
-    assert_ground_truth_invariants_with_known_violations("rust-tauri-apps-tauri-mostly-delete", 3)
+    assert_ground_truth_invariants("rust-tauri-apps-tauri-mostly-delete")
 }

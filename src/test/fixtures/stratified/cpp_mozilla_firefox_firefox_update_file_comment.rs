@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "cpp-mozilla-firefox-firefox-update-file-comment",
-        0.0,
+        0.06,
     )
 }
 

@@ -3435,17 +3435,6 @@
           "operation": "Insert",
           "after": [
             {
-              "start_row": 17,
-              "start_column": 47,
-              "end_row": 17,
-              "end_column": 48
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
               "start_row": 24,
               "start_column": 0,
               "end_row": 24,
@@ -4174,6 +4163,25 @@
               "start_column": 48,
               "end_row": 32,
               "end_column": 49
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 16,
+              "start_column": 43,
+              "end_row": 16,
+              "end_column": 47
+            }
+          ],
+          "after": [
+            {
+              "start_row": 17,
+              "start_column": 43,
+              "end_row": 17,
+              "end_column": 48
             }
           ]
         }

@@ -19,11 +19,17 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping("csharp-sonarr-sonarr-move-plus-add")
+    // Invariant 28 convention: the mapping pairs the wrapped node with the new inner one, and
+    // omnidiff pairs it with the new wrapper - two nodes either way.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+        "csharp-sonarr-sonarr-move-plus-add",
+        2,
+        0,
+    )
 }
 
 #[test]
@@ -33,8 +39,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `invocation_expression` on after row 123 is inserted, but it is made
-    // of the children of the `invocation_expression` on before row 92, which is paired with the
-    // code around this one instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations("csharp-sonarr-sonarr-move-plus-add", 1)
+    assert_ground_truth_invariants("csharp-sonarr-sonarr-move-plus-add")
 }

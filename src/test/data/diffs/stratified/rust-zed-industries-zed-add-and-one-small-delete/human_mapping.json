@@ -5903,17 +5903,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:8",
-        "block:1",
-        "expression_statement:1",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:7"
-      ],
+      "operation": "insert",
       "after_path": [
         "impl_item:2",
         "declaration_list:1",
@@ -5926,7 +5916,17 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "impl_item:2",
+        "declaration_list:1",
+        "function_item:8",
+        "block:1",
+        "expression_statement:1",
+        "if_expression:1",
+        "block:1",
+        "expression_statement:7"
+      ],
       "after_path": [
         "impl_item:2",
         "declaration_list:1",
@@ -6451,29 +6451,6 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:10",
-        "block:1",
-        "expression_statement:1",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:2"
-      ],
-      "after_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:10",
-        "block:1",
-        "expression_statement:1",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:2"
-      ]
-    },
-    {
       "operation": "insert",
       "after_path": [
         "impl_item:2",
@@ -6483,10 +6460,7 @@
         "expression_statement:1",
         "if_expression:1",
         "block:1",
-        "expression_statement:2",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:1"
+        "expression_statement:2"
       ]
     },
     {
@@ -6499,8 +6473,7 @@
         "expression_statement:1",
         "if_expression:1",
         "block:1",
-        "expression_statement:2",
-        "call_expression:1"
+        "expression_statement:2"
       ],
       "after_path": [
         "impl_item:2",
@@ -6513,36 +6486,7 @@
         "expression_statement:2",
         "if_expression:1",
         "block:1",
-        "expression_statement:1",
-        "call_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:10",
-        "block:1",
-        "expression_statement:1",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:2",
-        ";:1"
-      ],
-      "after_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:10",
-        "block:1",
-        "expression_statement:1",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:2",
-        "if_expression:1",
-        "block:1",
-        "expression_statement:1",
-        ";:1"
+        "expression_statement:1"
       ]
     },
     {

@@ -41,46 +41,36 @@ pub(crate) fn maximal_unmatched_roots(
     meta: &ASTMetadata,
     node_map: &rustc_hash::FxHashMap<usize, usize>,
 ) -> Vec<usize> {
-    let mut has_matched_descendant = rustc_hash::FxHashMap::default();
-    subtree_has_any_match(root_id, meta, node_map, &mut has_matched_descendant);
-
     let mut result = Vec::new();
-    let mut stack = vec![root_id];
-    while let Some(id) = stack.pop() {
-        let matched_here = node_map.contains_key(&id);
-        let matched_below = has_matched_descendant.get(&id).copied().unwrap_or(false);
-        if !matched_here && !matched_below {
-            result.push(id);
-            continue;
-        }
-        if let Some(info) = meta.node_info.get(&id) {
-            for &child in info.children.iter().rev() {
-                stack.push(child);
-            }
-        }
+    if !collect_unmatched_roots(root_id, meta, node_map, &mut result) {
+        result.clear();
+        result.push(root_id);
     }
     result
 }
 
-/// Fills `out[id]` with whether some node strictly under `id` is in `node_map`, and returns it.
-pub(crate) fn subtree_has_any_match(
+/// Appends the maximal unmatched roots strictly under `id` to `out` and returns whether `id`'s
+/// subtree, `id` included, holds a matched node. One postorder pass: a child found wholly
+/// unmatched takes back whatever its own descendants appended and stands in for them, at their
+/// position, so `out` stays in preorder.
+fn collect_unmatched_roots(
     id: usize,
     meta: &ASTMetadata,
     node_map: &rustc_hash::FxHashMap<usize, usize>,
-    out: &mut rustc_hash::FxHashMap<usize, bool>,
+    out: &mut Vec<usize>,
 ) -> bool {
-    let Some(info) = meta.node_info.get(&id) else {
-        return node_map.contains_key(&id);
-    };
-    let mut any_matched = false;
-    for &child in &info.children {
-        let child_matched = node_map.contains_key(&child);
-        let child_has_matched_descendant = subtree_has_any_match(child, meta, node_map, out);
-        if child_matched || child_has_matched_descendant {
-            any_matched = true;
+    let mut any_matched = node_map.contains_key(&id);
+    if let Some(info) = meta.node_info.get(&id) {
+        for &child in &info.children {
+            let mark = out.len();
+            if collect_unmatched_roots(child, meta, node_map, out) {
+                any_matched = true;
+            } else {
+                out.truncate(mark);
+                out.push(child);
+            }
         }
     }
-    out.insert(id, any_matched);
     any_matched
 }
 

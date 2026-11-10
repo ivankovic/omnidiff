@@ -142,8 +142,10 @@ file.
 - `quality_baseline.csv` - the per-fixture accuracy gate of `make check-quality`, written by
   `make update-quality-baseline` as a projection of the `fixtures` stubs' limits.
 - `painting_attribution.csv` - the painting gate of `make check-painting-attribution`, one row per
-  fixture and preset, written by `make update-painting-attribution` (the `painting_failure_census`
-  test).
+  fixture and graded case, written by `make update-painting-attribution` (the
+  `painting_failure_census` test). The `preset` column is `minimal` or `full`, or `single` for a
+  fixture whose lone painting names no preset: both presets are rendered against that one painting,
+  and a byte counts as mismatched when either disagrees with it (`GradedCase::Single`).
 - `mismatch_census.csv` - every mismatch against the human mapping, classified by operation,
   reason and node kind, written by the `mismatch_census` test.
 - `convention_census.csv` - leaves whose text survived but whose painting differs between

@@ -18,15 +18,17 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // A method body wrapped in a new `if`: `solve_wrapped_blocks` pairs the old body with the outer
+    // braces, while this ground truth pairs it with the inner block (invariant 28's convention).
+    // The rest recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        162,
-        111,
+        168,
+        115,
     )
 }
 
@@ -34,22 +36,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-closure-137-makedeclarednamesunique",
-        10.53,
+        7.72,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 1, both presets: the last painted run on after row 319 ends on a space. Invariant 5:
-    // Full leaves the whitespace at columns 47..48 of after row 318 unpainted between two painted
-    // regions. Invariant 16, twice: the `AbstractPostOrderCallback` <-> `ScopedCallback` rename on
-    // row 26 is not painted entire under Full.
-    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
-    //   before row 235: the space before the delete `extends AbstractPostOrderCa...` is not painted
-    //     with it
-    //   after row 237: the space before the insert `ScopedCallback,` is not painted with it
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-137-makedeclarednamesunique",
-        7,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-137-makedeclarednamesunique")
 }

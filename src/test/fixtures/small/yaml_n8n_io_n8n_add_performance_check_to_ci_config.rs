@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "yaml-n8n-io-n8n-add-performance-check-to-ci-config",
-        0.03,
+        0.0,
     )
 }

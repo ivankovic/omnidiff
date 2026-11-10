@@ -1260,39 +1260,6 @@
           ]
         },
         {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 10,
-              "start_column": 76,
-              "end_row": 10,
-              "end_column": 77
-            }
-          ]
-        },
-        {
-          "operation": "Insert",
-          "after": [
-            {
-              "start_row": 7,
-              "start_column": 77,
-              "end_row": 7,
-              "end_column": 78
-            }
-          ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 7,
-              "start_column": 28,
-              "end_row": 7,
-              "end_column": 29
-            }
-          ]
-        },
-        {
           "operation": "Match",
           "before": [
             {
@@ -1308,6 +1275,44 @@
               "start_column": 87,
               "end_row": 10,
               "end_column": 111
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 28,
+              "end_row": 7,
+              "end_column": 29
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 77,
+              "end_row": 7,
+              "end_column": 78
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 60,
+              "end_row": 10,
+              "end_column": 61
+            }
+          ],
+          "after": [
+            {
+              "start_row": 10,
+              "start_column": 76,
+              "end_row": 10,
+              "end_column": 77
             }
           ]
         }

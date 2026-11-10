@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jacksondatabind-37-simpletype", 0.09)
+    assert_matches_human_painting_within_limit("java-defects4j-jacksondatabind-37-simpletype", 0.02)
 }
 
 #[test]

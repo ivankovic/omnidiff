@@ -23,11 +23,9 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 #[test]
 fn mapping() -> Result<()> {
     // A rare example of a true move: the rotated-comment-run shape of
-    // `ruby-mastodon-mastodon-move`, mis-paired by position.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    // `ruby-mastodon-mastodon-move` (`solve_permuted_leaves`).
+    test::helper::human_mapping::assert_matches_human_mapping(
         "ruby-mastodon-mastodon-rare-example-of-true-move",
-        3,
-        3,
     )
 }
 
@@ -35,7 +33,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "ruby-mastodon-mastodon-rare-example-of-true-move",
-        15.55,
+        0.62,
     )
 }
 

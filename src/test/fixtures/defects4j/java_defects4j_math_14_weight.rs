@@ -26,14 +26,14 @@ fn mapping() -> Result<()> {
     // (one against a `type_identifier`). The scaffolding-reuse family.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-math-14-weight",
-        10,
         8,
+        6,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-math-14-weight", 0.67)
+    assert_matches_human_painting_within_limit("java-defects4j-math-14-weight", 0.28)
 }
 
 #[test]

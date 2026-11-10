@@ -33,7 +33,7 @@
 //! | 4 | `solve_syntax_aware_matching`: flat containers by Myers, qualified names, imports, `solve_greedy_anchor_blocks`; APTED inside each matched pair | phase 3 |
 //! | 6 | residual: named-local prematch, `solve_bottom_up_propagation`, `solve_unique_type_matching`, the Myers-LCS fallback ([`apted::for_roots_fallback`]), propagation again, `solve_orphaned_leaves` | phase 4 |
 //! | 7 | `solve_moved_subtrees`: GumTree-style move recovery | phase 5 |
-//! | 8, 8b, 9 | `solve_mutual_ancestors`, `solve_leaf_neighbour_agreement`, `solve_wrap_growth`: refine and re-tag existing pairs | - |
+//! | 8, 8b, 9 | `solve_mutual_ancestors`, `solve_leaf_neighbour_agreement`, `solve_wrapped_blocks`, `solve_wrap_growth`: refine and re-tag existing pairs | - |
 //! | 10 | `solve_unresolved_nodes`: delete/insert for every undecided node | closing step |
 //!
 //! [`text`] turns the finished node mapping into the byte ranges the viewers paint.
@@ -68,15 +68,20 @@ pub(crate) mod solve_multi_maps;
 pub(crate) mod solve_mutual_ancestors;
 pub(crate) mod solve_nested_condition_collapse;
 pub(crate) mod solve_orphaned_leaves;
+pub(crate) mod solve_permuted_leaves;
 pub(crate) mod solve_renamed_twins;
 pub(crate) mod solve_replaced_atoms;
+pub(crate) mod solve_sibling_terminators;
 pub(crate) mod solve_statement_shells;
 pub(crate) mod solve_stray_renames;
 pub(crate) mod solve_stray_terminators;
+pub(crate) mod solve_surviving_values;
 pub(crate) mod solve_syntax_aware_matching;
 pub(crate) mod solve_unique_type_matching;
+pub(crate) mod solve_unrelated_imports;
 pub(crate) mod solve_unresolved_nodes;
 pub(crate) mod solve_wrap_growth;
+pub(crate) mod solve_wrapped_blocks;
 pub mod text;
 pub mod text_range;
 
@@ -399,6 +404,10 @@ impl<'code> PendingDiff<'code> {
         // match; before phase 9, so that re-tags the corrected pairing.
         solve_leaf_neighbour_agreement::solve(&ctx, &mut ast_diff);
 
+        // Phase 9, before wrap growth tags the statements it leaves in the wrapper: like it, it
+        // needs the matched container above the new wrapper, which the fallback often resolves.
+        solve_wrapped_blocks::solve(&ctx, &mut ast_diff);
+
         // Phase 9: unlike phase 1c, the matched container above the new wrapper is often only
         // resolved by the fallback (`rust-add-if`, `typescript-add-error-handling`); any earlier
         // and it finds no ancestor to climb to and silently does nothing.
@@ -407,13 +416,23 @@ impl<'code> PendingDiff<'code> {
         // Phase 9b: after every pass that can pair a leaf, so no later one re-pairs what it unpairs;
         // before phase 10, which records the delete and insert.
         solve_stray_renames::solve(&ctx, &mut ast_diff);
+        // After stray renames, so only a rename that stayed under its paired parent is re-read
+        // as a leaf that changed places.
+        solve_permuted_leaves::solve(&ctx, &mut ast_diff);
+        // After every pass that can pair an import, the fallback above all.
+        solve_unrelated_imports::solve(&ctx, &mut ast_diff);
         // Beside stray renames and for the same reason: after every pass that can pair a leaf.
         solve_stray_terminators::solve(&ctx, &mut ast_diff);
+        // After stray terminators, which only unpairs `;`s inside statements; this re-pairs the
+        // ones beside them.
+        solve_sibling_terminators::solve(&ctx, &mut ast_diff);
         // After stray renames, so only a rename that stayed in its construct is weighed against a
         // twin; after every pass that can pair a leaf, so the twin is truly unpaired.
         solve_renamed_twins::solve(&ctx, &mut ast_diff);
         // After the leaf re-pairings, so a slot it reads as wholly unpaired really is.
         solve_replaced_atoms::solve(&ctx, &mut ast_diff);
+        // After replaced atoms, which pairs whole values; this pairs what survives inside them.
+        solve_surviving_values::solve(&ctx, &mut ast_diff);
         // After every pass that can pair a leaf, so a statement it reads as removed is gone, and
         // the moved value it takes as evidence is final.
         solve_statement_shells::solve(&ctx, &mut ast_diff);
@@ -550,8 +569,10 @@ impl ASTDiff {
             let after_node = after_node.unwrap();
             // A value replaced in place pairs across kinds on purpose (`FLAG` becoming `0`); the
             // kind rule guards the tree edit distance's relabelling, not that judgement.
-            let replaced_atom =
-                self.mapping[&(*before_id, *after_id)].reason == ASTMappingReason::ReplacedAtom;
+            let replaced_atom = matches!(
+                self.mapping[&(*before_id, *after_id)].reason,
+                ASTMappingReason::ReplacedAtom | ASTMappingReason::SurvivingValue
+            );
             if before_node.kind() != after_node.kind()
                 && !replaced_atom
                 && !crate::diff::nodes::kinds_update_allowed(
@@ -885,6 +906,18 @@ pub enum ASTMappingReason {
     /// A statement whose value moved out of it, paired with the one of its kind that took its
     /// place, with the keywords and punctuation they share. See `solve_statement_shells`.
     StatementShell,
+    /// A block whose statements gained (or lost) a wrapper, paired with the block in its own slot
+    /// rather than the one around the statements, with its delimiters. See `solve_wrapped_blocks`.
+    WrappedBlock,
+    /// A `;` beside its statement rather than inside it, paired with the one beside the
+    /// statement's partner. See `solve_sibling_terminators`.
+    SiblingTerminator,
+    /// A renamed leaf re-paired with the sibling-side leaf that reads the same: it changed
+    /// places, not text. See `solve_permuted_leaves`.
+    PermutedLeaf,
+    /// A value that kept its text in the same slot while the expression around it was rewritten.
+    /// See `solve_surviving_values`.
+    SurvivingValue,
 }
 
 impl ASTMappingReason {
@@ -916,6 +949,10 @@ impl ASTMappingReason {
             ASTMappingReason::RenamedTwin => "RenamedTwin",
             ASTMappingReason::ReplacedAtom => "ReplacedAtom",
             ASTMappingReason::StatementShell => "StatementShell",
+            ASTMappingReason::WrappedBlock => "WrappedBlock",
+            ASTMappingReason::SiblingTerminator => "SiblingTerminator",
+            ASTMappingReason::PermutedLeaf => "PermutedLeaf",
+            ASTMappingReason::SurvivingValue => "SurvivingValue",
         }
     }
 }

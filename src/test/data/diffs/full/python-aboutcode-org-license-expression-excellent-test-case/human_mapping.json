@@ -9126,7 +9126,15 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "match_but_not_identical",
+      "before_path": [
+        "decorated_definition:5",
+        "class_definition:1",
+        "block:1",
+        "function_definition:2",
+        "block:1",
+        "expression_statement:2"
+      ],
       "after_path": [
         "decorated_definition:5",
         "class_definition:1",
@@ -9197,17 +9205,6 @@
         "expression_statement:2",
         "yield:1",
         "from:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "decorated_definition:5",
-        "class_definition:1",
-        "block:1",
-        "function_definition:2",
-        "block:1",
-        "expression_statement:2"
       ]
     },
     {

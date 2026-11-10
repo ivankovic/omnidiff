@@ -21,11 +21,8 @@ use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet root-caused.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "go-cloudflare-cfssl-change-zero-value-to-is-zero",
-        2,
-        2,
     )
 }
 
@@ -38,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "go-cloudflare-cfssl-change-zero-value-to-is-zero",
-        0.06,
+        0.01,
     )
 }

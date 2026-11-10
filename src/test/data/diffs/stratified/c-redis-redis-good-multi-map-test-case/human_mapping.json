@@ -12485,6 +12485,25 @@
               "end_column": 9
             }
           ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3266,
+              "start_column": 30,
+              "end_row": 3266,
+              "end_column": 32
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3280,
+              "start_column": 30,
+              "end_row": 3280,
+              "end_column": 34
+            }
+          ]
         }
       ]
     },
@@ -12698,7 +12717,7 @@
           "after": [
             {
               "start_row": 1737,
-              "start_column": 85,
+              "start_column": 84,
               "end_row": 1737,
               "end_column": 86
             }
@@ -13020,6 +13039,25 @@
               "start_column": 0,
               "end_row": 1747,
               "end_column": 4
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3266,
+              "start_column": 30,
+              "end_row": 3266,
+              "end_column": 32
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3280,
+              "start_column": 30,
+              "end_row": 3280,
+              "end_column": 34
             }
           ]
         }

@@ -94,10 +94,12 @@ pub enum TextOperation {
 /// trims it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RenderOptions {
-    /// Whether an `Insert`/`Delete` range keeps the indentation in front of it, on every row. Off,
-    /// a multi-row range splits into one piece per row, each trimmed to its own content, since no
-    /// single `TextRange` can trim every row's indentation. One field for the first row and the
-    /// interior rows because no painting ever wants them to differ.
+    /// Whether an `Insert`/`Delete` range keeps the whitespace in front of it: the indentation of
+    /// every row it covers, and the blank an edit inside a line added along with it (` async` in
+    /// `pub async fn`, see `edit_spacing`). Off, a multi-row range splits into one piece per row,
+    /// each trimmed to its own content, since no single `TextRange` can trim every row's
+    /// indentation. One field for the first row and the interior rows because no painting ever
+    /// wants them to differ.
     ///
     /// `Move`/`Update` ranges are never split: their destinations are real positions, and a
     /// per-row split would need a matching split on the other side.
@@ -185,8 +187,9 @@ pub const OPTION_INFO: [OptionInfo; 8] = [
         name: "Highlight the indentation of added and removed lines",
         short: "indentation",
         description: "On, a line that was added or removed is highlighted from the left margin, its \
-            indentation included, so a new block reads as one bar. Off, only its code is \
-            highlighted and the indentation stays plain.",
+            indentation included, so a new block reads as one bar, and a word added inside a line \
+            takes the space it brought along. Off, only the code is highlighted and the \
+            whitespace stays plain.",
     },
     OptionInfo {
         name: "Highlight brackets and separators that only shifted",

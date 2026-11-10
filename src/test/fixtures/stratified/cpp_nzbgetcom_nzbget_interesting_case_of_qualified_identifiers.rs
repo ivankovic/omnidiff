@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -40,12 +40,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
-    // separator (awaiting a repaint):
-    //   before row 17 leaves 4 of the 4 byte(s) of `http` unpainted, which becomes `https`
-    //   after row 18 leaves 4 of the 5 byte(s) of `https` unpainted, which becomes `http`
-    assert_ground_truth_invariants_with_known_violations(
-        "cpp-nzbgetcom-nzbget-interesting-case-of-qualified-identifiers",
-        2,
-    )
+    assert_ground_truth_invariants("cpp-nzbgetcom-nzbget-interesting-case-of-qualified-identifiers")
 }

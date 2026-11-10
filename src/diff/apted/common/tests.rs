@@ -1690,6 +1690,34 @@ fn maximal_unmatched_roots_stops_at_first_unmatched_node_each_branch() {
     );
 }
 
+/// Roots come out in preorder, an unmatched node with a matched descendant is descended into
+/// however deep the match sits, and a wholly unmatched root is its own only root.
+#[test]
+fn maximal_unmatched_roots_are_in_preorder_and_stop_only_at_wholly_unmatched_subtrees() {
+    // root(1) -> A(2) -> C(4) -> E(6, matched)
+    //                 -> F(7)
+    //         -> B(3, matched) -> D(5)
+    //         -> G(8) -> H(9)
+    let mut meta = ASTMetadata::default();
+    interior(1, vec![2, 3, 8], &mut meta);
+    interior(2, vec![4, 7], &mut meta);
+    interior(4, vec![6], &mut meta);
+    interior(3, vec![5], &mut meta);
+    interior(8, vec![9], &mut meta);
+    for (id, hash) in [(5, 50), (6, 60), (7, 70), (9, 90)] {
+        leaf(id, hash, &mut meta);
+    }
+    let mut node_map = rustc_hash::FxHashMap::default();
+    node_map.insert(6, 600);
+    node_map.insert(3, 300);
+
+    assert_eq!(maximal_unmatched_roots(1, &meta, &node_map), vec![7, 5, 8]);
+    assert_eq!(
+        maximal_unmatched_roots(1, &meta, &rustc_hash::FxHashMap::default()),
+        vec![1]
+    );
+}
+
 #[test]
 fn resolve_residual_forest_via_myers_lcs_matches_identical_and_recurses_the_rest() {
     // One child pair shares a hash; the other is alone in the gap after it, so it recurses

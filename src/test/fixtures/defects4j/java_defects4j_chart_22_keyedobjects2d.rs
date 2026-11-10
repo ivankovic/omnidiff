@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,15 +32,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-chart-22-keyedobjects2d", 1.03)
+    assert_matches_human_painting_within_limit("java-defects4j-chart-22-keyedobjects2d", 1.04)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 1: both paintings end a run on the trailing space of after rows 321, 332 and 368.
-    // The file is CRLF and those lines carry a real space before the `\r`, so these are real.
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-chart-22-keyedobjects2d",
-        6,
-    )
+    assert_ground_truth_invariants("java-defects4j-chart-22-keyedobjects2d")
 }

@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // `APTED("fast_fallback")` cannot align nodes whose position in the residual forest moved.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "scala-com-lihaoyi-mill-new-import-used-to-remove-a-lot-of-code",
-        53,
-        30,
+        51,
+        28,
     )
 }
 

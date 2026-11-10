@@ -10,7 +10,13 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "import_statement:4",
+        "import_clause:1",
+        "named_imports:1",
+        "import_specifier:1"
+      ],
       "after_path": [
         "import_statement:5",
         "import_clause:1",
@@ -281,15 +287,6 @@
         "import_clause:1",
         "named_imports:1",
         "{:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "import_statement:4",
-        "import_clause:1",
-        "named_imports:1",
-        "import_specifier:1"
       ]
     },
     {

@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksondatabind-83-fromstringdeserializer",
-        0.14,
+        0.0,
     )
 }
 

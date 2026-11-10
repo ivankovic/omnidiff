@@ -91082,18 +91082,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:13",
-        "compound_statement:1",
-        "for_statement:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1"
-      ],
+      "operation": "insert",
       "after_path": [
         "namespace_definition:1",
         "declaration_list:1",
@@ -102812,21 +102801,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1"
-      ],
+      "operation": "insert",
       "after_path": [
         "namespace_definition:1",
         "declaration_list:1",
@@ -111051,7 +111026,18 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:13",
+        "compound_statement:1",
+        "for_statement:1",
+        "compound_statement:1",
+        "if_statement:1",
+        "condition_clause:1",
+        "binary_expression:1"
+      ],
       "after_path": [
         "namespace_definition:1",
         "declaration_list:1",
@@ -119953,7 +119939,21 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical_with_children",
+      "before_path": [
+        "namespace_definition:1",
+        "declaration_list:1",
+        "function_definition:17",
+        "compound_statement:1",
+        "expression_statement:1",
+        "call_expression:1",
+        "argument_list:1",
+        "lambda_expression:1",
+        "compound_statement:1",
+        "if_statement:1",
+        "condition_clause:1",
+        "binary_expression:1"
+      ],
       "after_path": [
         "namespace_definition:1",
         "declaration_list:1",
@@ -119968,108 +119968,6 @@
         "condition_clause:1",
         "binary_expression:1",
         "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "call_expression:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "call_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "||:1"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "||:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "call_expression:2"
-      ],
-      "after_path": [
-        "namespace_definition:1",
-        "declaration_list:1",
-        "function_definition:17",
-        "compound_statement:1",
-        "expression_statement:1",
-        "call_expression:1",
-        "argument_list:1",
-        "lambda_expression:1",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "call_expression:2"
       ]
     },
     {
@@ -128304,7 +128202,7 @@
           "after": [
             {
               "start_row": 573,
-              "start_column": 59,
+              "start_column": 58,
               "end_row": 573,
               "end_column": 86
             }
@@ -128389,7 +128287,7 @@
           "after": [
             {
               "start_row": 461,
-              "start_column": 67,
+              "start_column": 66,
               "end_row": 461,
               "end_column": 98
             }

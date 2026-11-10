@@ -27,7 +27,7 @@ main() {
   if [[ $# -gt 0 ]]; then
     cd "$1"
   fi
-  local boxes=("1 1" "3 4" "5 2")
+  local -a boxes=("1 1" "3 4" "5 2")
   if [[ -n ${VERBOSE:-} ]]; then
     for box in "${boxes[@]}"; do
       describe crate $box

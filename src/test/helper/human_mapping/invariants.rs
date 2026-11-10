@@ -481,7 +481,7 @@ pub(crate) fn painted_labels(
 ///
 /// Checked against the projected labels, not raw spans, so the `\n` a span ending at column 0 of
 /// the next row swallows is not reported: nothing paints it.
-fn rows_end_on_visible_characters(
+pub(crate) fn rows_end_on_visible_characters(
     painting: &str,
     labels: &PaintedLabels,
     before: &Code,
@@ -705,7 +705,7 @@ fn rows_of(contents: &str) -> impl Iterator<Item = (usize, usize, &str)> {
 /// genuinely be unchanged. Any verdict on the whitespace passes, only **unpainted** bytes are
 /// reported: pairing shared indentation in a `Match` is a stronger claim, not a weaker one
 /// (`go-lazygit-switch-to-strings` row 22). A line with nothing visible is skipped.
-fn full_paints_a_wholly_changed_line_whole(
+pub(crate) fn full_paints_a_wholly_changed_line_whole(
     painting: &str,
     labels: &PaintedLabels,
     before: &Code,
@@ -769,7 +769,7 @@ fn full_paints_a_wholly_changed_line_whole(
 /// **Invariant 5.** A `Full` painting never leaves an all-whitespace run unpainted between two
 /// painted regions on the same row: that breaks one highlight into two edits. A gap holding any
 /// visible character is a real gap between two edits and passes.
-fn no_unpainted_whitespace_between_painted_regions(
+pub(crate) fn no_unpainted_whitespace_between_painted_regions(
     painting: &str,
     labels: &PaintedLabels,
     before: &Code,
@@ -821,7 +821,7 @@ fn no_unpainted_whitespace_between_painted_regions(
 /// reading `MINIMAL` never produces. Unconditional on the verdict, `Insert` on a new line
 /// included - that is exactly where the presets part company. A line with nothing visible is
 /// skipped, as in invariants 1 and 4.
-fn minimal_never_paints_leading_whitespace(
+pub(crate) fn minimal_never_paints_leading_whitespace(
     painting: &str,
     labels: &PaintedLabels,
     before: &Code,
@@ -4122,13 +4122,25 @@ fn spaces_before_edits_follow_their_count(
         return Ok(Vec::new());
     }
     let paintings = paintings_with_labels(mapping, before, after, RenderOptions::FULL)?;
+    Ok(spaces_before_edits_follow_their_count_in(
+        &paintings, before, after,
+    ))
+}
+
+/// [`spaces_before_edits_follow_their_count`] over paintings already projected to labels, so a
+/// census can hold omnidiff's own rendering to the rule.
+pub(crate) fn spaces_before_edits_follow_their_count_in(
+    paintings: &[(&str, PaintedLabels)],
+    before: &Code,
+    after: &Code,
+) -> Vec<GroundTruthViolation> {
     if paintings.is_empty() {
-        return Ok(Vec::new());
+        return Vec::new();
     }
     let Some(core) =
         crate::diff::text::line_diff_core(&before.contents, &after.contents, ROW_LINE_UP_MAX_EDIT)
     else {
-        return Ok(Vec::new());
+        return Vec::new();
     };
     let rows = [
         rows_without_cr(&before.contents),
@@ -4137,7 +4149,7 @@ fn spaces_before_edits_follow_their_count(
     let label_name = |label: TextLabel| label_word(Some(label));
 
     let mut violations = Vec::new();
-    for (name, labels) in &paintings {
+    for (name, labels) in paintings {
         for (pair, survivors) in rows_lined_up_by_survivors(&rows, labels, &core.pairs) {
             // Each side's stretches: before the first survivor, between survivors, after the last.
             let stretches = |side: usize| -> Vec<(usize, usize)> {
@@ -4258,7 +4270,7 @@ fn spaces_before_edits_follow_their_count(
             }
         }
     }
-    Ok(violations)
+    violations
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────

@@ -37,6 +37,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-protocolbuffers-protobuf-add-import-and-update-field-access",
-        0.01,
+        0.0,
     )
 }

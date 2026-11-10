@@ -27,20 +27,21 @@ fn mapping() -> Result<()> {
     // rotation reads as unchanged in place. The move-detection gap in an import list.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-rust-lang-rust-change-use",
-        6,
-        6,
+        3,
+        3,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("rust-rust-lang-rust-change-use", 6.47)
+    assert_matches_human_painting_within_limit("rust-rust-lang-rust-change-use", 6.38)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the Minimal/Full split for a renamed identifier is not painted this way yet
-    // (`Abi`/`CfgAbi` and `abi`/`cfg_abi`).
-    assert_ground_truth_invariants_with_known_violations("rust-rust-lang-rust-change-use", 6)
+    // Invariant 16, twice: `Abi` -> `CfgAbi` in the `use` list (before row 1, after row 2) is
+    // painted as one Update under Minimal, not as the inserted `Cfg`. `Abi` also moved within the
+    // list, and leaving it unpainted would claim it stayed in place.
+    assert_ground_truth_invariants_with_known_violations("rust-rust-lang-rust-change-use", 2)
 }

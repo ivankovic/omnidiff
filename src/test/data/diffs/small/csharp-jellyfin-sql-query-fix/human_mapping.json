@@ -14220,17 +14220,6 @@
               "end_column": 25
             }
           ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 65,
-              "start_column": 24,
-              "end_row": 65,
-              "end_column": 25
-            }
-          ]
         }
       ]
     }

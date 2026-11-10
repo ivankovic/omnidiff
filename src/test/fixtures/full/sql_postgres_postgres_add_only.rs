@@ -22,17 +22,12 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "sql-postgres-postgres-add-only",
-        13,
-        13,
-    )
+    test::helper::human_mapping::assert_matches_human_mapping("sql-postgres-postgres-add-only")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("sql-postgres-postgres-add-only", 0.04)
+    assert_matches_human_painting_within_limit("sql-postgres-postgres-add-only", 0.0)
 }
 
 #[test]

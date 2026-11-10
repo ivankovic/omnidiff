@@ -29,10 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit(
-        "rust-protocolbuffers-protobuf-add-with-a-move",
-        0.43,
-    )
+    assert_matches_human_painting_within_limit("rust-protocolbuffers-protobuf-add-with-a-move", 0.1)
 }
 
 #[test]

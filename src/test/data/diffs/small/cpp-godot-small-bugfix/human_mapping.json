@@ -558,27 +558,6 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1"
-      ]
-    },
-    {
       "operation": "delete",
       "before_path": [
         "function_definition:3",
@@ -587,7 +566,6 @@
         "compound_statement:1",
         "if_statement:1",
         "condition_clause:1",
-        "binary_expression:1",
         "binary_expression:1"
       ]
     },
@@ -601,8 +579,7 @@
         "if_statement:1",
         "condition_clause:1",
         "binary_expression:1",
-        "binary_expression:1",
-        "field_expression:1"
+        "binary_expression:1"
       ],
       "after_path": [
         "function_definition:3",
@@ -611,56 +588,7 @@
         "compound_statement:1",
         "if_statement:1",
         "condition_clause:1",
-        "binary_expression:1",
-        "field_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "==:1"
-      ],
-      "after_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "==:1"
-      ]
-    },
-    {
-      "operation": "identical_with_children",
-      "before_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "string_literal:1"
-      ],
-      "after_path": [
-        "function_definition:3",
-        "compound_statement:1",
-        "if_statement:2",
-        "compound_statement:1",
-        "if_statement:1",
-        "condition_clause:1",
-        "binary_expression:1",
-        "string_literal:1"
+        "binary_expression:1"
       ]
     },
     {

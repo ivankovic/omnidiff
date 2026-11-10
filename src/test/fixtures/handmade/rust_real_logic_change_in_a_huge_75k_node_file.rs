@@ -24,8 +24,8 @@ fn mapping() -> Result<()> {
     // rather than matches.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-real-logic-change-in-a-huge-75k-node-file",
-        44,
-        31,
+        28,
+        18,
     )
 }
 

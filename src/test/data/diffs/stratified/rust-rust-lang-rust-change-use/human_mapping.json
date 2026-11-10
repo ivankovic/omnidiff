@@ -1313,6 +1313,28 @@
       "name": "Minimal",
       "entries": [
         {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 20,
+              "start_column": 12,
+              "end_row": 20,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 20,
+              "start_column": 21,
+              "end_row": 20,
+              "end_column": 24
+            }
+          ]
+        },
+        {
           "operation": "Match",
           "before": [
             {
@@ -1328,44 +1350,6 @@
               "start_column": 14,
               "end_row": 1,
               "end_column": 21
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 18,
-              "start_column": 12,
-              "end_row": 18,
-              "end_column": 15
-            }
-          ],
-          "after": [
-            {
-              "start_row": 20,
-              "start_column": 12,
-              "end_row": 20,
-              "end_column": 19
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 18,
-              "start_column": 17,
-              "end_row": 18,
-              "end_column": 20
-            }
-          ],
-          "after": [
-            {
-              "start_row": 20,
-              "start_column": 21,
-              "end_row": 20,
-              "end_column": 27
             }
           ]
         }

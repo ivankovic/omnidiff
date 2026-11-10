@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("xml-odoo-odoo-add-attribute", 0.01)
+    assert_matches_human_painting_within_limit("xml-odoo-odoo-add-attribute", 0.0)
 }

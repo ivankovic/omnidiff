@@ -1629,7 +1629,7 @@
           "before": [
             {
               "start_row": 78,
-              "start_column": 33,
+              "start_column": 32,
               "end_row": 78,
               "end_column": 34
             }
@@ -1637,28 +1637,9 @@
           "after": [
             {
               "start_row": 78,
-              "start_column": 33,
+              "start_column": 32,
               "end_row": 78,
               "end_column": 34
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 78,
-              "start_column": 32,
-              "end_row": 78,
-              "end_column": 33
-            }
-          ],
-          "after": [
-            {
-              "start_row": 78,
-              "start_column": 32,
-              "end_row": 78,
-              "end_column": 33
             }
           ]
         }

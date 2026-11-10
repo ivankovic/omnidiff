@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -36,16 +36,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-redis-redis-good-multi-map-test-case", 0.48)
+    assert_matches_human_painting_within_limit("c-redis-redis-good-multi-map-test-case", 0.47)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 12, both presets, and 16, four times: `lp` -> `eptr` (before row 3267, after row
-    // 3281) is painted on neither side, though the mapping says the leaf changed. Invariant 5:
-    // Full leaves columns 84..85 of after row 1738 unpainted between two painted regions.
-    assert_ground_truth_invariants_with_known_violations(
-        "c-redis-redis-good-multi-map-test-case",
-        7,
-    )
+    assert_ground_truth_invariants("c-redis-redis-good-multi-map-test-case")
 }

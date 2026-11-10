@@ -2612,8 +2612,8 @@ fn renamed_names_are_identifiers_and_operators_outside_content() {
 fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
     let untouched = |read_rows_carrying_several_edits| {
         node_untouched_on_its_row(
-            "f(a)\n",
-            "f(a, a)\n",
+            &SourceText::new("f(a)\n"),
+            &SourceText::new("f(a, a)\n"),
             &TextRange::new(0, 2, 0, 3),
             &TextRange::new(0, 5, 0, 6),
             read_rows_carrying_several_edits,
@@ -2929,7 +2929,7 @@ fn an_edit_beside_an_entity_in_an_attribute_value_is_painted() {
 
 /// A deleted attribute's value sits between its quotes as the value node's own text, not a child;
 /// it is painted with the quotes, so the attribute reads as one deletion
-/// (`xml-genymobile-scrcpy-remove-package-attribute`).
+/// (`xml-genymobile-scrcpy-remove-package-attribute`), together with the blank the row lost.
 #[test]
 fn a_deleted_attribute_value_is_painted_between_its_quotes() {
     let before = "<root>\n<s Label=\"InDualCone\">\n</s>\n</root>\n";
@@ -2941,7 +2941,7 @@ fn a_deleted_attribute_value_is_painted_between_its_quotes() {
         0,
         RenderOptions::FULL,
     );
-    assert_eq!(painted, ["Label=\"InDualCone\""]);
+    assert_eq!(painted, [" Label=\"InDualCone\""]);
 }
 
 /// A CSS `100%` is `integer_value` text plus a `%` unit child; an inserted declaration paints the
@@ -3084,4 +3084,202 @@ fn two_swapped_classes_both_move() {
         moved.sort();
         assert_eq!(moved, ["bg-border", "shrink-0"]);
     }
+}
+
+/// What `side` shows highlighted under `options`, after the display filter.
+fn shown_texts(
+    language: crate::code::Language,
+    before_src: &str,
+    after_src: &str,
+    side: usize,
+    options: RenderOptions,
+) -> Vec<String> {
+    let mut before = crate::code::Code::from_string(before_src, &language);
+    let mut after = crate::code::Code::from_string(after_src, &language);
+    before.ensure_parsed().unwrap();
+    after.ensure_parsed().unwrap();
+    let diff = crate::diff::diff_code(&before, &after);
+    let ast = diff.ast.expect("both sides parse");
+    let node_cache = NodeCache::build(&before, &after);
+    let text = TextDiff::from_with_options(&before, &after, &ast, &node_cache, options);
+    let source = if side == 0 { before_src } else { after_src };
+    let rows: Vec<&str> = source.split('\n').collect();
+    ranges_for_options(&text.all(side), source, options)
+        .iter()
+        .filter(|r| r.operation != TextOperation::Identical && !r.source.is_empty())
+        .filter(|r| r.source.start_row == r.source.end_row)
+        .map(|r| rows[r.source.start_row][r.source.start_column..r.source.end_column].to_string())
+        .collect()
+}
+
+/// `pub fn` -> `pub async fn` gains a word and a blank: `FULL` paints ` async`, `MINIMAL` the
+/// word alone.
+#[test]
+fn an_inserted_word_takes_the_blank_it_added() {
+    let (before, after) = ("pub fn f() {}\n", "pub async fn f() {}\n");
+    let language = crate::code::Language::Rust;
+    assert_eq!(
+        shown_texts(language, before, after, 1, RenderOptions::FULL),
+        [" async"]
+    );
+    assert_eq!(
+        shown_texts(language, before, after, 1, RenderOptions::MINIMAL),
+        ["async"]
+    );
+}
+
+/// A word added inside a comment's text leads with its blank too, rather than ending on it.
+#[test]
+fn a_word_inserted_into_text_takes_the_blank_in_front_of_it() {
+    let (before, after) = ("s = \"foo bar\"\n", "s = \"foo new bar\"\n");
+    let language = crate::code::Language::Python;
+    assert_eq!(
+        shown_texts(language, before, after, 1, RenderOptions::FULL),
+        [" new"]
+    );
+    assert_eq!(
+        shown_texts(language, before, after, 1, RenderOptions::MINIMAL),
+        ["new"]
+    );
+}
+
+/// A changed word keeps its blank: both sides have one there.
+#[test]
+fn an_updated_word_in_text_leaves_its_blank_alone() {
+    let (before, after) = ("s = \"foo bar\"\n", "s = \"foo baz\"\n");
+    let shown = shown_texts(
+        crate::code::Language::Python,
+        before,
+        after,
+        1,
+        RenderOptions::FULL,
+    );
+    assert_eq!(shown, ["z"]);
+}
+
+fn edit_on_row_0(start: usize, end: usize, anchor: usize, operation: TextOperation) -> RangeMatch {
+    RangeMatch {
+        source: text_range_on(0, start, end),
+        destination: text_range_on(0, anchor, anchor),
+        operation,
+    }
+}
+
+fn widened(source: &str, destination: &str, mut ranges: Vec<RangeMatch>) -> Vec<TextRange> {
+    super::edit_spacing::widen_over_added_spacing(
+        &mut ranges,
+        &SourceText::new(source),
+        &SourceText::new(destination),
+    );
+    ranges.into_iter().map(|range| range.source).collect()
+}
+
+/// `a b c` -> `a c`: the line lost a word and a blank, so the deletion is ` b`.
+#[test]
+fn a_deleted_word_takes_the_blank_the_line_lost() {
+    let ranges = vec![edit_on_row_0(2, 3, 1, TextOperation::Delete)];
+    assert_eq!(
+        widened("a b c\n", "a c\n", ranges),
+        [text_range_on(0, 1, 3)]
+    );
+}
+
+/// `f( b)` -> `f( )`: the blank is still there, so it stays unpainted.
+#[test]
+fn a_blank_the_other_side_still_has_stays_out_of_the_edit() {
+    let ranges = vec![edit_on_row_0(3, 4, 2, TextOperation::Delete)];
+    assert_eq!(
+        widened("f( b)\n", "f( )\n", ranges),
+        [text_range_on(0, 3, 4)]
+    );
+}
+
+/// The rule applies only where the anchor verifiably names the same place: the same character
+/// before it and after it.
+#[test]
+fn a_place_that_differs_on_the_other_side_is_left_alone() {
+    // A different character after the edit (`c` against `d`).
+    let ranges = vec![edit_on_row_0(2, 3, 1, TextOperation::Delete)];
+    assert_eq!(
+        widened("a b c\n", "a d\n", ranges),
+        [text_range_on(0, 2, 3)]
+    );
+    // A different character before it (`a` against `z`).
+    let ranges = vec![edit_on_row_0(2, 3, 1, TextOperation::Delete)];
+    assert_eq!(
+        widened("a b c\n", "z c\n", ranges),
+        [text_range_on(0, 2, 3)]
+    );
+}
+
+/// Indentation is not in-line spacing: a piece that starts its row keeps its range.
+#[test]
+fn a_piece_at_the_start_of_its_row_does_not_take_the_indentation() {
+    let ranges = vec![edit_on_row_0(2, 3, 0, TextOperation::Insert)];
+    assert_eq!(widened("  b\n", "\n", ranges), [text_range_on(0, 2, 3)]);
+}
+
+/// Pieces of one operation with only blanks between them are one edit, which takes the blank in
+/// front of its first piece; a range before the blank keeps it.
+#[test]
+fn a_run_of_pieces_widens_once_and_never_over_a_range_before_it() {
+    let ranges = vec![
+        edit_on_row_0(2, 3, 1, TextOperation::Insert),
+        edit_on_row_0(4, 5, 1, TextOperation::Insert),
+    ];
+    assert_eq!(
+        widened("a b c d\n", "a d\n", ranges),
+        [text_range_on(0, 1, 3), text_range_on(0, 4, 5)]
+    );
+    let before_it = RangeMatch {
+        source: text_range_on(0, 0, 2),
+        destination: text_range_on(0, 0, 1),
+        operation: TextOperation::Update,
+    };
+    let ranges = vec![before_it, edit_on_row_0(2, 3, 1, TextOperation::Insert)];
+    assert_eq!(
+        widened("a b c\n", "a c\n", ranges)[1],
+        text_range_on(0, 2, 3)
+    );
+}
+
+/// A node that ends its row ends at `(row + 1, 0)`, but it is a one-row node: the `;` after
+/// `o.g()` -> `new X(o.g())` slid only because of the edit beside it, also when a line inserted
+/// above pushes the row down.
+#[test]
+fn a_token_ending_its_row_slid_by_an_edit_beside_it_is_not_moved() {
+    let before = "import a.B;\nclass A {\n    void f() {\n        this.r = o.g();\n    }\n}\n";
+    let after = "import a.B;\nimport a.C;\nclass A {\n    void f() {\n        this.r = new X(o.g());\n    }\n}\n";
+    for side in 0..2 {
+        let painted = painted_texts(
+            crate::code::Language::Java,
+            before,
+            after,
+            side,
+            RenderOptions::FULL,
+        );
+        assert!(
+            !painted.iter().any(|text| text.starts_with(';')),
+            "{painted:?}"
+        );
+    }
+}
+
+/// A call that ends its row and lands in another statement on a row pushed down still reads as
+/// moved under `FULL`: the two rows do not open on the same text.
+#[test]
+fn a_call_ending_its_row_relocated_into_another_statement_is_still_moved() {
+    let before = "def f(x):\n    return g(x)\n";
+    let after = "def f(x):\n    z = 1\n    y = g(x)\n";
+    let painted = painted_texts(
+        crate::code::Language::Python,
+        before,
+        after,
+        0,
+        RenderOptions::FULL,
+    );
+    assert!(
+        painted.iter().any(|text| text.starts_with("g(x)")),
+        "{painted:?}"
+    );
 }

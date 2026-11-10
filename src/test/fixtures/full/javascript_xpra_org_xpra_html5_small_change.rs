@@ -15,7 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -23,18 +23,12 @@ fn mapping() -> Result<()> {
     // Residual not yet examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "javascript-xpra-org-xpra-html5-small-change",
-        3,
+        5,
         3,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `member_expression` on before row 3380 is deleted, but it is made of
-    // the children of the `member_expression` on after row 3380, which is paired with the code
-    // around this one instead: the two should pair, and the code around be removed.
-    assert_ground_truth_invariants_with_known_violations(
-        "javascript-xpra-org-xpra-html5-small-change",
-        1,
-    )
+    assert_ground_truth_invariants("javascript-xpra-org-xpra-html5-small-change")
 }

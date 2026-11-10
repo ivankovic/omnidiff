@@ -37,5 +37,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-greenbone-gsa-add-import-and-use-it", 0.76)
+    assert_matches_human_painting_within_limit("tsx-greenbone-gsa-add-import-and-use-it", 0.75)
 }

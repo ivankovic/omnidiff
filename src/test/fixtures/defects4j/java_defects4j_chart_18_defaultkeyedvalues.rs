@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-chart-18-defaultkeyedvalues", 0.03)
+    assert_matches_human_painting_within_limit("java-defects4j-chart-18-defaultkeyedvalues", 0.01)
 }
 
 #[test]

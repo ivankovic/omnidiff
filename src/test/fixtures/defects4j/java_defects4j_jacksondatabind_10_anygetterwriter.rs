@@ -18,15 +18,15 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-jacksondatabind-10-anygetterwriter",
-        19,
-        14,
+        18,
+        13,
     )
 }
 
@@ -34,17 +34,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksondatabind-10-anygetterwriter",
-        3.44,
+        3.04,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the Minimal painting of the `MapSerializer` <-> `JsonSerializer` renames (before
-    // row 29, after row 30) and `_mapSerializer` <-> `_serializer` (before row 82, after row 89) paints
-    // more of each identifier than its differing words.
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-jacksondatabind-10-anygetterwriter",
-        4,
-    )
+    assert_ground_truth_invariants("java-defects4j-jacksondatabind-10-anygetterwriter")
 }

@@ -22,17 +22,13 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Residual not yet examined.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
-        "c-ollama-ollama-change-imports",
-        8,
-        4,
-    )
+    // Pins `solve_unrelated_imports`: paired imports whose paths share no token are unpaired.
+    test::helper::human_mapping::assert_matches_human_mapping("c-ollama-ollama-change-imports")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-ollama-ollama-change-imports", 2.49)
+    assert_matches_human_painting_within_limit("c-ollama-ollama-change-imports", 0.0)
 }
 
 #[test]

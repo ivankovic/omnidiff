@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -25,28 +25,17 @@ fn mapping() -> Result<()> {
     // path) and `APTED("fast_fallback")` (a Myers LCS that cannot align a moved node).
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-yannjor-krabby-actual-normal-change",
-        442,
-        323,
+        439,
+        320,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16, nine times, around before rows 223-224 and after rows 109-110: the renames
-    // `pokemon_db` <-> `pokemon_db_file`, `pokemon` <-> `pokemon_db` and `load_pokemon` <-> `load` are
-    // not painted entire under Full, and `load_pokemon` <-> `load` is not painted as its differing
-    // word `_pokemon` under Minimal.
-    // Invariant 31, 2 time(s): a changed part not painted whole, or past its
-    // separator (awaiting a repaint):
-    //   before row 223 leaves 7 of the 8 byte(s) of `pokemond` unpainted, which becomes `pokemon`
-    //   after row 109 leaves 7 of the 7 byte(s) of `pokemon` unpainted, which becomes `pokemond`
-    assert_ground_truth_invariants_with_known_violations(
-        "rust-yannjor-krabby-actual-normal-change",
-        11,
-    )
+    assert_ground_truth_invariants("rust-yannjor-krabby-actual-normal-change")
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 18.45)
+    assert_matches_human_painting_within_limit("rust-yannjor-krabby-actual-normal-change", 17.36)
 }

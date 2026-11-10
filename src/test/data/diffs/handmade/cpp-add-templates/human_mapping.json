@@ -1059,25 +1059,6 @@
           ]
         },
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 2,
-              "start_column": 6,
-              "end_row": 2,
-              "end_column": 12
-            }
-          ],
-          "after": [
-            {
-              "start_row": 3,
-              "start_column": 6,
-              "end_row": 3,
-              "end_column": 9
-            }
-          ]
-        },
-        {
           "operation": "Delete",
           "before": [
             {
@@ -1122,44 +1103,6 @@
           ]
         },
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 5,
-              "start_column": 4,
-              "end_row": 5,
-              "end_column": 10
-            }
-          ],
-          "after": [
-            {
-              "start_row": 6,
-              "start_column": 4,
-              "end_row": 6,
-              "end_column": 7
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 10,
-              "start_column": 4,
-              "end_row": 10,
-              "end_column": 10
-            }
-          ],
-          "after": [
-            {
-              "start_row": 11,
-              "start_column": 4,
-              "end_row": 11,
-              "end_column": 7
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -1189,6 +1132,39 @@
               "start_column": 11,
               "end_row": 5,
               "end_column": 14
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 6,
+              "end_row": 2,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 5,
+              "start_column": 4,
+              "end_row": 5,
+              "end_column": 7
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 10,
+              "start_column": 4,
+              "end_row": 10,
+              "end_column": 7
             }
           ]
         }

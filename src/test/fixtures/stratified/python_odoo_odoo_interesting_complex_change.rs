@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-odoo-odoo-interesting-complex-change", 2.17)
+    assert_matches_human_painting_within_limit("python-odoo-odoo-interesting-complex-change", 2.12)
 }
 
 #[test]

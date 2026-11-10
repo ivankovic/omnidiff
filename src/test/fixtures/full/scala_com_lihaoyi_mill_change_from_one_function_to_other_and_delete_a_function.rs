@@ -23,8 +23,8 @@ fn mapping() -> Result<()> {
     // Residual not yet root-caused.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "scala-com-lihaoyi-mill-change-from-one-function-to-other-and-delete-a-function",
-        5,
         4,
+        3,
     )
 }
 

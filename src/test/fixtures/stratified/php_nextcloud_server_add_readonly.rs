@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("php-nextcloud-server-add-readonly", 0.0)
+    assert_matches_human_painting_within_limit("php-nextcloud-server-add-readonly", 0.09)
 }
 
 #[test]

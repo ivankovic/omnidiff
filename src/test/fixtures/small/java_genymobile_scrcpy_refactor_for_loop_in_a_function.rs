@@ -25,8 +25,8 @@ fn mapping() -> Result<()> {
     // structural-move gap.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-genymobile-scrcpy-refactor-for-loop-in-a-function",
-        46,
-        32,
+        45,
+        31,
     )
 }
 

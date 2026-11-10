@@ -6553,6 +6553,17 @@
               "end_column": 44
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 121,
+              "start_column": 55,
+              "end_row": 121,
+              "end_column": 71
+            }
+          ]
         }
       ]
     },
@@ -7161,25 +7172,6 @@
           "before": [
             {
               "start_row": 148,
-              "start_column": 0,
-              "end_row": 148,
-              "end_column": 8
-            }
-          ],
-          "after": [
-            {
-              "start_row": 147,
-              "start_column": 0,
-              "end_row": 147,
-              "end_column": 8
-            }
-          ]
-        },
-        {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 148,
               "start_column": 59,
               "end_row": 148,
               "end_column": 60
@@ -7338,12 +7330,6 @@
               "start_column": 0,
               "end_row": 143,
               "end_column": 6
-            },
-            {
-              "start_row": 144,
-              "start_column": 0,
-              "end_row": 144,
-              "end_column": 6
             }
           ],
           "after": [
@@ -7485,6 +7471,36 @@
               "start_column": 8,
               "end_row": 47,
               "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 122,
+              "start_column": 6,
+              "end_row": 122,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 121,
+              "start_column": 55,
+              "end_row": 121,
+              "end_column": 95
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 143,
+              "start_column": 58,
+              "end_row": 143,
+              "end_column": 59
             }
           ]
         }

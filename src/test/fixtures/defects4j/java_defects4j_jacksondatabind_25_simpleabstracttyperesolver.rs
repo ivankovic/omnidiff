@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksondatabind-25-simpleabstracttyperesolver",
-        0.64,
+        0.61,
     )
 }
 

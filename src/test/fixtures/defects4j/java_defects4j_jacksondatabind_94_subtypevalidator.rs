@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -31,16 +31,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksondatabind-94-subtypevalidator",
-        8.16,
+        8.14,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 1: both paintings end a run on the trailing space of a commented-out class name,
-    // before row 103 and after row 106.
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-jacksondatabind-94-subtypevalidator",
-        4,
-    )
+    assert_ground_truth_invariants("java-defects4j-jacksondatabind-94-subtypevalidator")
 }

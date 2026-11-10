@@ -38,6 +38,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "python-django-django-update-unit-tests-actual-logic-change",
-        0.26,
+        0.2,
     )
 }

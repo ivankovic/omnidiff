@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -27,11 +27,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("rust-tauri-apps-tauri-rename-mod", 1.77)
+    assert_matches_human_painting_within_limit("rust-tauri-apps-tauri-rename-mod", 0.0)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16: the Full half of a rename split is not painted (`v2_rc`/`v2_beta` not whole).
-    assert_ground_truth_invariants_with_known_violations("rust-tauri-apps-tauri-rename-mod", 2)
+    assert_ground_truth_invariants("rust-tauri-apps-tauri-rename-mod")
 }

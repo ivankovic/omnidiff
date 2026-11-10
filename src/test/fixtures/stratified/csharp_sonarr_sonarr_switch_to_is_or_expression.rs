@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "csharp-sonarr-sonarr-switch-to-is-or-expression",
-        0.72,
+        0.79,
     )
 }
 

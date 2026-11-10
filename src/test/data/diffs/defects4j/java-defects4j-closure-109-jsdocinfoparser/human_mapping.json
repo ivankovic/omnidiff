@@ -3205,25 +3205,6 @@
           ]
         },
         {
-          "operation": "Match",
-          "before": [
-            {
-              "start_row": 1907,
-              "start_column": 17,
-              "end_row": 1907,
-              "end_column": 30
-            }
-          ],
-          "after": [
-            {
-              "start_row": 1910,
-              "start_column": 13,
-              "end_row": 1910,
-              "end_column": 37
-            }
-          ]
-        },
-        {
           "operation": "Insert",
           "after": [
             {
@@ -3286,6 +3267,25 @@
               "start_column": 37,
               "end_row": 1910,
               "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1907,
+              "start_column": 22,
+              "end_row": 1907,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1910,
+              "start_column": 18,
+              "end_row": 1910,
+              "end_column": 37
             }
           ]
         }

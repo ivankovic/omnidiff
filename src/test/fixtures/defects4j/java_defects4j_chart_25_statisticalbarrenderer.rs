@@ -18,15 +18,15 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-chart-25-statisticalbarrenderer",
-        32,
-        20,
+        30,
+        18,
     )
 }
 
@@ -34,17 +34,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-chart-25-statisticalbarrenderer",
-        0.46,
+        0.43,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 4 time(s): the inserted `local_variable_declaration` on after row 318 starts
-    // insert but its `;` is unpainted (both presets); the inserted `local_variable_declaration` on
-    // after row 468 starts insert but its `;` is unpainted (both presets).
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-chart-25-statisticalbarrenderer",
-        4,
-    )
+    assert_ground_truth_invariants("java-defects4j-chart-25-statisticalbarrenderer")
 }

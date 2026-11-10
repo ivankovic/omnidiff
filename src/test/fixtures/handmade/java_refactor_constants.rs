@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -34,12 +34,10 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `FULL` sets the limit.
-    assert_matches_human_painting_within_limit("java-refactor-constants", 4.38)
+    assert_matches_human_painting_within_limit("java-refactor-constants", 3.71)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 25, 2 time(s): the inserted `field_declaration` on after row 2 starts insert but
-    // its `;` is unpainted (both presets).
-    assert_ground_truth_invariants_with_known_violations("java-refactor-constants", 2)
+    assert_ground_truth_invariants("java-refactor-constants")
 }

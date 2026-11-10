@@ -33,5 +33,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("php-wordpress-wordpress-add-null-to-return", 0.01)
+    assert_matches_human_painting_within_limit("php-wordpress-wordpress-add-null-to-return", 0.0)
 }

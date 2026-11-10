@@ -1061,6 +1061,17 @@
               "end_column": 21
             }
           ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 44,
+              "end_row": 1,
+              "end_column": 45
+            }
+          ]
         }
       ]
     },
@@ -1122,6 +1133,17 @@
               "start_column": 0,
               "end_row": 1,
               "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 44,
+              "end_row": 1,
+              "end_column": 45
             }
           ]
         }

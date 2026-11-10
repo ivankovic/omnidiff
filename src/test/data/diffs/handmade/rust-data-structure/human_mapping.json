@@ -2204,7 +2204,7 @@
           "before": [
             {
               "start_row": 8,
-              "start_column": 14,
+              "start_column": 13,
               "end_row": 8,
               "end_column": 18
             }
@@ -2215,7 +2215,7 @@
           "before": [
             {
               "start_row": 9,
-              "start_column": 14,
+              "start_column": 13,
               "end_row": 9,
               "end_column": 18
             }
@@ -2557,7 +2557,7 @@
           "before": [
             {
               "start_row": 7,
-              "start_column": 14,
+              "start_column": 13,
               "end_row": 7,
               "end_column": 19
             }

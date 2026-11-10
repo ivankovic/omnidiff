@@ -24561,27 +24561,6 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1"
-      ]
-    },
-    {
       "operation": "insert",
       "after_path": [
         "function_definition:1",
@@ -24590,56 +24569,7 @@
         "compound_statement:1",
         "if_statement:1",
         "parenthesized_expression:1",
-        "binary_expression:1",
         "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "==:1"
-      ],
-      "after_path": [
-        "function_definition:1",
-        "compound_statement:1",
-        "if_statement:5",
-        "compound_statement:1",
-        "if_statement:1",
-        "parenthesized_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "==:1"
       ]
     },
     {
@@ -24651,8 +24581,7 @@
         "compound_statement:1",
         "if_statement:1",
         "parenthesized_expression:1",
-        "binary_expression:1",
-        "null:1"
+        "binary_expression:1"
       ],
       "after_path": [
         "function_definition:1",
@@ -24662,8 +24591,7 @@
         "if_statement:1",
         "parenthesized_expression:1",
         "binary_expression:1",
-        "binary_expression:1",
-        "null:1"
+        "binary_expression:1"
       ]
     },
     {
@@ -71903,7 +71831,7 @@
           "after": [
             {
               "start_row": 240,
-              "start_column": 26,
+              "start_column": 25,
               "end_row": 240,
               "end_column": 59
             }

@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -32,15 +32,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-closure-134-typedscopecreator", 0.0)
+    assert_matches_human_painting_within_limit("java-defects4j-closure-134-typedscopecreator", 0.01)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   after row 560: the space before the insert `else {` is not painted with it
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-134-typedscopecreator",
-        1,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-134-typedscopecreator")
 }

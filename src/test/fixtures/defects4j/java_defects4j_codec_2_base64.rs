@@ -18,22 +18,25 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping("java-defects4j-codec-2-base64")
+    // Invariant 28 convention: the mapping pairs the wrapped node with the new inner one, and
+    // omnidiff pairs it with the new wrapper - two nodes either way.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+        "java-defects4j-codec-2-base64",
+        2,
+        0,
+    )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-codec-2-base64", 0.0)
+    assert_matches_human_painting_within_limit("java-defects4j-codec-2-base64", 0.01)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, once: the `binary_expression` on after row 446 is inserted, but it is made of
-    // the children of the `binary_expression` on before row 446, which is paired with the code
-    // around this one instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations("java-defects4j-codec-2-base64", 1)
+    assert_ground_truth_invariants("java-defects4j-codec-2-base64")
 }

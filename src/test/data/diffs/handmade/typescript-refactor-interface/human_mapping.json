@@ -2532,7 +2532,7 @@
           "after": [
             {
               "start_row": 7,
-              "start_column": 11,
+              "start_column": 10,
               "end_row": 7,
               "end_column": 28
             }
@@ -2543,7 +2543,7 @@
           "after": [
             {
               "start_row": 19,
-              "start_column": 12,
+              "start_column": 11,
               "end_row": 19,
               "end_column": 29
             }

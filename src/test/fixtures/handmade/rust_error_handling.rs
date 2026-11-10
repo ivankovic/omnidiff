@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -30,21 +30,18 @@ fn mapping() -> Result<()> {
     //    matches) excludes the pair - an objective wall, not a heuristic cutoff.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-error-handling",
-        5,
         4,
+        3,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
     // A 2dp ceiling of the true fraction: 43/698 is 6.16046%, so 6.16 fails.
-    assert_matches_human_painting_within_limit("rust-error-handling", 4.88)
+    assert_matches_human_painting_within_limit("rust-error-handling", 4.3)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   after row 11: the space before the insert `-> Result<(), std::io::Error>` is not painted
-    //     with it
-    assert_ground_truth_invariants_with_known_violations("rust-error-handling", 1)
+    assert_ground_truth_invariants("rust-error-handling")
 }

@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "javascript-microsoft-typescript-concat-to-template",
-        2.14,
+        1.07,
     )
 }
 

@@ -31,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "html-django-django-template-code-not-pure-html",
-        0.82,
+        0.05,
     )
 }
 

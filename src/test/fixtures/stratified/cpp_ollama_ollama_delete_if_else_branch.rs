@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("cpp-ollama-ollama-delete-if-else-branch", 1.06)
+    assert_matches_human_painting_within_limit("cpp-ollama-ollama-delete-if-else-branch", 0.0)
 }
 
 #[test]

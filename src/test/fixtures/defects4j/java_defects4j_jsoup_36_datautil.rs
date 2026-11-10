@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-jsoup-36-datautil", 2.25)
+    assert_matches_human_painting_within_limit("java-defects4j-jsoup-36-datautil", 0.12)
 }
 
 #[test]

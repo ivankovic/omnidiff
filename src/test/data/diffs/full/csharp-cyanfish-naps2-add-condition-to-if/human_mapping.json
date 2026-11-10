@@ -486,1711 +486,1711 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        ",:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        ",:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "||:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "||:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        ",:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        ",:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "argument:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:2",
-        "argument_list:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "||:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "||:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "(:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        ",:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        ",:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2",
-        "member_access_expression:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "argument:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "):1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1",
-        "):1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1"
-      ],
-      "after_path": [
-        "class_declaration:1",
-        "declaration_list:1",
-        "method_declaration:3",
-        "block:1",
-        "if_statement:3",
-        "binary_expression:1",
-        "binary_expression:1",
-        "invocation_expression:1",
-        "argument_list:1"
-      ]
-    },
-    {
       "operation": "insert",
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "||:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "||:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "argument:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:2",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "||:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "||:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "(:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        ",:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        ",:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        ".:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1",
+        "identifier:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2",
+        "member_access_expression:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "argument:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "):1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1",
+        "invocation_expression:1",
+        "argument_list:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "declaration_list:1",
+        "method_declaration:3",
+        "block:1",
+        "if_statement:3",
+        "binary_expression:1",
+        "binary_expression:1"
+      ],
       "after_path": [
         "class_declaration:1",
         "declaration_list:1",

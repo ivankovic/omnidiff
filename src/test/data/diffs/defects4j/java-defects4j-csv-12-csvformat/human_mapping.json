@@ -653,14 +653,7 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "class_declaration:1",
-        "class_body:1",
-        "field_declaration:16",
-        "variable_declarator:1",
-        "method_invocation:1"
-      ],
+      "operation": "insert",
       "after_path": [
         "class_declaration:1",
         "class_body:1",
@@ -750,7 +743,14 @@
       ]
     },
     {
-      "operation": "insert",
+      "operation": "identical",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "field_declaration:16",
+        "variable_declarator:1",
+        "method_invocation:1"
+      ],
       "after_path": [
         "class_declaration:1",
         "class_body:1",

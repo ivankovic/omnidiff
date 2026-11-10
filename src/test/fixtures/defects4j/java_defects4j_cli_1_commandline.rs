@@ -28,14 +28,14 @@ fn mapping() -> Result<()> {
     // choice each, counted per leaf.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "java-defects4j-cli-1-commandline",
-        77,
-        53,
+        73,
+        49,
     )
 }
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-cli-1-commandline", 1.34)
+    assert_matches_human_painting_within_limit("java-defects4j-cli-1-commandline", 1.13)
 }
 
 #[test]

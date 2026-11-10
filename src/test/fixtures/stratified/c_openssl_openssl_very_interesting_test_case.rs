@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -34,12 +34,5 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 5, twice: Full leaves columns 31..32 unpainted between two painted regions on
-    // before row 298 and after row 301.
-    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
-    //   before row 273: the space before the delete `output` is not painted with it
-    assert_ground_truth_invariants_with_known_violations(
-        "c-openssl-openssl-very-interesting-test-case",
-        3,
-    )
+    assert_ground_truth_invariants("c-openssl-openssl-very-interesting-test-case")
 }

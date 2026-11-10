@@ -31,5 +31,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-add-attribute", 0.04)
+    assert_matches_human_painting_within_limit("tsx-shadcn-ui-ui-add-attribute", 0.0)
 }

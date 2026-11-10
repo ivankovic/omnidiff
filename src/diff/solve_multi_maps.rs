@@ -198,7 +198,9 @@ fn find_copies(
         .copied()
         .filter(|id| unpaired(*id, map))
         .collect();
-    ids.sort_unstable();
+    // In tree order, not id order: ids are addresses, so their order, and with it the order of
+    // `ASTDiff::groups`, would differ from run to run.
+    ids.sort_unstable_by_key(|id| meta.node_info.get(id).map(|info| info.preorder_index));
     for id in ids {
         if meta.node_to_subtree_size.get(&id).copied().unwrap_or(0) < MIN_COPY_SIZE
             || !fully_unmatched(id, meta, map)

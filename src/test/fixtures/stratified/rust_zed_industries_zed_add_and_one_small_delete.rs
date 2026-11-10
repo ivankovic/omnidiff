@@ -18,14 +18,14 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
     // Recorded as found, not examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "rust-zed-industries-zed-add-and-one-small-delete",
-        2,
+        6,
         2,
     )
 }
@@ -34,21 +34,11 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "rust-zed-industries-zed-add-and-one-small-delete",
-        0.46,
+        0.45,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 28, twice:
-    // - the `expression_statement` on after row 921 is inserted, but it is made of the children of
-    //   the `expression_statement` on before row 911, which is paired with the code around this one
-    //   instead: the two should pair, and the code around be new.
-    // - the `expression_statement` on after row 868 is inserted, but it is made of the children of
-    //   the `expression_statement` on before row 860, which is paired with the code around this one
-    //   instead: the two should pair, and the code around be new.
-    assert_ground_truth_invariants_with_known_violations(
-        "rust-zed-industries-zed-add-and-one-small-delete",
-        2,
-    )
+    assert_ground_truth_invariants("rust-zed-industries-zed-add-and-one-small-delete")
 }

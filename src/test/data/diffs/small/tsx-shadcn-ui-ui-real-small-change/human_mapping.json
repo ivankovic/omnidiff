@@ -2038,17 +2038,6 @@
               "end_column": 127
             }
           ]
-        },
-        {
-          "operation": "Delete",
-          "before": [
-            {
-              "start_row": 22,
-              "start_column": 21,
-              "end_row": 22,
-              "end_column": 22
-            }
-          ]
         }
       ]
     }

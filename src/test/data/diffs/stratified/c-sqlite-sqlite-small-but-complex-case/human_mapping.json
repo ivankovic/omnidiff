@@ -1208,7 +1208,7 @@
           "after": [
             {
               "start_row": 5686,
-              "start_column": 31,
+              "start_column": 29,
               "end_row": 5686,
               "end_column": 46
             }
@@ -1283,7 +1283,7 @@
           "after": [
             {
               "start_row": 5696,
-              "start_column": 17,
+              "start_column": 16,
               "end_row": 5696,
               "end_column": 38
             }

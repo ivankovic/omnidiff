@@ -27,6 +27,7 @@ use crate::{
     },
 };
 
+mod edit_spacing;
 mod plain_text_diff;
 mod render_options;
 mod summary;
@@ -379,9 +380,21 @@ fn intra_node_update_ranges(
     renamed_name: bool,
     whole_pair_updates: bool,
 ) -> Vec<RangeMatch> {
-    let prefix_len = common_prefix_byte_len(source.text, destination.text);
-    let suffix_len =
+    let mut prefix_len = common_prefix_byte_len(source.text, destination.text);
+    let mut suffix_len =
         common_suffix_byte_len(&source.text[prefix_len..], &destination.text[prefix_len..]);
+    // A middle only one side has is an insertion or a deletion, which leads with its blank.
+    let longer = if source.text.len() >= destination.text.len() {
+        source.text
+    } else {
+        destination.text
+    };
+    if !renamed_name && prefix_len + suffix_len == source.text.len().min(destination.text.len()) {
+        let slid =
+            edit_spacing::slide_to_leading_spacing(longer, prefix_len, longer.len() - suffix_len);
+        prefix_len -= slid;
+        suffix_len += slid;
+    }
     if whole_pair_updates || (prefix_len == 0 && suffix_len == 0) {
         return vec![advance_and_build_range_with_source(
             last_non_move_range,
@@ -720,6 +733,11 @@ fn walk_ranges(
         }
         (Some(source_tree), Some(_destination_tree)) => {
             walk.visit_tree(source_tree.root_node());
+            edit_spacing::widen_over_added_spacing(
+                &mut walk.ranges,
+                &walk.source_text,
+                &walk.destination_text,
+            );
         }
     }
 
@@ -994,6 +1012,9 @@ impl RangeWalk<'_> {
         let s = TextRange::from_treesitter_range(node.range(), &self.source_columns);
         let d =
             TextRange::from_treesitter_range(destination_node.range(), &self.destination_columns);
+        // A node ending its row ends at `(row + 1, 0)`; the geometry below reads it on its row.
+        let s_on_its_row = on_its_row(&s, &self.source_columns);
+        let d_on_its_row = on_its_row(&d, &self.destination_columns);
 
         // A column change means a relocation (e.g. reindented into a new block); a row-only shift
         // is an unrelated edit above. A multi-row node landing before the anchor crossed earlier
@@ -1016,12 +1037,7 @@ impl RangeWalk<'_> {
         let displaced_beside_an_edit_on_its_first_row = !self.options.paint_displaced_moves
             && d.end_row as i64 - s.end_row as i64 == d.start_row as i64 - s.start_row as i64
             && s.end_column == d.end_column
-            && node_first_row_tail_untouched(
-                &self.source.contents,
-                &self.destination.contents,
-                &s,
-                &d,
-            );
+            && node_first_row_tail_untouched(&self.source_text, &self.destination_text, &s, &d);
         let shifted_within_its_own_line = s.end_row > s.start_row
             && (s.start_row == d.start_row || displaced_beside_an_edit_on_its_first_row);
         // Likewise a single-row node slid sideways by an edit beside it on its row (`int x` in
@@ -1037,7 +1053,7 @@ impl RangeWalk<'_> {
         // Under `FULL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares its
         // fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` -> `shape.area()`
         // leaves the `)` in an untouched tail although its call moved (`kotlin-refactor-function`).
-        let shifted_by_an_edit_beside_it = s.end_row == s.start_row
+        let shifted_by_an_edit_beside_it = s_on_its_row.is_some()
             && (s.start_row == d.start_row
                 || !self.options.paint_displaced_moves
                 || rows_share_a_head(
@@ -1045,10 +1061,10 @@ impl RangeWalk<'_> {
                     self.destination_text.row(d.start_row).unwrap_or_default(),
                 ))
             && node_untouched_on_its_row(
-                &self.source.contents,
-                &self.destination.contents,
-                &s,
-                &d,
+                &self.source_text,
+                &self.destination_text,
+                s_on_its_row.as_ref().unwrap_or(&s),
+                d_on_its_row.as_ref().unwrap_or(&d),
                 !self.options.paint_displaced_moves,
             );
         let column_shift_is_meaningful = s.start_column != d.start_column
@@ -1257,16 +1273,15 @@ impl RangeWalk<'_> {
 /// True if the single-row node at `s`/`d` lies wholly inside the common prefix or suffix of its two
 /// rows, so the row's one edit is beside it. Columns are characters; a missing row reads as empty.
 fn node_untouched_on_its_row(
-    source: &str,
-    destination: &str,
+    source: &SourceText,
+    destination: &SourceText,
     s: &TextRange,
     d: &TextRange,
     // `!paint_displaced_moves`.
     read_rows_carrying_several_edits: bool,
 ) -> bool {
-    let row = |text: &str, row: usize| -> Vec<char> {
-        text.split('\n')
-            .nth(row)
+    let row = |text: &SourceText, row: usize| -> Vec<char> {
+        text.row(row)
             .map(|line| line.chars().collect())
             .unwrap_or_default()
     };
@@ -1303,6 +1318,23 @@ fn node_untouched_on_its_row(
             && s.start_row == d.start_row
             && row_was_edited_rather_than_rewritten(&source_row, &destination_row, prefix, suffix)
             && node_uniquely_placed_on_its_row(&source_row, &destination_row, s, d))
+}
+
+/// `range` as a span of one row, its end written `(row, row_len)` rather than `(row + 1, 0)`, or
+/// `None` if it covers more than one row. `columns` holds each row's length in bytes.
+fn on_its_row(range: &TextRange, columns: &[usize]) -> Option<TextRange> {
+    if range.end_row == range.start_row {
+        return Some(range.clone());
+    }
+    let row_len = *columns.get(range.start_row)?;
+    (range.end_row == range.start_row + 1 && range.end_column == 0).then(|| {
+        TextRange::new(
+            range.start_row,
+            range.start_column,
+            range.start_row,
+            row_len,
+        )
+    })
 }
 
 /// True if two rows open on the same text past their indentation.
@@ -1385,13 +1417,13 @@ fn node_uniquely_placed_on_its_row(
 /// identical on both sides, so the row's edit sits before it. The multi-row counterpart of
 /// [`node_untouched_on_its_row`]'s suffix case.
 fn node_first_row_tail_untouched(
-    source: &str,
-    destination: &str,
+    source: &SourceText,
+    destination: &SourceText,
     s: &TextRange,
     d: &TextRange,
 ) -> bool {
-    let tail = |text: &str, row: usize, column: usize| -> Option<Vec<char>> {
-        let line: Vec<char> = text.split('\n').nth(row)?.chars().collect();
+    let tail = |text: &SourceText, row: usize, column: usize| -> Option<Vec<char>> {
+        let line: Vec<char> = text.row(row)?.chars().collect();
         (column <= line.len()).then(|| line[column..].to_vec())
     };
     match (

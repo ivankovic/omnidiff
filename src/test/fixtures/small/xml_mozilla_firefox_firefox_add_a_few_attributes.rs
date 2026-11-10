@@ -35,6 +35,6 @@ fn invariants() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "xml-mozilla-firefox-firefox-add-a-few-attributes",
-        0.06,
+        0.0,
     )
 }

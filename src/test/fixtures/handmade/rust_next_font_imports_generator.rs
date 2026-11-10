@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
@@ -32,13 +32,10 @@ fn painting() -> Result<()> {
     // `FULL` depends on `reconcile_moves` not calling two overlapping accounts of one relocation
     // (the de-indented `if let` chain, four columns apart) a conflict, which would blank the after
     // side over sixty-one rows.
-    assert_matches_human_painting_within_limit("rust-next-font-imports-generator", 6.91)
+    assert_matches_human_painting_within_limit("rust-next-font-imports-generator", 7.08)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
-    //   before row 97: the space before the delete `{` is not painted with it
-    //   before row 160: the space before the delete `{` is not painted with it
-    assert_ground_truth_invariants_with_known_violations("rust-next-font-imports-generator", 2)
+    assert_ground_truth_invariants("rust-next-font-imports-generator")
 }

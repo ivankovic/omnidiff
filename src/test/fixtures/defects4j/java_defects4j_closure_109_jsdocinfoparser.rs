@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -33,15 +33,10 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("java-defects4j-closure-109-jsdocinfoparser", 0.03)
+    assert_matches_human_painting_within_limit("java-defects4j-closure-109-jsdocinfoparser", 0.02)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 16, twice: the `parseTypeName` <-> `parseBasicTypeExpression` rename (before row
-    // 1908, after row 1911) is not painted as its differing words under Minimal.
-    assert_ground_truth_invariants_with_known_violations(
-        "java-defects4j-closure-109-jsdocinfoparser",
-        2,
-    )
+    assert_ground_truth_invariants("java-defects4j-closure-109-jsdocinfoparser")
 }

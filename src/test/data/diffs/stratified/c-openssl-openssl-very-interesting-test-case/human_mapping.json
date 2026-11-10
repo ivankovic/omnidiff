@@ -1940,7 +1940,7 @@
           "before": [
             {
               "start_row": 272,
-              "start_column": 26,
+              "start_column": 25,
               "end_row": 272,
               "end_column": 32
             }
@@ -2054,7 +2054,7 @@
               "start_row": 297,
               "start_column": 30,
               "end_row": 297,
-              "end_column": 31
+              "end_column": 32
             }
           ],
           "after": [
@@ -2062,7 +2062,7 @@
               "start_row": 300,
               "start_column": 30,
               "end_row": 300,
-              "end_column": 31
+              "end_column": 32
             }
           ]
         }

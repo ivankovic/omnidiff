@@ -22,11 +22,8 @@ use crate::test::helper::human_mapping::invariants::assert_ground_truth_invarian
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
-    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
+    test::helper::human_mapping::assert_matches_human_mapping(
         "java-defects4j-jacksonxml-5-xmlserializerprovider",
-        2,
-        2,
     )
 }
 
@@ -34,7 +31,7 @@ fn mapping() -> Result<()> {
 fn painting() -> Result<()> {
     assert_matches_human_painting_within_limit(
         "java-defects4j-jacksonxml-5-xmlserializerprovider",
-        0.13,
+        0.0,
     )
 }
 

@@ -37,10 +37,8 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 30, 2 time(s): the space before an edit (awaiting a repaint):
-    //   before row 278: the indentation before `colls, BSON("a" << GT << 0 ...` is painted, though
-    //     it did not change
+    // Invariant 30, 1 time(s): the space before an edit (awaiting a repaint):
     //   after row 255: the indentation change before `[](FindCommandRequest& find...` is not painted
     //     from column 0
-    assert_ground_truth_invariants_with_known_violations("cpp-mongodb-mongo-test-changes", 2)
+    assert_ground_truth_invariants_with_known_violations("cpp-mongodb-mongo-test-changes", 1)
 }

@@ -21,6 +21,14 @@
 //! `RegularTimePeriod.DEFAULT_TIME_ZONE` renamed into `zone` (`java-defects4j-chart-8-week`) -
 //! where the reader sees the old expression gone and a new one in its place.
 //!
+//! A pair across kinds (`MatchButNotIdentical` leaves: the type `IllegalStateException` of a
+//! `throw new` taken for the variable `nextLineTabStop` of the assignment that replaced it,
+//! `java-defects4j-cli-24-helpformatter`) is the same relabelling and is undone on the same
+//! evidence. One that reads the same on both sides is not: a name moved into a context the
+//! grammar parses differently (`self.added` into a Rust macro's token tree, where `added` is a
+//! plain `identifier`) is still that name. Dropping the lost-sibling condition for cross-kind
+//! pairs undoes renames a reader keeps (`[` -> `(` of a type argument list turned call).
+//!
 //! Only unpairs; phase 10 records the delete and the insert.
 
 use crate::code::ASTMetadata;
@@ -44,6 +52,10 @@ fn lost_named_sibling(
     })
 }
 
+fn text(meta: &ASTMetadata, id: usize) -> Option<&str> {
+    meta.node_info.get(&id).map(|info| info.text.as_str())
+}
+
 fn kind(meta: &ASTMetadata, id: usize) -> Option<&str> {
     meta.node_info.get(&id).map(|info| info.kind.as_str())
 }
@@ -60,11 +72,21 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         .mapping
         .iter()
         .filter(|&(&(b, a), mapping)| {
-            b != 0 && a != 0 && mapping.operation == ASTMappingOperation::Update
+            b != 0
+                && a != 0
+                && matches!(
+                    mapping.operation,
+                    ASTMappingOperation::Update | ASTMappingOperation::MatchButNotIdentical
+                )
         })
         .map(|(&pair, _)| pair)
         .filter(|&(b, a)| {
             if !is_leaf(before, b) || !is_leaf(after, a) {
+                return false;
+            }
+            // The same name in another grammar context (`self.added` moved into a macro's token
+            // tree reads `added` as a plain identifier) is no rename.
+            if text(before, b) == text(after, a) {
                 return false;
             }
             let (Some(&before_parent), Some(&after_parent)) =
@@ -81,5 +103,62 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
     stray.sort_unstable();
     for (b, a) in stray {
         diff.remove_match_mapping(b, a);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::code::{Code, Language};
+    use crate::diff::diff_code;
+
+    /// The id of the first leaf reading `text`, in document order.
+    fn leaf(code: &Code, text: &str) -> usize {
+        let mut found = Vec::new();
+        let mut stack = vec![code.ast.as_ref().unwrap().root_node()];
+        while let Some(node) = stack.pop() {
+            if node.child_count() == 0 && code.contents.get(node.byte_range()) == Some(text) {
+                found.push((node.start_byte(), node.id()));
+            }
+            let mut cursor = node.walk();
+            stack.extend(node.children(&mut cursor));
+        }
+        found.sort_unstable();
+        found[0].1
+    }
+
+    /// java-defects4j-cli-24-helpformatter, minimized: a `throw new` replaced by an assignment.
+    #[test]
+    fn a_type_name_is_not_renamed_into_the_variable_that_replaced_its_statement() {
+        let before = Code::from_string(
+            "class C {\n    void m() {\n        if (a) {\n            throw new IllegalStateException(\"no room\");\n        }\n    }\n}\n",
+            &Language::Java,
+        );
+        let after = Code::from_string(
+            "class C {\n    void m() {\n        if (a) {\n            nextLineTabStop = width - 1;\n        }\n    }\n}\n",
+            &Language::Java,
+        );
+        let diff = diff_code(&before, &after).ast.unwrap();
+        assert_eq!(
+            diff.before_node_map
+                .get(&leaf(&before, "IllegalStateException")),
+            Some(&0)
+        );
+    }
+
+    /// A name moved into a macro's token tree changes kind, not identity.
+    #[test]
+    fn a_name_that_reads_the_same_across_kinds_keeps_its_partner() {
+        let before = Code::from_string(
+            "fn f(s: &S) -> String {\n    Label::new(s.added.to_string()).render()\n}\n",
+            &Language::Rust,
+        );
+        let after = Code::from_string(
+            "fn f(s: &S) -> String {\n    Label::new(format!(\"+{}\", s.added)).render()\n}\n",
+            &Language::Rust,
+        );
+        let diff = diff_code(&before, &after).ast.unwrap();
+        let partner = diff.before_node_map.get(&leaf(&before, "added")).copied();
+        assert_ne!(partner, Some(0));
+        assert_ne!(partner, None);
     }
 }
