@@ -4616,70 +4616,69 @@ fn preset_census() -> Result<()> {
     use std::collections::BTreeMap;
 
     type Key = (&'static str, &'static str, &'static str);
+    /// A fixture's size, both files together, and its runs and bytes per key.
+    type Measured = (usize, BTreeMap<Key, [usize; 2]>);
     let label_name = |label: Option<TextLabel>| label.map_or("-", TextLabel::name);
 
     let names = paper_census_fixture_names()?;
-    let measured = paper_census_map(
-        &names,
-        |name| -> Result<Option<(usize, BTreeMap<Key, [usize; 2]>)>> {
-            let Some(Ok(Some(pair))) = crate::test::helper::diffs_case_dir(name)
-                .map(|dir| crate::test::helper::code_pair_from_dir(&dir))
-            else {
-                return Ok(None);
-            };
-            let (before, after) = (&pair.0, &pair.1);
-            let Ok(mapping) = load_with(name, before, after) else {
-                return Ok(None);
-            };
-            if mapping.text_mappings.len() < 2
-                || graded_cases(&mapping) != [GradedCase::Minimal, GradedCase::Full]
-            {
-                return Ok(None);
-            }
-            let (Ok(minimal), Ok(full)) = (
-                paintings_for_mode(&mapping, RenderOptions::MINIMAL),
-                paintings_for_mode(&mapping, RenderOptions::FULL),
-            ) else {
-                return Ok(None);
-            };
-            let (Some(minimal), Some(full)) = (minimal.first(), full.first()) else {
-                return Ok(None);
-            };
-            if std::ptr::eq(*minimal, *full) {
-                // Paintings that name no preset are alternatives, not a Minimal and a Full.
-                return Ok(None);
-            }
-            let minimal = painted_labels(minimal, before, after)?;
-            let full = painted_labels(full, before, after)?;
-            let mut tally: BTreeMap<Key, [usize; 2]> = BTreeMap::new();
-            for (side, contents) in [&before.contents, &after.contents].into_iter().enumerate() {
-                let (minimal, full) = (&minimal[side], &full[side]);
-                let mut index = 0usize;
-                while index < contents.len() {
-                    let pair = (minimal[index], full[index]);
-                    if pair == (None, None) {
-                        index += 1;
-                        continue;
-                    }
-                    let start = index;
-                    while index < contents.len() && (minimal[index], full[index]) == pair {
-                        index += 1;
-                    }
-                    let text = String::from_utf8_lossy(&contents.as_bytes()[start..index]);
-                    let entry = tally
-                        .entry((
-                            label_name(pair.0),
-                            label_name(pair.1),
-                            painted_text_class(&text),
-                        ))
-                        .or_default();
-                    entry[0] += 1;
-                    entry[1] += index - start;
+    let measured = paper_census_map(&names, |name| -> Result<Option<Measured>> {
+        let Some(Ok(Some(pair))) = crate::test::helper::diffs_case_dir(name)
+            .map(|dir| crate::test::helper::code_pair_from_dir(&dir))
+        else {
+            return Ok(None);
+        };
+        let (before, after) = (&pair.0, &pair.1);
+        let Ok(mapping) = load_with(name, before, after) else {
+            return Ok(None);
+        };
+        if mapping.text_mappings.len() < 2
+            || graded_cases(&mapping) != [GradedCase::Minimal, GradedCase::Full]
+        {
+            return Ok(None);
+        }
+        let (Ok(minimal), Ok(full)) = (
+            paintings_for_mode(&mapping, RenderOptions::MINIMAL),
+            paintings_for_mode(&mapping, RenderOptions::FULL),
+        ) else {
+            return Ok(None);
+        };
+        let (Some(minimal), Some(full)) = (minimal.first(), full.first()) else {
+            return Ok(None);
+        };
+        if std::ptr::eq(*minimal, *full) {
+            // Paintings that name no preset are alternatives, not a Minimal and a Full.
+            return Ok(None);
+        }
+        let minimal = painted_labels(minimal, before, after)?;
+        let full = painted_labels(full, before, after)?;
+        let mut tally: BTreeMap<Key, [usize; 2]> = BTreeMap::new();
+        for (side, contents) in [&before.contents, &after.contents].into_iter().enumerate() {
+            let (minimal, full) = (&minimal[side], &full[side]);
+            let mut index = 0usize;
+            while index < contents.len() {
+                let pair = (minimal[index], full[index]);
+                if pair == (None, None) {
+                    index += 1;
+                    continue;
                 }
+                let start = index;
+                while index < contents.len() && (minimal[index], full[index]) == pair {
+                    index += 1;
+                }
+                let text = String::from_utf8_lossy(&contents.as_bytes()[start..index]);
+                let entry = tally
+                    .entry((
+                        label_name(pair.0),
+                        label_name(pair.1),
+                        painted_text_class(&text),
+                    ))
+                    .or_default();
+                entry[0] += 1;
+                entry[1] += index - start;
             }
-            Ok(Some((before.contents.len() + after.contents.len(), tally)))
-        },
-    )?;
+        }
+        Ok(Some((before.contents.len() + after.contents.len(), tally)))
+    })?;
 
     let csv_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("research")

@@ -114,6 +114,42 @@ The paper's scope is **1687** fixtures. Over them omnidiff maps 18,616,022 of 18
 third of three runs; the README's code-speed figures are each fixture's median `elapsed_ms` over
 the three.
 
+## Refresh of 2026-11-10
+
+After the accuracy and speed commit `b87928e8` (repaired fixtures, new matching and painting rules,
+the three-case painting grading), on the laptop: `optimal_solutions_benchmark.csv` and
+`human_mapping_analysis.csv` re-run in that order, with the CORPUS block and the ambiguity,
+rendering and shape reports. Not re-run, for want of the external tools and of the server: the tool
+comparison and the fixture robustness run (still at the 1,217 fixtures of 2026-09-26) and the two
+AST-diff oracle runs (still at the 1,683 fixtures of 2026-10-22). 12 more fixtures in scope, the SQL
+fixtures of 2026-11-09, all in `full`.
+
+| | fixtures | with a `human_mapping.json` |
+|---|---|---|
+| `handmade` | 63 | 62 |
+| `small` (Curated) | 220 | 220 |
+| `full` (Full) | 244 | 244 |
+| `stratified` | 791 | 791 |
+| `defects4j` | 996 | 444 |
+| **total** | **2314** | **1761** |
+
+The paper's scope is **1699** fixtures. Over them omnidiff maps 18,631,192 of 18,638,860 nodes
+(99.96%), and 12,590,174 of 12,595,261 visible nodes; 1,427 fixtures have no visible node mapped
+differently. `analyze_human_mappings` now parses one fixture at a time, so it runs under a 10 GB
+memory cap.
+
+Three files joined this directory the same day, each written by an `#[ignore]`d test or a script
+and read by one report of `research/analysis/`:
+
+- `preset_census.csv` - what the `Full` hand painting adds to the `Minimal` one, per fixture with
+  both: the `preset_census` test (`make measure-presets`), read by `preset_report.py`.
+- `invariant_gap_census.csv` - the violation count of each of the 31 ground-truth invariants for
+  five accounts of each fixture (the hand paintings, GNU diff's line script and the human tree
+  mapping painted as they stand, and the human and omnidiff mappings through the renderer): the
+  `invariant_gap_census` test (`make measure-invariants`), read by `invariants_report.py`.
+- `dataset_growth.csv` - the date each fixture's ground truth and first painting were committed,
+  from git history: `dataset_growth.py --measure` (`make measure-dataset-growth`).
+
 ## Scope
 
 The paper's scope is `_common.PAPER_DATASETS`: every dataset above except `handmade`, which stays

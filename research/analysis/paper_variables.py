@@ -99,7 +99,7 @@ STRATIFIED_PER_CELL = 10
 # Ground-truth corpus size and AST-node accuracy.
 # source: cargo run --release --features test-fixtures --bin benchmark_optimal_solutions -- --csv
 #         (research/data/quality/optimal_solutions_benchmark.csv), totalled over solved fixtures.
-# Measured 2026-11-07, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
+# Measured 2026-11-10, over `_common.PAPER_DATASETS` - the `small`, `full`, `stratified` and
 # `defects4j` fixtures. The corpus directory also holds 63 `handmade` fixtures, hand-written
 # minimal examples of one change pattern each; the product benchmark scores them and this paper
 # does not, because no rate over cases written to exercise the matcher estimates anything about
@@ -110,34 +110,34 @@ STRATIFIED_PER_CELL = 10
 # why it carries so much of NodesTotal. Only solved fixtures count - the other 552 Defects4J
 # directories carry no human_mapping.json and are invisible here.
 #
-# In scope: 1687 fixture directories carrying a human_mapping.json (220 small, 232 full, 791
-# stratified, 444 defects4j).
+# In scope: 1699 fixture directories carrying a human_mapping.json (220 small, 244 full, 791
+# stratified, 444 defects4j); the 12 new ones are the SQL fixtures of 2026-11-09.
 # `rust-completely-unrelated-main-files`, which is deliberately ground-truth-free (a
 # pathological-latency case, not an accuracy case, reporting `human_unsolved` in the CSV), is a
 # `handmade` fixture and so is out of scope here rather than being an in-scope exception.
 #
-# NumFixtures is the ground-truth-bearing count, 1687, which is the denominator of the node
-# accuracy below. The per-tool rows are not over it: the 2026-10-17, 2026-10-22 and 2026-11-07
-# refreshes did not re-run the tool comparison, which stays at the 1217 fixtures of 2026-09-26
+# NumFixtures is the ground-truth-bearing count, 1699, which is the denominator of the node
+# accuracy below. The per-tool rows are not over it: the 2026-10-17, 2026-10-22, 2026-11-07 and
+# 2026-11-10 refreshes did not re-run the tool comparison, which stays at the 1217 fixtures of 2026-09-26
 # (\UnixDiffFixtures; footnote fn:in-progress in main.tex says so). The ablation study is older and names its own
 # corpus state.
 #
-# Refreshed together, from one corpus state, on 2026-11-07. These four move as a set and must be
+# Refreshed together, from one corpus state, on 2026-11-10. These four move as a set and must be
 # refreshed as a set: re-run the benchmark with --csv, re-run `analyze_human_mappings --csv` so the
 # scope artifact agrees with it, then recompute here. Order matters in one direction: human_mapping_analysis.csv carries a
 # `current_mismatches` column read back from optimal_solutions_benchmark.csv, so the benchmark runs
 # first. The check at the bottom of this file compares NumFixtures against the corpus on disk
 # precisely because the previous values silently outlived the corpus they described.
 CORPUS = {
-    "NumFixtures": 1687,
-    "NodesMatched": 18_616_022,
-    "NodesTotal": 18_623_801,
+    "NumFixtures": 1699,
+    "NodesMatched": 18_631_192,
+    "NodesTotal": 18_638_860,
     # Distinct languages across the fixture corpus, from `analyze_human_mappings`' own "By
-    # language" census restricted to these fixtures (24 as of 2026-11-07; `defects4j` is Java only, and the excluded handmade
+    # language" census restricted to these fixtures (25 as of 2026-11-10, SQL the newest; `defects4j` is Java only, and the excluded handmade
     # fixtures cover no language the sampled ones lack).
     # Not the same number as the empirical study's \NumLanguages, which counts languages in the
     # 100-repository measure-file-stats corpus.
-    "NumFixtureLanguages": 24,
+    "NumFixtureLanguages": 25,
 }
 
 # Same corpus, same run, counting only nodes that carry text of their own and therefore reach the
@@ -145,8 +145,8 @@ CORPUS = {
 # alongside the all-node figure because the all-node denominator includes every ancestor of every
 # change up to the root, so it partly measures how deep a grammar's tree is.
 CORPUS_VISIBLE = {
-    "VisibleNodesMatched": 12_581_856,
-    "VisibleNodesTotal": 12_587_060,
+    "VisibleNodesMatched": 12_590_174,
+    "VisibleNodesTotal": 12_595_261,
 }
 
 # Leave-one-out ablation deltas, in mismatches, against an all-enabled baseline. A positive number
@@ -196,6 +196,10 @@ TARGETS = {
     # this word and the paper's phase headings must be changed together.
     "NumPhasesWord": "five",
     "GumTreeVersion": "v4.0.0-beta8",
+    # Languages OmniDiff parses with a tree-sitter grammar and diffs structurally: the count the
+    # root README's "Supported content" section states (SQL, 2026-11-09, is the 26th). The
+    # fixture corpus covers \NumFixtureLanguages of them.
+    "NumSupportedLanguages": "26",
 }
 
 # The machine every corpus-wide measurement in this paper was run on, read off it on 2026-09-07
@@ -1325,6 +1329,118 @@ def content_accuracy(research_dir):
     return values
 
 
+# The six levels of the content ground truth, weakest first. The first three are strengths of
+# "nothing deliberate changed"; the last three are kinds of "something did".
+CONTENT_LEVELS = ["invisible", "imperceptible", "artifacts", "edited", "redrawn", "replaced"]
+CONTENT_NOTHING_LEVELS = CONTENT_LEVELS[:3]
+
+
+def content_verdicts(repo_root):
+    """How the annotators judged the content changes, from the `human_content.json` files of
+    `src/test/data/<family>/`: the level of each judged pair (the part of `verdict` before the
+    first `+`; the rest are tags such as `resized`) and of each judged member. DERIVED from the
+    ground truth alone - no engine output is read - which is what lets these stand in a research
+    answer: every one of these pairs differs in its bytes, so the share judged at one of the
+    three "nothing" levels is the share of byte deltas a reader has nothing to see in."""
+    pairs = collections.Counter()
+    members = collections.Counter()
+    for family, _ in CONTENT_FAMILIES:
+        pattern = os.path.join(repo_root, "src", "test", "data", family, "*", "human_content.json")
+        for path in glob.glob(pattern):
+            with open(path) as f:
+                judged = json.load(f)
+            if not judged.get("verdict"):
+                continue
+            pairs[judged["verdict"].split("+")[0]] += 1
+            for verdict in (judged.get("members") or {}).values():
+                if isinstance(verdict, str):
+                    members[verdict.split("+")[0]] += 1
+    if not pairs:
+        return {}
+
+    def pct(part, whole):
+        return f"{part / whole * 100:.1f}" if whole else PLACEHOLDER
+
+    total = sum(pairs.values())
+    member_total = sum(members.values())
+    nothing = sum(pairs[level] for level in CONTENT_NOTHING_LEVELS)
+    member_nothing = sum(members[level] for level in CONTENT_NOTHING_LEVELS)
+    values = {
+        "ContentVerdictPairs": total,
+        "ContentVerdictNothing": nothing,
+        "ContentVerdictNothingPct": pct(nothing, total),
+        "ContentVerdictMembers": member_total,
+        "ContentVerdictMembersNothing": member_nothing,
+        "ContentVerdictMembersNothingPct": pct(member_nothing, member_total),
+    }
+    for level in CONTENT_LEVELS:
+        values[f"ContentVerdict{level.capitalize()}"] = pairs[level]
+        values[f"ContentVerdict{level.capitalize()}Pct"] = pct(pairs[level], total)
+    return values
+
+
+def rendering_accuracy(research_dir):
+    """OmniDiff against the ground truth at the two levels the paper's tool section reports, on
+    the current corpus, scoped to `PAPER_DATASETS`.
+
+    * Mapping: per fixture of `data/quality/optimal_solutions_benchmark.csv`, whether no visible
+      node is mapped differently from the human mapping, and whether at most 1% of them are.
+    * Painting: per fixture and graded case of `data/quality/painting_attribution.csv`
+      (`painting_failure_census`), whether no byte is painted differently from the hand painting
+      (`real_bytes` is zero), and whether at most 1% of the fixture's bytes are. The cases are
+      `human_mapping::GradedCase`: `minimal`, `full`, and `single` for a lone painting that names
+      no preset, which both presets have to reproduce.
+
+    DERIVED. Both files are written by the product's own gates, so they follow the corpus; the
+    count they are over is emitted beside each rate."""
+    datasets = fixture_datasets()
+    values = {}
+    path = os.path.join(research_dir, "data", "quality", "optimal_solutions_benchmark.csv")
+    if os.path.exists(path):
+        with open(path, newline="") as f:
+            rows = [
+                r
+                for r in csv.DictReader(f)
+                if r["human_unsolved"] == "false" and in_paper_scope(r["solution"], datasets)
+            ]
+        zero = sum(int(r["visible_mismatches"]) == 0 for r in rows)
+        within = sum(float(r["visible_mismatch_pct"]) <= 1.0 for r in rows)
+        times = sorted(float(r["elapsed_ms"]) for r in rows)
+        values |= {
+            "MappingFixtures": latex_number(len(rows)),
+            "MappingZeroVisible": latex_number(zero),
+            "MappingZeroVisiblePct": f"{zero / len(rows) * 100:.1f}",
+            "MappingWithinOne": latex_number(within),
+            "MappingWithinOnePct": f"{within / len(rows) * 100:.1f}",
+            "MappingUnderHundredMsPct": f"{sum(t < 100 for t in times) / len(times) * 100:.1f}",
+        }
+    path = os.path.join(research_dir, "data", "quality", "painting_attribution.csv")
+    if os.path.exists(path):
+        with open(path, newline="") as f:
+            rows = [r for r in csv.DictReader(f) if in_paper_scope(r["fixture"], datasets)]
+        for case in ("minimal", "full", "single"):
+            of_case = [r for r in rows if r["preset"] == case]
+            if not of_case:
+                continue
+            zero = sum(int(r["real_bytes"]) == 0 for r in of_case)
+            within = sum(
+                int(r["real_bytes"]) * 100 <= int(r["total_bytes"]) for r in of_case
+            )
+            # What the renderer alone leaves: the human mapping, rendered, against the painting.
+            ideal = sum(int(r["renderer_bytes"]) == 0 for r in of_case)
+            stem = f"Painting{case.capitalize()}"
+            values |= {
+                f"{stem}Fixtures": latex_number(len(of_case)),
+                f"{stem}Zero": latex_number(zero),
+                f"{stem}ZeroPct": f"{zero / len(of_case) * 100:.1f}",
+                f"{stem}WithinOne": latex_number(within),
+                f"{stem}WithinOnePct": f"{within / len(of_case) * 100:.1f}",
+                f"{stem}IdealZero": latex_number(ideal),
+                f"{stem}IdealZeroPct": f"{ideal / len(of_case) * 100:.1f}",
+            }
+    return values
+
+
 def embedded_fixtures(repo_root):
     """How many of the paper's fixtures carry ground truth for code embedded in a string of
     another language (`src/diff/embedded.rs`): a non-empty `embedded` list in the fixture's
@@ -1370,6 +1486,7 @@ def build(
     growth_lines,
     preset_lines,
     invariant_lines,
+    accuracy,
 ):
     """Returns the complete variables.tex as a list of lines."""
     out = [
@@ -1581,7 +1698,8 @@ def build(
         "% `content_census`), how fast per family (data/performance/content_speed/, the machine",
         "% CONTENT_SPEED_MACHINE names - `content_speed`), how accurate against the judged",
         "% fixtures (data/quality/content_accuracy.csv - `content_accuracy`), and how many code",
-        "% fixtures carry ground truth for code inside a string (`embedded_fixtures`).",
+        "% fixtures carry ground truth for code inside a string (`embedded_fixtures`), and how",
+        "% the annotators judged the content changes (`content_verdicts`).",
     ]
     out += [command(name, value) for name, value in content.items()]
 
@@ -1621,6 +1739,15 @@ def build(
         "% --- The repair of the ground truth's own violations (AUTHORED - INVARIANT_REPAIR).",
     ]
     out += [command(name, value) for name, value in INVARIANT_REPAIR.items()]
+
+    out += [
+        "",
+        "% --- OmniDiff against the ground truth on the current corpus: fixtures with no visible",
+        "% node mapped differently, and fixtures with no byte painted differently, per graded",
+        "% case (DERIVED from data/quality/optimal_solutions_benchmark.csv and",
+        "% painting_attribution.csv - see `rendering_accuracy`).",
+    ]
+    out += [command(name, value) for name, value in accuracy.items()]
 
     return out
 
@@ -1820,6 +1947,8 @@ def main():
             )
         content.update(part)
     content.update(embedded_fixtures(repo_root))
+    content.update(content_verdicts(repo_root))
+    accuracy = rendering_accuracy(research_dir)
 
     lines = build(
         empirical,
@@ -1840,6 +1969,7 @@ def main():
         growth,
         presets,
         invariants,
+        accuracy,
     )
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

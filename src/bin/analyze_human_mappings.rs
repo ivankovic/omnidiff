@@ -1040,16 +1040,21 @@ fn write_kind_mismatches(rows: &[KindMismatch], path: &std::path::Path) -> Resul
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let code_pairs = helper::handmade_test_code_pairs()?;
-    let mut names: Vec<String> = code_pairs.keys().cloned().collect();
+    // One fixture parsed at a time and dropped: the whole corpus in memory at once is about
+    // 19 GB.
+    let case_dirs: HashMap<String, PathBuf> =
+        helper::handmade_test_case_dirs()?.into_iter().collect();
+    let mut names: Vec<String> = case_dirs.keys().cloned().collect();
     names.sort();
+    let pair_of = |name: &String| helper::code_pair_from_dir(&case_dirs[name]);
 
     if args.elimination_cost {
         let mut hits = Vec::new();
         for name in &names {
-            let (before, after) = code_pairs
-                .get(name)
-                .expect("name came from code_pairs.keys()");
+            let Some(pair) = pair_of(name)? else {
+                continue;
+            };
+            let (before, after) = (&pair.0, &pair.1);
             hits.extend(elimination_hits_of(name, before, after));
         }
         let (would_require, validation): (Vec<_>, Vec<_>) =
@@ -1107,9 +1112,10 @@ fn main() -> Result<()> {
             String,
         )> = Vec::new();
         for name in &names {
-            let (before, after) = code_pairs
-                .get(name)
-                .expect("name came from code_pairs.keys()");
+            let Some(pair) = pair_of(name)? else {
+                continue;
+            };
+            let (before, after) = (&pair.0, &pair.1);
             let Some(c) = kind_invariant_cost_of(name, before, after) else {
                 continue;
             };
@@ -1194,9 +1200,10 @@ fn main() -> Result<()> {
             target.unwrap_or_else(|| PathBuf::from("./research/data/quality/kind_mismatches.csv"));
         let mut rows = Vec::new();
         for name in &names {
-            let (before, after) = code_pairs
-                .get(name)
-                .expect("name came from code_pairs.keys()");
+            let Some(pair) = pair_of(name)? else {
+                continue;
+            };
+            let (before, after) = (&pair.0, &pair.1);
             rows.extend(kind_mismatches_of(name, before, after));
         }
         write_kind_mismatches(&rows, &path)?;
@@ -1218,9 +1225,10 @@ fn main() -> Result<()> {
 
     let mut all_stats = Vec::with_capacity(names.len());
     for name in &names {
-        let (before, after) = code_pairs
-            .get(name)
-            .expect("name came from code_pairs.keys()");
+        let Some(pair) = pair_of(name)? else {
+            continue;
+        };
+        let (before, after) = (&pair.0, &pair.1);
         let category = helper::diffs_case_dir(name)
             .and_then(|p| {
                 p.parent()
