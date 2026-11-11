@@ -14,6 +14,15 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+//! Phase 1's hash descent ([`solve_with_hash_map`]): largest-first, each still-unmatched node
+//! paired with a same-hash partner and its subtree mapped in lockstep.
+//!
+//! A bucket of `k` identical subtrees (generated tables, a file of copied functions) is visited
+//! once per member, so the free members of a bucket are kept as [`FreeBuckets`], built on the
+//! bucket's first visit and shrunk as pairs are mapped, rather than re-filtered from the whole
+//! bucket on every visit: O(k²) became O(k log k). Their orders reproduce the filtered lists'
+//! exactly (a member's index in the bucket breaks every tie), so the choices are unchanged.
+
 use std::collections::BTreeMap;
 
 use crate::code::metadata::metadata_of;
@@ -203,89 +212,94 @@ pub(crate) fn solve_with_hash_map(
         }
     };
 
-    let map_pair =
-        |diff: &mut ASTDiff, before_node: tree_sitter::Node, after_node: tree_sitter::Node| {
-            let before_node_id = before_node.id();
-            let (operation, cost) = classify(before_node_id, after_node.id());
-            diff.add_mapping(
-                before_node_id,
-                after_node.id(),
-                ASTMapping {
-                    cost,
-                    operation,
-                    reason: root_reason,
-                },
+    // Every pair it maps, root and descendants, goes into `mapped` for `FreeBuckets::remove`.
+    let map_pair = |diff: &mut ASTDiff,
+                    mapped: &mut Vec<(usize, usize)>,
+                    before_node: tree_sitter::Node,
+                    after_node: tree_sitter::Node| {
+        let before_node_id = before_node.id();
+        let (operation, cost) = classify(before_node_id, after_node.id());
+        mapped.push((before_node_id, after_node.id()));
+        diff.add_mapping(
+            before_node_id,
+            after_node.id(),
+            ASTMapping {
+                cost,
+                operation,
+                reason: root_reason,
+            },
+        );
+
+        // Nodes whose own children were reordered; their ancestors are downgraded afterwards.
+        let mut reordered_ids: Vec<usize> = Vec::new();
+        let mut stack = vec![(before_node, after_node)];
+        while let Some((before_parent, after_parent)) = stack.pop() {
+            let (pairs, reordered) = pair_children_for_descent(
+                before_parent,
+                after_parent,
+                &before_metadata,
+                &after_metadata,
             );
 
-            // Nodes whose own children were reordered; their ancestors are downgraded afterwards.
-            let mut reordered_ids: Vec<usize> = Vec::new();
-            let mut stack = vec![(before_node, after_node)];
-            while let Some((before_parent, after_parent)) = stack.pop() {
-                let (pairs, reordered) = pair_children_for_descent(
-                    before_parent,
-                    after_parent,
-                    &before_metadata,
-                    &after_metadata,
+            // The parent's mapping is already recorded, so patch it. A pure reorder is not a no-op:
+            // the ground truth records it as `MatchButNotIdentical` at `COST_UPDATE`.
+            if reordered {
+                if let Some(mapping) = diff
+                    .mapping
+                    .get_mut(&(before_parent.id(), after_parent.id()))
+                {
+                    mapping.reason = ASTMappingReason::FullyMappingSubtrees;
+                    mapping.operation = ASTMappingOperation::MatchButNotIdentical;
+                    mapping.cost = crate::diff::COST_UPDATE;
+                }
+                reordered_ids.push(before_parent.id());
+            }
+
+            for (before_child, after_child) in pairs {
+                // Either side may already be decided: the kind-only run descends through subtrees
+                // the kind-and-value run already matched inside, and `add_mapping` would silently
+                // overwrite the earlier partner.
+                if diff.before_node_map.contains_key(&before_child.id())
+                    || diff.after_node_map.contains_key(&after_child.id())
+                {
+                    continue;
+                }
+                let (operation, cost) = classify(before_child.id(), after_child.id());
+                mapped.push((before_child.id(), after_child.id()));
+                diff.add_mapping(
+                    before_child.id(),
+                    after_child.id(),
+                    ASTMapping {
+                        cost,
+                        operation,
+                        reason: descendant_reason,
+                    },
                 );
-
-                // The parent's mapping is already recorded, so patch it. A pure reorder is not a no-op:
-                // the ground truth records it as `MatchButNotIdentical` at `COST_UPDATE`.
-                if reordered {
-                    if let Some(mapping) = diff
-                        .mapping
-                        .get_mut(&(before_parent.id(), after_parent.id()))
-                    {
-                        mapping.reason = ASTMappingReason::FullyMappingSubtrees;
-                        mapping.operation = ASTMappingOperation::MatchButNotIdentical;
-                        mapping.cost = crate::diff::COST_UPDATE;
-                    }
-                    reordered_ids.push(before_parent.id());
-                }
-
-                for (before_child, after_child) in pairs {
-                    // Either side may already be decided: the kind-only run descends through subtrees
-                    // the kind-and-value run already matched inside, and `add_mapping` would silently
-                    // overwrite the earlier partner.
-                    if diff.before_node_map.contains_key(&before_child.id())
-                        || diff.after_node_map.contains_key(&after_child.id())
-                    {
-                        continue;
-                    }
-                    let (operation, cost) = classify(before_child.id(), after_child.id());
-                    diff.add_mapping(
-                        before_child.id(),
-                        after_child.id(),
-                        ASTMapping {
-                            cost,
-                            operation,
-                            reason: descendant_reason,
-                        },
-                    );
-                    stack.push((before_child, after_child));
-                }
+                stack.push((before_child, after_child));
             }
+        }
 
-            // A container is not a no-op if anything inside it was reordered, up to this match's root.
-            // The ancestors keep their reason: only the reordered container itself reordered.
-            for reordered_id in reordered_ids {
-                let mut cur = reordered_id;
-                while let Some(&parent_id) = before_metadata.node_to_parent.get(&cur) {
-                    let Some(&after_parent_id) = diff.before_node_map.get(&parent_id) else {
-                        break;
-                    };
-                    if let Some(mapping) = diff.mapping.get_mut(&(parent_id, after_parent_id))
-                        && mapping.operation == ASTMappingOperation::Identical
-                    {
-                        mapping.operation = ASTMappingOperation::MatchButNotIdentical;
-                        mapping.cost = crate::diff::COST_UPDATE;
-                    }
-                    if parent_id == before_node_id {
-                        break;
-                    }
-                    cur = parent_id;
+        // A container is not a no-op if anything inside it was reordered, up to this match's root.
+        // The ancestors keep their reason: only the reordered container itself reordered.
+        for reordered_id in reordered_ids {
+            let mut cur = reordered_id;
+            while let Some(&parent_id) = before_metadata.node_to_parent.get(&cur) {
+                let Some(&after_parent_id) = diff.before_node_map.get(&parent_id) else {
+                    break;
+                };
+                if let Some(mapping) = diff.mapping.get_mut(&(parent_id, after_parent_id))
+                    && mapping.operation == ASTMappingOperation::Identical
+                {
+                    mapping.operation = ASTMappingOperation::MatchButNotIdentical;
+                    mapping.cost = crate::diff::COST_UPDATE;
                 }
+                if parent_id == before_node_id {
+                    break;
+                }
+                cur = parent_id;
             }
-        };
+        }
+    };
 
     // What the lockstep descent from a root pair would cost (`classify` over every pair
     // `pair_children_for_descent` makes): how far two same-shaped subtrees differ in content.
@@ -402,6 +416,8 @@ pub(crate) fn solve_with_hash_map(
         false
     };
 
+    let mut free = FreeBuckets::default();
+    let mut mapped: Vec<(usize, usize)> = Vec::new();
     for &before_node_id in &before_node_ids {
         if diff.before_node_map.contains_key(&before_node_id) {
             continue;
@@ -415,25 +431,29 @@ pub(crate) fn solve_with_hash_map(
         let Some(after_candidates) = after_hash_to_nodes.get(before_hash_value) else {
             continue;
         };
-        let free_after: Vec<tree_sitter::Node> = after_candidates
-            .iter()
-            .filter(|&&id| !diff.after_node_map.contains_key(&id))
-            .filter_map(|id| node_cache.after.get(id).copied())
-            .collect();
-        let free_before: Vec<tree_sitter::Node> = if free_after.len() > 1 {
-            bucket_of
-                .get(before_hash_value)
-                .into_iter()
-                .flatten()
-                .filter(|&&id| !diff.before_node_map.contains_key(&id))
-                .filter_map(|id| node_cache.before.get(id).copied())
-                .collect()
+        let free_after_count = free
+            .after_bucket(*before_hash_value, after_candidates, node_cache, diff)
+            .len();
+        let free_before_count = if free_after_count > 1 {
+            free.before_bucket(*before_hash_value, &bucket_of, node_cache, diff)
+                .len()
         } else {
-            Vec::new()
+            0
         };
+        // Listed only for the assignment, which `SEGMENT_SIMILARITY_MAX_CELLS` keeps small.
+        let use_assignment = free_after_count > 1
+            && free_before_count * free_after_count <= SEGMENT_SIMILARITY_MAX_CELLS;
+        let (free_before, free_after): (Vec<tree_sitter::Node>, Vec<tree_sitter::Node>) =
+            if use_assignment {
+                (
+                    free.before[before_hash_value].values().copied().collect(),
+                    free.after_in_bucket_order(*before_hash_value),
+                )
+            } else {
+                (Vec::new(), Vec::new())
+            };
 
-        let assigned = (free_after.len() > 1
-            && free_before.len() * free_after.len() <= SEGMENT_SIMILARITY_MAX_CELLS)
+        let assigned = use_assignment
             .then(|| {
                 let mut free_before = free_before.clone();
                 let mut free_after = free_after.clone();
@@ -500,9 +520,8 @@ pub(crate) fn solve_with_hash_map(
             None => {
                 // Proximity in the file, not discovery order, tells true duplicates from
                 // coincidences.
-                let Some(&after_node) = free_after
-                    .iter()
-                    .min_by_key(|n| n.start_byte().abs_diff(before_node.start_byte()))
+                let Some(after_node) =
+                    free.nearest_after(*before_hash_value, before_node.start_byte())
                 else {
                     continue;
                 };
@@ -514,7 +533,10 @@ pub(crate) fn solve_with_hash_map(
             if vetoed(diff, anchors, b, a) {
                 continue;
             }
-            map_pair(diff, b, a);
+            map_pair(diff, &mut mapped, b, a);
+            for (before_id, after_id) in mapped.drain(..) {
+                free.remove(before_id, after_id);
+            }
             for (before_byte, after_byte) in [
                 (b.start_byte(), a.start_byte()),
                 (b.end_byte(), a.end_byte()),
@@ -523,6 +545,116 @@ pub(crate) fn solve_with_hash_map(
                     .entry(before_byte)
                     .or_insert(after_byte as i64 - before_byte as i64);
             }
+        }
+    }
+}
+
+/// The still-unmatched members of the buckets [`solve_with_hash_map`] has visited, per side and
+/// hash. Each is built on its bucket's first visit by the filter the per-visit lists used (not in
+/// the diff, in the node cache), keeping each member's index in the bucket, and loses a member when
+/// `map_pair` maps it; nothing else maps a node there, and nothing unmaps one.
+#[derive(Default)]
+struct FreeBuckets<'t> {
+    /// Free after members by `(start byte, index in after_hash_to_nodes' list)`.
+    after: rustc_hash::FxHashMap<u64, BTreeMap<(usize, usize), tree_sitter::Node<'t>>>,
+    after_key_of: rustc_hash::FxHashMap<usize, (u64, (usize, usize))>,
+    /// Free before members by index in `bucket_of`'s list.
+    before: rustc_hash::FxHashMap<u64, BTreeMap<usize, tree_sitter::Node<'t>>>,
+    before_key_of: rustc_hash::FxHashMap<usize, (u64, usize)>,
+}
+
+impl<'t> FreeBuckets<'t> {
+    fn after_bucket(
+        &mut self,
+        hash: u64,
+        candidates: &[usize],
+        node_cache: &NodeCache<'t>,
+        diff: &ASTDiff,
+    ) -> &BTreeMap<(usize, usize), tree_sitter::Node<'t>> {
+        let key_of = &mut self.after_key_of;
+        self.after.entry(hash).or_insert_with(|| {
+            let mut bucket = BTreeMap::new();
+            for (index, id) in candidates.iter().enumerate() {
+                if diff.after_node_map.contains_key(id) {
+                    continue;
+                }
+                if let Some(&node) = node_cache.after.get(id) {
+                    let key = (node.start_byte(), index);
+                    bucket.insert(key, node);
+                    key_of.insert(*id, (hash, key));
+                }
+            }
+            bucket
+        })
+    }
+
+    fn before_bucket(
+        &mut self,
+        hash: u64,
+        bucket_of: &rustc_hash::FxHashMap<u64, Vec<usize>>,
+        node_cache: &NodeCache<'t>,
+        diff: &ASTDiff,
+    ) -> &BTreeMap<usize, tree_sitter::Node<'t>> {
+        let key_of = &mut self.before_key_of;
+        self.before.entry(hash).or_insert_with(|| {
+            let mut bucket = BTreeMap::new();
+            for (index, id) in bucket_of.get(&hash).into_iter().flatten().enumerate() {
+                if diff.before_node_map.contains_key(id) {
+                    continue;
+                }
+                if let Some(&node) = node_cache.before.get(id) {
+                    bucket.insert(index, node);
+                    key_of.insert(*id, (hash, index));
+                }
+            }
+            bucket
+        })
+    }
+
+    /// The free after members of a built bucket, in the bucket's own order.
+    fn after_in_bucket_order(&self, hash: u64) -> Vec<tree_sitter::Node<'t>> {
+        let mut members: Vec<_> = self.after[&hash]
+            .iter()
+            .map(|(&(_, index), &node)| (index, node))
+            .collect();
+        members.sort_unstable_by_key(|&(index, _)| index);
+        members.into_iter().map(|(_, node)| node).collect()
+    }
+
+    /// The free after member of a built bucket whose start is nearest `byte`, the earliest in the
+    /// bucket's order on a tie: what `min_by_key` over the bucket-ordered list picked.
+    fn nearest_after(&self, hash: u64, byte: usize) -> Option<tree_sitter::Node<'t>> {
+        let bucket = self.after.get(&hash)?;
+        // The earliest-listed member at the nearest start at or before `byte`.
+        let at_or_before = bucket
+            .range(..=(byte, usize::MAX))
+            .next_back()
+            .and_then(|(&(start, _), _)| bucket.range((start, 0)..).next());
+        let later = bucket.range((byte + 1, 0)..).next();
+        match (at_or_before, later) {
+            (Some((&(s1, i1), &n1)), Some((&(s2, i2), &n2))) => {
+                let (d1, d2) = (byte - s1, s2 - byte);
+                Some(if d1 < d2 || (d1 == d2 && i1 < i2) {
+                    n1
+                } else {
+                    n2
+                })
+            }
+            (Some((_, &n)), None) | (None, Some((_, &n))) => Some(n),
+            (None, None) => None,
+        }
+    }
+
+    fn remove(&mut self, before_id: usize, after_id: usize) {
+        if let Some((hash, key)) = self.before_key_of.remove(&before_id)
+            && let Some(bucket) = self.before.get_mut(&hash)
+        {
+            bucket.remove(&key);
+        }
+        if let Some((hash, key)) = self.after_key_of.remove(&after_id)
+            && let Some(bucket) = self.after.get_mut(&hash)
+        {
+            bucket.remove(&key);
         }
     }
 }
