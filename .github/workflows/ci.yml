@@ -70,6 +70,27 @@ jobs:
 
       - run: cargo clippy --locked --tests --features "${{ matrix.features }}" -- -D warnings
 
+  # The library as a dependency sees it, `default-features = false` (issue #37): it must build
+  # without the TUI, and every dependency it is handed must be one it uses. A crate only the
+  # command line needs belongs behind the `tui` feature; `unused-crate-dependencies` says so here
+  # rather than in a downstream project's build.
+  library:
+    name: cargo clippy (library, no default features)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+          components: clippy
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          key: library
+
+      - run: cargo clippy --locked --lib --no-default-features -- -D warnings -D unused-crate-dependencies
+
   audit:
     name: cargo audit
     runs-on: ubuntu-latest
