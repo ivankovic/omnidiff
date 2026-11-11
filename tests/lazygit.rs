@@ -145,6 +145,71 @@ fn lazygits_render_starts_with_the_handshake_and_tags_the_changed_lines() {
     }
 }
 
+/// Under lazygit the `M` panel's saved options decide the painting, as in any headless run, and the
+/// records stay what git's patch says: the patch lazygit stages from has every whitespace change
+/// whatever its own ignore-whitespace toggle, so a line Minimal leaves unpainted is still one it
+/// can stage.
+#[test]
+fn the_saved_render_options_change_the_painting_and_never_the_records() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (before, after) = (dir.path().join("before.py"), dir.path().join("after.py"));
+    std::fs::write(
+        &before,
+        "def f(x):\n    if x:\n        return 1\n    return 0\n",
+    )
+    .unwrap();
+    std::fs::write(
+        &after,
+        "def f(x):\n    if x:\n        if x > 1:\n            return 1\n    return 0\n",
+    )
+    .unwrap();
+    let minimal = dir.path().join("minimal.toml");
+    std::fs::write(
+        &minimal,
+        "[render_options]\nleading_whitespace = false\nstructural_punctuation = false\n\
+         whole_pair_updates = false\npaint_reindent_only_moves = false\n\
+         paint_displaced_moves = false\npaint_resized_moves = false\n\
+         whole_identifier_updates = false\ninterior_whitespace = false\n",
+    )
+    .unwrap();
+    let run = |config: &Path| {
+        let output = Command::new(env!("CARGO_BIN_EXE_omnidiff"))
+            .args([
+                OsStr::new("w.py"),
+                before.as_os_str(),
+                OsStr::new("0000000"),
+            ])
+            .args([
+                OsStr::new("100644"),
+                after.as_os_str(),
+                OsStr::new("0000000"),
+            ])
+            .arg("100644")
+            .current_dir(dir.path())
+            .env("OMNIDIFF_CONFIG", config)
+            .env("OSC1717", "V1")
+            .env_remove("NO_COLOR")
+            .output()
+            .expect("omnidiff runs");
+        assert!(output.status.success());
+        let text = String::from_utf8(output.stdout).expect("UTF-8");
+        let records: Vec<String> = text
+            .split("\u{1b}]1717;")
+            .skip(1)
+            .map(|rest| rest.split('\u{1b}').next().unwrap_or_default().to_string())
+            .collect();
+        (text, records)
+    };
+    let (full, full_records) = run(&dir.path().join("none.toml"));
+    let (minimal, minimal_records) = run(&minimal);
+    assert_ne!(full, minimal, "the saved options change the painting");
+    assert_eq!(full_records, minimal_records);
+    assert!(
+        full_records.contains(&"1;a;3;;w.py".to_string()),
+        "{full_records:?}"
+    );
+}
+
 /// omnidiff with `args`, stdout a pipe, and `OSC1717` set to `osc` (unset for `None`).
 fn piped(args: &[&OsStr], osc: Option<&str>) -> (bool, Vec<u8>) {
     let home = tempfile::tempdir().expect("temp dir");

@@ -78,8 +78,12 @@
 //! DEL or C1: an `ESC` or `BEL` would end the OSC early) or that is not UTF-8 gets no records at
 //! all, only the handshake.
 //!
-//! **Not covered.** lazygit's whitespace toggle (`git diff -w`) is not passed to an external diff,
-//! so with it on, lazygit's patch and the records disagree on whitespace-only lines.
+//! **Whitespace, and the `M` panel.** The records describe git's patch without `-w`, and so does
+//! the patch lazygit stages from: its ignore-whitespace toggle only changes what it shows, since a
+//! patch missing changes would apply to nothing (`AddCommonDiffArgs` in lazygit 0.66). What omnidiff
+//! paints follows the `M` panel's saved options like any headless run (the Full preset when none
+//! are saved), and never changes a record: a whitespace-only line is unpainted under Minimal and
+//! still stageable as the change git has it as.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsStr;
