@@ -36,7 +36,12 @@
 //! frames left between matches are paired in order and compared as pictures, or reported inserted
 //! or deleted where one side has more. Two-minute terminal recordings run to hundreds of
 //! megabytes of raw pixels, so the frames are kept deflated ([`Frames`]) and unpacked one at a
-//! time.
+//! time. A frame shown several times (an `.ani`'s sequence) is deflated once and shared.
+//!
+//! **Decoding is bounded**, both files being hostile: a frame may take [`MAX_PICTURE_BYTES`], as
+//! `image` lets a still picture by default (a GIF's header can declare a 65535 x 65535 canvas,
+//! 17 GB, in a few bytes), and an animation [`MAX_FRAMES`] and [`MAX_ANIMATION_BYTES`] of frames in
+//! all. Past them the picture does not decode, and the pair is reported as binary.
 //!
 //! **The verdict** ([`PictureDiff::verdict`], levels and tags in `content::Level`): pixels equal
 //! once fully transparent ones count as alike are invisible; pixels that differ but pass
@@ -55,10 +60,23 @@
 use std::borrow::Cow;
 use std::hash::Hasher;
 use std::io::{Read, Write};
+use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use image::{AnimationDecoder, GenericImageView, ImageDecoder, RgbaImage};
 use serde::Serialize;
+
+/// The most bytes one decoded frame may take, RGBA: `image`'s default allocation limit, which a
+/// still picture decodes within.
+pub const MAX_PICTURE_BYTES: u64 = 512 * 1024 * 1024;
+
+/// The most frames an animation may have: a frame of a few bytes in the file is a whole canvas
+/// to deflate and compare.
+pub const MAX_FRAMES: usize = 100_000;
+
+/// The most bytes an animation's frames may take together, RGBA, before they are deflated: a
+/// two-minute terminal recording is a few hundred megabytes.
+pub const MAX_ANIMATION_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 
 /// Extensions treated as pictures, lower-cased: the raster formats `image` decodes here.
 pub const PICTURE_EXTENSIONS: &[&str] = &[
@@ -355,10 +373,10 @@ enum FrameStore {
 }
 
 /// One animation frame: its RGBA pixels deflated, a hash of them (equal frames align by it), and
-/// how long it shows.
+/// how long it shows. The pixels are shared by every frame that shows the same picture.
 #[derive(Debug, Clone)]
 struct PackedFrame {
-    pixels: Vec<u8>,
+    pixels: Arc<[u8]>,
     hash: u64,
     delay_ms: u32,
 }
@@ -386,6 +404,41 @@ impl Frames {
             width,
             height,
             store: FrameStore::Animation(packed),
+        })
+    }
+
+    /// A picture of `pictures` shown in `steps` order: each step a picture's index and how long
+    /// it shows in milliseconds. Each picture is deflated once, however many steps show it; every
+    /// picture must be the size of the first.
+    pub fn from_steps(pictures: &[RgbaImage], steps: &[(usize, u32)]) -> Result<Self> {
+        let Some(first) = pictures.first() else {
+            anyhow::bail!("a picture with no frame");
+        };
+        let (width, height) = first.dimensions();
+        if let [(index, _)] = steps {
+            let picture = pictures.get(*index).context("a step past the pictures")?;
+            return Ok(Self::still(picture.clone()));
+        }
+        if steps.len() > MAX_FRAMES {
+            anyhow::bail!("an animation of {} frames", steps.len());
+        }
+        let mut packed: Vec<Option<PackedFrame>> = vec![None; pictures.len()];
+        let mut frames = Vec::with_capacity(steps.len());
+        for &(index, delay_ms) in steps {
+            let picture = pictures.get(index).context("a step past the pictures")?;
+            if picture.dimensions() != (width, height) {
+                anyhow::bail!("frames of different sizes");
+            }
+            let frame = match &packed[index] {
+                Some(frame) => frame.clone(),
+                None => packed[index].insert(pack(picture, 0)?).clone(),
+            };
+            frames.push(PackedFrame { delay_ms, ..frame });
+        }
+        Ok(Self {
+            width,
+            height,
+            store: FrameStore::Animation(frames),
         })
     }
 
@@ -422,7 +475,7 @@ impl Frames {
             FrameStore::Animation(frames) => {
                 let frame = &frames[index.min(frames.len() - 1)];
                 let mut raw = Vec::with_capacity(self.width as usize * self.height as usize * 4);
-                flate2::read::DeflateDecoder::new(frame.pixels.as_slice())
+                flate2::read::DeflateDecoder::new(&frame.pixels[..])
                     .read_to_end(&mut raw)
                     .expect("inflating a frame this process deflated");
                 Cow::Owned(
@@ -465,7 +518,7 @@ fn pack(pixels: &RgbaImage, delay_ms: u32) -> Result<PackedFrame> {
     let mut encoder = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::fast());
     encoder.write_all(pixels.as_raw())?;
     Ok(PackedFrame {
-        pixels: encoder.finish()?,
+        pixels: encoder.finish()?.into(),
         hash: hash_pixels(pixels),
         delay_ms,
     })
@@ -485,13 +538,29 @@ pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
     use image::codecs::{gif::GifDecoder, png::PngDecoder, webp::WebPDecoder};
     let cursor = || std::io::Cursor::new(bytes);
     let format = image::guess_format(bytes).context("reading the picture")?;
+    // The animation decoders default to no limits; a still picture's are `image`'s defaults.
+    let limits = || {
+        let mut limits = image::Limits::default();
+        limits.max_alloc = Some(MAX_PICTURE_BYTES);
+        limits
+    };
+    let canvas = |(width, height): (u32, u32)| {
+        let bytes = u64::from(width) * u64::from(height) * 4;
+        if bytes > MAX_PICTURE_BYTES {
+            anyhow::bail!("a {width}x{height} canvas, past {MAX_PICTURE_BYTES} bytes");
+        }
+        Ok(())
+    };
     let animation = match format {
         ImageFormat::Gif => {
-            let decoder = GifDecoder::new(cursor()).context("reading the GIF")?;
+            let mut decoder = GifDecoder::new(cursor()).context("reading the GIF")?;
+            canvas(decoder.dimensions())?;
+            decoder.set_limits(limits()).context("reading the GIF")?;
             Some((decoder.color_type(), decoder.into_frames()))
         }
         ImageFormat::Png => {
-            let decoder = PngDecoder::new(cursor()).context("reading the PNG")?;
+            let decoder = PngDecoder::with_limits(cursor(), limits()).context("reading the PNG")?;
+            canvas(decoder.dimensions())?;
             if decoder.is_apng().context("reading the PNG")? {
                 let color = decoder.color_type();
                 Some((
@@ -504,6 +573,7 @@ pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
         }
         ImageFormat::WebP => {
             let decoder = WebPDecoder::new(cursor()).context("reading the WebP")?;
+            canvas(decoder.dimensions())?;
             if decoder.has_animation() {
                 Some((decoder.color_type(), decoder.into_frames()))
             } else {
@@ -525,11 +595,18 @@ pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
         // One frame at a time: packed as it comes, never all unpacked at once.
         let mut packed = Vec::new();
         let mut size = (0, 0);
+        let mut total = 0u64;
         for frame in decoded {
             let frame = frame.context("decoding a frame")?;
             let (numerator, denominator) = frame.delay().numer_denom_ms();
             let pixels = frame.into_buffer();
             size = pixels.dimensions();
+            total += pixels.as_raw().len() as u64;
+            if packed.len() >= MAX_FRAMES || total > MAX_ANIMATION_BYTES {
+                anyhow::bail!(
+                    "an animation past {MAX_FRAMES} frames or {MAX_ANIMATION_BYTES} bytes"
+                );
+            }
             packed.push(pack(&pixels, numerator / denominator.max(1))?);
         }
         if packed.len() > 1 {
@@ -560,13 +637,18 @@ pub fn diff(before: &[u8], after: &[u8]) -> Result<PictureDiff> {
 pub type Decoded = Option<(PictureInfo, Frames)>;
 
 /// Both sides [`decode`]d at once, an empty side as `None`: an animation's decoding takes long
-/// enough to be worth a second thread.
+/// enough to be worth a second thread. A side whose decoder panics is an error.
 pub fn decode_pair(before: &[u8], after: &[u8]) -> Result<(Decoded, Decoded)> {
-    let side = |bytes: &[u8]| (!bytes.is_empty()).then(|| decode(bytes)).transpose();
+    use super::content::{contained, joined};
+    let side = |bytes: &[u8]| {
+        contained("decoding a picture", || {
+            (!bytes.is_empty()).then(|| decode(bytes)).transpose()
+        })
+    };
     let (before, after) = std::thread::scope(|scope| {
         let before = scope.spawn(|| side(before));
         let after = side(after);
-        (before.join().expect("decoding a picture panicked"), after)
+        (joined(before.join(), "decoding a picture"), after)
     });
     Ok((before?, after?))
 }
@@ -777,8 +859,9 @@ fn push_same(steps: &mut Vec<FrameStep>, before: usize, after: usize) {
 const ALIGN_CELLS: usize = 16_000_000;
 
 /// The (before, after) index pairs of equal hashes a longest common subsequence matches, in order.
-/// Common ends match first, so the table only covers the middle.
-fn align(before: &[u64], after: &[u64]) -> Vec<(usize, usize)> {
+/// Common ends match first, so the table only covers the middle. A PDF's pages align by it too
+/// (`content::container::align`).
+pub(crate) fn align(before: &[u64], after: &[u64]) -> Vec<(usize, usize)> {
     let prefix = before.iter().zip(after).take_while(|(b, a)| b == a).count();
     let suffix = before[prefix..]
         .iter()
@@ -1552,5 +1635,50 @@ mod tests {
         let is = |name: &str| is_picture_path(std::path::Path::new(name));
         assert!(is("logo.PNG") && is("photo.jpeg") && is("before.png.test"));
         assert!(!is("logo.svg") && !is("main.rs") && !is("Makefile"));
+    }
+
+    /// A GIF whose screen is `width` x `height`, with one 1 x 1 frame.
+    fn gif(width: u16, height: u16) -> Vec<u8> {
+        let mut bytes = b"GIF89a".to_vec();
+        bytes.extend_from_slice(&width.to_le_bytes());
+        bytes.extend_from_slice(&height.to_le_bytes());
+        // A global table of two colours, then the frame: its descriptor and its LZW pixels.
+        bytes.extend_from_slice(&[0x80, 0, 0, 0, 0, 0, 255, 255, 255]);
+        bytes.extend_from_slice(&[0x2C, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 0x01, 0]);
+        bytes.push(0x3B);
+        bytes
+    }
+
+    #[test]
+    fn a_gif_canvas_past_the_limit_does_not_decode() {
+        assert!(
+            decode(&gif(1, 1)).is_ok(),
+            "the crafted GIF decodes at its own size"
+        );
+        // 65535 x 65535 is 17 GB of RGBA, declared in four bytes.
+        let error = decode(&gif(u16::MAX, u16::MAX)).expect_err("too large to decode");
+        assert!(format!("{error:#}").contains("canvas"), "{error:#}");
+    }
+
+    #[test]
+    fn frames_shown_many_times_are_packed_once_and_counted() -> Result<()> {
+        let pictures = [
+            filled(4, 4, [255, 0, 0, 255]),
+            filled(4, 4, [0, 0, 255, 255]),
+        ];
+        let steps: Vec<(usize, u32)> = (0..1000).map(|step| (step % 2, 10)).collect();
+        let frames = Frames::from_steps(&pictures, &steps)?;
+        assert_eq!(frames.count(), 1000);
+        assert_eq!(frames.pixels(1).get_pixel(0, 0).0, [0, 0, 255, 255]);
+        let FrameStore::Animation(packed) = &frames.store else {
+            panic!("an animation");
+        };
+        assert!(
+            Arc::ptr_eq(&packed[0].pixels, &packed[998].pixels),
+            "one deflated copy per picture"
+        );
+        let too_many = vec![(0, 10); MAX_FRAMES + 1];
+        assert!(Frames::from_steps(&pictures, &too_many).is_err());
+        Ok(())
     }
 }

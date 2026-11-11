@@ -20,17 +20,20 @@
 //! inside it, or as one member when it compresses a single file.
 //!
 //! A zip's members are hashed by the CRC and size its directory already records, so listing one
-//! decompresses nothing. A tar or a compressed stream has no directory: it is expanded once, up
-//! to [`MAX_EXPANDED_BYTES`].
+//! decompresses nothing, and the directory is read once: opening a member clones the parsed
+//! archive, which shares it. A tar or a compressed stream has no directory: it is expanded once,
+//! up to [`MAX_EXPANDED_BYTES`]. Whatever is decompressed is charged to the diff's budget
+//! ([`super::charge_expanded`]) as it comes.
 
 use std::io::{Cursor, Read};
+use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 
-use super::Format;
 use super::container::{
     Container, ContainerInfo, Loaded, MAX_EXPANDED_BYTES, Member, MemberContent,
 };
+use super::{Format, charge_expanded};
 
 /// The key of the one member a compressed single file has: the stream does not say what the file
 /// was called (gzip may, but then a renamed file would read as removed and added).
@@ -44,7 +47,7 @@ pub fn is_tar(bytes: &[u8]) -> bool {
 /// Decodes an archive `format` names.
 pub fn decode(bytes: &[u8], format: Format) -> Result<Box<dyn Container>> {
     Ok(match format {
-        Format::Zip => Box::new(Zip::new(bytes.to_vec())?),
+        Format::Zip => Box::new(Zip::new(bytes)?),
         Format::Tar => Box::new(tar(bytes, "TAR", bytes.len())?),
         Format::Gzip => expanded(
             flate2::read::MultiGzDecoder::new(bytes),
@@ -75,17 +78,25 @@ fn expanded(reader: impl Read, format: &str, size: usize) -> Result<Box<dyn Cont
     })
 }
 
-/// All of `reader`, unless it runs past [`MAX_EXPANDED_BYTES`].
-fn read_capped(reader: impl Read) -> Result<Vec<u8>> {
+/// How much of a stream is read before it is charged to the diff's budget.
+const CHARGE_CHUNK: u64 = 1024 * 1024;
+
+/// All of `reader`, unless it runs past [`MAX_EXPANDED_BYTES`] or the diff's budget.
+fn read_capped(mut reader: impl Read) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
-    reader
-        .take(MAX_EXPANDED_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .context("decompressing")?;
-    if bytes.len() as u64 > MAX_EXPANDED_BYTES {
-        bail!("expands past {MAX_EXPANDED_BYTES} bytes");
+    loop {
+        let read = (&mut reader)
+            .take(CHARGE_CHUNK)
+            .read_to_end(&mut bytes)
+            .context("decompressing")?;
+        if read == 0 {
+            return Ok(bytes);
+        }
+        charge_expanded(read as u64)?;
+        if bytes.len() as u64 > MAX_EXPANDED_BYTES {
+            bail!("expands past {MAX_EXPANDED_BYTES} bytes");
+        }
     }
-    Ok(bytes)
 }
 
 /// A tar's regular files, in their order.
@@ -116,12 +127,13 @@ pub struct Zip {
     members: Vec<Member>,
     /// Each member's index in the zip's directory.
     indices: Vec<usize>,
-    bytes: Vec<u8>,
+    /// The parsed directory, over the zip's bytes: a clone shares both.
+    archive: zip::ZipArchive<Cursor<Arc<[u8]>>>,
 }
 
 impl Zip {
-    pub fn new(bytes: Vec<u8>) -> Result<Self> {
-        let mut archive = zip::ZipArchive::new(Cursor::new(bytes.as_slice()))
+    pub fn new(bytes: &[u8]) -> Result<Self> {
+        let mut archive = zip::ZipArchive::new(Cursor::new(Arc::<[u8]>::from(bytes)))
             .context("reading the zip's directory")?;
         let (mut members, mut indices) = (Vec::new(), Vec::new());
         let mut total = 0u64;
@@ -148,13 +160,13 @@ impl Zip {
             },
             members,
             indices,
-            bytes,
+            archive,
         })
     }
 
     /// The bytes of member `index`.
     pub fn read(&self, index: usize) -> Result<Vec<u8>> {
-        let mut archive = zip::ZipArchive::new(Cursor::new(self.bytes.as_slice()))?;
+        let mut archive = self.archive.clone();
         let file = archive.by_index(self.indices[index])?;
         read_capped(file)
     }

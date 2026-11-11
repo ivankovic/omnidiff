@@ -28,13 +28,27 @@
 //!
 //! A member that only one side has is added or removed. Renames are not followed: a moved file
 //! is one removed and one added.
+//!
+//! **Except in a sequence** ([`Container::sequence`]: a PDF's pages), whose keys are positions.
+//! When the two sides have as many members, they still match by key. When they have not, a member
+//! was inserted or removed, and every later key would name another member: the members then
+//! align by hash, the way an animation's frames do (`picture::align`, a longest common subsequence
+//! bounded by its table size), and the members left between matches pair in order, the rest added
+//! or removed. A page inserted in the middle is one added page; the pages after it are unchanged.
+//!
+//! Changed members are opened and compared on every core, each worker taking the next member as
+//! it finishes one (a few large members do not leave the other cores idle) and opening members
+//! through one [`Opener`] per side, which may keep what it shares between them (a PDF parsed
+//! once per worker). A member whose decoder panics, or that would take the diff past its expansion budget
+//! ([`super::MAX_DIFF_EXPANDED_BYTES`]), does not open: it is changed, with no detail.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use anyhow::Result;
 use serde::Serialize;
 
-use super::{ContentDiff, Family, Level, Tag, Verdict};
+use super::{Budget, ContentDiff, Family, Level, Tag, Verdict, contained};
 use crate::diff::picture::{self, Frames, PictureDiff, PictureInfo, REPLACED_SHARE};
 
 /// How deep containers nest before the rest is compared as bytes: a zip in a zip in a zip is
@@ -42,7 +56,9 @@ use crate::diff::picture::{self, Frames, PictureDiff, PictureInfo, REPLACED_SHAR
 pub const MAX_DEPTH: usize = 3;
 
 /// The most bytes a side may expand to, in total: past it the side does not decode, and the pair
-/// is reported as binary. A decompression bomb is a few kilobytes on disk.
+/// is reported as binary. A decompression bomb is a few kilobytes on disk. Every byte expanded is
+/// also charged to the whole diff's budget ([`super::MAX_DIFF_EXPANDED_BYTES`]), which nested
+/// containers and parallel workers share.
 pub const MAX_EXPANDED_BYTES: u64 = 512 * 1024 * 1024;
 
 /// One member of a container, as listed: what it is called, and a hash of what it holds.
@@ -62,6 +78,9 @@ pub enum MemberContent {
     Text(String),
 }
 
+/// Opens members of one container one after another, on one thread (see [`Container::opener`]).
+pub type Opener<'a> = Box<dyn FnMut(usize) -> Result<MemberContent> + 'a>;
+
 /// One side of a container pair, decoded.
 pub trait Container: Send + Sync {
     fn info(&self) -> &ContainerInfo;
@@ -69,6 +88,16 @@ pub trait Container: Send + Sync {
     fn members(&self) -> &[Member];
     /// Member `index`'s content.
     fn open(&self, index: usize) -> Result<MemberContent>;
+    /// A way to open many members on one thread, sharing what opening them can share; by default
+    /// [`Container::open`] each.
+    fn opener(&self) -> Opener<'_> {
+        Box::new(move |index| self.open(index))
+    }
+    /// True if the members are a sequence keyed by position (a PDF's pages), which aligns by hash
+    /// when a member was inserted or removed (see the module doc).
+    fn sequence(&self) -> bool {
+        false
+    }
 }
 
 /// One side of a container pair, as the file says it is.
@@ -245,6 +274,13 @@ pub struct Aligned {
 /// Both sides' members, matched by key, in one order: after's, with each member only before has
 /// placed after the last member before it that both have (or first, if none is).
 pub fn align(before: Option<&dyn Container>, after: Option<&dyn Container>) -> Vec<Aligned> {
+    if let (Some(before), Some(after)) = (before, after)
+        && before.sequence()
+        && after.sequence()
+        && before.members().len() != after.members().len()
+    {
+        return align_sequence(before.members(), after.members());
+    }
     let empty: &[Member] = &[];
     let before_members = before.map_or(empty, |container| container.members());
     let after_members = after.map_or(empty, |container| container.members());
@@ -305,8 +341,58 @@ pub fn align(before: Option<&dyn Container>, after: Option<&dyn Container>) -> V
     rows
 }
 
+/// Two sequences of members aligned by hash: matched members, then in each gap between matches
+/// the members paired in order, and the rest of the longer side added or removed.
+fn align_sequence(before: &[Member], after: &[Member]) -> Vec<Aligned> {
+    let hashes = |members: &[Member]| members.iter().map(|member| member.hash).collect::<Vec<_>>();
+    let matched = picture::align(&hashes(before), &hashes(after));
+    let mut rows = Vec::with_capacity(before.len().max(after.len()));
+    let (mut i, mut j) = (0, 0);
+    // The end of both sides closes the last gap.
+    for (b, a) in matched.into_iter().chain([(before.len(), after.len())]) {
+        let paired = (b - i).min(a - j);
+        rows.extend((0..paired).map(|k| Aligned {
+            before: Some(i + k),
+            after: Some(j + k),
+            status: if before[i + k].hash == after[j + k].hash {
+                MemberStatus::Same
+            } else {
+                MemberStatus::Changed
+            },
+        }));
+        rows.extend((i + paired..b).map(|index| Aligned {
+            before: Some(index),
+            after: None,
+            status: MemberStatus::Removed,
+        }));
+        rows.extend((j + paired..a).map(|index| Aligned {
+            before: None,
+            after: Some(index),
+            status: MemberStatus::Added,
+        }));
+        if b < before.len() {
+            rows.push(Aligned {
+                before: Some(b),
+                after: Some(a),
+                status: MemberStatus::Same,
+            });
+        }
+        (i, j) = (b + 1, a + 1);
+    }
+    rows
+}
+
 /// Compares two containers of `family` (either may be absent: an added or deleted file).
 pub fn compare(
+    family: Family,
+    before: Option<&dyn Container>,
+    after: Option<&dyn Container>,
+    depth: usize,
+) -> ContainerDiff {
+    Budget::within(|| compare_within(family, before, after, depth))
+}
+
+fn compare_within(
     family: Family,
     before: Option<&dyn Container>,
     after: Option<&dyn Container>,
@@ -329,19 +415,18 @@ pub fn compare(
         .collect();
     // Opening and comparing changed members is the slow part (pictures, nested archives): on
     // every core.
-    let details = parallel_map(&changed, |row| {
-        let (Some(before), Some(after)) = (before, after) else {
-            return None;
-        };
-        let open = |side: &dyn Container, index: Option<usize>| {
-            side.open(index.expect("a changed member has both sides"))
-                .ok()
-        };
-        Some(compare_members(
-            open(before, row.before)?,
-            open(after, row.after)?,
-            depth,
-        ))
+    let openers = || Some((before?.opener(), after?.opener()));
+    let details = parallel_map(&changed, openers, |openers, row| {
+        let (open_before, open_after) = openers.as_mut()?;
+        let index = |index: Option<usize>| index.expect("a changed member has both sides");
+        contained("opening a member", || {
+            Ok(compare_members(
+                open_before(index(row.before))?,
+                open_after(index(row.after))?,
+                depth,
+            ))
+        })
+        .ok()
     });
     let mut details = details.into_iter();
     let mut members = Vec::new();
@@ -369,24 +454,61 @@ pub fn compare(
     }
 }
 
-/// `f` over `items`, in order, spread over the machine's cores.
-fn parallel_map<T: Sync, U: Send>(items: &[T], f: impl Fn(&T) -> U + Sync) -> Vec<U> {
+/// `f` over `items`, in order, spread over the machine's cores: each worker makes its own `state`
+/// and takes the next item whenever it is done with one. The workers work within the caller's
+/// [`Budget`].
+fn parallel_map<T: Sync, S, U: Send>(
+    items: &[T],
+    state: impl Fn() -> S + Sync,
+    f: impl Fn(&mut S, &T) -> U + Sync,
+) -> Vec<U> {
     let threads = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let chunk = items.len().div_ceil(threads).max(1);
+    let threads = threads.min(items.len());
+    let next = AtomicUsize::new(0);
+    let budget = Budget::current();
+    let (next, state, f) = (&next, &state, &f);
+    let mut results: Vec<Option<U>> = std::iter::repeat_with(|| None).take(items.len()).collect();
     std::thread::scope(|scope| {
-        let workers: Vec<_> = items
-            .chunks(chunk)
-            .map(|slice| scope.spawn(|| slice.iter().map(&f).collect::<Vec<_>>()))
+        let workers: Vec<_> = (0..threads)
+            .map(|_| {
+                let budget = budget.clone();
+                scope.spawn(move || {
+                    Budget::enter(budget, || {
+                        let mut state = state();
+                        let mut done = Vec::new();
+                        loop {
+                            let index = next.fetch_add(1, Ordering::Relaxed);
+                            let Some(item) = items.get(index) else {
+                                break done;
+                            };
+                            done.push((index, f(&mut state, item)));
+                        }
+                    })
+                })
+            })
             .collect();
-        workers
-            .into_iter()
-            .flat_map(|worker| worker.join().expect("comparing members panicked"))
-            .collect()
-    })
+        for worker in workers {
+            // `f` contains its own panics; one outside it (making the state) is the caller's.
+            let done = worker
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+            for (index, result) in done {
+                results[index] = Some(result);
+            }
+        }
+    });
+    results
+        .into_iter()
+        .map(|result| result.expect("every item is done"))
+        .collect()
 }
 
 /// What changed between two opened members.
 pub fn compare_members(before: MemberContent, after: MemberContent, depth: usize) -> MemberDetail {
+    Budget::within(|| compare_contents(before, after, depth))
+}
+
+fn compare_contents(before: MemberContent, after: MemberContent, depth: usize) -> MemberDetail {
     match (before, after) {
         (MemberContent::Picture(before), MemberContent::Picture(after)) => {
             MemberDetail::Picture(picture::compare_decoded(Some(&before), Some(&after)))
@@ -659,5 +781,73 @@ mod tests {
             "every line changed, every word kept"
         );
         assert_eq!(level("one two\nthree four\n", "five\nsix\n"), "replaced");
+    }
+
+    #[test]
+    fn parallel_work_comes_back_in_order() {
+        let items: Vec<u64> = (0..200).collect();
+        // A few slow items early on, as one large member among small ones.
+        let squares = parallel_map(
+            &items,
+            || (),
+            |_, &item| {
+                if item < 3 {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                item * item
+            },
+        );
+        assert_eq!(
+            squares,
+            items.iter().map(|item| item * item).collect::<Vec<_>>()
+        );
+    }
+
+    /// A container whose members panic when opened, as a decoder would on a crafted file.
+    struct Panics(Loaded);
+
+    impl Container for Panics {
+        fn info(&self) -> &ContainerInfo {
+            &self.0.info
+        }
+        fn members(&self) -> &[Member] {
+            &self.0.members
+        }
+        fn open(&self, _: usize) -> Result<MemberContent> {
+            panic!("a crafted member")
+        }
+    }
+
+    #[test]
+    fn a_member_that_panics_does_not_open() {
+        let before = Panics(loaded(&[("a", "1"), ("b", "2")]));
+        let after = loaded(&[("a", "one"), ("b", "two")]);
+        let diff = compare(Family::Archives, Some(&before), Some(&after), 0);
+        assert_eq!(diff.members.len(), 2);
+        assert!(diff.members.iter().all(|member| member.detail.is_none()));
+        assert_eq!(diff.members[0].verdict(), Some(Verdict::new(Level::Edited)));
+    }
+
+    #[test]
+    fn workers_share_one_expansion_budget() -> Result<()> {
+        use crate::diff::content::archive::{Zip, tests::zip};
+        let (a, b) = (vec![b'a'; 1024 * 1024], vec![b'b'; 1024 * 1024]);
+        let names: Vec<String> = (0..8).map(|n| format!("{n}.bin")).collect();
+        let side = |contents: &[u8]| {
+            zip(&names
+                .iter()
+                .map(|name| (name.as_str(), contents))
+                .collect::<Vec<_>>())
+        };
+        let (before, after) = (Zip::new(&side(&a))?, Zip::new(&side(&b))?);
+        // Eight changed members of a MiB a side; five MiB open two of them at most.
+        let diff = Budget::enter(Some(Budget::of(5 * 1024 * 1024)), || {
+            compare(Family::Archives, Some(&before), Some(&after), 0)
+        });
+        let opened = diff.members.iter().filter(|member| member.detail.is_some());
+        assert!(opened.count() <= 2, "{diff:?}");
+        let diff = compare(Family::Archives, Some(&before), Some(&after), 0);
+        assert!(diff.members.iter().all(|member| member.detail.is_some()));
+        Ok(())
     }
 }

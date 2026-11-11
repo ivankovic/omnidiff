@@ -36,6 +36,23 @@
 //! **Two engines.** A picture is pixels ([`picture`]). Everything else is a [`container`] of
 //! named members - an archive's files, a font's glyphs, a PDF's pages - matched by name, each
 //! changed member diffed by what it holds.
+//!
+//! **Both files are hostile.** Under `GIT_EXTERNAL_DIFF` OmniDiff reads other people's commits,
+//! so no file may make it allocate without bound, hang, read local files or take the process
+//! down. Each decoder caps what its format can amplify (a named constant beside it), and two
+//! guards span the whole diff:
+//!
+//! * **One expansion budget** ([`MAX_DIFF_EXPANDED_BYTES`]): every byte decompressed - on both
+//!   sides, at every nesting level, on every worker thread - is charged to it
+//!   ([`charge_expanded`]). A per-container cap alone would multiply by the nesting depth and the
+//!   worker count. The budget is the calling thread's, and a thread spawned for the diff takes
+//!   its parent's ([`Budget::current`], [`Budget::enter`]).
+//! * **Panics are contained** ([`contained`]): the decoders are third-party code (image, zip,
+//!   hayro, skrifa, usvg) a crafted file can make panic. [`diff`] never panics: a panic decoding a
+//!   side is that side's error, so the pair is reported as binary, and a panic opening one
+//!   member is that member not opening. A panic caught there prints nothing: a hook installed
+//!   once stays quiet while this thread is in [`contained`], and hands every other panic to the
+//!   hook that was there before it.
 
 pub mod archive;
 pub mod catalog;
@@ -45,7 +62,12 @@ pub mod cursor;
 pub mod font;
 pub mod pdf;
 
-use anyhow::{Context, Result, bail};
+use std::cell::{Cell, RefCell};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+use anyhow::{Context, Result, anyhow, bail};
 use serde::{Deserialize, Serialize};
 
 use super::picture::{self, PictureDiff};
@@ -669,8 +691,11 @@ impl ContentDiff {
 }
 
 /// Diffs a pair by its content; `Ok(None)` when it is not a pair [`pair_kind`] recognises.
+///
+/// The one entry point a caller can rely on: whatever the bytes, it returns, within one
+/// [`MAX_DIFF_EXPANDED_BYTES`] budget, and a panic in a decoder comes back as an `Err`.
 pub fn diff(before: &[u8], after: &[u8]) -> Result<Option<ContentDiff>> {
-    diff_at_depth(before, after, 0)
+    Budget::within(|| contained("diffing the pair", || diff_at_depth(before, after, 0)))
 }
 
 /// [`diff`] of a pair found `depth` containers deep (see [`container::MAX_DEPTH`]).
@@ -697,22 +722,133 @@ pub(crate) fn diff_at_depth(
 /// A decoded side of a container pair: `None` for an empty one.
 pub type DecodedContainer = Option<Box<dyn Container>>;
 
-/// Both sides of a container pair decoded, on two threads; an empty side is `None`.
+/// Both sides of a container pair decoded, on two threads; an empty side is `None`. A side whose
+/// decoder panics is an error.
 pub fn decode_container_pair(
     before: &[u8],
     after: &[u8],
 ) -> Result<(DecodedContainer, DecodedContainer)> {
     let side = |bytes: &[u8]| {
-        (!bytes.is_empty())
-            .then(|| decode_container(bytes))
-            .transpose()
+        contained("decoding a container", || {
+            (!bytes.is_empty())
+                .then(|| decode_container(bytes))
+                .transpose()
+        })
     };
-    let (before, after) = std::thread::scope(|scope| {
-        let before = scope.spawn(|| side(before));
-        let after = side(after);
-        (before.join().expect("decoding a container panicked"), after)
+    Budget::within(|| {
+        let budget = Budget::current();
+        let (before, after) = std::thread::scope(|scope| {
+            let before = scope.spawn(|| Budget::enter(budget, || side(before)));
+            let after = side(after);
+            (joined(before.join(), "decoding a container"), after)
+        });
+        Ok((before?, after?))
+    })
+}
+
+/// The most bytes one diff may decompress, over both sides, every container nested in them and
+/// every worker thread: two sides each at [`container::MAX_EXPANDED_BYTES`], and as much again
+/// for the archives inside them. Past it, what is still to expand does not open.
+pub const MAX_DIFF_EXPANDED_BYTES: u64 = 4 * container::MAX_EXPANDED_BYTES;
+
+/// What is left of one diff's [`MAX_DIFF_EXPANDED_BYTES`], shared by the threads working on it.
+#[derive(Clone, Debug)]
+pub struct Budget(Arc<AtomicU64>);
+
+thread_local! {
+    static BUDGET: RefCell<Option<Budget>> = const { RefCell::new(None) };
+}
+
+impl Budget {
+    fn full() -> Self {
+        Self::of(MAX_DIFF_EXPANDED_BYTES)
+    }
+
+    /// A budget of `bytes`: [`MAX_DIFF_EXPANDED_BYTES`] for a diff, less for a test.
+    pub(crate) fn of(bytes: u64) -> Self {
+        Self(Arc::new(AtomicU64::new(bytes)))
+    }
+
+    /// The budget this thread is working within, for a thread it spawns to take along.
+    pub fn current() -> Option<Budget> {
+        BUDGET.with(|budget| budget.borrow().clone())
+    }
+
+    /// `f` within `budget` on this thread (a spawned worker's parent's), or within a full one if
+    /// there is none.
+    pub fn enter<T>(budget: Option<Budget>, f: impl FnOnce() -> T) -> T {
+        struct Restore(Option<Budget>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                BUDGET.with(|budget| *budget.borrow_mut() = self.0.take());
+            }
+        }
+        let budget = budget.unwrap_or_else(Budget::full);
+        let _restore = Restore(BUDGET.with(|current| current.borrow_mut().replace(budget)));
+        f()
+    }
+
+    /// `f` within this thread's budget, or a full one if it has none: an entry point's.
+    pub fn within<T>(f: impl FnOnce() -> T) -> T {
+        match Budget::current() {
+            Some(_) => f(),
+            None => Budget::enter(None, f),
+        }
+    }
+}
+
+/// Charges `bytes` just decompressed to this thread's [`Budget`]: an error once the diff has spent
+/// it. Without a budget (a decoder called on its own) only the decoder's own caps apply.
+pub fn charge_expanded(bytes: u64) -> Result<()> {
+    let Some(Budget(left)) = Budget::current() else {
+        return Ok(());
+    };
+    let mut current = left.load(Ordering::Relaxed);
+    loop {
+        let Some(rest) = current.checked_sub(bytes) else {
+            bail!("the diff expands past {MAX_DIFF_EXPANDED_BYTES} bytes");
+        };
+        match left.compare_exchange_weak(current, rest, Ordering::Relaxed, Ordering::Relaxed) {
+            Ok(_) => return Ok(()),
+            Err(actual) => current = actual,
+        }
+    }
+}
+
+thread_local! {
+    /// True while this thread is in [`contained`], whose panics become errors, not messages.
+    static QUIET: Cell<bool> = const { Cell::new(false) };
+}
+
+/// `f`, with a panic in it turned into an error: `what` panicked. The panic prints nothing.
+pub fn contained<T>(what: &str, f: impl FnOnce() -> Result<T>) -> Result<T> {
+    static HOOK: std::sync::Once = std::sync::Once::new();
+    HOOK.call_once(|| {
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            if !QUIET.get() {
+                previous(info);
+            }
+        }));
     });
-    Ok((before?, after?))
+    let was_quiet = QUIET.replace(true);
+    let result = catch_unwind(AssertUnwindSafe(f));
+    QUIET.set(was_quiet);
+    result.unwrap_or_else(|panic| Err(panicked(what, &*panic)))
+}
+
+/// A thread's [`std::thread::Result`] as an error if it panicked while doing `what`.
+pub fn joined<T>(result: std::thread::Result<Result<T>>, what: &str) -> Result<T> {
+    result.unwrap_or_else(|panic| Err(panicked(what, &*panic)))
+}
+
+fn panicked(what: &str, panic: &(dyn std::any::Any + Send)) -> anyhow::Error {
+    let message = panic
+        .downcast_ref::<&str>()
+        .copied()
+        .or_else(|| panic.downcast_ref::<String>().map(String::as_str))
+        .unwrap_or("a panic");
+    anyhow!("{what} panicked: {message}")
 }
 
 #[cfg(test)]
@@ -772,5 +908,38 @@ mod tests {
             assert_eq!(Family::from_name(family.name()), Some(family));
         }
         assert_eq!(Family::from_name("diffs"), None);
+    }
+
+    #[test]
+    fn a_panic_is_contained_as_an_error() {
+        let result: Result<()> = contained("decoding", || panic!("a crafted file"));
+        let error = result.expect_err("a panic is an error");
+        assert_eq!(error.to_string(), "decoding panicked: a crafted file");
+    }
+
+    #[test]
+    fn a_spawned_thread_spends_its_parents_budget() {
+        let budget = Budget::of(10);
+        Budget::enter(Some(budget.clone()), || {
+            assert!(charge_expanded(6).is_ok());
+            let parent = Budget::current();
+            std::thread::scope(|scope| {
+                scope.spawn(|| {
+                    Budget::enter(parent, || {
+                        assert!(charge_expanded(6).is_err(), "only 4 bytes are left");
+                        assert!(charge_expanded(4).is_ok());
+                    })
+                });
+            });
+            assert!(charge_expanded(1).is_err());
+        });
+        assert!(
+            Budget::current().is_none(),
+            "the budget ends with its scope"
+        );
+        assert!(
+            Budget::within(|| charge_expanded(1 << 20)).is_ok(),
+            "a fresh one"
+        );
     }
 }

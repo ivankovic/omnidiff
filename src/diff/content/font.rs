@@ -38,6 +38,13 @@
 //! redesigned glyph rarely changes more than [`crate::diff::picture::REPLACED_SHARE`] of it and
 //! reads as edited, never redrawn or replaced. The font fixtures will say whether the share should
 //! be of the glyph's own area instead.
+//!
+//! **What a font may unwrap to is bounded**: a WOFF's tables [`MAX_SFNT_BYTES`] and
+//! [`MAX_COMPRESSION_RATIO`] times the file (WOFF2's limits, which `wuff` applies itself), a
+//! collection [`MAX_COLLECTION_FONTS`] fonts (its header may list a font per four bytes, all
+//! sharing one set of tables), and a font [`MAX_MEMBERS`] members. Past them the font does not
+//! decode, and the pair is reported as binary. Listing hashes each glyph once, however many
+//! characters map to it.
 
 use anyhow::{Context, Result, bail};
 use image::RgbaImage;
@@ -59,6 +66,20 @@ pub const CELL_PIXELS: u32 = 96;
 pub const EM_PIXELS: f32 = 64.0;
 /// Where the origin is drawn: from the left, and the baseline from the top.
 const ORIGIN: (f32, f32) = (16.0, 72.0);
+
+/// The most bytes a WOFF may unwrap to: `wuff`'s limit for WOFF2.
+pub const MAX_SFNT_BYTES: u64 = 128 * 1024 * 1024;
+
+/// The most a WOFF may unwrap to per byte of it: `wuff`'s plausible ratio for WOFF2. Fonts
+/// compress to about half.
+pub const MAX_COMPRESSION_RATIO: u64 = 100;
+
+/// The most fonts a collection may hold: the largest real ones (CJK families) hold a few dozen.
+pub const MAX_COLLECTION_FONTS: u32 = 256;
+
+/// The most members a font file may list: a font that maps every Unicode code point (Last
+/// Resort) has 1.1 million.
+pub const MAX_MEMBERS: usize = 2_000_000;
 
 /// True if `bytes` start like an sfnt: TrueType, OpenType, Apple's `true`, or a collection.
 pub fn is_sfnt(bytes: &[u8]) -> bool {
@@ -94,13 +115,41 @@ pub fn is_eot(bytes: &[u8]) -> bool {
 pub fn sfnt(bytes: &[u8], format: Format) -> Result<Vec<u8>> {
     match format {
         Format::Sfnt => Ok(bytes.to_vec()),
-        Format::Woff => wuff::decompress_woff1(bytes)
-            .map_err(|err| anyhow::anyhow!("reading the WOFF: {err:?}")),
+        Format::Woff => {
+            check_woff1(bytes)?;
+            wuff::decompress_woff1(bytes)
+                .map_err(|err| anyhow::anyhow!("reading the WOFF: {err:?}"))
+        }
         Format::Woff2 => wuff::decompress_woff2(bytes)
             .map_err(|err| anyhow::anyhow!("reading the WOFF2: {err:?}")),
         Format::Eot => eot_font_data(bytes),
         other => bail!("{} is not a font", other.name()),
     }
+}
+
+/// Refuses a WOFF whose tables would unwrap past [`MAX_SFNT_BYTES`] or [`MAX_COMPRESSION_RATIO`]
+/// times its size: `wuff` allocates each table's declared size, and tables may overlap.
+fn check_woff1(bytes: &[u8]) -> Result<()> {
+    let be = |at: usize, len: usize| {
+        bytes
+            .get(at..at + len)
+            .map(|b| {
+                b.iter()
+                    .fold(0u64, |value, &byte| value << 8 | u64::from(byte))
+            })
+            .context("a short WOFF")
+    };
+    let tables = be(12, 2)?;
+    // The sfnt's header and table directory, then each table padded to four bytes.
+    let mut total = 12 + 16 * tables;
+    for table in 0..tables as usize {
+        total += be(44 + 20 * table + 12, 4)?.next_multiple_of(4);
+    }
+    let limit = MAX_SFNT_BYTES.min(MAX_COMPRESSION_RATIO * bytes.len() as u64);
+    if total > limit {
+        bail!("a WOFF that unwraps to {total} bytes, past {limit}");
+    }
+    Ok(())
 }
 
 /// An EOT's font data: after its header, XOR-obfuscated if its flags say so. MicroType Express
@@ -158,11 +207,24 @@ pub struct Font {
 fn fonts(data: &[u8]) -> Result<Vec<FontRef<'_>>> {
     Ok(match FileRef::new(data).context("reading the font")? {
         FileRef::Font(font) => vec![font],
-        FileRef::Collection(collection) => collection
-            .iter()
-            .collect::<Result<Vec<_>, _>>()
-            .context("reading the font collection")?,
+        FileRef::Collection(collection) => {
+            if collection.len() > MAX_COLLECTION_FONTS {
+                bail!("a collection of {} fonts", collection.len());
+            }
+            collection
+                .iter()
+                .collect::<Result<Vec<_>, _>>()
+                .context("reading the font collection")?
+        }
     })
+}
+
+/// Refuses a font file of more than [`MAX_MEMBERS`] members.
+fn check_members(members: usize) -> Result<()> {
+    if members > MAX_MEMBERS {
+        bail!("a font of more than {MAX_MEMBERS} members");
+    }
+    Ok(())
 }
 
 impl Font {
@@ -185,10 +247,19 @@ impl Font {
                 });
                 sources.push(Source::Text(text));
             }
-            for (key, glyph) in glyph_keys(font) {
+            let keys = glyph_keys(font);
+            check_members(members.len() + keys.len())?;
+            let (outlines, advances) = (
+                font.outline_glyphs(),
+                font.glyph_metrics(Size::unscaled(), LocationRef::default()),
+            );
+            let mut hashes = std::collections::HashMap::new();
+            for (key, glyph) in keys {
                 members.push(Member {
                     key: format!("{prefix}{key}"),
-                    hash: glyph_hash(font, glyph),
+                    hash: *hashes
+                        .entry(glyph)
+                        .or_insert_with(|| glyph_hash(&outlines, &advances, glyph)),
                 });
                 sources.push(Source::Glyph {
                     font: index as u32,
@@ -345,19 +416,20 @@ impl OutlinePen for Recorder {
     }
 }
 
-/// A hash of a glyph's outline, in font units, and its advance width.
-fn glyph_hash(font: &FontRef, glyph: GlyphId) -> u64 {
+/// A hash of a glyph's outline, in font units, and its advance width (`advances`, unscaled).
+fn glyph_hash(
+    outlines: &skrifa::OutlineGlyphCollection,
+    advances: &skrifa::metrics::GlyphMetrics,
+    glyph: GlyphId,
+) -> u64 {
     let mut recorder = Recorder::default();
-    if let Some(outline) = font.outline_glyphs().get(glyph) {
+    if let Some(outline) = outlines.get(glyph) {
         let _ = outline.draw(
             DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
             &mut recorder,
         );
     }
-    let advance = font
-        .glyph_metrics(Size::unscaled(), LocationRef::default())
-        .advance_width(glyph)
-        .unwrap_or(0.0);
+    let advance = advances.advance_width(glyph).unwrap_or(0.0);
     recorder.push(b'A', &[advance]);
     hash_bytes(&recorder.0)
 }
@@ -455,10 +527,12 @@ pub fn glyph_count(bytes: &[u8], format: Format) -> Result<u64> {
 /// has another shape.
 pub fn member_keys(bytes: &[u8], format: Format) -> Result<Vec<String>> {
     let data = sfnt(bytes, format)?;
-    let mut keys: Vec<String> = fonts(&data)?
-        .iter()
-        .flat_map(|font| glyph_keys(font).into_iter().map(|(key, _)| key))
-        .collect();
+    let mut keys = Vec::new();
+    for font in fonts(&data)? {
+        let glyphs = glyph_keys(&font);
+        check_members(keys.len() + glyphs.len())?;
+        keys.extend(glyphs.into_iter().map(|(key, _)| key));
+    }
     keys.sort_unstable();
     Ok(keys)
 }
@@ -573,5 +647,58 @@ mod tests {
         }
         assert!(sfnt(&eot(0x4), Format::Eot).is_err(), "MicroType Express");
         Ok(())
+    }
+
+    #[test]
+    fn a_collection_of_too_many_fonts_does_not_decode() {
+        // Every entry names the same font, at the end of the offsets.
+        let ttf = read("before.ttf");
+        let collection = |fonts: u32| {
+            let start = 12 + 4 * fonts;
+            let mut bytes = b"ttcf".to_vec();
+            bytes.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+            bytes.extend_from_slice(&fonts.to_be_bytes());
+            for _ in 0..fonts {
+                bytes.extend_from_slice(&start.to_be_bytes());
+            }
+            // The font's table offsets count from the file's start.
+            let mut font = ttf.clone();
+            let tables = usize::from(u16::from_be_bytes([font[4], font[5]]));
+            for table in 0..tables {
+                let at = 12 + 16 * table + 8;
+                let offset = u32::from_be_bytes(font[at..at + 4].try_into().unwrap()) + start;
+                font[at..at + 4].copy_from_slice(&offset.to_be_bytes());
+            }
+            bytes.extend(font);
+            bytes
+        };
+        let two = Font::new(&collection(2), Format::Sfnt).expect("two fonts decode");
+        assert_eq!(two.info().format, "TTC");
+        assert_eq!(two.members()[0].key, "#1 names");
+        let error = Font::new(&collection(MAX_COLLECTION_FONTS + 1), Format::Sfnt)
+            .err()
+            .expect("too many fonts");
+        assert!(error.to_string().contains("a collection of"), "{error}");
+        assert!(check_members(MAX_MEMBERS).is_ok() && check_members(MAX_MEMBERS + 1).is_err());
+    }
+
+    #[test]
+    fn a_woff_whose_tables_unwrap_past_the_limit_does_not_decode() {
+        // One table of 4 GB, deflated (so it says) to 100 bytes.
+        let mut bytes = b"wOFF".to_vec();
+        bytes.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+        bytes.extend_from_slice(&164u32.to_be_bytes());
+        bytes.extend_from_slice(&1u16.to_be_bytes());
+        bytes.resize(44, 0);
+        for field in [u32::from_be_bytes(*b"glyf"), 64, 100, 0xFFFF_FFF0, 0] {
+            bytes.extend_from_slice(&field.to_be_bytes());
+        }
+        bytes.resize(164, 0);
+        let error = sfnt(&bytes, Format::Woff).expect_err("too large");
+        assert!(error.to_string().contains("unwraps to"), "{error}");
+        assert!(
+            check_woff1(&read("after.woff")).is_ok(),
+            "a real WOFF is within the limit"
+        );
     }
 }

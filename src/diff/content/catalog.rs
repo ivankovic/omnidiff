@@ -33,6 +33,10 @@
 //! block is a run of tagged fields per message - translation (UTF-16BE), source text, context,
 //! comment - each message ended by an end tag. A catalog compiled without source texts keys its
 //! messages by their hash instead.
+//!
+//! **The text a catalog decodes to is bounded** ([`text_budget`]): a `.mo`'s tables may point
+//! every message at the same megabyte, and a `.qm`'s one-byte messages each make a key. Past the
+//! budget the catalog does not decode, and the pair is reported as binary.
 
 use anyhow::{Context, Result, bail};
 
@@ -42,6 +46,33 @@ use super::container::{Container, ContainerInfo, Member, MemberContent, hash_byt
 const QM_MAGIC: [u8; 16] = [
     0x3C, 0xB8, 0x64, 0x18, 0xCA, 0xEF, 0x9C, 0x95, 0xCD, 0x21, 0x1C, 0xBF, 0x60, 0xA1, 0xBD, 0xDD,
 ];
+
+/// How many bytes of text a catalog may decode to per byte of it: a compiled catalog holds each
+/// string once, so its messages are about its own size.
+const TEXT_PER_BYTE: usize = 4;
+
+/// Text any catalog may decode to, however small: room for a few keys a `.qm` writes itself.
+const TEXT_SLACK: usize = 1024 * 1024;
+
+/// The most text any catalog may decode to: the largest real ones are a few megabytes.
+const MAX_TEXT_BYTES: usize = 256 * 1024 * 1024;
+
+/// The text a catalog of `bytes` bytes may decode to, its keys and translations together.
+fn text_budget(bytes: usize) -> usize {
+    bytes
+        .saturating_mul(TEXT_PER_BYTE)
+        .saturating_add(TEXT_SLACK)
+        .min(MAX_TEXT_BYTES)
+}
+
+/// Adds `bytes` of text to `spent`, unless that passes `budget`.
+fn spend(spent: &mut usize, bytes: usize, budget: usize) -> Result<()> {
+    *spent = spent.saturating_add(bytes);
+    if *spent > budget {
+        bail!("a catalog of more than {budget} bytes of text");
+    }
+    Ok(())
+}
 
 /// True if `bytes` are a gettext `.mo`, in either byte order.
 pub fn is_mo(bytes: &[u8]) -> bool {
@@ -143,8 +174,10 @@ fn mo_messages(bytes: &[u8]) -> Result<Vec<(String, String)>> {
     if count > bytes.len() / 16 {
         bail!("a .mo of {count} messages in {} bytes", bytes.len());
     }
-    let string = |table: usize, index: usize| -> Result<String> {
+    let (budget, mut spent) = (text_budget(bytes.len()), 0);
+    let mut string = |table: usize, index: usize| -> Result<String> {
         let (length, offset) = (word(table + index * 8)?, word(table + index * 8 + 4)?);
+        spend(&mut spent, length, budget)?;
         let raw = bytes
             .get(offset..offset + length)
             .context("a .mo string past the end")?;
@@ -209,6 +242,7 @@ fn qm_messages(bytes: &[u8]) -> Result<Vec<(String, String)>> {
     };
 
     let mut messages = Vec::new();
+    let (budget, mut spent) = (text_budget(bytes.len()), 0);
     let (mut source, mut context, mut comment, mut hash) =
         (String::new(), String::new(), String::new(), None);
     let mut translations: Vec<String> = Vec::new();
@@ -237,7 +271,9 @@ fn qm_messages(bytes: &[u8]) -> Result<Vec<(String, String)>> {
                 } else {
                     key(&[&context, &source, &comment])
                 };
-                messages.push((message_key, translations.join("\n")));
+                let translation = translations.join("\n");
+                spend(&mut spent, message_key.len() + translation.len(), budget)?;
+                messages.push((message_key, translation));
                 (source, context, comment, hash) =
                     (String::new(), String::new(), String::new(), None);
                 translations.clear();
@@ -410,5 +446,33 @@ pub(crate) mod tests {
         assert_eq!(status("Open"), Some(MemberStatus::Changed));
         assert_eq!(status("Quit"), Some(MemberStatus::Added));
         Ok(())
+    }
+
+    #[test]
+    fn a_mo_pointing_every_message_at_one_string_is_bounded() {
+        // 2,000 messages, original and translation each naming the same 64 KiB: 256 MB of text
+        // from a 96 KB file.
+        let (count, length) = (2000usize, 64 * 1024usize);
+        let tables = 28;
+        let data = tables + count * 16;
+        let mut bytes = Vec::new();
+        for word in [
+            0x9504_12de_u32,
+            0,
+            count as u32,
+            tables as u32,
+            (tables + count * 8) as u32,
+            0,
+            0,
+        ] {
+            bytes.extend_from_slice(&word.to_le_bytes());
+        }
+        for _ in 0..count * 2 {
+            bytes.extend_from_slice(&(length as u32).to_le_bytes());
+            bytes.extend_from_slice(&(data as u32).to_le_bytes());
+        }
+        bytes.resize(data + length, b'x');
+        let error = Catalog::mo(&bytes).err().expect("too much text");
+        assert!(error.to_string().contains("bytes of text"), "{error}");
     }
 }
