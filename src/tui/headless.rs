@@ -39,7 +39,7 @@ use crate::tui::actions::DiffSessionData;
 use crate::tui::display_columns;
 use crate::tui::osc1717::{self, Annotation, Section, SectionRecords};
 
-mod alignment;
+pub(crate) mod alignment;
 mod side_by_side;
 
 pub use side_by_side::{
@@ -705,7 +705,8 @@ pub(crate) fn render_annotated_text_diff(
 
 /// [`render_annotated_text_diff`] in the layout `request` asks for: side by side when it asks
 /// for it and it fits (see `side_by_side`), else stacked. `fallback_patch` is git's patch of the
-/// pair for a side-by-side layout too large to align, when `annotation` carries none.
+/// pair for a side-by-side layout too large to align, when `annotation` carries none;
+/// `node_lines` the node mapping's lines the side-by-side rows follow, when the pair has an AST.
 pub(crate) fn render_laid_out_text_diff(
     data: &DiffSessionData,
     use_color: bool,
@@ -713,13 +714,14 @@ pub(crate) fn render_laid_out_text_diff(
     annotation: Option<&Annotation>,
     request: LayoutRequest,
     fallback_patch: Option<&osc1717::Patch>,
+    node_lines: Option<&alignment::NodeLines>,
 ) -> String {
     side_by_side::render(
         data,
         use_color,
         context,
         annotation,
-        fallback_patch,
+        (fallback_patch, node_lines),
         request,
     )
     .unwrap_or_else(|| render_annotated_text_diff(data, use_color, context, annotation))
@@ -780,6 +782,21 @@ impl Pair {
         self,
         render_options: RenderOptions,
     ) -> Result<(crate::tui::actions::DiffSessionData, bool)> {
+        self.diff_and_node_lines(render_options, false)
+            .map(|(data, large_residual, _)| (data, large_residual))
+    }
+
+    /// [`Pair::diff`], and with `node_lines` what the node mapping says of each line (see
+    /// `alignment`), when the pair has an AST.
+    pub(crate) fn diff_and_node_lines(
+        self,
+        render_options: RenderOptions,
+        node_lines: bool,
+    ) -> Result<(
+        crate::tui::actions::DiffSessionData,
+        bool,
+        Option<alignment::NodeLines>,
+    )> {
         match self.contents {
             PairContents::Text { before, after } => crate::tui::app::compute_diff_of_decoded(
                 &self.before,
@@ -787,6 +804,7 @@ impl Pair {
                 &self.after,
                 after,
                 render_options,
+                node_lines,
             ),
             PairContents::Binary { .. } => anyhow::bail!(
                 "{} and {} are not both text",
@@ -834,7 +852,9 @@ pub fn run(
         && pending.is_none()
         && too_large_to_align)
         .then(|| osc1717::Patch::start(&pair.before, &pair.after));
-    let (mut data, large_residual) = pair.diff(render_options)?;
+    let side_by_side = layout.layout != Layout::Stacked && layout.width.is_some();
+    let (mut data, large_residual, node_lines) =
+        pair.diff_and_node_lines(render_options, side_by_side)?;
     let annotation = record_file.map(|file| Annotation {
         file,
         patch: pending.and_then(osc1717::PendingPatch::finish),
@@ -864,6 +884,7 @@ pub fn run(
         annotation.as_ref(),
         layout,
         fallback_patch.as_ref(),
+        node_lines.as_ref(),
     ))?;
     // Raw bytes, compared at read: `data`'s contents went through `display_safe`, which replaces
     // control characters.

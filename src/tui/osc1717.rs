@@ -921,7 +921,9 @@ mod tests {
             std::fs::write(&new, &after).unwrap();
             let patch = Patch::start(&old, &new).finish();
             let pair = Pair::read(&old, &new).unwrap();
-            let (data, _) = pair.diff(crate::diff::text::RenderOptions::FULL).unwrap();
+            let (data, _, node_lines) = pair
+                .diff_and_node_lines(crate::diff::text::RenderOptions::FULL, true)
+                .unwrap();
             let annotation = Annotation {
                 file: file.to_string(),
                 patch,
@@ -940,6 +942,7 @@ mod tests {
                         width: Some(width),
                     },
                     None,
+                    node_lines.as_ref(),
                 );
                 let rows: Vec<&str> = output.lines().collect();
                 let records = records_of_side_by_side_rows(&output);

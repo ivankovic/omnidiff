@@ -51,6 +51,7 @@ use crate::tui::components::{
     theme_dialog::ThemeDialog,
 };
 use crate::tui::events::Event;
+use crate::tui::headless::alignment::NodeLines;
 use crate::tui::theme::{self, OverlayTheme};
 use crate::tui::ui::UI;
 
@@ -1833,7 +1834,15 @@ fn compute_diff_with_options_inner(
     render_options: RenderOptions,
 ) -> Result<(DiffSessionData, bool)> {
     let (before_code, after_code) = parse_before_after(before, after)?;
-    diff_parsed(before, after, before_code, after_code, render_options)
+    diff_parsed(
+        before,
+        after,
+        before_code,
+        after_code,
+        render_options,
+        false,
+    )
+    .map(|(data, large_residual, _)| (data, large_residual))
 }
 
 /// [`compute_diff_with_options`] of two texts already in memory (a member of an archive, see
@@ -1867,7 +1876,15 @@ pub fn compute_diff_of_texts(
                 (before_code.metadata.language, after_code.metadata.language);
             substitute_missing_language(&mut before_code, after_language, &before);
             substitute_missing_language(&mut after_code, before_language, &after);
-            diff_parsed(&before, &after, before_code, after_code, render_options)
+            diff_parsed(
+                &before,
+                &after,
+                before_code,
+                after_code,
+                render_options,
+                false,
+            )
+            .map(|(data, large_residual, _)| (data, large_residual))
         })
         .expect("failed to spawn diff-computation thread")
         .join()
@@ -1879,14 +1896,16 @@ pub fn compute_diff_of_texts(
 
 /// [`compute_diff_with_options`] of two files already read and decoded (`headless::Pair`), so a
 /// non-interactive run reads and validates each side once. Parsed exactly as `Code::from_file`
-/// parses a file, on the same big-stack thread.
-pub fn compute_diff_of_decoded(
+/// parses a file, on the same big-stack thread. With `node_lines`, also what the node mapping says
+/// of each line, for the side-by-side layout (`headless::alignment`); `None` without an AST.
+pub(crate) fn compute_diff_of_decoded(
     before: &Path,
     before_text: String,
     after: &Path,
     after_text: String,
     render_options: RenderOptions,
-) -> Result<(DiffSessionData, bool)> {
+    node_lines: bool,
+) -> Result<(DiffSessionData, bool, Option<NodeLines>)> {
     let (before, after) = (before.to_path_buf(), after.to_path_buf());
     match std::thread::Builder::new()
         .name(DIFF_THREAD_NAME.to_string())
@@ -1909,7 +1928,14 @@ pub fn compute_diff_of_decoded(
                 (before_code.metadata.language, after_code.metadata.language);
             substitute_missing_language(&mut before_code, after_language, &before);
             substitute_missing_language(&mut after_code, before_language, &after);
-            diff_parsed(&before, &after, before_code, after_code, render_options)
+            diff_parsed(
+                &before,
+                &after,
+                before_code,
+                after_code,
+                render_options,
+                node_lines,
+            )
         })
         .expect("failed to spawn diff-computation thread")
         .join()
@@ -1920,30 +1946,53 @@ pub fn compute_diff_of_decoded(
 }
 
 /// The diff of two parsed sides: the AST diff, or the plain-text fallback when either side has no
-/// grammar.
+/// grammar; with `node_lines`, the AST diff's [`NodeLines`] too.
 fn diff_parsed(
     before: &Path,
     after: &Path,
     before_code: Code,
     after_code: Code,
     render_options: RenderOptions,
-) -> Result<(DiffSessionData, bool)> {
+    node_lines: bool,
+) -> Result<(DiffSessionData, bool, Option<NodeLines>)> {
     if before_code.ast.is_none() || after_code.ast.is_none() {
         let data = assemble_plain_text_diff_session_data(before, after, &before_code, &after_code);
-        return Ok((data, false));
+        return Ok((data, false, None));
     }
-    let pending = Diff::pending(&before_code, &after_code);
-    let large_residual = pending.large_residual();
-    let diff = pending.finish();
-    let data = assemble_diff_session_data(
-        before,
-        after,
-        &before_code,
-        &after_code,
-        &diff,
-        render_options,
-    )?;
-    Ok((data, large_residual))
+    use crate::tui::headless::alignment::mapping;
+    // The node lines need the trees indexed, which the engine's diff does not, and then the
+    // mapping, which the ranges only read: each half is built beside one of them.
+    let (trees, (diff, large_residual)) = std::thread::scope(|scope| {
+        let trees =
+            node_lines.then(|| scope.spawn(|| mapping::Trees::of(&before_code, &after_code)));
+        let pending = Diff::pending(&before_code, &after_code);
+        let large_residual = pending.large_residual();
+        let diff = pending.finish();
+        (trees.and_then(join), (diff, large_residual))
+    });
+    let (data, lines) = std::thread::scope(|scope| {
+        let lines = trees.zip(diff.ast.as_ref()).map(|(trees, ast)| {
+            scope.spawn(|| mapping::node_lines(trees, &before_code, &after_code, ast))
+        });
+        let data = assemble_diff_session_data(
+            before,
+            after,
+            &before_code,
+            &after_code,
+            &diff,
+            render_options,
+        );
+        (data, lines.map(join))
+    });
+    let data = data?;
+    Ok((data, large_residual, lines))
+}
+
+/// A scoped thread's result, its panic re-raised here.
+fn join<T>(handle: std::thread::ScopedJoinHandle<'_, T>) -> T {
+    handle
+        .join()
+        .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
 }
 
 /// Only an empty side with no detected language is re-parsed; that is the one case where the two

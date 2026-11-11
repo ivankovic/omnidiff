@@ -19,34 +19,58 @@ use std::path::PathBuf;
 
 use super::*;
 use crate::diff::text::{RenderOptions, ranges_for_options};
+use crate::tui::headless::alignment::NodeLines;
 use crate::tui::headless::{
     CONTEXT_LINES, Pair, render_annotated_text_diff, render_laid_out_text_diff,
 };
 
+/// A diff as `headless::run` computes it for a side-by-side layout: the session data, and what the
+/// node mapping says of the lines when the pair has an AST.
+struct Diffed {
+    data: DiffSessionData,
+    lines: Option<NodeLines>,
+}
+
+impl std::ops::Deref for Diffed {
+    type Target = DiffSessionData;
+
+    fn deref(&self) -> &DiffSessionData {
+        &self.data
+    }
+}
+
 /// The diff of `before` and `after` as `headless::run` paints it under `options`, its sides named
 /// `name`.
-fn diff_of(before: &str, after: &str, name: &str, options: RenderOptions) -> DiffSessionData {
+fn diff_of(before: &str, after: &str, name: &str, options: RenderOptions) -> Diffed {
     let dir = tempfile::tempdir().unwrap();
     let (old, new) = (dir.path().join(format!("a-{name}")), dir.path().join(name));
     std::fs::write(&old, before).unwrap();
     std::fs::write(&new, after).unwrap();
-    let (mut data, _) = Pair::read(&old, &new).unwrap().diff(options).unwrap();
+    let (mut data, _, lines) = Pair::read(&old, &new)
+        .unwrap()
+        .diff_and_node_lines(options, true)
+        .unwrap();
     data.before_path = PathBuf::from(name);
     data.after_path = PathBuf::from(name);
     data.before_ranges = ranges_for_options(&data.before_ranges, &data.before_contents, options);
     data.after_ranges = ranges_for_options(&data.after_ranges, &data.after_contents, options);
-    data
+    Diffed { data, lines }
 }
 
-fn laid_out(data: &DiffSessionData, layout: Layout, width: Option<usize>) -> String {
+fn laid_out_with(diffed: &Diffed, layout: Layout, width: Option<usize>, context: usize) -> String {
     render_laid_out_text_diff(
-        data,
+        diffed,
         false,
-        CONTEXT_LINES,
+        context,
         None,
         LayoutRequest { layout, width },
         None,
+        diffed.lines.as_ref(),
     )
+}
+
+fn laid_out(diffed: &Diffed, layout: Layout, width: Option<usize>) -> String {
+    laid_out_with(diffed, layout, width, CONTEXT_LINES)
 }
 
 /// The rows after the header row, trailing blanks trimmed.
@@ -69,9 +93,9 @@ fn column_of(row: &str, needle: char) -> Option<usize> {
 const MOVE_BEFORE: &str = "def total(numbers):\n    s = 0\n    for n in numbers:\n        s += n\n    return s\n\n\ndef mean(numbers):\n    return total(numbers) / len(numbers)\n";
 const MOVE_AFTER: &str = "def mean(numbers):\n    return sum(numbers) / len(numbers)\n\n\ndef total(numbers):\n    return sum(numbers)\n";
 
-/// The design's first example: `def mean` keeps its rows because its lines are updated on both
-/// sides, while `total`'s rewrite is painted on one side only under Minimal (`return s` is not);
-/// the moved `total` names its other copy's lines.
+/// The design's first example: `def mean` keeps its rows because the node mapping holds more
+/// pairs inside it (25, its `total` -> `sum` an update) than inside `def total` (12: the header
+/// and the `return`, its loop deleted); the moved `total` names its other copy's lines.
 #[test]
 fn a_moved_function_sits_alone_and_names_its_other_copy() {
     let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::MINIMAL);
@@ -104,30 +128,39 @@ fn a_moved_function_sits_alone_and_names_its_other_copy() {
     assert_eq!(body(&text), expected, "\n{text}");
 }
 
-/// Under Full `return s` is painted too, so both functions hold one updated line on each side:
-/// the tie goes to the chain earlier in the old file.
+/// Under Full the painting differs (`return s` is `~`, the long line wraps at this width), the rows
+/// do not: they come from the mapping, which the render options never touch.
 #[test]
-fn a_tie_in_updated_lines_keeps_the_rows_of_the_function_earlier_in_the_old_file() {
+fn the_moved_function_keeps_the_same_rows_under_full() {
     let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::FULL);
-    let rows = body(&laid_out(&data, Layout::SideBySide, Some(90)));
-    assert!(
-        rows.iter()
-            .any(|row| row.starts_with("1    def total(numbers):")
-                && row.ends_with("│ 5    def total(numbers):")),
-        "{rows:#?}"
-    );
-    assert!(rows.iter().any(|row| row.ends_with("→ 2│")), "{rows:#?}");
+    let expected = [
+        "1    def total(numbers):                 → 5│",
+        "2  -     s = 0                              │",
+        "3  -     for n in numbers:                  │",
+        "4  -         s += n                         │",
+        "5  ~     return s                        → 6│",
+        "6                                           │",
+        "7                                           │",
+        "8    def mean(numbers):                     │ 1    def mean(numbers):",
+        "9  ~     return total(numbers) / len(numbers│ 2  ~     return sum(numbers) / len(numbers)",
+        "     )                                      │",
+        "                                            │ 3",
+        "                                            │ 4",
+        "                                            │ 5    def total(numbers):                 ← 1",
+        "                                            │ 6  ~     return sum(numbers)             ← 5",
+    ];
+    let text = laid_out(&data, Layout::SideBySide, Some(90));
+    assert_eq!(body(&text), expected, "\n{text}");
 }
+
+const REINDENT_BEFORE: &str = "def f(x):\n    if x:\n        return 1\n    return 0\n";
+const REINDENT_AFTER: &str =
+    "def f(x):\n    if x:\n        if x > 1:\n            return 1\n    return 0\n";
 
 /// The design's second example: a nested `if` added around a line that is then the same line.
 #[test]
 fn a_line_reindented_into_a_new_block_stays_beside_itself() {
-    let data = diff_of(
-        "def f(x):\n    if x:\n        return 1\n    return 0\n",
-        "def f(x):\n    if x:\n        if x > 1:\n            return 1\n    return 0\n",
-        "f.py",
-        RenderOptions::FULL,
-    );
+    let data = diff_of(REINDENT_BEFORE, REINDENT_AFTER, "f.py", RenderOptions::FULL);
     let text = laid_out(&data, Layout::SideBySide, Some(80));
     let expected = [
         "1    def f(x):                         │ 1    def f(x):",
@@ -257,6 +290,7 @@ fn colors_never_cross_the_divider() {
             width: Some(60),
         },
         None,
+        data.lines.as_ref(),
     );
     let rows: Vec<&str> = text.lines().skip(1).collect();
     assert!(rows.len() >= 2, "{text}");
@@ -318,10 +352,10 @@ fn an_unknown_or_too_narrow_width_is_stacked() {
     let side_by_side = laid_out(&data, Layout::SideBySide, Some(narrowest));
     assert_ne!(side_by_side, stacked);
     assert!(side_by_side.contains('┬'));
-    // At the narrowest width auto allows, the lines that name a counterpart (moved, each `→ N`
-    // shortening its column) do not fit: more than a tenth of the rows would wrap.
+    // At the narrowest width auto allows, every row fits: the longest line is exactly the column,
+    // and the lines naming a counterpart are short enough for their `→ N`.
     assert!(
-        !laid_out(
+        laid_out(
             &data,
             Layout::Auto,
             Some(2 * (AUTO_MIN_CODE_COLUMNS + 5) + 2)
@@ -369,28 +403,91 @@ fn numbers(text: &str, geometry: &Geometry) -> Vec<(Option<usize>, Option<usize>
         .collect()
 }
 
+/// A fixture's before and after texts and its file extension.
+fn fixture(name: &str) -> (String, String, String) {
+    let dir = crate::test::helper::diffs_case_dir(name).unwrap();
+    let side = |prefix: &str| {
+        let entry = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .find(|file| file.starts_with(prefix) && file.ends_with(".test"))
+            .unwrap();
+        let extension = entry
+            .trim_start_matches(prefix)
+            .trim_end_matches(".test")
+            .to_string();
+        (
+            std::fs::read_to_string(dir.join(&entry)).unwrap(),
+            extension,
+        )
+    };
+    let ((before, extension), (after, _)) = (side("before"), side("after"));
+    (before, after, extension)
+}
+
+/// The rows of `before` -> `after` named `name` under `options`, and the line each one-sided row
+/// names.
+fn rows_under(
+    before: &str,
+    after: &str,
+    name: &str,
+    options: RenderOptions,
+) -> alignment::Alignment {
+    let data = diff_of(before, after, name, options);
+    let (old_lines, new_lines) = (osc1717::line_count(before), osc1717::line_count(after));
+    let old_side = SideLines::new(&data.before_contents, &data.before_ranges, None);
+    let new_side = SideLines::new(&data.after_contents, &data.after_ranges, None);
+    aligned_rows(
+        &data,
+        (&old_side, &new_side),
+        (old_lines, new_lines),
+        (None, data.lines.as_ref()),
+        alignment::PAIR_CAP,
+    )
+    .unwrap()
+}
+
+/// The `M` panel's options change the painting and never the rows: the rows come from the node
+/// mapping. Both design examples and a sample of the fixtures.
+#[test]
+fn the_render_options_never_change_the_rows() {
+    let examples = [
+        (
+            MOVE_BEFORE.to_string(),
+            MOVE_AFTER.to_string(),
+            ".py".to_string(),
+        ),
+        (
+            REINDENT_BEFORE.to_string(),
+            REINDENT_AFTER.to_string(),
+            ".py".to_string(),
+        ),
+    ];
+    let fixtures = crate::test::helper::UNIT_TEST_FIXTURES
+        .iter()
+        .step_by(5)
+        .map(|name| fixture(name));
+    let mut with_ast = 0;
+    for (index, (before, after, extension)) in examples.into_iter().chain(fixtures).enumerate() {
+        let name = format!("f{extension}");
+        let full = rows_under(&before, &after, &name, RenderOptions::FULL);
+        let minimal = rows_under(&before, &after, &name, RenderOptions::MINIMAL);
+        assert_eq!(full, minimal, "case {index} ({extension})");
+        with_ast += usize::from(
+            diff_of(&before, &after, &name, RenderOptions::FULL)
+                .lines
+                .is_some(),
+        );
+    }
+    assert!(with_ast > 2, "the sample reaches the node mapping");
+}
+
 /// Over a sample of the fixtures, with no folding: every line of each side on exactly one row,
 /// top to bottom, and every divider in its column.
 #[test]
 fn every_line_of_a_fixture_is_on_one_row_in_order() {
     for name in crate::test::helper::UNIT_TEST_FIXTURES.iter().step_by(7) {
-        let dir = crate::test::helper::diffs_case_dir(name).unwrap();
-        let side = |prefix: &str| {
-            let entry = std::fs::read_dir(&dir)
-                .unwrap()
-                .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-                .find(|file| file.starts_with(prefix) && file.ends_with(".test"))
-                .unwrap();
-            let extension = entry
-                .trim_start_matches(prefix)
-                .trim_end_matches(".test")
-                .to_string();
-            (
-                std::fs::read_to_string(dir.join(&entry)).unwrap(),
-                extension,
-            )
-        };
-        let ((before, extension), (after, _)) = (side("before"), side("after"));
+        let (before, after, extension) = fixture(name);
         let data = diff_of(
             &before,
             &after,
@@ -399,17 +496,7 @@ fn every_line_of_a_fixture_is_on_one_row_in_order() {
         );
         let (old_lines, new_lines) = (osc1717::line_count(&before), osc1717::line_count(&after));
         let width = 160;
-        let text = render_laid_out_text_diff(
-            &data,
-            false,
-            usize::MAX / 2,
-            None,
-            LayoutRequest {
-                layout: Layout::SideBySide,
-                width: Some(width),
-            },
-            None,
-        );
+        let text = laid_out_with(&data, Layout::SideBySide, Some(width), usize::MAX / 2);
         let geometry = Geometry::new(width, old_lines, new_lines);
         if !data
             .before_ranges
@@ -500,7 +587,7 @@ fn above_the_cap_the_rows_follow_gits_patch() {
     let old_side = SideLines::new(&data.before_contents, &data.before_ranges, None);
     let new_side = SideLines::new(&data.after_contents, &data.after_ranges, None);
     let rows = |cap: usize, patch: Option<&Patch>| {
-        aligned_rows(&data, (&old_side, &new_side), (4, 5), patch, cap).map(|a| a.rows)
+        aligned_rows(&data, (&old_side, &new_side), (4, 5), (patch, None), cap).map(|a| a.rows)
     };
     assert_eq!(
         rows(alignment::PAIR_CAP, None).unwrap()[2..4],

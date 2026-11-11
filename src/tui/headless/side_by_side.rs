@@ -29,7 +29,8 @@
 //! (under `git diff` stdout is the pager's pipe and git sets no `COLUMNS`, but the terminal is
 //! still there). Zero counts as unknown at every step. Not on Windows past `$COLUMNS`.
 //!
-//! **Rows** come from [`super::alignment`]: omnidiff's own line matching, not git's patch. A row
+//! **Rows** come from [`super::alignment`]: the engine's node mapping (or, without a tree, the
+//! painting's matched ranges), not git's patch, and never from the render options. A row
 //! whose line sits alone although it matches a line elsewhere (a move) ends its half with that
 //! line's number, `→ N` on the left and `← N` on the right; the stacked layout's `Moved to/from`
 //! box headers are not drawn, the `|` marker of a moved line is.
@@ -389,15 +390,23 @@ fn fold_text(old: usize, new: usize) -> String {
     }
 }
 
-/// The rows of `sides`, the first `lines` of each: by omnidiff's matching, or by git's `patch`
-/// above `cap` pairs; `None` above the cap without a patch.
+/// The rows of `sides`, the first `lines` of each: by the node mapping's `node_lines` when the
+/// pair has them; else by the painting's ranges, or by git's `patch` above `cap` pairs; `None`
+/// above the cap without a patch.
 fn aligned_rows(
     data: &DiffSessionData,
     (old_side, new_side): (&SideLines, &SideLines),
     (old_lines, new_lines): (usize, usize),
-    patch: Option<&Patch>,
+    (patch, node_lines): (Option<&Patch>, Option<&alignment::NodeLines>),
     cap: usize,
 ) -> Option<alignment::Alignment> {
+    if let Some(node_lines) = node_lines {
+        return Some(alignment::align_by_nodes(
+            &old_side.lines[..old_lines],
+            &new_side.lines[..new_lines],
+            node_lines,
+        ));
+    }
     let pairs = alignment::line_pairs(
         &data.before_ranges,
         &data.after_ranges,
@@ -427,13 +436,14 @@ fn aligned_rows(
 
 /// The diff laid out side by side, or `None` when `request` asks for the stacked layout or it does
 /// not fit (see the module doc). `fallback_patch` is git's patch of the pair when `annotation`
-/// has none, for rows by the patch above the alignment's cap.
+/// has none, for rows by the patch above the alignment's cap; `node_lines` what the node mapping
+/// says of each line, which the rows follow when given.
 pub(super) fn render(
     data: &DiffSessionData,
     use_color: bool,
     context: usize,
     annotation: Option<&Annotation>,
-    fallback_patch: Option<&Patch>,
+    (fallback_patch, node_lines): (Option<&Patch>, Option<&alignment::NodeLines>),
     request: LayoutRequest,
 ) -> Option<String> {
     let minimum = match request.layout {
@@ -470,7 +480,7 @@ pub(super) fn render(
         data,
         (&old_side, &new_side),
         (old_lines, new_lines),
-        patch,
+        (patch, node_lines),
         alignment::PAIR_CAP,
     )?;
     let rows = &aligned.rows;

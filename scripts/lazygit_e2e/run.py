@@ -108,9 +108,6 @@ class Renderer:
     config: tuple[dict, ...] = ()
     # Text the rendered diff must also show, to tell this renderer's layout from another's.
     signature: str = ""
-    # The moved function's two `def total` lines share one row, so staging that row stages both
-    # (OSC 1717 §6.2: a host acts on every record of a row).
-    pairs_moved_copies: bool = False
 
     @property
     def is_raw_git(self) -> bool:
@@ -126,9 +123,8 @@ RENDERERS = [
         ({"type": "extDiff", "command": "omnidiff --headless --context {{diffContext}}"},),
     ),
     # Two columns, as wide as lazygit's main view; the header row's divider says it is not stacked.
-    # Painted Full (no saved options), `total`'s `return s` is updated on both sides like `mean`'s
-    # return line, the tie keeps `total`'s rows (earlier in the old file), and its two `def` lines
-    # share a row. Painted Minimal, `mean`'s rows win and each `def total` sits alone.
+    # The rows come from the node mapping, whatever the painting: under Full (no saved options)
+    # and Minimal alike `mean` keeps its rows and each copy of the moved `def total` sits alone.
     Renderer(
         "omnidiff-sbs",
         (
@@ -139,7 +135,6 @@ RENDERERS = [
             },
         ),
         signature="┬─ after: ",
-        pairs_moved_copies=True,
     ),
     Renderer(
         "omnidiff-sbs-minimal",
@@ -185,10 +180,6 @@ def scenarios() -> list[Scenario]:
         # The first row naming `def total` is the old copy, the second the new one, in git's
         # rendering and omnidiff's alike.
         moved = "def total(numbers):"
-        if r.pairs_moved_copies:
-            both = ("-" + moved, "+" + moved)
-            out.append(Scenario(f"{r.name}-stage-moved-row", r, "stage", moved, both, files=MOVED))
-            continue
         out.append(
             Scenario(f"{r.name}-stage-moved-del", r, "stage", moved, ("-" + moved,), 1, files=MOVED)
         )

@@ -18,41 +18,69 @@
 //! Which before line sits beside which after line in the side-by-side layout
 //! (`super::side_by_side`).
 //!
-//! **Rows follow omnidiff's own matching, not git's patch.** Every `Identical`, `Update` and `Move`
-//! range says that the text it covers on one side *is* the text it names on the other, so each
-//! line it touches is paired with the line its destination covers at the same offset (a range
-//! whose destination has fewer rows, such as an `Update`'s zero-width anchor, clamps to its last
-//! row). Both sides' lists are read, since a range can be recorded on one side only. `Insert` and
-//! `Delete` carry a destination too, but it is an anchor, not a match, and pairs nothing. A pair
-//! drawn from several ranges is the same pair; its `support` counts them.
+//! **Rows follow the engine's node mapping** ([`mapping::node_lines`]), not the painting and not
+//! git's patch. The painting depends on the `M` panel's render options (Full and Minimal paint
+//! different ranges of the same diff), so rows read from it changed with them; the mapping does
+//! not. Without a tree on either side (plain text, a side over `MAX_AST_NODES`) the painting's
+//! ranges are all there is, and the older rule below applies.
 //!
-//! **One in-order chain.** A row can only hold lines that read top to bottom on both sides, so the
-//! rows keep the best chain of pairs strictly increasing in both lines (a weighted longest
-//! increasing subsequence, `O(P log P)` over a Fenwick tree of prefix maxima). Best is, in order:
-//! the most *updated* lines (a line painted `~`, counted on each side, so a chain through a
-//! rewritten function wins over one through a function moved intact - the rewrite is what a
-//! reader compares across a row); then the most pairs; then the chain that ends earlier in the
-//! old file, and among equals the predecessor earlier in it. Weighting by the painting makes the
-//! choice follow the `M` panel's options: under `--full` a `return s` -> `return sum(numbers)`
-//! line is `~` on both sides, under the saved default only on one.
+//! **Kept node pairs, top down.** The two roots are kept. Under a kept pair `P_b <-> P_a`, the
+//! *candidates* are each side's frontier: walking down from `P_b`'s children, the topmost nodes
+//! whose partner lies strictly inside `P_a`'s subtree (and the same from `P_a`'s side, so a node
+//! below an unmapped or elsewhere-mapped node on either side is still found). Usually that is a
+//! child mapped to a child; it is also a node mapped across parents, such as a statement wrapped
+//! into a new `if` (example 2). The kept candidates are the heaviest chain of them that is in
+//! order and nested in neither on both sides ([`best_span_chain`], `O(c log c)`), weight being
+//! the number of mapped node pairs inside the two subtrees (counted for every mapped pair at once,
+//! by an offline sweep over both preorders). Ties: more pairs, then earlier in the old file.
+//! Every kept candidate is recursed into; every other one is a *move*, and so is any mapped node
+//! below it or not reached from a kept pair: no row is drawn from it, and it is never revisited.
 //!
-//! **Blank lines.** No range covers a line of only whitespace, so between two neighbouring chain
-//! pairs the lines no range touches are paired by equal text (an LCS, skipped past
-//! [`GAP_FILL_LIMIT`] cells), else an unchanged blank line would sit on a row of its own.
+//! **Lines from tokens.** A line is `Kept` if a token (leaf) on it is in a kept pair, else
+//! `Moved` if one is mapped (naming the line of the first such token's partner), else `Unmatched`
+//! if it holds a token, else `Blank`. Each kept token names its first rows on both sides, and its
+//! last rows if it spans more than one, as a line pair; *tokens* rather than every kept node,
+//! because a kept Python `block` starts on its first statement's row, which may be a moved one.
+//! The rows keep the chain of those line pairs strictly increasing on both sides with the most
+//! tokens naming them ([`best_chain`]); each is a row.
 //!
-//! **Everything else is one-sided**: the old lines between two rows of pairs first, then the new
-//! ones, as git orders a change block. A one-sided line that does have a match elsewhere (a move,
-//! or the losing side of a crossing) names it: [`Alignment::old_counterpart`] holds, per old line,
-//! the new line its best-supported pair names (lowest line on a tie), and the reverse.
+//! **Between two anchor rows**, `Kept` lines of the two sides pair in order (a kept token whose
+//! line pair lost to a crossing one, or the inside of a kept multi-line string), and so do
+//! `Blank` lines of equal text (an LCS over the gap, skipped past [`GAP_FILL_LIMIT`] cells). A
+//! `Moved` or `Unmatched` line never pairs: it is one-sided, the old lines first, then the new,
+//! as git orders a change block; a `Moved` one names its counterpart, `→ N` / `← N`.
 //!
-//! **The cap.** Above [`PAIR_CAP`] pairs the chain is not computed and the rows follow git's patch
-//! instead ([`rows_by_patch`]): context lines share a row, and in a change block the n-th deleted
-//! line sits beside the n-th added one.
+//! Example 1, `def total` (loop, `return s`) moved below `def mean`, `total` -> `sum` inside it.
+//! The module's two `def`s cross; the mapping holds 25 pairs inside `mean` (all of it, the
+//! renamed call an update) and 12 inside `total` (its header and `return`; the loop deleted), so
+//! `mean` keeps its two rows under every preset and `total`'s lines are one-sided: header and
+//! `return` `→ 5`/`→ 6` and `← 1`/`← 5`, the loop's lines plain, the blank lines alone because
+//! they fall in different gaps. Example 2, `return 1` wrapped in a new `if x > 1:`: the
+//! `return_statement` is mapped from the outer block into the new `if`'s block, in order, so it
+//! is a candidate of the kept outer blocks and keeps its row; `if x > 1:` is `Unmatched`, alone.
+//!
+//! **Without a tree: matched ranges.** Every `Identical`, `Update` and `Move` range says that the
+//! text it covers on one side *is* the text it names on the other, so each line it touches is
+//! paired with the line its destination covers at the same offset (a range whose destination has
+//! fewer rows, such as an `Update`'s zero-width anchor, clamps to its last row). Both sides'
+//! lists are read, since a range can be recorded on one side only. `Insert` and `Delete` carry a
+//! destination too, but it is an anchor, not a match, and pairs nothing. A pair drawn from several
+//! ranges is the same pair; its `support` counts them. The rows keep the best chain of pairs
+//! strictly increasing in both lines: the most *updated* lines (painted `~`, each side counted),
+//! then the most pairs, then the chain that ends earlier in the old file. Between two pairs of
+//! the chain the lines no range touches pair by equal text; every other line is one-sided and
+//! names, per old line, the new line its best-supported pair names (lowest on a tie), and back.
+//!
+//! **The cap.** Above [`PAIR_CAP`] range pairs the chain is not computed and the rows follow
+//! git's patch instead ([`rows_by_patch`]): context lines share a row, and in a change block the
+//! n-th deleted line sits beside the n-th added one.
 
 use std::cmp::Reverse;
 
 use crate::diff::text::{RangeMatch, TextOperation};
 use crate::diff::text_range::TextRange;
+
+pub(crate) mod mapping;
 
 /// Above this many line pairs the rows follow git's patch ([`rows_by_patch`]).
 pub(crate) const PAIR_CAP: usize = 2_000_000;
@@ -164,11 +192,11 @@ pub(crate) fn line_pairs(
     pairs
 }
 
-/// A chain's rank: updated lines, then pairs, then ending earlier in the old file (and then the
-/// new). Larger is better.
+/// A chain's rank: weight (updated lines, or mapped nodes), then members, then ending earlier in
+/// the old file (and then the new). Larger is better.
 type Score = (u64, u64, Reverse<usize>, Reverse<usize>);
 
-/// A Fenwick tree of prefix maxima over new lines: the best chain ending before a new line.
+/// A Fenwick tree of prefix maxima over new positions: the best chain ending before a position.
 struct PrefixMax {
     tree: Vec<Option<(Score, usize)>>,
 }
@@ -202,48 +230,59 @@ impl PrefixMax {
     }
 }
 
-/// The indices into `pairs` (sorted by old, then new line) of the best chain strictly increasing
-/// in both lines, in order, where a pair's `updated` is how many of its two lines are updated (see
-/// the module doc). `None` above `cap` pairs.
-pub(crate) fn best_chain(
-    pairs: &[LinePair],
-    updated: impl Fn(&LinePair) -> u64,
-    cap: usize,
-) -> Option<Vec<usize>> {
-    if pairs.len() > cap {
-        return None;
-    }
-    let new_size = pairs.iter().map(|pair| pair.new + 1).max().unwrap_or(0);
-    let mut prefix = PrefixMax::new(new_size);
-    let mut previous: Vec<Option<usize>> = vec![None; pairs.len()];
+/// Something with an extent on each side, half-open and never empty: a line (`[n, n + 1)`) or a
+/// node's subtree in preorder (`[first, past its last descendant)`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Span2 {
+    pub old: (usize, usize),
+    pub new: (usize, usize),
+    pub weight: u64,
+}
+
+/// The indices into `items` of the heaviest chain in which each item ends, on both sides, before
+/// the next one starts, in order; ranked by [`Score`]. A weighted longest increasing subsequence,
+/// `O(n log n)` whatever the positions (they are ranked first, so a call on a few children of a
+/// node deep in a large tree stays small): items are taken by old start, and one joins the
+/// prefix-maximum tree (keyed by its new end) once an item starting at or after its old end is
+/// reached.
+pub(crate) fn best_span_chain(items: &[Span2]) -> Vec<usize> {
+    let mut by_start: Vec<usize> = (0..items.len()).collect();
+    by_start.sort_unstable_by_key(|&index| (items[index].old.0, items[index].new.0));
+    let mut by_end: Vec<usize> = (0..items.len()).collect();
+    by_end.sort_unstable_by_key(|&index| items[index].old.1);
+    // Each item's last new position, ranked.
+    let mut lasts: Vec<usize> = items.iter().map(|item| item.new.1 - 1).collect();
+    lasts.sort_unstable();
+    lasts.dedup();
+    let rank = |position: usize| lasts.partition_point(|&last| last < position);
+    let mut prefix = PrefixMax::new(lasts.len());
+    let mut scores: Vec<Option<(Score, usize)>> = vec![None; items.len()];
+    let mut previous: Vec<Option<usize>> = vec![None; items.len()];
     let mut best: Option<(Score, usize)> = None;
-    let mut group_start = 0;
-    while group_start < pairs.len() {
-        // Pairs of one old line cannot chain to each other: all read the tree before any writes.
-        let old = pairs[group_start].old;
-        let group_end = group_start + pairs[group_start..].partition_point(|pair| pair.old == old);
-        let scored: Vec<(Score, usize)> = (group_start..group_end)
-            .map(|index| {
-                let pair = &pairs[index];
-                let before = prefix.best_before(pair.new);
-                previous[index] = before.map(|(_, at)| at);
-                let (updated_so_far, length) = before.map_or((0, 0), |((u, n, _, _), _)| (u, n));
-                (
-                    (
-                        updated_so_far + updated(pair),
-                        length + 1,
-                        Reverse(pair.old),
-                        Reverse(pair.new),
-                    ),
-                    index,
-                )
-            })
-            .collect();
-        for entry in scored {
-            prefix.offer(pairs[entry.1].new, entry);
-            best = best.max(Some(entry));
+    let mut joined = 0;
+    for &index in &by_start {
+        let item = &items[index];
+        while joined < by_end.len() && items[by_end[joined]].old.1 <= item.old.0 {
+            let done = by_end[joined];
+            if let Some(entry) = scores[done] {
+                prefix.offer(rank(items[done].new.1 - 1), entry);
+            }
+            joined += 1;
         }
-        group_start = group_end;
+        let before = prefix.best_before(rank(item.new.0));
+        previous[index] = before.map(|(_, at)| at);
+        let (weight, length) = before.map_or((0, 0), |((w, n, _, _), _)| (w, n));
+        let entry = (
+            (
+                weight + item.weight,
+                length + 1,
+                Reverse(item.old.0),
+                Reverse(item.new.0),
+            ),
+            index,
+        );
+        scores[index] = Some(entry);
+        best = best.max(Some(entry));
     }
     let mut chain = Vec::new();
     let mut at = best.map(|(_, index)| index);
@@ -252,21 +291,43 @@ pub(crate) fn best_chain(
         at = previous[index];
     }
     chain.reverse();
-    Some(chain)
+    chain
 }
 
-/// The pairs of equal lines, by a longest common subsequence of `old` and `new` (indices into
-/// them); none when the table would pass [`GAP_FILL_LIMIT`] cells.
-fn equal_lines(old: &[&str], new: &[&str]) -> Vec<(usize, usize)> {
-    if old.is_empty() || new.is_empty() || old.len().saturating_mul(new.len()) > GAP_FILL_LIMIT {
+/// The indices into `pairs` (sorted by old, then new line) of the best chain strictly increasing
+/// in both lines, in order, where a pair's `updated` is its weight (see the module doc). `None`
+/// above `cap` pairs.
+pub(crate) fn best_chain(
+    pairs: &[LinePair],
+    updated: impl Fn(&LinePair) -> u64,
+    cap: usize,
+) -> Option<Vec<usize>> {
+    if pairs.len() > cap {
+        return None;
+    }
+    let spans: Vec<Span2> = pairs
+        .iter()
+        .map(|pair| Span2 {
+            old: (pair.old, pair.old + 1),
+            new: (pair.new, pair.new + 1),
+            weight: updated(pair),
+        })
+        .collect();
+    Some(best_span_chain(&spans))
+}
+
+/// The pairs `(i, j)` with `matches(i, j)` of a longest common subsequence of `0..old` and `0..new`
+/// under that predicate; none when the table would pass [`GAP_FILL_LIMIT`] cells.
+fn lcs(old: usize, new: usize, matches: impl Fn(usize, usize) -> bool) -> Vec<(usize, usize)> {
+    if old == 0 || new == 0 || old.saturating_mul(new) > GAP_FILL_LIMIT {
         return Vec::new();
     }
-    let width = new.len() + 1;
+    let width = new + 1;
     // `table[i * width + j]`: the LCS of `old[i..]` and `new[j..]`.
-    let mut table = vec![0u32; (old.len() + 1) * width];
-    for i in (0..old.len()).rev() {
-        for j in (0..new.len()).rev() {
-            table[i * width + j] = if old[i] == new[j] {
+    let mut table = vec![0u32; (old + 1) * width];
+    for i in (0..old).rev() {
+        for j in (0..new).rev() {
+            table[i * width + j] = if matches(i, j) {
                 table[(i + 1) * width + j + 1] + 1
             } else {
                 table[(i + 1) * width + j].max(table[i * width + j + 1])
@@ -275,8 +336,8 @@ fn equal_lines(old: &[&str], new: &[&str]) -> Vec<(usize, usize)> {
     }
     let (mut i, mut j) = (0, 0);
     let mut out = Vec::new();
-    while i < old.len() && j < new.len() {
-        if old[i] == new[j] {
+    while i < old && j < new {
+        if matches(i, j) {
             out.push((i, j));
             i += 1;
             j += 1;
@@ -289,8 +350,62 @@ fn equal_lines(old: &[&str], new: &[&str]) -> Vec<(usize, usize)> {
     out
 }
 
-/// The rows of a side-by-side layout of `old` and `new` (each side's lines) from omnidiff's `pairs`
-/// (see the module doc), `updated` weighting the chain; `None` above `cap` pairs.
+/// The rows through `anchors` (strictly increasing line pairs, each a row of its own): between
+/// two anchors the lines `free` on both sides pair by an LCS under `matches`, every other line is
+/// one-sided, old lines first. A one-sided line names `counterpart`'s line, if any.
+fn rows_through(
+    (old_lines, new_lines): (usize, usize),
+    anchors: impl Iterator<Item = (usize, usize)>,
+    (free_old, free_new): (impl Fn(usize) -> bool, impl Fn(usize) -> bool),
+    matches: impl Fn(usize, usize) -> bool,
+    (old_counterpart, new_counterpart): (
+        impl Fn(usize) -> Option<usize>,
+        impl Fn(usize) -> Option<usize>,
+    ),
+) -> Alignment {
+    let mut rows = Vec::with_capacity(old_lines.max(new_lines));
+    let (mut next_old, mut next_new) = (0, 0);
+    let one_sided = |rows: &mut Vec<RowLines>, from: (usize, usize), to: (usize, usize)| {
+        rows.extend((from.0..to.0).map(RowLines::old));
+        rows.extend((from.1..to.1).map(RowLines::new));
+    };
+    for (anchor_old, anchor_new) in anchors.chain(std::iter::once((old_lines, new_lines))) {
+        let gap_old: Vec<usize> = (next_old..anchor_old).filter(|&l| free_old(l)).collect();
+        let gap_new: Vec<usize> = (next_new..anchor_new).filter(|&l| free_new(l)).collect();
+        for (i, j) in lcs(gap_old.len(), gap_new.len(), |i, j| {
+            matches(gap_old[i], gap_new[j])
+        }) {
+            let (fill_old, fill_new) = (gap_old[i], gap_new[j]);
+            one_sided(&mut rows, (next_old, next_new), (fill_old, fill_new));
+            rows.push(RowLines::pair(fill_old, fill_new));
+            (next_old, next_new) = (fill_old + 1, fill_new + 1);
+        }
+        one_sided(&mut rows, (next_old, next_new), (anchor_old, anchor_new));
+        if anchor_old < old_lines {
+            rows.push(RowLines::pair(anchor_old, anchor_new));
+        }
+        (next_old, next_new) = (anchor_old + 1, anchor_new + 1);
+    }
+
+    // Only a one-sided line names its counterpart.
+    let mut old_named: Vec<Option<usize>> = vec![None; old_lines];
+    let mut new_named: Vec<Option<usize>> = vec![None; new_lines];
+    for row in &rows {
+        match (row.old, row.new) {
+            (Some(line), None) => old_named[line] = old_counterpart(line),
+            (None, Some(line)) => new_named[line] = new_counterpart(line),
+            _ => {}
+        }
+    }
+    Alignment {
+        rows,
+        old_counterpart: old_named,
+        new_counterpart: new_named,
+    }
+}
+
+/// The rows of a side-by-side layout of `old` and `new` (each side's lines) from the painting's
+/// `pairs` (see the module doc), `updated` weighting the chain; `None` above `cap` pairs.
 pub(crate) fn align(
     old: &[&str],
     new: &[&str],
@@ -313,56 +428,97 @@ pub(crate) fn align(
         offer(&mut old_counterpart[pair.old], pair.new);
         offer(&mut new_counterpart[pair.new], pair.old);
     }
-
-    let mut rows = Vec::with_capacity(old.len().max(new.len()));
-    let (mut next_old, mut next_new) = (0, 0);
     let anchors = chain
         .iter()
-        .map(|&index| (pairs[index].old, pairs[index].new))
-        .chain(std::iter::once((old.len(), new.len())));
-    for (anchor_old, anchor_new) in anchors {
-        // The gap before the anchor: its unmatched lines pair by equal text.
-        let free_old: Vec<usize> = (next_old..anchor_old)
-            .filter(|&line| old_counterpart[line].is_none())
-            .collect();
-        let free_new: Vec<usize> = (next_new..anchor_new)
-            .filter(|&line| new_counterpart[line].is_none())
-            .collect();
-        let old_texts: Vec<&str> = free_old.iter().map(|&line| old[line]).collect();
-        let new_texts: Vec<&str> = free_new.iter().map(|&line| new[line]).collect();
-        let fills = equal_lines(&old_texts, &new_texts);
-        let one_sided = |rows: &mut Vec<RowLines>, from: (usize, usize), to: (usize, usize)| {
-            rows.extend((from.0..to.0).map(RowLines::old));
-            rows.extend((from.1..to.1).map(RowLines::new));
-        };
-        for (i, j) in fills {
-            let (fill_old, fill_new) = (free_old[i], free_new[j]);
-            one_sided(&mut rows, (next_old, next_new), (fill_old, fill_new));
-            rows.push(RowLines::pair(fill_old, fill_new));
-            (next_old, next_new) = (fill_old + 1, fill_new + 1);
+        .map(|&index| (pairs[index].old, pairs[index].new));
+    Some(rows_through(
+        (old.len(), new.len()),
+        anchors,
+        (
+            |line: usize| old_counterpart[line].is_none(),
+            |line: usize| new_counterpart[line].is_none(),
+        ),
+        |o, n| old[o] == new[n],
+        (
+            |line: usize| old_counterpart[line].map(|(_, other)| other),
+            |line: usize| new_counterpart[line].map(|(_, other)| other),
+        ),
+    ))
+}
+
+/// What the node mapping says of one line (see the module doc), by the tokens on it, strongest
+/// first: one of them is in a kept pair; else one is mapped elsewhere (a move, to the line of its
+/// partner's start); else one is deleted or inserted; else there is no token on it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LineClass {
+    Kept,
+    Moved(usize),
+    Unmatched,
+    Blank,
+}
+
+impl LineClass {
+    fn rank(self) -> u8 {
+        match self {
+            LineClass::Kept => 3,
+            LineClass::Moved(_) => 2,
+            LineClass::Unmatched => 1,
+            LineClass::Blank => 0,
         }
-        one_sided(&mut rows, (next_old, next_new), (anchor_old, anchor_new));
-        if anchor_old < old.len() {
-            rows.push(RowLines::pair(anchor_old, anchor_new));
-        }
-        (next_old, next_new) = (anchor_old + 1, anchor_new + 1);
     }
 
-    // Only a one-sided line names its counterpart.
-    let mut old_named: Vec<Option<usize>> = vec![None; old.len()];
-    let mut new_named: Vec<Option<usize>> = vec![None; new.len()];
-    for row in &rows {
-        match (row.old, row.new) {
-            (Some(line), None) => old_named[line] = old_counterpart[line].map(|(_, other)| other),
-            (None, Some(line)) => new_named[line] = new_counterpart[line].map(|(_, other)| other),
-            _ => {}
+    /// `self` raised to `other` if `other` is stronger; the first move named stays.
+    pub fn raise(&mut self, other: LineClass) {
+        if other.rank() > self.rank() {
+            *self = other;
         }
     }
-    Some(Alignment {
-        rows,
-        old_counterpart: old_named,
-        new_counterpart: new_named,
-    })
+}
+
+/// The lines of a pair as the node mapping sees them ([`mapping::node_lines`]): the line pairs
+/// the kept tokens name, each with how many name it, and each line's [`LineClass`]. Independent
+/// of the `M` panel's render options.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub(crate) struct NodeLines {
+    pub anchors: Vec<LinePair>,
+    pub old: Vec<LineClass>,
+    pub new: Vec<LineClass>,
+}
+
+/// The rows of a side-by-side layout of `old` and `new` from the node mapping's `lines` (see the
+/// module doc).
+pub(crate) fn align_by_nodes(old: &[&str], new: &[&str], lines: &NodeLines) -> Alignment {
+    let anchors: Vec<LinePair> = lines
+        .anchors
+        .iter()
+        .copied()
+        .filter(|pair| pair.old < old.len() && pair.new < new.len())
+        .collect();
+    let chain = best_chain(&anchors, |pair| u64::from(pair.support), usize::MAX).expect("no cap");
+    let class =
+        |classes: &[LineClass], line: usize| classes.get(line).copied().unwrap_or(LineClass::Blank);
+    let (old_class, new_class) = (
+        |line: usize| class(&lines.old, line),
+        |line: usize| class(&lines.new, line),
+    );
+    let free = |class: LineClass| matches!(class, LineClass::Kept | LineClass::Blank);
+    let moved = |class: LineClass| match class {
+        LineClass::Moved(other) => Some(other),
+        _ => None,
+    };
+    rows_through(
+        (old.len(), new.len()),
+        chain
+            .iter()
+            .map(|&index| (anchors[index].old, anchors[index].new)),
+        (|line| free(old_class(line)), |line| free(new_class(line))),
+        |o, n| match (old_class(o), new_class(n)) {
+            (LineClass::Kept, LineClass::Kept) => true,
+            (LineClass::Blank, LineClass::Blank) => old[o] == new[n],
+            _ => false,
+        },
+        (|line| moved(old_class(line)), |line| moved(new_class(line))),
+    )
 }
 
 /// The rows by git's patch, for a pair above the cap: an old line `is_deleted` deletes and a new
@@ -522,6 +678,58 @@ mod tests {
                 RowLines::new(2),
                 RowLines::pair(2, 3),
             ]
+        );
+    }
+
+    #[test]
+    fn between_anchors_kept_lines_pair_in_order_and_moved_or_unmatched_ones_never() {
+        use LineClass::*;
+        // Old: a, X (moved to new 5), "", k1, k2, z; new: a, I (inserted), "", k1, Y (moved from
+        // old 1), X, z. Anchors a and z only.
+        let old = ["a", "x", "", "k1", "k2", "z"];
+        let new = ["a", "i", "", "k1", "y", "x", "z"];
+        let lines = NodeLines {
+            anchors: vec![pair(0, 0), pair(5, 6)],
+            old: vec![Kept, Moved(5), Blank, Kept, Kept, Kept],
+            new: vec![Kept, Unmatched, Blank, Kept, Moved(1), Kept, Kept],
+        };
+        let alignment = align_by_nodes(&old, &new, &lines);
+        assert_eq!(
+            alignment.rows,
+            vec![
+                RowLines::pair(0, 0),
+                RowLines::old(1),
+                RowLines::new(1),
+                RowLines::pair(2, 2),
+                RowLines::pair(3, 3),
+                RowLines::new(4),
+                RowLines::pair(4, 5),
+                RowLines::pair(5, 6),
+            ]
+        );
+        assert_eq!(alignment.old_counterpart[1], Some(5));
+        assert_eq!(alignment.new_counterpart[4], Some(1));
+        assert_eq!(
+            alignment.new_counterpart[1], None,
+            "inserted, no counterpart"
+        );
+
+        // Crossing anchors: the chain keeps the better-supported one.
+        let lines = NodeLines {
+            anchors: vec![
+                pair(0, 1),
+                LinePair {
+                    old: 1,
+                    new: 0,
+                    support: 3,
+                },
+            ],
+            old: vec![Kept, Kept],
+            new: vec![Kept, Kept],
+        };
+        assert_eq!(
+            align_by_nodes(&["p", "q"], &["q", "p"], &lines).rows,
+            vec![RowLines::old(0), RowLines::pair(1, 0), RowLines::new(1)]
         );
     }
 
