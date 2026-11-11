@@ -151,10 +151,12 @@ struct Args {
     /// the viewer starts empty.
     paths: Vec<PathBuf>,
 
-    /// How to show the diff. `headless` and `json` need BEFORE and AFTER. `headless` is also
-    /// chosen when stdout is not a terminal; `json` never is.
-    #[arg(long, value_enum, ignore_case = true, default_value_t = Mode::Tui)]
-    mode: Mode,
+    /// How to show the diff, `tui` by default. `headless` and `json` need BEFORE and AFTER.
+    /// `headless` is also chosen when stdout is not a terminal, and under git's
+    /// `GIT_EXTERNAL_DIFF` argument form unless `--mode tui` is given; `json` never is.
+    // An `Option` so that an explicit `--mode tui` can be told from the default.
+    #[arg(long, value_enum, ignore_case = true)]
+    mode: Option<Mode>,
 
     /// Shorthand for `--mode headless`. `--batch` is a synonym.
     #[arg(long, alias = "batch", conflicts_with = "mode")]
@@ -243,22 +245,35 @@ async fn tui_main(args: &Args, before_after: Option<(PathBuf, PathBuf)>) -> Resu
     Ok(())
 }
 
-/// Whether to print text instead of starting the TUI: when asked to, or whenever stdout is not a
-/// terminal, which is what makes `GIT_EXTERNAL_DIFF` under git's pager work with no configuration.
+/// The mode asked for, [`Mode::Tui`] when none was.
+fn mode(args: &Args) -> Mode {
+    args.mode.unwrap_or_default()
+}
+
+/// Whether to print text instead of starting the TUI: when asked to, whenever stdout is not a
+/// terminal, which is what makes `GIT_EXTERNAL_DIFF` under git's pager work with no configuration,
+/// and under git's 7- or 9-argument `GIT_EXTERNAL_DIFF` form even on a terminal - unless
+/// `--mode tui` is given explicitly. git waits for an external diff to print its file and go on
+/// to the next one: `git --no-pager diff` and lazygit (which renders an external diff on a
+/// pseudo-terminal) would otherwise block on a full-screen viewer. `git difftool`'s two
+/// arguments keep the viewer.
 fn should_run_headless(args: &Args, stdout_is_terminal: bool) -> bool {
-    args.headless || args.mode == Mode::Headless || !stdout_is_terminal
+    args.headless
+        || mode(args) == Mode::Headless
+        || !stdout_is_terminal
+        || (invoked_as_git_external_diff(&args.paths) && args.mode != Some(Mode::Tui))
 }
 
 /// Whether to print a JSON diff object. Only `--mode json` selects it: a non-terminal stdout must
 /// keep getting headless text, or every pipe and git integration would change format.
 fn should_run_json(args: &Args) -> bool {
-    args.mode == Mode::Json
+    mode(args) == Mode::Json
 }
 
 /// The error for a text-mode run with no files, naming the reason text mode was chosen: a user
 /// who passed `--headless` on a terminal is told about the missing files, not about the terminal.
 fn headless_needs_files_message(args: &Args) -> &'static str {
-    if args.headless || args.mode == Mode::Headless {
+    if args.headless || mode(args) == Mode::Headless {
         "text mode needs BEFORE and AFTER - pass two files to diff"
     } else {
         "stdout is not a terminal and no files were given - pass BEFORE and AFTER to run in text \
@@ -520,14 +535,17 @@ fn with_git_arguments_positional(
 }
 
 /// Whether `tail` (7 or 9 arguments) is git's `path old-file old-hex old-mode new-file new-hex
-/// new-mode [new-path header]`: the hashes full hex object names and the modes six octal digits,
-/// each `.` for a side git has no version of. A file name could pose as one, never as all four.
+/// new-mode [new-path header]`: the hashes hex object names and the modes six octal digits, each
+/// `.` for a side git has no version of. A file name could pose as one, never as all four.
+///
+/// A hash is 7 to 64 hex digits: git itself passes full names (40 for SHA-1, 64 for SHA-256), but
+/// callers that imitate it abbreviate - lazygit probes a diff renderer with `0000000`.
 fn is_git_external_diff_tail(tail: &[std::ffi::OsString]) -> bool {
     let text = |index: usize| tail[index].to_str().unwrap_or("");
     let hash = |index: usize| {
         let hash = text(index);
         hash == "."
-            || (matches!(hash.len(), 40 | 64) && hash.bytes().all(|b| b.is_ascii_hexdigit()))
+            || ((7..=64).contains(&hash.len()) && hash.bytes().all(|b| b.is_ascii_hexdigit()))
     };
     let mode = |index: usize| {
         let mode = text(index);
@@ -694,6 +712,50 @@ mod tests {
         assert_eq!(
             with_git_arguments_positional(not_hex.clone(), true),
             not_hex
+        );
+    }
+
+    /// lazygit probes a diff renderer as git would run it, but with abbreviated hashes; 7 to 64
+    /// hex digits are git's shape, fewer or more are not.
+    #[test]
+    fn abbreviated_hashes_are_gits_shape_too() {
+        let tail = |hash: &str| os(&["probe", "/tmp/a", hash, "100644", "/tmp/b", hash, "100644"]);
+        for hash in ["0000000", "abcdef0", HEX_A, &"f".repeat(64)] {
+            assert!(is_git_external_diff_tail(&tail(hash)), "{hash}");
+        }
+        for hash in ["000000", &"f".repeat(65), "000000g"] {
+            assert!(!is_git_external_diff_tail(&tail(hash)), "{hash}");
+        }
+        let mut probe = os(&["omnidiff", "--context", "3"]);
+        probe.extend(tail("0000000"));
+        assert_eq!(with_git_arguments_positional(probe, true)[3], "--");
+    }
+
+    /// git's argument form never opens the viewer, even on a terminal: git (`git --no-pager
+    /// diff`, lazygit's pseudo-terminal) waits for each file's text. Only `--mode tui` asks for it.
+    #[test]
+    fn gits_argument_form_runs_headless_on_a_terminal_unless_the_tui_is_asked_for() {
+        let git_form = [
+            "f.rs", "/tmp/a", "0000000", "100644", "/tmp/b", "0000000", "100644",
+        ];
+        let mut argv = vec!["omnidiff"];
+        argv.extend(git_form);
+        let args = Args::try_parse_from(os(&argv)).unwrap();
+        assert!(should_run_headless(&args, true));
+
+        let mut argv = vec!["omnidiff", "--mode", "tui"];
+        argv.extend(git_form);
+        let args = Args::try_parse_from(os(&argv)).unwrap();
+        assert!(!should_run_headless(&args, true));
+        assert!(
+            should_run_headless(&args, false),
+            "a pipe still gets text whatever the mode"
+        );
+
+        let difftool = Args::try_parse_from(os(&["omnidiff", "a.rs", "b.rs"])).unwrap();
+        assert!(
+            !should_run_headless(&difftool, true),
+            "git difftool keeps the viewer"
         );
     }
 
@@ -897,7 +959,8 @@ mod tests {
         Args {
             command: None,
             paths: Vec::new(),
-            mode,
+            // As clap leaves it when `--mode` is not given.
+            mode: (mode != Mode::Tui).then_some(mode),
             headless,
             minimal: false,
             full: false,
@@ -1023,7 +1086,7 @@ mod tests {
             ("JSON", Mode::Json),
         ] {
             let args = Args::try_parse_from(["omnidiff", "--mode", value]).unwrap();
-            assert_eq!(args.mode, expected, "--mode {value}");
+            assert_eq!(args.mode, Some(expected), "--mode {value}");
         }
         assert!(Args::try_parse_from(["omnidiff", "--mode", "bogus"]).is_err());
         assert!(Args::try_parse_from(["omnidiff", "--exact"]).is_err());
