@@ -44,7 +44,8 @@ Scenarios are SCENARIOS below: each renderer gets `render` (its diff of the file
 within a timeout - an extDiff renderer that opens a TUI under lazygit's pty never gets there),
 `stage-add` and `stage-del` (one added, one deleted line staged from the focused view), and
 every renderer but git's own also `osc1717` (focusing the view keeps the renderer's rendering,
-rather than falling back to git's raw diff).
+rather than falling back to git's raw diff). A renderer with a `signature` must show it too:
+omnidiff's side-by-side layout, whose header row's `┬` a stacked fallback would not have.
 
 Usage:  python3 scripts/lazygit_e2e/run.py [--omnidiff-src PATH] [--scenario NAME]... [--keep]
         python3 scripts/lazygit_e2e/run.py --list
@@ -105,6 +106,11 @@ class Renderer:
     name: str
     # lazygit's `git.diffRenderers`; empty is git's own diff.
     config: tuple[dict, ...] = ()
+    # Text the rendered diff must also show, to tell this renderer's layout from another's.
+    signature: str = ""
+    # The moved function's two `def total` lines share one row, so staging that row stages both
+    # (OSC 1717 §6.2: a host acts on every record of a row).
+    pairs_moved_copies: bool = False
 
     @property
     def is_raw_git(self) -> bool:
@@ -118,6 +124,33 @@ RENDERERS = [
     Renderer(
         "omnidiff-headless",
         ({"type": "extDiff", "command": "omnidiff --headless --context {{diffContext}}"},),
+    ),
+    # Two columns, as wide as lazygit's main view; the header row's divider says it is not stacked.
+    # Painted Full (no saved options), `total`'s `return s` is updated on both sides like `mean`'s
+    # return line, the tie keeps `total`'s rows (earlier in the old file), and its two `def` lines
+    # share a row. Painted Minimal, `mean`'s rows win and each `def total` sits alone.
+    Renderer(
+        "omnidiff-sbs",
+        (
+            {
+                "type": "extDiff",
+                "command": "omnidiff --context {{diffContext}} --width {{width}} "
+                "--layout side-by-side",
+            },
+        ),
+        signature="┬─ after: ",
+        pairs_moved_copies=True,
+    ),
+    Renderer(
+        "omnidiff-sbs-minimal",
+        (
+            {
+                "type": "extDiff",
+                "command": "omnidiff --minimal --context {{diffContext}} --width {{width}} "
+                "--layout side-by-side",
+            },
+        ),
+        signature="┬─ after: ",
     ),
 ]
 
@@ -152,6 +185,10 @@ def scenarios() -> list[Scenario]:
         # The first row naming `def total` is the old copy, the second the new one, in git's
         # rendering and omnidiff's alike.
         moved = "def total(numbers):"
+        if r.pairs_moved_copies:
+            both = ("-" + moved, "+" + moved)
+            out.append(Scenario(f"{r.name}-stage-moved-row", r, "stage", moved, both, files=MOVED))
+            continue
         out.append(
             Scenario(f"{r.name}-stage-moved-del", r, "stage", moved, ("-" + moved,), 1, files=MOVED)
         )
@@ -392,6 +429,8 @@ def run_scenario(s: Scenario, timeout: float, artifacts: Path, keep: bool) -> st
             screen = lg.capture()
         finally:
             lg.save("start")
+        if s.renderer.signature and s.renderer.signature not in screen.main_text():
+            raise Failure(f"the diff does not show {s.renderer.signature!r}")
         if s.check == "render":
             lg.quit()
             return "; ".join(notes)
