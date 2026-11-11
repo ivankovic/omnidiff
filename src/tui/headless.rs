@@ -36,7 +36,6 @@ use crate::diff::text::{
     RangeMatch, RenderOptions, TextOperation, ranges_for_options, summarize_diff_with_comment_check,
 };
 use crate::tui::actions::DiffSessionData;
-use crate::tui::app::compute_diff_with_options;
 use crate::tui::display_columns;
 
 /// Whether `character` is a bidirectional-text control: an embedding, override or isolate, or a
@@ -489,6 +488,78 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
     out
 }
 
+/// The two files of a non-interactive run, each read once: as text if both decode (see
+/// [`crate::code::decode_text`], the test `Code::from_file` applies), else as bytes for the binary
+/// and content reports. Before, each side was read three times - the binary check, the parse, and
+/// the comparison for the exit code - and validated twice.
+pub struct Pair {
+    pub before: PathBuf,
+    pub after: PathBuf,
+    /// Whether the two files' bytes differ, for a `diff`-style exit code.
+    pub differed: bool,
+    pub contents: PairContents,
+}
+
+/// What [`Pair`] holds of the two files.
+pub enum PairContents {
+    /// Both sides decoded.
+    Text { before: String, after: String },
+    /// At least one side does not decode: both sides' raw bytes.
+    Binary { before: Vec<u8>, after: Vec<u8> },
+}
+
+impl Pair {
+    /// Reads `before` and `after`, failing as `code::is_binary_file` does on an unreadable one.
+    pub fn read(before: &Path, after: &Path) -> Result<Self> {
+        let read = |path: &Path| {
+            std::fs::read(path)
+                .map_err(|e| anyhow::anyhow!("Failed to read file {}: {}", path.display(), e))
+        };
+        let (before_bytes, after_bytes) = (read(before)?, read(after)?);
+        let differed = before_bytes != after_bytes;
+        let decode = crate::code::decode_text;
+        let contents = match (decode(&before_bytes), decode(&after_bytes)) {
+            (Some(before), Some(after)) => PairContents::Text { before, after },
+            _ => PairContents::Binary {
+                before: before_bytes,
+                after: after_bytes,
+            },
+        };
+        Ok(Self {
+            before: before.to_path_buf(),
+            after: after.to_path_buf(),
+            differed,
+            contents,
+        })
+    }
+
+    /// Whether at least one side is not text.
+    pub fn is_binary(&self) -> bool {
+        matches!(self.contents, PairContents::Binary { .. })
+    }
+
+    /// The diff of a text pair, as `compute_diff_with_options` computes it from the paths.
+    pub fn diff(
+        self,
+        render_options: RenderOptions,
+    ) -> Result<(crate::tui::actions::DiffSessionData, bool)> {
+        match self.contents {
+            PairContents::Text { before, after } => crate::tui::app::compute_diff_of_decoded(
+                &self.before,
+                before,
+                &self.after,
+                after,
+                render_options,
+            ),
+            PairContents::Binary { .. } => anyhow::bail!(
+                "{} and {} are not both text",
+                printable_path(&self.before),
+                printable_path(&self.after)
+            ),
+        }
+    }
+}
+
 /// Computes the diff exactly as the TUI does and prints it to stdout. Returns whether the files'
 /// bytes differ, for a `diff`-style exit code. `titles` names the two sides in place of the files
 /// read (see [`crate::tui::positional::display_names`]).
@@ -496,14 +567,14 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
 /// A large unmatched residual is reported with `eprintln!`, not `tracing`: headless mode installs
 /// no subscriber.
 pub fn run(
-    before: &Path,
-    after: &Path,
+    pair: Pair,
     use_color: bool,
     context: usize,
     render_options: RenderOptions,
     titles: Option<(PathBuf, PathBuf)>,
 ) -> Result<bool> {
-    let (mut data, large_residual) = compute_diff_with_options(before, after, render_options)?;
+    let differed = pair.differed;
+    let (mut data, large_residual) = pair.diff(render_options)?;
     if let Some((before_title, after_title)) = titles {
         data.before_path = before_title;
         data.after_path = after_title;
@@ -521,9 +592,9 @@ pub fn run(
         );
     }
     write_stdout(&render_text_diff(&data, use_color, context))?;
-    // Raw bytes: `data`'s contents went through `display_safe`, which replaces control
-    // characters.
-    Ok(std::fs::read(before)? != std::fs::read(after)?)
+    // Raw bytes, compared at read: `data`'s contents went through `display_safe`, which replaces
+    // control characters.
+    Ok(differed)
 }
 
 /// Writes non-interactive output to stdout as an `io::Result`, where `print!` would panic. The
@@ -986,6 +1057,40 @@ mod tests {
     }
 
     #[test]
+    fn printable_escapes_controls_newlines_and_bidi_and_leaves_the_rest() {
+        assert_eq!(printable("src/a.rs"), "src/a.rs");
+        assert!(matches!(
+            printable("é/中.rs"),
+            std::borrow::Cow::Borrowed(_)
+        ));
+        assert_eq!(
+            printable("a\u{1b}]0;x\u{7}b\nc\td\u{7f}"),
+            "a\\x1b]0;x\\x07b\\nc\\td\\x7f"
+        );
+        assert_eq!(printable("\u{9b}2J"), "\\u{9b}2J");
+        assert_eq!(
+            printable("x\u{202e}gpj.exe\u{2066}\u{200f}"),
+            "x\\u{202e}gpj.exe\\u{2066}\\u{200f}"
+        );
+    }
+
+    /// A path a commit chooses is printed in the side headers, so it is escaped there.
+    #[test]
+    fn a_hostile_path_cannot_reach_the_terminal_through_a_header() {
+        let mut data = sample_data();
+        data.before_path = PathBuf::from("a\u{1b}[2J.rs");
+        data.after_path = PathBuf::from("b.rs\n=== after: forged ===");
+        let text = render_text_diff(&data, false, CONTEXT_LINES);
+        assert!(!text.contains('\u{1b}'), "{text:?}");
+        assert!(text.contains("=== before: a\\x1b[2J.rs ===\n"), "{text}");
+        assert!(
+            text.contains("=== after: b.rs\\n=== after: forged === ===\n"),
+            "{text}"
+        );
+        assert_eq!(text.matches("\n=== after:").count(), 1, "{text}");
+    }
+
+    #[test]
     fn render_text_diff_omits_the_summary_header_for_an_ordinary_mixed_edit() {
         let text = render_text_diff(&sample_data(), false, CONTEXT_LINES);
         assert!(
@@ -1053,40 +1158,6 @@ mod tests {
             text.starts_with("\u{1b}[1mNo changes - files are identical\u{1b}[0m\n\n"),
             "the header should be bold, not colored, when use_color is on: {text}"
         );
-    }
-
-    #[test]
-    fn printable_escapes_controls_newlines_and_bidi_and_leaves_the_rest() {
-        assert_eq!(printable("src/a.rs"), "src/a.rs");
-        assert!(matches!(
-            printable("é/中.rs"),
-            std::borrow::Cow::Borrowed(_)
-        ));
-        assert_eq!(
-            printable("a\u{1b}]0;x\u{7}b\nc\td\u{7f}"),
-            "a\\x1b]0;x\\x07b\\nc\\td\\x7f"
-        );
-        assert_eq!(printable("\u{9b}2J"), "\\u{9b}2J");
-        assert_eq!(
-            printable("x\u{202e}gpj.exe\u{2066}\u{200f}"),
-            "x\\u{202e}gpj.exe\\u{2066}\\u{200f}"
-        );
-    }
-
-    /// A path a commit chooses is printed in the side headers, so it is escaped there.
-    #[test]
-    fn a_hostile_path_cannot_reach_the_terminal_through_a_header() {
-        let mut data = sample_data();
-        data.before_path = PathBuf::from("a\u{1b}[2J.rs");
-        data.after_path = PathBuf::from("b.rs\n=== after: forged ===");
-        let text = render_text_diff(&data, false, CONTEXT_LINES);
-        assert!(!text.contains('\u{1b}'), "{text:?}");
-        assert!(text.contains("=== before: a\\x1b[2J.rs ===\n"), "{text}");
-        assert!(
-            text.contains("=== after: b.rs\\n=== after: forged === ===\n"),
-            "{text}"
-        );
-        assert_eq!(text.matches("\n=== after:").count(), 1, "{text}");
     }
 
     #[test]
@@ -1208,13 +1279,35 @@ mod tests {
         std::fs::write(&before_path, "\tx\n").unwrap();
         std::fs::write(&after_path, "    x\n").unwrap();
         assert!(run(
-            &before_path,
-            &after_path,
+            Pair::read(&before_path, &after_path)?,
             false,
             CONTEXT_LINES,
             RenderOptions::FULL,
             None
         )?);
+        Ok(())
+    }
+
+    /// Reading each side once must not change the diff: `Pair::diff` against the path-based
+    /// `compute_diff_with_options`, on a pair with a language, a CRLF, a tab and a control byte.
+    #[test]
+    fn a_pair_read_once_diffs_exactly_as_the_paths_do() -> Result<()> {
+        let dir = tempfile::tempdir().expect("create temp dir");
+        let before_path = dir.path().join("a.rs");
+        let after_path = dir.path().join("b.rs");
+        std::fs::write(&before_path, "fn main() {\r\n\told(1);\n}\n").unwrap();
+        std::fs::write(&after_path, "fn main() {\r\n\tnew(\x07, 2);\n}\n").unwrap();
+        let (expected, _) = crate::tui::app::compute_diff_with_options(
+            &before_path,
+            &after_path,
+            RenderOptions::FULL,
+        )?;
+        let pair = Pair::read(&before_path, &after_path)?;
+        assert!(pair.differed && !pair.is_binary());
+        let (actual, _) = pair.diff(RenderOptions::FULL)?;
+        assert_eq!(actual, expected);
+        std::fs::write(&after_path, [0xff, 0xfe, 0x00]).unwrap();
+        assert!(Pair::read(&before_path, &after_path)?.is_binary());
         Ok(())
     }
 }

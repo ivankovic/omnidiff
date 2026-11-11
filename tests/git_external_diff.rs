@@ -125,3 +125,85 @@ fn an_added_file_has_dev_null_before() {
     assert!(out.contains("=== before: /dev/null ===\n"), "{out}");
     assert!(out.contains("=== after: new.rs ===\n"), "{out}");
 }
+
+/// A root file named like a flag: git passes its path with no `--` in front, so clap must not
+/// read it as one - an exit 2 would make git abandon the whole diff, every later file with it.
+#[test]
+fn files_named_like_flags_are_diffed_not_parsed() {
+    let dir = repository();
+    for name in ["-x.rs", "--help", "git"] {
+        std::fs::write(dir.path().join(name), "fn a() {}\n").unwrap();
+    }
+    run(dir.path(), &["add", "--", "-x.rs", "--help", "git"]);
+    run(dir.path(), &["commit", "-qm", "flags"]);
+    for name in ["-x.rs", "--help", "git"] {
+        std::fs::write(dir.path().join(name), "fn b() {}\n").unwrap();
+    }
+    let out = external_diff(dir.path(), &[]);
+    for name in ["-x.rs", "--help", "git"] {
+        assert!(
+            out.contains(&format!("=== after: {name} ===\n")),
+            "{name}: {out}"
+        );
+    }
+    assert!(!out.contains("Usage:"), "{out}");
+}
+
+/// The same, with the binary run by hand as git would run it: `GIT_DIFF_PATH_TOTAL` set, git's
+/// seven arguments, and a path that is a flag.
+#[test]
+fn a_flag_shaped_path_in_gits_argument_form_is_a_path() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (before, after) = (dir.path().join("a.rs"), dir.path().join("b.rs"));
+    std::fs::write(&before, "fn a() {}\n").unwrap();
+    std::fs::write(&after, "fn b() {}\n").unwrap();
+    let hex = |digit: char| digit.to_string().repeat(40);
+    let output = Command::new(env!("CARGO_BIN_EXE_omnidiff"))
+        .arg("--headless")
+        .arg("-x.rs")
+        .arg(&before)
+        .args([hex('1').as_str(), "100644"])
+        .arg(&after)
+        .args([hex('2').as_str(), "100644"])
+        .env("GIT_DIFF_PATH_TOTAL", "1")
+        .env("GIT_DIFF_PATH_COUNTER", "1")
+        .env("OMNIDIFF_CONFIG", dir.path().join("config.toml"))
+        .output()
+        .expect("omnidiff runs");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "{stdout}{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(stdout.contains("=== before: -x.rs ===\n"), "{stdout}");
+}
+
+/// A path is a hostile commit's to choose, escape sequences and all; it must reach the terminal
+/// as visible text, not as a command to it.
+#[cfg(unix)]
+#[test]
+fn a_path_with_terminal_escapes_is_printed_escaped() {
+    let dir = repository();
+    let text = "evil\u{1b}]0;pwned\u{7}\u{1b}[2J.rs";
+    let binary = "bin\u{1b}[31m\u{202e}.dat";
+    std::fs::write(dir.path().join(text), "fn a() {}\n").unwrap();
+    std::fs::write(dir.path().join(binary), [0u8, 159, 146, 150]).unwrap();
+    run(dir.path(), &["add", "--", text, binary]);
+    run(dir.path(), &["commit", "-qm", "escapes"]);
+    std::fs::write(dir.path().join(text), "fn b() {}\n").unwrap();
+    std::fs::write(dir.path().join(binary), [0u8, 1, 2, 3]).unwrap();
+    let out = external_diff(dir.path(), &["--", text, binary]);
+    let plain = out.replace("\u{1b}[0m", "").replace("\u{1b}[90m", "");
+    assert!(
+        plain.contains("=== after: evil\\x1b]0;pwned\\x07\\x1b[2J.rs ===\n"),
+        "{out:?}"
+    );
+    assert!(
+        plain.contains("Binary file bin\\x1b[31m\\u{202e}.dat differs\n"),
+        "{out:?}"
+    );
+    assert!(!out.contains("\u{1b}]"), "{out:?}");
+    assert!(!out.contains("\u{1b}[2J"), "{out:?}");
+    assert!(!out.contains('\u{202e}'), "{out:?}");
+}

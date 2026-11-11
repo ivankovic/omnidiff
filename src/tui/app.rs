@@ -1015,13 +1015,27 @@ impl App {
     }
 
     /// Shows `before` and `after` by their content if they are a pair diffed by content; false,
-    /// and nothing changed, if not.
+    /// and nothing changed, if not. Decoding is the third-party decoders' work on untrusted
+    /// bytes, so a panic in it is contained: reported in the error banner, and true, since there
+    /// is nothing further to try.
     fn open_content_pair(&mut self, before: &Path, after: &Path) -> bool {
         let picker = self
             .graphics
             .clone()
             .unwrap_or_else(ratatui_image::picker::Picker::halfblocks);
-        match ContentViewer::open(before, after, picker) {
+        let opened =
+            crate::tui::panic_guard::contain(|| ContentViewer::open(before, after, picker));
+        let opened = match opened {
+            Ok(opened) => opened,
+            Err(panic) => {
+                self.last_error = Some(format!(
+                    "internal error while decoding {}: {panic}",
+                    before.display()
+                ));
+                return true;
+            }
+        };
+        match opened {
             Some(viewer) => {
                 self.content_viewer = Some(viewer);
                 self.last_error = None;
@@ -1845,6 +1859,48 @@ pub fn compute_diff_of_texts(
         .name(DIFF_THREAD_NAME.to_string())
         .stack_size(DIFF_COMPUTE_STACK_SIZE)
         .spawn(move || {
+            let (before_language, after_language) =
+                (before_code.metadata.language, after_code.metadata.language);
+            substitute_missing_language(&mut before_code, after_language, &before);
+            substitute_missing_language(&mut after_code, before_language, &after);
+            diff_parsed(&before, &after, before_code, after_code, render_options)
+        })
+        .expect("failed to spawn diff-computation thread")
+        .join()
+    {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
+/// [`compute_diff_with_options`] of two files already read and decoded (`headless::Pair`), so a
+/// non-interactive run reads and validates each side once. Parsed exactly as `Code::from_file`
+/// parses a file, on the same big-stack thread.
+pub fn compute_diff_of_decoded(
+    before: &Path,
+    before_text: String,
+    after: &Path,
+    after_text: String,
+    render_options: RenderOptions,
+) -> Result<(DiffSessionData, bool)> {
+    let (before, after) = (before.to_path_buf(), after.to_path_buf());
+    match std::thread::Builder::new()
+        .name(DIFF_THREAD_NAME.to_string())
+        .stack_size(DIFF_COMPUTE_STACK_SIZE)
+        .spawn(move || {
+            let code = |path: &Path, text: &str| {
+                let language = crate::code::language::language_for_path_and_content(path, text)
+                    .unwrap_or(Language::Unknown);
+                let mut code = Code::from_string(text, &language);
+                code.metadata.path = Some(path.to_path_buf());
+                code
+            };
+            // Always in parallel, as `parse_before_after` builds them.
+            let (mut before_code, mut after_code) = crate::code::build_sides(
+                true,
+                || code(&before, &before_text),
+                || code(&after, &after_text),
+            );
             let (before_language, after_language) =
                 (before_code.metadata.language, after_code.metadata.language);
             substitute_missing_language(&mut before_code, after_language, &before);

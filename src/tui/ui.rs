@@ -202,7 +202,10 @@ pub fn restore_terminal() {
 pub fn install_panic_hook() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
-        if std::thread::current().name() == Some(crate::tui::app::DIFF_THREAD_NAME) {
+        // Reported by whoever catches it: as an error banner, with the terminal left as it is.
+        if std::thread::current().name() == Some(crate::tui::app::DIFF_THREAD_NAME)
+            || crate::tui::panic_guard::hook_stays_silent()
+        {
             return;
         }
         restore_terminal();

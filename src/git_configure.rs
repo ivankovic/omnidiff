@@ -117,9 +117,10 @@ pub fn run() -> Result<()> {
 
 /// The `difftool.omnidiff.cmd` value. git runs it through `sh`, so the binary's path is quoted
 /// as a shell word (a path under "Program Files" or "Application Support" has a space in it) and
-/// `$LOCAL`/`$REMOTE` stay as the variables git expands.
+/// `$LOCAL`/`$REMOTE` stay as the variables git expands. The `--` keeps them paths: `$REMOTE` is
+/// the work tree file's repository-relative path, which a commit can name `-x.rs` or `--help`.
 fn difftool_command(omnidiff_path: &str) -> String {
-    format!("{} \"$LOCAL\" \"$REMOTE\"", shell_quote(omnidiff_path))
+    format!("{} -- \"$LOCAL\" \"$REMOTE\"", shell_quote(omnidiff_path))
 }
 
 /// `key`'s current value under `scope` as a line to show before the prompt that would overwrite it,
@@ -177,7 +178,7 @@ fn ensure_inside_git_repo() -> Result<()> {
 fn print_manual_instructions() {
     eprintln!(
         "Run these manually instead (see README's \"Git integration\" section):\n\n\
-         git config difftool.omnidiff.cmd 'omnidiff \"$LOCAL\" \"$REMOTE\"'\n\
+         git config difftool.omnidiff.cmd 'omnidiff -- \"$LOCAL\" \"$REMOTE\"'\n\
          git config diff.tool omnidiff\n\
          git config difftool.prompt false\n\n\
          Add --global to any of these to apply them to every repository instead of just this \
@@ -215,11 +216,11 @@ mod tests {
     fn difftool_command_quotes_a_path_with_spaces_and_keeps_gits_variables_bare() {
         assert_eq!(
             difftool_command("/usr/local/bin/omnidiff"),
-            "/usr/local/bin/omnidiff \"$LOCAL\" \"$REMOTE\""
+            "/usr/local/bin/omnidiff -- \"$LOCAL\" \"$REMOTE\""
         );
         assert_eq!(
             difftool_command("/Applications/My Tools/omnidiff"),
-            "'/Applications/My Tools/omnidiff' \"$LOCAL\" \"$REMOTE\""
+            "'/Applications/My Tools/omnidiff' -- \"$LOCAL\" \"$REMOTE\""
         );
     }
 
