@@ -420,6 +420,10 @@ jobs:
             --version "${TAG#v}" --sums SHA256SUMS.txt --out rendered/omnidiff.rb
           cat rendered/omnidiff.rb
 
+      # The formula exactly as users will get it, against the real assets, before the tap has it.
+      - name: brew install + test the rendered formula
+        run: python3 scripts/brew_e2e.py --formula rendered/omnidiff.rb
+
       - name: Push to the tap
         env:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

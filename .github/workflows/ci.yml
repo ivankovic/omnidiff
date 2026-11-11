@@ -211,6 +211,32 @@ jobs:
 
       - run: make check-painting-attribution
 
+  # `brew install` and `brew test` of this build through packaging/homebrew/omnidiff.rb.in, on
+  # both platforms the tap serves: the formula's `test do` block otherwise first runs on a user's
+  # machine (it once failed everywhere, matching text the headless output colours). Linux runners
+  # carry Homebrew; scripts/brew_e2e.py says what it checks.
+  homebrew:
+    name: brew install + test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          key: homebrew
+
+      - run: cargo build --locked --profile ci --bin omnidiff
+
+      - run: python3 scripts/brew_e2e.py --binary target/ci/omnidiff
+
   # The suite on the two other operating systems the release ships binaries for, with default
   # features: the fixture corpus is feature-independent and already sharded across the Linux
   # matrix below, so it is left out here (`test::fixtures::`) and the rest runs whole. Without this

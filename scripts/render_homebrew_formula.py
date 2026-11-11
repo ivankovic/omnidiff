@@ -38,7 +38,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = REPO_ROOT / "packaging" / "homebrew" / "omnidiff.rb.in"
 
-PLACEHOLDER = re.compile(r"\{\{(VERSION|SHA256:([^}]+))\}\}")
+PLACEHOLDER = re.compile(r"\{\{(VERSION|RELEASE_URL|SHA256:([^}]+))\}\}")
+
+
+def release_url(version: str) -> str:
+    """Where a published release's assets are downloaded from."""
+    return f"https://github.com/ivankovic/omnidiff/releases/download/v{version}"
 
 
 def checksums(sums_text: str) -> dict[str, str]:
@@ -53,12 +58,15 @@ def checksums(sums_text: str) -> dict[str, str]:
     return out
 
 
-def render(template: str, version: str, sums: dict[str, str]) -> str:
-    """The formula, or a `KeyError` naming the first asset the checksums do not cover."""
+def render(template: str, version: str, sums: dict[str, str], base_url: str | None = None) -> str:
+    """The formula, or a `KeyError` naming the first asset the checksums do not cover. Assets are
+    fetched from `base_url`, by default the release's download URL."""
 
     def fill(match: re.Match[str]) -> str:
         if match.group(1) == "VERSION":
             return version
+        if match.group(1) == "RELEASE_URL":
+            return base_url or release_url(version)
         asset = match.group(2)
         if asset not in sums:
             raise KeyError(asset)
@@ -72,11 +80,15 @@ def main() -> int:
     parser.add_argument("--version", required=True, help="release version, without the v")
     parser.add_argument("--sums", type=Path, required=True, help="the release's SHA256SUMS.txt")
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--base-url",
+        help="fetch the assets from here instead of the release (scripts/brew_e2e.py)",
+    )
     args = parser.parse_args()
 
     sums = checksums(args.sums.read_text())
     try:
-        formula = render(TEMPLATE.read_text(), args.version, sums)
+        formula = render(TEMPLATE.read_text(), args.version, sums, args.base_url)
     except KeyError as missing:
         sys.exit(f"render_homebrew_formula: {args.sums} has no entry for {missing.args[0]}")
     args.out.parent.mkdir(parents=True, exist_ok=True)

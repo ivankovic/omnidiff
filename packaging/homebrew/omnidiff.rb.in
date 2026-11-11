@@ -16,7 +16,8 @@
 
 # The Homebrew formula for the tap at github.com/ivankovic/homebrew-omnidiff, as a template:
 # scripts/render_homebrew_formula.py fills the version and the checksums from a release's
-# SHA256SUMS.txt, and release.yml pushes the result to the tap. The installed binary is the same
+# SHA256SUMS.txt, and release.yml pushes the result to the tap. `{{RELEASE_URL}}` is the release's
+# download URL, or a local directory when scripts/brew_e2e.py installs a build that is not released. The installed binary is the same
 # attested release asset every other route ships, so `brew install` takes seconds instead of the
 # ten-minute grammar-and-LTO compile a build-from-source formula would run on every machine.
 class Omnidiff < Formula
@@ -27,11 +28,11 @@ class Omnidiff < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/ivankovic/omnidiff/releases/download/v{{VERSION}}/omnidiff-aarch64-apple-darwin.tar.gz"
+      url "{{RELEASE_URL}}/omnidiff-aarch64-apple-darwin.tar.gz"
       sha256 "{{SHA256:omnidiff-aarch64-apple-darwin.tar.gz}}"
     end
     on_intel do
-      url "https://github.com/ivankovic/omnidiff/releases/download/v{{VERSION}}/omnidiff-x86_64-apple-darwin.tar.gz"
+      url "{{RELEASE_URL}}/omnidiff-x86_64-apple-darwin.tar.gz"
       sha256 "{{SHA256:omnidiff-x86_64-apple-darwin.tar.gz}}"
     end
   end
@@ -40,11 +41,11 @@ class Omnidiff < Formula
   # glibc, or none.
   on_linux do
     on_arm do
-      url "https://github.com/ivankovic/omnidiff/releases/download/v{{VERSION}}/omnidiff-aarch64-unknown-linux-musl.tar.gz"
+      url "{{RELEASE_URL}}/omnidiff-aarch64-unknown-linux-musl.tar.gz"
       sha256 "{{SHA256:omnidiff-aarch64-unknown-linux-musl.tar.gz}}"
     end
     on_intel do
-      url "https://github.com/ivankovic/omnidiff/releases/download/v{{VERSION}}/omnidiff-x86_64-unknown-linux-musl.tar.gz"
+      url "{{RELEASE_URL}}/omnidiff-x86_64-unknown-linux-musl.tar.gz"
       sha256 "{{SHA256:omnidiff-x86_64-unknown-linux-musl.tar.gz}}"
     end
   end

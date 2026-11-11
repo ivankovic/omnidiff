@@ -665,6 +665,20 @@ def test_the_homebrew_formula_renders_from_the_release_checksums():
     assert "{{" not in formula
 
 
+def test_the_homebrew_formula_can_fetch_its_assets_from_elsewhere():
+    """scripts/brew_e2e.py installs an unreleased build from a local directory; every asset URL
+    must move there, and none may still point at the release."""
+    template = render_homebrew_formula.TEMPLATE.read_text()
+    names = {
+        m.group(2) for m in render_homebrew_formula.PLACEHOLDER.finditer(template) if m.group(2)
+    }
+    formula = render_homebrew_formula.render(
+        template, "0.1.0", dict.fromkeys(names, "aaaa"), "file:///work"
+    )
+    assert formula.count('url "file:///work/omnidiff-') == len(names)
+    assert "releases/download" not in formula
+
+
 def test_the_homebrew_formula_refuses_an_asset_the_release_lacks():
     """A placeholder left behind would fail at `brew install` on a user's machine; a missing asset
     fails here, naming it."""

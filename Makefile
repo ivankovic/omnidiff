@@ -39,7 +39,7 @@ OUT_DIR ?= research/data/ablation
 # research/data/performance/content_speed/<machine>.csv. MACHINE=<name> times a run as that one.
 which-machine = python3 scripts/machine.py $(MACHINE)
 
-.PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python build install install-hooks \
+.PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python test-homebrew build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
@@ -102,6 +102,13 @@ update-quick-fixtures:
 		--write ../src/test/data/quick_fixtures.txt --measured-at $$(git rev-parse --short HEAD)
 
 # The unit tests of research/analysis/ and scripts/, in research/'s uv environment.
+# `brew install` and `brew test` of a fresh build through the Homebrew formula (scripts/brew_e2e.py).
+# Without Homebrew it runs in the homebrew/brew container, which a binary built against a newer glibc
+# than its Ubuntu cannot run; that is reported as a skip here and as a failure in CI.
+test-homebrew:
+	cargo build --locked --profile ci --bin omnidiff
+	python3 scripts/brew_e2e.py --binary target/ci/omnidiff
+
 test-python:
 	cd research && uv run pytest -q
 
