@@ -16,10 +16,15 @@
  */
 //! The positional-argument conventions `omnidiff` accepts, and the notice it prints for a binary
 //! pair. The tests live in `main.rs`, next to the CLI behaviour they also exercise.
+//!
+//! Every path and member key in a notice is attacker-chosen under `GIT_EXTERNAL_DIFF` (a hostile
+//! commit names them), so each is printed through `headless::printable`.
 
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+
+use crate::tui::headless::{printable, printable_path};
 
 /// Resolves the positional arguments into a `(before, after)` pair, or `None` for an empty
 /// viewer. The shape is chosen by count alone:
@@ -100,19 +105,19 @@ pub fn container_notice(
     use crate::diff::content::container::{ContainerInfo, MemberStatus};
 
     let name = if invoked_as_git_external_diff(paths) {
-        format!("{} {}", diff.family.noun(false), paths[0].display())
+        format!("{} {}", diff.family.noun(false), printable_path(&paths[0]))
     } else {
         format!(
             "{} {} and {}",
             diff.family.noun(true),
-            before.display(),
-            after.display()
+            printable_path(before),
+            printable_path(after)
         )
     };
     let side = |info: &Option<ContainerInfo>| match info {
         Some(info) => format!(
             "{}, {} member{}, {} bytes",
-            info.format,
+            printable(&info.format),
             info.members,
             if info.members == 1 { "" } else { "s" },
             info.bytes
@@ -134,13 +139,14 @@ pub fn container_notice(
         diff.unchanged
     ));
     for member in diff.members.iter().take(LISTED_MEMBERS) {
+        let key = printable(&member.key);
         let line = match (member.status, &member.detail) {
             (MemberStatus::Changed, Some(detail)) => {
-                format!("changed  {}: {}", member.key, member_summary(detail))
+                format!("changed  {key}: {}", member_summary(detail))
             }
-            (MemberStatus::Changed, None) => format!("changed  {}: does not open", member.key),
-            (MemberStatus::Added, _) => format!("added    {}", member.key),
-            (MemberStatus::Removed, _) => format!("removed  {}", member.key),
+            (MemberStatus::Changed, None) => format!("changed  {key}: does not open"),
+            (MemberStatus::Added, _) => format!("added    {key}"),
+            (MemberStatus::Removed, _) => format!("removed  {key}"),
             (MemberStatus::Same, _) => continue,
         };
         out.push_str(&format!("    {line}\n"));
@@ -240,9 +246,13 @@ pub fn picture_notice(
     const LISTED_STEPS: usize = 10;
 
     let name = if invoked_as_git_external_diff(paths) {
-        format!("Picture {}", paths[0].display())
+        format!("Picture {}", printable_path(&paths[0]))
     } else {
-        format!("Pictures {} and {}", before.display(), after.display())
+        format!(
+            "Pictures {} and {}",
+            printable_path(before),
+            printable_path(after)
+        )
     };
     let side = |info: &Option<PictureInfo>| match info {
         Some(info) if info.frames > 1 => format!(
@@ -364,13 +374,13 @@ pub fn picture_notice(
 /// byte comparison: a direct invocation may pass identical files.
 pub fn binary_notice(paths: &[PathBuf], before: &Path, after: &Path, differed: bool) -> String {
     if invoked_as_git_external_diff(paths) {
-        let name = paths[0].display();
+        let name = printable_path(&paths[0]);
         return match differed {
             true => format!("Binary file {name} differs\n"),
             false => format!("Binary file {name} is unchanged\n"),
         };
     }
-    let (before, after) = (before.display(), after.display());
+    let (before, after) = (printable_path(before), printable_path(after));
     match differed {
         true => format!("Binary files {before} and {after} differ\n"),
         false => format!("Binary files {before} and {after} are identical\n"),

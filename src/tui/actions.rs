@@ -49,7 +49,11 @@ pub struct DiffSessionData {
 /// The result of one background diff computation - the payload of `Action::DiffComputed`.
 #[derive(Debug, Clone, PartialEq)]
 pub enum DiffOutcome {
-    Ready(DiffSessionData),
+    /// The diff, and both sides' syntax highlighting computed beside it (`None` if that failed).
+    Ready(
+        DiffSessionData,
+        Option<crate::tui::components::diff_viewer::SideHighlights>,
+    ),
     Failed(String),
 }
 

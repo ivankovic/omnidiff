@@ -15,13 +15,14 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use std::io::IsTerminal;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use omnidiff::tui;
+use omnidiff::tui::headless::{Pair, PairContents, printable, printable_path};
 use omnidiff::tui::positional::{
     binary_notice, content_notice, display_names, invoked_as_git_external_diff,
     resolve_before_after,
@@ -319,22 +320,14 @@ fn exit_code_for(differed: bool, want_exit_code: bool, invoked_as_git_external_d
     }
 }
 
-/// True if `before` and `after` are a pair diffed by content (see `diff::content::pair_kind`).
-fn is_content_pair(before: &std::path::Path, after: &std::path::Path) -> Result<bool> {
-    Ok(
-        omnidiff::diff::content::pair_kind(&std::fs::read(before)?, &std::fs::read(after)?)
-            .is_some(),
-    )
-}
-
 /// Reports a pair with at least one binary side (the other may be git's empty `/dev/null`), in
 /// every mode. It must succeed: a UTF-8 decode error would exit 2, and under `GIT_EXTERNAL_DIFF`
 /// git then abandons every remaining file in the diff.
-fn run_binary(args: &Args, before: &std::path::Path, after: &std::path::Path) -> Result<i32> {
-    let (before_bytes, after_bytes) = (std::fs::read(before)?, std::fs::read(after)?);
+fn run_binary(args: &Args, before: &Path, after: &Path, bytes: (&[u8], &[u8])) -> Result<i32> {
+    let (before_bytes, after_bytes) = bytes;
     let differed = before_bytes != after_bytes;
     // Content that does not decode is reported as any other binary, never as an error.
-    let content = omnidiff::diff::content::diff(&before_bytes, &after_bytes)
+    let content = omnidiff::diff::content::diff(before_bytes, after_bytes)
         .ok()
         .flatten();
     if should_run_json(args) {
@@ -355,6 +348,77 @@ fn run_binary(args: &Args, before: &std::path::Path, after: &std::path::Path) ->
         args.exit_code,
         invoked_as_git_external_diff(&args.paths),
     ))
+}
+
+/// A headless or JSON run on one pair: each side read once ([`Pair`]), then reported as binary or
+/// diffed as text.
+fn run_non_interactive(args: &Args, before: &Path, after: &Path) -> Result<i32> {
+    let pair = Pair::read(before, after)?;
+    if let PairContents::Binary {
+        before: before_bytes,
+        after: after_bytes,
+    } = &pair.contents
+    {
+        return run_binary(args, before, after, (before_bytes, after_bytes));
+    }
+    let differed = if should_run_json(args) {
+        tui::json_output::run(pair, render_options(args))?
+    } else {
+        tui::headless::run(
+            pair,
+            use_color(args.color),
+            args.context,
+            render_options(args),
+            display_names(&args.paths),
+        )?
+    };
+    Ok(exit_code_for(
+        differed,
+        args.exit_code,
+        invoked_as_git_external_diff(&args.paths),
+    ))
+}
+
+/// [`run_non_interactive`], with a panic in the decoders or the diff - third-party code on
+/// attacker-chosen bytes - contained (`tui::panic_guard`). Under `GIT_EXTERNAL_DIFF` a failure of
+/// one file must not abort git's whole diff, so there a panic or an error is reported - one
+/// `omnidiff: could not diff PATH` line in the output, the reason once on stderr - and the run
+/// exits 0, as a binary file's notice would. Invoked directly, it exits 2 with the reason.
+fn run_contained(args: &Args, before: &Path, after: &Path) -> Result<i32> {
+    tui::panic_guard::install_quiet_hook();
+    contained(args, before, after, || {
+        run_non_interactive(args, before, after)
+    })
+}
+
+/// [`run_contained`]'s reporting around any `work`, for the tests.
+fn contained(
+    args: &Args,
+    before: &Path,
+    after: &Path,
+    work: impl FnOnce() -> Result<i32>,
+) -> Result<i32> {
+    let outcome = tui::panic_guard::contain(work);
+    let git_form = invoked_as_git_external_diff(&args.paths);
+    let name = if git_form {
+        printable_path(&args.paths[0])
+    } else {
+        format!("{} and {}", printable_path(before), printable_path(after))
+    };
+    let reason = match outcome {
+        Ok(Ok(code)) => return Ok(code),
+        Ok(Err(error)) if is_broken_pipe(&error) || !git_form => return Err(error),
+        Ok(Err(error)) => format!("{error:#}"),
+        Err(panic) => format!("internal error: {panic}"),
+    };
+    eprintln!("omnidiff: could not diff {name}: {}", printable(&reason));
+    if !git_form {
+        return Ok(EXIT_FAILURE);
+    }
+    if !should_run_json(args) {
+        tui::headless::write_stdout(&format!("omnidiff: could not diff {name}\n"))?;
+    }
+    Ok(0)
 }
 
 /// Writes a shell completion script or a man page to stdout, generated from the clap definition
@@ -399,23 +463,81 @@ fn is_broken_pipe(error: &anyhow::Error) -> bool {
 /// Every failure exits [`EXIT_FAILURE`] with an `omnidiff: ...` line, whichever path raised it;
 /// clap's own usage errors already exit 2 on their own. The one exception is a broken pipe, which
 /// exits 0 without a word.
-#[tokio::main]
-async fn main() {
-    let code = match run().await {
+///
+/// A plain `fn main`: only the TUI awaits anything, so only it builds a tokio runtime
+/// ([`run_tui`]). git runs one process per changed file under `GIT_EXTERNAL_DIFF`, and a
+/// multi-threaded runtime's start-up and shutdown would be paid for each of them.
+fn main() {
+    let args = parse_args(std::env::args_os().collect(), under_git_external_diff());
+    let code = match run(&args) {
         Ok(code) => code,
         Err(error) if is_broken_pipe(&error) => 0,
         Err(error) => {
-            eprintln!("omnidiff: {error:#}");
+            // An error's message often quotes a path, which may be a hostile commit's.
+            eprintln!("omnidiff: {}", printable(&format!("{error:#}")));
             EXIT_FAILURE
         }
     };
     std::process::exit(code);
 }
 
-/// The whole program; the `Ok` value is the exit status of a completed run.
-async fn run() -> Result<i32> {
-    let args = Args::parse();
+/// Whether git is running this process as an external diff. git sets `GIT_DIFF_PATH_COUNTER` and
+/// `GIT_DIFF_PATH_TOTAL` for every `GIT_EXTERNAL_DIFF`/`diff.external` command (git(1)).
+fn under_git_external_diff() -> bool {
+    std::env::var_os("GIT_DIFF_PATH_TOTAL").is_some()
+}
 
+/// `Args` from `argv`. Under `GIT_EXTERNAL_DIFF` git appends its 7 or 9 arguments after the
+/// configured command, with no `--` before them, so a file named `-x.rs` or `--help` at the root
+/// of a hostile commit would be parsed as a flag: clap exits 2, and git abandons the entire diff.
+/// So when git is the caller and the arguments end in that shape, a `--` goes in front of them
+/// and they stay paths; the configured command's own flags before them are parsed as usual.
+fn parse_args(argv: Vec<std::ffi::OsString>, under_git: bool) -> Args {
+    Args::parse_from(with_git_arguments_positional(argv, under_git))
+}
+
+/// [`parse_args`]' `--` insertion, on its own for the tests.
+fn with_git_arguments_positional(
+    mut argv: Vec<std::ffi::OsString>,
+    under_git: bool,
+) -> Vec<std::ffi::OsString> {
+    if !under_git {
+        return argv;
+    }
+    for count in [9, 7] {
+        // `argv[0]` is the program.
+        let Some(start) = argv.len().checked_sub(count).filter(|&start| start >= 1) else {
+            continue;
+        };
+        if is_git_external_diff_tail(&argv[start..]) {
+            if !argv[1..start].iter().any(|arg| arg == "--") {
+                argv.insert(start, "--".into());
+            }
+            break;
+        }
+    }
+    argv
+}
+
+/// Whether `tail` (7 or 9 arguments) is git's `path old-file old-hex old-mode new-file new-hex
+/// new-mode [new-path header]`: the hashes full hex object names and the modes six octal digits,
+/// each `.` for a side git has no version of. A file name could pose as one, never as all four.
+fn is_git_external_diff_tail(tail: &[std::ffi::OsString]) -> bool {
+    let text = |index: usize| tail[index].to_str().unwrap_or("");
+    let hash = |index: usize| {
+        let hash = text(index);
+        hash == "."
+            || (matches!(hash.len(), 40 | 64) && hash.bytes().all(|b| b.is_ascii_hexdigit()))
+    };
+    let mode = |index: usize| {
+        let mode = text(index);
+        mode == "." || (mode.len() == 6 && mode.bytes().all(|b| (b'0'..=b'7').contains(&b)))
+    };
+    hash(2) && mode(3) && hash(5) && mode(6)
+}
+
+/// The whole program; the `Ok` value is the exit status of a completed run.
+fn run(args: &Args) -> Result<i32> {
     if let Some(Command::Git {
         action: GitAction::Configure,
     }) = &args.command
@@ -435,56 +557,171 @@ async fn run() -> Result<i32> {
     }
 
     let before_after = resolve_before_after(&args.paths)?;
-    let invoked_as_git_external_diff = invoked_as_git_external_diff(&args.paths);
+    let stdout_is_terminal = std::io::stdout().is_terminal();
+    let non_interactive = should_run_json(args) || should_run_headless(args, stdout_is_terminal);
 
     if let Some((before, after)) = before_after.as_ref() {
-        let either_is_binary =
-            omnidiff::code::is_binary_file(before)? || omnidiff::code::is_binary_file(after)?;
-        // A pair diffed by content goes on to the TUI's content view; every other binary pair, and
-        // any content pair headless or as JSON, is answered here.
-        let tui =
-            !should_run_json(&args) && !should_run_headless(&args, std::io::stdout().is_terminal());
-        if either_is_binary && !(tui && is_content_pair(before, after)?) {
-            return run_binary(&args, before, after);
+        if non_interactive {
+            return run_contained(args, before, after);
+        }
+        // A pair diffed by content goes on to the TUI's content view; every other binary pair is
+        // answered here.
+        let pair = Pair::read(before, after)?;
+        if let PairContents::Binary {
+            before: before_bytes,
+            after: after_bytes,
+        } = &pair.contents
+            && omnidiff::diff::content::pair_kind(before_bytes, after_bytes).is_none()
+        {
+            return run_binary(args, before, after, (before_bytes, after_bytes));
         }
     }
 
-    if should_run_json(&args) {
-        let (before, after) = before_after
+    if should_run_json(args) {
+        before_after
+            .as_ref()
             .context("`--mode json` needs BEFORE and AFTER - pass two files to diff")?;
-        let differed = tui::json_output::run(&before, &after, render_options(&args))?;
-        return Ok(exit_code_for(
-            differed,
-            args.exit_code,
-            invoked_as_git_external_diff,
-        ));
+    }
+    if should_run_headless(args, stdout_is_terminal) {
+        before_after
+            .as_ref()
+            .context(headless_needs_files_message(args))?;
     }
 
-    if should_run_headless(&args, std::io::stdout().is_terminal()) {
-        let (before, after) = before_after.context(headless_needs_files_message(&args))?;
-        let differed = tui::headless::run(
-            &before,
-            &after,
-            use_color(args.color),
-            args.context,
-            render_options(&args),
-            display_names(&args.paths),
-        )?;
-        return Ok(exit_code_for(
-            differed,
-            args.exit_code,
-            invoked_as_git_external_diff,
-        ));
-    }
-
-    tui_main(&args, before_after).await?;
+    run_tui(args, before_after)?;
     Ok(0)
+}
+
+/// The TUI, on the tokio runtime it needs: multi-threaded, as `#[tokio::main]` builds it.
+fn run_tui(args: &Args, before_after: Option<(PathBuf, PathBuf)>) -> Result<()> {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .context("cannot start the TUI's runtime")?
+        .block_on(tui_main(args, before_after))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use omnidiff::tui::positional::picture_notice;
+
+    fn os(args: &[&str]) -> Vec<std::ffi::OsString> {
+        args.iter().map(Into::into).collect()
+    }
+
+    const HEX_A: &str = "1111111111111111111111111111111111111111";
+    const HEX_B: &str = "2222222222222222222222222222222222222222";
+
+    /// git passes its arguments without `--`, so a root file named like a flag would be parsed
+    /// as one and the whole `git diff` aborted.
+    #[test]
+    fn gits_arguments_stay_paths_whatever_the_file_is_called() {
+        for name in ["-x.rs", "--help", "--mode=json", "git", "util"] {
+            let argv = os(&[
+                "omnidiff",
+                "--headless",
+                name,
+                "/tmp/a",
+                HEX_A,
+                "100644",
+                "/tmp/b",
+                HEX_B,
+                "100644",
+            ]);
+            let fixed = with_git_arguments_positional(argv.clone(), true);
+            assert_eq!(fixed[2], "--", "{name}");
+            let args = Args::try_parse_from(fixed).unwrap_or_else(|e| panic!("{name}: {e}"));
+            assert!(args.headless && args.command.is_none(), "{name}");
+            assert_eq!(args.paths[0], PathBuf::from(name));
+            assert_eq!(args.paths.len(), 7);
+            assert_eq!(
+                with_git_arguments_positional(argv.clone(), false),
+                argv,
+                "untouched when git is not the caller"
+            );
+        }
+    }
+
+    #[test]
+    fn a_rename_and_an_added_file_are_recognised_as_gits_too() {
+        let rename = os(&[
+            "omnidiff",
+            "-x.rs",
+            "/tmp/a",
+            HEX_A,
+            "100644",
+            "/tmp/b",
+            HEX_B,
+            "100755",
+            "-y.rs",
+            "similarity index 90%\n",
+        ]);
+        let fixed = with_git_arguments_positional(rename, true);
+        assert_eq!(fixed[1], "--");
+        assert_eq!(Args::try_parse_from(fixed).unwrap().paths.len(), 9);
+        let added = os(&[
+            "omnidiff",
+            "-new.rs",
+            "/dev/null",
+            ".",
+            ".",
+            "/tmp/b",
+            HEX_B,
+            "100644",
+        ]);
+        assert_eq!(with_git_arguments_positional(added, true)[1], "--");
+    }
+
+    /// `git difftool` runs its helper as the external diff, so `GIT_DIFF_PATH_TOTAL` reaches a
+    /// difftool command too: two paths, which are not git's shape and are left alone - as is a
+    /// command that already ends options with `--`.
+    #[test]
+    fn anything_else_under_git_is_parsed_as_given() {
+        let difftool = os(&["omnidiff", "--", "/tmp/a.rs", "-b.rs"]);
+        assert_eq!(
+            with_git_arguments_positional(difftool.clone(), true),
+            difftool
+        );
+        let already = os(&[
+            "omnidiff", "--", "-x.rs", "/tmp/a", HEX_A, "100644", "/tmp/b", HEX_B, "100644",
+        ]);
+        assert_eq!(
+            with_git_arguments_positional(already.clone(), true),
+            already
+        );
+        let not_hex = os(&["omnidiff", "a", "b", "c", "d", "e", "f", "g"]);
+        assert_eq!(
+            with_git_arguments_positional(not_hex.clone(), true),
+            not_hex
+        );
+    }
+
+    /// A panic in the decoders or the diff must not abort git's whole diff: exit 0 there, and 2
+    /// when invoked directly.
+    #[test]
+    fn a_panic_while_diffing_exits_0_under_git_and_2_directly() {
+        let git = Args::try_parse_from(os(&[
+            "omnidiff", "--mode", "json", "f.rs", "/tmp/a", HEX_A, "100644", "/tmp/b", HEX_B,
+            "100644",
+        ]))
+        .unwrap();
+        let (before, after) = (Path::new("/tmp/a"), Path::new("/tmp/b"));
+        let code = contained(&git, before, after, || panic!("decoder bug"));
+        assert_eq!(code.unwrap(), 0);
+        let code = contained(&git, before, after, || anyhow::bail!("no AST"));
+        assert_eq!(
+            code.unwrap(),
+            0,
+            "an error is no more fatal there than a panic"
+        );
+
+        let direct = Args::try_parse_from(os(&["omnidiff", "--headless", "a", "b"])).unwrap();
+        let code = contained(&direct, before, after, || panic!("decoder bug"));
+        assert_eq!(code.unwrap(), EXIT_FAILURE);
+        assert!(contained(&direct, before, after, || anyhow::bail!("no AST")).is_err());
+        assert_eq!(contained(&direct, before, after, || Ok(1)).unwrap(), 1);
+    }
 
     #[test]
     fn resolve_before_after_with_no_args_starts_an_empty_viewer() {

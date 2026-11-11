@@ -25,6 +25,11 @@
 //! the revision directory keeps same-named files apart. The working tree's file is diffed in place,
 //! so `e` edits the real file. An absent side is an empty file at the same path, which parses as a
 //! whole-file insert or delete in the right language, unlike `/dev/null`.
+//!
+//! `<path>` is whatever the tree says, and a tree can hold entries git's own checkout refuses
+//! (`..`, built with `git mktree`, fetched without `fetch.fsckObjects`). So the path is flattened
+//! to plain components before it is joined ([`contained_relative_path`]) and the file is created
+//! fresh, never written through what is already there; the name the reader sees stays git's.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -387,6 +392,23 @@ fn sides(root: &Path, target: &ReviewTarget) -> Result<(Side, Side)> {
     })
 }
 
+/// `path`, an untrusted relative path (a git tree entry, an archive member key), as one that stays
+/// below whatever it is joined to: split on `/` and `\`, with empty, `.` and `..` components
+/// dropped, a drive prefix (`C:`) or any other `:` made `_`, and `member` for nothing left. The
+/// result names the same file for every ordinary path, so its extension still picks the grammar;
+/// what a hostile tree could use to climb out (`../../.bashrc`, `/etc/x`, `C:\x`) is flattened.
+pub(crate) fn contained_relative_path(path: &str) -> PathBuf {
+    let parts: Vec<String> = path
+        .split(['/', '\\'])
+        .filter(|part| !part.is_empty() && *part != "." && *part != "..")
+        .map(|part| part.replace(':', "_"))
+        .collect();
+    if parts.is_empty() {
+        return PathBuf::from("member");
+    }
+    parts.iter().collect()
+}
+
 /// A temp directory holding materialized blobs, removed when dropped.
 #[derive(Debug)]
 pub struct Workspace {
@@ -432,14 +454,31 @@ impl Workspace {
     }
 
     /// Writes `bytes` to `<workspace>/<label>/<path>`, creating the directories, and returns the
-    /// file's path.
+    /// file's path. `path` is untrusted - a tree's entry names, an archive's member key - so it
+    /// goes through [`contained_relative_path`] first, and the result is checked to lie inside
+    /// the workspace. A file already at the target (the same member opened twice) is unlinked
+    /// rather than written through, so not even a symlink there could redirect the write.
     pub(crate) fn write(&self, label: &str, path: &str, bytes: &[u8]) -> Result<PathBuf> {
-        let target = self.dir.join(label).join(path);
+        use std::io::Write;
+
+        let base = self.dir.join(contained_relative_path(label));
+        let target = base.join(contained_relative_path(path));
+        if !target.starts_with(&self.dir) || target == base {
+            bail!("refusing to write {path:?} outside the review workspace");
+        }
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("cannot create {}", parent.display()))?;
         }
-        std::fs::write(&target, bytes)
+        if std::fs::symlink_metadata(&target).is_ok() {
+            std::fs::remove_file(&target)
+                .with_context(|| format!("cannot replace {}", target.display()))?;
+        }
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target)
+            .and_then(|mut file| file.write_all(bytes))
             .with_context(|| format!("cannot write {}", target.display()))?;
         Ok(target)
     }
@@ -757,5 +796,72 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.starts_with("git show"), "{err}");
+    }
+
+    #[test]
+    fn an_untrusted_path_cannot_climb_out_of_where_it_is_joined() {
+        let cases = [
+            ("src/a.rs", "src/a.rs"),
+            ("../../.bashrc", ".bashrc"),
+            ("/etc/passwd", "etc/passwd"),
+            ("a/./b/../c.rs", "a/b/c.rs"),
+            ("C:\\Windows\\x.rs", "C_/Windows/x.rs"),
+            ("..", "member"),
+            ("", "member"),
+        ];
+        for (path, expected) in cases {
+            let safe = contained_relative_path(path);
+            assert_eq!(safe, PathBuf::from(expected), "{path:?}");
+            assert!(
+                safe.components()
+                    .all(|part| matches!(part, std::path::Component::Normal(_))),
+                "{path:?} -> {safe:?}"
+            );
+        }
+    }
+
+    /// A tree entry named `..` (git mktree builds one; fetch accepts it without
+    /// `fetch.fsckObjects`) must not make an absent side truncate a file outside the workspace.
+    #[test]
+    fn an_absent_side_with_dot_dot_in_its_path_is_written_inside_the_workspace() {
+        let outside = tempfile::tempdir().unwrap();
+        let victim = outside.path().join("victim.rs");
+        std::fs::write(&victim, "keep me\n").unwrap();
+        let workspace = Workspace::new().unwrap();
+        let depth = workspace.dir().components().count() + 2;
+        let climb = "../".repeat(depth);
+        let hostile = format!("{climb}{}", victim.display());
+        let target = ReviewTarget {
+            set: ChangeSet::WorkingTree,
+            file: ChangedFile {
+                status: FileStatus::Deleted,
+                path: hostile,
+                old_path: None,
+            },
+        };
+        let after = workspace
+            .materialize_side(outside.path(), &sides(outside.path(), &target).unwrap().1)
+            .unwrap();
+        assert!(after.starts_with(workspace.dir()), "{after:?}");
+        assert_eq!(std::fs::read_to_string(&victim).unwrap(), "keep me\n");
+    }
+
+    /// Writing the same member twice replaces the file; a symlink planted at the target is
+    /// replaced too, never written through.
+    #[cfg(unix)]
+    #[test]
+    fn a_rewrite_replaces_the_file_and_never_follows_a_symlink_there() {
+        let outside = tempfile::tempdir().unwrap();
+        let victim = outside.path().join("victim");
+        std::fs::write(&victim, "keep me").unwrap();
+        let workspace = Workspace::new().unwrap();
+        let first = workspace.write("before", "m.txt", b"one").unwrap();
+        assert_eq!(workspace.write("before", "m.txt", b"two").unwrap(), first);
+        assert_eq!(std::fs::read_to_string(&first).unwrap(), "two");
+        std::fs::remove_file(&first).unwrap();
+        std::os::unix::fs::symlink(&victim, &first).unwrap();
+        workspace.write("before", "m.txt", b"three").unwrap();
+        assert_eq!(std::fs::read_to_string(&victim).unwrap(), "keep me");
+        assert_eq!(std::fs::read_to_string(&first).unwrap(), "three");
     }
 }

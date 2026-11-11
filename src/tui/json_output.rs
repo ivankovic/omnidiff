@@ -50,7 +50,6 @@ use crate::diff::text::{
 };
 use crate::diff::text_range::TextRange;
 use crate::tui::actions::DiffSessionData;
-use crate::tui::app::compute_diff_with_options;
 use crate::tui::headless::nearest_reference_line;
 
 /// A `TextRange` for JSON. Local, like the other `Json*` types, so `diff` stays serde-free.
@@ -279,8 +278,9 @@ pub fn binary_diff_json(
 
 /// Entry point for `--mode json`: computes the diff as `headless::run` does and prints it.
 /// Returns whether the files differ byte-wise, for `main.rs`'s exit code.
-pub fn run(before: &Path, after: &Path, render_options: RenderOptions) -> Result<bool> {
-    let (mut data, large_residual) = compute_diff_with_options(before, after, render_options)?;
+pub fn run(pair: crate::tui::headless::Pair, render_options: RenderOptions) -> Result<bool> {
+    let differed = pair.differed;
+    let (mut data, large_residual) = pair.diff(render_options)?;
     // A presentation filter over the finished diff, not a different diff.
     data.before_ranges =
         ranges_for_options(&data.before_ranges, &data.before_contents, render_options);
@@ -290,7 +290,7 @@ pub fn run(before: &Path, after: &Path, render_options: RenderOptions) -> Result
     let mut json = serde_json::to_string_pretty(&diff)?;
     json.push('\n');
     crate::tui::headless::write_stdout(&json)?;
-    Ok(std::fs::read(before)? != std::fs::read(after)?)
+    Ok(differed)
 }
 
 #[cfg(test)]

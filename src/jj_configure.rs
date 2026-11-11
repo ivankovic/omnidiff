@@ -22,7 +22,7 @@
 //! ```toml
 //! [merge-tools.omnidiff]
 //! program = "/abs/path/to/omnidiff"
-//! diff-args = ["$left", "$right"]
+//! diff-args = ["--", "$left", "$right"]
 //! diff-invocation-mode = "file-by-file"
 //!
 //! [ui]
@@ -47,6 +47,11 @@ use crate::configure_prompt::{ask_yes_no, read_line, resolve_omnidiff_path};
 
 /// The tool name omnidiff registers itself under in `[merge-tools.<name>]`.
 const TOOL: &str = "omnidiff";
+
+/// `merge-tools.omnidiff.diff-args`. In file-by-file mode jj passes `left/<path>` and
+/// `right/<path>`, which never start with `-`; the `--` makes that a guarantee rather than a
+/// property of jj's current temp layout, as `git configure` does for `$LOCAL`/`$REMOTE`.
+const DIFF_ARGS: &str = r#"["--","$left","$right"]"#;
 
 /// Whether `jj config set` writes `--user` (all repositories) or `--repo` (this one only).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,11 +122,7 @@ pub fn run() -> Result<()> {
             &format!("merge-tools.{TOOL}.program"),
             &omnidiff_path,
         )?;
-        set_config(
-            scope,
-            &format!("merge-tools.{TOOL}.diff-args"),
-            r#"["$left","$right"]"#,
-        )?;
+        set_config(scope, &format!("merge-tools.{TOOL}.diff-args"), DIFF_ARGS)?;
         // Required; see the module doc.
         set_config(
             scope,
@@ -214,7 +215,7 @@ fn print_manual_instructions() {
     eprintln!(
         "Run these manually instead (see README's \"Jujutsu (jj) integration\" section):\n\n\
          jj config set --user merge-tools.omnidiff.program omnidiff\n\
-         jj config set --user merge-tools.omnidiff.diff-args '[\"$left\",\"$right\"]'\n\
+         jj config set --user merge-tools.omnidiff.diff-args '[\"--\",\"$left\",\"$right\"]'\n\
          jj config set --user merge-tools.omnidiff.diff-invocation-mode file-by-file\n\n\
          Use --repo instead of --user to apply them to the current repository only. To make \
          omnidiff the default for plain `jj diff` as well:\n\n\
@@ -248,6 +249,11 @@ fn ask_scope() -> Result<Scope> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_diff_args_end_options_before_jjs_paths() {
+        assert_eq!(DIFF_ARGS, r#"["--","$left","$right"]"#);
+    }
 
     #[test]
     fn scope_flags_match_jjs_own_spelling() {

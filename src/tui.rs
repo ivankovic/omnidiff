@@ -23,6 +23,7 @@ pub mod display_columns;
 pub mod events;
 pub mod headless;
 pub mod json_output;
+pub mod panic_guard;
 pub mod positional;
 pub mod screenshot;
 pub mod settings_examples;
