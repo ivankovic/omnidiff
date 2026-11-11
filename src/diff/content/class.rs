@@ -28,9 +28,31 @@
 //! numbering shifts whenever any constant is added, so the same code compiles to different bytes.
 //! What it refers to does not shift. A change only in arithmetic or control flow, with no new
 //! reference, shows as a changed code size, or not at all when the size is the same.
+//!
+//! **A listing is bounded** ([`listing_limit`]): every method may name the same 64 KB constant,
+//! so a small class file could list to gigabytes. Past the limit there is no listing, and the
+//! class is compared as bytes. Each reference is described once however often the code reaches it.
 
 use std::collections::HashSet;
 use std::fmt::Write;
+
+/// How many bytes of listing a class file may make per byte of it: a listing restates names the
+/// constant pool holds once, a few times over.
+const LISTING_PER_BYTE: usize = 64;
+
+/// A listing any class file may make, however small.
+const LISTING_SLACK: usize = 64 * 1024;
+
+/// The longest listing of any class file: the largest real ones list to a few megabytes.
+const MAX_LISTING_BYTES: usize = 64 * 1024 * 1024;
+
+/// The longest listing a class file of `bytes` bytes may make.
+fn listing_limit(bytes: usize) -> usize {
+    bytes
+        .saturating_mul(LISTING_PER_BYTE)
+        .saturating_add(LISTING_SLACK)
+        .min(MAX_LISTING_BYTES)
+}
 
 /// True if `bytes` are a Java class file: `CAFEBABE`, then a class file's major version.
 /// Mach-O universal binaries start `CAFEBABE` too, with a small architecture count where a class
@@ -348,10 +370,11 @@ fn instruction_length(code: &[u8], pc: usize) -> Option<usize> {
 }
 
 /// What `code` refers to, each once, in the order the code first reaches it: `calls`, `reads`,
-/// `writes`, `creates`, `checks`, `loads`.
-fn references(code: &[u8], pool: &Pool) -> Vec<String> {
+/// `writes`, `creates`, `checks`, `loads`; `None` once the lines would pass `limit` bytes.
+fn references(code: &[u8], pool: &Pool, limit: usize) -> Option<Vec<String>> {
     let mut found = Vec::new();
-    let mut seen = HashSet::new();
+    let (mut seen, mut described) = (HashSet::new(), HashSet::new());
+    let mut length_so_far = 0;
     let mut pc = 0;
     while pc < code.len() {
         let Some(length) = instruction_length(code, pc) else {
@@ -373,15 +396,21 @@ fn references(code: &[u8], pool: &Pool) -> Vec<String> {
             0xc0 | 0xc1 => u2().map(|index| ("checks", index)),
             _ => None,
         };
-        if let Some((verb, index)) = reference {
+        if let Some((verb, index)) = reference
+            && described.insert((verb, index))
+        {
             let line = format!("{verb} {}", pool.describe(index));
             if seen.insert(line.clone()) {
+                length_so_far += line.len();
+                if length_so_far > limit {
+                    return None;
+                }
                 found.push(line);
             }
         }
         pc += length;
     }
-    found
+    Some(found)
 }
 
 /// An attribute: its name and its bytes.
@@ -406,10 +435,18 @@ pub fn listing(bytes: &[u8]) -> Option<String> {
     let pool = read_pool(&mut reader)?;
     let access = reader.u2()?;
     let (this, superclass) = (reader.u2()?, reader.u2()?);
-    let interfaces: Vec<String> = (0..reader.u2()?)
-        .map(|_| reader.u2().map(|index| pool.class(index)))
-        .collect::<Option<_>>()?;
+    let limit = listing_limit(bytes.len());
+    let (mut interfaces, mut named) = (Vec::new(), 0);
+    for _ in 0..reader.u2()? {
+        let interface = pool.class(reader.u2()?);
+        named += interface.len() + 2;
+        if named > limit {
+            return None;
+        }
+        interfaces.push(interface);
+    }
 
+    let within = |out: &String| (out.len() <= limit).then_some(());
     let mut out = String::new();
     let kind = if access & 0x0200 != 0 { "" } else { "class " };
     let _ = write!(
@@ -436,6 +473,7 @@ pub fn listing(bytes: &[u8]) -> Option<String> {
             modifiers(access, "field"),
             field_type(&descriptor)
         );
+        within(&out)?;
     }
     for _ in 0..reader.u2()? {
         let access = reader.u2()?;
@@ -453,12 +491,13 @@ pub fn listing(bytes: &[u8]) -> Option<String> {
                 let length = code_reader.u4()? as usize;
                 let body = code_reader.take(length)?;
                 let _ = writeln!(out, "  [{length} bytes of code]");
-                for reference in references(body, &pool) {
+                for reference in references(body, &pool, limit.saturating_sub(out.len()))? {
                     let _ = writeln!(out, "    {reference}");
                 }
             }
             None => out.push('\n'),
         }
+        within(&out)?;
     }
     Some(out)
 }
@@ -555,6 +594,41 @@ mod tests {
         code.push(0xb1);
         assert_eq!(instruction_length(&code, 1), Some(23));
         assert_eq!(instruction_length(&code, 24), Some(1));
-        assert!(references(&code, &Pool(Vec::new())).is_empty());
+        assert_eq!(
+            references(&code, &Pool(Vec::new()), usize::MAX),
+            Some(Vec::new())
+        );
+    }
+
+    #[test]
+    fn a_listing_of_many_methods_naming_one_long_constant_is_bounded() {
+        // 65,535 methods, each eight bytes naming the same 60 KB string: 4 GB of listing from a
+        // 600 KB file.
+        let name = "a".repeat(60_000);
+        let mut bytes = vec![0xCA, 0xFE, 0xBA, 0xBE, 0, 0, 0, 61, 0, 3];
+        bytes.push(1);
+        bytes.extend_from_slice(&(name.len() as u16).to_be_bytes());
+        bytes.extend_from_slice(name.as_bytes());
+        bytes.extend_from_slice(&[1, 0, 3]);
+        bytes.extend_from_slice(b"()V");
+        bytes.extend_from_slice(&[0x00, 0x21, 0, 0, 0, 0, 0, 0, 0, 0]); // no interfaces, no fields
+        bytes.extend_from_slice(&u16::MAX.to_be_bytes());
+        for _ in 0..u16::MAX {
+            bytes.extend_from_slice(&[0x00, 0x01, 0, 1, 0, 2, 0, 0]);
+        }
+        bytes.extend_from_slice(&[0, 0]);
+        assert!(listing(&bytes).is_none());
+
+        let few = {
+            let mut few = bytes[..bytes.len() - 2 - 8 * usize::from(u16::MAX) - 2].to_vec();
+            few.extend_from_slice(&[0, 2]);
+            for _ in 0..2 {
+                few.extend_from_slice(&[0x00, 0x01, 0, 1, 0, 2, 0, 0]);
+            }
+            few.extend_from_slice(&[0, 0]);
+            few
+        };
+        let text = listing(&few).expect("two methods list");
+        assert_eq!(text.matches(&name).count(), 2);
     }
 }
