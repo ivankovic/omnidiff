@@ -1640,6 +1640,126 @@ fn myers_lcs_exceeds_limit() {
     assert!(myers_lcs(&a, &b, 3).is_none());
 }
 
+/// The full-`V`-per-step Myers `myers_lcs` replaced, kept as the reference its script must equal.
+fn myers_lcs_full_snapshots(a: &[u64], b: &[u64], max_edit: usize) -> Option<Vec<(usize, usize)>> {
+    let (n, m) = (a.len(), b.len());
+    if n == 0 || m == 0 {
+        return Some(vec![]);
+    }
+    let limit = max_edit.min(n + m);
+    let offset = limit + 1;
+    let mut v = vec![0usize; 2 * limit + 3];
+    let mut snapshots: Vec<Vec<usize>> = Vec::new();
+    for d in 0..=limit {
+        snapshots.push(v.clone());
+        for k in (-(d as i64)..=(d as i64)).step_by(2) {
+            let ki = (k + offset as i64) as usize;
+            let mut x = if k == -(d as i64) {
+                v[ki + 1]
+            } else if k == d as i64 || v[ki - 1] >= v[ki + 1] {
+                v[ki - 1] + 1
+            } else {
+                v[ki + 1]
+            };
+            let mut y = (x as i64 - k) as usize;
+            while x < n && y < m && a[x] == b[y] {
+                x += 1;
+                y += 1;
+            }
+            v[ki] = x;
+            if x >= n && y >= m {
+                let (mut matches, mut x, mut y) = (Vec::new(), n as i64, m as i64);
+                for step in (1..=d).rev() {
+                    let v = &snapshots[step];
+                    let k = x - y;
+                    let ki = (k + offset as i64) as usize;
+                    let prev_k = if k == -(step as i64) {
+                        k + 1
+                    } else if k == step as i64 || v[ki - 1] >= v[ki + 1] {
+                        k - 1
+                    } else {
+                        k + 1
+                    };
+                    let prev_x = v[(prev_k + offset as i64) as usize] as i64;
+                    let x_enter = if prev_k < k { prev_x + 1 } else { prev_x };
+                    while x > x_enter {
+                        x -= 1;
+                        y -= 1;
+                        matches.push((x as usize, y as usize));
+                    }
+                    (x, y) = (prev_x, prev_x - prev_k);
+                }
+                while x > 0 && y > 0 {
+                    x -= 1;
+                    y -= 1;
+                    matches.push((x as usize, y as usize));
+                }
+                matches.reverse();
+                return Some(matches);
+            }
+        }
+    }
+    None
+}
+
+/// A deterministic pseudo-random sequence over `alphabet` symbols (an LCG; no seed crate needed).
+fn lcg_sequence(seed: &mut u64, len: usize, alphabet: u64) -> Vec<u64> {
+    (0..len)
+        .map(|_| {
+            *seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (*seed >> 33) % alphabet
+        })
+        .collect()
+}
+
+/// The per-step trace picks exactly the script the full snapshots did, ties included (small
+/// alphabets make many equal-length LCSs), and `myers_distance` agrees with its length.
+#[test]
+fn myers_lcs_matches_the_full_snapshot_reference() {
+    let mut seed = 7;
+    for round in 0..3000 {
+        let alphabet = 1 + round % 5;
+        let (n, m) = (round % 23, (round * 7) % 19);
+        let a = lcg_sequence(&mut seed, n as usize, alphabet);
+        let b = lcg_sequence(&mut seed, m as usize, alphabet);
+        for max_edit in [0, 3, 10, 100] {
+            let got = myers_lcs(&a, &b, max_edit);
+            assert_eq!(
+                got,
+                myers_lcs_full_snapshots(&a, &b, max_edit),
+                "{a:?} {b:?} {max_edit}"
+            );
+            if let (Some(pairs), false) = (&got, a.is_empty() || b.is_empty()) {
+                let distance = a.len() + b.len() - 2 * pairs.len();
+                assert_eq!(myers_distance(&a, &b, max_edit), Some(distance));
+            }
+        }
+    }
+}
+
+/// Past its eager steps the script comes from the second, recorded pass, or `None` from the
+/// unrecorded one; both must equal the reference.
+#[test]
+fn myers_lcs_matches_the_reference_past_the_eager_record_steps() {
+    let mut seed = 11;
+    for round in 0..500 {
+        let alphabet = 2 + round as u64 % 6;
+        let a = lcg_sequence(&mut seed, 20 + round % 31, alphabet);
+        let b = lcg_sequence(&mut seed, 15 + round % 37, alphabet);
+        for max_edit in [4, 20, 1000] {
+            for eager in [0, 1, 2, 5] {
+                assert_eq!(
+                    myers_lcs_recording(&a, &b, max_edit, eager),
+                    myers_lcs_full_snapshots(&a, &b, max_edit),
+                    "{a:?} {b:?} {max_edit} {eager}"
+                );
+            }
+        }
+    }
+}
+
 fn leaf(id: usize, hash: u64, meta: &mut ASTMetadata) {
     meta.node_info.insert(
         id,

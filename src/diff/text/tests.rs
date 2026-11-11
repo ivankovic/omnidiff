@@ -1145,6 +1145,31 @@ fn plain_text_line_diff_treats_two_empty_files_as_no_changes() {
     assert!(after.is_empty());
 }
 
+/// `line_match_count` is `line_diff_core`'s pair count, `None` alike past the cap.
+#[test]
+fn line_match_count_is_the_line_diff_core_pair_count() {
+    let texts = [
+        "",
+        "a\n",
+        "a\nb\nc\n",
+        "a\nx\nc\nb\n",
+        "b\nb\nb\n",
+        "c\nb\na\nb\n",
+        "x\ny\nz\nw\nv\n",
+    ];
+    for before in texts {
+        for after in texts {
+            for max_edit in [0, 2, 100] {
+                assert_eq!(
+                    line_match_count(before, after, max_edit),
+                    line_diff_core(before, after, max_edit).map(|core| core.pairs.len()),
+                    "{before:?} {after:?} {max_edit}"
+                );
+            }
+        }
+    }
+}
+
 /// Past the edit-distance cap, the whole file is one `Delete` and one `Insert`. Uses a small cap:
 /// reaching the real `PLAIN_TEXT_MAX_EDIT` costs quadratic memory.
 #[test]

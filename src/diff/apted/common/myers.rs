@@ -53,22 +53,115 @@ pub(crate) fn sole_flat_child(root_id: usize, meta: &ASTMetadata) -> Option<usiz
     Some(candidate)
 }
 
+/// Steps of the forward pass [`myers_lcs`] records as it goes. Past them it stops recording,
+/// finds the distance with [`myers_distance`]'s O(limit) memory and, only if that is within the
+/// cap, runs again recording every step. Recording all `d` steps costs `d * (d + 1) / 2` cells,
+/// 8 MB of `u32` here, so a pair that runs into the cap (two unrelated 12,000-line files) no
+/// longer pays O(d²) memory for a script it never builds; a pair that finishes past this pays a
+/// second forward pass instead.
+const MYERS_EAGER_RECORD_STEPS: usize = 2048;
+
 /// Myers O(ND) LCS on two sequences of hashes. Returns matched `(a_idx, b_idx)` pairs
 /// in ascending order, or `None` if the edit distance exceeds `max_edit`.
+///
+/// Memory is O(D²) for the distance `D` actually reached, not O(D × `max_edit`): step `d` reads
+/// only the diagonals step `d - 1` wrote, `k ∈ [-(d-1), d-1]` of `d`'s other parity, so that is
+/// all the backtrack needs kept per step (the standard trick). A linear-space (Hirschberg) script
+/// would be cheaper still but breaks ties differently, and every caller's output depends on which
+/// of several equal-length LCSs this picks. For the same reason the common suffix is not trimmed
+/// first (`[x, x]` against `[x]` pairs the first `x` here, the second after a trim); the common
+/// prefix needs no trimming, since step 0's snake is exactly that.
 pub(crate) fn myers_lcs(a: &[u64], b: &[u64], max_edit: usize) -> Option<Vec<(usize, usize)>> {
+    myers_lcs_recording(a, b, max_edit, MYERS_EAGER_RECORD_STEPS)
+}
+
+/// [`myers_lcs`] recording the first `eager_steps` steps; the tests shrink it.
+pub(super) fn myers_lcs_recording(
+    a: &[u64],
+    b: &[u64],
+    max_edit: usize,
+    eager_steps: usize,
+) -> Option<Vec<(usize, usize)>> {
     let n = a.len();
     let m = b.len();
     if n == 0 || m == 0 {
         return Some(vec![]);
     }
+    // Recorded positions are `u32`; no caller comes near 4 billion entries.
+    if n > u32::MAX as usize {
+        return None;
+    }
     let limit = max_edit.min(n + m);
-    let offset = limit + 1; // v[k + offset] for k in [-limit, +limit]
-    let v_size = 2 * limit + 3;
-    let mut v = vec![0usize; v_size];
-    let mut snapshots: Vec<Vec<usize>> = Vec::with_capacity(limit + 1);
+    let mut v = vec![0usize; 2 * limit + 3];
+    let mut trace = MyersTrace::default();
+    let eager = limit.min(eager_steps);
+    if let Some(d) = myers_forward(a, b, limit, &mut v, 0..=eager, Some(&mut trace)) {
+        return Some(backtrack_myers(&trace, a, b, d));
+    }
+    if eager == limit {
+        return None;
+    }
+    // `v` holds step `eager`'s state: carry on unrecorded, then record only up to the distance.
+    let d = myers_forward(a, b, limit, &mut v, eager + 1..=limit, None)?;
+    v.fill(0);
+    trace = MyersTrace::default();
+    let found = myers_forward(a, b, limit, &mut v, 0..=d, Some(&mut trace));
+    debug_assert_eq!(found, Some(d));
+    Some(backtrack_myers(&trace, a, b, d))
+}
 
-    for d in 0..=limit {
-        snapshots.push(v.clone()); // snapshots[d] = v before step d's modifications
+/// The Myers edit distance (insertions plus deletions) between `a` and `b`, or `None` past
+/// `max_edit`. O(`max_edit`) memory; the LCS length is `(a.len() + b.len() - distance) / 2`.
+/// Unlike [`myers_lcs`], two empty-sided inputs get their true distance, not a pass.
+pub(crate) fn myers_distance(a: &[u64], b: &[u64], max_edit: usize) -> Option<usize> {
+    let limit = max_edit.min(a.len() + b.len());
+    let mut v = vec![0usize; 2 * limit + 3];
+    myers_forward(a, b, limit, &mut v, 0..=limit, None)
+}
+
+/// What each forward step read: for step `d`, `v[k]` for `k = -(d-1), -(d-1)+2, ..., d-1` (`d`
+/// values), the steps laid end to end, so step `d` starts at `d * (d - 1) / 2`.
+#[derive(Default)]
+struct MyersTrace {
+    cells: Vec<u32>,
+}
+
+impl MyersTrace {
+    fn record(&mut self, d: usize, v: &[usize], offset: usize) {
+        debug_assert_eq!(self.cells.len(), d * d.saturating_sub(1) / 2);
+        for i in 0..d {
+            let k = 2 * i as i64 - (d as i64 - 1);
+            self.cells.push(v[(k + offset as i64) as usize] as u32);
+        }
+    }
+
+    /// `v[k]` as step `d` found it.
+    fn get(&self, d: usize, k: i64) -> i64 {
+        let start = d * (d - 1) / 2;
+        let i = ((k + d as i64 - 1) / 2) as usize;
+        debug_assert!(i < d);
+        i64::from(self.cells[start + i])
+    }
+}
+
+/// Myers' forward pass over steps `steps` (the first one following on from the state in `v`,
+/// zeroed for step 0), recording each step's input into `trace` when given. Returns the step at
+/// which both sequences are consumed.
+fn myers_forward(
+    a: &[u64],
+    b: &[u64],
+    limit: usize,
+    v: &mut [usize],
+    steps: std::ops::RangeInclusive<usize>,
+    mut trace: Option<&mut MyersTrace>,
+) -> Option<usize> {
+    let n = a.len();
+    let m = b.len();
+    let offset = limit + 1; // v[k + offset] for k in [-limit, +limit]
+    for d in steps {
+        if let Some(trace) = trace.as_deref_mut() {
+            trace.record(d, v, offset);
+        }
         for k in (-(d as i64)..=(d as i64)).step_by(2) {
             let ki = (k + offset as i64) as usize;
             let x = if k == -(d as i64) {
@@ -86,36 +179,29 @@ pub(crate) fn myers_lcs(a: &[u64], b: &[u64], max_edit: usize) -> Option<Vec<(us
             }
             v[ki] = x;
             if x >= n && y >= m {
-                return Some(backtrack_myers(&snapshots, a, b, d, offset));
+                return Some(d);
             }
         }
     }
     None
 }
 
-pub(crate) fn backtrack_myers(
-    snapshots: &[Vec<usize>],
-    a: &[u64],
-    b: &[u64],
-    d: usize,
-    offset: usize,
-) -> Vec<(usize, usize)> {
+fn backtrack_myers(trace: &MyersTrace, a: &[u64], b: &[u64], d: usize) -> Vec<(usize, usize)> {
     let mut matches = Vec::new();
     let mut x = a.len() as i64;
     let mut y = b.len() as i64;
 
     for step in (1..=d).rev() {
-        let v = &snapshots[step]; // v at start of step `step` (= after step `step-1`)
+        // v at start of step `step` (= after step `step-1`)
         let k = x - y;
-        let ki = (k + offset as i64) as usize;
         let prev_k = if k == -(step as i64) {
             k + 1 // came via insert
-        } else if k == step as i64 || v[ki - 1] >= v[ki + 1] {
+        } else if k == step as i64 || trace.get(step, k - 1) >= trace.get(step, k + 1) {
             k - 1 // came via delete
         } else {
             k + 1 // came via insert
         };
-        let prev_x = v[(prev_k + offset as i64) as usize] as i64;
+        let prev_x = trace.get(step, prev_k);
         let prev_y = prev_x - prev_k;
         let x_enter = if prev_k < k { prev_x + 1 } else { prev_x };
         let mut xi = x;
