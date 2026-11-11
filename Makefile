@@ -43,7 +43,7 @@ which-machine = python3 scripts/machine.py $(MACHINE)
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
 	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
-	deploy-github deploy third-party-notices check-third-party-notices test-graphics
+	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
 # scripts/coverage_report.py). On demand, not a gate: a threshold teaches touching lines. Rebuilds
@@ -108,6 +108,14 @@ update-quick-fixtures:
 test-homebrew:
 	cargo build --locked --profile ci --bin omnidiff
 	python3 scripts/brew_e2e.py --binary target/ci/omnidiff
+
+# OmniDiff as lazygit's diff renderer, end to end (scripts/lazygit_e2e/run.py): the real lazygit
+# in tmux in podman, typed into as a user would, beside git's own diff and delta. Builds omnidiff
+# in the container from OMNIDIFF_SRC (default: this checkout), mounted read-only. Not part of
+# `make test`: it needs podman and the network for the image's first build.
+OMNIDIFF_SRC ?= $(CURDIR)
+test-lazygit:
+	python3 scripts/lazygit_e2e/run.py --omnidiff-src "$(OMNIDIFF_SRC)" $(LAZYGIT_E2E_ARGS)
 
 test-python:
 	cd research && uv run pytest -q

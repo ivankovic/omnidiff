@@ -1,0 +1,68 @@
+# This file is part of the OmniDiff code diffing tool.
+#
+# Copyright (C) 2026 Marko Ivankovic
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+# The image scripts/lazygit_e2e/run.py drives lazygit in: git, tmux, lazygit, delta, and a Rust
+# toolchain that builds omnidiff from the checkout mounted into the container. omnidiff is built in
+# here rather than on the host because a binary linked against a newer glibc than the image's does
+# not run in it.
+#
+# Fedora because its own repositories carry a current stable Rust (rustc >= Cargo.toml's
+# rust-version), so nothing but lazygit and delta comes from outside the distribution. Those two
+# are official GitHub release tarballs, each checked against a SHA-256 pinned here before it is
+# unpacked: lazygit's against the release's checksums.txt, itself pinned; delta publishes no
+# checksums file, so its tarballs are pinned to the digests GitHub lists for the release assets.
+FROM registry.fedoraproject.org/fedora:43
+
+RUN dnf -y --setopt=install_weak_deps=False install \
+        cargo rust gcc git-core tmux python3 procps-ng tar gzip curl ncurses \
+    && dnf clean all
+
+ARG LAZYGIT_VERSION=0.66.3
+ARG LAZYGIT_CHECKSUMS_SHA256=31d0cecb257c64d815a022279edfb4ca9a0eb10afdd62a0e96c29e80cbdcd705
+# delta >= 0.20.0 speaks OSC 1717, which is what makes it the known-good renderer here.
+ARG DELTA_VERSION=0.20.1
+ARG DELTA_SHA256_X86_64=50f08c879f84c81ceb220e476491a7f492d2c9c671e79918cc44badf961a6240
+ARG DELTA_SHA256_AARCH64=da7f4338f593572ff426ae153e0870e2fdc72729416eff551b40cdeb67940db8
+
+RUN set -eu; \
+    case "$(uname -m)" in \
+        x86_64) lg_arch=x86_64; delta_triple=x86_64-unknown-linux-gnu; \
+                delta_sha=$DELTA_SHA256_X86_64 ;; \
+        aarch64) lg_arch=arm64; delta_triple=aarch64-unknown-linux-gnu; \
+                 delta_sha=$DELTA_SHA256_AARCH64 ;; \
+        *) echo "no lazygit/delta release pinned for $(uname -m)" >&2; exit 1 ;; \
+    esac; \
+    work=$(mktemp -d); cd "$work"; \
+    lg="lazygit_${LAZYGIT_VERSION}_linux_${lg_arch}.tar.gz"; \
+    base="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}"; \
+    curl -fsSLo checksums.txt "$base/checksums.txt"; \
+    echo "$LAZYGIT_CHECKSUMS_SHA256  checksums.txt" | sha256sum -c -; \
+    curl -fsSLo "$lg" "$base/$lg"; \
+    grep " $lg\$" checksums.txt | sha256sum -c -; \
+    tar -xzf "$lg" lazygit; \
+    install -m 0755 lazygit /usr/local/bin/lazygit; \
+    delta="delta-${DELTA_VERSION}-${delta_triple}"; \
+    curl -fsSLo "$delta.tar.gz" \
+        "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/$delta.tar.gz"; \
+    echo "$delta_sha  $delta.tar.gz" | sha256sum -c -; \
+    tar -xzf "$delta.tar.gz" "$delta/delta"; \
+    install -m 0755 "$delta/delta" /usr/local/bin/delta; \
+    cd /; rm -rf "$work"; \
+    lazygit --version; delta --version
+
+# The checkout is mounted read-only at /src; the build goes to a named volume at /target, and the
+# crates cargo fetches to another at /cargo, so a rerun is an incremental build.
+ENV CARGO_HOME=/cargo CARGO_TARGET_DIR=/target TERM=xterm-256color LANG=C.UTF-8
