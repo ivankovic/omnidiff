@@ -38,6 +38,11 @@
 //!   move into a renamed `impl` is the same construct reshaped (rust-turbopack-module-rule), but
 //!   an expression resurfacing inside a new construct of another kind reads as new code
 //!   (kotlin-refactor-function).
+//!
+//! Cost: whether a subtree is fully unmapped is memoised per node ([`FullyUnmapped`]) and the
+//! cheap hash lookup runs before it, so a long deleted chain (each link a candidate, each walk
+//! the rest of the chain) costs O(n), not O(n × depth). The walks are iterative: a pass that
+//! recursed per tree level overflowed on deep input (100k nested brackets).
 
 use std::collections::HashSet;
 
@@ -103,13 +108,10 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
     let mut claimed_before: HashSet<usize> = HashSet::new();
     let mut claimed_after: HashSet<usize> = HashSet::new();
 
+    let mut before_unmapped = FullyUnmapped::default();
+    let mut after_unmapped = FullyUnmapped::default();
     for (_, _, b) in deleted {
         if claimed_before.contains(&b) {
-            continue;
-        }
-        if !subtree_fully_unmapped(b, before_metadata, &|id| {
-            diff.before_node_map.get(&id) == Some(&0)
-        }) {
             continue;
         }
         let Some(hash) = before_metadata.node_to_full_hash.get(&b) else {
@@ -118,6 +120,11 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         let Some(candidates) = after_metadata.full_hash_to_node.get(hash) else {
             continue;
         };
+        if !before_unmapped.get(b, before_metadata, |id| {
+            diff.before_node_map.get(&id) == Some(&0)
+        }) {
+            continue;
+        }
 
         // Document order, so the earliest of several equally-valid targets wins.
         let mut candidates: Vec<usize> = candidates
@@ -125,9 +132,8 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
             .copied()
             .filter(|a| {
                 !claimed_after.contains(a)
-                    && subtree_fully_unmapped(*a, after_metadata, &|id| {
-                        unpaired(id, &diff.after_node_map)
-                    })
+                    && after_unmapped
+                        .get(*a, after_metadata, |id| unpaired(id, &diff.after_node_map))
             })
             .collect();
         candidates.sort_unstable_by_key(|a| {
@@ -184,6 +190,8 @@ pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
         remap_moved_subtree(b, a, before_metadata, after_metadata, diff);
         claim_subtree(b, before_metadata, &mut claimed_before);
         claim_subtree(a, after_metadata, &mut claimed_after);
+        before_unmapped.mapped(b, before_parents);
+        after_unmapped.mapped(a, after_parents);
     }
 }
 
@@ -298,30 +306,88 @@ fn unpaired(id: usize, map: &rustc_hash::FxHashMap<usize, usize>) -> bool {
     map.get(&id).is_none_or(|&partner| partner == 0)
 }
 
-/// Whether `root` and every node below it pass `free`.
-fn subtree_fully_unmapped(root: usize, meta: &ASTMetadata, free: &impl Fn(usize) -> bool) -> bool {
-    if !free(root) {
-        return false;
+/// Whether a node and every node below it are still free (`before_node_map` says deleted, or
+/// `unpaired`), memoised. Nodes stop being free only through `remap_moved_subtree`, which
+/// [`FullyUnmapped::mapped`] is told about, so an answer stays true until then. `solve` asks
+/// only about unclaimed nodes, and an unclaimed node's subtree holds a remapped node only if it is
+/// an ancestor of a remapped root, which `mapped` marks.
+#[derive(Default)]
+struct FullyUnmapped {
+    memo: rustc_hash::FxHashMap<usize, bool>,
+}
+
+impl FullyUnmapped {
+    /// Whether `root` and every node below it pass `free`, depth-first in child order and
+    /// stopping at the first that does not, as the recursive walk did.
+    fn get(&mut self, root: usize, meta: &ASTMetadata, free: impl Fn(usize) -> bool) -> bool {
+        if let Some(&known) = self.memo.get(&root) {
+            return known;
+        }
+        if !free(root) {
+            self.memo.insert(root, false);
+            return false;
+        }
+        // (node, index of its next child to look at)
+        let mut stack: Vec<(usize, usize)> = vec![(root, 0)];
+        while let Some(&mut (node, ref mut next)) = stack.last_mut() {
+            let children = meta
+                .node_info
+                .get(&node)
+                .map_or(&[][..], |info| &info.children[..]);
+            let Some(&child) = children.get(*next) else {
+                self.memo.insert(node, true);
+                stack.pop();
+                continue;
+            };
+            *next += 1;
+            let child_free = match self.memo.get(&child) {
+                Some(&known) => known,
+                None if free(child) => {
+                    stack.push((child, 0));
+                    continue;
+                }
+                None => {
+                    self.memo.insert(child, false);
+                    false
+                }
+            };
+            if !child_free {
+                // Everything on the stack is an ancestor of a node that is not free.
+                for (ancestor, _) in stack {
+                    self.memo.insert(ancestor, false);
+                }
+                return false;
+            }
+        }
+        true
     }
-    let Some(info) = meta.node_info.get(&root) else {
-        return true;
-    };
-    info.children
-        .iter()
-        .all(|&child| subtree_fully_unmapped(child, meta, free))
+
+    /// `root`'s subtree was just remapped: `root` and its ancestors are no longer fully unmapped.
+    /// Stops at an ancestor already known not to be, whose own ancestors are then known not to be
+    /// or not asked about yet.
+    fn mapped(&mut self, root: usize, parents: &rustc_hash::FxHashMap<usize, usize>) {
+        let mut cur = Some(root);
+        while let Some(node) = cur {
+            if self.memo.insert(node, false) == Some(false) {
+                break;
+            }
+            cur = parents.get(&node).copied();
+        }
+    }
 }
 
 fn claim_subtree(root: usize, meta: &ASTMetadata, claimed: &mut HashSet<usize>) {
-    claimed.insert(root);
-    if let Some(info) = meta.node_info.get(&root) {
-        for &child in &info.children {
-            claim_subtree(child, meta, claimed);
+    let mut stack = vec![root];
+    while let Some(node) = stack.pop() {
+        claimed.insert(node);
+        if let Some(info) = meta.node_info.get(&node) {
+            stack.extend(info.children.iter().copied());
         }
     }
 }
 
 /// Maps two identical subtrees pairwise in lockstep; identical full hashes guarantee identical
-/// shape, so children line up 1:1.
+/// shape, so children line up 1:1. Preorder, children in order, as the recursion it replaced.
 fn remap_moved_subtree(
     b: usize,
     a: usize,
@@ -329,22 +395,23 @@ fn remap_moved_subtree(
     after_meta: &ASTMetadata,
     diff: &mut ASTDiff,
 ) {
-    diff.remove_delete_mapping(b);
-    diff.remove_insert_mapping(a);
-    diff.add_mapping(b, a, ASTMapping::identical(ASTMappingReason::MovedSubtree));
+    let mut stack = vec![(b, a)];
+    while let Some((b, a)) = stack.pop() {
+        diff.remove_delete_mapping(b);
+        diff.remove_insert_mapping(a);
+        diff.add_mapping(b, a, ASTMapping::identical(ASTMappingReason::MovedSubtree));
 
-    let b_children = before_meta
-        .node_info
-        .get(&b)
-        .map(|i| i.children.clone())
-        .unwrap_or_default();
-    let a_children = after_meta
-        .node_info
-        .get(&a)
-        .map(|i| i.children.clone())
-        .unwrap_or_default();
-    for (cb, ca) in b_children.into_iter().zip(a_children) {
-        remap_moved_subtree(cb, ca, before_meta, after_meta, diff);
+        let children = |meta: &ASTMetadata, id: usize| {
+            meta.node_info
+                .get(&id)
+                .map(|info| info.children.clone())
+                .unwrap_or_default()
+        };
+        let pairs: Vec<(usize, usize)> = children(before_meta, b)
+            .into_iter()
+            .zip(children(after_meta, a))
+            .collect();
+        stack.extend(pairs.into_iter().rev());
     }
 }
 
