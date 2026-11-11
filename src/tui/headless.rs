@@ -39,6 +39,14 @@ use crate::tui::actions::DiffSessionData;
 use crate::tui::display_columns;
 use crate::tui::osc1717::{self, Annotation, Section, SectionRecords};
 
+mod alignment;
+mod side_by_side;
+
+pub use side_by_side::{
+    AUTO_FIT_PERCENT, AUTO_MIN_CODE_COLUMNS, Layout, LayoutRequest, MIN_CODE_COLUMNS,
+    resolve_width, terminal_width,
+};
+
 /// Whether `character` is a bidirectional-text control: an embedding, override or isolate, or a
 /// directional mark. Each reorders what is drawn after it, so a name or a line of code can read
 /// differently from what it is (CVE-2021-42574, "Trojan Source").
@@ -422,6 +430,11 @@ impl<'a> SideLines<'a> {
         }
     }
 
+    /// Whether line `i` is a change: omnidiff paints it or git's patch changes it.
+    fn changed(&self, i: usize) -> bool {
+        self.flags[i].any() || self.patch_changed.get(i).copied().unwrap_or(false)
+    }
+
     /// The colored pieces of line `i` ([`line_pieces`]).
     fn pieces(&self, i: usize, use_color: bool) -> Vec<Piece> {
         line_pieces(self.lines[i], &self.spans[i], use_color)
@@ -690,6 +703,28 @@ pub(crate) fn render_annotated_text_diff(
     out
 }
 
+/// [`render_annotated_text_diff`] in the layout `request` asks for: side by side when it asks
+/// for it and it fits (see `side_by_side`), else stacked. `fallback_patch` is git's patch of the
+/// pair for a side-by-side layout too large to align, when `annotation` carries none.
+pub(crate) fn render_laid_out_text_diff(
+    data: &DiffSessionData,
+    use_color: bool,
+    context: usize,
+    annotation: Option<&Annotation>,
+    request: LayoutRequest,
+    fallback_patch: Option<&osc1717::Patch>,
+) -> String {
+    side_by_side::render(
+        data,
+        use_color,
+        context,
+        annotation,
+        fallback_patch,
+        request,
+    )
+    .unwrap_or_else(|| render_annotated_text_diff(data, use_color, context, annotation))
+}
+
 /// The two files of a non-interactive run, each read once: as text if both decode (see
 /// [`crate::code::decode_text`], the test `Code::from_file` applies), else as bytes for the binary
 /// and content reports. Before, each side was read three times - the binary check, the parse, and
@@ -772,6 +807,9 @@ impl Pair {
 /// `record_file` is the OSC 1717 `file` field when records were negotiated (see
 /// `tui::osc1717`): git's patch of the pair is then computed beside the diff, and every row
 /// tagged.
+///
+/// `layout` picks the layout (see `side_by_side`). One too large to align follows git's patch,
+/// which is then started beside the diff even without records.
 pub fn run(
     pair: Pair,
     use_color: bool,
@@ -779,11 +817,23 @@ pub fn run(
     render_options: RenderOptions,
     titles: Option<(PathBuf, PathBuf)>,
     record_file: Option<String>,
+    layout: LayoutRequest,
 ) -> Result<bool> {
     let differed = pair.differed;
     let pending = record_file
         .as_ref()
         .map(|_| osc1717::Patch::start(&pair.before, &pair.after));
+    let too_large_to_align = match &pair.contents {
+        PairContents::Text { before, after } => {
+            osc1717::line_count(before) + osc1717::line_count(after) > alignment::PAIR_CAP
+        }
+        PairContents::Binary { .. } => false,
+    };
+    let fallback = (layout.layout != Layout::Stacked
+        && layout.width.is_some()
+        && pending.is_none()
+        && too_large_to_align)
+        .then(|| osc1717::Patch::start(&pair.before, &pair.after));
     let (mut data, large_residual) = pair.diff(render_options)?;
     let annotation = record_file.map(|file| Annotation {
         file,
@@ -806,11 +856,14 @@ pub fn run(
              usual."
         );
     }
-    write_stdout(&render_annotated_text_diff(
+    let fallback_patch = fallback.and_then(osc1717::PendingPatch::finish);
+    write_stdout(&render_laid_out_text_diff(
         &data,
         use_color,
         context,
         annotation.as_ref(),
+        layout,
+        fallback_patch.as_ref(),
     ))?;
     // Raw bytes, compared at read: `data`'s contents went through `display_safe`, which replaces
     // control characters.
@@ -1513,6 +1566,7 @@ mod tests {
             RenderOptions::FULL,
             None,
             None,
+            LayoutRequest::default(),
         )?);
         Ok(())
     }

@@ -28,8 +28,10 @@
 //!
 //! **Records.** `ESC ] 1717 ; 1 ; type ; new-line ; old-line ; file ESC \`, written as a row's
 //! first bytes, before its gutter and its first SGR, so a host that reads "the nearest record at
-//! or left of a cell" lands on it. headless never wraps a row itself (the host does), so one
-//! record per row is all §6.3 asks.
+//! or left of a cell" lands on it. The stacked layout never wraps a row itself (the host does), so
+//! one record per row is all §6.3 asks. The side-by-side layout (`headless::side_by_side`) has two
+//! halves a row and wraps long lines itself: each half starts with its own record, and each
+//! continuation row repeats it (§6.2, §6.3); everything below holds per half.
 //!
 //! * `f` on every file-header row: `=== before: … ===`, `=== after: … ===`, every line of a
 //!   binary or content notice, and the "could not diff" line. The summary label (`No changes`,
@@ -378,6 +380,13 @@ pub struct SectionRecords<'a> {
 }
 
 impl Annotation {
+    /// git's patch, if it fits a pair of `old_lines` and `new_lines` lines.
+    pub fn fitting_patch(&self, old_lines: usize, new_lines: usize) -> Option<&Patch> {
+        self.patch
+            .as_ref()
+            .filter(|patch| patch.fits(old_lines, new_lines))
+    }
+
     /// The records of `section`, for a pair of `old_lines` and `new_lines` lines. A patch that
     /// does not fit the counts is dropped.
     pub fn section(
@@ -388,10 +397,7 @@ impl Annotation {
     ) -> SectionRecords<'_> {
         SectionRecords {
             file: &self.file,
-            patch: self
-                .patch
-                .as_ref()
-                .filter(|patch| patch.fits(old_lines, new_lines)),
+            patch: self.fitting_patch(old_lines, new_lines),
             context: self.context,
             section,
             old_lines,
@@ -857,6 +863,147 @@ mod tests {
             let stripped = render_annotated_text_diff(&data, false, CONTEXT, Some(&bare))
                 .replace(&file_record(file), "");
             assert_eq!(stripped, plain, "{name}");
+        }
+    }
+
+    /// Every record of each row with whether it is the row's first bytes (a left half, or a whole
+    /// row) or follows the divider (a right half).
+    fn records_of_side_by_side_rows(output: &str) -> Vec<Vec<(bool, Parsed)>> {
+        const OPEN: &str = "\u{1b}]1717;";
+        output
+            .lines()
+            .map(|row| {
+                let mut records = Vec::new();
+                let mut from = 0;
+                while let Some(at) = row[from..].find(OPEN).map(|at| from + at) {
+                    let rest = &row[at + OPEN.len()..];
+                    let end = rest.find("\u{1b}\\").expect("terminated by ST");
+                    let fields: Vec<&str> = rest[..end].splitn(5, ';').collect();
+                    assert_eq!(fields.len(), 5, "five fields: {row:?}");
+                    assert_eq!(fields[0], "1");
+                    let number = |field: &str| (!field.is_empty()).then(|| field.parse().unwrap());
+                    records.push((
+                        at == 0,
+                        Parsed {
+                            kind: fields[1].chars().next().unwrap(),
+                            new: number(fields[2]),
+                            old: number(fields[3]),
+                            file: fields[4].to_string(),
+                        },
+                    ));
+                    from = at + OPEN.len() + end + 2;
+                }
+                records
+            })
+            .collect()
+    }
+
+    /// The side-by-side layout over the same sample (§6.2, §6.3): every line git deletes on the
+    /// left and every line it adds on the right, each on one run of rows (its primary row and its
+    /// wrapped continuations, each repeating the record) and nowhere else; `c` on either half;
+    /// one `f`, on the header row; `h` only at the start of a row. Wide and narrow, so lines wrap.
+    #[test]
+    fn side_by_side_records_name_every_line_of_gits_patch_on_one_run_of_rows() {
+        use crate::tui::headless::{Layout, LayoutRequest, Pair, render_laid_out_text_diff};
+        const CONTEXT: usize = 3;
+        if Command::new("git").arg("--version").output().is_err() {
+            eprintln!("no git on PATH; skipped");
+            return;
+        }
+        let file = "dir/the file;1.txt";
+        for (name, extension, before, after) in sample_pairs() {
+            let dir = tempfile::tempdir().unwrap();
+            let (old, new) = (
+                dir.path().join(format!("before{extension}")),
+                dir.path().join(format!("after{extension}")),
+            );
+            std::fs::write(&old, &before).unwrap();
+            std::fs::write(&new, &after).unwrap();
+            let patch = Patch::start(&old, &new).finish();
+            let pair = Pair::read(&old, &new).unwrap();
+            let (data, _) = pair.diff(crate::diff::text::RenderOptions::FULL).unwrap();
+            let annotation = Annotation {
+                file: file.to_string(),
+                patch,
+                context: CONTEXT,
+            };
+            let (expected_deleted, expected_added) = contexted_patch(&old, &new, CONTEXT);
+            let new_lines = line_count(&after);
+            for width in [160, 72] {
+                let output = render_laid_out_text_diff(
+                    &data,
+                    false,
+                    CONTEXT,
+                    Some(&annotation),
+                    LayoutRequest {
+                        layout: Layout::SideBySide,
+                        width: Some(width),
+                    },
+                    None,
+                );
+                let rows: Vec<&str> = output.lines().collect();
+                let records = records_of_side_by_side_rows(&output);
+                let header = rows
+                    .iter()
+                    .position(|row| row.contains('┬'))
+                    .unwrap_or_else(|| panic!("{name} {width}: not side by side\n{output}"));
+                // Each line's rows, by its record.
+                let (mut deleted, mut added) = (
+                    BTreeMap::<(usize, usize), Vec<usize>>::new(),
+                    BTreeMap::<usize, Vec<usize>>::new(),
+                );
+                let mut files = 0;
+                for (index, row_records) in records.iter().enumerate() {
+                    let (starts, follows): (Vec<_>, Vec<_>) =
+                        row_records.iter().partition(|(at_start, _)| *at_start);
+                    assert!(starts.len() <= 1 && follows.len() <= 1, "{name}: {rows:?}");
+                    for (at_start, record) in row_records {
+                        assert_eq!(record.file, file, "{name}");
+                        match (record.kind, at_start) {
+                            ('f', true) => {
+                                assert_eq!(index, header, "{name}");
+                                files += 1;
+                            }
+                            ('h', true) => {
+                                assert!((1..=new_lines).contains(&record.new.unwrap()), "{name}")
+                            }
+                            ('d', true) => deleted
+                                .entry((record.old.unwrap(), record.new.unwrap()))
+                                .or_default()
+                                .push(index),
+                            ('a', false) => {
+                                assert_eq!(record.old, None, "{name}");
+                                added.entry(record.new.unwrap()).or_default().push(index);
+                            }
+                            ('c', _) => {
+                                let new = record.new.unwrap();
+                                assert!((1..=new_lines).contains(&new), "{name}: c {new}");
+                                assert!(!expected_added.contains(&new), "{name}: c on an add");
+                            }
+                            (kind, at_start) => panic!(
+                                "{name}: {kind} {}: {:?}",
+                                if *at_start {
+                                    "first"
+                                } else {
+                                    "after the divider"
+                                },
+                                rows[index]
+                            ),
+                        }
+                    }
+                }
+                assert_eq!(files, 1, "{name}: one f\n{output}");
+                let one_run = |indices: &Vec<usize>| indices.windows(2).all(|w| w[1] == w[0] + 1);
+                assert!(
+                    deleted.values().chain(added.values()).all(one_run),
+                    "{name} {width}: a line's rows are not one run\n{output}"
+                );
+                let deleted: BTreeMap<usize, usize> =
+                    deleted.keys().map(|&(old, new)| (old, new)).collect();
+                assert_eq!(deleted, expected_deleted, "{name} {width}\n{output}");
+                let added: BTreeSet<usize> = added.keys().copied().collect();
+                assert_eq!(added, expected_added, "{name} {width}\n{output}");
+            }
         }
     }
 

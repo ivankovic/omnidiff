@@ -111,6 +111,18 @@ enum Mode {
     Json,
 }
 
+/// How headless output lays out the two sides; see `tui::headless::Layout`.
+#[derive(clap::ValueEnum, Clone, Copy, PartialEq, Eq, Debug, Default)]
+enum LayoutChoice {
+    /// Side by side when each column has room and nearly every shown line fits, else stacked.
+    Auto,
+    /// The before side, then the after side.
+    #[default]
+    Stacked,
+    /// The two sides in two columns, long lines wrapped, unless the columns are too narrow.
+    SideBySide,
+}
+
 /// The exit status of a failed run: what `--help` documents, and distinct from `--exit-code`'s 1.
 const EXIT_FAILURE: i32 = 2;
 
@@ -211,6 +223,19 @@ struct Args {
     #[arg(long, value_name = "N", default_value_t = tui::headless::CONTEXT_LINES)]
     context: usize,
 
+    /// How headless output lays out a text diff. `side-by-side` puts the before side on the left
+    /// and the after side on the right, the lines omnidiff matched on one row and long lines
+    /// wrapped, when each column has room for at least 20 columns of code; `auto` does so only
+    /// with 40 and nearly every shown line fitting. Otherwise, and when the width is unknown,
+    /// stacked.
+    #[arg(long, value_enum, value_name = "LAYOUT", default_value_t = LayoutChoice::Stacked)]
+    layout: LayoutChoice,
+
+    /// The width to lay headless output out in, in columns. Without it: `$COLUMNS`, then the
+    /// terminal's width (stdout's, else the controlling terminal's). Read only by `--layout`.
+    #[arg(long, value_name = "N")]
+    width: Option<usize>,
+
     /// Open on the git review picker - the repository around the current directory's unstaged
     /// files, staged files and recent commits - instead of an empty viewer (the `G` key, at
     /// startup). TUI only; takes no BEFORE/AFTER pair.
@@ -307,6 +332,21 @@ fn render_option_flags(args: &Args) -> Option<omnidiff::diff::text::RenderOption
 /// The render options a headless or JSON run paints with.
 fn render_options(args: &Args) -> omnidiff::diff::text::RenderOptions {
     render_option_flags(args).unwrap_or_else(omnidiff::tui::theme::load_render_options)
+}
+
+/// The layout headless output asks for; the width is looked up only when it can matter.
+fn layout_request(args: &Args) -> tui::headless::LayoutRequest {
+    let layout = match args.layout {
+        LayoutChoice::Stacked => tui::headless::Layout::Stacked,
+        LayoutChoice::Auto => tui::headless::Layout::Auto,
+        LayoutChoice::SideBySide => tui::headless::Layout::SideBySide,
+    };
+    tui::headless::LayoutRequest {
+        layout,
+        width: (layout != tui::headless::Layout::Stacked)
+            .then(|| tui::headless::terminal_width(args.width))
+            .flatten(),
+    }
 }
 
 /// Whether headless output should be ANSI-colored. `Auto` deliberately ignores whether stdout is a
@@ -409,6 +449,7 @@ fn run_non_interactive(
             render_options(args),
             display_names(&args.paths),
             record_file.map(str::to_string),
+            layout_request(args),
         )?
     };
     Ok(exit_code_for(
@@ -1010,6 +1051,8 @@ mod tests {
             color: ColorChoice::Auto,
             exit_code: false,
             context: tui::headless::CONTEXT_LINES,
+            layout: LayoutChoice::Stacked,
+            width: None,
             review: false,
             tui_tick_rate: 4.0,
             tui_frame_rate: 60.0,

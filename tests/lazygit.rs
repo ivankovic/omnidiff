@@ -145,6 +145,56 @@ fn lazygits_render_starts_with_the_handshake_and_tags_the_changed_lines() {
     }
 }
 
+/// lazygit's render with `--layout side-by-side`: the handshake first, then two columns, each
+/// half of a row starting with its own record (§6.2). With `--width` the layout is that wide;
+/// without it, as wide as the pseudo-terminal lazygit gives its renderer.
+#[test]
+fn lazygits_side_by_side_render_tags_each_half_of_a_row() {
+    let dir = pair();
+    let (before, after) = (dir.path().join("before.rs"), dir.path().join("after.rs"));
+    let env = [
+        ("BEFORE", before.as_os_str()),
+        ("AFTER", after.as_os_str()),
+        ("OSC1717", OsStr::new("V1")),
+    ];
+    let git_form = r#"src/main.rs "$BEFORE" 0000000 100644 "$AFTER" 0000000 100644"#;
+    for (width_flag, width) in [("--width 100", 100), ("", 120)] {
+        let (success, output) = on_a_terminal(
+            &format!("--context 3 --layout side-by-side {width_flag} {git_form}"),
+            &env,
+        );
+        assert!(success, "{output:?}");
+        assert!(output.starts_with(HANDSHAKE), "{output:?}");
+        let record = |kind: &str, new: &str, old: &str| {
+            format!("\u{1b}]1717;1;{kind};{new};{old};src/main.rs\u{1b}\\")
+        };
+        let rows: Vec<&str> = output[HANDSHAKE.len()..].lines().collect();
+        let header = rows[0]
+            .strip_prefix(record("f", "", "").as_str())
+            .expect("the header row carries the f");
+        assert!(
+            header.starts_with("── before: src/main.rs ─")
+                && header.contains("┬─ after: src/main.rs ─"),
+            "{header}"
+        );
+        assert_eq!(header.chars().count(), width, "{header}");
+        // `fn main() {` is context on both halves; `a();` -> `b();` one row, `d` then `a`.
+        assert!(
+            rows[1].starts_with(&record("c", "1", ""))
+                && rows[1].contains(&format!("│{}", record("c", "1", ""))),
+            "{:?}",
+            rows[1]
+        );
+        assert!(
+            rows[2].starts_with(&record("d", "2", "2"))
+                && rows[2].contains(&format!("│{}", record("a", "2", ""))),
+            "{:?}",
+            rows[2]
+        );
+        assert!(rows[2].contains("a();") && rows[2].contains("b();"));
+    }
+}
+
 /// Under lazygit the `M` panel's saved options decide the painting, as in any headless run, and the
 /// records stay what git's patch says: the patch lazygit stages from has every whitespace change
 /// whatever its own ignore-whitespace toggle, so a line Minimal leaves unpainted is still one it
