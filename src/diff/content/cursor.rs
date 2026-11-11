@@ -298,7 +298,7 @@ pub struct Hyprcursor {
 
 impl Hyprcursor {
     pub fn new(bytes: &[u8]) -> Result<Self> {
-        let zip = Zip::new(bytes.to_vec())?;
+        let zip = Zip::new(bytes)?;
         let mut sizes = BTreeMap::new();
         if let Some(meta) = HYPRCURSOR_META.iter().find_map(|name| zip.find(name)) {
             let meta = String::from_utf8_lossy(&zip.read(meta)?).into_owned();
