@@ -36,7 +36,7 @@ jobs:
     name: create draft release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Extract this version's section from CHANGELOG.md
         env:
@@ -64,7 +64,7 @@ jobs:
           EOF
           cat release-notes.md
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
@@ -112,13 +112,14 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: release-${{ matrix.target }}
 
@@ -145,13 +146,13 @@ jobs:
       # for both architectures, so no per-architecture toolchain package is needed.
       - name: Install cargo-zigbuild
         if: matrix.zig
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2
         with:
           tool: cargo-zigbuild
 
       - name: Install zig
         if: matrix.zig
-        uses: mlugg/setup-zig@v2
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2
 
       - name: Build (zig)
         if: matrix.zig
@@ -201,11 +202,11 @@ jobs:
 
       # Signed provenance (which workflow, commit and runner produced this file), verifiable with
       # `gh attestation verify omnidiff-<target>.tar.gz --repo ivankovic/omnidiff`.
-      - uses: actions/attest-build-provenance@v4
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: omnidiff-${{ matrix.target }}.*
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
@@ -218,10 +219,16 @@ jobs:
     name: completions + man page
     needs: release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: release-assets
 
@@ -237,7 +244,11 @@ jobs:
           ./target/release/omnidiff util completions elvish > dist/completions/omnidiff.elv
           tar czf omnidiff-completions-and-man.tar.gz -C dist .
 
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: omnidiff-completions-and-man.tar.gz
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
@@ -270,9 +281,11 @@ jobs:
             # binary. Both are native operations, so the runner is the cheaper answer.
             os: ubuntu-22.04-arm
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: release-deb-${{ matrix.arch }}
 
@@ -312,11 +325,11 @@ jobs:
             || { echo "::error::.deb declares Architecture $got, expected ${{ matrix.arch }}"; exit 1; }
           echo "Depends: $(dpkg-deb -f omnidiff_${{ matrix.arch }}.deb Depends)"
 
-      - uses: actions/attest-build-provenance@v4
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: omnidiff_${{ matrix.arch }}.deb
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
@@ -333,6 +346,10 @@ jobs:
     name: SHA256SUMS + publish
     runs-on: ubuntu-latest
     needs: [build, assets, deb]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Collect and hash every release asset
         env:
@@ -342,6 +359,14 @@ jobs:
           set -euo pipefail
           mkdir -p assets && cd assets
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --clobber
+          # Every asset must carry this workflow's provenance before it is hashed: a file swapped
+          # into the draft by anything else (a leaked token, a third-party action) fails here
+          # instead of being vouched for by SHA256SUMS.txt.
+          for asset in $(ls | grep -vFx SHA256SUMS.txt); do
+            gh attestation verify "$asset" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" > /dev/null \
+              || { echo "::error::$asset has no provenance from release.yml"; exit 1; }
+          done
           # Sorted so the file's line order is stable between runs and a diff between two releases
           # is readable. SHA256SUMS.txt itself is excluded: on a re-run `gh release download`
           # fetches the previous run's copy along with everything else, and it would otherwise be
@@ -349,7 +374,13 @@ jobs:
           sha256sum $(ls | grep -vFx SHA256SUMS.txt | sort) > ../SHA256SUMS.txt
           cat ../SHA256SUMS.txt
 
-      - uses: softprops/action-gh-release@v2
+      # SHA256SUMS.txt is what the Homebrew formula trusts, so it is signed too:
+      # `gh attestation verify SHA256SUMS.txt --repo ivankovic/omnidiff`.
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
@@ -377,7 +408,7 @@ jobs:
     if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Render the formula from this release's checksums
         env:
@@ -398,7 +429,12 @@ jobs:
             echo "::warning::HOMEBREW_TAP_TOKEN is not set; the formula was rendered but not pushed"
             exit 0
           fi
-          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/ivankovic/homebrew-omnidiff.git" tap
+          # The token goes in a header for this one clone, as actions/checkout does, not in the
+          # URL, where it would be saved in tap/.git/config and echoed by any git error.
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TAP_TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=$auth" \
+            clone --depth 1 https://github.com/ivankovic/homebrew-omnidiff.git tap
           mkdir -p tap/Formula
           cp rendered/omnidiff.rb tap/Formula/omnidiff.rb
           cd tap
@@ -410,7 +446,7 @@ jobs:
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
               commit -m "omnidiff $TAG"
-          git push
+          git -c "http.https://github.com/.extraheader=$auth" push
 
   # Rebuild the apt repository that GitHub Pages serves, now that the release is public: pages.yml
   # pools the .debs of the last few non-draft releases, so a dispatch before `checksums` publishes

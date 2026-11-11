@@ -35,10 +35,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# Per job below; nothing by default.
+permissions: {}
 
 # Only one Pages deployment at a time; a newer push should win over one still in flight rather
 # than queue behind it.
@@ -47,28 +45,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  # Everything that builds or runs this repository's Rust code, and with it every dependency's
+  # build script. It never sees the apt signing key: that lives in `apt` below, which runs no
+  # cargo and no third-party action, so nothing compiled here can read it.
+  site:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: pages
 
       - name: Generate site
-        run: cargo run --release --features test-fixtures --bin generate_mapping_site -- --out site
+        run: cargo run --locked --release --features test-fixtures --bin generate_mapping_site -- --out site
 
       # Into a subdirectory of the same artifact, after the step above has wiped and recreated
       # `site`. Needs GNU diff on PATH (ubuntu-latest has it): every case is baked once as `diff`
       # marks it, by running the real tool.
       - name: Generate showcase
-        run: cargo run --release --features test-fixtures --bin generate_showcase -- --out site/showcase
+        run: cargo run --locked --release --features test-fixtures --bin generate_showcase -- --out site/showcase
 
-      # Last of the three, and that ordering is load-bearing: `generate_mapping_site` wipes and
-      # recreates `site`, so an apt tree built before it would simply be deleted.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: site
+          path: site
+          retention-days: 1
+
+  apt:
+    needs: site
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # `gh attestation verify` on each .deb.
+      attestations: read
+    steps:
+      # The one job holding the signing key keeps no token on disk either.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Into `site`, which `site` above built and wiped first; the apt tree is added under it.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: site
+          path: site
+
       #
       # Built from the .deb assets of recent releases, never from this checkout. What users
       # install through apt has to be the exact package the release workflow attached and
@@ -140,22 +168,37 @@ jobs:
             fi
           done
 
+          # Only a package release.yml built is signed into the repository: a .deb attached to a
+          # release by anything else (a leaked token, a hand upload) is left out. Releases from
+          # before provenance was recorded (v0.1.x, still named codediff) drop out with a warning.
+          for deb in apt-debs/*/*.deb; do
+            [ -e "$deb" ] || continue
+            if ! gh attestation verify "$deb" --repo "$GITHUB_REPOSITORY" \
+                   --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" > /dev/null; then
+              echo "::warning::$deb has no provenance from release.yml - left out of the apt repository"
+              rm -f "$deb"
+            fi
+          done
+
           scripts/build_apt_repo.sh --debs apt-debs --out site/apt
 
-      - uses: actions/configure-pages@v6
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
       # upload-pages-artifact drops dotfiles; nothing in site is one, and Pages from an artifact
       # never runs Jekyll.
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: site
 
   deploy:
-    needs: build
+    needs: apt
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
