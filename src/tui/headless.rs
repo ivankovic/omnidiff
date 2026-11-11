@@ -17,6 +17,13 @@
 
 //! Non-interactive counterpart to the TUI: prints a diff as text, for when stdout is not a
 //! terminal (git's pager, pipes, CI) or `--headless` is given.
+//!
+//! Everything printed that a hostile commit chooses goes through one of two filters before it
+//! reaches the terminal. File *contents* went through `app::display_safe`, which must keep every
+//! byte offset. *Names* - paths, archive member keys, error messages that carry them - go through
+//! [`printable`], which may lengthen them: a control character or a bidi override becomes a
+//! visible escape (`\x1b`, `\u{202e}`), so a name can neither drive the terminal nor forge a
+//! report line with an embedded newline.
 
 use std::path::{Path, PathBuf};
 
@@ -31,6 +38,44 @@ use crate::diff::text::{
 use crate::tui::actions::DiffSessionData;
 use crate::tui::app::compute_diff_with_options;
 use crate::tui::display_columns;
+
+/// Whether `character` is a bidirectional-text control: an embedding, override or isolate, or a
+/// directional mark. Each reorders what is drawn after it, so a name or a line of code can read
+/// differently from what it is (CVE-2021-42574, "Trojan Source").
+pub(crate) fn is_bidi_control(character: char) -> bool {
+    matches!(
+        character,
+        '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}'
+    )
+}
+
+/// `name` as it is safe to print: C0 controls (newline and tab included), DEL, the C1 controls
+/// (U+0080-U+009F) and the bidi controls of [`is_bidi_control`] written as visible escapes -
+/// `\n`, `\x1b`, `\u{9b}`, `\u{202e}` - and everything else untouched. For names only (paths,
+/// member keys, messages that quote them), never for contents whose offsets must hold.
+pub fn printable(name: &str) -> std::borrow::Cow<'_, str> {
+    let unsafe_char = |c: char| c.is_control() || is_bidi_control(c);
+    if !name.contains(unsafe_char) {
+        return std::borrow::Cow::Borrowed(name);
+    }
+    let mut out = String::with_capacity(name.len() + 8);
+    for character in name.chars() {
+        match character {
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if c.is_ascii_control() => out.push_str(&format!("\\x{:02x}", c as u32)),
+            c if unsafe_char(c) => out.push_str(&format!("\\u{{{:x}}}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    std::borrow::Cow::Owned(out)
+}
+
+/// [`printable`] for a path, through its lossy `display()`.
+pub fn printable_path(path: &Path) -> String {
+    printable(&path.display().to_string()).into_owned()
+}
 
 /// SGR grey for chrome (gutter, moved-chunk box). `90` rather than `37`: it is the one neutral
 /// legible on both light and dark terminals.
@@ -431,9 +476,15 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
             )
         },
     );
-    out.push_str(&format!("=== before: {} ===\n", data.before_path.display()));
+    out.push_str(&format!(
+        "=== before: {} ===\n",
+        printable_path(&data.before_path)
+    ));
     out.push_str(&before);
-    out.push_str(&format!("=== after: {} ===\n", data.after_path.display()));
+    out.push_str(&format!(
+        "=== after: {} ===\n",
+        printable_path(&data.after_path)
+    ));
     out.push_str(&after);
     out
 }
@@ -1002,6 +1053,40 @@ mod tests {
             text.starts_with("\u{1b}[1mNo changes - files are identical\u{1b}[0m\n\n"),
             "the header should be bold, not colored, when use_color is on: {text}"
         );
+    }
+
+    #[test]
+    fn printable_escapes_controls_newlines_and_bidi_and_leaves_the_rest() {
+        assert_eq!(printable("src/a.rs"), "src/a.rs");
+        assert!(matches!(
+            printable("é/中.rs"),
+            std::borrow::Cow::Borrowed(_)
+        ));
+        assert_eq!(
+            printable("a\u{1b}]0;x\u{7}b\nc\td\u{7f}"),
+            "a\\x1b]0;x\\x07b\\nc\\td\\x7f"
+        );
+        assert_eq!(printable("\u{9b}2J"), "\\u{9b}2J");
+        assert_eq!(
+            printable("x\u{202e}gpj.exe\u{2066}\u{200f}"),
+            "x\\u{202e}gpj.exe\\u{2066}\\u{200f}"
+        );
+    }
+
+    /// A path a commit chooses is printed in the side headers, so it is escaped there.
+    #[test]
+    fn a_hostile_path_cannot_reach_the_terminal_through_a_header() {
+        let mut data = sample_data();
+        data.before_path = PathBuf::from("a\u{1b}[2J.rs");
+        data.after_path = PathBuf::from("b.rs\n=== after: forged ===");
+        let text = render_text_diff(&data, false, CONTEXT_LINES);
+        assert!(!text.contains('\u{1b}'), "{text:?}");
+        assert!(text.contains("=== before: a\\x1b[2J.rs ===\n"), "{text}");
+        assert!(
+            text.contains("=== after: b.rs\\n=== after: forged === ===\n"),
+            "{text}"
+        );
+        assert_eq!(text.matches("\n=== after:").count(), 1, "{text}");
     }
 
     #[test]

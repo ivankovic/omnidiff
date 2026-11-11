@@ -227,6 +227,7 @@ pub(crate) fn editor_command(path: &Path, line: usize) -> (String, std::process:
         .or_else(|| set("EDITOR"))
         .unwrap_or_else(|| "vi".to_string());
     let line_arg = format!("+{line}");
+    let path = editor_path_argument(path);
     #[cfg(unix)]
     let command = {
         let mut command = std::process::Command::new("sh");
@@ -235,17 +236,29 @@ pub(crate) fn editor_command(path: &Path, line: usize) -> (String, std::process:
             .arg(format!("{editor} \"$@\""))
             .arg(&editor)
             .arg(line_arg)
-            .arg(path);
+            .arg(&path);
         command
     };
     #[cfg(not(unix))]
     let command = {
         let mut words = editor.split_whitespace();
         let mut command = std::process::Command::new(words.next().unwrap_or("vi"));
-        command.args(words).arg(line_arg).arg(path);
+        command.args(words).arg(line_arg).arg(&path);
         command
     };
     (editor, command)
+}
+
+/// `path` as the editor's file argument: a relative one gets a leading `./`, so a file a commit
+/// names `+!rm -rf ~` or `-c...` is still a file to vi, vim, nvim, emacs and nano rather than an ex
+/// command or an option. Not `--`: the `+line` must come before the file, and not every editor
+/// takes `--`; `./` means the same file to all of them.
+fn editor_path_argument(path: &Path) -> PathBuf {
+    if path.is_relative() {
+        Path::new(".").join(path)
+    } else {
+        path.to_path_buf()
+    }
 }
 
 /// Ctrl-C, which raw mode (no ISIG) delivers as an ordinary `Char('c')` rather than SIGINT. Quits
@@ -974,19 +987,9 @@ impl App {
             self.member_workspace = Some(review::Workspace::new()?);
         }
         let workspace = self.member_workspace.as_ref().expect("created just above");
-        // A member's path is the archive's say: no `..` or root may leave the workspace.
-        let safe: String = key
-            .split('/')
-            .filter(|part| !part.is_empty() && *part != "." && *part != "..")
-            .collect::<Vec<_>>()
-            .join("/");
-        let safe = if safe.is_empty() {
-            "member".to_string()
-        } else {
-            safe
-        };
-        let before_path = workspace.write("before", &safe, before.as_bytes())?;
-        let after_path = workspace.write("after", &safe, after.as_bytes())?;
+        // A member's path is the archive's say; `Workspace::write` keeps it inside the workspace.
+        let before_path = workspace.write("before", &key, before.as_bytes())?;
+        let after_path = workspace.write("after", &key, after.as_bytes())?;
         let viewer = self
             .content_viewer
             .take()
@@ -1709,25 +1712,35 @@ fn assemble_diff_session_data(
     })
 }
 
-/// Replaces every ASCII control character except line terminators and tabs with a space, for
-/// text a front end draws. Written raw, a control character moves the real terminal cursor away
-/// from the cell `ratatui` believes it is at, corrupting everything drawn after it; a tab is kept
-/// because every renderer expands it to its tab stop (`tui::display_columns`).
+/// Neutralises every character that would drive the terminal rather than be drawn, for text a
+/// front end shows: each ASCII control character except line terminators and tabs becomes a space,
+/// each C1 control (U+0080-U+009F, which some terminals read as `ESC [`, `ESC ]` and the rest)
+/// becomes `¿`, and each bidi control (`headless::is_bidi_control`, which reorders what follows
+/// it, "Trojan Source") becomes `�`. Written raw, a control character moves the real terminal
+/// cursor away from the cell `ratatui` believes it is at, corrupting everything drawn after it; a
+/// tab is kept because every renderer expands it to its tab stop (`tui::display_columns`).
 ///
-/// Offset-preserving: every substituted character is one UTF-8 byte, like the space, so ranges
-/// computed against the original text stay valid. That is why it is `is_ascii_control` and not
-/// `is_control`, whose C1 code points are two bytes. A `\r` before `\n` is part of the CRLF
-/// terminator and is kept, since the renderers drop it where they split rows; as a space it would
-/// be a phantom trailing column.
-fn display_safe(text: &str) -> String {
+/// Offset-preserving: every substitute is exactly as many UTF-8 bytes as what it replaces - a
+/// one-byte space for an ASCII control, the two-byte `¿` for a two-byte C1 code point, the
+/// three-byte U+FFFD for a three-byte bidi control - and one character for one, so byte ranges
+/// and character counts computed against the original text stay valid. A `\r` before `\n` is
+/// part of the CRLF terminator and is kept, since the renderers drop it where they split rows; as
+/// a space it would be a phantom trailing column.
+pub(crate) fn display_safe(text: &str) -> String {
     let bytes = text.as_bytes();
     text.char_indices()
         .map(|(index, character)| {
             let kept = character == '\n'
                 || character == '\t'
                 || (character == '\r' && bytes.get(index + 1) == Some(&b'\n'));
-            if !kept && character.is_ascii_control() {
+            if kept {
+                character
+            } else if character.is_ascii_control() {
                 ' '
+            } else if character.is_control() {
+                '\u{bf}'
+            } else if crate::tui::headless::is_bidi_control(character) {
+                '\u{fffd}'
             } else {
                 character
             }
@@ -2458,6 +2471,8 @@ mod tests {
         }
         let (editor, mut command) = editor_command(Path::new("/tmp/a file.rs"), 7);
         let output = command.output().expect("run sh");
+        let (_, mut relative) = editor_command(Path::new("+!touch pwned"), 3);
+        let relative = relative.output().expect("run sh");
         unsafe {
             std::env::remove_var("VISUAL");
             std::env::remove_var("EDITOR");
@@ -2468,6 +2483,29 @@ mod tests {
             String::from_utf8_lossy(&output.stdout),
             "+7|/tmp/a file.rs|"
         );
+        assert_eq!(
+            String::from_utf8_lossy(&relative.stdout),
+            "+3|./+!touch pwned|",
+            "a relative path that looks like an ex command is made a path"
+        );
+    }
+
+    #[test]
+    fn a_relative_editor_path_cannot_be_read_as_a_command_or_an_option() {
+        assert_eq!(
+            editor_path_argument(Path::new("+!cmd")),
+            Path::new(".").join("+!cmd")
+        );
+        assert_eq!(
+            editor_path_argument(Path::new("-x.rs")),
+            Path::new(".").join("-x.rs")
+        );
+        assert_eq!(
+            editor_path_argument(Path::new("src/a.rs")),
+            Path::new(".").join("src/a.rs")
+        );
+        let absolute = std::env::temp_dir().join("a.rs");
+        assert_eq!(editor_path_argument(&absolute), absolute);
     }
 
     #[test]
@@ -3594,13 +3632,22 @@ mod tests {
         Ok(())
     }
 
-    /// A C1 code point is two UTF-8 bytes; replacing it with a space would shift offsets.
+    /// A C1 code point is two UTF-8 bytes and a bidi control three; each is replaced by a
+    /// visible character of the same length, so no offset shifts.
     #[test]
-    fn display_safe_leaves_multi_byte_control_code_points_alone() {
-        let text = "a\u{9c}b\x07\n";
+    fn display_safe_neutralises_c1_and_bidi_controls_without_moving_an_offset() {
+        let text = "a\u{9b}b\u{9d}\x07\u{202e}c\u{2066}\u{200f}\n";
         let safe = display_safe(text);
-        assert_eq!(safe, "a\u{9c}b \n");
+        assert_eq!(safe, "a\u{bf}b\u{bf} \u{fffd}c\u{fffd}\u{fffd}\n");
         assert_eq!(safe.len(), text.len());
+        assert_eq!(safe.chars().count(), text.chars().count());
+        let boundaries = |s: &str| s.char_indices().map(|(i, _)| i).collect::<Vec<_>>();
+        assert_eq!(boundaries(&safe), boundaries(text));
+        assert_eq!(
+            display_safe("é ü 中"),
+            "é ü 中",
+            "ordinary text is untouched"
+        );
     }
 
     #[test]

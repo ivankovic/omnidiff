@@ -38,7 +38,7 @@ use ratatui::{
 use unicode_width::UnicodeWidthChar;
 
 use crate::diff::text::ranges_for_options;
-use crate::tui::app::compute_diff_of_texts;
+use crate::tui::app::{compute_diff_of_texts, display_safe};
 use crate::tui::headless::{CONTEXT_LINES, render_text_diff};
 
 /// Texts larger than this are diffed by lines only: a pane is no place to wait for the AST diff of
@@ -181,7 +181,9 @@ impl TextPairView {
 }
 
 /// A line of `render_text_diff`'s output as styled spans: its ANSI SGR codes (the handful headless
-/// writes) become colors, everything else is text.
+/// writes, `ESC [ ... m`) become colors, everything else is text. Anything else that starts with
+/// `ESC` is dropped with the `ESC` alone, never sliced into: the line may carry a member key or a
+/// line of a member, and neither is trusted to be well-formed.
 fn ansi_line(text: &str) -> Line<'static> {
     let mut spans = Vec::new();
     let mut style = Style::default();
@@ -190,11 +192,18 @@ fn ansi_line(text: &str) -> Line<'static> {
         if start > 0 {
             spans.push(Span::styled(rest[..start].to_string(), style));
         }
-        let Some(end) = rest[start..].find('m') else {
-            rest = &rest[start + 1..];
+        let after_escape = &rest[start + 1..];
+        // `ESC [`, then parameters (digits and `;`), then `m`: an SGR. Both delimiters are ASCII,
+        // so every slice below is on a char boundary.
+        let sgr = after_escape.strip_prefix('[').and_then(|body| {
+            let end = body.find(|c: char| !(c.is_ascii_digit() || c == ';'))?;
+            (body.as_bytes()[end] == b'm').then(|| (&body[..end], &body[end + 1..]))
+        });
+        let Some((parameters, after)) = sgr else {
+            rest = after_escape;
             continue;
         };
-        for code in rest[start + 2..start + end].split(';') {
+        for code in parameters.split(';') {
             style = match code {
                 "0" | "" => Style::default(),
                 "1" => style.add_modifier(Modifier::BOLD),
@@ -205,7 +214,7 @@ fn ansi_line(text: &str) -> Line<'static> {
                 _ => style,
             };
         }
-        rest = &rest[start + end + 1..];
+        rest = after;
     }
     if !rest.is_empty() {
         spans.push(Span::styled(rest.to_string(), style));
@@ -301,12 +310,14 @@ fn wrap(lines: &[Line<'static>], width: usize) -> (Vec<Line<'static>>, Vec<usize
 }
 
 /// A plain line diff, rendered as `render_text_diff` renders one, for texts too large for the AST
-/// diff: each side's lines, changed ones colored whole.
+/// diff: each side's lines, changed ones colored whole. The lines go through `display_safe`, as
+/// `render_text_diff`'s do, so no `ESC` of the member's own reaches `ansi_line` or the terminal.
 fn plain_diff(before: &str, after: &str) -> String {
-    let (b, a): (Vec<&str>, Vec<&str>) = (before.lines().collect(), after.lines().collect());
     let pairs = crate::diff::text::line_diff_core(before, after, 10_000)
         .map(|core| core.pairs)
         .unwrap_or_default();
+    let (before, after) = (display_safe(before), display_safe(after));
+    let (b, a): (Vec<&str>, Vec<&str>) = (before.lines().collect(), after.lines().collect());
     let mut out = String::new();
     let mut side = |name: &str, lines: &[&str], kept: &[usize], color: &str| {
         out.push_str(&format!("=== {name} ===\n"));
@@ -347,6 +358,47 @@ mod tests {
         assert_eq!(line.spans[1].content, "gone");
         assert_eq!(line.spans[1].style.fg, Some(Color::Red));
         assert!(line.spans[3].style.add_modifier.contains(Modifier::BOLD));
+    }
+
+    /// A member key or member line is not trusted to hold only the SGR codes headless writes:
+    /// a bare `ESC m`, an `ESC [` cut short, or a multi-byte character right after `ESC` must not
+    /// panic, and no `ESC` may survive into a span.
+    #[test]
+    fn a_malformed_escape_is_dropped_not_sliced_into() {
+        for text in [
+            "a\u{1b}mb",
+            "a\u{1b}[",
+            "a\u{1b}[31",
+            "a\u{1b}é[m",
+            "a\u{1b}[3é1m",
+            "\u{1b}",
+            "\u{1b}]0;title\u{7}x",
+        ] {
+            let line = ansi_line(text);
+            assert!(
+                line.spans
+                    .iter()
+                    .all(|span| !span.content.contains('\u{1b}')),
+                "{text:?} -> {line:?}"
+            );
+        }
+        let line = ansi_line("a\u{1b}mb\u{1b}[32mc");
+        let shown: String = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect();
+        assert_eq!(shown, "ambc");
+        assert_eq!(line.spans.last().unwrap().style.fg, Some(Color::Green));
+    }
+
+    #[test]
+    fn a_plain_diff_passes_no_escape_of_the_texts_own() {
+        let out = plain_diff("a\u{1b}[2Jb\n", "c\u{9b}d\n");
+        let own_escapes = out.matches('\u{1b}').count();
+        // Only the SGR pairs plain_diff writes itself: one color and one reset per changed line.
+        assert_eq!(own_escapes, 4, "{out:?}");
+        assert!(!out.contains('\u{9b}'), "{out:?}");
     }
 
     #[test]

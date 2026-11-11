@@ -14,6 +14,19 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+//! Overlay palettes, and the persisted settings (`ThemeConfig`) the TUI and headless mode read.
+//!
+//! The settings file is layered (see [`config_path`]); the middle layer is the nearest
+//! `.omnidiff.toml` above the current directory, so a repository can carry one - and under
+//! `git difftool`/`GIT_EXTERNAL_DIFF` that repository may be hostile. Two rules follow. A project
+//! config may only set how things *look* (theme, palette, layout, render options, syntax theme):
+//! `recent_pairs`, the one field that names files the TUI opens, is read from and written to the
+//! user's own layer instead ([`recent_pairs_path`]), so a commit can neither plant pairs nor
+//! collect the user's paths. And every save is atomic - a fresh temp file beside the target, then
+//! a rename - which for a project config replaces a committed symlink rather than writing through
+//! it to whatever file it names. The user's own config is trusted and may be a symlink into a
+//! dotfiles checkout, so there the link is followed and its target replaced.
+
 use std::path::{Path, PathBuf};
 
 use ratatui::style::Color;
@@ -452,35 +465,80 @@ const LEGACY_CONFIG_DIR: &str = "codediff";
 ///
 /// Each layer also accepts its pre-rename name (see [`LEGACY_CONFIG_ENV`]).
 pub(crate) fn config_path() -> PathBuf {
+    config_file().path
+}
+
+/// The config file [`config_path`] resolves to, and whether it is a project's (layer 2).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ConfigFile {
+    path: PathBuf,
+    /// A repository's `.omnidiff.toml`: not trusted with file paths, and never written through a
+    /// symlink (see the module doc).
+    project: bool,
+}
+
+fn config_file() -> ConfigFile {
     #[cfg(test)]
     if let Some(path) = TEST_CONFIG.with(|path| path.borrow().clone()) {
-        return path;
+        return ConfigFile {
+            path,
+            project: TEST_CONFIG_IS_PROJECT.with(std::cell::Cell::get),
+        };
     }
-    config_path_from(|variable| std::env::var(variable).ok())
+    config_file_from(|variable| std::env::var(variable).ok())
 }
 
 /// [`config_path`] with the environment read through `lookup`, so the order can be tested without
 /// setting a process-wide variable under threads that read it.
+#[cfg(test)]
 fn config_path_from(lookup: impl Fn(&str) -> Option<String>) -> PathBuf {
-    for variable in [CONFIG_ENV, LEGACY_CONFIG_ENV] {
-        if let Some(explicit) = lookup(variable)
-            && !explicit.is_empty()
-        {
-            return PathBuf::from(explicit);
-        }
+    config_file_from(lookup).path
+}
+
+fn config_file_from(lookup: impl Fn(&str) -> Option<String>) -> ConfigFile {
+    if let Some(path) = explicit_config(&lookup) {
+        return ConfigFile {
+            path,
+            project: false,
+        };
     }
     #[cfg(test)]
     {
-        test_config_path()
+        ConfigFile {
+            path: test_config_path(),
+            project: false,
+        }
     }
     #[cfg(not(test))]
     {
-        nearest_project_config().unwrap_or_else(|| {
-            let path = user_config_path();
-            adopt_legacy_user_config(&path);
-            path
-        })
+        match nearest_project_config() {
+            Some(path) => ConfigFile {
+                path,
+                project: true,
+            },
+            None => ConfigFile {
+                path: user_config_file(),
+                project: false,
+            },
+        }
     }
+}
+
+/// Layer 1: `$OMNIDIFF_CONFIG` (or its legacy name), if set and non-empty.
+fn explicit_config(lookup: &impl Fn(&str) -> Option<String>) -> Option<PathBuf> {
+    [CONFIG_ENV, LEGACY_CONFIG_ENV]
+        .into_iter()
+        .filter_map(lookup)
+        .find(|explicit| !explicit.is_empty())
+        .map(PathBuf::from)
+}
+
+/// Layer 3, with a pre-rename user config moved into place first.
+#[cfg_attr(test, allow(dead_code))]
+fn user_config_file() -> PathBuf {
+    let path = user_config_path();
+    adopt_legacy_user_config(&path);
+    path
 }
 
 /// Moves a pre-rename `.../codediff/config.toml` to `path`, when `path` is `.../omnidiff/config.toml`
@@ -523,6 +581,19 @@ fn test_config_path() -> PathBuf {
 thread_local! {
     /// The config this test thread reads and writes, set by [`use_config_for_this_thread`].
     static TEST_CONFIG: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+    /// Whether [`TEST_CONFIG`] stands in for a project config (layer 2).
+    static TEST_CONFIG_IS_PROJECT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// The user layer while [`TEST_CONFIG`] is a project config, for [`recent_pairs_path`].
+    static TEST_USER_CONFIG: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Like [`use_config_for_this_thread`], with `project` standing in for a repository's
+/// `.omnidiff.toml` and `user` for the user's own config.
+#[cfg(test)]
+fn use_project_config_for_this_thread(project: &Path, user: &Path) -> TestConfigGuard {
+    TEST_CONFIG_IS_PROJECT.with(|is_project| is_project.set(true));
+    TEST_USER_CONFIG.with(|config| *config.borrow_mut() = Some(user.to_path_buf()));
+    use_config_for_this_thread(project)
 }
 
 /// Points this test thread's config at `path` until the guard drops. Per thread rather than
@@ -542,6 +613,8 @@ pub(crate) struct TestConfigGuard;
 impl Drop for TestConfigGuard {
     fn drop(&mut self) {
         TEST_CONFIG.with(|config| *config.borrow_mut() = None);
+        TEST_CONFIG_IS_PROJECT.with(|is_project| is_project.set(false));
+        TEST_USER_CONFIG.with(|config| *config.borrow_mut() = None);
     }
 }
 
@@ -624,12 +697,15 @@ fn read_config(path: &Path) -> Result<ThemeConfig, Unreadable> {
 /// would replace every other setting with a default. Resolves the layered path once, so the read
 /// and the write hit the same file.
 fn update_config(mutate: impl FnOnce(&mut ThemeConfig)) {
-    let path = config_path();
-    let Ok(mut config) = read_config(&path) else {
+    update_config_file(&config_file(), mutate);
+}
+
+fn update_config_file(file: &ConfigFile, mutate: impl FnOnce(&mut ThemeConfig)) {
+    let Ok(mut config) = read_config(&file.path) else {
         return;
     };
     mutate(&mut config);
-    save_to(path, config);
+    let _ = store(&file.path, config, !file.project);
 }
 
 /// The persisted theme, or the default if the file is missing or broken. `confy` rather than
@@ -742,7 +818,7 @@ fn is_throwaway(path: &Path) -> bool {
 /// The recently diffed pairs, most recent first. Pairs whose files are gone are dropped, since
 /// selecting one would fail.
 pub fn load_recent_pairs() -> Vec<(PathBuf, PathBuf)> {
-    let mut pairs = load_from(config_path()).recent_pairs;
+    let mut pairs = load_from(recent_pairs_path()).recent_pairs;
     pairs.retain(|(before, after)| before.exists() && after.exists());
     pairs
 }
@@ -755,11 +831,36 @@ pub fn record_recent_pair(before: &Path, after: &Path) {
         return;
     }
     let pair = (before.to_path_buf(), after.to_path_buf());
-    update_config(|config| {
+    let file = ConfigFile {
+        path: recent_pairs_path(),
+        project: false,
+    };
+    update_config_file(&file, |config| {
         config.recent_pairs.retain(|existing| existing != &pair);
         config.recent_pairs.insert(0, pair);
         config.recent_pairs.truncate(MAX_RECENT_PAIRS);
     });
+}
+
+/// Where the recent pairs live: the live config, unless that is a project's, which may not name
+/// files the TUI opens (see the module doc) - then the user's own config.
+fn recent_pairs_path() -> PathBuf {
+    let file = config_file();
+    if !file.project {
+        return file.path;
+    }
+    #[cfg(test)]
+    if let Some(user) = TEST_USER_CONFIG.with(|path| path.borrow().clone()) {
+        return user;
+    }
+    #[cfg(test)]
+    {
+        test_config_path()
+    }
+    #[cfg(not(test))]
+    {
+        user_config_file()
+    }
 }
 
 /// Falls back to defaults, which is right for a read; writes go through [`update_config`].
@@ -767,8 +868,65 @@ fn load_from(path: PathBuf) -> ThemeConfig {
     read_config(&path).unwrap_or_default()
 }
 
+/// Saves to a user-level config, following a symlink there (see [`store`]).
+#[cfg(test)]
 fn save_to(path: PathBuf, config: ThemeConfig) {
-    let _ = confy::store_path(path, config);
+    let _ = store(&path, config, true);
+}
+
+/// Writes `config` to `path` atomically: into a new temp file beside the file written, then
+/// renamed over it, keeping its permissions. With `follow_symlink` (the user's own config) a
+/// symlink at `path` is resolved first and its target replaced; without it (a project config)
+/// the rename replaces the symlink itself, so a committed `.omnidiff.toml -> ~/.bashrc` is never
+/// written through.
+fn store(path: &Path, config: ThemeConfig, follow_symlink: bool) -> std::io::Result<()> {
+    let target = if follow_symlink {
+        std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    } else {
+        path.to_path_buf()
+    };
+    let directory = match target.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
+        _ => PathBuf::from("."),
+    };
+    std::fs::create_dir_all(&directory)?;
+    let name = target
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "config.toml".to_string());
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_nanos())
+        .unwrap_or(0);
+    let (temp, _) = (0..100)
+        .find_map(|attempt| {
+            let temp = directory.join(format!(
+                ".{name}.{}-{nanos}-{attempt}.tmp",
+                std::process::id()
+            ));
+            std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&temp)
+                .ok()
+                .map(|file| (temp, file))
+        })
+        .ok_or_else(|| std::io::Error::other("no free temp file name"))?;
+    let written = (|| {
+        // `create_new` made it ours and a regular file, so confy's truncating open stays on it.
+        confy::store_path(&temp, config).map_err(std::io::Error::other)?;
+        // Not through a symlink: a project config's link says nothing about the mode to keep.
+        if let Ok(metadata) = std::fs::symlink_metadata(&target)
+            && metadata.is_file()
+        {
+            std::fs::set_permissions(&temp, metadata.permissions())?;
+        }
+        std::fs::rename(&temp, &target)
+    })();
+    if written.is_err() {
+        let _ = std::fs::remove_file(&temp);
+    }
+    written
 }
 
 #[cfg(test)]
@@ -828,6 +986,88 @@ mod tests {
             config_path_from(empty),
             PathBuf::new(),
             "an empty value is not a path"
+        );
+    }
+
+    /// A repository can commit `.omnidiff.toml` as a symlink to any file of the user's; saving a
+    /// setting must replace the link, not truncate what it points at.
+    #[cfg(unix)]
+    #[test]
+    fn saving_a_project_config_replaces_a_symlink_rather_than_writing_through_it() {
+        let repo = tempfile::tempdir().expect("temp dir");
+        let victim = repo.path().join("victim");
+        std::fs::write(&victim, "precious = true\n").expect("write");
+        let project = repo.path().join(PROJECT_CONFIG);
+        std::os::unix::fs::symlink(&victim, &project).expect("symlink");
+        let user = repo.path().join("user.toml");
+        {
+            let _config = use_project_config_for_this_thread(&project, &user);
+            save_node_highlight(true);
+        }
+        assert_eq!(
+            std::fs::read_to_string(&victim).expect("read"),
+            "precious = true\n"
+        );
+        assert!(!std::fs::symlink_metadata(&project).unwrap().is_symlink());
+        assert!(load_from(project).node_highlight);
+    }
+
+    /// The user's own config may be a symlink into a dotfiles checkout: that link is kept.
+    #[cfg(unix)]
+    #[test]
+    fn saving_the_users_config_through_their_own_symlink_keeps_the_link() {
+        let home = tempfile::tempdir().expect("temp dir");
+        let real = home.path().join("dotfiles-config.toml");
+        std::fs::write(&real, "").expect("write");
+        let link = home.path().join("config.toml");
+        std::os::unix::fs::symlink(&real, &link).expect("symlink");
+        save_to(
+            link.clone(),
+            ThemeConfig {
+                node_highlight: true,
+                ..Default::default()
+            },
+        );
+        assert!(std::fs::symlink_metadata(&link).unwrap().is_symlink());
+        assert!(load_from(real).node_highlight);
+        let strays: Vec<_> = std::fs::read_dir(home.path())
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| entry.file_name().to_string_lossy().ends_with(".tmp"))
+            .collect();
+        assert!(strays.is_empty(), "the temp file is renamed away");
+    }
+
+    /// A project config may not name files the TUI opens: its `recent_pairs` are not offered,
+    /// and a pair diffed there is recorded in the user's config, not committed to the project's.
+    #[test]
+    fn recent_pairs_never_come_from_or_go_to_a_project_config() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let planted = dir.path().join("planted");
+        std::fs::write(&planted, "").expect("write");
+        let project = dir.path().join(PROJECT_CONFIG);
+        let user = dir.path().join("user.toml");
+        // Outside the temp directory, which `record_recent_pair` treats as throwaway.
+        let lasting = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        save_to(
+            project.clone(),
+            ThemeConfig {
+                recent_pairs: vec![(planted.clone(), planted.clone())],
+                ..Default::default()
+            },
+        );
+        let (pairs, after) = {
+            let _config = use_project_config_for_this_thread(&project, &user);
+            let pairs = load_recent_pairs();
+            record_recent_pair(&lasting, &lasting);
+            (pairs, load_recent_pairs())
+        };
+        assert!(pairs.is_empty(), "{pairs:?}");
+        assert_eq!(after, vec![(lasting.clone(), lasting)]);
+        assert_eq!(
+            load_from(project).recent_pairs,
+            vec![(planted.clone(), planted)],
+            "the project config is not written"
         );
     }
 
