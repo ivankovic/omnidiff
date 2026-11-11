@@ -289,11 +289,11 @@ impl Diff {
     }
 }
 
-/// Stack size of the thread the matching pipeline runs on; see the module doc. The same ceiling as
-/// the TUI's `DIFF_COMPUTE_STACK_SIZE`.
+/// Stack size of the thread the matching pipeline runs on; see the module doc. The TUI's
+/// `DIFF_COMPUTE_STACK_SIZE` is this constant.
 pub const PIPELINE_STACK_SIZE: usize = 256 * 1024 * 1024;
 
-/// The name of that thread: the TUI's `DIFF_THREAD_NAME`, which its panic hook reads to tell a
+/// The name of that thread, also the TUI's `DIFF_THREAD_NAME`, which its panic hook reads to tell a
 /// diff-computation panic (caught, shown in the error banner) from one that takes the app down.
 pub const PIPELINE_THREAD_NAME: &str = "omnidiff-diff";
 
@@ -1050,14 +1050,6 @@ mod tests {
                 .expect("no overflow, no panic")
         });
         assert!(diff.ast.is_some_and(|ast| !ast.before_node_map.is_empty()));
-    }
-
-    /// The TUI's panic hook names the thread by its own constant; a diff thread the pipeline
-    /// spawns must carry the same name.
-    #[cfg(feature = "tui")]
-    #[test]
-    fn pipeline_thread_name_is_the_tuis_diff_thread_name() {
-        assert_eq!(PIPELINE_THREAD_NAME, crate::tui::app::DIFF_THREAD_NAME);
     }
 
     /// A language without a grammar leaves `ast: None`, a valid state `Diff` must fail safe on.

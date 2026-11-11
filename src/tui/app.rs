@@ -1796,11 +1796,11 @@ pub(crate) fn compute_diff(before: &Path, after: &Path) -> Result<(DiffSessionDa
 /// Stack size for the thread [`compute_diff_with_options`] runs the pipeline on. Deep trees
 /// overflow the recursive AST walks on a default stack, and a stack overflow aborts the process
 /// where a panic could be caught. Public so tools diffing on their own threads use the same ceiling.
-pub const DIFF_COMPUTE_STACK_SIZE: usize = 256 * 1024 * 1024;
+pub const DIFF_COMPUTE_STACK_SIZE: usize = crate::diff::PIPELINE_STACK_SIZE;
 
 /// The name of that thread, which the TUI's panic hook uses to tell a diff-computation panic
 /// (caught, shown in the error banner) from one that takes the app down.
-pub const DIFF_THREAD_NAME: &str = "omnidiff-diff";
+pub const DIFF_THREAD_NAME: &str = crate::diff::PIPELINE_THREAD_NAME;
 
 /// Parses, diffs and builds the display ranges, honouring `render_options`' construction-time
 /// options. The `bool` is `PendingDiff::large_residual`, always `false` for the plain-text

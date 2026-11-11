@@ -567,8 +567,8 @@ const TEXT_MAX_EDIT: usize = 10_000;
 /// Two texts compared by lines.
 pub fn text_detail(before: &str, after: &str) -> MemberDetail {
     let (before_lines, after_lines) = (before.lines().count(), after.lines().count());
-    let matched = crate::diff::text::line_diff_core(before, after, TEXT_MAX_EDIT)
-        .map_or(0, |core| core.pairs.len());
+    // Only the count is needed, which Myers finds in O(TEXT_MAX_EDIT) memory without the script.
+    let matched = crate::diff::text::line_match_count(before, after, TEXT_MAX_EDIT).unwrap_or(0);
     let (removed, added) = (before_lines - matched, after_lines - matched);
     let changed = removed + added > 0;
     MemberDetail::Text {

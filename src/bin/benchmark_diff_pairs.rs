@@ -421,6 +421,9 @@ fn print_progress(
 fn main() -> Result<()> {
     let args = Args::parse();
     let budget = Budget::from_args(&args);
+    // `max_combined_nodes` is this tool's size budget; the product's own per-side cap would
+    // otherwise turn every pair above it into a plain-text diff and time that instead.
+    omnidiff::code::language::AST_NODE_CAP.store(usize::MAX, std::sync::atomic::Ordering::Relaxed);
 
     let mut writer = csv::Writer::from_path(&args.output)?;
     writer.write_record([
