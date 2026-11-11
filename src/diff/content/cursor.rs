@@ -28,6 +28,11 @@
 //!
 //! The hotspot (the pixel that clicks) is not compared: it is metadata, and a changed one shows
 //! nowhere a reader could see.
+//!
+//! **What a file may decode to is bounded**: its pictures together [`MAX_CURSOR_BYTES`] (an X
+//! cursor's table may point every entry at one image, an `.ani` show one frame many times), an
+//! `.ani` [`MAX_ANI_STEPS`] steps, each frame deflated once however many steps show it, and an
+//! SVG is drawn at most [`MAX_SVG_SIZE`] pixels square and never reads a file it names.
 
 use std::collections::BTreeMap;
 use std::io::Cursor;
@@ -64,6 +69,28 @@ pub fn is_hyprcursor(bytes: &[u8]) -> bool {
             .file_names()
             .any(|name| name.is_ok_and(|name| HYPRCURSOR_META.contains(&name.as_ref())))
     })
+}
+
+/// The most RGBA bytes one cursor file's pictures may decode to: a 256-pixel cursor of a thousand
+/// frames, past any theme's.
+pub const MAX_CURSOR_BYTES: u64 = 256 * 1024 * 1024;
+
+/// The most steps an `.ani` may play: a step is four bytes of `seq `, a whole frame to compare.
+/// Real cursors play a few dozen.
+pub const MAX_ANI_STEPS: usize = 10_000;
+
+/// The largest square a Hyprland SVG is drawn on, whatever `define_size` says: cursors are drawn
+/// at 256 pixels at most.
+pub const MAX_SVG_SIZE: u32 = 1024;
+
+/// Adds a `width` x `height` picture's RGBA bytes to `total`, unless that passes
+/// [`MAX_CURSOR_BYTES`].
+fn count_decoded(total: &mut u64, width: u32, height: u32) -> Result<()> {
+    *total += u64::from(width) * u64::from(height) * 4;
+    if *total > MAX_CURSOR_BYTES {
+        bail!("a cursor of more than {MAX_CURSOR_BYTES} bytes of pictures");
+    }
+    Ok(())
 }
 
 /// A picture's description, for a cursor decoded here.
@@ -153,35 +180,55 @@ pub fn decode_ani(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
     if flags & 1 == 0 {
         bail!("an animated cursor of raw bitmaps, not icons");
     }
-    let pictures = icons
-        .iter()
-        .map(|icon| decode_icon(icon))
-        .collect::<Result<Vec<_>>>()?;
+    let mut decoded = 0;
+    let mut pictures = Vec::with_capacity(icons.len());
+    for icon in &icons {
+        let picture = decode_icon(icon)?;
+        count_decoded(&mut decoded, picture.width(), picture.height())?;
+        pictures.push(picture);
+    }
     let first = pictures
         .first()
         .context("an animated cursor with no frame")?;
     let (width, height) = first.dimensions();
+    // A frame of another size is fitted to the first, as Windows draws it.
+    let mut fitted = 0;
+    let pictures = pictures
+        .into_iter()
+        .map(|picture| {
+            count_decoded(&mut fitted, width, height)?;
+            Ok(if picture.dimensions() == (width, height) {
+                picture
+            } else {
+                image::imageops::resize(
+                    &picture,
+                    width,
+                    height,
+                    image::imageops::FilterType::Nearest,
+                )
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
     let steps = if steps == 0 { pictures.len() } else { steps };
+    // A step past both the sequence and the frames shows a frame that is not there.
+    let listed = sequence.map_or(0, |sequence| sequence.len() / 4);
+    if steps > MAX_ANI_STEPS || steps > listed.max(pictures.len()) {
+        bail!("an animated cursor of {steps} steps");
+    }
     let mut frames = Vec::with_capacity(steps);
     for step in 0..steps {
         let index = sequence
             .and_then(|sequence| u32_at(sequence, step * 4))
             .map_or(step, |index| index as usize);
-        let picture = pictures
-            .get(index)
-            .with_context(|| format!("step {step} shows frame {index}, which is not there"))?;
+        if index >= pictures.len() {
+            bail!("step {step} shows frame {index}, which is not there");
+        }
         let jiffies = rates
             .and_then(|rates| u32_at(rates, step * 4))
             .unwrap_or(default_rate);
-        // A frame of another size is fitted to the first, as Windows draws it.
-        let picture = if picture.dimensions() == (width, height) {
-            picture.clone()
-        } else {
-            image::imageops::resize(picture, width, height, image::imageops::FilterType::Nearest)
-        };
-        frames.push((picture, (f64::from(jiffies) * JIFFY_MS).round() as u32));
+        frames.push((index, (f64::from(jiffies) * JIFFY_MS).round() as u32));
     }
-    let frames = Frames::from_frames(frames)?;
+    let frames = Frames::from_steps(&pictures, &frames)?;
     Ok((info("ANI", bytes.len(), &frames), frames))
 }
 
@@ -191,6 +238,7 @@ fn xcursor_sizes(bytes: &[u8]) -> Result<BTreeMap<u32, Vec<(RgbaImage, u32)>>> {
     const IMAGE: u32 = 0xfffd_0002;
     let toc = u32_at(bytes, 12).context("a short X cursor header")? as usize;
     let mut sizes: BTreeMap<u32, Vec<(RgbaImage, u32)>> = BTreeMap::new();
+    let mut decoded = 0;
     for entry in 0..toc.min(bytes.len() / 12) {
         let at = 16 + entry * 12;
         let (Some(kind), Some(position)) = (u32_at(bytes, at), u32_at(bytes, at + 8)) else {
@@ -207,6 +255,7 @@ fn xcursor_sizes(bytes: &[u8]) -> Result<BTreeMap<u32, Vec<(RgbaImage, u32)>>> {
         if width > 0x7fff || height > 0x7fff {
             bail!("an X cursor image of {width}x{height}");
         }
+        count_decoded(&mut decoded, width, height)?;
         let header = field(0)? as usize;
         let pixels = (width * height) as usize;
         let argb = chunk
@@ -336,7 +385,7 @@ impl Container for Hyprcursor {
         let bytes = self.zip.read(index)?;
         if key.to_ascii_lowercase().ends_with(".svg") {
             let size = match self.sizes.get(key) {
-                Some(&size) if size > 0 => size,
+                Some(&size) if size > 0 => size.min(MAX_SVG_SIZE),
                 _ => SVG_SIZE,
             };
             let frames = Frames::from_frames(vec![(render_svg(&bytes, size)?, 0)])?;
@@ -349,11 +398,21 @@ impl Container for Hyprcursor {
     }
 }
 
-/// `svg` drawn to fit a `size` x `size` square.
+/// `svg` drawn to fit a `size` x `size` square. An image it places is read only from a `data:`
+/// URL: usvg's default reads any path an `href` names, `/dev/zero` or a FIFO included.
 pub fn render_svg(svg: &[u8], size: u32) -> Result<RgbaImage> {
     use resvg::{tiny_skia, usvg};
-    let tree = usvg::Tree::from_data(svg, &usvg::Options::default()).context("reading the SVG")?;
+    let options = usvg::Options {
+        resources_dir: None,
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            resolve_string: Box::new(|_, _| None),
+        },
+        ..usvg::Options::default()
+    };
+    let tree = usvg::Tree::from_data(svg, &options).context("reading the SVG")?;
     let (width, height) = (tree.size().width(), tree.size().height());
+    let size = size.min(MAX_SVG_SIZE);
     let scale = size as f32 / width.max(height).max(1.0);
     let (w, h) = (
         ((width * scale).round() as u32).max(1),
@@ -531,6 +590,94 @@ pub(crate) mod tests {
         assert!(
             matches!(cursor.open(0)?, MemberContent::Bytes(_)),
             "meta.hl is text"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn an_ani_shares_its_frames_and_bounds_its_steps() -> Result<()> {
+        let red = icon(8, [255, 0, 0, 255], true);
+        // Five thousand steps of one frame: one picture, deflated once.
+        let bytes = ani(std::slice::from_ref(&red), &[0; 5000], &[1; 5000]);
+        let (info, frames) = decode_ani(&bytes)?;
+        assert_eq!(
+            (info.frames, frames.pixels(4999).get_pixel(0, 0).0),
+            (5000, [255, 0, 0, 255])
+        );
+        let too_many = ani(std::slice::from_ref(&red), &vec![0; MAX_ANI_STEPS + 1], &[]);
+        assert!(decode_ani(&too_many).is_err());
+        // A header claiming four billion steps, with no sequence to play them: refused before
+        // anything is allocated for them.
+        let mut claims = ani(&[red], &[], &[]);
+        let at = claims
+            .windows(4)
+            .position(|window| window == b"anih")
+            .expect("a header")
+            + 8;
+        claims[at + 8..at + 12].copy_from_slice(&u32::MAX.to_le_bytes());
+        let error = decode_ani(&claims).expect_err("too many steps");
+        assert!(error.to_string().contains("steps"), "{error}");
+        Ok(())
+    }
+
+    #[test]
+    fn an_x_cursor_pointing_every_entry_at_one_image_is_bounded() {
+        // 512 x 512 is a MiB of pixels; 300 entries for it pass MAX_CURSOR_BYTES.
+        let mut bytes = xcursor(&[(512, 512, 0xff00_00ff, 0)]);
+        let entries = 300u32;
+        let image_at = 16 + 12 * entries;
+        let image = bytes[28..].to_vec();
+        bytes.truncate(12);
+        bytes.extend_from_slice(&entries.to_le_bytes());
+        for _ in 0..entries {
+            for field in [0xfffd_0002u32, 512, image_at] {
+                bytes.extend_from_slice(&field.to_le_bytes());
+            }
+        }
+        bytes.extend(image);
+        let error = Xcursor::new(&bytes).err().expect("too many pictures");
+        assert!(error.to_string().contains("bytes of pictures"), "{error}");
+    }
+
+    #[test]
+    fn a_hyprcursor_svg_is_drawn_at_most_at_the_largest_size() -> Result<()> {
+        let svg = br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>"#;
+        let bytes = crate::diff::content::archive::tests::zip(&[
+            ("meta.hl", b"define_size = 4294967295, arrow.svg\n"),
+            ("arrow.svg", svg),
+        ]);
+        let MemberContent::Picture(picture) = Hyprcursor::new(&bytes)?.open(1)? else {
+            panic!("the SVG is drawn");
+        };
+        assert_eq!(
+            (picture.0.width, picture.0.height),
+            (MAX_SVG_SIZE, MAX_SVG_SIZE)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn an_svg_never_reads_a_file_it_names() -> Result<()> {
+        use resvg::usvg;
+        let dir = tempfile::tempdir()?;
+        let red = dir.path().join("red.svg");
+        std::fs::write(
+            &red,
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>"#,
+        )?;
+        let svg = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10"><image width="10" height="10" xlink:href="{}"/></svg>"#,
+            red.display()
+        );
+        let by_default = usvg::Tree::from_data(svg.as_bytes(), &usvg::Options::default())?;
+        assert!(
+            by_default.root().has_children(),
+            "usvg's default reads the file"
+        );
+        let drawn = render_svg(svg.as_bytes(), 10)?;
+        assert!(
+            drawn.pixels().all(|pixel| pixel.0[3] == 0),
+            "nothing drawn from the file"
         );
         Ok(())
     }
