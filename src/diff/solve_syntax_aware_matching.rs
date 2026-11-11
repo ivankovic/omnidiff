@@ -14,6 +14,7 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
 
 use tree_sitter::Node;
@@ -640,7 +641,7 @@ const IMPORT_PATH_TOKEN_BUDGET_DIVISOR: usize = 6;
 
 /// Pairs unmapped import statements (any language [`nodes::is_import_kind`] knows) by Jaccard over
 /// their path tokens, bucketed by node kind. A pair must also pass
-/// [`import_paths_are_the_same_module`] and [`import_paths_have_no_rival`]; otherwise it is
+/// [`import_paths_are_the_same_module`] and, for each member, [`has_one_same_module`]; otherwise it is
 /// priced out, not ranked low. Statement-level only, as in [`solve_import_list_overlap`].
 fn solve_import_path_similarity(before: &Code, after: &Code, diff: &mut ASTDiff) {
     let before_metadata = metadata_of(before);
@@ -670,23 +671,32 @@ fn solve_import_path_similarity(before: &Code, after: &Code, diff: &mut ASTDiff)
         };
     let before_candidates = candidates(&before_items);
     let after_candidates = candidates(&after_items);
-    let before_tokens: HashMap<usize, &HashSet<&str>> = before_items
-        .iter()
-        .map(|(id, _, tokens)| (*id, tokens))
-        .collect();
-    let after_tokens: HashMap<usize, &HashSet<&str>> = after_items
-        .iter()
-        .map(|(id, _, tokens)| (*id, tokens))
-        .collect();
+    let index_of = |items: &[(usize, &'static str, HashSet<&str>)]| -> HashMap<usize, usize> {
+        items
+            .iter()
+            .enumerate()
+            .map(|(index, (id, _, _))| (*id, index))
+            .collect()
+    };
+    let (before_index, after_index) = (index_of(&before_items), index_of(&after_items));
+    // Whether an item has exactly one same-module item on the other side. It depends on the item
+    // alone, so it is worked out once per item, on its first scored pair: per pair, every
+    // same-module pair rescanned both sides, cubic in a block of near-identical imports.
+    let before_unrivalled: Vec<OnceCell<bool>> = vec![OnceCell::new(); before_items.len()];
+    let after_unrivalled: Vec<OnceCell<bool>> = vec![OnceCell::new(); after_items.len()];
 
     grouped_greedy_matcher::solve(
         diff,
         &before_candidates,
         &after_candidates,
         |before_id, after_id| {
-            let (before_set, after_set) = (before_tokens[&before_id], after_tokens[&after_id]);
+            let (b, a) = (before_index[&before_id], after_index[&after_id]);
+            let (before_set, after_set) = (&before_items[b].2, &after_items[a].2);
             if !import_paths_are_the_same_module(before_set, after_set)
-                || !import_paths_have_no_rival(before_set, after_set, &before_items, &after_items)
+                || !*before_unrivalled[b]
+                    .get_or_init(|| has_one_same_module(before_set, &after_items))
+                || !*after_unrivalled[a]
+                    .get_or_init(|| has_one_same_module(after_set, &before_items))
             {
                 // The matcher has one `max_cost` for all pairs; these rules are per-pair.
                 return f64::INFINITY;
@@ -718,23 +728,19 @@ fn import_paths_are_the_same_module(before: &HashSet<&str>, after: &HashSet<&str
         && differing <= 1 + union / IMPORT_PATH_TOKEN_BUDGET_DIVISOR
 }
 
-/// Whether this pair is the *only* acceptable reading on both sides. N:1 import edits (a split
-/// import, eight imports collapsed into a `*`) leave every group member acceptable, and a greedy
-/// 1:1 pick orphans the rest; such group edits are left to APTED, which sees the whole block
-/// (scala-com-lihaoyi-mill-split-import).
-fn import_paths_have_no_rival(
-    before: &HashSet<&str>,
-    after: &HashSet<&str>,
-    before_items: &[(usize, &'static str, HashSet<&str>)],
-    after_items: &[(usize, &'static str, HashSet<&str>)],
+/// Whether exactly one of the other side's `items` names the same module as `set`. A pair is
+/// accepted only if this holds for both its members, the pair being the *only* acceptable reading
+/// on both sides. N:1 import edits (a split import, eight imports collapsed into a `*`) leave every
+/// group member acceptable, and a greedy 1:1 pick orphans the rest; such group edits are left to
+/// APTED, which sees the whole block (scala-com-lihaoyi-mill-split-import).
+fn has_one_same_module(
+    set: &HashSet<&str>,
+    items: &[(usize, &'static str, HashSet<&str>)],
 ) -> bool {
-    let rivals_for = |set: &HashSet<&str>, items: &[(usize, &'static str, HashSet<&str>)]| {
-        items
-            .iter()
-            .filter(|(_, _, other)| import_paths_are_the_same_module(set, other))
-            .count()
-    };
-    rivals_for(before, after_items) == 1 && rivals_for(after, before_items) == 1
+    let mut same_module = items
+        .iter()
+        .filter(|(_, _, other)| import_paths_are_the_same_module(set, other));
+    same_module.next().is_some() && same_module.next().is_none()
 }
 
 /// Language keywords dropped before scoring; kept, they lift every pair in a file by a fixed
@@ -1166,17 +1172,9 @@ impl Foo { fn b() -> i32 { 20 } }
         let second = tokens(&["com", "unciv", "logic", "civ", "Civ", "B"]);
         let before_items = vec![(1, "import", first.clone()), (2, "import", second)];
         let after_items = vec![(3, "import", single.clone())];
-        assert!(!import_paths_have_no_rival(
-            &first,
-            &single,
-            &before_items,
-            &after_items
-        ));
-        assert!(import_paths_have_no_rival(
-            &first,
-            &single,
-            &before_items[..1],
-            &after_items
-        ));
+        // `first` has its one same-module item, `single`; `single` has two, `first` and `second`.
+        assert!(has_one_same_module(&first, &after_items));
+        assert!(!has_one_same_module(&single, &before_items));
+        assert!(has_one_same_module(&single, &before_items[..1]));
     }
 }

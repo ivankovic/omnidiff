@@ -467,6 +467,20 @@ pub fn line_diff_core(before: &str, after: &str, max_edit: usize) -> Option<Line
     })
 }
 
+/// How many lines [`line_diff_core`] pairs (`core.pairs.len()`), `None` exactly when it gives
+/// up, in O(`max_edit`) memory rather than the script's O(D²): for a caller that only counts
+/// lines kept, such as a container member's line summary.
+pub fn line_match_count(before: &str, after: &str, max_edit: usize) -> Option<usize> {
+    let before_lines: Vec<&str> = before.lines().collect();
+    let after_lines: Vec<&str> = after.lines().collect();
+    if before_lines.is_empty() || after_lines.is_empty() {
+        return Some(0);
+    }
+    let (before_hashes, after_hashes) = (hash_lines(&before_lines), hash_lines(&after_lines));
+    let distance = crate::diff::apted::myers_distance(&before_hashes, &after_hashes, max_edit)?;
+    Some((before_lines.len() + after_lines.len() - distance) / 2)
+}
+
 pub(crate) fn hash_lines(lines: &[&str]) -> Vec<u64> {
     use std::hash::{Hash, Hasher};
     lines

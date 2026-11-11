@@ -33,8 +33,9 @@ mod render_options;
 mod summary;
 
 pub use plain_text_diff::{
-    LineDiffCore, WholeFileClass, class_list_diff, line_diff_core, plain_text_line_diff,
-    plain_text_token_diff, text_layer_diff, token_edit_count, whole_file_text_class,
+    LineDiffCore, WholeFileClass, class_list_diff, line_diff_core, line_match_count,
+    plain_text_line_diff, plain_text_token_diff, text_layer_diff, token_edit_count,
+    whole_file_text_class,
 };
 pub use render_options::{
     OPTION_INFO, OptionInfo, RangeMatch, RenderOptions, TextOperation, is_structural_only,
