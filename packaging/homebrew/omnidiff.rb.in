@@ -60,7 +60,7 @@ class Omnidiff < Formula
     assert_match version.to_s, shell_output("#{bin}/omnidiff --version")
     (testpath/"before.py").write "def f(x):\n    return x + 1\n"
     (testpath/"after.py").write "def f(x):\n    return x + 2\n"
-    output = shell_output("#{bin}/omnidiff --headless before.py after.py")
+    output = shell_output("#{bin}/omnidiff --headless --color never before.py after.py")
     assert_match "x + 2", output
   end
 end
