@@ -810,7 +810,10 @@ impl App {
                     generation,
                     outcome,
                 } => match outcome {
-                    DiffOutcome::Ready(data) if *generation == self.diff_generation => {
+                    DiffOutcome::Ready(data, highlights) if *generation == self.diff_generation => {
+                        if let Some(highlights) = highlights {
+                            self.diff_viewer.offer_highlights(highlights.clone());
+                        }
                         self.action_tx.send(Action::DiffReady(data.clone()))?;
                     }
                     DiffOutcome::Failed(message) if *generation == self.diff_generation => {
@@ -1216,17 +1219,18 @@ impl App {
         // Read off the live viewer rather than threaded through `Action::StartDiff`, so no
         // caller has to know to pass them.
         let render_options = self.diff_viewer.render_options();
+        let highlight_settings = self.diff_viewer.highlight_settings();
         tokio::task::spawn_blocking(move || {
-            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                compute_diff_with_options(&before, &after, render_options)
-            }));
+            let result = crate::tui::panic_guard::contain(|| {
+                compute_diff_with_options(&before, &after, render_options).map(|(data, _)| {
+                    let highlights = highlight_sides(&data, highlight_settings);
+                    (data, highlights)
+                })
+            });
             let outcome = match result {
-                Ok(Ok((data, _large_residual))) => DiffOutcome::Ready(data),
+                Ok(Ok((data, highlights))) => DiffOutcome::Ready(data, highlights),
                 Ok(Err(err)) => DiffOutcome::Failed(err.to_string()),
-                Err(panic) => DiffOutcome::Failed(format!(
-                    "internal error while diffing: {}",
-                    panic_message(&panic)
-                )),
+                Err(panic) => DiffOutcome::Failed(format!("internal error while diffing: {panic}")),
             };
             let _ = tx.send(Action::DiffComputed {
                 generation,
@@ -1954,14 +1958,22 @@ fn substitute_missing_language(code: &mut Code, fallback_language: Option<Langua
     }
 }
 
-fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {
-    if let Some(message) = panic.downcast_ref::<&str>() {
-        message.to_string()
-    } else if let Some(message) = panic.downcast_ref::<String>() {
-        message.clone()
-    } else {
-        "unknown panic".to_string()
-    }
+/// Both sides of `data` syntax-highlighted, in parallel, for `DiffViewer::load_diff` to take
+/// instead of highlighting on the UI thread; `None` if either side panicked, and then `load_diff`
+/// highlights as it always did.
+fn highlight_sides(
+    data: &DiffSessionData,
+    [before_settings, after_settings]: [crate::tui::widgets::code_viewer::HighlightSettings; 2],
+) -> Option<crate::tui::components::diff_viewer::SideHighlights> {
+    use crate::tui::widgets::code_viewer::Highlighted;
+    std::thread::scope(|scope| {
+        let before = scope.spawn(|| {
+            Highlighted::compute(&data.before_path, &data.before_contents, before_settings)
+        });
+        let after = Highlighted::compute(&data.after_path, &data.after_contents, after_settings);
+        let before = before.join().ok()?;
+        Some(std::sync::Arc::new([before, after]))
+    })
 }
 
 /// True if `path` holds content diffed by content, by its bytes (see
@@ -1986,19 +1998,19 @@ mod tests {
     #[test]
     fn panic_message_extracts_str_payload() {
         let panic: Box<dyn std::any::Any + Send> = Box::new("boom");
-        assert_eq!(panic_message(&panic), "boom");
+        assert_eq!(crate::tui::panic_guard::message(&panic), "boom");
     }
 
     #[test]
     fn panic_message_extracts_string_payload() {
         let panic: Box<dyn std::any::Any + Send> = Box::new("boom".to_string());
-        assert_eq!(panic_message(&panic), "boom");
+        assert_eq!(crate::tui::panic_guard::message(&panic), "boom");
     }
 
     #[test]
     fn panic_message_falls_back_for_unknown_payload_type() {
         let panic: Box<dyn std::any::Any + Send> = Box::new(42i32);
-        assert_eq!(panic_message(&panic), "unknown panic");
+        assert_eq!(crate::tui::panic_guard::message(&panic), "unknown panic");
     }
 
     #[test]

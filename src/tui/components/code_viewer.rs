@@ -27,6 +27,7 @@ use crate::diff::text_range::{TextRange, floor_char_boundary};
 use crate::tui::actions::Action;
 use crate::tui::display_columns;
 use crate::tui::theme::OverlayTheme;
+use crate::tui::widgets::code_viewer::{HighlightSettings, Highlighted};
 
 /// One code panel: the `CodeViewerWidget` plus its cursor, scroll and range state.
 #[derive(Default)]
@@ -61,8 +62,25 @@ impl CodeViewer {
 
     /// Load already-read contents, without filesystem access.
     pub fn load_contents(&mut self, path: PathBuf, contents: String) {
-        self.widget.load_contents(path, contents);
+        self.load_contents_highlighted(path, contents, None);
+    }
+
+    /// [`load_contents`](Self::load_contents) with highlighting computed ahead; see
+    /// `CodeViewerWidget::load_contents_highlighted`.
+    pub fn load_contents_highlighted(
+        &mut self,
+        path: PathBuf,
+        contents: String,
+        highlighted: Option<Highlighted>,
+    ) {
+        self.widget
+            .load_contents_highlighted(path, contents, highlighted);
         self.reset_state();
+    }
+
+    /// What this side's highlighting depends on besides its text.
+    pub fn highlight_settings(&self) -> HighlightSettings {
+        self.widget.highlight_settings()
     }
 
     fn reset_state(&mut self) {

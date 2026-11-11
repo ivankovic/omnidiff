@@ -24,6 +24,7 @@ use super::{Component, code_viewer::CodeViewer};
 use crate::diff::text::{RangeMatch, RenderOptions, TextOperation, ranges_for_options};
 use crate::tui::actions::{Action, DiffSessionData};
 use crate::tui::theme::{OverlayTheme, PanelLayout};
+use crate::tui::widgets::code_viewer::{HighlightSettings, Highlighted};
 
 /// Below this terminal width two side-by-side panels are too narrow to read, so `Auto` layout
 /// shows one panel - unless the user set another width ([`DiffViewer::set_wide_columns`],
@@ -57,7 +58,13 @@ pub struct DiffViewer {
     /// `set_render_options` can re-filter without the cursor reset a reload does.
     full_ranges: [Vec<RangeMatch>; 2],
     sources: [String; 2],
+    /// Both sides' highlighting, computed with the diff off the UI thread (see
+    /// [`DiffViewer::offer_highlights`]); taken by the next `load_diff`.
+    offered_highlights: Option<SideHighlights>,
 }
+
+/// The before and after sides' highlighting, computed ahead of `load_diff`.
+pub type SideHighlights = std::sync::Arc<[Highlighted; 2]>;
 
 /// Both panels side by side, or only `active_panel`'s.
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -86,17 +93,47 @@ impl DiffViewer {
     }
 
     /// Load a completed diff and put the cursor on its first change.
+    ///
+    /// Highlighting both whole files with syntect is most of a second for a 10,000-line pair, so
+    /// the diff's background job does it ([`Self::highlight_settings`], `Highlighted::compute`)
+    /// and offers the result first; a side whose offer does not match is highlighted here.
     pub fn load_diff(&mut self, data: &DiffSessionData) {
-        self.left_viewer
-            .load_contents(data.before_path.clone(), data.before_contents.clone());
-        self.right_viewer
-            .load_contents(data.after_path.clone(), data.after_contents.clone());
+        let [before, after] = match self.offered_highlights.take() {
+            Some(offered) => match std::sync::Arc::try_unwrap(offered) {
+                Ok([before, after]) => [Some(before), Some(after)],
+                Err(shared) => [Some(shared[0].clone()), Some(shared[1].clone())],
+            },
+            None => [None, None],
+        };
+        self.left_viewer.load_contents_highlighted(
+            data.before_path.clone(),
+            data.before_contents.clone(),
+            before,
+        );
+        self.right_viewer.load_contents_highlighted(
+            data.after_path.clone(),
+            data.after_contents.clone(),
+            after,
+        );
         self.full_ranges = [data.before_ranges.clone(), data.after_ranges.clone()];
         self.sources = [data.before_contents.clone(), data.after_contents.clone()];
         self.apply_render_options(true);
         self.active_panel = Panel::Before;
         self.sync_focus();
         self.sync_cross_highlight();
+    }
+
+    /// Each side's highlighting settings, for computing its highlighting off the UI thread.
+    pub fn highlight_settings(&self) -> [HighlightSettings; 2] {
+        [
+            self.left_viewer.highlight_settings(),
+            self.right_viewer.highlight_settings(),
+        ]
+    }
+
+    /// Highlighting computed ahead for the next `load_diff`.
+    pub fn offer_highlights(&mut self, highlights: SideHighlights) {
+        self.offered_highlights = Some(highlights);
     }
 
     /// Switch how much of the diff is painted, keeping the cursor and scroll where they are.

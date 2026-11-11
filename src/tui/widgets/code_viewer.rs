@@ -42,7 +42,7 @@ pub(crate) fn theme_set() -> &'static ThemeSet {
     THEME_SET.get_or_init(ThemeSet::load_defaults)
 }
 
-/// Every syntect built-in theme name, sorted: exactly the names `get_theme` can resolve.
+/// Every syntect built-in theme name, sorted: exactly the names `syntax_theme` can resolve.
 pub fn syntax_theme_names() -> Vec<String> {
     let mut names: Vec<String> = theme_set().themes.keys().cloned().collect();
     names.sort();
@@ -450,10 +450,43 @@ impl CodeViewerWidget {
 
     /// Load contents read elsewhere, so the UI thread does not redo a blocking read.
     pub fn load_contents(&mut self, path: PathBuf, contents: String) {
+        self.load_contents_highlighted(path, contents, None);
+    }
+
+    /// [`load_contents`](Self::load_contents) with highlighting done ahead, off the UI thread
+    /// ([`Highlighted::compute`]). Used only if it was computed for exactly these contents,
+    /// language and settings; otherwise highlighted here as before, so the result is the same
+    /// either way.
+    pub fn load_contents_highlighted(
+        &mut self,
+        path: PathBuf,
+        contents: String,
+        highlighted: Option<Highlighted>,
+    ) {
         self.language = language_for_path_and_content(&path, &contents);
         self.file_path = Some(path);
-        self.contents = contents;
-        self.rebuild_highlight_cache();
+        match highlighted {
+            Some(done)
+                if done.contents == contents
+                    && done.language == self.language
+                    && done.settings == self.highlight_settings() =>
+            {
+                self.contents = contents;
+                self.highlighted_lines = done.lines;
+            }
+            _ => {
+                self.contents = contents;
+                self.rebuild_highlight_cache();
+            }
+        }
+    }
+
+    /// What highlighting depends on besides the text, for [`Highlighted::compute`].
+    pub fn highlight_settings(&self) -> HighlightSettings {
+        HighlightSettings {
+            theme_name: self.theme_name.clone(),
+            enabled: self.syntax_highlighting,
+        }
     }
 
     #[cfg(test)]
@@ -552,77 +585,120 @@ impl CodeViewerWidget {
         matches
     }
 
-    fn get_syntax(&self) -> Option<&'static SyntaxReference> {
-        let lang_name = self.language.as_ref()?;
-        let syntect_name = language_to_syntect(lang_name)?;
-        syntax_set().find_syntax_by_name(syntect_name)
-    }
-
-    /// `theme_name`, or [`DEFAULT_SYNTAX_THEME`] if unset or unknown: `set_theme` does not
-    /// validate.
-    fn get_theme(&self) -> Theme {
-        let theme_set = theme_set();
-        let theme_name = self.theme_name.as_deref().unwrap_or(DEFAULT_SYNTAX_THEME);
-        theme_set
-            .themes
-            .get(theme_name)
-            .or_else(|| theme_set.themes.get(DEFAULT_SYNTAX_THEME))
-            .expect("base16-ocean.dark is one of syntect's own bundled default themes")
-            .clone()
-    }
-
-    /// The only place highlighting runs; call it on a change of input, never per frame.
+    /// The only place highlighting runs on the UI thread; call it on a change of input, never
+    /// per frame.
     fn rebuild_highlight_cache(&mut self) {
-        let lines: Vec<&str> = self.contents.lines().collect();
-
-        self.highlighted_lines = if self.syntax_highlighting {
-            self.highlight_lines(&lines).unwrap_or_else(|_| {
-                lines
-                    .iter()
-                    .map(|&line| Line::from(line.to_string()))
-                    .collect()
-            })
-        } else {
-            lines
-                .iter()
-                .map(|&line| Line::from(line.to_string()))
-                .collect()
-        };
+        self.highlighted_lines = highlighted_lines(
+            &self.contents,
+            self.language.as_ref(),
+            &self.highlight_settings(),
+        );
     }
+}
 
-    fn highlight_lines(&self, lines: &[&str]) -> Result<Vec<Line<'static>>> {
-        let syntax = match self.get_syntax() {
-            Some(s) => s,
-            None => {
-                return Ok(lines
-                    .iter()
-                    .map(|&line| Line::from(line.to_string()))
-                    .collect());
-            }
-        };
+/// What a file's highlighting depends on besides its text and language.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HighlightSettings {
+    /// A syntect theme name; `None` or an unknown name is [`DEFAULT_SYNTAX_THEME`].
+    pub theme_name: Option<String>,
+    /// Off: plain lines.
+    pub enabled: bool,
+}
 
-        let theme = self.get_theme();
-        let mut highlighter = syntect::easy::HighlightLines::new(syntax, &theme);
-        let mut result = Vec::with_capacity(lines.len());
+/// One file's highlighted lines, computed ahead of loading it - on the diff's background thread,
+/// since syntect over a 10,000-line file takes most of a second - together with everything they
+/// were computed from, so [`CodeViewerWidget::load_contents_highlighted`] can tell whether they
+/// still apply.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Highlighted {
+    contents: String,
+    language: Option<crate::code::Language>,
+    settings: HighlightSettings,
+    lines: Vec<Line<'static>>,
+}
 
-        for &line in lines {
-            let regions: Vec<(syntect::highlighting::Style, &str)> =
-                highlighter.highlight_line(line, syntax_set())?;
-
-            let spans: Vec<Span> = regions
-                .into_iter()
-                .map(|(style, text)| {
-                    let color = syntect_color_to_ratatui(style.foreground);
-                    Span::styled(text.to_string(), Style::new().fg(color))
-                })
-                .collect();
-
-            result.push(Line::from(spans));
+impl Highlighted {
+    /// `contents` (named `path`, which with the contents picks the language) highlighted as a
+    /// widget with `settings` would highlight it.
+    pub fn compute(path: &std::path::Path, contents: &str, settings: HighlightSettings) -> Self {
+        let language = language_for_path_and_content(path, contents);
+        let lines = highlighted_lines(contents, language.as_ref(), &settings);
+        Self {
+            contents: contents.to_string(),
+            language,
+            settings,
+            lines,
         }
+    }
+}
 
-        Ok(result)
+/// Every line of `contents`, syntax-highlighted per `settings` when `language` has a syntect
+/// grammar, else plain.
+fn highlighted_lines(
+    contents: &str,
+    language: Option<&crate::code::Language>,
+    settings: &HighlightSettings,
+) -> Vec<Line<'static>> {
+    let lines: Vec<&str> = contents.lines().collect();
+    let plain = |lines: &[&str]| {
+        lines
+            .iter()
+            .map(|&line| Line::from(line.to_string()))
+            .collect()
+    };
+    if !settings.enabled {
+        return plain(&lines);
+    }
+    let syntax = language
+        .and_then(language_to_syntect)
+        .and_then(|name| syntax_set().find_syntax_by_name(name));
+    match syntax {
+        Some(syntax) => highlight_lines(syntax, settings.theme_name.as_deref(), &lines)
+            .unwrap_or_else(|_| plain(&lines)),
+        None => plain(&lines),
+    }
+}
+
+/// `theme_name`, or [`DEFAULT_SYNTAX_THEME`] if unset or unknown: `set_theme` does not validate.
+fn syntax_theme(theme_name: Option<&str>) -> Theme {
+    let theme_set = theme_set();
+    let theme_name = theme_name.unwrap_or(DEFAULT_SYNTAX_THEME);
+    theme_set
+        .themes
+        .get(theme_name)
+        .or_else(|| theme_set.themes.get(DEFAULT_SYNTAX_THEME))
+        .expect("base16-ocean.dark is one of syntect's own bundled default themes")
+        .clone()
+}
+
+fn highlight_lines(
+    syntax: &SyntaxReference,
+    theme_name: Option<&str>,
+    lines: &[&str],
+) -> Result<Vec<Line<'static>>> {
+    let theme = syntax_theme(theme_name);
+    let mut highlighter = syntect::easy::HighlightLines::new(syntax, &theme);
+    let mut result = Vec::with_capacity(lines.len());
+
+    for &line in lines {
+        let regions: Vec<(syntect::highlighting::Style, &str)> =
+            highlighter.highlight_line(line, syntax_set())?;
+
+        let spans: Vec<Span> = regions
+            .into_iter()
+            .map(|(style, text)| {
+                let color = syntect_color_to_ratatui(style.foreground);
+                Span::styled(text.to_string(), Style::new().fg(color))
+            })
+            .collect();
+
+        result.push(Line::from(spans));
     }
 
+    Ok(result)
+}
+
+impl CodeViewerWidget {
     pub fn visible_lines(&self, state: &CodeViewerState) -> Vec<Line<'static>> {
         let total_lines = self.highlighted_lines.len();
 
@@ -867,6 +943,39 @@ mod tests {
     use super::*;
     use crate::diff::text::RangeMatch;
 
+    /// Highlighting done ahead, off the UI thread, must be exactly what the widget would have
+    /// computed itself - and an offer made for other settings must not be used.
+    #[test]
+    fn highlighting_computed_ahead_matches_and_a_stale_offer_is_ignored() {
+        let contents = "fn main() {\n    let x = \"s\"; // c\n}\n".to_string();
+        let path = PathBuf::from("a.rs");
+        let mut own = CodeViewerWidget::default();
+        own.load_contents(path.clone(), contents.clone());
+
+        let ahead = Highlighted::compute(&path, &contents, own.highlight_settings());
+        let mut offered = CodeViewerWidget::default();
+        offered.load_contents_highlighted(path.clone(), contents.clone(), Some(ahead.clone()));
+        assert_eq!(offered.highlighted_lines, own.highlighted_lines);
+        assert_eq!(ahead.lines, own.highlighted_lines);
+
+        let other_theme = Highlighted::compute(
+            &path,
+            &contents,
+            HighlightSettings {
+                theme_name: Some("Solarized (light)".to_string()),
+                enabled: true,
+            },
+        );
+        assert_ne!(other_theme.lines, own.highlighted_lines);
+        let mut stale = CodeViewerWidget::default();
+        stale.load_contents_highlighted(path.clone(), contents.clone(), Some(other_theme));
+        assert_eq!(stale.highlighted_lines, own.highlighted_lines);
+
+        let mut other_text = CodeViewerWidget::default();
+        other_text.load_contents_highlighted(path, "fn b() {}\n".to_string(), Some(ahead));
+        assert_eq!(other_text.line_text(0), "fn b() {}");
+    }
+
     fn widget_with_line(text: &str) -> CodeViewerWidget {
         CodeViewerWidget::default().with_contents(text.to_string())
     }
@@ -932,11 +1041,9 @@ mod tests {
         ];
 
         for language in languages {
-            let widget = CodeViewerWidget {
-                language: Some(language),
-                ..CodeViewerWidget::default()
-            };
-            let resolved = widget.get_syntax().is_some();
+            let resolved = language_to_syntect(&language)
+                .and_then(|name| syntax_set().find_syntax_by_name(name))
+                .is_some();
             if matches!(language, Language::Bazel | Language::Unknown) {
                 assert!(
                     !resolved,
