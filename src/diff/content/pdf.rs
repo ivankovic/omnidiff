@@ -23,12 +23,18 @@
 //! pages (a new modification date, renumbered objects) has no changed page, and only a changed
 //! page is drawn, at [`PAGE_SCALE`] times its size in points.
 //!
-//! Pages are matched by number, so a page inserted early makes every later page "changed": they
-//! are compared as pictures and say what moved. The text on a page is not compared on its own yet;
-//! it is in the picture.
+//! Pages are keyed by number, and match by it when both sides have as many. When a page was
+//! inserted or removed they are a sequence aligned by hash ([`Container::sequence`]): a page
+//! inserted early is one added page, and the pages after it pair with their unchanged
+//! counterparts rather than all redrawing. The text on a page is not compared on its own yet; it
+//! is in the picture.
 //!
-//! The PDF is parsed once, and the pages a worker draws share one render cache (hayro's fonts and
-//! glyph outlines; see [`Container::opener`]).
+//! The PDF is parsed once to list it, and once more by each worker that draws its pages, which
+//! draws them all from that one parse ([`Container::opener`]), not once per page. Workers do not
+//! share a parse: hayro drawing pages of one `Pdf` on several threads at once draws them
+//! differently from run to run (a fixture's unchanged page 8 came out changed one run in ten).
+//! Each page still gets a fresh `RenderCache`, as before: one kept across a worker's pages
+//! would make a page's pixels depend on which pages that worker drew first.
 //!
 //! **What a PDF makes OmniDiff decode is bounded.** Listing hashes at most [`MAX_HASHED_BYTES`]
 //! of content streams and placed objects over all pages (a page's `/Contents` may name one
@@ -120,24 +126,21 @@ impl Document {
         })
     }
 
-    /// Member `index`'s content, a page drawn with `cache`.
-    fn open_with<'a>(
-        &'a self,
-        index: usize,
-        cache: &hayro::RenderCache<'a>,
-    ) -> Result<MemberContent> {
+    /// This PDF parsed again, for one thread to draw from (see the module doc).
+    fn reload(&self) -> Result<Pdf> {
+        Pdf::new(self.pdf.data().clone()).map_err(|err| anyhow::anyhow!("reading the PDF: {err:?}"))
+    }
+
+    /// Member `index`'s content, a page drawn from `pdf`, this document parsed on this thread.
+    fn open_from(&self, pdf: &Pdf, index: usize) -> Result<MemberContent> {
         if index == 0 {
             return Ok(MemberContent::Text(self.metadata.clone()));
         }
-        let page = self
-            .pdf
-            .pages()
-            .get(index - 1)
-            .context("a page past the end")?;
+        let page = pdf.pages().get(index - 1).context("a page past the end")?;
         if !self.drawable[index - 1] {
             bail!("a page of more content than is drawn");
         }
-        let pixels = render(page, cache)?;
+        let pixels = render(page, &hayro::RenderCache::new())?;
         let (width, height) = pixels.dimensions();
         let frames = Frames::from_frames(vec![(pixels, 0)])?;
         let info = PictureInfo {
@@ -163,12 +166,21 @@ impl Container for Document {
     }
 
     fn open(&self, index: usize) -> Result<MemberContent> {
-        self.open_with(index, &hayro::RenderCache::new())
+        self.open_from(&self.reload()?, index)
     }
 
     fn opener(&self) -> Opener<'_> {
-        let cache = hayro::RenderCache::new();
-        Box::new(move |index| self.open_with(index, &cache))
+        let mut pdf = None;
+        Box::new(move |index| {
+            if pdf.is_none() {
+                pdf = Some(self.reload()?);
+            }
+            self.open_from(pdf.as_ref().expect("loaded"), index)
+        })
+    }
+
+    fn sequence(&self) -> bool {
+        true
     }
 }
 
@@ -450,7 +462,7 @@ pub(crate) mod tests {
     #[test]
     fn only_the_changed_page_is_drawn_and_compared() -> Result<()> {
         let before = pdf(&[SQUARE, SQUARE]);
-        let after = pdf(&[SQUARE, BIG_SQUARE, SQUARE]);
+        let after = pdf(&[SQUARE, BIG_SQUARE]);
         let Some(ContentDiff::Container(diff)) = crate::diff::content::diff(&before, &after)?
         else {
             panic!("a document pair");
@@ -458,7 +470,6 @@ pub(crate) mod tests {
         let status = |key: &str| diff.member(key).map(|member| member.status);
         assert_eq!(status("page 1"), None, "unchanged");
         assert_eq!(status("page 2"), Some(MemberStatus::Changed));
-        assert_eq!(status("page 3"), Some(MemberStatus::Added));
         assert!(matches!(
             diff.member("page 2")
                 .and_then(|member| member.detail.as_ref()),
@@ -509,6 +520,42 @@ pub(crate) mod tests {
         let (_, drawable) = page_hash(page, &mut plenty);
         assert!(drawable);
         assert_eq!(MAX_HASHED_BYTES - plenty, 10 * 1024 * 1024);
+        Ok(())
+    }
+
+    #[test]
+    fn a_page_inserted_in_the_middle_is_one_added_page() -> Result<()> {
+        const DOT: &str = "0 0 0 rg 50 50 2 2 re f";
+        let before = pdf(&[SQUARE, BIG_SQUARE, SQUARE, BIG_SQUARE]);
+        let after = pdf(&[SQUARE, BIG_SQUARE, DOT, SQUARE, BIG_SQUARE]);
+        let Some(ContentDiff::Container(diff)) = crate::diff::content::diff(&before, &after)?
+        else {
+            panic!("a document pair");
+        };
+        let changes: Vec<(&str, MemberStatus)> = diff
+            .members
+            .iter()
+            .map(|member| (member.key.as_str(), member.status))
+            .collect();
+        assert_eq!(
+            changes,
+            vec![
+                ("metadata", MemberStatus::Changed),
+                ("page 3", MemberStatus::Added)
+            ],
+            "the pages after it are unchanged"
+        );
+        assert_eq!(diff.unchanged, 4);
+        // The other way round, the page is removed.
+        let Some(ContentDiff::Container(diff)) = crate::diff::content::diff(&after, &before)?
+        else {
+            panic!("a document pair");
+        };
+        assert_eq!(
+            diff.member("page 3").map(|member| member.status),
+            Some(MemberStatus::Removed)
+        );
+        assert_eq!(diff.unchanged, 4);
         Ok(())
     }
 }

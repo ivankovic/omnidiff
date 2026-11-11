@@ -859,8 +859,9 @@ fn push_same(steps: &mut Vec<FrameStep>, before: usize, after: usize) {
 const ALIGN_CELLS: usize = 16_000_000;
 
 /// The (before, after) index pairs of equal hashes a longest common subsequence matches, in order.
-/// Common ends match first, so the table only covers the middle.
-fn align(before: &[u64], after: &[u64]) -> Vec<(usize, usize)> {
+/// Common ends match first, so the table only covers the middle. A PDF's pages align by it too
+/// (`content::container::align`).
+pub(crate) fn align(before: &[u64], after: &[u64]) -> Vec<(usize, usize)> {
     let prefix = before.iter().zip(after).take_while(|(b, a)| b == a).count();
     let suffix = before[prefix..]
         .iter()

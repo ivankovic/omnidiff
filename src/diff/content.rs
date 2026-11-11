@@ -50,7 +50,9 @@
 //! * **Panics are contained** ([`contained`]): the decoders are third-party code (image, zip,
 //!   hayro, skrifa, usvg) a crafted file can make panic. [`diff`] never panics: a panic decoding a
 //!   side is that side's error, so the pair is reported as binary, and a panic opening one
-//!   member is that member not opening.
+//!   member is that member not opening. A panic caught there prints nothing: a hook installed
+//!   once stays quiet while this thread is in [`contained`], and hands every other panic to the
+//!   hook that was there before it.
 
 pub mod archive;
 pub mod catalog;
@@ -60,7 +62,7 @@ pub mod cursor;
 pub mod font;
 pub mod pdf;
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -813,9 +815,26 @@ pub fn charge_expanded(bytes: u64) -> Result<()> {
     }
 }
 
-/// `f`, with a panic in it turned into an error: `what` panicked.
+thread_local! {
+    /// True while this thread is in [`contained`], whose panics become errors, not messages.
+    static QUIET: Cell<bool> = const { Cell::new(false) };
+}
+
+/// `f`, with a panic in it turned into an error: `what` panicked. The panic prints nothing.
 pub fn contained<T>(what: &str, f: impl FnOnce() -> Result<T>) -> Result<T> {
-    catch_unwind(AssertUnwindSafe(f)).unwrap_or_else(|panic| Err(panicked(what, &*panic)))
+    static HOOK: std::sync::Once = std::sync::Once::new();
+    HOOK.call_once(|| {
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            if !QUIET.get() {
+                previous(info);
+            }
+        }));
+    });
+    let was_quiet = QUIET.replace(true);
+    let result = catch_unwind(AssertUnwindSafe(f));
+    QUIET.set(was_quiet);
+    result.unwrap_or_else(|panic| Err(panicked(what, &*panic)))
 }
 
 /// A thread's [`std::thread::Result`] as an error if it panicked while doing `what`.

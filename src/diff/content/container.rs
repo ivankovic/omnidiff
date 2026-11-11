@@ -29,10 +29,17 @@
 //! A member that only one side has is added or removed. Renames are not followed: a moved file
 //! is one removed and one added.
 //!
+//! **Except in a sequence** ([`Container::sequence`]: a PDF's pages), whose keys are positions.
+//! When the two sides have as many members, they still match by key. When they have not, a member
+//! was inserted or removed, and every later key would name another member: the members then
+//! align by hash, the way an animation's frames do (`picture::align`, a longest common subsequence
+//! bounded by its table size), and the members left between matches pair in order, the rest added
+//! or removed. A page inserted in the middle is one added page; the pages after it are unchanged.
+//!
 //! Changed members are opened and compared on every core, each worker taking the next member as
 //! it finishes one (a few large members do not leave the other cores idle) and opening members
-//! through one [`Opener`] per side, which may keep what it shares between them (a PDF's render
-//! cache). A member whose decoder panics, or that would take the diff past its expansion budget
+//! through one [`Opener`] per side, which may keep what it shares between them (a PDF parsed
+//! once per worker). A member whose decoder panics, or that would take the diff past its expansion budget
 //! ([`super::MAX_DIFF_EXPANDED_BYTES`]), does not open: it is changed, with no detail.
 
 use std::collections::HashMap;
@@ -85,6 +92,11 @@ pub trait Container: Send + Sync {
     /// [`Container::open`] each.
     fn opener(&self) -> Opener<'_> {
         Box::new(move |index| self.open(index))
+    }
+    /// True if the members are a sequence keyed by position (a PDF's pages), which aligns by hash
+    /// when a member was inserted or removed (see the module doc).
+    fn sequence(&self) -> bool {
+        false
     }
 }
 
@@ -262,6 +274,13 @@ pub struct Aligned {
 /// Both sides' members, matched by key, in one order: after's, with each member only before has
 /// placed after the last member before it that both have (or first, if none is).
 pub fn align(before: Option<&dyn Container>, after: Option<&dyn Container>) -> Vec<Aligned> {
+    if let (Some(before), Some(after)) = (before, after)
+        && before.sequence()
+        && after.sequence()
+        && before.members().len() != after.members().len()
+    {
+        return align_sequence(before.members(), after.members());
+    }
     let empty: &[Member] = &[];
     let before_members = before.map_or(empty, |container| container.members());
     let after_members = after.map_or(empty, |container| container.members());
@@ -318,6 +337,47 @@ pub fn align(before: Option<&dyn Container>, after: Option<&dyn Container>) -> V
         if row.before.is_some() {
             removed(&mut rows, Some(index));
         }
+    }
+    rows
+}
+
+/// Two sequences of members aligned by hash: matched members, then in each gap between matches
+/// the members paired in order, and the rest of the longer side added or removed.
+fn align_sequence(before: &[Member], after: &[Member]) -> Vec<Aligned> {
+    let hashes = |members: &[Member]| members.iter().map(|member| member.hash).collect::<Vec<_>>();
+    let matched = picture::align(&hashes(before), &hashes(after));
+    let mut rows = Vec::with_capacity(before.len().max(after.len()));
+    let (mut i, mut j) = (0, 0);
+    // The end of both sides closes the last gap.
+    for (b, a) in matched.into_iter().chain([(before.len(), after.len())]) {
+        let paired = (b - i).min(a - j);
+        rows.extend((0..paired).map(|k| Aligned {
+            before: Some(i + k),
+            after: Some(j + k),
+            status: if before[i + k].hash == after[j + k].hash {
+                MemberStatus::Same
+            } else {
+                MemberStatus::Changed
+            },
+        }));
+        rows.extend((i + paired..b).map(|index| Aligned {
+            before: Some(index),
+            after: None,
+            status: MemberStatus::Removed,
+        }));
+        rows.extend((j + paired..a).map(|index| Aligned {
+            before: None,
+            after: Some(index),
+            status: MemberStatus::Added,
+        }));
+        if b < before.len() {
+            rows.push(Aligned {
+                before: Some(b),
+                after: Some(a),
+                status: MemberStatus::Same,
+            });
+        }
+        (i, j) = (b + 1, a + 1);
     }
     rows
 }
