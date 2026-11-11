@@ -1047,8 +1047,14 @@ mod tests {
         std::fs::write(&planted, "").expect("write");
         let project = dir.path().join(PROJECT_CONFIG);
         let user = dir.path().join("user.toml");
-        // Outside the temp directory, which `record_recent_pair` treats as throwaway.
-        let lasting = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        // Outside the temp directory, which `record_recent_pair` treats as throwaway: the
+        // filesystem root, since the checkout itself can be under it (Nix builds in /build, which
+        // is also its TMPDIR).
+        let lasting = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .last()
+            .expect("a path has a root")
+            .to_path_buf();
         save_to(
             project.clone(),
             ThemeConfig {
