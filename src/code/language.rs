@@ -256,8 +256,18 @@ pub fn requires_clean_parse(language: Language) -> bool {
     language == Language::SQL
 }
 
-/// `contents` parsed with `parser`, already set to `language`'s grammar; `None` when the parse fails
-/// or [`requires_clean_parse`] rejects the tree.
+/// The most nodes (root included, anonymous ones too) a side's tree may have and still be diffed
+/// structurally; a bigger tree is dropped and the file diffed as plain text, as if there were no
+/// grammar. Why this value is in the `code` module doc.
+pub const MAX_AST_NODES: usize = 300_000;
+
+/// The cap [`parse_tree`] applies, [`MAX_AST_NODES`] unless a tool that measures the engine
+/// itself on huge inputs (a robustness run) raises it. Process-wide.
+pub static AST_NODE_CAP: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(MAX_AST_NODES);
+
+/// `contents` parsed with `parser`, already set to `language`'s grammar; `None` when the parse fails,
+/// [`requires_clean_parse`] rejects the tree, or it has more than [`AST_NODE_CAP`] nodes.
 pub fn parse_tree(
     parser: &mut tree_sitter::Parser,
     contents: &str,
@@ -265,6 +275,11 @@ pub fn parse_tree(
 ) -> Option<tree_sitter::Tree> {
     let tree = parser.parse(contents, None)?;
     if requires_clean_parse(language) && tree.root_node().has_error() {
+        return None;
+    }
+    // `descendant_count` is stored in the tree, so this costs nothing.
+    if tree.root_node().descendant_count() > AST_NODE_CAP.load(std::sync::atomic::Ordering::Relaxed)
+    {
         return None;
     }
     Some(tree)

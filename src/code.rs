@@ -22,6 +22,19 @@
 //! The two sides of a diff are built independently - nothing in a parse or its metadata reads the
 //! other side - so the product's entry points build them on two threads ([`build_sides`]) once a
 //! pair is big enough to pay for one. The diff itself stays on one thread.
+//!
+//! **Size cap.** A side whose tree has more than [`language::MAX_AST_NODES`] (300,000) nodes gets
+//! no `ast`, so every entry point diffs the pair as plain text, line by line, the path a file
+//! without a grammar takes (`DiffSessionData::plain_text_fallback`).
+//! The shipped pipeline had no bound at all: over the Full corpus 96 pairs ran past a 120 s budget
+//! (median 1.3 M nodes combined) and 112 past 6 GB (`research/data/performance/PROVENANCE.md`).
+//! The value, from measurements on 2026-11-11 (release build, laptop): the largest fixture has
+//! 198,406 nodes a side (`json-ipfs-ipfs-desktop-only-update-version-strings`), so the cap leaves
+//! the whole corpus structural with 1.5x headroom; well-behaved code costs about 4 µs and 2.6 KB
+//! per node a side (the Rust, C++ and TypeScript fixtures repeated up to 1 M nodes a side: 4.6 s
+//! and 2.6 GB there), and a parse-table-like C array, the worst kind seen, grows faster (400 k
+//! nodes a side, 4.7 s). At 300,000 a side a diff stays within a few seconds and about 1.5 GB.
+//! Depth is not capped: the pipeline runs on its own big-stack thread (`diff::PIPELINE_STACK_SIZE`).
 #[cfg(test)]
 mod gap_survey;
 pub mod hash;
@@ -523,6 +536,32 @@ impl std::fmt::Display for Type {
 
 #[cfg(test)]
 mod tests {
+    /// Past `MAX_AST_NODES` a side has no tree, so it is diffed as plain text; just under it, it
+    /// keeps one. A JSON array of `n` numbers is `2n + 3` nodes: the document, the array, its two
+    /// brackets, `n` numbers and `n - 1` commas.
+    #[test]
+    fn a_tree_past_the_node_cap_is_dropped() {
+        let array = |n: usize| {
+            let numbers: Vec<String> = (0..n).map(|i| (i % 10).to_string()).collect();
+            format!("[{}]", numbers.join(","))
+        };
+        let n_under_cap = (language::MAX_AST_NODES - 3) / 2;
+        let under_cap = Code::from_string(&array(n_under_cap), &Language::JSON);
+        assert_eq!(
+            under_cap
+                .ast
+                .as_ref()
+                .map(|ast| ast.root_node().descendant_count()),
+            Some(2 * n_under_cap + 3)
+        );
+        assert!(2 * (n_under_cap + 1) + 3 > language::MAX_AST_NODES);
+        assert!(
+            Code::from_string(&array(n_under_cap + 1), &Language::JSON)
+                .ast
+                .is_none()
+        );
+    }
+
     fn encoded(text: &str, encoding: Encoding) -> Vec<u8> {
         let text = format!("\u{feff}{text}");
         match encoding {
