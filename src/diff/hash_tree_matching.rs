@@ -21,7 +21,8 @@
 //! once per member, so the free members of a bucket are kept as [`FreeBuckets`], built on the
 //! bucket's first visit and shrunk as pairs are mapped, rather than re-filtered from the whole
 //! bucket on every visit: O(k²) became O(k log k). Their orders reproduce the filtered lists'
-//! exactly (a member's index in the bucket breaks every tie), so the choices are unchanged.
+//! exactly (a member's index in the bucket breaks every tie), so the choices are unchanged. Small
+//! buckets, nearly all of them, are still filtered per visit, which costs less than the lists.
 
 use std::collections::BTreeMap;
 
@@ -431,27 +432,57 @@ pub(crate) fn solve_with_hash_map(
         let Some(after_candidates) = after_hash_to_nodes.get(before_hash_value) else {
             continue;
         };
-        let free_after_count = free
-            .after_bucket(*before_hash_value, after_candidates, node_cache, diff)
-            .len();
-        let free_before_count = if free_after_count > 1 {
-            free.before_bucket(*before_hash_value, &bucket_of, node_cache, diff)
-                .len()
+        let before_bucket = bucket_of
+            .get(before_hash_value)
+            .map_or(&[][..], Vec::as_slice);
+        // Small buckets, nearly all of them, are filtered per visit: cheaper than keeping lists.
+        let small = after_candidates.len() < FREE_BUCKETS_MIN_SIZE
+            && before_bucket.len() < FREE_BUCKETS_MIN_SIZE;
+        let (free_before, free_after, use_assignment): (
+            Vec<tree_sitter::Node>,
+            Vec<tree_sitter::Node>,
+            bool,
+        ) = if small {
+            let free_after: Vec<tree_sitter::Node> = after_candidates
+                .iter()
+                .filter(|&&id| !diff.after_node_map.contains_key(&id))
+                .filter_map(|id| node_cache.after.get(id).copied())
+                .collect();
+            let free_before: Vec<tree_sitter::Node> = if free_after.len() > 1 {
+                before_bucket
+                    .iter()
+                    .filter(|&&id| !diff.before_node_map.contains_key(&id))
+                    .filter_map(|id| node_cache.before.get(id).copied())
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let use_assignment = free_after.len() > 1
+                && free_before.len() * free_after.len() <= SEGMENT_SIMILARITY_MAX_CELLS;
+            (free_before, free_after, use_assignment)
         } else {
-            0
-        };
-        // Listed only for the assignment, which `SEGMENT_SIMILARITY_MAX_CELLS` keeps small.
-        let use_assignment = free_after_count > 1
-            && free_before_count * free_after_count <= SEGMENT_SIMILARITY_MAX_CELLS;
-        let (free_before, free_after): (Vec<tree_sitter::Node>, Vec<tree_sitter::Node>) =
+            let free_after_count = free
+                .after_bucket(*before_hash_value, after_candidates, node_cache, diff)
+                .len();
+            let free_before_count = if free_after_count > 1 {
+                free.before_bucket(*before_hash_value, &bucket_of, node_cache, diff)
+                    .len()
+            } else {
+                0
+            };
+            // Listed only for the assignment, which `SEGMENT_SIMILARITY_MAX_CELLS` keeps small.
+            let use_assignment = free_after_count > 1
+                && free_before_count * free_after_count <= SEGMENT_SIMILARITY_MAX_CELLS;
             if use_assignment {
                 (
                     free.before[before_hash_value].values().copied().collect(),
                     free.after_in_bucket_order(*before_hash_value),
+                    true,
                 )
             } else {
-                (Vec::new(), Vec::new())
-            };
+                (Vec::new(), Vec::new(), false)
+            }
+        };
 
         let assigned = use_assignment
             .then(|| {
@@ -520,9 +551,15 @@ pub(crate) fn solve_with_hash_map(
             None => {
                 // Proximity in the file, not discovery order, tells true duplicates from
                 // coincidences.
-                let Some(after_node) =
+                let nearest = if small {
+                    free_after
+                        .iter()
+                        .min_by_key(|n| n.start_byte().abs_diff(before_node.start_byte()))
+                        .copied()
+                } else {
                     free.nearest_after(*before_hash_value, before_node.start_byte())
-                else {
+                };
+                let Some(after_node) = nearest else {
                     continue;
                 };
                 vec![(before_node, after_node)]
@@ -534,6 +571,9 @@ pub(crate) fn solve_with_hash_map(
                 continue;
             }
             map_pair(diff, &mut mapped, b, a);
+            if free.is_empty() {
+                mapped.clear();
+            }
             for (before_id, after_id) in mapped.drain(..) {
                 free.remove(before_id, after_id);
             }
@@ -563,7 +603,16 @@ struct FreeBuckets<'t> {
     before_key_of: rustc_hash::FxHashMap<usize, (u64, usize)>,
 }
 
+/// Bucket size (either side) from which [`solve_with_hash_map`] keeps [`FreeBuckets`] rather than
+/// filtering the bucket on each visit.
+const FREE_BUCKETS_MIN_SIZE: usize = 16;
+
 impl<'t> FreeBuckets<'t> {
+    /// No bucket kept yet, so nothing to tell about a mapping.
+    fn is_empty(&self) -> bool {
+        self.after.is_empty() && self.before.is_empty()
+    }
+
     fn after_bucket(
         &mut self,
         hash: u64,
