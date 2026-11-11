@@ -47,6 +47,15 @@
 //! does not produce groups yet: the ground truth does not yet tell a copy from identical new code
 //! in a way a pass could detect (AGENT_LOG, N:M Phase 0), so today only a human mapping's
 //! all-to-all groups arrive here, through `test::helper::human_mapping`.
+//!
+//! **Stack.** Several passes walk the trees recursively, one frame per level, and tree-sitter
+//! builds trees as deep as the input nests: 100,000 nested JSON arrays overflowed an 8 MB stack in
+//! [`Diff::from_code`], and an overflow aborts the process where a panic could be caught. The TUI
+//! always ran the pipeline on a 256 MB thread, but the library entry points ran it on the
+//! caller's. [`Diff::pending_with_config`], [`PendingDiff::finish`] and so [`Diff::from_code`] now
+//! run on a [`PIPELINE_STACK_SIZE`] thread of their own (`on_pipeline_stack`), unless already on
+//! one; the thread costs tens of microseconds against a median diff of milliseconds, and its
+//! stack is an address-space reservation, committed only as used.
 pub mod apted;
 pub mod content;
 pub mod cost;
@@ -206,7 +215,7 @@ impl Diff {
     /// [`Diff::from_code`] with individual passes switchable, for ablation studies only: later
     /// passes assume every earlier one ran, so a disabled pass changes quality, not just speed.
     pub fn from_code_with_config(before: &Code, after: &Code, config: &HeuristicConfig) -> Self {
-        Self::pending_with_config(before, after, config).finish()
+        on_pipeline_stack(|| Self::pending_with_config(before, after, config).finish())
     }
 
     /// Runs phases 1-4 and pauses before phase 6, so a caller can read
@@ -217,6 +226,14 @@ impl Diff {
 
     /// [`Diff::pending`] with [`HeuristicConfig`]'s per-pass switches.
     pub fn pending_with_config<'code>(
+        before: &'code Code,
+        after: &'code Code,
+        config: &HeuristicConfig,
+    ) -> PendingDiff<'code> {
+        on_pipeline_stack(|| Self::pending_on_this_stack(before, after, config))
+    }
+
+    fn pending_on_this_stack<'code>(
         before: &'code Code,
         after: &'code Code,
         config: &HeuristicConfig,
@@ -270,6 +287,40 @@ impl Diff {
             config: *config,
         }
     }
+}
+
+/// Stack size of the thread the matching pipeline runs on; see the module doc. The same ceiling as
+/// the TUI's `DIFF_COMPUTE_STACK_SIZE`.
+pub const PIPELINE_STACK_SIZE: usize = 256 * 1024 * 1024;
+
+/// The name of that thread: the TUI's `DIFF_THREAD_NAME`, which its panic hook reads to tell a
+/// diff-computation panic (caught, shown in the error banner) from one that takes the app down.
+pub const PIPELINE_THREAD_NAME: &str = "omnidiff-diff";
+
+thread_local! {
+    static ON_PIPELINE_STACK: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Runs `work` on a [`PIPELINE_STACK_SIZE`] thread, or inline when already on one. A panic is
+/// re-raised on the caller's thread.
+fn on_pipeline_stack<R: Send>(work: impl FnOnce() -> R + Send) -> R {
+    if ON_PIPELINE_STACK.get() {
+        return work();
+    }
+    std::thread::scope(|scope| {
+        let worker = std::thread::Builder::new()
+            .name(PIPELINE_THREAD_NAME.to_string())
+            .stack_size(PIPELINE_STACK_SIZE)
+            .spawn_scoped(scope, || {
+                ON_PIPELINE_STACK.set(true);
+                work()
+            })
+            .expect("failed to spawn the diff pipeline thread");
+        match worker.join() {
+            Ok(result) => result,
+            Err(panic) => std::panic::resume_unwind(panic),
+        }
+    })
 }
 
 /// What every `solve_*` pass reads: both sides, their [`NodeCache`] and each side's
@@ -340,6 +391,10 @@ impl<'code> PendingDiff<'code> {
     }
 
     pub fn finish(self) -> Diff {
+        on_pipeline_stack(|| self.finish_on_this_stack())
+    }
+
+    fn finish_on_this_stack(self) -> Diff {
         let PendingDiff {
             before,
             after,
@@ -976,6 +1031,34 @@ mod tests {
     use anyhow::Result;
 
     use super::*;
+
+    /// The pipeline brings its own stack: on a 1 MB caller's thread (smaller than any default),
+    /// 90,000 nested arrays overflowed the recursive walks before `on_pipeline_stack`.
+    #[test]
+    fn diff_code_survives_deep_nesting_on_a_small_caller_stack() {
+        let depth = 90_000;
+        let nested = |leaf: &str| format!("{}{leaf}{}", "[".repeat(depth), "]".repeat(depth));
+        let before = Code::from_string(&nested("1"), &Language::JSON);
+        let after = Code::from_string(&nested("2"), &Language::JSON);
+        assert!(before.ast.is_some(), "under the node cap");
+        let diff = std::thread::scope(|scope| {
+            std::thread::Builder::new()
+                .stack_size(1024 * 1024)
+                .spawn_scoped(scope, || diff_code(&before, &after))
+                .expect("spawn")
+                .join()
+                .expect("no overflow, no panic")
+        });
+        assert!(diff.ast.is_some_and(|ast| !ast.before_node_map.is_empty()));
+    }
+
+    /// The TUI's panic hook names the thread by its own constant; a diff thread the pipeline
+    /// spawns must carry the same name.
+    #[cfg(feature = "tui")]
+    #[test]
+    fn pipeline_thread_name_is_the_tuis_diff_thread_name() {
+        assert_eq!(PIPELINE_THREAD_NAME, crate::tui::app::DIFF_THREAD_NAME);
+    }
 
     /// A language without a grammar leaves `ast: None`, a valid state `Diff` must fail safe on.
     #[test]
