@@ -92,6 +92,12 @@ pub fn run() -> Result<()> {
         false,
     )?;
 
+    let layout = if set_external {
+        ask_layout()?
+    } else {
+        Layout::Stacked
+    };
+
     if !set_difftool && !set_external {
         println!("\nNothing selected - no changes made.");
         return Ok(());
@@ -108,7 +114,11 @@ pub fn run() -> Result<()> {
     if set_external {
         // The resolved path, like the difftool command, so git runs this build rather than
         // whatever `omnidiff` is first on PATH; git runs the value through a shell.
-        set_config(scope, "diff.external", &shell_quote(&omnidiff_path))?;
+        set_config(
+            scope,
+            "diff.external",
+            &external_command(&omnidiff_path, layout),
+        )?;
     }
 
     println!("\nDone - configured {}.", scope.label());
@@ -183,8 +193,64 @@ fn print_manual_instructions() {
          git config difftool.prompt false\n\n\
          Add --global to any of these to apply them to every repository instead of just this \
          one. For plain `git diff`/`git log -p` too (always non-interactive):\n\n\
-         git config diff.external omnidiff"
+         git config diff.external omnidiff\n\n\
+         or, side by side when the terminal is wide enough:\n\n\
+         git config diff.external 'omnidiff --layout auto'"
     );
+}
+
+/// The layout `git diff` output takes, written into `diff.external` as `--layout`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Layout {
+    /// Side by side when the terminal is wide enough and the lines fit, stacked otherwise.
+    Auto,
+    Stacked,
+    SideBySide,
+}
+
+impl Layout {
+    /// The `--layout` argument, or `None` for stacked, which is the default and needs none, so
+    /// a stacked setup stays the bare command it always was.
+    fn flag(self) -> Option<&'static str> {
+        match self {
+            Layout::Auto => Some("auto"),
+            Layout::Stacked => None,
+            Layout::SideBySide => Some("side-by-side"),
+        }
+    }
+}
+
+/// The `diff.external` value: git runs it through a shell, so the path is quoted as a shell word.
+fn external_command(omnidiff_path: &str, layout: Layout) -> String {
+    let path = shell_quote(omnidiff_path);
+    match layout.flag() {
+        Some(layout) => format!("{path} --layout {layout}"),
+        None => path,
+    }
+}
+
+/// Parses `ask_layout`'s answer; `None` means reprompt.
+fn parse_layout(input: &str) -> Option<Layout> {
+    match input.trim().to_lowercase().as_str() {
+        "" | "a" | "auto" => Some(Layout::Auto),
+        "s" | "stacked" => Some(Layout::Stacked),
+        "b" | "side-by-side" | "side by side" => Some(Layout::SideBySide),
+        _ => None,
+    }
+}
+
+fn ask_layout() -> Result<Layout> {
+    loop {
+        let input = read_line(
+            "Layout for `git diff`: [a]uto (side by side when the terminal is wide enough, \
+             otherwise stacked), [s]tacked (old file, then new), or side-[b]y-side? \
+             [a/s/b] (default: a) ",
+        )?;
+        match parse_layout(&input) {
+            Some(layout) => return Ok(layout),
+            None => println!("'{input}' - please answer 'a', 's' or 'b'."),
+        }
+    }
 }
 
 /// Parses `ask_scope`'s answer; `None` means reprompt.
@@ -222,6 +288,37 @@ mod tests {
             difftool_command("/Applications/My Tools/omnidiff"),
             "'/Applications/My Tools/omnidiff' -- \"$LOCAL\" \"$REMOTE\""
         );
+    }
+
+    #[test]
+    fn external_command_adds_the_layout_unless_stacked_and_quotes_the_path() {
+        assert_eq!(
+            external_command("/usr/bin/omnidiff", Layout::Auto),
+            "/usr/bin/omnidiff --layout auto"
+        );
+        assert_eq!(
+            external_command("/usr/bin/omnidiff", Layout::SideBySide),
+            "/usr/bin/omnidiff --layout side-by-side"
+        );
+        assert_eq!(
+            external_command("/usr/bin/omnidiff", Layout::Stacked),
+            "/usr/bin/omnidiff"
+        );
+        assert_eq!(
+            external_command("/Applications/My Tools/omnidiff", Layout::Auto),
+            "'/Applications/My Tools/omnidiff' --layout auto"
+        );
+    }
+
+    #[test]
+    fn parse_layout_defaults_to_auto_and_accepts_letters_and_names() {
+        assert_eq!(parse_layout(""), Some(Layout::Auto));
+        assert_eq!(parse_layout("A"), Some(Layout::Auto));
+        assert_eq!(parse_layout("s"), Some(Layout::Stacked));
+        assert_eq!(parse_layout("stacked"), Some(Layout::Stacked));
+        assert_eq!(parse_layout("b"), Some(Layout::SideBySide));
+        assert_eq!(parse_layout("Side-by-side"), Some(Layout::SideBySide));
+        assert_eq!(parse_layout("x"), None);
     }
 
     #[test]
