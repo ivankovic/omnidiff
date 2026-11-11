@@ -87,6 +87,18 @@ BEFORE = [
 CHANGES = {"charlie": "CHARLIE-changed", "lima": "LIMA-changed"}
 FILE = "notes.txt"
 
+# A moved function: omnidiff matches `def total(numbers):` across the move and paints neither copy,
+# while git's patch deletes it at old line 1 and adds it at new line 5. Staging either copy from
+# omnidiff's view must stage git's line - what OSC 1717's patch-space types are for.
+MOVED = (
+    "move.py",
+    (
+        "def total(numbers):\n    s = 0\n    for n in numbers:\n        s += n\n    return s\n\n\n"
+        "def mean(numbers):\n    return total(numbers) / len(numbers)\n"
+    ),
+    "def mean(numbers):\n    return sum(numbers) / len(numbers)\n\n\ndef total(numbers):\n    return sum(numbers)\n",
+)
+
 
 @dataclass(frozen=True)
 class Renderer:
@@ -120,6 +132,10 @@ class Scenario:
     check: str
     target: str = ""
     staged: tuple[str, ...] = ()
+    # Select the n-th row showing `target`, counting from the top of the diff.
+    occurrence: int = 1
+    # (file name, committed contents, working-tree contents); default the notes.txt pair.
+    files: tuple[str, str, str] | None = None
 
 
 def scenarios() -> list[Scenario]:
@@ -133,6 +149,15 @@ def scenarios() -> list[Scenario]:
         out.append(Scenario(f"{r.name}-stage-del", r, "stage", "charlie", staged=("-charlie",)))
         if not r.is_raw_git:
             out.append(Scenario(f"{r.name}-osc1717", r, "osc1717", target="LIMA-changed"))
+        # The first row naming `def total` is the old copy, the second the new one, in git's
+        # rendering and omnidiff's alike.
+        moved = "def total(numbers):"
+        out.append(
+            Scenario(f"{r.name}-stage-moved-del", r, "stage", moved, ("-" + moved,), 1, files=MOVED)
+        )
+        out.append(
+            Scenario(f"{r.name}-stage-moved-add", r, "stage", moved, ("+" + moved,), 2, files=MOVED)
+        )
     return out
 
 
@@ -303,10 +328,15 @@ def make_repo(root: Path, scenario: Scenario) -> tuple[Path, Path]:
     git(repo, "init", "-q", "-b", "main")
     git(repo, "config", "user.name", "e2e")
     git(repo, "config", "user.email", "e2e@example.invalid")
-    (repo / FILE).write_text("\n".join(BEFORE) + "\n")
-    git(repo, "add", FILE)
+    name, committed, changed = scenario.files or (
+        FILE,
+        "\n".join(BEFORE) + "\n",
+        "\n".join(CHANGES.get(w, w) for w in BEFORE) + "\n",
+    )
+    (repo / name).write_text(committed)
+    git(repo, "add", name)
     git(repo, "commit", "-q", "-m", "init")
-    (repo / FILE).write_text("\n".join(CHANGES.get(w, w) for w in BEFORE) + "\n")
+    (repo / name).write_text(changed)
     config = {
         "gui": {
             "showRandomTip": False,
@@ -382,7 +412,8 @@ def run_scenario(s: Scenario, timeout: float, artifacts: Path, keep: bool) -> st
             return "; ".join(notes)
 
         presses = 0
-        while not any(s.target in row for row in screen.selected()):
+        seen = 1 if any(s.target in row for row in screen.selected()) else 0
+        while seen < s.occurrence:
             if presses >= 60:
                 raise Failure(f"no row showing {s.target!r} after {presses} Down presses")
             before = screen
@@ -391,6 +422,8 @@ def run_scenario(s: Scenario, timeout: float, artifacts: Path, keep: bool) -> st
             screen = lg.changed_from(before)
             if screen is before:
                 raise Failure(f"Down stopped moving before a row showing {s.target!r}")
+            if any(s.target in row for row in screen.selected()):
+                seen += 1
         lg.save("selected", screen)
         notes.append(f"{presses} Down")
         lg.keys("Space")
