@@ -23,8 +23,9 @@ use clap::{Parser, Subcommand};
 
 use omnidiff::tui;
 use omnidiff::tui::headless::{Pair, PairContents, printable, printable_path};
+use omnidiff::tui::osc1717;
 use omnidiff::tui::positional::{
-    binary_notice, content_notice, display_names, invoked_as_git_external_diff,
+    binary_notice, content_notice, display_names, invoked_as_git_external_diff, record_path,
     resolve_before_after,
 };
 
@@ -337,8 +338,15 @@ fn exit_code_for(differed: bool, want_exit_code: bool, invoked_as_git_external_d
 
 /// Reports a pair with at least one binary side (the other may be git's empty `/dev/null`), in
 /// every mode. It must succeed: a UTF-8 decode error would exit 2, and under `GIT_EXTERNAL_DIFF`
-/// git then abandons every remaining file in the diff.
-fn run_binary(args: &Args, before: &Path, after: &Path, bytes: (&[u8], &[u8])) -> Result<i32> {
+/// git then abandons every remaining file in the diff. `record_file` is the OSC 1717 `file` field
+/// when records were negotiated: every line of the notice is then tagged `f`.
+fn run_binary(
+    args: &Args,
+    before: &Path,
+    after: &Path,
+    bytes: (&[u8], &[u8]),
+    record_file: Option<&str>,
+) -> Result<i32> {
     let (before_bytes, after_bytes) = bytes;
     let differed = before_bytes != after_bytes;
     // Content that does not decode is reported as any other binary, never as an error.
@@ -356,6 +364,10 @@ fn run_binary(args: &Args, before: &Path, after: &Path, bytes: (&[u8], &[u8])) -
             Some(content) => content_notice(&args.paths, before, after, content),
             None => binary_notice(&args.paths, before, after, differed),
         };
+        let notice = match record_file {
+            Some(file) => osc1717::tag_lines(&notice, &osc1717::file_record(file)),
+            None => notice,
+        };
         tui::headless::write_stdout(&notice)?;
     }
     Ok(exit_code_for(
@@ -366,15 +378,26 @@ fn run_binary(args: &Args, before: &Path, after: &Path, bytes: (&[u8], &[u8])) -
 }
 
 /// A headless or JSON run on one pair: each side read once ([`Pair`]), then reported as binary or
-/// diffed as text.
-fn run_non_interactive(args: &Args, before: &Path, after: &Path) -> Result<i32> {
+/// diffed as text, with OSC 1717 records naming `record_file` if given.
+fn run_non_interactive(
+    args: &Args,
+    before: &Path,
+    after: &Path,
+    record_file: Option<&str>,
+) -> Result<i32> {
     let pair = Pair::read(before, after)?;
     if let PairContents::Binary {
         before: before_bytes,
         after: after_bytes,
     } = &pair.contents
     {
-        return run_binary(args, before, after, (before_bytes, after_bytes));
+        return run_binary(
+            args,
+            before,
+            after,
+            (before_bytes, after_bytes),
+            record_file,
+        );
     }
     let differed = if should_run_json(args) {
         tui::json_output::run(pair, render_options(args))?
@@ -385,6 +408,7 @@ fn run_non_interactive(args: &Args, before: &Path, after: &Path) -> Result<i32> 
             args.context,
             render_options(args),
             display_names(&args.paths),
+            record_file.map(str::to_string),
         )?
     };
     Ok(exit_code_for(
@@ -399,10 +423,22 @@ fn run_non_interactive(args: &Args, before: &Path, after: &Path) -> Result<i32> 
 /// one file must not abort git's whole diff, so there a panic or an error is reported - one
 /// `omnidiff: could not diff PATH` line in the output, the reason once on stderr - and the run
 /// exits 0, as a binary file's notice would. Invoked directly, it exits 2 with the reason.
+///
+/// When the environment negotiates OSC 1717 (see `tui::osc1717`) and the output is text, its
+/// handshake goes first, before anything can fail, so that every run that prints - and even one
+/// that only errors - announces it.
 fn run_contained(args: &Args, before: &Path, after: &Path) -> Result<i32> {
     tui::panic_guard::install_quiet_hook();
-    contained(args, before, after, || {
-        run_non_interactive(args, before, after)
+    let negotiated = !should_run_json(args) && osc1717::negotiated();
+    if negotiated {
+        tui::headless::write_stdout(osc1717::HANDSHAKE)?;
+    }
+    let record_file = record_path(&args.paths)
+        .and_then(osc1717::file_field)
+        .filter(|_| negotiated);
+    let record_file = record_file.as_deref();
+    contained(args, before, after, record_file, || {
+        run_non_interactive(args, before, after, record_file)
     })
 }
 
@@ -411,6 +447,7 @@ fn contained(
     args: &Args,
     before: &Path,
     after: &Path,
+    record_file: Option<&str>,
     work: impl FnOnce() -> Result<i32>,
 ) -> Result<i32> {
     let outcome = tui::panic_guard::contain(work);
@@ -431,7 +468,8 @@ fn contained(
         return Ok(EXIT_FAILURE);
     }
     if !should_run_json(args) {
-        tui::headless::write_stdout(&format!("omnidiff: could not diff {name}\n"))?;
+        let record = record_file.map_or(String::new(), osc1717::file_record);
+        tui::headless::write_stdout(&format!("{record}omnidiff: could not diff {name}\n"))?;
     }
     Ok(0)
 }
@@ -591,7 +629,7 @@ fn run(args: &Args) -> Result<i32> {
         } = &pair.contents
             && omnidiff::diff::content::pair_kind(before_bytes, after_bytes).is_none()
         {
-            return run_binary(args, before, after, (before_bytes, after_bytes));
+            return run_binary(args, before, after, (before_bytes, after_bytes), None);
         }
     }
 
@@ -769,9 +807,9 @@ mod tests {
         ]))
         .unwrap();
         let (before, after) = (Path::new("/tmp/a"), Path::new("/tmp/b"));
-        let code = contained(&git, before, after, || panic!("decoder bug"));
+        let code = contained(&git, before, after, None, || panic!("decoder bug"));
         assert_eq!(code.unwrap(), 0);
-        let code = contained(&git, before, after, || anyhow::bail!("no AST"));
+        let code = contained(&git, before, after, None, || anyhow::bail!("no AST"));
         assert_eq!(
             code.unwrap(),
             0,
@@ -779,10 +817,13 @@ mod tests {
         );
 
         let direct = Args::try_parse_from(os(&["omnidiff", "--headless", "a", "b"])).unwrap();
-        let code = contained(&direct, before, after, || panic!("decoder bug"));
+        let code = contained(&direct, before, after, None, || panic!("decoder bug"));
         assert_eq!(code.unwrap(), EXIT_FAILURE);
-        assert!(contained(&direct, before, after, || anyhow::bail!("no AST")).is_err());
-        assert_eq!(contained(&direct, before, after, || Ok(1)).unwrap(), 1);
+        assert!(contained(&direct, before, after, None, || anyhow::bail!("no AST")).is_err());
+        assert_eq!(
+            contained(&direct, before, after, None, || Ok(1)).unwrap(),
+            1
+        );
     }
 
     #[test]

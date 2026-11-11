@@ -71,6 +71,18 @@ pub fn display_names(paths: &[PathBuf]) -> Option<(PathBuf, PathBuf)> {
     }
 }
 
+/// The path an OSC 1717 record names the pair by (see `tui::osc1717`): the repository path git
+/// names for the 7-argument form, the new path of the 9-argument rename form, and the after path
+/// as given for `BEFORE AFTER`. `None` for any other count.
+pub fn record_path(paths: &[PathBuf]) -> Option<&Path> {
+    match paths.len() {
+        2 => Some(&paths[1]),
+        7 => Some(&paths[0]),
+        9 => Some(&paths[7]),
+        _ => None,
+    }
+}
+
 /// Whether the arguments have the `GIT_EXTERNAL_DIFF` shape that `resolve_before_after`
 /// recognizes (7 or 9). One predicate so every caller moves together if git adds an argument.
 pub fn invoked_as_git_external_diff(paths: &[PathBuf]) -> bool {

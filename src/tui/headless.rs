@@ -37,6 +37,7 @@ use crate::diff::text::{
 };
 use crate::tui::actions::DiffSessionData;
 use crate::tui::display_columns;
+use crate::tui::osc1717::{self, Annotation, Section, SectionRecords};
 
 /// Whether `character` is a bidirectional-text control: an embedding, override or isolate, or a
 /// directional mark. Each reorders what is drawn after it, so a name or a line of code can read
@@ -275,11 +276,13 @@ fn colorize_line(line: &str, spans: &[(usize, usize, TextOperation)], use_color:
 /// Default unchanged lines kept around a change, as `diff -u`'s `-U3`; `--context N` overrides it.
 pub const CONTEXT_LINES: usize = 3;
 
-/// Which lines to print: changed lines plus `context` lines either side; the rest elide.
-fn lines_to_keep(flags: &[RowFlags], context: usize) -> Vec<bool> {
+/// Which lines to print: changed lines plus `context` lines either side; the rest elide. A line
+/// is changed when omnidiff paints it or `patch_changed` (git's patch, see `tui::osc1717`; empty
+/// without it) marks it.
+fn lines_to_keep(flags: &[RowFlags], patch_changed: &[bool], context: usize) -> Vec<bool> {
     let mut keep = vec![false; flags.len()];
     for (i, f) in flags.iter().enumerate() {
-        if f.any() {
+        if f.any() || patch_changed.get(i).copied().unwrap_or(false) {
             let start = i.saturating_sub(context);
             let end = (i + context + 1).min(flags.len());
             keep[start..end].fill(true);
@@ -315,6 +318,9 @@ pub(crate) fn nearest_reference_line(
 ///
 /// Re-parses `contents` for the breadcrumb rather than threading the diff's AST through
 /// `DiffSessionData`: only the tree (`Code::parse_only`), since the breadcrumb reads no metadata.
+///
+/// `records` are the section's OSC 1717 records (see `tui::osc1717`), each written as its row's
+/// first bytes; `None` leaves the output as it always was.
 fn render_side(
     contents: &str,
     ranges: &[RangeMatch],
@@ -322,6 +328,7 @@ fn render_side(
     use_color: bool,
     path: &Path,
     context: usize,
+    records: Option<&SectionRecords>,
 ) -> String {
     // `display_safe` keeps a CRLF `\r` as part of the terminator; it comes off here.
     let lines: Vec<&str> = contents
@@ -329,7 +336,13 @@ fn render_side(
         .map(|line| line.strip_suffix('\r').unwrap_or(line))
         .collect();
     let (flags, spans) = row_overlay(ranges, &lines);
-    let keep = lines_to_keep(&flags, context);
+    let patch_changed = records.map_or(Vec::new(), |records| records.changed_rows(lines.len()));
+    let keep = lines_to_keep(&flags, &patch_changed, context);
+    let push_record = |out: &mut String, record: Option<String>| {
+        if let Some(record) = record {
+            out.push_str(&record);
+        }
+    };
 
     let language = language_for_path_and_content(path, contents);
     let parsed = language.map(|lang| Code::parse_only(contents, &lang));
@@ -346,6 +359,12 @@ fn render_side(
                 i += 1;
             }
             let skipped = i - run_start;
+            if i < lines.len() {
+                push_record(
+                    &mut out,
+                    records.and_then(|records| records.region_header(i)),
+                );
+            }
             let elision = format!(
                 "      ... {skipped} unchanged line{} ...",
                 if skipped == 1 { "" } else { "s" }
@@ -365,6 +384,10 @@ fn render_side(
             && let Some(ref_row) = nearest_reference_line(parsed, lang, i)
             && !keep[ref_row]
         {
+            push_record(
+                &mut out,
+                records.and_then(|records| records.region_header(i)),
+            );
             let breadcrumb = format!(
                 "{:>number_width$} @ {}",
                 ref_row + 1,
@@ -398,6 +421,7 @@ fn render_side(
             }
         }
 
+        push_record(&mut out, records.and_then(|records| records.content(i)));
         let number = format!("{:>number_width$} ", i + 1);
         if use_color {
             out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{number}\u{1b}[0m"));
@@ -447,6 +471,24 @@ fn summary_header(data: &DiffSessionData, use_color: bool) -> Option<String> {
 
 /// Renders a diff session as text: optional summary header, then the before and after sides.
 pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context: usize) -> String {
+    render_annotated_text_diff(data, use_color, context, None)
+}
+
+/// [`render_text_diff`] with each row's OSC 1717 record (see `tui::osc1717`) when `annotation`
+/// is given.
+pub(crate) fn render_annotated_text_diff(
+    data: &DiffSessionData,
+    use_color: bool,
+    context: usize,
+    annotation: Option<&Annotation>,
+) -> String {
+    let (old_lines, new_lines) = (
+        osc1717::line_count(&data.before_contents),
+        osc1717::line_count(&data.after_contents),
+    );
+    let records = |section| annotation.map(|a| a.section(section, old_lines, new_lines));
+    let (before_records, after_records) = (records(Section::Before), records(Section::After));
+    let file_record = annotation.map(|a| osc1717::file_record(&a.file));
     let mut out = String::new();
     if let Some(header) = summary_header(data, use_color) {
         out.push_str(&header);
@@ -462,6 +504,7 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
                 use_color,
                 &data.before_path,
                 context,
+                before_records.as_ref(),
             )
         },
         || {
@@ -472,14 +515,21 @@ pub(crate) fn render_text_diff(data: &DiffSessionData, use_color: bool, context:
                 use_color,
                 &data.after_path,
                 context,
+                after_records.as_ref(),
             )
         },
     );
+    if let Some(record) = &file_record {
+        out.push_str(record);
+    }
     out.push_str(&format!(
         "=== before: {} ===\n",
         printable_path(&data.before_path)
     ));
     out.push_str(&before);
+    if let Some(record) = &file_record {
+        out.push_str(record);
+    }
     out.push_str(&format!(
         "=== after: {} ===\n",
         printable_path(&data.after_path)
@@ -566,15 +616,28 @@ impl Pair {
 ///
 /// A large unmatched residual is reported with `eprintln!`, not `tracing`: headless mode installs
 /// no subscriber.
+///
+/// `record_file` is the OSC 1717 `file` field when records were negotiated (see
+/// `tui::osc1717`): git's patch of the pair is then computed beside the diff, and every row
+/// tagged.
 pub fn run(
     pair: Pair,
     use_color: bool,
     context: usize,
     render_options: RenderOptions,
     titles: Option<(PathBuf, PathBuf)>,
+    record_file: Option<String>,
 ) -> Result<bool> {
     let differed = pair.differed;
+    let pending = record_file
+        .as_ref()
+        .map(|_| osc1717::Patch::start(&pair.before, &pair.after));
     let (mut data, large_residual) = pair.diff(render_options)?;
+    let annotation = record_file.map(|file| Annotation {
+        file,
+        patch: pending.and_then(osc1717::PendingPatch::finish),
+        context,
+    });
     if let Some((before_title, after_title)) = titles {
         data.before_path = before_title;
         data.after_path = after_title;
@@ -591,7 +654,12 @@ pub fn run(
              usual."
         );
     }
-    write_stdout(&render_text_diff(&data, use_color, context))?;
+    write_stdout(&render_annotated_text_diff(
+        &data,
+        use_color,
+        context,
+        annotation.as_ref(),
+    ))?;
     // Raw bytes, compared at read: `data`'s contents went through `display_safe`, which replaces
     // control characters.
     Ok(differed)
@@ -619,7 +687,7 @@ mod tests {
         let mut flags = vec![RowFlags::default(); 10];
         flags[5].inserted = true;
 
-        let keep = lines_to_keep(&flags, 2);
+        let keep = lines_to_keep(&flags, &[], 2);
         assert_eq!(
             keep,
             vec![
@@ -634,7 +702,7 @@ mod tests {
         flags[2].deleted = true;
         flags[6].inserted = true;
 
-        let keep = lines_to_keep(&flags, 2);
+        let keep = lines_to_keep(&flags, &[], 2);
         assert_eq!(
             keep,
             vec![true, true, true, true, true, true, true, true, true, false]
@@ -660,6 +728,7 @@ mod tests {
             false,
             Path::new("plain.txt"),
             CONTEXT_LINES,
+            None,
         );
         let line_count = rendered.lines().count();
         assert!(
@@ -801,6 +870,7 @@ mod tests {
             false,
             Path::new("plain.txt"),
             CONTEXT_LINES,
+            None,
         );
         assert!(
             plain.contains("Moved from line 10\n"),
@@ -822,6 +892,7 @@ mod tests {
             false,
             Path::new("plain.txt"),
             CONTEXT_LINES,
+            None,
         );
         assert!(
             before_plain.contains("Moved to line 10\n"),
@@ -836,6 +907,7 @@ mod tests {
             true,
             Path::new("plain.txt"),
             CONTEXT_LINES,
+            None,
         );
         assert!(
             colored.contains("\u{1b}[90mMoved from line 10\u{1b}[0m"),
@@ -912,6 +984,7 @@ mod tests {
             false,
             Path::new("sample.rs"),
             CONTEXT_LINES,
+            None,
         );
 
         assert!(
@@ -1187,6 +1260,7 @@ mod tests {
             false,
             Path::new("plain.txt"),
             CONTEXT_LINES,
+            None,
         );
         assert!(
             !rendered.contains('\r'),
@@ -1209,6 +1283,7 @@ mod tests {
             false,
             Path::new("sample.rs"),
             CONTEXT_LINES,
+            None,
         );
         assert!(
             !rendered.contains(" @ "),
@@ -1263,6 +1338,7 @@ mod tests {
             false,
             Path::new("sample.txt"),
             CONTEXT_LINES,
+            None,
         );
 
         assert!(rendered.contains("1    a\n"), "{rendered}");
@@ -1283,7 +1359,8 @@ mod tests {
             false,
             CONTEXT_LINES,
             RenderOptions::FULL,
-            None
+            None,
+            None,
         )?);
         Ok(())
     }
