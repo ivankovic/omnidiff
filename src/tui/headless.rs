@@ -231,64 +231,121 @@ fn moved_chunk_destination(
     span.map(|(lo, hi)| (lo + 1, hi + 1))
 }
 
-/// Wraps each span of `line` in its operation's color, with every tab expanded to its tab stop
-/// (see `tui::display_columns`), counted from the start of the line's text so indentation lines
-/// up whatever the gutter's width. `spans` are **byte** columns (`text_range::SourceColumn`) into
-/// `line` as it is, tabs included; an expanded tab is colored with the span it belongs to.
-/// Malformed spans (off a char boundary, overlapping, past the end) are clamped; the text itself
-/// is never altered beyond the tabs.
-fn colorize_line(line: &str, spans: &[(usize, usize, TextOperation)], use_color: bool) -> String {
+/// One piece of a row's text, every tab already expanded, and the SGR color it is painted in.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Piece {
+    text: String,
+    color: Option<&'static str>,
+}
+
+/// The pieces of `line`: each span in its operation's color, with every tab expanded to its tab
+/// stop (see `tui::display_columns`), counted from the start of the line's text so indentation
+/// lines up whatever the gutter's width. `spans` are **byte** columns
+/// (`text_range::SourceColumn`) into `line` as it is, tabs included; an expanded tab is colored
+/// with the span it belongs to. Malformed spans (off a char boundary, overlapping, past the end)
+/// are clamped; the text itself is never altered beyond the tabs. No piece is empty.
+fn line_pieces(line: &str, spans: &[(usize, usize, TextOperation)], use_color: bool) -> Vec<Piece> {
+    let plain = |text: String| Piece { text, color: None };
     if !use_color || spans.is_empty() {
-        return display_columns::expand_tabs(line);
+        let text = display_columns::expand_tabs(line);
+        return if text.is_empty() {
+            Vec::new()
+        } else {
+            vec![plain(text)]
+        };
     }
     let boundary = |index: usize| crate::diff::text_range::floor_char_boundary(line, index);
 
-    let mut out = String::new();
+    let mut pieces = Vec::new();
     let mut column = 0usize;
+    let mut push = |pieces: &mut Vec<Piece>, text: &str, color: Option<&'static str>| {
+        let mut expanded = String::new();
+        display_columns::push_expanded(&mut expanded, text, &mut column);
+        if !expanded.is_empty() {
+            pieces.push(Piece {
+                text: expanded,
+                color,
+            });
+        }
+    };
     let mut cut = 0usize;
     for (start, end, op) in spans {
         let start = boundary(*start);
         let end = boundary(*end);
         if start > cut {
-            display_columns::push_expanded(&mut out, &line[cut..start], &mut column);
+            push(&mut pieces, &line[cut..start], None);
         }
         // `cut`, not `start`: an overlapping span must never duplicate the user's text.
         let segment_start = start.max(cut);
         if end > segment_start {
-            let segment = &line[segment_start..end];
-            match ansi_color(op) {
-                Some(code) => {
-                    out.push_str(&format!("\u{1b}[{code}m"));
-                    display_columns::push_expanded(&mut out, segment, &mut column);
-                    out.push_str("\u{1b}[0m");
-                }
-                None => display_columns::push_expanded(&mut out, segment, &mut column),
-            }
+            push(&mut pieces, &line[segment_start..end], ansi_color(op));
         }
         cut = cut.max(end);
     }
     if cut < line.len() {
-        display_columns::push_expanded(&mut out, &line[cut..], &mut column);
+        push(&mut pieces, &line[cut..], None);
     }
+    pieces
+}
+
+/// Appends `pieces` to `out`, each colored one opened and reset on its own, so no color outlives
+/// its piece.
+fn paint_pieces(out: &mut String, pieces: &[Piece]) {
+    for piece in pieces {
+        match piece.color {
+            Some(code) => {
+                out.push_str(&format!("\u{1b}[{code}m"));
+                out.push_str(&piece.text);
+                out.push_str("\u{1b}[0m");
+            }
+            None => out.push_str(&piece.text),
+        }
+    }
+}
+
+/// `line` with each span wrapped in its operation's color: [`line_pieces`], painted.
+#[cfg(test)]
+fn colorize_line(line: &str, spans: &[(usize, usize, TextOperation)], use_color: bool) -> String {
+    let mut out = String::new();
+    paint_pieces(&mut out, &line_pieces(line, spans, use_color));
     out
+}
+
+/// `text` in the chrome grey when `use_color`, then a newline.
+fn push_chrome_row(out: &mut String, text: &str, use_color: bool) {
+    if use_color {
+        out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{text}\u{1b}[0m\n"));
+    } else {
+        out.push_str(text);
+        out.push('\n');
+    }
 }
 
 /// Default unchanged lines kept around a change, as `diff -u`'s `-U3`; `--context N` overrides it.
 pub const CONTEXT_LINES: usize = 3;
 
+/// Which of `changed` items to print: each changed one plus `context` items either side; the
+/// rest elide.
+fn keep_around(changed: &[bool], context: usize) -> Vec<bool> {
+    let mut keep = vec![false; changed.len()];
+    for (i, _) in changed.iter().enumerate().filter(|(_, changed)| **changed) {
+        let start = i.saturating_sub(context);
+        let end = (i + context + 1).min(changed.len());
+        keep[start..end].fill(true);
+    }
+    keep
+}
+
 /// Which lines to print: changed lines plus `context` lines either side; the rest elide. A line
 /// is changed when omnidiff paints it or `patch_changed` (git's patch, see `tui::osc1717`; empty
 /// without it) marks it.
 fn lines_to_keep(flags: &[RowFlags], patch_changed: &[bool], context: usize) -> Vec<bool> {
-    let mut keep = vec![false; flags.len()];
-    for (i, f) in flags.iter().enumerate() {
-        if f.any() || patch_changed.get(i).copied().unwrap_or(false) {
-            let start = i.saturating_sub(context);
-            let end = (i + context + 1).min(flags.len());
-            keep[start..end].fill(true);
-        }
-    }
-    keep
+    let changed: Vec<bool> = flags
+        .iter()
+        .enumerate()
+        .map(|(i, f)| f.any() || patch_changed.get(i).copied().unwrap_or(false))
+        .collect();
+    keep_around(&changed, context)
 }
 
 /// Row of the nearest enclosing named declaration of `row` (like `git diff`'s hunk-header
@@ -312,44 +369,106 @@ pub(crate) fn nearest_reference_line(
     }
 }
 
-/// Renders one side of a diff: numbered, marker-prefixed lines with elided unchanged runs, an
-/// `@` breadcrumb per hunk when its enclosing declaration is out of view, and a box around each
-/// moved chunk. `side_is_before` only picks the box header's wording (`Moved to`/`Moved from`).
+/// One side's text parsed for its breadcrumbs, the enclosing declaration of a hunk.
 ///
-/// Re-parses `contents` for the breadcrumb rather than threading the diff's AST through
-/// `DiffSessionData`: only the tree (`Code::parse_only`), since the breadcrumb reads no metadata.
+/// Re-parses the contents rather than threading the diff's AST through `DiffSessionData`: only
+/// the tree (`Code::parse_only`), since the breadcrumb reads no metadata.
+struct Breadcrumbs {
+    parsed: Code,
+    language: crate::code::Language,
+}
+
+impl Breadcrumbs {
+    /// `None` without a language for `path` and `contents`.
+    fn of(path: &Path, contents: &str) -> Option<Self> {
+        let language = language_for_path_and_content(path, contents)?;
+        Some(Self {
+            parsed: Code::parse_only(contents, &language),
+            language,
+        })
+    }
+
+    /// The row of `row`'s enclosing declaration ([`nearest_reference_line`]).
+    fn enclosing(&self, row: usize) -> Option<usize> {
+        nearest_reference_line(&self.parsed, &self.language, row)
+    }
+}
+
+/// One side of a diff split into rows, with what every layout draws from each: its operations,
+/// its painted spans, and whether git's patch changes it.
+struct SideLines<'a> {
+    /// Every piece of the text between newlines, the empty one after a final newline included.
+    lines: Vec<&'a str>,
+    flags: Vec<RowFlags>,
+    spans: Vec<RowSpans>,
+    /// Per line, whether git's patch changes it (see `tui::osc1717`); empty without records.
+    patch_changed: Vec<bool>,
+}
+
+impl<'a> SideLines<'a> {
+    fn new(contents: &'a str, ranges: &[RangeMatch], records: Option<&SectionRecords>) -> Self {
+        // `display_safe` keeps a CRLF `\r` as part of the terminator; it comes off here.
+        let lines: Vec<&str> = contents
+            .split('\n')
+            .map(|line| line.strip_suffix('\r').unwrap_or(line))
+            .collect();
+        let (flags, spans) = row_overlay(ranges, &lines);
+        let patch_changed = records.map_or(Vec::new(), |records| records.changed_rows(lines.len()));
+        Self {
+            lines,
+            flags,
+            spans,
+            patch_changed,
+        }
+    }
+
+    /// The colored pieces of line `i` ([`line_pieces`]).
+    fn pieces(&self, i: usize, use_color: bool) -> Vec<Piece> {
+        line_pieces(self.lines[i], &self.spans[i], use_color)
+    }
+}
+
+/// One row of the stacked layout's section of a side.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum StackedRow {
+    /// `... N unchanged lines ...`, with the record of the region it heads.
+    Elision {
+        skipped: usize,
+        record: Option<String>,
+    },
+    /// The `@` line naming row `line`, the enclosing declaration of the region below.
+    Breadcrumb { line: usize, record: Option<String> },
+    /// The moved-chunk box's header.
+    MovedHeader(String),
+    /// Line `index` itself.
+    Line {
+        index: usize,
+        record: Option<String>,
+    },
+    /// The moved-chunk box's footer.
+    MovedFooter,
+}
+
+/// The rows of one side's stacked section: numbered, marker-prefixed lines with elided
+/// unchanged runs, an `@` breadcrumb per hunk when its enclosing declaration is out of view, and
+/// a box around each moved chunk. `side_is_before` only picks the box header's wording (`Moved
+/// to`/`Moved from`).
 ///
 /// `records` are the section's OSC 1717 records (see `tui::osc1717`), each written as its row's
 /// first bytes; `None` leaves the output as it always was.
-fn render_side(
-    contents: &str,
+fn stacked_rows(
+    side: &SideLines,
     ranges: &[RangeMatch],
     side_is_before: bool,
-    use_color: bool,
-    path: &Path,
+    breadcrumbs: Option<&Breadcrumbs>,
     context: usize,
     records: Option<&SectionRecords>,
-) -> String {
-    // `display_safe` keeps a CRLF `\r` as part of the terminator; it comes off here.
-    let lines: Vec<&str> = contents
-        .split('\n')
-        .map(|line| line.strip_suffix('\r').unwrap_or(line))
-        .collect();
-    let (flags, spans) = row_overlay(ranges, &lines);
-    let patch_changed = records.map_or(Vec::new(), |records| records.changed_rows(lines.len()));
-    let keep = lines_to_keep(&flags, &patch_changed, context);
-    let push_record = |out: &mut String, record: Option<String>| {
-        if let Some(record) = record {
-            out.push_str(&record);
-        }
-    };
+) -> Vec<StackedRow> {
+    let (lines, flags) = (&side.lines, &side.flags);
+    let keep = lines_to_keep(flags, &side.patch_changed, context);
+    let region_header = |i: usize| records.and_then(|records| records.region_header(i));
 
-    let language = language_for_path_and_content(path, contents);
-    let parsed = language.map(|lang| Code::parse_only(contents, &lang));
-
-    let number_width = lines.len().to_string().len();
-
-    let mut out = String::new();
+    let mut rows = Vec::new();
     let mut i = 0;
     let mut prev_line_shown = false;
     while i < lines.len() {
@@ -358,47 +477,26 @@ fn render_side(
             while i < lines.len() && !keep[i] {
                 i += 1;
             }
-            let skipped = i - run_start;
-            if i < lines.len() {
-                push_record(
-                    &mut out,
-                    records.and_then(|records| records.region_header(i)),
-                );
-            }
-            let elision = format!(
-                "      ... {skipped} unchanged line{} ...",
-                if skipped == 1 { "" } else { "s" }
-            );
-            if use_color {
-                out.push_str(&format!("\u{1b}[90m{elision}\u{1b}[0m\n"));
-            } else {
-                out.push_str(&elision);
-                out.push('\n');
-            }
+            rows.push(StackedRow::Elision {
+                skipped: i - run_start,
+                record: if i < lines.len() {
+                    region_header(i)
+                } else {
+                    None
+                },
+            });
             prev_line_shown = false;
             continue;
         }
 
         if !prev_line_shown
-            && let (Some(parsed), Some(lang)) = (&parsed, &language)
-            && let Some(ref_row) = nearest_reference_line(parsed, lang, i)
+            && let Some(ref_row) = breadcrumbs.and_then(|breadcrumbs| breadcrumbs.enclosing(i))
             && !keep[ref_row]
         {
-            push_record(
-                &mut out,
-                records.and_then(|records| records.region_header(i)),
-            );
-            let breadcrumb = format!(
-                "{:>number_width$} @ {}",
-                ref_row + 1,
-                display_columns::expand_tabs(lines[ref_row])
-            );
-            if use_color {
-                out.push_str(&format!("\u{1b}[90m{breadcrumb}\u{1b}[0m\n"));
-            } else {
-                out.push_str(&breadcrumb);
-                out.push('\n');
-            }
+            rows.push(StackedRow::Breadcrumb {
+                line: ref_row,
+                record: region_header(i),
+            });
         }
 
         let starts_moved_chunk = flags[i].moved && (i == 0 || !flags[i - 1].moved);
@@ -408,47 +506,101 @@ fn render_side(
                 run_end += 1;
             }
             let verb = if side_is_before { "to" } else { "from" };
-            let header = match moved_chunk_destination(ranges, i, run_end) {
-                Some((start, end)) if start == end => format!("Moved {verb} line {start}"),
-                Some((start, end)) => format!("Moved {verb} lines {start}-{end}"),
-                None => format!("Moved {verb} elsewhere"),
-            };
-            if use_color {
-                out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{header}\u{1b}[0m\n"));
-            } else {
-                out.push_str(&header);
-                out.push('\n');
-            }
+            rows.push(StackedRow::MovedHeader(
+                match moved_chunk_destination(ranges, i, run_end) {
+                    Some((start, end)) if start == end => format!("Moved {verb} line {start}"),
+                    Some((start, end)) => format!("Moved {verb} lines {start}-{end}"),
+                    None => format!("Moved {verb} elsewhere"),
+                },
+            ));
         }
 
-        push_record(&mut out, records.and_then(|records| records.content(i)));
-        let number = format!("{:>number_width$} ", i + 1);
-        if use_color {
-            out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{number}\u{1b}[0m"));
-        } else {
-            out.push_str(&number);
-        }
-        let prefix = markers(flags[i], use_color);
-        let colored_line = colorize_line(lines[i], &spans[i], use_color);
-        out.push_str(&prefix);
-        out.push_str(&colored_line);
-        out.push('\n');
+        rows.push(StackedRow::Line {
+            index: i,
+            record: records.and_then(|records| records.content(i)),
+        });
 
         let ends_moved_chunk = flags[i].moved && (i + 1 == lines.len() || !flags[i + 1].moved);
         if ends_moved_chunk {
-            let footer = "-".repeat(MOVED_CHUNK_FOOTER_WIDTH);
-            if use_color {
-                out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{footer}\u{1b}[0m\n"));
-            } else {
-                out.push_str(&footer);
-                out.push('\n');
-            }
+            rows.push(StackedRow::MovedFooter);
         }
 
         prev_line_shown = true;
         i += 1;
     }
+    rows
+}
+
+/// Prints [`stacked_rows`] of `side`.
+fn print_stacked(side: &SideLines, rows: &[StackedRow], use_color: bool) -> String {
+    let number_width = side.lines.len().to_string().len();
+    let mut out = String::new();
+    let push_record = |out: &mut String, record: &Option<String>| {
+        if let Some(record) = record {
+            out.push_str(record);
+        }
+    };
+    for row in rows {
+        match row {
+            StackedRow::Elision { skipped, record } => {
+                push_record(&mut out, record);
+                let elision = format!(
+                    "      ... {skipped} unchanged line{} ...",
+                    if *skipped == 1 { "" } else { "s" }
+                );
+                push_chrome_row(&mut out, &elision, use_color);
+            }
+            StackedRow::Breadcrumb { line, record } => {
+                push_record(&mut out, record);
+                let breadcrumb = format!(
+                    "{:>number_width$} @ {}",
+                    line + 1,
+                    display_columns::expand_tabs(side.lines[*line])
+                );
+                push_chrome_row(&mut out, &breadcrumb, use_color);
+            }
+            StackedRow::MovedHeader(header) => push_chrome_row(&mut out, header, use_color),
+            StackedRow::Line { index, record } => {
+                push_record(&mut out, record);
+                let number = format!("{:>number_width$} ", index + 1);
+                if use_color {
+                    out.push_str(&format!("\u{1b}[{CHROME_COLOR}m{number}\u{1b}[0m"));
+                } else {
+                    out.push_str(&number);
+                }
+                out.push_str(&markers(side.flags[*index], use_color));
+                paint_pieces(&mut out, &side.pieces(*index, use_color));
+                out.push('\n');
+            }
+            StackedRow::MovedFooter => {
+                push_chrome_row(&mut out, &"-".repeat(MOVED_CHUNK_FOOTER_WIDTH), use_color);
+            }
+        }
+    }
     out
+}
+
+/// Renders one side of a diff in the stacked layout: [`stacked_rows`], printed.
+fn render_side(
+    contents: &str,
+    ranges: &[RangeMatch],
+    side_is_before: bool,
+    use_color: bool,
+    path: &Path,
+    context: usize,
+    records: Option<&SectionRecords>,
+) -> String {
+    let side = SideLines::new(contents, ranges, records);
+    let breadcrumbs = Breadcrumbs::of(path, contents);
+    let rows = stacked_rows(
+        &side,
+        ranges,
+        side_is_before,
+        breadcrumbs.as_ref(),
+        context,
+        records,
+    );
+    print_stacked(&side, &rows, use_color)
 }
 
 /// The diff's `DiffSummary` label, as the TUI's status bar shows it, or `None` for an ordinary
