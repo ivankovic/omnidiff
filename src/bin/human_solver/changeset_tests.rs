@@ -16,6 +16,12 @@
  */
 //! The changeset session driven by keys, as a human drives it: [`Driver`] is the loop of
 //! `changeset::run` and `run_case_session` without a terminal, drawing on a `TestBackend`.
+//!
+//! The `solve_*` functions at the end are the sessions that solved three handmade changesets,
+//! kept as the record of how their truth was made: a test replays each on a scratch copy and
+//! holds the result to the committed file, and the ignored `solve_the_handmade_changesets_in_place`
+//! (`cargo test --all-features --bin human_solver solve_the_handmade -- --ignored`) writes the
+//! truths and stubs into the repository again.
 
 use super::*;
 use crate::CaseOrigin;
@@ -1030,4 +1036,123 @@ fn the_key_log_names_the_changeset_views() {
         crate::keylog::mode_name(driver.app.modal.as_ref()),
         "partners"
     );
+}
+
+// ─── The sessions that solved three handmade changesets ─────────────────────────────────────
+
+/// `parse_body` leaves handlers.py for codec.py as `decode_body`.
+fn solve_python_function_moved_and_renamed(driver: &mut Driver) {
+    // Both files are themselves; each pair starts from the engine's matches.
+    driver.keys("C\nSbj\tj\nS");
+    // handlers.py: one import goes, another comes, and the call follows the new name - by word,
+    // where the seed painted the whole identifier.
+    driver.keys("]D\t]I\t");
+    driver.keys("t:1\nv$d\t:1\nv$i");
+    driver.keys("\t:9\n^wwuvllll\t:5\n^wwvlllllm\x1bb");
+    // The pool has the function on both sides, but renamed, so not as a candidate: pin one,
+    // open it beside the other, match with children.
+    driver.keys("Lyj\nM");
+    // Minimal: `def `, then the changed word, then the rest of the line, then the body.
+    driver.keys("t:4\nvlll\t:8\nvlllm");
+    driver.keys("lvlllll\tlvllllm");
+    driver.keys("lv$\tlv$m");
+    driver.keys("j^v$\tj^v$m");
+    // Full, branched for the whole changeset; its `def` line updates the whole identifier.
+    driver.keys("sj\n");
+    driver.keys(":4\nuwuwu0vlll\t:8\nvlllm");
+    driver.keys("lve\tlvem");
+    driver.keys("lv$\tlv$m\x1bb");
+    driver.keys("xk\tkx");
+}
+
+/// helpers.ts becomes format.ts unedited; listing.ts imports it under the new name.
+fn solve_typescript_file_renamed_unedited(driver: &mut Driver) {
+    // git's rename is right here: confirmed, and the engine sees two identical files.
+    driver.keys("C\nSb");
+    driver.keys("j\tj\nS");
+    driver.keys("tsj\n\x1bb");
+    driver.keys("xk\tkx");
+}
+
+/// The control: three files edited, nothing crossing between them.
+fn solve_go_three_files_nothing_crossing(driver: &mut Driver) {
+    // len.go gains a comment, queue.go a field.
+    driver.keys("C\nS\t]It:3\nv$i\x1bb");
+    driver.keys("jj\tjj\nS\t]It:5\n^v$i\x1bb");
+    // pop.go: a second result, an early return, and `true` on the old return. The seed paints
+    // `string` as moved one column, which it is not.
+    driver.keys("k\tk\nS\t]iiiiiIiIii");
+    driver.keys("tg/(string\nvilu");
+    driver.keys(&format!("/{BACKSPACES}, bool\nvlllllli"));
+    driver.keys(":4\n^vjj$i");
+    driver.keys(&format!("/{BACKSPACES}, true\nvllllli"));
+    // Full: the branch widens the inserted `(` over the blank before it, which was there already.
+    driver.keys("sj\n");
+    driver.keys(&format!("g/{BACKSPACES}(string\nuvi\x1bb"));
+    driver.keys("xj\tjxkk\tkkx");
+}
+
+impl Driver {
+    /// The repository's own changeset `name`, for the `solve_*` sessions.
+    fn in_place(name: &str) -> Self {
+        let dir = changeset_dir(name).unwrap();
+        let _ = fs::remove_file(dir.join(TRUTH_FILE_NAME));
+        Driver::over(Session::open(&dir, false).unwrap(), None)
+    }
+}
+
+type Script = fn(&mut Driver);
+
+const SOLVED_BY_SCRIPT: [(&str, Script); 3] = [
+    (
+        "python-function-moved-and-renamed",
+        solve_python_function_moved_and_renamed,
+    ),
+    (
+        "typescript-file-renamed-unedited",
+        solve_typescript_file_renamed_unedited,
+    ),
+    (
+        "go-three-files-nothing-crossing",
+        solve_go_three_files_nothing_crossing,
+    ),
+];
+
+/// Each scripted session, on a scratch copy, ends solved and valid and writes the truth the
+/// repository holds: the committed files are what the tool's keys produce, not hand-edited JSON.
+#[test]
+fn the_scripted_sessions_solve_their_changesets_as_committed() {
+    for (name, script) in SOLVED_BY_SCRIPT {
+        let mut driver = Driver::scratch(name, false, false);
+        script(&mut driver);
+        let (truth, violations) = driver.saved();
+        assert_eq!(violations, [], "{name}");
+        assert!(
+            truth.is_solved(&driver.session().trees),
+            "{name}: {}",
+            driver.status()
+        );
+        assert!(driver.session().stub_path().is_file(), "{name}");
+        let saved = fs::read_to_string(driver.session().dir.join(TRUTH_FILE_NAME)).unwrap();
+        let (_, committed) = repository_truth(name);
+        assert_eq!(saved, committed, "{name}");
+    }
+}
+
+/// Writes the three truths and their stubs into the repository.
+#[test]
+#[ignore = "writes into src/test/data/changesets and src/test/fixtures/changesets"]
+fn solve_the_handmade_changesets_in_place() {
+    for (name, script) in SOLVED_BY_SCRIPT {
+        let mut driver = Driver::in_place(name);
+        script(&mut driver);
+        let (_, violations) = driver.saved();
+        assert_eq!(violations, [], "{name}");
+        assert!(
+            driver.status().contains("solved"),
+            "{name}: {}",
+            driver.status()
+        );
+        omnidiff::test::helper::human_changeset::assert_solved_ground_truth(name).unwrap();
+    }
 }

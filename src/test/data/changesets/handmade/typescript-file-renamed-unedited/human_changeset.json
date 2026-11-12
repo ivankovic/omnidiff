@@ -1,0 +1,274 @@
+{
+  "files": [
+    {
+      "before": "src/helpers.ts",
+      "after": "src/format.ts",
+      "relation": "renamed",
+      "solved": true
+    },
+    {
+      "before": "src/listing.ts",
+      "after": "src/listing.ts",
+      "relation": "same",
+      "solved": true
+    }
+  ],
+  "entries": [
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/helpers.ts",
+        "path": []
+      },
+      "after": {
+        "file": "src/format.ts",
+        "path": []
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": []
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": []
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "import:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "import:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "import_clause:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "import_clause:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "from:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "from:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "\":1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "\":1"
+        ]
+      }
+    },
+    {
+      "operation": "update",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "string_fragment:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "string_fragment:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "\":2"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          "string:1",
+          "\":2"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          ";:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "import_statement:1",
+          ";:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/listing.ts",
+        "path": [
+          "export_statement:1"
+        ]
+      },
+      "after": {
+        "file": "src/listing.ts",
+        "path": [
+          "export_statement:1"
+        ]
+      }
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/listing.ts",
+              "range": {
+                "start_row": 0,
+                "start_column": 31,
+                "end_row": 0,
+                "end_column": 38
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/listing.ts",
+              "range": {
+                "start_row": 0,
+                "start_column": 31,
+                "end_row": 0,
+                "end_column": 37
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/listing.ts",
+              "range": {
+                "start_row": 0,
+                "start_column": 31,
+                "end_row": 0,
+                "end_column": 38
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/listing.ts",
+              "range": {
+                "start_row": 0,
+                "start_column": 31,
+                "end_row": 0,
+                "end_column": 37
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

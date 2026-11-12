@@ -25,6 +25,12 @@
 //! here once there is something to clamp, for the reasons `test::fixtures` gives.
 
 #[cfg(test)]
+mod go_three_files_nothing_crossing;
+#[cfg(test)]
+mod python_function_moved_and_renamed;
+#[cfg(test)]
 mod rust_function_copied;
 #[cfg(test)]
 mod rust_function_moved_intact;
+#[cfg(test)]
+mod typescript_file_renamed_unedited;

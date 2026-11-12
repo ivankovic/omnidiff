@@ -1,0 +1,995 @@
+{
+  "files": [
+    {
+      "before": "queue/len.go",
+      "after": "queue/len.go",
+      "relation": "same",
+      "solved": true
+    },
+    {
+      "before": "queue/pop.go",
+      "after": "queue/pop.go",
+      "relation": "same",
+      "solved": true
+    },
+    {
+      "before": "queue/queue.go",
+      "after": "queue/queue.go",
+      "relation": "same",
+      "solved": true
+    }
+  ],
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after": {
+        "file": "queue/len.go",
+        "path": [
+          "comment:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "(:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "parameter_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          ",:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "parameter_declaration:2"
+        ]
+      }
+    },
+    {
+      "operation": "insert_with_children",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "parameter_declaration:2",
+          "type_identifier:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "):1"
+        ]
+      }
+    },
+    {
+      "operation": "insert_with_children",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "if_statement:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1",
+          ",:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert",
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1",
+          "true:1"
+        ]
+      }
+    },
+    {
+      "operation": "insert_with_children",
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "field_declaration:2"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/len.go",
+        "path": []
+      },
+      "after": {
+        "file": "queue/len.go",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/len.go",
+        "path": [
+          "package_clause:1"
+        ]
+      },
+      "after": {
+        "file": "queue/len.go",
+        "path": [
+          "package_clause:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/len.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/len.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": []
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "package_clause:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "package_clause:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "func:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "func:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "field_identifier:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "field_identifier:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:2"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:2"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "type_identifier:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "parameter_list:3",
+          "parameter_declaration:1",
+          "type_identifier:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "{:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "{:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "short_var_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "short_var_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "assignment_statement:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "assignment_statement:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "return:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "return:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1",
+          "identifier:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "statement_list:1",
+          "return_statement:1",
+          "expression_list:1",
+          "identifier:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "}:1"
+        ]
+      },
+      "after": {
+        "file": "queue/pop.go",
+        "path": [
+          "method_declaration:1",
+          "block:1",
+          "}:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": []
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "package_clause:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "package_clause:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "type_identifier:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "type_identifier:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "struct:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "struct:1"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "{:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "{:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "field_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "field_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "}:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "type_declaration:1",
+          "type_spec:1",
+          "struct_type:1",
+          "field_declaration_list:1",
+          "}:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "queue/queue.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "queue/queue.go",
+        "path": [
+          "method_declaration:1"
+        ]
+      }
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/len.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 0,
+                "end_row": 2,
+                "end_column": 42
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 22,
+                "end_row": 2,
+                "end_column": 23
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 29,
+                "end_row": 2,
+                "end_column": 36
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 3,
+                "start_column": 1,
+                "end_row": 3,
+                "end_column": 23
+              }
+            },
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 4,
+                "start_column": 2,
+                "end_row": 4,
+                "end_column": 18
+              }
+            },
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 5,
+                "start_column": 1,
+                "end_row": 5,
+                "end_column": 2
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 8,
+                "start_column": 12,
+                "end_row": 8,
+                "end_column": 18
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/queue.go",
+              "range": {
+                "start_row": 4,
+                "start_column": 1,
+                "end_row": 4,
+                "end_column": 10
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/len.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 0,
+                "end_row": 2,
+                "end_column": 42
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 22,
+                "end_row": 2,
+                "end_column": 23
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 2,
+                "start_column": 29,
+                "end_row": 2,
+                "end_column": 36
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 3,
+                "start_column": 0,
+                "end_row": 3,
+                "end_column": 23
+              }
+            },
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 4,
+                "start_column": 0,
+                "end_row": 4,
+                "end_column": 18
+              }
+            },
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 5,
+                "start_column": 0,
+                "end_row": 5,
+                "end_column": 2
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/pop.go",
+              "range": {
+                "start_row": 8,
+                "start_column": 12,
+                "end_row": 8,
+                "end_column": 18
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "queue/queue.go",
+              "range": {
+                "start_row": 4,
+                "start_column": 0,
+                "end_row": 4,
+                "end_column": 10
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
