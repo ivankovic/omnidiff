@@ -163,7 +163,7 @@ CRATES="
 	lab@0.11.0
 	lazy_static@1.5.0
 	libbz2-rs-sys@0.2.5
-	libc@0.2.189
+	libc@0.2.191
 	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49

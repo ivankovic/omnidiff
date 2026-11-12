@@ -6555,7 +6555,7 @@ Used by:
 - image 0.25.10 (https://github.com/image-rs/image)
 - indoc 2.0.8 (https://github.com/dtolnay/indoc)
 - itoa 1.0.18 (https://github.com/dtolnay/itoa)
-- libc 0.2.189 (https://github.com/rust-lang/libc)
+- libc 0.2.191 (https://github.com/rust-lang/libc)
 - linebender_resource_handle 0.1.1 (https://github.com/linebender/raw_resource_handle)
 - litrs 1.0.0 (https://github.com/LukasKalbertodt/litrs)
 - miniz_oxide 0.8.9 (https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide)
