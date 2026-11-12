@@ -1183,6 +1183,11 @@ pub struct ChangesetViolation {
     /// For `single_file_invariants_hold_per_pair`: which of `human_mapping`'s invariants.
     pub invariant: Option<u8>,
     pub message: String,
+    /// For `single_file_invariants_hold_per_pair`: the before and after file it was found
+    /// between, so a tool (`human_solver`'s violation list) can open that pair.
+    pub pair: Option<(String, String)>,
+    /// Where in that pair to look: `(side, range)`, 0 = the before file, 1 = the after file.
+    pub sites: Vec<(usize, HumanTextSpan)>,
 }
 
 impl std::fmt::Display for ChangesetViolation {
@@ -1196,6 +1201,8 @@ fn violation(check: &'static str, message: String) -> ChangesetViolation {
         check,
         invariant: None,
         message,
+        pair: None,
+        sites: Vec::new(),
     }
 }
 
@@ -1825,6 +1832,12 @@ fn single_file_invariants_hold_per_pair(
                     check: CHECK,
                     invariant: Some(found.invariant),
                     message: format!("{before} -> {after}: {found}"),
+                    pair: Some((before.to_string(), after.to_string())),
+                    sites: found
+                        .sites
+                        .iter()
+                        .map(|site| (site.side, site.span))
+                        .collect(),
                 });
             }
         }
