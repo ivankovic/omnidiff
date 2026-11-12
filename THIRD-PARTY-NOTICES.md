@@ -7540,7 +7540,7 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 
-- ts-parser-perl 2.0.0 (https://github.com/tree-sitter-perl/tree-sitter-perl)
+- ts-parser-perl 2.0.5 (https://github.com/tree-sitter-perl/tree-sitter-perl)
 
 ```
 Copyright 2025 Avishai &quot;Veesh&quot; Goldman
