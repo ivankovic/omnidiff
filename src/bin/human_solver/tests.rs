@@ -925,7 +925,7 @@ fn sample_diff_line_count_is_zero_for_a_nonexistent_sample() {
 #[test]
 fn sample_diff_line_count_is_nonzero_for_a_real_sample_on_disk() {
     // Skips when no sample is checked in, as `list_dir_names` treats a missing directory.
-    let Ok(names) = list_dir_names(&samples_root()) else {
+    let Ok(names) = list_sample_names() else {
         return;
     };
     // A picture sample's pair is binary, and has no lines to count.
