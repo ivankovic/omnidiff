@@ -290,8 +290,12 @@ pub(crate) enum Overlay {
 struct FileStats {
     language: String,
     lines: usize,
+    /// The nodes of its tree; `None` for a file with no tree.
+    nodes: Option<usize>,
     /// Nodes no entry says anything about; `None` for a file with no tree.
     unmarked: Option<usize>,
+    /// [`mark_fingerprints`] of the file when `unmarked` was counted.
+    marks: u64,
 }
 
 pub(crate) struct Session {
@@ -333,7 +337,10 @@ pub(crate) struct Session {
     /// Each file as the pair view needs it: its own parse, with the hashes `m` reads. Kept so a
     /// file's node ids are the same every time it is opened.
     codes: [HashMap<String, Arc<Code>>; 2],
-    stats: Option<[BTreeMap<String, FileStats>; 2]>,
+    /// The board's figures for each file, kept from draw to draw: a folder fixture has hundreds
+    /// of files and one key changes the marks of one or two ([`Session::file_stats`]).
+    stats: [BTreeMap<String, FileStats>; 2],
+    stats_stale: bool,
 }
 
 /// The changeset directory `name` opens, and whether it is a sample.
@@ -414,7 +421,8 @@ impl Session {
             corpus_root: changesets_root(),
             fixtures_root,
             codes: Default::default(),
-            stats: None,
+            stats: Default::default(),
+            stats_stale: true,
         };
         session.propose();
         session.collapsed = session.quiet_files().len() > QUIET_FILES_SHOWN;
@@ -480,6 +488,16 @@ impl Session {
     /// matched to itself whole - the one thing there is to say about a file nobody touched.
     fn confirm_quiet(&mut self) -> Result<String> {
         let mut confirmed = 0;
+        // The files an entry already names, found once: each file confirmed adds an entry a
+        // node, and looking through those again for every file made this quadratic.
+        let named: HashSet<String> = self
+            .truth
+            .entries
+            .iter()
+            .flat_map(|entry| [&entry.before, &entry.after])
+            .flatten()
+            .map(|node| node.file.clone())
+            .collect();
         for path in self.quiet_files() {
             if self.has_relation(BEFORE, &path) || self.has_relation(AFTER, &path) {
                 continue;
@@ -489,12 +507,7 @@ impl Session {
                 .before
                 .get(&path)
                 .is_some_and(|file| file.root().is_some());
-            let touched = self.truth.entries.iter().any(|entry| {
-                [&entry.before, &entry.after]
-                    .into_iter()
-                    .flatten()
-                    .any(|node| node.file == path)
-            });
+            let touched = named.contains(&path);
             if has_tree && !touched {
                 let root = NodeRef {
                     file: path.clone(),
@@ -614,7 +627,7 @@ impl Session {
     /// Records that the truth changed.
     fn touch(&mut self) {
         self.dirty = true;
-        self.stats = None;
+        self.stats_stale = true;
         self.quit_armed = false;
     }
 
@@ -2221,13 +2234,20 @@ fn seed_pair(app: &mut App, before: &Code, after: &Code) -> Result<String> {
 
 /// Per side and file: the paths with a match, and the removed paths with whether the mark takes
 /// the children.
-struct Marks {
-    matched: [HashMap<String, HashSet<Vec<String>>>; 2],
-    removed: [HashMap<String, HashMap<Vec<String>, bool>>; 2],
+/// What the entries say of each node, by side, file and tree path. It borrows the truth: a
+/// folder fixture's is a hundred thousand entries, and this is built on a keystroke.
+struct Marks<'t> {
+    matched: [HashMap<&'t str, HashSet<&'t [String]>>; 2],
+    removed: [HashMap<&'t str, HashMap<&'t [String], bool>>; 2],
 }
 
-impl Marks {
-    fn of(truth: &HumanChangeset) -> Self {
+impl<'t> Marks<'t> {
+    fn of(truth: &'t HumanChangeset) -> Self {
+        Self::of_files(truth, |_, _| true)
+    }
+
+    /// The marks of the files `wanted(side, file)` names, and of no other.
+    fn of_files(truth: &'t HumanChangeset, wanted: impl Fn(usize, &str) -> bool) -> Self {
         let mut marks = Marks {
             matched: Default::default(),
             removed: Default::default(),
@@ -2235,24 +2255,43 @@ impl Marks {
         for entry in &truth.entries {
             for (side, node) in [&entry.before, &entry.after].into_iter().enumerate() {
                 let Some(node) = node else { continue };
+                if !wanted(side, &node.file) {
+                    continue;
+                }
                 if is_match(entry.operation) {
                     marks.matched[side]
-                        .entry(node.file.clone())
+                        .entry(node.file.as_str())
                         .or_default()
-                        .insert(node.path.clone());
+                        .insert(node.path.as_slice());
                 } else {
                     let with_children = matches!(
                         entry.operation,
                         HumanOperation::DeleteWithChildren | HumanOperation::InsertWithChildren
                     );
                     marks.removed[side]
-                        .entry(node.file.clone())
+                        .entry(node.file.as_str())
                         .or_default()
-                        .insert(node.path.clone(), with_children);
+                        .insert(node.path.as_slice(), with_children);
                 }
             }
         }
         marks
+    }
+
+    /// How many nodes of `root`, the tree of `file`, no entry says anything about.
+    fn unmarked(&self, side: usize, file: &str, root: Node, nodes: usize) -> usize {
+        match (self.matched[side].get(file), self.removed[side].get(file)) {
+            (None, None) => nodes,
+            // Nothing removed: every marked node is a matched path. (A path that resolves to
+            // no node would be counted as one; `validate` reports those.)
+            (Some(matched), None) => nodes.saturating_sub(matched.len()),
+            _ => precompute_paths(root)
+                .values()
+                .filter(|path| {
+                    !self.is_matched(side, file, path) && !self.is_removed(side, file, path)
+                })
+                .count(),
+        }
     }
 
     fn is_matched(&self, side: usize, file: &str, path: &[String]) -> bool {
@@ -2260,7 +2299,45 @@ impl Marks {
             .get(file)
             .is_some_and(|paths| paths.contains(path))
     }
+}
 
+/// Per side and file, a fingerprint of the entries that name the file: equal fingerprints mean
+/// the same marks (up to a hash collision), whatever the order of the entries. A file no entry
+/// names has none, which reads as 0.
+fn mark_fingerprints(truth: &HumanChangeset) -> [HashMap<&str, u64>; 2] {
+    use std::hash::{Hash, Hasher};
+    let mut prints: [HashMap<&str, u64>; 2] = Default::default();
+    for entry in &truth.entries {
+        for (side, node) in [&entry.before, &entry.after].into_iter().enumerate() {
+            let Some(node) = node else { continue };
+            let mut hasher = rustc_hash::FxHasher::default();
+            (entry.operation as u8, &node.path).hash(&mut hasher);
+            let print = prints[side].entry(node.file.as_str()).or_default();
+            // A sum, so that the order does not count and two equal entries do not cancel.
+            *print = print.wrapping_add(hasher.finish() | 1);
+        }
+    }
+    prints
+}
+
+/// The nodes of the tree under `root`.
+fn count_nodes(root: Node) -> usize {
+    let mut cursor = root.walk();
+    let mut count = 0;
+    loop {
+        count += 1;
+        if cursor.goto_first_child() {
+            continue;
+        }
+        while !cursor.goto_next_sibling() {
+            if !cursor.goto_parent() {
+                return count;
+            }
+        }
+    }
+}
+
+impl Marks<'_> {
     /// Whether `path` is removed, by its own entry or an ancestor's with-children one.
     fn is_removed(&self, side: usize, file: &str, path: &[String]) -> bool {
         let Some(removed) = self.removed[side].get(file) else {
@@ -2882,47 +2959,74 @@ impl Session {
         Ok(())
     }
 
+    /// The board's figures, brought up to date. Only the files whose marks changed since the
+    /// last call are counted again ([`mark_fingerprints`]): after a key in a pair view that is
+    /// the pair, where counting every file of a folder fixture again took 400 ms a keystroke.
     fn file_stats(&mut self) -> &[BTreeMap<String, FileStats>; 2] {
-        if self.stats.is_none() {
-            let marks = Marks::of(&self.truth);
-            let stats = [BEFORE, AFTER].map(|side| {
-                self.side(side)
-                    .iter()
-                    .map(|(path, file)| {
-                        let language = match &file.code {
-                            None => "binary".to_string(),
-                            Some(code) => match code.metadata.language {
-                                Some(language) if file.root().is_some() => {
-                                    omnidiff::code::language::human_name(language)
-                                }
-                                _ => "text".to_string(),
-                            },
-                        };
-                        let lines = file.text().map_or(0, |text| text.lines().count());
-                        let unmarked = file.root().map(|root| {
-                            let paths = precompute_paths(root);
-                            paths
-                                .values()
-                                .filter(|node| {
-                                    !marks.is_matched(side, path, node)
-                                        && !marks.is_removed(side, path, node)
-                                })
-                                .count()
-                        });
-                        (
-                            path.clone(),
-                            FileStats {
-                                language,
-                                lines,
-                                unmarked,
-                            },
-                        )
-                    })
-                    .collect()
-            });
-            self.stats = Some(stats);
+        if !self.stats_stale {
+            return &self.stats;
         }
-        self.stats.as_ref().expect("just filled")
+        let Session {
+            stats,
+            truth,
+            trees,
+            ..
+        } = self;
+        let prints = mark_fingerprints(truth);
+        let print_of = |side: usize, path: &str| prints[side].get(path).copied().unwrap_or(0);
+        let is_stale = |side: usize, path: &str| {
+            stats[side]
+                .get(path)
+                .is_none_or(|stat| stat.marks != print_of(side, path))
+        };
+        let stale: [BTreeSet<&str>; 2] = [BEFORE, AFTER].map(|side| {
+            let files = if side == BEFORE {
+                &trees.before
+            } else {
+                &trees.after
+            };
+            files
+                .keys()
+                .map(String::as_str)
+                .filter(|path| is_stale(side, path))
+                .collect()
+        });
+        let marks = Marks::of_files(truth, |side, file| stale[side].contains(file));
+        for side in [BEFORE, AFTER] {
+            let files = if side == BEFORE {
+                &trees.before
+            } else {
+                &trees.after
+            };
+            for path in &stale[side] {
+                let file = &files[*path];
+                let stat = stats[side].entry(path.to_string()).or_insert_with(|| {
+                    let language = match &file.code {
+                        None => "binary".to_string(),
+                        Some(code) => match code.metadata.language {
+                            Some(language) if file.root().is_some() => {
+                                omnidiff::code::language::human_name(language)
+                            }
+                            _ => "text".to_string(),
+                        },
+                    };
+                    FileStats {
+                        language,
+                        lines: file.text().map_or(0, |text| text.lines().count()),
+                        nodes: file.root().map(count_nodes),
+                        unmarked: None,
+                        marks: 0,
+                    }
+                });
+                stat.unmarked = file
+                    .root()
+                    .zip(stat.nodes)
+                    .map(|(root, nodes)| marks.unmarked(side, path, root, nodes));
+                stat.marks = print_of(side, path);
+            }
+        }
+        self.stats_stale = false;
+        &self.stats
     }
 }
 
@@ -3320,7 +3424,7 @@ fn board_lines(session: &mut Session, side: usize) -> Vec<Line<'static>> {
     let width = files.iter().map(|file| file.len()).max().unwrap_or(0);
     session.file_stats();
     let session: &Session = session;
-    let stats = &session.stats.as_ref().expect("just filled")[side];
+    let stats = &session.stats[side];
     files
         .iter()
         .enumerate()

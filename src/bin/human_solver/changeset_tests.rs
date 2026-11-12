@@ -27,7 +27,9 @@ use super::*;
 use crate::CaseOrigin;
 use crate::events::{compute_frame_state, session_key};
 use crossterm::event::{KeyEvent, KeyModifiers};
-use omnidiff::test::helper::human_changeset::ChangesetKind;
+use omnidiff::test::helper::human_changeset::{
+    ChangesetKind, assert_solved_fixture, changeset_samples_root, fixture_violations,
+};
 use ratatui::backend::TestBackend;
 
 struct Driver {
@@ -622,6 +624,8 @@ fn a_folder_fixture_without_hints_collapses_filters_and_confirms_its_untouched_f
     assert_eq!(violations, [], "{}", driver.status());
     assert!(truth.is_solved(&driver.session().trees));
     assert!(driver.status().contains("promoted"), "{}", driver.status());
+    // What the fixture's stub asserts holds of it where it now is.
+    assert_solved_fixture(&driver.session().dir).unwrap();
     let source = fs::read_to_string(driver.session().dir.join(SOURCE_FILE_NAME)).unwrap();
     assert!(!source.contains("vcs_hints"), "{source}");
     let source = ChangesetSource::load(&driver.session().dir).unwrap();
@@ -1146,6 +1150,7 @@ fn saving_a_finished_sample_promotes_it_with_its_stub() {
         session.dir,
         session.corpus_root.join("handmade").join(&session.name)
     );
+    assert_solved_fixture(&session.dir).unwrap();
     for kept in [
         "README.md",
         SOURCE_FILE_NAME,
@@ -1411,4 +1416,181 @@ fn solve_the_handmade_changesets_in_place() {
         );
         omnidiff::test::helper::human_changeset::assert_solved_ground_truth(name).unwrap();
     }
+}
+
+// ─── From a materialised sample to the corpus ───────────────────────────────────────────────
+
+impl Driver {
+    /// A copy of the pilot sample `name` (`materialize_test_diffs --changesets`) in a scratch
+    /// directory, as the sample it is. Promotion and its stub land in the scratch directory.
+    fn pilot_sample(name: &str) -> Self {
+        let scratch = tempfile::tempdir().unwrap();
+        let dir = scratch.path().join("samples").join("changesets").join(name);
+        copy_dir(&changeset_samples_root().join(name), &dir);
+        let mut session = Session::open(&dir, true).unwrap();
+        session.corpus_root = scratch.path().join("changesets");
+        session.fixtures_root = scratch.path().join("fixtures");
+        Driver::over(session, Some(scratch))
+    }
+}
+
+/// What a promotion leaves: the fixture under its dataset in the corpus, the sample gone, a
+/// `source.json` that says so, and the stub the corpus test demands - which passes, since what
+/// it asserts ([`assert_solved_fixture`]) holds of the directory.
+fn assert_promoted(driver: &Driver, sample: &Path, kind: ChangesetKind) {
+    let session = driver.session();
+    let dataset = session.source.dataset.clone();
+    assert!(
+        driver.status().contains(&format!(
+            "promoted to changesets/{dataset}/{}",
+            session.name
+        )),
+        "{}",
+        driver.status()
+    );
+    assert!(!session.is_sample && !sample.exists());
+    assert_eq!(
+        session.dir,
+        session.corpus_root.join(&dataset).join(&session.name)
+    );
+    let source = ChangesetSource::load(&session.dir).unwrap();
+    assert_eq!((source.kind, source.status.as_str()), (kind, "PROMOTED"));
+    assert_eq!(
+        fixture_violations(&session.dir).unwrap(),
+        Vec::<String>::new()
+    );
+    assert_solved_fixture(&session.dir).unwrap();
+    assert_eq!(
+        fs::read_to_string(session.stub_path()).unwrap(),
+        stub_contents(&session.name)
+    );
+    let mods = fs::read_to_string(session.fixtures_root.join("changesets.rs")).unwrap();
+    assert_eq!(
+        mods,
+        format!("#[cfg(test)]\nmod {};\n", module_name(&session.name))
+    );
+}
+
+/// The pilot, end to end: a sample as `materialize_test_diffs --changesets` wrote it is opened,
+/// solved and promoted, one of each kind. The samples are git-ignored, so this runs where they
+/// have been materialised: `cargo test --all-features --bin human_solver
+/// materialised_pilot_samples -- --ignored`. Nothing is written outside a scratch directory.
+#[test]
+#[ignore = "reads the git-ignored src/test/data/samples/changesets/"]
+fn materialised_pilot_samples_are_opened_solved_and_promoted_with_a_passing_stub() {
+    // A commit: two C files, `unsigned int` become `size_t` in a definition and its
+    // declaration. Git's hints propose both pairs; the seed matches everything but the two
+    // words of the old type, which are deleted.
+    let mut driver = Driver::pilot_sample("commit-x-htop-5f17f255");
+    let sample = driver.session().dir.clone();
+    assert_eq!(driver.session().source.kind, ChangesetKind::Commit);
+    assert_eq!(driver.session().proposals.len(), 2);
+    driver.keys("C\nS]d]d]d]dbx");
+    driver.keys("j\tj\nS]d]dbx");
+    driver.keys("s");
+    assert_promoted(&driver, &sample, ChangesetKind::Commit);
+
+    // Folders: ten files a side with no hints. Seven did not change (`I`); a picture and an
+    // SVG were renamed with their bytes, proposed from those; a script went and a picture came.
+    let mut driver = Driver::pilot_sample("folders-x-scrcpy-f91fa565-740460d0");
+    let sample = driver.session().dir.clone();
+    assert_eq!(driver.session().source.kind, ChangesetKind::Folders);
+    assert!(driver.session().source.vcs_hints.is_none());
+    driver.keys("IC");
+    // The picture has no tree; the SVG's is matched to itself by the seed.
+    driver.keys("xjf\nSbx");
+    driver.keys("jdx\tgax");
+    driver.keys("s");
+    assert_promoted(&driver, &sample, ChangesetKind::Folders);
+}
+
+/// How long the session takes at the size a folders fixture may have: the largest pilot sample,
+/// some 200 files a side. Prints the timings; asserts nothing a slow machine would fail.
+/// `cargo test --profile ci --all-features --bin human_solver folder_scale -- --ignored
+/// --nocapture`.
+#[test]
+#[ignore = "reads the git-ignored src/test/data/samples/changesets/, and is a measurement"]
+fn folder_scale_timings() {
+    let name = std::env::var("PILOT")
+        .unwrap_or_else(|_| "folders-x-prettier-cd100bb1-b023f316".to_string());
+    let timed = |label: &str, started: std::time::Instant| {
+        println!(
+            "{label:<44} {:>8.1} ms",
+            started.elapsed().as_secs_f64() * 1e3
+        );
+    };
+    let started = std::time::Instant::now();
+    let mut driver = Driver::pilot_sample(&name);
+    timed("copy + open (load, parse, propose)", started);
+    let files = [BEFORE, AFTER].map(|side| driver.session().side(side).len());
+    println!("{name}: {} before, {} after file(s)", files[0], files[1]);
+
+    let started = std::time::Instant::now();
+    driver.screen(200, 50);
+    timed("board, first draw (file stats)", started);
+    let started = std::time::Instant::now();
+    driver.screen(200, 50);
+    timed("board, redraw", started);
+    let started = std::time::Instant::now();
+    driver.keys("j");
+    driver.screen(200, 50);
+    timed("board, j + draw", started);
+
+    let started = std::time::Instant::now();
+    driver.keys("I");
+    timed("I (bulk confirm)", started);
+    println!("  {}", driver.status());
+    println!(
+        "  {} entries in memory",
+        driver.session().truth.entries.len()
+    );
+    let started = std::time::Instant::now();
+    driver.screen(200, 50);
+    timed("board, draw after I", started);
+
+    let started = std::time::Instant::now();
+    driver.keys("Cz");
+    timed("C (confirm proposals)", started);
+    // The largest file that changed, and the largest of all (which did not): a pair view edit
+    // writes the pair back into the changeset and projects it again.
+    let pairs = std::env::var("PAIRS").unwrap_or_else(|_| "print/class.js,print/jsx.js".into());
+    for file in pairs.split(',') {
+        println!("{file}:");
+        driver.keys(&format!("/{file}\n"));
+        let started = std::time::Instant::now();
+        driver.keys("\n");
+        timed("  Enter (open the pair)", started);
+        assert!(driver.codes.is_some(), "{}", driver.status());
+        let started = std::time::Instant::now();
+        driver.screen(200, 50);
+        timed("  pair, first draw", started);
+        let started = std::time::Instant::now();
+        driver.keys("j");
+        driver.screen(200, 50);
+        timed("  pair, j + draw", started);
+        let started = std::time::Instant::now();
+        driver.keys("S");
+        timed("  pair, S (seed)", started);
+        println!("    {}", driver.status());
+        for key in ["u", "m", "d", "u", "M"] {
+            let started = std::time::Instant::now();
+            driver.keys(key);
+            let pressed = started.elapsed().as_secs_f64() * 1e3;
+            driver.screen(200, 50);
+            println!(
+                "  pair, {key}: {pressed:>6.1} ms the key, {:>6.1} ms with the draw   ({})",
+                started.elapsed().as_secs_f64() * 1e3,
+                driver.status()
+            );
+        }
+        let started = std::time::Instant::now();
+        driver.keys("b");
+        driver.screen(200, 50);
+        timed("  b (back to the board) + draw", started);
+        driver.keys("/\x1b");
+    }
+    let started = std::time::Instant::now();
+    driver.keys("s");
+    timed("s (save + validate)", started);
+    println!("  {}", driver.status());
 }

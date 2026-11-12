@@ -285,6 +285,9 @@ pub const STATUSES: [&str; 3] = ["SAMPLED", "PROMOTED", "REJECTED"];
 /// Why a `folders` tree lacks something its directory held ([`Omitted::reason`]).
 pub const OMITTED_REASONS: [&str; 3] = ["size", "symlink", "submodule"];
 
+/// The fewest files of a fixture each loading thread is given: below twice this, one thread.
+const PARALLEL_LOAD_FILES: usize = 16;
+
 const BEFORE: usize = 0;
 const AFTER: usize = 1;
 const SIDE_NAMES: [&str; 2] = ["before", "after"];
@@ -427,23 +430,59 @@ pub struct ChangesetTrees {
 
 impl ChangesetTrees {
     /// Reads `dir/before` and `dir/after`. A side without a directory is empty.
+    ///
+    /// The files are read and parsed on several threads once there are enough of them: a
+    /// folder fixture holds some 200 a side, and parsing them one after another was most of the
+    /// quarter of a second it took to open one.
     pub fn load(dir: &Path) -> Result<Self> {
-        let mut parser = tree_sitter::Parser::new();
-        let mut sides = [BTreeMap::new(), BTreeMap::new()];
-        for (side, files) in sides.iter_mut().enumerate() {
-            let root = dir.join(SIDE_NAMES[side]);
+        let mut found: Vec<(usize, String, PathBuf)> = Vec::new();
+        for (side, name) in SIDE_NAMES.iter().enumerate() {
+            let root = dir.join(name);
             if !root.exists() {
                 continue;
             }
-            let mut found = Vec::new();
-            collect_files(&root, "", &mut found)?;
-            for (path, on_disk) in found {
-                let bytes = fs::read(&on_disk).with_context(|| format!("reading {on_disk:?}"))?;
-                files.insert(
-                    path.clone(),
-                    ChangesetFile::from_bytes(&path, bytes, &mut parser)?,
-                );
-            }
+            let mut files = Vec::new();
+            collect_files(&root, "", &mut files)?;
+            found.extend(
+                files
+                    .into_iter()
+                    .map(|(path, on_disk)| (side, path, on_disk)),
+            );
+        }
+        let parse = |files: &[(usize, String, PathBuf)]| -> Vec<Result<ChangesetFile>> {
+            let mut parser = tree_sitter::Parser::new();
+            files
+                .iter()
+                .map(|(_, path, on_disk)| {
+                    let bytes =
+                        fs::read(on_disk).with_context(|| format!("reading {on_disk:?}"))?;
+                    ChangesetFile::from_bytes(path, bytes, &mut parser)
+                })
+                .collect()
+        };
+        let workers = std::thread::available_parallelism()
+            .map_or(1, |count| count.get())
+            .min(found.len() / PARALLEL_LOAD_FILES)
+            .max(1);
+        let parsed: Vec<Result<ChangesetFile>> = if workers == 1 {
+            parse(&found)
+        } else {
+            // Chunks in order, so the first error is the same one a single thread would meet.
+            let chunk = found.len().div_ceil(workers);
+            std::thread::scope(|scope| {
+                let handles: Vec<_> = found
+                    .chunks(chunk)
+                    .map(|files| scope.spawn(|| parse(files)))
+                    .collect();
+                handles
+                    .into_iter()
+                    .flat_map(|handle| handle.join().expect("a parsing thread panicked"))
+                    .collect()
+            })
+        };
+        let mut sides = [BTreeMap::new(), BTreeMap::new()];
+        for ((side, path, _), file) in found.iter().zip(parsed) {
+            sides[*side].insert(path.clone(), file?);
         }
         let [before, after] = sides;
         Ok(Self { before, after })
@@ -1556,6 +1595,21 @@ struct Resolved<'t> {
     removed: [HashMap<NodeKey<'t>, (usize, bool)>; 2],
     /// Entries whose sides fit their operation but do not resolve, with why.
     unresolved: Vec<(usize, String)>,
+    /// Per side, the files an entry removes a node of with its children.
+    removes_children: [HashSet<&'t str>; 2],
+    /// Per side and file, the matches that name the file, as ascending indices into `matches`:
+    /// a folder fixture has hundreds of pairs, and each reads only its own two files' entries.
+    matches_of: [HashMap<&'t str, Vec<usize>>; 2],
+    /// Per side and file, the entries with that side only, as ascending indices into the truth.
+    one_sided: [HashMap<&'t str, Vec<usize>>; 2],
+}
+
+/// The indices of two ascending lists, ascending, each once.
+fn merged(first: Option<&Vec<usize>>, second: Option<&Vec<usize>>) -> Vec<usize> {
+    let mut all: Vec<usize> = first.into_iter().chain(second).flatten().copied().collect();
+    all.sort_unstable();
+    all.dedup();
+    all
 }
 
 impl<'t> Resolved<'t> {
@@ -1566,8 +1620,24 @@ impl<'t> Resolved<'t> {
             partners: Default::default(),
             removed: Default::default(),
             unresolved: Vec::new(),
+            removes_children: Default::default(),
+            matches_of: Default::default(),
+            one_sided: Default::default(),
         };
         for (index, entry) in truth.entries.iter().enumerate() {
+            let only_side = match (&entry.before, &entry.after) {
+                (Some(node), None) => Some((BEFORE, node)),
+                (None, Some(node)) => Some((AFTER, node)),
+                _ => None,
+            };
+            if let Some((side, node)) = only_side
+                && let Some((file, _)) = trees.side(side).get_key_value(&node.file)
+            {
+                resolved.one_sided[side]
+                    .entry(file.as_str())
+                    .or_default()
+                    .push(index);
+            }
             let outcome = match (&entry.before, &entry.after) {
                 (Some(before), Some(after)) if is_match(entry.operation) => resolver
                     .node(BEFORE, before)
@@ -1581,6 +1651,10 @@ impl<'t> Resolved<'t> {
                         for side in [BEFORE, AFTER] {
                             resolved.partners[side]
                                 .entry(found.key(side))
+                                .or_default()
+                                .push(resolved.matches.len());
+                            resolved.matches_of[side]
+                                .entry(found.key(side).0)
                                 .or_default()
                                 .push(resolved.matches.len());
                         }
@@ -1603,6 +1677,9 @@ impl<'t> Resolved<'t> {
                         resolved.removed[side]
                             .entry((file.path.as_str(), node.id()))
                             .or_insert((index, with_children));
+                        if with_children {
+                            resolved.removes_children[side].insert(file.path.as_str());
+                        }
                     })
                 }
                 // `entry_sides_agree_with_operation` reports these.
@@ -1620,6 +1697,9 @@ impl<'t> Resolved<'t> {
         if let Some((entry, _)) = self.removed[side].get(&(file, node.id())) {
             return Some(*entry);
         }
+        if !self.removes_children[side].contains(file) {
+            return None;
+        }
         let mut current = node;
         while let Some(parent) = current.parent() {
             if let Some((entry, true)) = self.removed[side].get(&(file, parent.id())) {
@@ -1628,6 +1708,15 @@ impl<'t> Resolved<'t> {
             current = parent;
         }
         None
+    }
+
+    /// The matches with an end in the before file `before` or in the after file `after`, as
+    /// ascending indices into `matches`.
+    fn touching(&self, before: &str, after: &str) -> Vec<usize> {
+        merged(
+            self.matches_of[BEFORE].get(before),
+            self.matches_of[AFTER].get(after),
+        )
     }
 
     /// Whether `node` has several partners, or a partner that has several.
@@ -2237,7 +2326,8 @@ fn spans_overlap(a: HumanTextSpan, b: HumanTextSpan) -> bool {
 /// Where the many-matched nodes of the pair's two files are, `[before, after]`.
 fn many_matched_spans(resolved: &Resolved, before: &str, after: &str) -> [Vec<HumanTextSpan>; 2] {
     let mut spans: [Vec<HumanTextSpan>; 2] = Default::default();
-    for found in &resolved.matches {
+    for index in resolved.touching(before, after) {
+        let found = &resolved.matches[index];
         for (side, (file, node)) in [found.before, found.after].into_iter().enumerate() {
             if file.path == [before, after][side]
                 && resolved.is_many_matched(side, (file.path.as_str(), node.id()))
@@ -2266,7 +2356,9 @@ fn pair_view(
     let mut entries = Vec::new();
     let mut dropped = Vec::new();
     let mut paired: [HashSet<usize>; 2] = Default::default();
-    for (index, found) in resolved.matches.iter().enumerate() {
+    let touching = resolved.touching(before, after);
+    for &index in &touching {
+        let found = &resolved.matches[index];
         if found.before.0.path != before || found.after.0.path != after {
             continue;
         }
@@ -2282,7 +2374,8 @@ fn pair_view(
     }
     // A node whose partners are all elsewhere left this pair, or came into it.
     let mut gone: [HashSet<usize>; 2] = Default::default();
-    for found in &resolved.matches {
+    for &index in &touching {
+        let found = &resolved.matches[index];
         for (side, (file, node)) in [found.before, found.after].into_iter().enumerate() {
             if file.path != files[side]
                 || paired[side].contains(&node.id())
@@ -2306,13 +2399,12 @@ fn pair_view(
             });
         }
     }
-    for entry in &truth.entries {
-        let in_pair = match (&entry.before, &entry.after) {
-            (Some(node), None) => node.file == before,
-            (None, Some(node)) => node.file == after,
-            _ => false,
-        };
-        if in_pair && !is_match(entry.operation) {
+    let one_sided = merged(
+        resolved.one_sided[BEFORE].get(before),
+        resolved.one_sided[AFTER].get(after),
+    );
+    for entry in one_sided.into_iter().map(|index| &truth.entries[index]) {
+        if !is_match(entry.operation) {
             entries.push(single_file_entry(entry));
         }
     }
@@ -2440,7 +2532,18 @@ pub fn fixture_violations(dir: &Path) -> Result<Vec<String>> {
 /// its `source.json` fits its trees, and its truth is whole, valid, and saved as
 /// [`HumanChangeset::to_json`] writes it.
 pub fn assert_solved_ground_truth(name: &str) -> Result<()> {
-    let changeset = Changeset::load_by_name(name)?;
+    let dir = changeset_dir(name).with_context(|| format!("no changeset called '{name}'"))?;
+    assert_solved_fixture(&dir)
+}
+
+/// [`assert_solved_ground_truth`] of the changeset directory `dir`, wherever it is: what a stub
+/// would assert of a fixture promoted there.
+pub fn assert_solved_fixture(dir: &Path) -> Result<()> {
+    let changeset = Changeset::load(dir)?;
+    let name = dir
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let source = source_violations(&changeset.source, &changeset.trees);
     ensure!(
         source.is_empty(),
