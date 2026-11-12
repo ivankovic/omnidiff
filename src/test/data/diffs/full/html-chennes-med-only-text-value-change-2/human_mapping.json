@@ -2971,5 +2971,126 @@
         "end_tag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 40,
+              "start_column": 40,
+              "end_row": 40,
+              "end_column": 76
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 40,
+              "end_row": 40,
+              "end_column": 76
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 40,
+              "start_column": 137,
+              "end_row": 40,
+              "end_column": 173
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 137,
+              "end_row": 40,
+              "end_column": 173
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 40,
+              "start_column": 237,
+              "end_row": 40,
+              "end_column": 273
+            }
+          ],
+          "after": [
+            {
+              "start_row": 40,
+              "start_column": 237,
+              "end_row": 40,
+              "end_column": 273
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 44,
+              "start_column": 245,
+              "end_row": 44,
+              "end_column": 251
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 245,
+              "end_row": 44,
+              "end_column": 251
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 44,
+              "start_column": 329,
+              "end_row": 44,
+              "end_column": 335
+            }
+          ],
+          "after": [
+            {
+              "start_row": 44,
+              "start_column": 329,
+              "end_row": 44,
+              "end_column": 335
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 47,
+              "start_column": 13,
+              "end_row": 47,
+              "end_column": 45
+            }
+          ],
+          "after": [
+            {
+              "start_row": 47,
+              "start_column": 13,
+              "end_row": 47,
+              "end_column": 39
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
