@@ -1,5 +1,8 @@
 {
-  "stratum": "rename unedited",
+  "kind": "commit",
+  "signals": [
+    "rename-unedited"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

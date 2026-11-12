@@ -1,7 +1,7 @@
 # Two files merged into one
 
 - **Dataset:** handmade
-- **Stratum:** split or merge
+- **Signals:** block-move, rename-edited, split-or-merge
 - **Repository, commit:** none. Written for OmniDiff.
 
 `cache/get.go` and `cache/put.go`, one method each, become `cache/access.go` holding both. The second file's `package` line is the only code that goes away. Git pairs the new file with one of the two and calls the other deleted.
@@ -10,8 +10,6 @@ What `git diff --name-status -M` reports for the two trees, as `source.json` rec
 
 - `R059` `cache/get.go` -> `cache/access.go`
 - `D` `cache/put.go`
-
-Not solved yet: there is no `human_changeset.json`.
 
 ## License
 

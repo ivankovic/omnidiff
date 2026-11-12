@@ -1,7 +1,7 @@
 # Two files swapping contents
 
 - **Dataset:** handmade
-- **Stratum:** rename unedited
+- **Signals:** rename-unedited
 - **Repository, commit:** none. Written for OmniDiff.
 
 `themes/default.ts` and `themes/alternate.ts` exchange their contents, byte for byte. Each path is modified; nothing is new.
@@ -10,8 +10,6 @@ What `git diff --name-status -M` reports for the two trees, as `source.json` rec
 
 - `M` `themes/alternate.ts`
 - `M` `themes/default.ts`
-
-Not solved yet: there is no `human_changeset.json`.
 
 ## License
 

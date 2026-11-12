@@ -42,10 +42,17 @@
 //! (a file over the size cap, a link, a submodule) is listed in `source.json` as `omitted`.
 //! Either way a path that is not plain and relative is refused.
 //!
-//! `source.json` is written through [`ChangesetSource`]: a `commit` carries what git says
-//! happened (`vcs_hints`); `folders` have no such key, since two folders on disk have no VCS to
-//! ask. Re-running leaves a fixture that already holds exactly these files alone, and refuses
-//! one that holds anything else rather than overwrite it.
+//! `source.json` is written through [`ChangesetSource`], the format's one definition of the file
+//! (`test::helper::human_changeset`, whose module doc is the specification): a `commit` carries
+//! what git says happened to its changed files (`vcs_hints`, see [`commit_hints`]); `folders`
+//! have no such key, since two folders on disk have no VCS to ask. Each fixture also gets a
+//! `README.md` with its provenance and the licence its files are under, which `human_solver`
+//! requires before it promotes a sample.
+//!
+//! Re-running leaves a fixture that already holds exactly these files alone, and refuses one
+//! that holds anything else rather than overwrite it. A `README.md` is never overwritten. A
+//! `source.json` is `human_solver`'s once written, and is rewritten only when it is not in the
+//! format (one an earlier version of the format wrote), keeping its `status`.
 use anyhow::{Result, bail};
 use clap::Parser;
 use git2::{Oid, Repository, Tree};
@@ -53,8 +60,11 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use omnidiff::stats::changeset;
+use omnidiff::stats::changeset::{self, ChangesetKind};
 use omnidiff::stats::license;
+#[cfg(test)]
+use omnidiff::test::helper::human_changeset::fixture_violations;
+use omnidiff::test::helper::human_changeset::{ChangesetSource, HintStatus, SourceFile, VcsHint};
 
 const DEFAULT_REPO_ROOTS: &[&str] = &[
     "/var/tmp/research/tiny/repositories",
@@ -470,76 +480,6 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
     Ok(resolution)
 }
 
-/// A changeset fixture's `source.json`: where the changeset came from, every file it holds,
-/// and for a commit what the VCS says happened - hints, never truth.
-///
-/// A copy of `ChangesetSource` in `src/test/helper/human_changeset.rs` (branch `changesets`,
-/// d0bc9eac), field for field, to be replaced by it at merge; this is the only place that writes
-/// the file. What that type does not have yet: `kind`, `root`, `omitted`, and a `vcs_hints` that
-/// may be absent.
-#[derive(Serialize)]
-struct ChangesetSource {
-    /// `commit` or `folders` (`stats::changeset`).
-    kind: String,
-    repository: String,
-    /// The commit whose tree is `after/`.
-    commit: String,
-    /// The commit whose tree is `before/`.
-    parent: String,
-    /// Folders only: the sub-folder of the repository the two trees are, `.` for its root.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    root: Option<String>,
-    /// Derived, not a ranking: the signals the changeset was sampled with, joined by `+`, or
-    /// `control`.
-    stratum: String,
-    dataset: String,
-    status: String,
-    files: Vec<ChangesetSourceFile>,
-    /// Folders only: what the trees held on disk and the fixture does not.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    omitted: Vec<ChangesetSourceOmitted>,
-    /// Commits only; folders have no key at all.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    vcs_hints: Option<Vec<ChangesetSourceHint>>,
-}
-
-/// A file of a changeset by its path on each side it exists on: the fixture holds
-/// `before/<path>.test` and `after/<path>.test`.
-#[derive(Serialize)]
-struct ChangesetSourceFile {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    before: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    after: Option<String>,
-    /// Byte-identical on both sides: for a commit, held because a signal points at it; for
-    /// folders, every file the two trees share.
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
-    untouched: bool,
-}
-
-/// `stats::changeset::Omitted`.
-#[derive(Serialize)]
-struct ChangesetSourceOmitted {
-    side: String,
-    path: String,
-    reason: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    bytes: Option<u64>,
-    id: String,
-}
-
-/// One line of `git diff --name-status -M` about a file the fixture holds.
-#[derive(Serialize)]
-struct ChangesetSourceHint {
-    /// `A`, `D`, `M`, `R` or `C`.
-    status: String,
-    path: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    old_path: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    similarity: Option<u8>,
-}
-
 /// The regular files under `dir`, by path relative to it; an error if it holds anything that is
 /// neither a directory nor a regular file, which a fixture never does.
 fn files_under(dir: &Path) -> Result<Vec<(PathBuf, Vec<u8>)>> {
@@ -568,12 +508,12 @@ fn files_under(dir: &Path) -> Result<Vec<(PathBuf, Vec<u8>)>> {
 /// What a fixture holds, before anything is written.
 #[derive(Default)]
 struct ChangesetFiles {
-    source_files: Vec<ChangesetSourceFile>,
+    source_files: Vec<SourceFile>,
     /// Each path with what happened to it, for the README.
     readme_files: Vec<(String, &'static str)>,
     /// The files to write, relative to the fixture's directory.
     wanted: Vec<(PathBuf, Vec<u8>)>,
-    omitted: Vec<ChangesetSourceOmitted>,
+    omitted: Vec<changeset::Omitted>,
 }
 
 impl ChangesetFiles {
@@ -586,7 +526,7 @@ impl ChangesetFiles {
     ) {
         let test_path = |side: &str| Path::new(side).join(format!("{path}.test"));
         self.readme_files.push((path.to_string(), change));
-        self.source_files.push(ChangesetSourceFile {
+        self.source_files.push(SourceFile {
             before: before.as_ref().map(|_| path.to_string()),
             after: after.as_ref().map(|_| path.to_string()),
             untouched: change == "untouched",
@@ -614,6 +554,43 @@ impl ChangesetFiles {
     }
 }
 
+/// The hints of `source.json` for a commit: git's lines about its changed files, in git's order.
+///
+/// Git pairs paths the fixture may hold only one of - a rename out of a file the sampler drops,
+/// or one git detected and the tree diff shows as a removal and an addition of which one is
+/// dropped. Such a line is rewritten as what it says about the held path alone: the old path
+/// deleted (`D`), or the new one added (`A`); a copy (`C`) from a path that is not held is an
+/// addition. The format wants the hints to name exactly the changed paths, each side existing.
+fn commit_hints(hints: Vec<changeset::VcsHint>, changed: &dyn Fn(&str) -> bool) -> Vec<VcsHint> {
+    let plain = |status: HintStatus, path: String| VcsHint {
+        status,
+        path,
+        old_path: None,
+        similarity: None,
+    };
+    let mut kept = Vec::new();
+    for hint in hints {
+        let Some(hint) = hint.to_source() else {
+            continue;
+        };
+        let new_held = changed(&hint.path);
+        match (hint.status, hint.old_path.clone()) {
+            (HintStatus::R, Some(old)) => match (changed(&old), new_held) {
+                (true, true) => kept.push(hint),
+                (true, false) => kept.push(plain(HintStatus::D, old)),
+                (false, true) => kept.push(plain(HintStatus::A, hint.path)),
+                (false, false) => {}
+            },
+            // A copy's source is unchanged, so it is held only as an untouched file, if at all.
+            (HintStatus::C, _) if new_held => kept.push(plain(HintStatus::A, hint.path)),
+            (HintStatus::C, _) => {}
+            _ if new_held => kept.push(hint),
+            _ => {}
+        }
+    }
+    kept
+}
+
 /// Writes the fixture of one `changesets.csv` row (see the module documentation).
 fn materialize_changeset(
     row: &changeset::Row,
@@ -623,11 +600,10 @@ fn materialize_changeset(
     if row.name.contains('/') || !changeset::is_safe_path(&row.name) {
         bail!("{:?} is not a fixture name", row.name);
     }
-    let folders = match row.kind.as_str() {
-        changeset::KIND_COMMIT => false,
-        changeset::KIND_FOLDERS => true,
-        kind => bail!("{kind:?} is not a kind of changeset"),
+    let Some(kind) = changeset::kind_of(&row.kind) else {
+        bail!("{:?} is not a kind of changeset", row.kind);
     };
+    let folders = kind == ChangesetKind::Folders;
     let repo_path = find_repo_path(repo_roots, &row.repository)
         .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
     let repo = Repository::open(&repo_path)?;
@@ -653,17 +629,7 @@ fn materialize_changeset(
         for (path, bytes) in unchanged {
             files.add(&path, Some(bytes.clone()), Some(bytes), "untouched");
         }
-        files.omitted = folder
-            .omitted
-            .into_iter()
-            .map(|omitted| ChangesetSourceOmitted {
-                side: omitted.side.to_string(),
-                path: omitted.path,
-                reason: omitted.reason.to_string(),
-                bytes: omitted.bytes,
-                id: omitted.id,
-            })
-            .collect();
+        files.omitted = folder.omitted;
     } else {
         for file in changeset::load_changes(&repo, &before_tree, &tree)?
             .map_err(|skip| anyhow::anyhow!("no longer a changeset: {}", skip.name()))?
@@ -679,11 +645,16 @@ fn materialize_changeset(
         }
     }
     let ChangesetFiles {
-        source_files,
+        mut source_files,
         readme_files,
         mut wanted,
         omitted,
     } = files;
+    // `files` is in path order, untouched files among the changed ones.
+    source_files.sort_by(|a, b| {
+        let path = |file: &SourceFile| file.before.clone().or(file.after.clone());
+        path(a).cmp(&path(b))
+    });
     wanted.sort();
     // `a` beside `a.test/b` would need `a.test` to be a file and a directory.
     for pair in wanted.windows(2) {
@@ -725,44 +696,54 @@ fn materialize_changeset(
         Resolution::Create(dir.clone())
     };
 
-    // Neither is overwritten: a hand-corrected README.md survives a re-run, and `source.json` is
-    // `human_solver`'s to update once the changeset is triaged.
+    // A hand-corrected README.md survives a re-run, and `source.json` is `human_solver`'s to
+    // update once the changeset is triaged: it is written when there is none, and again only
+    // when what is there is not the format's (an older shape), with the status it had.
     let missing = |path: &Path| fs::symlink_metadata(path).is_err();
     let source_path = dir.join("source.json");
-    if missing(&source_path) {
-        let held = |path: &str| readme_files.iter().any(|(file, _)| file == path);
+    let stale_status = match fs::read_to_string(&source_path) {
+        Ok(text) if serde_json::from_str::<ChangesetSource>(&text).is_err() => Some(
+            serde_json::from_str::<serde_json::Value>(&text)
+                .ok()
+                .and_then(|value| value.get("status")?.as_str().map(String::from))
+                .unwrap_or_else(|| row.status.clone()),
+        ),
+        _ => None,
+    };
+    if missing(&source_path) || stale_status.is_some() {
+        // Git's account of the commit, as far as it is about the files the fixture holds: a
+        // hint is kept when every path it names is held as a changed file, so that the hints
+        // name exactly the changed paths (`source_violations`). A file the sampler drops (a
+        // lock file, generated code, a link) has no hint, and neither has a rename out of or
+        // into one.
+        let changed = |path: &str| {
+            readme_files
+                .iter()
+                .any(|(file, change)| file == path && *change != "untouched")
+        };
         // Two folders on disk have no VCS to ask.
         let vcs_hints = if folders {
             None
         } else {
-            Some(
-                changeset::vcs_hints(&repo, parent.id(), commit.id())?
-                    .into_iter()
-                    .filter(|hint| matches!(hint.status, 'A' | 'D' | 'M' | 'R' | 'C'))
-                    .filter(|hint| held(&hint.path) || hint.old_path.as_deref().is_some_and(held))
-                    .map(|hint| ChangesetSourceHint {
-                        status: hint.status.to_string(),
-                        path: hint.path,
-                        old_path: hint.old_path,
-                        similarity: hint.similarity,
-                    })
-                    .collect(),
-            )
+            Some(commit_hints(
+                changeset::vcs_hints(&repo, parent.id(), commit.id())?,
+                &changed,
+            ))
         };
         let source = ChangesetSource {
-            kind: row.kind.clone(),
+            kind,
             repository: row.repository.clone(),
             commit: row.commit.clone(),
             parent: row.parent.clone(),
             root: folders.then(|| row.root.clone()),
-            stratum: row.signal_names().join("+"),
+            signals: row.signal_names().into_iter().map(String::from).collect(),
             dataset: row.dataset.clone(),
-            status: row.status.clone(),
+            status: stale_status.unwrap_or_else(|| row.status.clone()),
             files: source_files,
             omitted,
             vcs_hints,
         };
-        fs::write(&source_path, serde_json::to_string_pretty(&source)?)?;
+        fs::write(&source_path, source.to_json()?)?;
     }
     let readme_path = dir.join("README.md");
     if missing(&readme_path) {
@@ -1147,24 +1128,25 @@ mod tests {
                 "kind",
                 "parent",
                 "repository",
+                "signals",
                 "status",
-                "stratum",
                 "vcs_hints"
             ]
         );
         assert_eq!(source["kind"], "commit");
         assert_eq!(source["parent"], row.parent);
         assert_eq!(
-            source["stratum"], "block-move+copy",
-            "derived from the signals"
+            source["signals"],
+            serde_json::json!(["block-move", "copy"]),
+            "every signal of the row, none first"
         );
         assert_eq!(
             source["files"],
             serde_json::json!([
+                {"before": "lib/source.rs", "after": "lib/source.rs", "untouched": true},
                 {"before": "old.rs"},
                 {"before": "src/a.rs", "after": "src/a.rs"},
                 {"after": "src/b.rs"},
-                {"before": "lib/source.rs", "after": "lib/source.rs", "untouched": true},
             ])
         );
         // Git's own account of the files held, the link's change left out.
@@ -1177,11 +1159,57 @@ mod tests {
             ])
         );
 
+        // What is written is a fixture of the format: it loads, and passes the corpus's inventory.
+        assert_eq!(fixture_violations(&dir)?, Vec::<String>::new());
+
         let readme = fs::read_to_string(dir.join("README.md"))?;
         assert!(readme.contains(&format!("- **Parent:** `{}`", row.parent)));
         assert!(readme.contains("  - `lib/source.rs` (untouched)"));
         assert!(readme.contains("- `LICENSE` - MIT License"));
         Ok(())
+    }
+
+    #[test]
+    fn a_commits_hints_are_about_the_changed_files_it_holds() {
+        let hint = |status: char, path: &str, old: Option<&str>| changeset::VcsHint {
+            status,
+            path: path.to_string(),
+            old_path: old.map(String::from),
+            similarity: old.map(|_| 90),
+        };
+        let held = |path: &str| ["a.rs", "new.rs", "old.rs", "copy.rs"].contains(&path);
+        let hints = commit_hints(
+            vec![
+                hint('M', "a.rs", None),
+                hint('M', "Cargo.lock", None),
+                hint('T', "link", None),
+                hint('R', "new.rs", Some("old.rs")),
+                // A rename out of a file the fixture does not hold, and one into such a file.
+                hint('R', "new.rs", Some("generated.rs")),
+                hint('R', "generated.rs", Some("old.rs")),
+                hint('R', "b.lock", Some("a.lock")),
+                hint('C', "copy.rs", Some("untouched.rs")),
+            ],
+            &held,
+        );
+        let brief: Vec<String> = hints
+            .iter()
+            .map(|hint| {
+                let old = hint.old_path.as_deref().unwrap_or("-");
+                format!("{:?} {} {old}", hint.status, hint.path)
+            })
+            .collect();
+        assert_eq!(
+            brief,
+            [
+                "M a.rs -",
+                "R new.rs old.rs",
+                "A new.rs -",
+                "D old.rs -",
+                "A copy.rs -"
+            ]
+        );
+        assert!(hints[2].similarity.is_none() && hints[1].similarity == Some(90));
     }
 
     #[test]
@@ -1202,6 +1230,25 @@ mod tests {
         }
         assert_eq!(fs::read_to_string(dir.join("README.md"))?, "hand-corrected");
         assert!(dir.join("source.json").exists(), "backfilled");
+
+        // A triaged fixture's source.json is left as it is...
+        let source_path = dir.join("source.json");
+        let written = fs::read_to_string(&source_path)?;
+        let triaged = written.replace("\"SAMPLED\"", "\"REJECTED\"");
+        assert_ne!(triaged, written);
+        fs::write(&source_path, &triaged)?;
+        materialize_changeset(&row, &roots, output_dir.path())?;
+        assert_eq!(fs::read_to_string(&source_path)?, triaged);
+        // ...unless it is not the format's: one written before `signals` replaced `stratum` is
+        // written again, with the status it had.
+        let stale = triaged.replace(
+            "\"signals\": [\n    \"block-move\",\n    \"copy\"\n  ]",
+            "\"stratum\": \"block-move+copy\"",
+        );
+        assert_ne!(stale, triaged);
+        fs::write(&source_path, stale)?;
+        materialize_changeset(&row, &roots, output_dir.path())?;
+        assert_eq!(fs::read_to_string(&source_path)?, triaged);
 
         // Anything else in the fixture's trees and the row is refused, not written over.
         fs::write(dir.join("after/src/b.rs.test"), "edited by hand")?;
@@ -1311,6 +1358,7 @@ mod tests {
         assert_eq!(omitted.len(), 2, "the link, on each side");
         assert_eq!(omitted[0]["path"], "link");
         assert_eq!(omitted[0]["reason"], "symlink");
+        assert_eq!(fixture_violations(&dir)?, Vec::<String>::new());
         let readme = fs::read_to_string(dir.join("README.md"))?;
         assert!(readme.contains("- **Kind:** folders\n- **Folder:** `.`\n"));
 

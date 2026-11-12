@@ -1,7 +1,7 @@
 # A file renamed and not edited
 
 - **Dataset:** handmade
-- **Stratum:** rename unedited
+- **Signals:** rename-unedited
 - **Repository, commit:** none. Written for OmniDiff.
 
 `src/helpers.ts` becomes `src/format.ts` with the same bytes. `src/listing.ts` changes only the path it imports from.
@@ -10,8 +10,6 @@ What `git diff --name-status -M` reports for the two trees, as `source.json` rec
 
 - `R100` `src/helpers.ts` -> `src/format.ts`
 - `M` `src/listing.ts`
-
-Not solved yet: there is no `human_changeset.json`.
 
 ## License
 

@@ -62,6 +62,7 @@ use omnidiff::stats::git::{
     text_loc_if_in_range, walk_single_parent_commit_diffs, walk_single_parent_commits,
 };
 use omnidiff::stats::sampling::{Reservoir, loc_bucket};
+use omnidiff::test::helper::human_changeset::CHANGESET_DATASETS;
 
 // The upper bound is the size `stats::expand_from_code` refuses to parse.
 const MIN_BYTES: usize = 1;
@@ -147,8 +148,9 @@ struct Args {
     #[arg(long, default_value_t = 20)]
     range_length: usize,
 
-    /// Under `--folders`: the most files a side of the sub-folder may hold.
-    #[arg(long, default_value_t = 200)]
+    /// Under `--folders`: the most files a side of the sub-folder may hold; the format's cap
+    /// (`MAX_TREE_FILES`) by default, and never more.
+    #[arg(long, default_value_t = changeset::MAX_TREE_FILES)]
     max_tree_files: usize,
 
     /// Under `--changesets`: print the census and write nothing.
@@ -932,12 +934,24 @@ fn sample_changesets(args: &Args, output: &Path) -> Result<()> {
     if args.folders && args.range_length < 1 {
         bail!("--range-length is at least 1");
     }
+    if args.folders && args.max_tree_files > changeset::MAX_TREE_FILES {
+        bail!(
+            "--max-tree-files is at most {}, the format's cap on a side of a folder",
+            changeset::MAX_TREE_FILES
+        );
+    }
     let dataset = match &args.dataset {
         Some(dataset) => dataset.clone(),
         None => infer_dataset(&args.repos_dir).ok_or_else(|| {
             anyhow::anyhow!("could not infer a dataset name from --repos-dir; pass --dataset")
         })?,
     };
+    if !CHANGESET_DATASETS.contains(&dataset.as_str()) {
+        eprintln!(
+            "note: '{dataset}' is not one of the changeset datasets {CHANGESET_DATASETS:?} \
+             (test::helper::human_changeset): its samples cannot be promoted until it is"
+        );
+    }
     let options = ChangesetOptions {
         max_commits: args.max_commits_per_repo,
         folders: args
@@ -1168,6 +1182,9 @@ fn sample_changeset_repository(
         census.several += usize::from(classification.signals.len() >= 2);
         for cell in &cells {
             *census.cells.entry(cell.clone()).or_default() += 1;
+        }
+        if options.explain && options.folders.is_some() {
+            println!("\n  {} folder {}", &commit_id[..12], row.root);
         }
         if options.explain && !classification.signals.is_empty() {
             println!(
@@ -1663,7 +1680,7 @@ mod tests {
             changesets: false,
             folders: false,
             range_length: 20,
-            max_tree_files: 200,
+            max_tree_files: changeset::MAX_TREE_FILES,
             dry_run: false,
             explain: false,
         }

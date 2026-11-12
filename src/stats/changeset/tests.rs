@@ -939,6 +939,93 @@ fn the_folder_is_the_deepest_directory_with_the_most_changed_files_under_the_cap
     Ok(())
 }
 
+/// Two trees of `paths`, every file changed between them.
+fn all_changed(repo: &Repository, paths: &[String]) -> Result<(Oid, Oid)> {
+    let side = |version: u32, parent: Option<Oid>| -> Result<Oid> {
+        let texts: Vec<Vec<u8>> = paths
+            .iter()
+            .map(|path| format!("{path} at version {version}\n").into_bytes())
+            .collect();
+        let entries: Vec<(&str, &[u8], i32)> = paths
+            .iter()
+            .zip(&texts)
+            .map(|(path, text)| (path.as_str(), text.as_slice(), 0o100644))
+            .collect();
+        commit_tree(repo, parent, &entries)
+    };
+    let first = side(1, None)?;
+    Ok((first, side(2, Some(first))?))
+}
+
+#[test]
+fn the_folder_is_where_the_code_changed_and_never_a_dot_directory() -> Result<()> {
+    assert!(is_code_path("src/a.rs") && is_code_path("ci/build.yml"));
+    assert!(!is_code_path("docs/guide.md") && !is_code_path("LICENSE") && !is_code_path("a.snap"));
+
+    let numbered = |prefix: &str, count: usize, extension: &str| -> Vec<String> {
+        (0..count)
+            .map(|index| format!("{prefix}{index}.{extension}"))
+            .collect()
+    };
+    // Six workflows, four pages of documentation, and three source files in two directories.
+    let mut paths = numbered(".github/workflows/w", 6, "yml");
+    paths.extend(numbered("docs/page", 4, "md"));
+    paths.extend(["src/core/a.rs", "src/core/b.rs", "src/ui/c.rs"].map(String::from));
+    let dir = tempfile::tempdir()?;
+    let repo = Repository::init(dir.path())?;
+    let (first, second) = all_changed(&repo, &paths)?;
+    let before = repo.find_commit(first)?.tree()?;
+    let after = repo.find_commit(second)?.tree()?;
+    // The root holds all thirteen when it fits.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 200)?,
+        Ok(String::new())
+    );
+    // When it does not, the most changed files are the six workflows, and the four pages come
+    // next: neither is chosen. `src` has the three files of code.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 6)?,
+        Ok("src".to_string())
+    );
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 2)?,
+        Ok("src/core".to_string())
+    );
+
+    // More changed files do not outweigh more changed code: `lib` over `assets`.
+    let mut paths = numbered("assets/note", 5, "txt");
+    paths.push("assets/load.rs".to_string());
+    paths.extend(numbered("lib/m", 3, "rs"));
+    let dir = tempfile::tempdir()?;
+    let repo = Repository::init(dir.path())?;
+    let (first, second) = all_changed(&repo, &paths)?;
+    let before = repo.find_commit(first)?.tree()?;
+    let after = repo.find_commit(second)?.tree()?;
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 6)?,
+        Ok("lib".to_string())
+    );
+
+    // Nothing but workflows and documentation changed: no folder to solve.
+    let mut paths = numbered(".github/workflows/w", 6, "yml");
+    paths.extend(numbered("docs/page", 4, "md"));
+    let dir = tempfile::tempdir()?;
+    let repo = Repository::init(dir.path())?;
+    let (first, second) = all_changed(&repo, &paths)?;
+    let before = repo.find_commit(first)?.tree()?;
+    let after = repo.find_commit(second)?.tree()?;
+    // The root qualifies by the workflows' YAML, which is code; nothing below it does.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 200)?,
+        Ok(String::new())
+    );
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 6)?,
+        Err(Skip::NoFolder)
+    );
+    Ok(())
+}
+
 #[test]
 fn a_folder_is_two_complete_trees_with_what_is_left_out_listed() -> Result<()> {
     let dir = tempfile::tempdir()?;
@@ -984,8 +1071,8 @@ fn a_folder_is_two_complete_trees_with_what_is_left_out_listed() -> Result<()> {
         .map(|omitted| {
             (
                 omitted.path.as_str(),
-                omitted.side,
-                omitted.reason,
+                omitted.side.as_str(),
+                omitted.reason.as_str(),
                 omitted.bytes,
             )
         })
@@ -1017,5 +1104,73 @@ fn a_folder_is_two_complete_trees_with_what_is_left_out_listed() -> Result<()> {
     )?;
     assert_eq!(folder.changed.len(), 1);
     assert!(folder.changed[0].before.is_none());
+    Ok(())
+}
+
+#[test]
+fn the_signals_are_the_formats() {
+    let names: Vec<&str> = Signal::ALL.iter().map(|signal| signal.name()).collect();
+    assert_eq!(names, format::SIGNALS);
+    assert_eq!(kind_of(KIND_COMMIT), Some(ChangesetKind::Commit));
+    assert_eq!(kind_of(KIND_FOLDERS), Some(ChangesetKind::Folders));
+    assert_eq!(kind_of("range"), None);
+}
+
+/// The handmade changesets are written to show a signal each, by a person; the sampler reads
+/// the same trees and hints. Whatever it fires, the fixture's `source.json` names - a person may
+/// name more (a rename git does not report, a move too short to make a block), never fewer.
+#[test]
+fn the_handmade_changesets_name_every_signal_the_sampler_fires_on_them() -> Result<()> {
+    let mut missing = Vec::new();
+    for (dataset, name, dir) in format::changeset_dirs()? {
+        if dataset != "handmade" {
+            continue;
+        }
+        let changeset = format::Changeset::load(&dir)?;
+        let mut files = Vec::new();
+        let mut untouched = Vec::new();
+        for file in &changeset.source.files {
+            let path = file.before.as_ref().or(file.after.as_ref()).unwrap();
+            let side = |trees: &std::collections::BTreeMap<String, format::ChangesetFile>| {
+                trees.get(path).map(|file| Blob::of(&file.bytes))
+            };
+            if file.untouched {
+                let text = changeset.trees.before[path].text().unwrap_or_default();
+                untouched.push((path.as_str(), text));
+            } else {
+                files.push(ChangedFile {
+                    path: path.clone(),
+                    before: side(&changeset.trees.before),
+                    after: side(&changeset.trees.after),
+                });
+            }
+        }
+        let hints: Vec<VcsHint> = changeset
+            .source
+            .hints()
+            .iter()
+            .map(|hint| VcsHint {
+                status: format!("{:?}", hint.status).chars().next().unwrap(),
+                path: hint.path.clone(),
+                old_path: hint.old_path.clone(),
+                similarity: hint.similarity,
+            })
+            .collect();
+        let classification = classify(&files, &hints, &UntouchedTexts::new(untouched));
+        let named = |signal: &&Signal| !changeset.source.signals.contains(&signal.name().into());
+        let unnamed: Vec<&str> = classification
+            .signals
+            .iter()
+            .filter(named)
+            .map(|signal| signal.name())
+            .collect();
+        if !unnamed.is_empty() {
+            missing.push(format!(
+                "'{name}' names {:?}, and the sampler also fires {unnamed:?}: {:?}",
+                changeset.source.signals, classification.evidence
+            ));
+        }
+    }
+    assert!(missing.is_empty(), "{}", missing.join("\n"));
     Ok(())
 }

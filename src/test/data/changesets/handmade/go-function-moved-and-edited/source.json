@@ -1,5 +1,8 @@
 {
-  "stratum": "moved and edited",
+  "kind": "commit",
+  "signals": [
+    "moved-and-edited"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

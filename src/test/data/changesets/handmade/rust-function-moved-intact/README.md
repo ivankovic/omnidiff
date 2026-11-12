@@ -1,7 +1,7 @@
 # A function moved intact to another existing file
 
 - **Dataset:** handmade
-- **Stratum:** block move
+- **Signals:** block-move
 - **Repository, commit:** none. Written for OmniDiff.
 
 `perimeter` leaves `src/geometry.rs` for the end of `src/measure.rs`, byte for byte. Nothing else changes in either file.

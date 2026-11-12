@@ -1,5 +1,8 @@
 {
-  "stratum": "non-code move",
+  "kind": "commit",
+  "signals": [
+    "non-code-move"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

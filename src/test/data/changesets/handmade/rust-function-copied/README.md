@@ -1,7 +1,7 @@
 # A function copied; the original stays
 
 - **Dataset:** handmade
-- **Stratum:** copy
+- **Signals:** copy
 - **Repository, commit:** none. Written for OmniDiff.
 
 `round_to` is copied from `src/units.rs` to the end of `src/report.rs`. `src/units.rs` is **untouched** (`source.json` marks it): it is in the changeset because it is where the copy comes from, and no VCS line mentions it.

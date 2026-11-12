@@ -27,6 +27,7 @@ use super::*;
 use crate::CaseOrigin;
 use crate::events::{compute_frame_state, session_key};
 use crossterm::event::{KeyEvent, KeyModifiers};
+use omnidiff::test::helper::human_changeset::ChangesetKind;
 use ratatui::backend::TestBackend;
 
 struct Driver {
@@ -441,7 +442,7 @@ fn a_pair_without_trees_takes_a_verdict() {
 }
 
 /// Two whole folders: thirty-odd files a side, nearly all untouched, and no VCS to hint at
-/// anything - `source.json` has no `vcs_hints` key, and keys this tool does not know.
+/// anything - `source.json` is of kind `folders`, with a root and no `vcs_hints` key.
 fn folders_fixture() -> Driver {
     let scratch = tempfile::tempdir().unwrap();
     let dir = scratch.path().join("samples/changesets/folders-example");
@@ -459,8 +460,9 @@ fn folders_fixture() -> Driver {
         } else {
             ""
         };
-        files.push(format!(
-            "{{\"before\": \"{path}\", \"after\": \"{path}\"{untouched}}}"
+        files.push((
+            path.clone(),
+            format!("{{\"before\": \"{path}\", \"after\": \"{path}\"{untouched}}}"),
         ));
     };
     for index in 0..28 {
@@ -484,13 +486,18 @@ fn folders_fixture() -> Driver {
     let util = b"pub fn util(value: u32) -> u32 {\n    value + 1\n}\n";
     write("before", "src/old/util.rs", util);
     write("after", "src/new/util.rs", util);
-    files.push("{\"before\": \"src/old/util.rs\"}".to_string());
-    files.push("{\"after\": \"src/new/util.rs\"}".to_string());
+    for (side, path) in [("before", "src/old/util.rs"), ("after", "src/new/util.rs")] {
+        files.push((path.to_string(), format!("{{\"{side}\": \"{path}\"}}")));
+    }
+    // `files` is in path order.
+    files.sort();
+    let files: Vec<String> = files.into_iter().map(|(_, record)| record).collect();
     fs::write(
         dir.join(SOURCE_FILE_NAME),
         format!(
-            "{{\"kind\": \"folders\", \"root\": \"project\", \"omitted\": 3, \"stratum\": \
-             \"range\", \"dataset\": \"handmade\", \"status\": \"SAMPLED\", \"files\": [{}]}}\n",
+            "{{\"kind\": \"folders\", \"root\": \"project\", \"signals\": \
+             [\"rename-unedited\"], \"dataset\": \"handmade\", \"status\": \"SAMPLED\", \
+             \"files\": [{}]}}\n",
             files.join(", ")
         ),
     )
@@ -506,7 +513,7 @@ fn folders_fixture() -> Driver {
 fn a_folder_fixture_without_hints_collapses_filters_and_confirms_its_untouched_files_at_once() {
     let mut driver = folders_fixture();
     // No hints at all: proposals come from equal paths and from the same bytes at another path.
-    assert!(driver.session().source.vcs_hints.is_empty());
+    assert!(driver.session().source.vcs_hints.is_none());
     assert!(driver.session().truth.files.is_empty());
     let proposals = &driver.session().proposals;
     assert_eq!(proposals.len(), 31);
@@ -609,18 +616,22 @@ fn a_folder_fixture_without_hints_collapses_filters_and_confirms_its_untouched_f
     );
 
     // The two files that changed are solved as in any changeset, and the sample is promoted
-    // with the keys of its source.json this tool does not know, and still without hints.
+    // as the folders it is: still without hints, and fit for the corpus's own checks.
     driver.keys("C\nSbxj\tj\nSbx");
     let (truth, violations) = driver.saved();
     assert_eq!(violations, [], "{}", driver.status());
     assert!(truth.is_solved(&driver.session().trees));
     assert!(driver.status().contains("promoted"), "{}", driver.status());
     let source = fs::read_to_string(driver.session().dir.join(SOURCE_FILE_NAME)).unwrap();
-    let source: serde_json::Value = serde_json::from_str(&source).unwrap();
-    assert_eq!(source["kind"], "folders");
-    assert_eq!(source["omitted"], 3);
-    assert_eq!(source["status"], "PROMOTED");
-    assert!(source.get("vcs_hints").is_none());
+    assert!(!source.contains("vcs_hints"), "{source}");
+    let source = ChangesetSource::load(&driver.session().dir).unwrap();
+    assert_eq!(source.kind, ChangesetKind::Folders);
+    assert_eq!(source.root.as_deref(), Some("project"));
+    assert_eq!(source.status, "PROMOTED");
+    assert_eq!(
+        source_violations(&source, &driver.session().trees),
+        Vec::<String>::new()
+    );
 }
 
 /// Both levels at once: the board says the file moved, and its pair view shows what stayed in

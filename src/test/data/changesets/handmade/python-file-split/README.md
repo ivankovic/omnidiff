@@ -1,7 +1,7 @@
 # A file split into two
 
 - **Dataset:** handmade
-- **Stratum:** split or merge
+- **Signals:** block-move, split-or-merge
 - **Repository, commit:** none. Written for OmniDiff.
 
 The two rendering functions of `inventory.py` move to a new `rendering.py`. What stays is untouched, and so are the functions that move.
@@ -10,8 +10,6 @@ What `git diff --name-status -M` reports for the two trees, as `source.json` rec
 
 - `M` `inventory.py`
 - `A` `rendering.py`
-
-Not solved yet: there is no `human_changeset.json`.
 
 ## License
 

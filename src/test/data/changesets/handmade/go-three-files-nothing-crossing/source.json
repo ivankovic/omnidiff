@@ -1,5 +1,8 @@
 {
-  "stratum": "control",
+  "kind": "commit",
+  "signals": [
+    "control"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

@@ -1,5 +1,8 @@
 {
-  "stratum": "copy",
+  "kind": "commit",
+  "signals": [
+    "copy"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

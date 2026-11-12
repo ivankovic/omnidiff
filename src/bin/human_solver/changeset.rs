@@ -111,7 +111,7 @@ use omnidiff::test::helper::human_changeset::{
     CHANGESET_DATASETS, Changeset, ChangesetEntry, ChangesetSource, ChangesetTextEntry,
     ChangesetTextMapping, ChangesetTrees, ChangesetViolation, FileRelation, FileRelationKind,
     FileSpan, HintStatus, HumanChangeset, NodeRef, SOURCE_FILE_NAME, TRUTH_FILE_NAME,
-    changeset_dir, changesets_root, validate,
+    changeset_dir, changesets_root, source_violations, validate,
 };
 use omnidiff::test::helper::human_content::Judgement;
 use omnidiff::test::helper::human_mapping::invariants;
@@ -543,7 +543,7 @@ impl Session {
         self.proposals.clear();
         let mut taken: [BTreeSet<String>; 2] = Default::default();
         let mut candidates: Vec<(Option<String>, Option<String>, FileRelationKind)> = Vec::new();
-        for hint in &self.source.vcs_hints {
+        for hint in self.source.hints() {
             let path = Some(hint.path.clone());
             match hint.status {
                 HintStatus::M => candidates.push((path.clone(), path, FileRelationKind::Same)),
@@ -732,10 +732,21 @@ impl Session {
             CHANGESET_DATASETS.contains(&dataset.as_str()),
             "source.json names the dataset '{dataset}', which is not one of {CHANGESET_DATASETS:?}"
         );
+        // What the corpus will hold the fixture to (`fixture_violations`, and so its stub): a
+        // sample that would fail there stays a sample. The README is `materialize_test_diffs
+        // --changesets`'s to write.
+        let mut promoted = self.source.clone();
+        promoted.status = "PROMOTED".to_string();
+        let unfit = source_violations(&promoted, &self.trees);
+        ensure!(
+            unfit.is_empty(),
+            "source.json does not fit the trees, so the corpus would refuse the fixture: {}",
+            unfit.join("; ")
+        );
         ensure!(
             self.dir.join("README.md").is_file(),
             "the sample has no README.md saying where it is from and under what licence, which \
-             the corpus requires: add one, then save again"
+             the corpus requires: `materialize_test_diffs --changesets` writes one"
         );
         for known in CHANGESET_DATASETS {
             ensure!(
@@ -750,14 +761,9 @@ impl Session {
             .with_context(|| format!("moving {:?} to {target:?}", self.dir))?;
         self.dir = target;
         self.is_sample = false;
-        // Only the status changes: the file may hold keys this tool does not know (a folder
-        // fixture's `kind`), and an absent `vcs_hints` stays absent.
+        // Only the status changes; the file is the format's own type, read and written whole.
         self.source.status = "PROMOTED".to_string();
-        let source_path = self.dir.join(SOURCE_FILE_NAME);
-        let mut source: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(&source_path)?)?;
-        source["status"] = "PROMOTED".into();
-        fs::write(&source_path, serde_json::to_string_pretty(&source)? + "\n")?;
+        fs::write(self.dir.join(SOURCE_FILE_NAME), self.source.to_json()?)?;
         self.set_stub(true)?;
         Ok(format!(
             "promoted to changesets/{dataset}/{} with its stub",

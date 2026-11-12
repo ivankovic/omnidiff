@@ -33,8 +33,22 @@
 //!
 //! Datasets are subdirectories, as under `diffs/` ([`CHANGESET_DATASETS`]), and a name is unique
 //! across them. A file's language comes from its real path (`before/src/a.rs.test` is Rust). A
-//! file that is not text (a PNG) is carried as bytes and has no tree. A side with no files has no
-//! directory, because git does not keep empty ones. At most [`MAX_FILES`] paths a changeset.
+//! text file in no language with a grammar (a `.md`, a `.snap`) is text without a tree, and a
+//! file that is not text (a PNG) is carried as bytes and has neither. A side with no files has no
+//! directory, because git does not keep empty ones.
+//!
+//! A changeset is of one of two kinds ([`ChangesetKind`]), and its limits go by kind:
+//!
+//! * a **commit** holds every file one commit changes and the few untouched files a signal
+//!   points at (the source of a copy): at most [`MAX_CHANGED_FILES`] changed and
+//!   [`MAX_COMMIT_UNTOUCHED_FILES`] untouched;
+//! * **folders** are two directories as they lie on disk, complete, the files that did not
+//!   change included, with no VCS and so no hints: at most [`MAX_CHANGED_FILES`] changed, and
+//!   [`MAX_TREE_FILES`] files a side.
+//!
+//! A sample (`src/test/data/samples/changesets/<name>/`, git-ignored, written by
+//! `materialize_test_diffs --changesets`) is the same directory before anyone solved it;
+//! `human_solver` moves it under its dataset here on the save that finds it solved and valid.
 //!
 //! **Paths in the JSON** are relative to the side's root, `/`-separated, without the `.test`:
 //! `src/a.rs`. [`check_repo_path`] rejects an absolute path, a `..` or `.` component, a backslash
@@ -43,24 +57,65 @@
 //!
 //! # `source.json`
 //!
+//! One type, [`ChangesetSource`], is the file: the materializer writes it, `human_solver` reads
+//! it and rewrites its `status`, and an unknown key is an error. A commit:
+//!
 //! ```json
-//! { "stratum": "block move", "dataset": "handmade", "status": "PROMOTED",
+//! { "kind": "commit", "repository": "caddy", "commit": "5f44…", "parent": "c8e4…",
+//!   "signals": ["block-move", "rename-edited"], "dataset": "changeset-pilot", "status": "SAMPLED",
 //!   "files": [ { "before": "src/a.rs", "after": "src/a.rs" },
 //!              { "before": "src/u.rs", "after": "src/u.rs", "untouched": true },
-//!              { "after": "src/new.rs" } ],
+//!              { "before": "src/b.rs" }, { "after": "lib/b.rs" } ],
 //!   "vcs_hints": [ { "status": "M", "path": "src/a.rs" },
 //!                  { "status": "R", "path": "lib/b.rs", "old_path": "src/b.rs", "similarity": 92 } ] }
 //! ```
 //!
-//! plus `repository`, `commit` and `parent` for a sampled changeset. `files` lists every path in
-//! the fixture once: a path both sides have carries both keys, and they are equal - which path
-//! became which is truth, and `files` is not. `untouched` marks a file that is byte-identical on
-//! both sides and is in the fixture because something else points at it (the source of a copy).
-//! `vcs_hints` is what `git diff --name-status -M` reports for the two trees. **Hints are data,
-//! never truth**: they live here and nowhere in `human_changeset.json`, and no check of the truth
-//! reads them. [`source_violations`] holds `source.json` to the trees. The handmade set's hints
-//! are generated, not written: the ignored test `write_handmade_sources` builds a temporary git
-//! repository from the two trees, and `handmade_hints_are_what_git_reports` holds them to it.
+//! and folders:
+//!
+//! ```json
+//! { "kind": "folders", "repository": "scrcpy", "commit": "7404…", "parent": "f91f…",
+//!   "root": "app/data", "signals": ["control"], "dataset": "changeset-pilot", "status": "SAMPLED",
+//!   "files": [ { "before": "icon.png" }, { "after": "scrcpy.png" },
+//!              { "before": "open.bat", "after": "open.bat", "untouched": true } ],
+//!   "omitted": [ { "side": "before", "path": "data", "reason": "symlink", "bytes": 7,
+//!                  "id": "a1b2…" } ] }
+//! ```
+//!
+//! * `kind` - `commit` or `folders`.
+//! * `repository`, `commit`, `parent` - where it was sampled from: `after/` is the tree of
+//!   `commit` and `before/` that of `parent`, which for folders is any earlier point in history.
+//!   All three, or none for a changeset written by hand (the `handmade` dataset).
+//! * `root` - folders only: the sub-folder of the repository the two trees are, `.` for its
+//!   root. Every path of the fixture is relative to it.
+//! * `signals` - every phenomenon the changeset was drawn or written for, of [`SIGNALS`]
+//!   (defined in `stats::changeset`), sorted by name; none ranks above another, and a directory
+//!   renamed with one file edited is `directory-move`, `rename-edited` and `rename-unedited` at
+//!   once. `["control"]` when there is none. A signal says why the changeset is here; it is not
+//!   truth, and a person solving it may find another.
+//! * `dataset` - which is also the changeset's parent directory once it is promoted.
+//! * `status` - `human_solver`'s triage state: `SAMPLED`, `PROMOTED` or `REJECTED`.
+//! * `files` - every path in the fixture once, in path order: a path both sides have carries
+//!   both keys, and they are equal - which path became which is truth, and `files` is not.
+//!   `untouched` marks a file that is byte-identical at one path on both sides, and every such
+//!   file is marked. In a commit it is there because a signal points at it; in folders it is
+//!   every file that did not change. This is the one place that says which files are untouched
+//!   (`changesets.csv` has an `untouched_paths` column only so that the materializer knows which
+//!   files to fetch for a commit).
+//! * `omitted` - folders only: what a directory held and its tree here does not, by `side`,
+//!   `path`, `reason` (`size`: an unchanged file over the sampler's cap; `symlink`;
+//!   `submodule`), `bytes` (not for a submodule) and git `id`. The trees are complete except
+//!   exactly there, and none of these paths is a file of that side.
+//! * `vcs_hints` - commits only, and always there for one: what `git diff --name-status -M`
+//!   reports for the two trees about the files the fixture holds. **Hints are data, never
+//!   truth**: they live here and nowhere in `human_changeset.json`, and no check of the truth
+//!   reads them. Folders have no such key, because two directories have no VCS to ask.
+//!
+//! [`source_violations`] holds `source.json` to the trees and to its kind: the limits above; for
+//! a commit, that the hints name exactly the changed paths; for folders, that there are no
+//! hints, and that nothing `omitted` is in the trees. The handmade set are commits without a
+//! repository, and their hints are generated, not written: the ignored test
+//! `write_handmade_sources` builds a temporary git repository from the two trees, and
+//! `handmade_hints_are_what_git_reports` holds them to it.
 //!
 //! # `human_changeset.json`
 //!
@@ -193,15 +248,42 @@ use super::human_mapping::{
     path_refs, span_text, walk_identical_subtree,
 };
 use crate::code::Code;
+use crate::code::language::to_treesitter;
 
 /// The provenance file's name in a changeset directory.
 pub const SOURCE_FILE_NAME: &str = "source.json";
 /// The truth file's name in a changeset directory.
 pub const TRUTH_FILE_NAME: &str = "human_changeset.json";
-/// The datasets under `src/test/data/changesets/`: `handmade` (written for this repository).
-pub const CHANGESET_DATASETS: &[&str] = &["handmade"];
-/// The most paths a changeset may hold, counting a path both sides have once.
-pub const MAX_FILES: usize = 20;
+/// The datasets under `src/test/data/changesets/`: `handmade` (written for this repository) and
+/// `changeset-pilot` (the first sampled draw, `src/test/data/changesets.csv`). A dataset has a
+/// directory once a changeset of it is in the corpus.
+pub const CHANGESET_DATASETS: &[&str] = &["handmade", "changeset-pilot"];
+/// The most **changed** files a changeset of either kind may hold, a path both sides have
+/// counting once. Untouched files are not counted.
+pub const MAX_CHANGED_FILES: usize = 20;
+/// The most untouched files a `commit` may hold: each is there because a signal points at it.
+pub const MAX_COMMIT_UNTOUCHED_FILES: usize = 3;
+/// The most files a side of a `folders` changeset may hold, unchanged ones included.
+pub const MAX_TREE_FILES: usize = 200;
+/// What a changeset can show, as `signals` names them: the sampler's signals
+/// (`stats::changeset::Signal`, which defines each), in name order.
+pub const SIGNALS: [&str; 9] = [
+    "block-move",
+    "copy",
+    "cross-language",
+    "directory-move",
+    "moved-and-edited",
+    "non-code-move",
+    "rename-edited",
+    "rename-unedited",
+    "split-or-merge",
+];
+/// The one entry of `signals` for a changeset that shows none of [`SIGNALS`].
+pub const CONTROL_SIGNAL: &str = "control";
+/// `human_solver`'s triage states, as `status` spells them.
+pub const STATUSES: [&str; 3] = ["SAMPLED", "PROMOTED", "REJECTED"];
+/// Why a `folders` tree lacks something its directory held ([`Omitted::reason`]).
+pub const OMITTED_REASONS: [&str; 3] = ["size", "symlink", "submodule"];
 
 const BEFORE: usize = 0;
 const AFTER: usize = 1;
@@ -304,8 +386,14 @@ impl ChangesetFile {
                 // The real path, never the fixture's: the language is the file's own.
                 code.metadata.path = Some(PathBuf::from(path));
                 crate::code::metadata::hermetic_expand(&mut code.metadata);
-                code.parse(parser);
-                if code.metadata.language.is_some() {
+                // A language that is recognised but has no grammar (Markdown) is text without
+                // a tree, as a file of no known language is.
+                if code
+                    .metadata
+                    .language
+                    .is_some_and(|language| to_treesitter(&language).is_some())
+                {
+                    code.parse(parser);
                     code.ensure_parsed()
                         .with_context(|| format!("parsing {path}"))?;
                 }
@@ -431,38 +519,91 @@ fn collect_files(dir: &Path, prefix: &str, found: &mut Vec<(String, PathBuf)>) -
 
 // ─── source.json ────────────────────────────────────────────────────────────────────────────
 
-/// `source.json`: where a changeset came from and what the VCS says about it. See the module doc.
+/// What a changeset is of.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ChangesetKind {
+    /// One commit: the files it changes, the untouched files a signal points at, and what the
+    /// VCS says happened.
+    Commit,
+    /// Two directory trees as they lie on disk, complete, with nothing from a VCS.
+    Folders,
+}
+
+impl ChangesetKind {
+    /// The kind as `source.json` and `changesets.csv` spell it.
+    pub fn name(self) -> &'static str {
+        match self {
+            ChangesetKind::Commit => "commit",
+            ChangesetKind::Folders => "folders",
+        }
+    }
+}
+
+/// `source.json`: where a changeset came from and, for a commit, what the VCS says about it.
+/// The one definition of the file: the materializer writes it through this type, `human_solver`
+/// reads and rewrites it through it, and a key it does not have is an error. See the module doc.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ChangesetSource {
-    /// The sampled repository; empty for a handmade changeset.
+    pub kind: ChangesetKind,
+    /// The sampled repository; absent, with `commit` and `parent`, for a handmade changeset.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub repository: String,
-    /// The commit whose tree is `after/`; empty for a handmade changeset.
+    /// The commit whose tree is `after/`.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub commit: String,
-    /// The commit whose tree is `before/`; empty for a handmade changeset.
+    /// The commit whose tree is `before/`: `commit`'s parent, or for folders any earlier point.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub parent: String,
-    /// The phenomenon the changeset was drawn or written for (`block move`, `copy`, `control`).
-    pub stratum: String,
-    /// The dataset it belongs to, which is also its parent directory.
+    /// Folders only: the sub-folder of the repository the two trees are, `.` for its root.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root: Option<String>,
+    /// Every phenomenon the changeset was drawn or written for, of [`SIGNALS`], in name order
+    /// and none ranking above another; [`CONTROL_SIGNAL`] alone when there is none.
+    pub signals: Vec<String>,
+    /// The dataset it belongs to, which is also its parent directory once promoted.
     pub dataset: String,
-    /// `human_solver`'s triage state: `SAMPLED`, `PROMOTED` or `REJECTED`.
+    /// `human_solver`'s triage state, one of [`STATUSES`].
     pub status: String,
     pub files: Vec<SourceFile>,
-    /// Absent for a fixture that has no VCS behind it (two folders): read as none.
-    #[serde(default)]
-    pub vcs_hints: Vec<VcsHint>,
+    /// Folders only: what the two directories held and the trees here do not.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub omitted: Vec<Omitted>,
+    /// Commits only, and always there for one; two folders have no VCS to ask, and no key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vcs_hints: Option<Vec<VcsHint>>,
+}
+
+/// What a `folders` tree held on disk at a path and the fixture does not: the tree is known to
+/// be incomplete exactly there.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Omitted {
+    /// `before` or `after`.
+    pub side: String,
+    /// Relative to the sub-folder, as every path of the fixture.
+    pub path: String,
+    /// One of [`OMITTED_REASONS`]: `size` (an unchanged file over the sampler's size cap),
+    /// `symlink` or `submodule`.
+    pub reason: String,
+    /// Of the file or of the link's target path, in bytes; none for a submodule.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
+    /// The git blob, or the submodule's commit.
+    pub id: String,
 }
 
 /// One path of the fixture. Both keys, equal, when both sides have the path.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SourceFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub before: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
-    /// Byte-identical on both sides, and in the fixture because something points at it.
+    /// Byte-identical at this path on both sides. A commit holds such a file because a signal
+    /// points at it (the source of a copy); folders hold every file that did not change.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub untouched: bool,
 }
@@ -484,6 +625,7 @@ pub enum HintStatus {
 
 /// One line of what the VCS reports. A hint, never truth.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct VcsHint {
     pub status: HintStatus,
     /// The path the line is about: the after side's, or the before side's for `D`.
@@ -496,7 +638,37 @@ pub struct VcsHint {
     pub similarity: Option<u8>,
 }
 
+impl HintStatus {
+    /// The status `git diff --name-status` spells `letter`; `None` for one the format has no
+    /// name for (`T`, a type change, which a changeset never holds).
+    pub fn from_letter(letter: char) -> Option<Self> {
+        Some(match letter {
+            'A' => HintStatus::A,
+            'D' => HintStatus::D,
+            'M' => HintStatus::M,
+            'R' => HintStatus::R,
+            'C' => HintStatus::C,
+            _ => return None,
+        })
+    }
+}
+
 impl ChangesetSource {
+    /// The hints, none for folders.
+    pub fn hints(&self) -> &[VcsHint] {
+        self.vcs_hints.as_deref().unwrap_or_default()
+    }
+
+    /// The paths that changed: every path of `files` that is not `untouched`.
+    pub fn changed_paths(&self) -> BTreeSet<&str> {
+        self.files
+            .iter()
+            .filter(|file| !file.untouched)
+            .flat_map(|file| [file.before.as_deref(), file.after.as_deref()])
+            .flatten()
+            .collect()
+    }
+
     pub fn load(dir: &Path) -> Result<Self> {
         let path = dir.join(SOURCE_FILE_NAME);
         let json = fs::read_to_string(&path).with_context(|| format!("reading {path:?}"))?;
@@ -509,36 +681,35 @@ impl ChangesetSource {
     }
 }
 
-/// What `files` must be for `trees`: every path once, in path order, `untouched` as given by
-/// `untouched(path)` for a path that is byte-identical on both sides.
-pub fn source_files(trees: &ChangesetTrees, untouched: impl Fn(&str) -> bool) -> Vec<SourceFile> {
+/// What `files` must be for `trees`: every path once, in path order, `untouched` for a path
+/// that is byte-identical on both sides.
+pub fn source_files(trees: &ChangesetTrees) -> Vec<SourceFile> {
     let paths: BTreeSet<&String> = trees.before.keys().chain(trees.after.keys()).collect();
     paths
         .into_iter()
-        .map(|path| SourceFile {
-            before: trees.before.contains_key(path).then(|| path.clone()),
-            after: trees.after.contains_key(path).then(|| path.clone()),
-            untouched: untouched(path),
+        .map(|path| {
+            let (before, after) = (trees.before.get(path), trees.after.get(path));
+            SourceFile {
+                before: before.map(|_| path.clone()),
+                after: after.map(|_| path.clone()),
+                untouched: matches!((before, after), (Some(b), Some(a)) if b.bytes == a.bytes),
+            }
         })
         .collect()
 }
 
-/// Every way `source` disagrees with `trees`, in a stable order. Empty is a pass.
+/// Every way `source` disagrees with `trees` or with itself, in a stable order. Empty is a pass.
 ///
-/// `files` names every path of the trees once and nothing else; an `untouched` file is on both
-/// sides with the same bytes, and a file on both sides that is not `untouched` differs. Every
-/// hint's paths exist on the side its status says, and the hints between them name exactly the
-/// paths that changed.
+/// For either kind: `files` names every path of the trees once, in path order, and nothing
+/// else; a file is
+/// `untouched` exactly when it is on both sides with the same bytes; at most
+/// [`MAX_CHANGED_FILES`] paths changed; `signals`, `status` and the provenance keys are
+/// well-formed. Then by `kind`, as the module doc lists: a commit's hints and its cap on
+/// untouched files ([`commit_violations`]), or a folder's root, tree cap and `omitted`
+/// ([`folders_violations`]).
 pub fn source_violations(source: &ChangesetSource, trees: &ChangesetTrees) -> Vec<String> {
     let mut violations = Vec::new();
-    if trees.path_count() > MAX_FILES {
-        violations.push(format!(
-            "{} paths, more than the {MAX_FILES} a changeset may hold",
-            trees.path_count()
-        ));
-    }
     let mut listed: [BTreeSet<&str>; 2] = Default::default();
-    let mut changed: BTreeSet<&str> = BTreeSet::new();
     for file in &source.files {
         let sides = [&file.before, &file.after];
         if let (Some(before), Some(after)) = (&file.before, &file.after)
@@ -587,9 +758,6 @@ pub fn source_violations(source: &ChangesetSource, trees: &ChangesetTrees) -> Ve
             )),
             _ => {}
         }
-        if !file.untouched {
-            changed.extend(sides.iter().filter_map(|path| path.as_deref()));
-        }
     }
     for side in [BEFORE, AFTER] {
         for path in trees.side(side).keys() {
@@ -598,8 +766,89 @@ pub fn source_violations(source: &ChangesetSource, trees: &ChangesetTrees) -> Ve
             }
         }
     }
+    let path_of = |file: &SourceFile| file.before.clone().or(file.after.clone());
+    if !source
+        .files
+        .windows(2)
+        .all(|pair| path_of(&pair[0]) < path_of(&pair[1]))
+    {
+        violations.push("files is not in path order".to_string());
+    }
+    let changed = source.changed_paths();
+    if changed.len() > MAX_CHANGED_FILES {
+        violations.push(format!(
+            "{} changed files, more than the {MAX_CHANGED_FILES} a changeset may hold",
+            changed.len()
+        ));
+    }
+
+    let known = |name: &String| SIGNALS.contains(&name.as_str());
+    if source.signals.is_empty() {
+        violations.push(format!(
+            "signals is empty: a changeset with none is [\"{CONTROL_SIGNAL}\"]"
+        ));
+    } else if source.signals != [CONTROL_SIGNAL] {
+        for name in source.signals.iter().filter(|name| !known(name)) {
+            violations.push(format!(
+                "signals names {name:?}, which is not one of {SIGNALS:?} (or \
+                 \"{CONTROL_SIGNAL}\", alone)"
+            ));
+        }
+        if !source.signals.windows(2).all(|pair| pair[0] < pair[1]) {
+            violations.push("signals is not sorted by name, each once".to_string());
+        }
+    }
+    if !STATUSES.contains(&source.status.as_str()) {
+        violations.push(format!(
+            "status {:?} is not one of {STATUSES:?}",
+            source.status
+        ));
+    }
+    let provenance = [&source.repository, &source.commit, &source.parent];
+    if provenance.iter().any(|key| key.is_empty()) && !provenance.iter().all(|key| key.is_empty()) {
+        violations.push(
+            "repository, commit and parent go together: all three, or none for a changeset \
+             nothing was sampled from"
+                .to_string(),
+        );
+    }
+    violations.extend(match source.kind {
+        ChangesetKind::Commit => commit_violations(source, trees, &changed),
+        ChangesetKind::Folders => folders_violations(source, trees),
+    });
+    violations
+}
+
+/// What only a `commit` is held to: no `root` and nothing `omitted`; at most
+/// [`MAX_COMMIT_UNTOUCHED_FILES`] untouched files; `vcs_hints` is there, every hint's paths
+/// exist on the side its status says, and the hints between them name exactly the `changed`
+/// paths.
+fn commit_violations(
+    source: &ChangesetSource,
+    trees: &ChangesetTrees,
+    changed: &BTreeSet<&str>,
+) -> Vec<String> {
+    let mut violations = Vec::new();
+    if source.root.is_some() {
+        violations.push("a commit has no root: the paths are the repository's".to_string());
+    }
+    if !source.omitted.is_empty() {
+        violations.push("a commit omits nothing: omitted is for folders".to_string());
+    }
+    let untouched = source.files.iter().filter(|file| file.untouched).count();
+    if untouched > MAX_COMMIT_UNTOUCHED_FILES {
+        violations.push(format!(
+            "{untouched} untouched files, more than the {MAX_COMMIT_UNTOUCHED_FILES} a commit \
+             may hold"
+        ));
+    }
+    let Some(hints) = &source.vcs_hints else {
+        violations
+            .push("a commit has vcs_hints, an empty list when the VCS reports nothing".to_string());
+        return violations;
+    };
     let mut hinted: BTreeSet<&str> = BTreeSet::new();
-    for hint in &source.vcs_hints {
+    for hint in hints {
         let on = |side: usize, path: &str| trees.side(side).contains_key(path);
         let describe = format!("hint {:?} {}", hint.status, hint.path);
         hinted.insert(&hint.path);
@@ -638,13 +887,80 @@ pub fn source_violations(source: &ChangesetSource, trees: &ChangesetTrees) -> Ve
             violations.push(format!("{describe}: wrong for what after/ holds"));
         }
     }
-    if hinted != changed {
-        let only_hinted: Vec<_> = hinted.difference(&changed).collect();
+    if hinted != *changed {
+        let only_hinted: Vec<_> = hinted.difference(changed).collect();
         let only_changed: Vec<_> = changed.difference(&hinted).collect();
         violations.push(format!(
             "the hints and the changed files differ: hinted only {only_hinted:?}, changed only \
              {only_changed:?}"
         ));
+    }
+    violations
+}
+
+/// What only `folders` are held to: a `root` (`.` or a path); no `vcs_hints`; at most
+/// [`MAX_TREE_FILES`] files a side; and `omitted` in path and side order, each entry once,
+/// well-formed, and about a path its side's tree does not hold.
+fn folders_violations(source: &ChangesetSource, trees: &ChangesetTrees) -> Vec<String> {
+    let mut violations = Vec::new();
+    match source.root.as_deref() {
+        None => violations.push(
+            "folders name their root: the sub-folder the trees are, `.` for the repository's"
+                .to_string(),
+        ),
+        Some(".") => {}
+        Some(root) => {
+            if let Err(error) = check_repo_path(root) {
+                violations.push(format!("root: {error}"));
+            }
+        }
+    }
+    if source.vcs_hints.is_some() {
+        violations.push("folders have no vcs_hints: there is no VCS to ask".to_string());
+    }
+    for side in [BEFORE, AFTER] {
+        let files = trees.side(side).len();
+        if files > MAX_TREE_FILES {
+            violations.push(format!(
+                "{}/ holds {files} files, more than the {MAX_TREE_FILES} a side of a folder may",
+                SIDE_NAMES[side]
+            ));
+        }
+    }
+    let key = |omitted: &Omitted| (omitted.path.clone(), omitted.side.clone());
+    if !source
+        .omitted
+        .windows(2)
+        .all(|pair| key(&pair[0]) < key(&pair[1]))
+    {
+        violations.push("omitted is not sorted by path and side, each once".to_string());
+    }
+    for omitted in &source.omitted {
+        let describe = format!("omitted {}/{}", omitted.side, omitted.path);
+        let Some(side) = SIDE_NAMES.iter().position(|name| *name == omitted.side) else {
+            violations.push(format!("{describe}: the side is before or after"));
+            continue;
+        };
+        if let Err(error) = check_repo_path(&omitted.path) {
+            violations.push(format!("{describe}: {error}"));
+        } else if trees.side(side).contains_key(&omitted.path) {
+            violations.push(format!("{describe}: the tree holds that file"));
+        }
+        if !OMITTED_REASONS.contains(&omitted.reason.as_str()) {
+            violations.push(format!(
+                "{describe}: reason {:?} is not one of {OMITTED_REASONS:?}",
+                omitted.reason
+            ));
+        }
+        if omitted.bytes.is_some() == (omitted.reason == "submodule") {
+            violations.push(format!(
+                "{describe}: a size in bytes goes with a file or a link, and not with a \
+                 submodule"
+            ));
+        }
+        if omitted.id.is_empty() {
+            violations.push(format!("{describe}: no id"));
+        }
     }
     violations
 }
@@ -2075,6 +2391,51 @@ impl Changeset {
     }
 }
 
+/// `src/test/data/samples/changesets/`: the samples nobody has promoted yet (git-ignored).
+pub fn changeset_samples_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("test")
+        .join("data")
+        .join("samples")
+        .join("changesets")
+}
+
+/// What is wrong with the changeset directory `dir`, corpus fixture or sample, short of its
+/// truth being unfinished: the inventory every fixture passes. `source.json` fits the trees and
+/// its kind ([`source_violations`]); there is a `README.md` saying where the files are from and
+/// under what licence, and it does not claim the changeset is unsolved (whether it is solved is
+/// [`HumanChangeset::is_solved`]'s to say, and a sentence in a README goes stale); a truth in
+/// progress may be unsolved, but never invalid. An error when the directory does not load.
+pub fn fixture_violations(dir: &Path) -> Result<Vec<String>> {
+    let changeset = Changeset::load(dir)?;
+    let mut violations = source_violations(&changeset.source, &changeset.trees);
+    match fs::read_to_string(dir.join("README.md")) {
+        Err(_) => violations.push(
+            "no README.md saying where the files are from and under what licence".to_string(),
+        ),
+        Ok(readme) => {
+            if !readme.to_lowercase().contains("licen") {
+                violations.push("README.md does not name a licence".to_string());
+            }
+            if readme.to_lowercase().contains("not solved") {
+                violations.push(
+                    "README.md says whether the changeset is solved, which goes stale:                      human_changeset.json says it"
+                        .to_string(),
+                );
+            }
+        }
+    }
+    if let Some(truth) = &changeset.truth {
+        violations.extend(
+            validate(truth, &changeset.trees)
+                .iter()
+                .map(ToString::to_string),
+        );
+    }
+    Ok(violations)
+}
+
 /// What a solved changeset's stub asserts while there is no engine to grade: the fixture loads,
 /// its `source.json` fits its trees, and its truth is whole, valid, and saved as
 /// [`HumanChangeset::to_json`] writes it.
@@ -2909,6 +3270,22 @@ mod tests {
         }
     }
 
+    fn commit_source(trees: &ChangesetTrees, vcs_hints: Vec<VcsHint>) -> ChangesetSource {
+        ChangesetSource {
+            kind: ChangesetKind::Commit,
+            repository: String::new(),
+            commit: String::new(),
+            parent: String::new(),
+            root: None,
+            signals: vec!["rename-unedited".to_string()],
+            dataset: "handmade".to_string(),
+            status: "PROMOTED".to_string(),
+            files: source_files(trees),
+            omitted: Vec::new(),
+            vcs_hints: Some(vcs_hints),
+        }
+    }
+
     #[test]
     fn source_json_is_held_to_the_trees() {
         let trees = trees(
@@ -2923,15 +3300,9 @@ mod tests {
                 ("new.rs", "fn o() {}\n"),
             ],
         );
-        let good = ChangesetSource {
-            repository: String::new(),
-            commit: String::new(),
-            parent: String::new(),
-            stratum: "rename unedited".to_string(),
-            dataset: "handmade".to_string(),
-            status: "PROMOTED".to_string(),
-            files: source_files(&trees, |path| path == "u.rs"),
-            vcs_hints: vec![
+        let good = commit_source(
+            &trees,
+            vec![
                 hint(HintStatus::M, "a.rs"),
                 VcsHint {
                     old_path: Some("old.rs".to_string()),
@@ -2939,10 +3310,155 @@ mod tests {
                     ..hint(HintStatus::R, "new.rs")
                 },
             ],
-        };
+        );
         assert_eq!(source_violations(&good, &trees), Vec::<String>::new());
         let json = good.to_json().unwrap();
         assert!(!json.contains("repository"), "{json}");
+        assert!(
+            !json.contains("root") && !json.contains("omitted"),
+            "{json}"
+        );
+        assert_eq!(
+            serde_json::from_str::<ChangesetSource>(&json).unwrap(),
+            good
+        );
+        // The file has one definition: a key it does not have is refused, `stratum` included.
+        let stale = json.replacen("\"signals\"", "\"stratum\": \"copy\",\n  \"signals\"", 1);
+        assert!(serde_json::from_str::<ChangesetSource>(&stale).is_err());
+
+        let broken = |change: &dyn Fn(&mut ChangesetSource)| {
+            let mut source = good.clone();
+            change(&mut source);
+            source_violations(&source, &trees)
+        };
+        fn hints(source: &mut ChangesetSource) -> &mut Vec<VcsHint> {
+            source.vcs_hints.as_mut().unwrap()
+        }
+        // A file missing from `files`, a wrong `untouched`, a hint about a path that is not
+        // there, a hint missing, and a rename without where it came from.
+        assert!(!broken(&|source| drop(source.files.pop())).is_empty());
+        assert!(!broken(&|source| source.files[0].untouched = true).is_empty());
+        assert!(!broken(&|source| source.files[3].untouched = false).is_empty());
+        assert!(!broken(&|source| hints(source)[0].path = "b.rs".to_string()).is_empty());
+        assert!(!broken(&|source| drop(hints(source).remove(0))).is_empty());
+        assert!(!broken(&|source| hints(source)[1].old_path = None).is_empty());
+        assert!(!broken(&|source| hints(source)[0].status = HintStatus::A).is_empty());
+        assert!(!broken(&|source| hints(source).push(hint(HintStatus::M, "u.rs"))).is_empty());
+        // What a commit has and has not, and the keys every kind is held to.
+        assert!(!broken(&|source| source.vcs_hints = None).is_empty());
+        assert!(!broken(&|source| source.root = Some(".".to_string())).is_empty());
+        assert!(!broken(&|source| source.signals.clear()).is_empty());
+        assert!(!broken(&|source| source.signals = vec!["rename unedited".to_string()]).is_empty());
+        assert!(
+            !broken(&|source| {
+                source.signals = vec!["rename-unedited".to_string(), "copy".to_string()]
+            })
+            .is_empty()
+        );
+        assert!(
+            !broken(&|source| { source.signals = vec!["control".to_string(), "copy".to_string()] })
+                .is_empty()
+        );
+        assert!(!broken(&|source| source.status = "DONE".to_string()).is_empty());
+        assert!(!broken(&|source| source.commit = "5f44ea07".to_string()).is_empty());
+        assert!(broken(&|source| source.signals = vec!["control".to_string()]).is_empty());
+    }
+
+    /// `count` files `f<n>.rs`, the first `changed` of them differing between the sides.
+    fn many_files(count: usize, changed: usize) -> ChangesetTrees {
+        let side = |after: bool| -> Vec<(String, String)> {
+            (0..count)
+                .map(|index| {
+                    let body = if after && index < changed { "1" } else { "0" };
+                    (format!("f{index:03}.rs"), format!("fn f() {{ {body} }}\n"))
+                })
+                .collect()
+        };
+        fn refs(files: &[(String, String)]) -> Vec<(&str, &[u8])> {
+            files
+                .iter()
+                .map(|(path, text)| (path.as_str(), text.as_bytes()))
+                .collect()
+        }
+        let (before, after) = (side(false), side(true));
+        ChangesetTrees::from_files(&refs(&before), &refs(&after)).unwrap()
+    }
+
+    fn modified_hints(trees: &ChangesetTrees) -> Vec<VcsHint> {
+        source_files(trees)
+            .iter()
+            .filter(|file| !file.untouched)
+            .map(|file| hint(HintStatus::M, file.before.as_ref().unwrap()))
+            .collect()
+    }
+
+    #[test]
+    fn the_file_cap_is_on_changed_files_and_goes_by_kind() {
+        let folders = |trees: &ChangesetTrees| ChangesetSource {
+            kind: ChangesetKind::Folders,
+            root: Some("src".to_string()),
+            vcs_hints: None,
+            ..commit_source(trees, Vec::new())
+        };
+        // Twenty changed files beside the untouched ones a signal may point at: a commit.
+        let trees = many_files(
+            MAX_CHANGED_FILES + MAX_COMMIT_UNTOUCHED_FILES,
+            MAX_CHANGED_FILES,
+        );
+        let commit = commit_source(&trees, modified_hints(&trees));
+        assert_eq!(source_violations(&commit, &trees), Vec::<String>::new());
+        // One more changed file is too many for either kind.
+        let trees = many_files(MAX_CHANGED_FILES + 1, MAX_CHANGED_FILES + 1);
+        let commit = commit_source(&trees, modified_hints(&trees));
+        assert_eq!(source_violations(&commit, &trees).len(), 1);
+        assert_eq!(source_violations(&folders(&trees), &trees).len(), 1);
+        // A whole tree of unchanged files is what folders hold, and not what a commit does.
+        let trees = many_files(MAX_TREE_FILES, 2);
+        assert_eq!(
+            source_violations(&folders(&trees), &trees),
+            Vec::<String>::new()
+        );
+        let commit = commit_source(&trees, modified_hints(&trees));
+        assert_eq!(source_violations(&commit, &trees).len(), 1);
+        // And a tree has its own cap, a side.
+        let trees = many_files(MAX_TREE_FILES + 1, 2);
+        assert_eq!(source_violations(&folders(&trees), &trees).len(), 2);
+    }
+
+    #[test]
+    fn folders_have_a_root_no_hints_and_nothing_omitted_in_their_trees() {
+        let trees = trees(
+            &[("a.rs", "fn f() {}\n"), ("u.rs", "fn u() {}\n")],
+            &[("a.rs", "fn g() {}\n"), ("u.rs", "fn u() {}\n")],
+        );
+        let omitted = |side: &str, path: &str, reason: &str, bytes: Option<u64>| Omitted {
+            side: side.to_string(),
+            path: path.to_string(),
+            reason: reason.to_string(),
+            bytes,
+            id: "0123abcd".to_string(),
+        };
+        let good = ChangesetSource {
+            kind: ChangesetKind::Folders,
+            repository: "example".to_string(),
+            commit: "c".repeat(40),
+            parent: "p".repeat(40),
+            root: Some(".".to_string()),
+            signals: vec![CONTROL_SIGNAL.to_string()],
+            dataset: "changeset-pilot".to_string(),
+            status: "SAMPLED".to_string(),
+            files: source_files(&trees),
+            omitted: vec![
+                omitted("before", "big.bin", "size", Some(2_000_000)),
+                omitted("after", "link", "symlink", Some(4)),
+                omitted("before", "link", "symlink", Some(4)),
+                omitted("after", "vendor/lib", "submodule", None),
+            ],
+            vcs_hints: None,
+        };
+        assert_eq!(source_violations(&good, &trees), Vec::<String>::new());
+        let json = good.to_json().unwrap();
+        assert!(!json.contains("vcs_hints"), "{json}");
         assert_eq!(
             serde_json::from_str::<ChangesetSource>(&json).unwrap(),
             good
@@ -2953,16 +3469,19 @@ mod tests {
             change(&mut source);
             source_violations(&source, &trees)
         };
-        // A file missing from `files`, a wrong `untouched`, a hint about a path that is not
-        // there, a hint missing, and a rename without where it came from.
-        assert!(!broken(&|source| drop(source.files.pop())).is_empty());
-        assert!(!broken(&|source| source.files[0].untouched = true).is_empty());
-        assert!(!broken(&|source| source.files[3].untouched = false).is_empty());
-        assert!(!broken(&|source| source.vcs_hints[0].path = "b.rs".to_string()).is_empty());
-        assert!(!broken(&|source| drop(source.vcs_hints.remove(0))).is_empty());
-        assert!(!broken(&|source| source.vcs_hints[1].old_path = None).is_empty());
-        assert!(!broken(&|source| source.vcs_hints[0].status = HintStatus::A).is_empty());
-        assert!(!broken(&|source| source.vcs_hints.push(hint(HintStatus::M, "u.rs"))).is_empty());
+        assert!(!broken(&|source| source.root = None).is_empty());
+        assert!(!broken(&|source| source.root = Some("../up".to_string())).is_empty());
+        assert!(!broken(&|source| source.vcs_hints = Some(Vec::new())).is_empty());
+        // Every file that did not change is marked, with no signal needed to point at it.
+        assert!(!broken(&|source| source.files[1].untouched = false).is_empty());
+        // An omitted path is no file of its side; and each entry is well-formed, once, in order.
+        assert!(!broken(&|source| source.omitted[0].path = "a.rs".to_string()).is_empty());
+        assert!(!broken(&|source| source.omitted[0].side = "both".to_string()).is_empty());
+        assert!(!broken(&|source| source.omitted[0].reason = "generated".to_string()).is_empty());
+        assert!(!broken(&|source| source.omitted[0].bytes = None).is_empty());
+        assert!(!broken(&|source| source.omitted[3].bytes = Some(1)).is_empty());
+        assert!(!broken(&|source| source.omitted.swap(1, 2)).is_empty());
+        assert!(!broken(&|source| source.omitted[2] = source.omitted[1].clone()).is_empty());
     }
 
     // ─── The fixtures on disk ───────────────────────────────────────────────────────────────
@@ -3035,13 +3554,8 @@ mod tests {
         while let Some(status) = fields.next() {
             let mut next = || fields.next().context("git's output ends inside a record");
             let (letter, score) = status.split_at(1);
-            let status = match letter {
-                "A" => HintStatus::A,
-                "D" => HintStatus::D,
-                "M" => HintStatus::M,
-                "R" => HintStatus::R,
-                "C" => HintStatus::C,
-                other => bail!("git reports a status {other:?} the format has no name for"),
+            let Some(status) = letter.chars().next().and_then(HintStatus::from_letter) else {
+                bail!("git reports a status {letter:?} the format has no name for");
             };
             let old_path = match status {
                 HintStatus::R | HintStatus::C => Some(next()?.to_string()),
@@ -3058,7 +3572,7 @@ mod tests {
     }
 
     /// The dev helper behind the handmade set's `source.json` files: rewrites each one's `files`
-    /// and `vcs_hints` from its trees, keeping what a person wrote (`stratum`, `status`). Run it
+    /// and `vcs_hints` from its trees, keeping what a person wrote (`signals`, `status`). Run it
     /// after changing a handmade tree:
     /// `cargo test --all-features write_handmade_sources -- --ignored`.
     #[test]
@@ -3070,13 +3584,8 @@ mod tests {
             }
             let trees = ChangesetTrees::load(&dir)?;
             let mut source = ChangesetSource::load(&dir)?;
-            // Nothing samples a handmade changeset, so the file that is in it unchanged is there
-            // on purpose.
-            source.files = source_files(&trees, |path| {
-                trees.before.get(path).map(|file| &file.bytes)
-                    == trees.after.get(path).map(|file| &file.bytes)
-            });
-            source.vcs_hints = git_vcs_hints(&trees)?.context("this needs git")?;
+            source.files = source_files(&trees);
+            source.vcs_hints = Some(git_vcs_hints(&trees)?.context("this needs git")?);
             source.dataset = dataset;
             fs::write(dir.join(SOURCE_FILE_NAME), source.to_json()?)?;
             println!("{name}: {:?}", source.vcs_hints);
@@ -3095,7 +3604,8 @@ mod tests {
                 eprintln!("no git on PATH: the hints are not compared");
                 return Ok(());
             };
-            assert_eq!(changeset.source.vcs_hints, hints, "{name}");
+            assert_eq!(changeset.source.kind, ChangesetKind::Commit, "{name}");
+            assert_eq!(changeset.source.hints(), hints, "{name}");
         }
         Ok(())
     }
@@ -3116,27 +3626,61 @@ mod tests {
         let all = changeset_dirs()?;
         assert!(!all.is_empty());
         for (dataset, name, dir) in all {
-            let changeset =
-                Changeset::load(&dir).with_context(|| format!("loading changeset '{name}'"))?;
             assert!(
                 names.insert(name.clone()),
                 "'{name}' is in two datasets; a name is unique across them"
             );
+            let changeset = Changeset::load(&dir)?;
             assert_eq!(changeset.source.dataset, dataset, "{name}");
-            assert_eq!(
-                source_violations(&changeset.source, &changeset.trees),
-                Vec::<String>::new(),
-                "{name}"
-            );
-            assert!(
-                dir.join("README.md").is_file(),
-                "'{name}' has no README.md saying where it is from and under what licence"
-            );
-            // A truth in progress may be unsolved, but never invalid.
-            if let Some(truth) = &changeset.truth {
-                assert_eq!(validate(truth, &changeset.trees), [], "{name}");
+            assert_eq!(changeset.source.status, "PROMOTED", "{name}");
+            assert_eq!(fixture_violations(&dir)?, Vec::<String>::new(), "{name}");
+        }
+        Ok(())
+    }
+
+    /// The same inventory over the samples nobody has promoted yet, which are git-ignored and
+    /// so not there on every machine: `cargo test --all-features --lib
+    /// every_changeset_sample_loads -- --ignored` after `materialize_test_diffs --changesets`.
+    /// `CHANGESET_SAMPLES_DIR` names another directory of samples (a materializer's
+    /// `--output-dir`).
+    #[test]
+    #[ignore = "reads the git-ignored src/test/data/samples/changesets/"]
+    fn every_changeset_sample_loads_and_its_source_fits_its_trees() -> Result<()> {
+        let root = std::env::var_os("CHANGESET_SAMPLES_DIR")
+            .map_or_else(changeset_samples_root, PathBuf::from);
+        let mut failures = Vec::new();
+        let mut kinds: BTreeMap<&str, usize> = BTreeMap::new();
+        let mut dirs: Vec<PathBuf> = fs::read_dir(&root)
+            .with_context(|| format!("reading {root:?}"))?
+            .map(|entry| Ok(entry?.path()))
+            .collect::<Result<_>>()?;
+        dirs.sort();
+        for dir in &dirs {
+            let name = dir.file_name().unwrap().to_string_lossy().into_owned();
+            match fixture_violations(dir) {
+                Ok(violations) => {
+                    failures.extend(violations.iter().map(|found| format!("{name}: {found}")))
+                }
+                Err(error) => failures.push(format!("{name}: {error:#}")),
+            }
+            if let Ok(source) = ChangesetSource::load(dir) {
+                *kinds.entry(source.kind.name()).or_default() += 1;
+                if !CHANGESET_DATASETS.contains(&source.dataset.as_str()) {
+                    failures.push(format!(
+                        "{name}: dataset {:?} is not one of {CHANGESET_DATASETS:?}, so the \
+                         sample cannot be promoted",
+                        source.dataset
+                    ));
+                }
             }
         }
+        println!("{} samples under {root:?}: {kinds:?}", dirs.len());
+        assert!(
+            failures.is_empty(),
+            "{} problem(s):\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
         Ok(())
     }
 

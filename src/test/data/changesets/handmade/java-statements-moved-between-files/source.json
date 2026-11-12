@@ -1,5 +1,8 @@
 {
-  "stratum": "block move",
+  "kind": "commit",
+  "signals": [
+    "block-move"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

@@ -1,7 +1,7 @@
 # A block of statements moved between functions in different files
 
 - **Dataset:** handmade
-- **Stratum:** block move
+- **Signals:** block-move
 - **Repository, commit:** none. Written for OmniDiff.
 
 The four statements that trim and shorten a subject leave `Sender.send` and arrive, unchanged, in `Composer.compose`, before its `return`. No declaration moves: the block crosses files below the level of a method.
@@ -10,8 +10,6 @@ What `git diff --name-status -M` reports for the two trees, as `source.json` rec
 
 - `M` `src/main/java/mail/Composer.java`
 - `M` `src/main/java/mail/Sender.java`
-
-Not solved yet: there is no `human_changeset.json`.
 
 ## License
 

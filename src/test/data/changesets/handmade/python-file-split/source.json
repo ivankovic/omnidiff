@@ -1,5 +1,9 @@
 {
-  "stratum": "split or merge",
+  "kind": "commit",
+  "signals": [
+    "block-move",
+    "split-or-merge"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

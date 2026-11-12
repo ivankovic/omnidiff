@@ -1,5 +1,10 @@
 {
-  "stratum": "directory move",
+  "kind": "commit",
+  "signals": [
+    "directory-move",
+    "rename-edited",
+    "rename-unedited"
+  ],
   "dataset": "handmade",
   "status": "PROMOTED",
   "files": [

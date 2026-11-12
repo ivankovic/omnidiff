@@ -17,11 +17,13 @@
 //! Changeset sampling: what a multi-file fixture holds and which signals it carries, for
 //! `sample_test_diffs --changesets` and `materialize_test_diffs --changesets`.
 //!
-//! A changeset is of one of two kinds ([`KIND_COMMIT`], [`KIND_FOLDERS`]). A *commit* is every
-//! file one commit changes, plus any untouched file a signal points at,
-//! [`MIN_FILES`]..=[`MAX_FILES`] files in all, with the VCS's hints beside it. *Folders* are two
-//! complete directory trees as they would lie on disk, with no VCS, no hints and no notion of a
-//! commit.
+//! The fixture format, `source.json` and the limits of each kind are specified in
+//! `test::helper::human_changeset`; what is sampled here is held to them
+//! (`source_violations`). A changeset is of one of two kinds ([`ChangesetKind`]; [`KIND_COMMIT`]
+//! and [`KIND_FOLDERS`] in the CSV). A *commit* is every file one commit changes,
+//! [`MIN_FILES`]..=[`MAX_FILES`] of them, plus at most [`MAX_UNTOUCHED_SOURCES`] untouched
+//! files a signal points at, with the VCS's hints beside it. *Folders* are two complete
+//! directory trees as they would lie on disk, with no VCS, no hints and no notion of a commit.
 //!
 //! # What a commit holds
 //!
@@ -48,12 +50,23 @@
 //! Nothing is dropped by its path: a lock file or a vendored directory is there on disk too.
 //!
 //! The sub-folder is the directory, the repository root included, that holds the most changed
-//! files among those that qualify, and the deepest of them on a tie: so the deepest directory
-//! that contains every changed file when that one qualifies, and otherwise the one that keeps the
-//! most. A directory qualifies when it holds [`MIN_FILES`]..=[`MAX_FILES`] changed files, none of
-//! them over [`MAX_FILE_BYTES`], and at most `--max-tree-files` files on either side. The pair is
-//! skipped when no directory qualifies, or when the one chosen changes more than
-//! [`MAX_CHANGED_LINES`] lines.
+//! *code* files among those that qualify - then the most changed files, then the deepest. A
+//! code file is one whose path names a language with a tree-sitter grammar
+//! ([`is_code_path`]): what a person solving the fixture maps node by node. A directory
+//! qualifies when
+//! - it holds [`MIN_FILES`]..=[`MAX_FILES`] changed files, none of them over
+//!   [`MAX_FILE_BYTES`], and at least one of them is code;
+//! - no component of its path starts with a dot (`.github`, `.changes`, `.vscode`): what lives
+//!   there is configuration and release bookkeeping, many small files changing together, which
+//!   won nearly one pilot folder in eight under the first rule, "the most changed files";
+//! - it holds at most `--max-tree-files` files on either side ([`MAX_TREE_FILES`] by default,
+//!   and at most).
+//!
+//! The pair is skipped when no directory qualifies, or when the one chosen changes more than
+//! [`MAX_CHANGED_LINES`] lines. Because the rule takes the directory that keeps the most of
+//! what changed, twenty commits apart it rarely takes one with two or three changed files:
+//! the `2-3` bucket of folders stays nearly empty by construction (`--range-length` is the
+//! knob for that, not the choice of directory).
 //!
 //! What a tree on disk would hold and a fixture does not is listed, not passed over
 //! ([`Omitted`]): an unchanged file over [`MAX_FILE_BYTES`] (with its size and blob id), a
@@ -126,10 +139,15 @@ use crate::anomalous_paths;
 use crate::code::language::language_for_path;
 use crate::code::{Language, decode_text};
 use crate::diff::content;
+use crate::test::helper::human_changeset as format;
+pub use crate::test::helper::human_changeset::{ChangesetKind, Omitted};
 
+/// The fewest changed files that make a changeset worth sampling.
 pub const MIN_FILES: usize = 2;
-/// The design's cap, counting the untouched files a signal adds.
-pub const MAX_FILES: usize = 20;
+/// The format's cap on changed files; the untouched files a signal adds are not counted.
+pub const MAX_FILES: usize = format::MAX_CHANGED_FILES;
+/// The format's cap on a side of a folder, and `--max-tree-files`'s default and limit.
+pub const MAX_TREE_FILES: usize = format::MAX_TREE_FILES;
 /// Added plus removed lines of a changeset.
 pub const MAX_CHANGED_LINES: usize = 3_000;
 /// The size `stats::expand_from_code` refuses to parse; `sample_test_diffs`'s cap for code.
@@ -142,7 +160,8 @@ pub const BOILERPLATE_FILES: usize = 2;
 /// pieces: in the pilot, at one to three blocks nearly every `copy` was a new test file opening
 /// like its neighbour (the same six lines of set-up), not code somebody copied.
 pub const COPY_BLOCKS: usize = 6;
-pub const MAX_UNTOUCHED_SOURCES: usize = 3;
+/// The untouched `copy` sources a commit records: the format's cap on a commit's untouched files.
+pub const MAX_UNTOUCHED_SOURCES: usize = format::MAX_COMMIT_UNTOUCHED_FILES;
 /// K: the lines each side of a `moved-and-edited` pair must lose and gain.
 pub const MOVED_EDITED_LINES: usize = 8;
 pub const SHINGLE_TOKENS: usize = 3;
@@ -198,11 +217,18 @@ pub enum Signal {
 }
 
 /// What a changeset with no signal is called, in `signals` and as a sampling cell.
-pub const CONTROL: &str = "control";
-/// A changeset that is one commit, with the VCS's hints.
+pub const CONTROL: &str = format::CONTROL_SIGNAL;
+/// A changeset that is one commit, with the VCS's hints, as the `kind` column spells it.
 pub const KIND_COMMIT: &str = "commit";
 /// A changeset that is two directory trees, with nothing from a VCS.
 pub const KIND_FOLDERS: &str = "folders";
+
+/// The kind a `kind` column names.
+pub fn kind_of(name: &str) -> Option<ChangesetKind> {
+    [ChangesetKind::Commit, ChangesetKind::Folders]
+        .into_iter()
+        .find(|kind| kind.name() == name)
+}
 
 impl Signal {
     pub const ALL: [Signal; 9] = [
@@ -279,6 +305,19 @@ pub struct VcsHint {
     pub old_path: Option<String>,
     /// Of a rename or copy, in percent.
     pub similarity: Option<u8>,
+}
+
+impl VcsHint {
+    /// The hint as `source.json` holds one; `None` for a status the format has no name for (a
+    /// type change, `T`: a link or a submodule, which a changeset never holds).
+    pub fn to_source(&self) -> Option<format::VcsHint> {
+        Some(format::VcsHint {
+            status: format::HintStatus::from_letter(self.status)?,
+            path: self.path.clone(),
+            old_path: self.old_path.clone(),
+            similarity: self.similarity,
+        })
+    }
 }
 
 /// The untouched files of the before tree that hold a block.
@@ -894,9 +933,8 @@ pub fn classify(
         .filter(|(_, count)| *count >= COPY_BLOCKS)
         .collect();
     copies.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-    let room = MAX_FILES
-        .saturating_sub(files.len())
-        .min(MAX_UNTOUCHED_SOURCES);
+    // The cap on files is on changed ones, so every changeset has room for its sources.
+    let room = MAX_UNTOUCHED_SOURCES;
     let mut sources: Vec<String> = Vec::new();
     for ((source, target), count) in copies {
         if !index_of.contains_key(source.as_str()) && !sources.contains(&source) {
@@ -1093,21 +1131,6 @@ pub fn regular_blob(repo: &Repository, tree: &Tree, path: &str) -> Result<Vec<u8
     Ok(repo.find_blob(entry.id())?.content().to_vec())
 }
 
-/// What a tree on disk would hold at a path and a folders fixture does not.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Omitted {
-    /// `before` or `after`.
-    pub side: &'static str,
-    /// Relative to the sub-folder.
-    pub path: String,
-    /// `size` (a file over [`MAX_FILE_BYTES`]), `symlink` or `submodule`.
-    pub reason: &'static str,
-    /// Of a file or a link's target, in bytes; none for a submodule.
-    pub bytes: Option<u64>,
-    /// The blob, or the submodule's commit.
-    pub id: String,
-}
-
 /// Two complete trees of one sub-folder (see the module documentation), paths relative to it.
 pub struct Folder {
     /// The sub-folder's path in the repository; empty for the root.
@@ -1189,6 +1212,20 @@ fn is_regular_mode(mode: i32) -> bool {
     matches!(mode, 0o100644 | 0o100664 | 0o100755)
 }
 
+/// True for a path in a language OmniDiff parses with a tree-sitter grammar: a file a person
+/// solving a changeset maps node by node, not line by line.
+pub fn is_code_path(path: &str) -> bool {
+    language_for_path(Path::new(path))
+        .is_some_and(|language| crate::code::language::to_treesitter(&language).is_some())
+}
+
+/// True for a directory a folders fixture may be: the root, or a path none of whose components
+/// starts with a dot.
+fn is_folder_candidate(directory: &str) -> bool {
+    directory.is_empty()
+        || (is_safe_path(directory) && !directory.split('/').any(|part| part.starts_with('.')))
+}
+
 /// The sub-folder a folders fixture of `before` and `after` holds, by the rule in the module
 /// documentation; [`Skip::NoFolder`] when no directory qualifies.
 pub fn choose_folder(
@@ -1222,15 +1259,23 @@ pub fn choose_folder(
             too_large(has_old, old.id()) || too_large(has_new, new.id()),
         ));
     }
-    // A directory's changed files, and whether one of them is too large; the root is "".
-    let mut directories: FxHashMap<&str, (usize, bool)> = FxHashMap::default();
+    /// What a directory's changed files come to; the root is "".
+    #[derive(Default)]
+    struct Changed {
+        files: usize,
+        code: usize,
+        too_large: bool,
+    }
+    let mut directories: FxHashMap<&str, Changed> = FxHashMap::default();
     for (path, too_large) in &changed {
+        let code = is_code_path(path);
         let mut directory = path.as_str();
         loop {
             directory = directory.rsplit_once('/').map_or("", |(parent, _)| parent);
             let entry = directories.entry(directory).or_default();
-            entry.0 += 1;
-            entry.1 |= too_large;
+            entry.files += 1;
+            entry.code += usize::from(code);
+            entry.too_large |= too_large;
             if directory.is_empty() {
                 break;
             }
@@ -1240,22 +1285,27 @@ pub fn choose_folder(
         "" => 0,
         _ => directory.split('/').count(),
     };
-    let mut candidates: Vec<(&str, usize)> = directories
+    let mut candidates: Vec<(&str, Changed)> = directories
         .into_iter()
-        .filter(|(_, (files, too_large))| (MIN_FILES..=MAX_FILES).contains(files) && !too_large)
-        .map(|(directory, (files, _))| (directory, files))
+        .filter(|(directory, changed)| {
+            (MIN_FILES..=MAX_FILES).contains(&changed.files)
+                && changed.code > 0
+                && !changed.too_large
+                && is_folder_candidate(directory)
+        })
         .collect();
     candidates.sort_by(|a, b| {
-        (b.1, depth(b.0))
-            .cmp(&(a.1, depth(a.0)))
+        (b.1.code, b.1.files, depth(b.0))
+            .cmp(&(a.1.code, a.1.files, depth(a.0)))
             .then_with(|| a.0.cmp(b.0))
     });
+    let max_tree_files = max_tree_files.min(MAX_TREE_FILES);
     for (directory, _) in candidates {
         let fits = |tree: &Tree| {
             subtree(repo, tree, directory)
                 .is_none_or(|tree| count_files(repo, &tree, max_tree_files) <= max_tree_files)
         };
-        if (directory.is_empty() || is_safe_path(directory)) && fits(before) && fits(after) {
+        if fits(before) && fits(after) {
             return Ok(Ok(directory.to_string()));
         }
     }
@@ -1294,9 +1344,9 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
         }
         let submodule = *mode == 0o160000;
         folder.omitted.push(Omitted {
-            side,
+            side: side.to_string(),
             path: path.to_string(),
-            reason: if submodule { "submodule" } else { "symlink" },
+            reason: if submodule { "submodule" } else { "symlink" }.to_string(),
             bytes: odb.read_header(*id).ok().map(|(size, _)| size as u64),
             id: id.to_string(),
         });
@@ -1322,9 +1372,9 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
             if size(id) > MAX_FILE_BYTES {
                 for side in ["before", "after"] {
                     folder.omitted.push(Omitted {
-                        side,
+                        side: side.to_string(),
                         path: path.clone(),
-                        reason: "size",
+                        reason: "size".to_string(),
                         bytes: Some(size(id) as u64),
                         id: id.to_string(),
                     });
@@ -1352,7 +1402,7 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
     }
     folder
         .omitted
-        .sort_by(|a, b| (&a.path, a.side).cmp(&(&b.path, b.side)));
+        .sort_by(|a, b| (&a.path, &a.side).cmp(&(&b.path, &b.side)));
     Ok(folder)
 }
 
