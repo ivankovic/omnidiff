@@ -17,7 +17,7 @@
 use std::path::Path;
 
 use anyhow::Result;
-use git2::{DiffDelta, DiffFindOptions, Oid, Repository, Sort, Tree};
+use git2::{Commit, DiffDelta, DiffFindOptions, Oid, Repository, Sort, Tree};
 
 /// The raw content of the blob at `path` inside `tree`.
 pub fn blob_bytes(repo: &Repository, tree: &Tree, path: &Path) -> Result<Vec<u8>> {
@@ -43,16 +43,15 @@ pub fn text_loc_if_in_range(
     Some(text.lines().count())
 }
 
-/// Calls `on_delta` for each changed file of the `max_commits` most recent single-parent commits
-/// reachable from HEAD, diffed against the parent; filtering deltas is the caller's job.
+/// Calls `on_commit` for each of the `max_commits` most recent commits reachable from HEAD that has
+/// exactly one parent: merges mix unrelated changes and root commits have no "before".
 ///
 /// Time-ordered because repeated shallow fetches can leave far more history than the nominal
 /// depth, and `max_commits` must mean "the most recent".
-pub fn walk_single_parent_commit_diffs(
+pub fn walk_single_parent_commits(
     repo_path: &Path,
     max_commits: usize,
-    detect_renames: bool,
-    mut on_delta: impl FnMut(&Repository, Oid, &DiffDelta) -> Result<()>,
+    mut on_commit: impl FnMut(&Repository, &Commit) -> Result<()>,
 ) -> Result<()> {
     let repo = Repository::open(repo_path)?;
     let mut walk = repo.revwalk()?;
@@ -67,14 +66,25 @@ pub fn walk_single_parent_commit_diffs(
         let Ok(commit) = repo.find_commit(id) else {
             continue;
         };
-
-        // Merges mix unrelated changes and root commits have no "before".
         if commit.parents().len() != 1 {
             continue;
         }
-        let parent = commit.parent(0)?;
+        on_commit(&repo, &commit)?;
+    }
 
-        let before_tree = parent.tree()?;
+    Ok(())
+}
+
+/// Calls `on_delta` for each changed file of the commits [`walk_single_parent_commits`] visits,
+/// diffed against the parent; filtering deltas is the caller's job.
+pub fn walk_single_parent_commit_diffs(
+    repo_path: &Path,
+    max_commits: usize,
+    detect_renames: bool,
+    mut on_delta: impl FnMut(&Repository, Oid, &DiffDelta) -> Result<()>,
+) -> Result<()> {
+    walk_single_parent_commits(repo_path, max_commits, |repo, commit| {
+        let before_tree = commit.parent(0)?.tree()?;
         let after_tree = commit.tree()?;
         let mut diff = repo.diff_tree_to_tree(Some(&before_tree), Some(&after_tree), None)?;
         if detect_renames {
@@ -85,9 +95,8 @@ pub fn walk_single_parent_commit_diffs(
         }
 
         for delta in diff.deltas() {
-            on_delta(&repo, id, &delta)?;
+            on_delta(repo, commit.id(), &delta)?;
         }
-    }
-
-    Ok(())
+        Ok(())
+    })
 }

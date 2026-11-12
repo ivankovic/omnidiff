@@ -231,6 +231,25 @@ pub fn render_readme(
          exactly as it read in that repository at this commit."
     );
     let _ = writeln!(out);
+    license_section(
+        &mut out,
+        repo_url,
+        commit,
+        license_files,
+        unverifiable_reason,
+    );
+    out
+}
+
+/// The `## License` section of a sample's `README.md`: a commit-pinned link and a label for each
+/// of `license_files`, or why there is none to give (see [`render_readme`]).
+fn license_section(
+    out: &mut String,
+    repo_url: Option<&str>,
+    commit: &str,
+    license_files: &[LicenseFile],
+    unverifiable_reason: Option<&str>,
+) {
     let _ = writeln!(out, "## License");
     let _ = writeln!(out);
 
@@ -243,7 +262,7 @@ pub fn render_readme(
              repository lacks a license. Check the repository above directly before reusing this \
              sample outside omnidiff's own test suite."
         );
-        return out;
+        return;
     }
 
     if license_files.is_empty() {
@@ -253,7 +272,7 @@ pub fn render_readme(
              Licensing terms are unknown from this checkout alone - check the repository above \
              directly before reusing this sample outside omnidiff's own test suite."
         );
-        return out;
+        return;
     }
 
     for file in license_files {
@@ -272,7 +291,81 @@ pub fn render_readme(
         "License text is not reproduced here - follow the link(s) above (or the repository listed \
          at the top of this file, at the commit above) for the full terms."
     );
+}
 
+/// Where a changeset sample came from, for its `README.md`.
+pub struct ChangesetProvenance<'a> {
+    pub repository: &'a str,
+    pub commit: &'a str,
+    /// The commit its before tree is.
+    pub parent: &'a str,
+    /// `commit` or `folders` (`stats::changeset`).
+    pub kind: &'a str,
+    /// The sub-folder the trees of a `folders` sample are, `.` for the repository root.
+    pub root: Option<&'a str>,
+    /// The signals it was sampled with, as `changesets.csv` has them.
+    pub signals: &'a str,
+    pub dataset: &'a str,
+    /// Every file the fixture holds, with what happened to it (`modified`, `untouched`).
+    pub files: &'a [(String, &'a str)],
+}
+
+/// Renders the `README.md` of a changeset sample (`materialize_test_diffs --changesets`): its
+/// provenance and the license section of [`render_readme`].
+pub fn render_changeset_readme(
+    repo_url: Option<&str>,
+    provenance: &ChangesetProvenance,
+    license_files: &[LicenseFile],
+) -> String {
+    let ChangesetProvenance {
+        repository,
+        commit,
+        parent,
+        kind,
+        root,
+        signals,
+        dataset,
+        files,
+    } = provenance;
+    let mut out = String::new();
+    let _ = writeln!(out, "# Sample provenance");
+    let _ = writeln!(out);
+    match repo_url {
+        Some(url) => {
+            let _ = writeln!(out, "- **Repository:** {url} (`{repository}`)");
+        }
+        None => {
+            let _ = writeln!(
+                out,
+                "- **Repository:** `{repository}` (origin remote URL unavailable)"
+            );
+        }
+    }
+    let _ = writeln!(out, "- **Commit:** `{commit}`");
+    let _ = writeln!(out, "- **Parent:** `{parent}`");
+    let _ = writeln!(out, "- **Kind:** {kind}");
+    if let Some(root) = root {
+        let _ = writeln!(out, "- **Folder:** `{root}`");
+    }
+    let _ = writeln!(out, "- **Signals:** {signals}");
+    let _ = writeln!(out, "- **Research dataset:** {dataset}");
+    let _ = writeln!(out, "- **Files:**");
+    for (path, change) in files.iter() {
+        let _ = writeln!(out, "  - `{path}` ({change})");
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "`before/` and `after/` in this directory hold the files above, each at its path in the \
+         source repository (below the folder above, when there is one) with `.test` appended, \
+         copied verbatim from that repository at the parent and at the commit above, for use as \
+         omnidiff test-fixture input. This content is \
+         **not** part of omnidiff's own codebase and is **not** covered by omnidiff's own AGPL-3.0 \
+         license - it remains under whatever license the source repository itself applies, linked \
+         below exactly as it read in that repository at this commit."
+    );
+    let _ = writeln!(out);
+    license_section(&mut out, repo_url, commit, license_files, None);
     out
 }
 
@@ -322,6 +415,40 @@ mod tests {
             blob_url("https://example.com/example/repo.git", "abc123", "LICENSE"),
             None
         );
+    }
+
+    #[test]
+    fn a_changeset_readme_lists_every_file_and_the_license() {
+        let files = vec![LicenseFile {
+            filename: "LICENSE".to_string(),
+            label: "MIT License",
+            text: String::new(),
+        }];
+        let readme = render_changeset_readme(
+            Some("https://github.com/example/repo"),
+            &ChangesetProvenance {
+                repository: "example-repo",
+                commit: "abc123",
+                parent: "def456",
+                kind: "folders",
+                root: Some("src"),
+                signals: "block-move;copy",
+                dataset: "pilot",
+                files: &[
+                    ("src/a.rs".to_string(), "modified"),
+                    ("src/b.rs".to_string(), "untouched"),
+                ],
+            },
+            &files,
+        );
+        assert!(readme.contains("- **Commit:** `abc123`\n- **Parent:** `def456`\n"));
+        assert!(readme.contains(
+            "- **Kind:** folders\n- **Folder:** `src`\n- **Signals:** block-move;copy\n"
+        ));
+        assert!(readme.contains("  - `src/a.rs` (modified)\n  - `src/b.rs` (untouched)\n"));
+        assert!(readme.contains(
+            "- `LICENSE` - MIT License (https://github.com/example/repo/blob/abc123/LICENSE)"
+        ));
     }
 
     #[test]

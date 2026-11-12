@@ -525,6 +525,14 @@ fn list_dir_names(root: &Path) -> Result<Vec<String>> {
     Ok(names)
 }
 
+/// The single-file samples under `src/test/data/samples/`. `changesets/` there is not one: it
+/// holds the changeset samples (`materialize_test_diffs --changesets`), a directory each.
+fn list_sample_names() -> Result<Vec<String>> {
+    let mut names = list_dir_names(&samples_root())?;
+    names.retain(|name| name != "changesets");
+    Ok(names)
+}
+
 /// Just the names from [`list_available_cases`], for `scan_corpus`.
 fn list_available_case_names() -> Result<Vec<String>> {
     Ok(list_available_cases()?
@@ -1497,7 +1505,7 @@ impl SampleTriageStatus {
 /// join `action_promote`/`action_reject` use). `size` is 0 here; the `O` handler fills it from the
 /// cached `App::sample_diff_sizes`.
 fn list_sample_rows() -> Result<Vec<SampleRow>> {
-    let names = list_dir_names(&samples_root())?;
+    let names = list_sample_names()?;
     let meta = sample_metadata()?;
 
     Ok(names
