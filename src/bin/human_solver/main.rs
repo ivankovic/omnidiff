@@ -87,6 +87,10 @@ use omnidiff::code::{Code, Language};
 use omnidiff::diff::content::{Family, Level, Vocabulary};
 use omnidiff::diff::text::TextDiff;
 use omnidiff::diff::{ASTDiff, ASTMappingReason, NodeCache, diff_code};
+use omnidiff::test::helper::human_changeset::{
+    CHANGESET_DATASETS, SOURCE_FILE_NAME, TRUTH_FILE_NAME, changeset_dirs, changeset_samples_root,
+    changesets_root,
+};
 use omnidiff::test::helper::human_content::{self, HumanContent};
 #[cfg(test)]
 use omnidiff::test::helper::human_mapping::rebuild_caches;
@@ -345,12 +349,20 @@ C              open a commit from this repo's own git log, then a file it
                  confirmation. Nothing is written until s, so reopening the case
                  without saving gets it back
 
-CHANGESETS     `human_solver <name>`, where <name> is a directory under
+CHANGESETS     A whole commit, or two whole folders: every file of both sides,
+                 where code may have moved between files. Which file became
+                 which is part of the truth, and yours to say. Opened like any
+                 case: `human_solver <name>` for a directory under
                  src/test/data/changesets/<dataset>/ or
-                 src/test/data/samples/changesets/, opens a whole commit or two
-                 whole folders: every file of both sides, where code may have
-                 moved between files. Which file became which is part of the
-                 truth, and yours to say.
+                 src/test/data/samples/changesets/; from o, which lists the
+                 corpus changesets among the cases - Dataset cs/handmade,
+                 cs/pilot (f on Dataset picks one), Cmpl and Verdict say solved,
+                 2/3 solved (relations) or unsolved, Size is the file count (3f);
+                 from O, which lists the changeset samples of changesets.csv -
+                 Lang the main language, Bucket the file-count bucket, Size the
+                 changed lines, kind and signals after the name (the Name filter
+                 matches them too), rejected ones shown as REJECTED like any
+                 sample. A sample opens unsolved, or with what was last saved.
   The board    Before files left, after files right: language, lines, nodes
                  nothing is said about, relations. A relation read from
                  human_changeset.json is truth. One drawn dim with a ? is only
@@ -379,6 +391,12 @@ CHANGESETS     `human_solver <name>`, where <name> is a directory under
                  judge. L the leftover pool, V validate and list the violations
                  (Enter opens the pair one names, at the place), s save, q quit
                  (twice with unsaved work).
+                 o and O open the two pickers from the board, and } / { go to the
+                 next / previous case of the o listing, changesets included;
+                 unsaved work is asked about first (save, discard, cancel). In
+                 the pair view those keys are off: go back to the board first.
+                 R rejects a sample with a reason, recorded in changesets.csv
+                 (status REJECTED, the reason in comment) and its source.json.
   The pair     Everything above this section, on one before file and one after
   view           file: the trees, m/M/f/d/D/i/I/u, the t painting view, U undo.
                  The title names both files and their relation. What you see is
@@ -560,14 +578,20 @@ fn list_available_cases() -> Result<Vec<(String, &'static str)>> {
 }
 
 /// What the `o` picker lists: every case of [`list_available_cases`], then every content fixture
-/// (one dataset per `Family`: `pictures`, `archives`, ...), sorted by name. Only the picker sees
-/// them: the corpus scans, `load_case` and `{`/`}` read their names as code.
+/// (one dataset per `Family`: `pictures`, `archives`, ...), then every corpus changeset (one
+/// dataset per changeset dataset, [`changeset_dataset_label`]), sorted by name. Only the picker
+/// sees the last two - and the changeset board's `{`/`}`: the corpus scans, `load_case` and the
+/// code session's `{`/`}` read their names as code.
 fn list_picker_cases() -> Result<Vec<(String, &'static str)>> {
     let mut names = list_available_cases()?;
     for family in Family::ALL {
         for name in list_dir_names(&human_content::root(family))? {
             names.push((name, family.name()));
         }
+    }
+    // A corpus the format cannot list (a stray directory) costs the picker these rows only.
+    for (dataset, name, _) in changeset_dirs().unwrap_or_default() {
+        names.push((name, changeset_dataset_label(&dataset)));
     }
     names.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(names)
@@ -584,6 +608,8 @@ pub(crate) struct ContentRow {
     /// The `Cmpl` column: a picture without its verdict, or a container without a pair verdict
     /// or one for every changed member.
     pub(crate) incomplete: bool,
+    /// The `Size` column, for a row that has one of its own: a changeset's files (`3f`).
+    pub(crate) files: Option<usize>,
 }
 
 impl ContentRow {
@@ -614,6 +640,40 @@ impl ContentRow {
             rank,
             label,
             incomplete: !human.is_complete(),
+            files: None,
+        }
+    }
+
+    /// A corpus changeset's row. `Verdict` says how far it is: `solved` (it has its stub, which
+    /// exists exactly then), `2/3 solved` (relations of a saved partial truth) or `unsolved`.
+    /// Read from the JSON as it lies, without parsing a tree.
+    pub(crate) fn of_changeset(dir: &Path, has_stub: bool) -> Self {
+        let json = |file: &str| -> Option<serde_json::Value> {
+            serde_json::from_str(&fs::read_to_string(dir.join(file)).ok()?).ok()
+        };
+        let count = |value: Option<serde_json::Value>| {
+            value.and_then(|value| Some(value.get("files")?.as_array()?.clone()))
+        };
+        let relations = count(json(TRUTH_FILE_NAME));
+        let solved = relations.as_ref().map_or(0, |relations| {
+            relations
+                .iter()
+                .filter(|relation| relation.get("solved") == Some(&true.into()))
+                .count()
+        });
+        let label = match &relations {
+            _ if has_stub => "solved".to_string(),
+            Some(relations) if !relations.is_empty() => {
+                format!("{solved}/{} solved", relations.len())
+            }
+            _ => "unsolved".to_string(),
+        };
+        Self {
+            // Sorted by how many relations are solved, unsolved ones first.
+            rank: Some(if has_stub { usize::MAX } else { solved }),
+            label,
+            incomplete: !has_stub,
+            files: count(json(SOURCE_FILE_NAME)).map(|files| files.len()),
         }
     }
 }
@@ -629,6 +689,10 @@ fn read_content_rows() -> HashMap<String, ContentRow> {
                 ContentRow::of(family, human_content::load(family, &name).ok()),
             );
         }
+    }
+    for (_, name, dir) in changeset_dirs().unwrap_or_default() {
+        let stub = fixtures_dir("changesets").join(format!("{}.rs", module_name(&name)));
+        rows.insert(name, ContentRow::of_changeset(&dir, stub.is_file()));
     }
     rows
 }
@@ -895,7 +959,16 @@ fn starting_case(remembered: Option<&str>) -> Result<String> {
 /// raised `ConfirmDiscardUnsaved`, which returns the target itself once answered. Runs the scans
 /// the view's sort and filters read, as the picker's `s`/`f` would have.
 fn neighbouring_case(app: &mut App, forward: bool) -> Result<Option<OpenTarget>> {
-    let options = list_available_cases()?;
+    neighbouring_in(app, list_available_cases()?, forward)
+}
+
+/// [`neighbouring_case`] within `options`: the code session steps through code cases, the
+/// changeset board through everything the `o` picker lists, changesets among it.
+fn neighbouring_in(
+    app: &mut App,
+    options: Vec<(String, &'static str)>,
+    forward: bool,
+) -> Result<Option<OpenTarget>> {
     let view = app.diff_view.clone();
     ensure_diff_column_data(app, view.sort.column);
     for column in view.filters.active_columns() {
@@ -1066,12 +1139,41 @@ where
     result
 }
 
-/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the content fixtures' families.
+/// The datasets the `o` picker lists: `DIFF_DATASETS`, then the content fixtures' families, then
+/// the changeset datasets under their picker names ([`changeset_dataset_label`]).
 fn picker_datasets() -> impl Iterator<Item = &'static str> {
     DIFF_DATASETS
         .iter()
         .copied()
         .chain(Family::ALL.map(Family::name))
+        .chain(
+            CHANGESET_DATASETS
+                .iter()
+                .map(|dataset| changeset_dataset_label(dataset)),
+        )
+}
+
+/// A changeset dataset as the `o` picker's Dataset column names it: `cs/handmade`, `cs/pilot`
+/// (for `changeset-pilot`). The prefix keeps it apart from the single-file dataset of the same
+/// name, in the column and in the `f` popup, and it is short because the column is.
+/// `'static` because every picker dataset is; the few labels are made once.
+fn changeset_dataset_label(dataset: &str) -> &'static str {
+    static LABELS: std::sync::OnceLock<Vec<(&'static str, &'static str)>> =
+        std::sync::OnceLock::new();
+    LABELS
+        .get_or_init(|| {
+            CHANGESET_DATASETS
+                .iter()
+                .map(|dataset| {
+                    let short = dataset.strip_prefix("changeset-").unwrap_or(dataset);
+                    let label: &'static str = Box::leak(format!("cs/{short}").into());
+                    (*dataset, label)
+                })
+                .collect()
+        })
+        .iter()
+        .find(|(known, _)| *known == dataset)
+        .map_or("cs/?", |(_, label)| label)
 }
 
 /// One line of the `f` value popup (`Modal::ChooseFilterValue`): a value of the column, `None`
@@ -1538,9 +1640,87 @@ fn list_sample_rows() -> Result<Vec<SampleRow>> {
                     .map(|meta| meta.status)
                     .unwrap_or(SampleTriageStatus::Sampled),
                 size: 0,
+                detail: String::new(),
             }
         })
+        .chain(changeset_sample_rows(
+            &changeset_samples_root(),
+            &changesets_root().with_extension("csv"),
+        ))
         .collect())
+}
+
+/// Every changeset sample under `samples` as an `O` picker row, joined by name to its row of
+/// the `changesets.csv` at `csv` (`sample_test_diffs --changesets` writes it): main language,
+/// file-count bucket, changed lines as the size, the status, and kind and signals as the
+/// detail. A sample the list does not name falls back on its own `source.json`.
+pub(crate) fn changeset_sample_rows(samples: &Path, csv: &Path) -> Vec<SampleRow> {
+    let mut listed: HashMap<String, HashMap<String, String>> = HashMap::new();
+    if let Ok(mut reader) = csv::Reader::from_path(csv) {
+        let headers: Vec<String> = reader
+            .headers()
+            .map(|headers| headers.iter().map(str::to_string).collect())
+            .unwrap_or_default();
+        for record in reader.records().flatten() {
+            let row: HashMap<String, String> = headers
+                .iter()
+                .cloned()
+                .zip(record.iter().map(str::to_string))
+                .collect();
+            if let Some(name) = row.get("name") {
+                listed.insert(name.clone(), row);
+            }
+        }
+    }
+    list_dir_names(samples)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|name| {
+            let source: Option<serde_json::Value> =
+                fs::read_to_string(samples.join(&name).join(SOURCE_FILE_NAME))
+                    .ok()
+                    .and_then(|json| serde_json::from_str(&json).ok());
+            let from_source = |key: &str| -> Option<String> {
+                match source.as_ref()?.get(key)? {
+                    serde_json::Value::String(text) => Some(text.clone()),
+                    serde_json::Value::Array(items) => Some(
+                        items
+                            .iter()
+                            .filter_map(|item| item.as_str())
+                            .collect::<Vec<_>>()
+                            .join(";"),
+                    ),
+                    _ => None,
+                }
+            };
+            let row = listed.get(&name);
+            let cell = |key: &str| {
+                row.and_then(|row| row.get(key))
+                    .filter(|cell| !cell.is_empty())
+                    .cloned()
+                    .or_else(|| from_source(key))
+            };
+            let status = match cell("status").as_deref() {
+                Some("PROMOTED") => SampleTriageStatus::Promoted,
+                Some("REJECTED") => SampleTriageStatus::Rejected,
+                _ => SampleTriageStatus::Sampled,
+            };
+            SampleRow {
+                language: cell("main_language").unwrap_or_else(|| "?".to_string()),
+                bucket: cell("bucket"),
+                status,
+                size: cell("changed_lines")
+                    .and_then(|lines| lines.parse().ok())
+                    .unwrap_or(0),
+                detail: format!(
+                    "{}: {}",
+                    cell("kind").unwrap_or_else(|| "changeset".to_string()),
+                    cell("signals").unwrap_or_default().replace(';', ", ")
+                ),
+                name,
+            }
+        })
+        .collect()
 }
 
 /// A sample's `source.json` provenance, without parsing its code (unlike `load_sample`).
@@ -2073,8 +2253,11 @@ impl<'a> DiffPickerData<'a> {
         self.unmarked_of(name).map(|count| count > 0)
     }
 
+    /// Changed lines; for a changeset, its files.
     fn size_of(&self, name: &str) -> Option<usize> {
-        self.sizes.and_then(|map| map.get(name)).copied()
+        self.content_of(name)
+            .and_then(|row| row.files)
+            .or_else(|| self.sizes.and_then(|map| map.get(name)).copied())
     }
 
     fn unmarked_of(&self, name: &str) -> Option<usize> {
@@ -2108,6 +2291,9 @@ pub(crate) struct SampleRow {
     pub(crate) bucket: Option<String>,
     pub(crate) status: SampleTriageStatus,
     pub(crate) size: usize,
+    /// For a changeset sample: its kind and signals (`commit: copy, block move`), shown after
+    /// the name and matched by the Name filter. Empty for a single-file sample.
+    pub(crate) detail: String,
 }
 
 /// One column of the `O` picker's table, driven by the same keys as `DiffColumn`. Not shared with
@@ -2230,6 +2416,7 @@ impl SampleFilters {
     fn keeps(&self, row: &SampleRow) -> bool {
         if let Some(needle) = &self.name
             && !row.name.to_lowercase().contains(needle)
+            && !row.detail.to_lowercase().contains(needle)
         {
             return false;
         }
@@ -2518,33 +2705,29 @@ fn main() -> Result<()> {
         None => starting_case(memory.last_case.as_deref())?,
     };
 
-    // A changeset (a whole commit, several files a side) has a session of its own.
-    if let Some((dir, is_sample)) = diffs_case_dir(&name)
+    // A changeset (a whole commit, several files a side) has a session of its own, which runs
+    // over a code case as a content session does: the case the tool would have started on.
+    let first = match diffs_case_dir(&name)
         .is_none()
         .then(|| changeset::find_dir(&name))
         .flatten()
     {
-        let session = changeset::Session::open(&dir, is_sample)
-            .with_context(|| format!("opening the changeset in {dir:?}"))?;
-        let mut app = App::new(
-            name,
-            CaseOrigin::Diffs,
-            usize::MAX,
-            usize::MAX,
-            HumanMapping::default(),
-        );
-        app.changeset = Some(Box::new(session));
-        app.key_log = key_log_path().and_then(|path| KeyLog::open(&path).ok());
-        let panic_hook = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |info| {
-            let _ = restore_terminal();
-            panic_hook(info);
-        }));
-        let mut terminal = setup_terminal()?;
-        let result = changeset::run(&mut terminal, &mut app);
-        restore_terminal()?;
-        return result;
-    }
+        Some((dir, is_sample)) => {
+            // Checked here, where a failure is an error message rather than a status line.
+            changeset::Session::open(&dir, is_sample)
+                .with_context(|| format!("opening the changeset in {dir:?}"))?;
+            Some(SessionEnd::Open(if is_sample {
+                OpenTarget::Sample(name.clone())
+            } else {
+                OpenTarget::Diffs(name.clone())
+            }))
+        }
+        None => None,
+    };
+    let name = match first {
+        Some(_) => starting_case(memory.last_case.as_deref())?,
+        None => name,
+    };
 
     let (before, after) = load_case(&name)?;
     let before_root_id = starting_cursor_id(&before);
@@ -2570,7 +2753,7 @@ fn main() -> Result<()> {
     }));
 
     let mut terminal = setup_terminal()?;
-    let result = run_event_loop(&mut terminal, &mut app, before, after);
+    let result = run_event_loop(&mut terminal, &mut app, before, after, first);
     restore_terminal()?;
 
     result

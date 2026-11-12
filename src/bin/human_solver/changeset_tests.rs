@@ -35,6 +35,8 @@ use ratatui::backend::TestBackend;
 struct Driver {
     app: App,
     codes: Option<(Arc<Code>, Arc<Code>)>,
+    /// The case a board key left the changeset session for (`o`, `O`, `}`, `{`).
+    left: Option<OpenTarget>,
     /// Holds the copy the session works on, when it is not the repository's own directory.
     _scratch: Option<tempfile::TempDir>,
 }
@@ -65,6 +67,7 @@ impl Driver {
         Driver {
             app,
             codes: None,
+            left: None,
             _scratch: scratch,
         }
     }
@@ -146,8 +149,10 @@ impl Driver {
             }
             return;
         }
-        if let BoardEnd::Open(request) = board_key(&mut self.app, code) {
-            self.open_pair(request);
+        match board_key(&mut self.app, code) {
+            BoardEnd::Open(request) => self.open_pair(request),
+            BoardEnd::Leave(target) => self.left = Some(target),
+            BoardEnd::Stay | BoardEnd::Quit => {}
         }
     }
 
@@ -677,6 +682,322 @@ fn a_renamed_file_shows_its_relation_on_the_board_and_both_kinds_of_match_in_its
     assert!(
         screen.contains("9 unmarked"),
         "the new export is still to decide: {screen}"
+    );
+}
+
+// ─── The pickers ────────────────────────────────────────────────────────────────────────────
+
+/// One key to the `o` or `O` picker open on a code session's app, as `handle_modal_key` routes it.
+fn picker_press(app: &mut App, code: KeyCode) -> Option<OpenTarget> {
+    match app.modal.take()? {
+        Modal::OpenDiffPicker {
+            options,
+            selected,
+            view,
+            name_input,
+        } => handle_open_diff_picker(app, code, options, selected, view, name_input),
+        Modal::OpenSamplePicker {
+            rows,
+            selected,
+            view,
+            name_input,
+        } => handle_open_sample_picker(app, code, rows, selected, view, name_input),
+        Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        } => {
+            handle_choose_filter_value(app, code, *picker, choices, selected);
+            None
+        }
+        other => {
+            app.modal = Some(other);
+            None
+        }
+    }
+}
+
+fn picker_screen(app: &App, width: u16, height: u16) -> String {
+    let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+    terminal
+        .draw(|frame| draw_pickers(frame, frame.area(), app))
+        .unwrap();
+    let buffer = terminal.backend().buffer().clone();
+    let mut text = String::new();
+    for row in 0..height {
+        for column in 0..width {
+            text.push_str(buffer[(column, row)].symbol());
+        }
+        text.push('\n');
+    }
+    text
+}
+
+fn code_session_app() -> App {
+    App::new(
+        "some-code-case".to_string(),
+        CaseOrigin::Diffs,
+        usize::MAX,
+        usize::MAX,
+        HumanMapping::default(),
+    )
+}
+
+#[test]
+fn o_in_a_code_session_lists_the_corpus_changesets_and_opens_one() {
+    let mut app = code_session_app();
+    open_diff_picker(&mut app, "some-code-case");
+    let Some(Modal::OpenDiffPicker { options, .. }) = &app.modal else {
+        panic!("o opens the picker: {:?}", app.status);
+    };
+    // Changesets are rows among the code cases and content fixtures, under their own dataset.
+    assert!(options.contains(&("rust-function-moved-intact".to_string(), "cs/handmade")));
+    assert!(options.iter().any(|(_, dataset)| *dataset == "handmade"));
+
+    // Dataset's `f` popup offers the changeset datasets by the same names; picked, only they show.
+    for key in [KeyCode::Char('l'), KeyCode::Char('f')] {
+        picker_press(&mut app, key);
+    }
+    let Some(Modal::ChooseFilterValue { choices, .. }) = &app.modal else {
+        panic!("f on Dataset opens the value popup");
+    };
+    let wanted = choices
+        .iter()
+        .position(|choice| choice.value.as_deref() == Some("cs/handmade"))
+        .expect("the popup lists the changeset dataset");
+    let at = choices
+        .iter()
+        .position(|choice| choice.value.is_none())
+        .unwrap_or(0);
+    for _ in at..wanted {
+        picker_press(&mut app, KeyCode::Char('j'));
+    }
+    picker_press(&mut app, KeyCode::Enter);
+    let screen = picker_screen(&app, 170, 30);
+    println!("{screen}");
+    assert!(screen.contains("cs/handmade"), "{screen}");
+    // Solved ones say so; one nobody started is unsolved; Size is the file count.
+    let row = |name: &str| -> String {
+        screen
+            .lines()
+            .find(|line| line.contains(name))
+            .unwrap_or_else(|| panic!("no row for {name}: {screen}"))
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let solved = row("rust-function-moved-intact");
+    assert!(
+        solved.contains("✓") && solved.ends_with("2f solved │"),
+        "{solved}"
+    );
+    let unsolved = row("go-files-merged");
+    assert!(
+        unsolved.contains("•") && unsolved.ends_with("3f unsolved │"),
+        "{unsolved}"
+    );
+
+    // Enter on a row opens the changeset session on it.
+    picker_press(&mut app, KeyCode::Char('g'));
+    let visible = {
+        let Some(Modal::OpenDiffPicker { options, view, .. }) = &app.modal else {
+            panic!("the picker is still open");
+        };
+        crate::visible_diff_options(options, view, DiffPickerData::from_app(&app))
+    };
+    assert_eq!(
+        visible.len(),
+        13,
+        "the handmade changesets, and nothing else: {visible:?}"
+    );
+    let target = picker_press(&mut app, KeyCode::Enter).expect("Enter picks the row");
+    assert_eq!(target.name(), visible[0]);
+    let (dir, is_sample) = opened_by(&SessionEnd::Open(target)).expect("it is a changeset");
+    assert!(!is_sample);
+    let session = Session::open(&dir, is_sample).unwrap();
+    assert_eq!(session.name, visible[0]);
+    // A code case of the same listing is not a changeset.
+    assert!(
+        opened_by(&SessionEnd::Open(OpenTarget::Diffs(
+            "rust-add-if".to_string()
+        )))
+        .is_none()
+    );
+}
+
+/// A pilot-shaped sample in a scratch `samples/changesets/`, listed in a scratch changesets.csv.
+fn pilot_sample(status: &str) -> (Driver, PathBuf) {
+    let mut driver = Driver::scratch("python-function-moved-and-renamed", false, true);
+    let csv = driver.session().corpus_root.with_extension("csv");
+    let name = driver.session().name.clone();
+    fs::write(
+        &csv,
+        format!(
+            "name,kind,repository,commit,parent,root,signals,untouched_paths,files,changed_lines,\
+             main_language,bucket,dataset,status,comment\n\
+             other-sample,commit,repo,c,p,,copy,,3,40,Go,2-3,changeset-pilot,SAMPLED,\n\
+             {name},commit,repo,c0ffee,dad,,block move;moved and edited,,2,17,Python,2-3,\
+             changeset-pilot,{status},\n"
+        ),
+    )
+    .unwrap();
+    driver.app.changeset.as_mut().unwrap().source.status = status.to_string();
+    (driver, csv)
+}
+
+#[test]
+fn capital_o_lists_changeset_samples_from_changesets_csv_and_opens_one() {
+    let (mut driver, csv) = pilot_sample("SAMPLED");
+    let samples = driver.session().dir.parent().unwrap().to_path_buf();
+    let name = driver.session().name.clone();
+    let rows = crate::changeset_sample_rows(&samples, &csv);
+    assert_eq!(
+        rows.len(),
+        1,
+        "a row for each sample directory, joined to the list by name"
+    );
+    assert_eq!(rows[0].language, "Python");
+    assert_eq!(rows[0].bucket.as_deref(), Some("2-3"));
+    assert_eq!(rows[0].size, 17);
+    assert_eq!(rows[0].detail, "commit: block move, moved and edited");
+    assert_eq!(rows[0].status.label(), "sampled");
+
+    let mut app = code_session_app();
+    app.modal = Some(crate::open_sample_picker_modal(
+        rows,
+        "",
+        Default::default(),
+    ));
+    let screen = picker_screen(&app, 150, 12);
+    println!("{screen}");
+    assert!(
+        screen.contains("(commit: block move, moved and edited)"),
+        "{screen}"
+    );
+    // The Name filter reads the signals too.
+    picker_press(&mut app, KeyCode::Char('f'));
+    for typed in "moved and".chars() {
+        picker_press(&mut app, KeyCode::Char(typed));
+    }
+    picker_press(&mut app, KeyCode::Enter);
+    let target = picker_press(&mut app, KeyCode::Enter).expect("the row survives the filter");
+    assert!(matches!(&target, OpenTarget::Sample(picked) if *picked == name));
+
+    // Opened, it is unsolved; saved half way and opened again, it has what was saved.
+    assert!(driver.session().truth.files.is_empty());
+    driver.keys("cs");
+    let reopened = Session::open(&driver.session().dir, true).unwrap();
+    assert_eq!(reopened.truth.files.len(), 1);
+    assert_eq!(reopened.proposals.len(), 1);
+}
+
+#[test]
+fn capital_r_on_the_board_rejects_a_sample_with_a_reason() {
+    let (mut driver, csv) = pilot_sample("SAMPLED");
+    let samples = driver.session().dir.parent().unwrap().to_path_buf();
+    driver.keys("R\n");
+    assert!(
+        driver.status().contains("needs a reason"),
+        "{}",
+        driver.status()
+    );
+    // Typed text is the reason, not keys: `q` and `s` do nothing here.
+    driver.keys("Rgenerated qs\n");
+    assert!(
+        driver.status().starts_with("Rejected"),
+        "{}",
+        driver.status()
+    );
+    let listed = fs::read_to_string(&csv).unwrap();
+    assert!(
+        listed.contains(",changeset-pilot,REJECTED,generated qs\n"),
+        "{listed}"
+    );
+    assert!(
+        listed
+            .contains("other-sample,commit,repo,c,p,,copy,,3,40,Go,2-3,changeset-pilot,SAMPLED,\n")
+    );
+    let source = ChangesetSource::load(&driver.session().dir).unwrap();
+    assert_eq!(source.status, "REJECTED");
+    // The `O` picker still lists it, as it lists rejected single-file samples, and says so.
+    let rows = crate::changeset_sample_rows(&samples, &csv);
+    assert_eq!(rows[0].status.label(), "REJECTED");
+    // A corpus changeset is not a sample to reject.
+    let mut driver = Driver::scratch("go-files-merged", false, false);
+    driver.keys("R");
+    assert!(
+        driver.status().contains("only a sample"),
+        "{}",
+        driver.status()
+    );
+}
+
+#[test]
+fn the_board_opens_the_pickers_and_steps_to_the_next_case() {
+    let mut driver = Driver::scratch("go-files-merged", false, false);
+    // `o`: the code session's picker, over the board, on this changeset's row.
+    driver.keys("o");
+    let Some(Modal::OpenDiffPicker {
+        options,
+        selected,
+        view,
+        ..
+    }) = &driver.app.modal
+    else {
+        panic!("o opens the picker on the board: {}", driver.status());
+    };
+    let visible = crate::visible_diff_options(options, view, DiffPickerData::from_app(&driver.app));
+    assert_eq!(visible[*selected], "go-files-merged");
+    assert!(driver.screen(160, 30).contains("Open diff"));
+    // Its keys are the picker's while it is up: `s` sorts, it does not save the changeset.
+    driver.keys("s\x1b");
+    assert!(driver.app.modal.is_none() && driver.left.is_none());
+    assert!(!driver.session().dir.join(TRUTH_FILE_NAME).exists());
+    driver.keys("O\x1b");
+    assert!(driver.app.modal.is_none());
+
+    // `}` and `{`: the neighbours in the `o` listing, here narrowed to the changesets.
+    driver.app.diff_view.filters.dataset = Some("cs/handmade");
+    driver.keys("}");
+    assert!(
+        matches!(&driver.left, Some(OpenTarget::Diffs(name)) if name == "go-function-moved-and-edited"),
+        "{:?}",
+        driver.left
+    );
+    driver.left = None;
+    driver.keys("{");
+    assert!(
+        matches!(&driver.left, Some(OpenTarget::Diffs(name)) if name == "typescript-files-swapped"),
+        "wrapping to the last: {:?}",
+        driver.left
+    );
+
+    // Unsaved work is asked about first, as in the code session: cancel, discard, or save.
+    driver.left = None;
+    driver.keys("M}");
+    assert!(driver.left.is_none());
+    assert!(matches!(
+        driver.app.modal,
+        Some(Modal::ConfirmDiscardUnsaved { .. })
+    ));
+    assert!(
+        driver
+            .screen(160, 30)
+            .contains("Save before opening 'go-function-moved-and-edited'?")
+    );
+    driver.keys("\x1b");
+    assert!(driver.left.is_none() && driver.app.modal.is_none());
+    driver.keys("}s");
+    assert!(driver.left.is_some());
+    assert!(
+        driver.session().dir.join(TRUTH_FILE_NAME).is_file(),
+        "s saved before leaving"
+    );
+    // The code case underneath was never the one being asked about.
+    assert!(!driver.app.dirty);
+    assert_eq!(
+        crate::keylog::mode_name(Some(&Modal::Help { scroll: 0 })),
+        "help"
     );
 }
 

@@ -159,6 +159,9 @@ pub(crate) fn run_event_loop(
     app: &mut App,
     before: Code,
     after: Code,
+    // What to open over the loaded case before its own session runs: the changeset the tool
+    // was started on.
+    mut first: Option<SessionEnd>,
 ) -> Result<()> {
     // `Arc`, not owned: the background omnidiff run (`start_algo_diff`) must diff these very
     // trees, since `ASTDiff` is keyed by node id and a re-parse would number the nodes afresh.
@@ -171,19 +174,36 @@ pub(crate) fn run_event_loop(
         // The session borrows `before`/`after` immutably, so its cached `FrameState` can live for
         // the whole session; only this loop reassigns them, between sessions.
         app.layer_paint = project_layer_paint(&app.mapping, &before, &after);
-        let mut end = run_case_session(terminal, app, &before, &after)?;
-        // A picture sample or fixture has no trees: it gets its own session, which hands back
-        // whatever is opened from it. The tree session's case stays loaded underneath.
-        while let Some(case) = crate::content::ContentCase::opened_by(&end) {
-            end = match crate::content::run_content_session(terminal, app, &case) {
-                Ok(end) => end,
-                // A picture the decoder cannot read (some multi-size ICOs): said, and the tree
-                // session resumes as it was.
-                Err(err) => {
-                    app.status = Some(format!("Cannot open picture '{}': {err:#}", case.name()));
-                    run_case_session(terminal, app, &before, &after)?
-                }
-            };
+        let mut end = match first.take() {
+            Some(end) => end,
+            None => run_case_session(terminal, app, &before, &after)?,
+        };
+        // A changeset, and a picture sample or fixture, is no pair of trees: each gets its own
+        // session, which hands back whatever is opened from it. The tree session's case stays
+        // loaded underneath.
+        loop {
+            if let Some((dir, is_sample)) = crate::changeset::opened_by(&end) {
+                end = match crate::changeset::run(terminal, app, &dir, is_sample) {
+                    Ok(end) => end,
+                    Err(err) => {
+                        app.status = Some(format!("Cannot open the changeset in {dir:?}: {err:#}"));
+                        run_case_session(terminal, app, &before, &after)?
+                    }
+                };
+            } else if let Some(case) = crate::content::ContentCase::opened_by(&end) {
+                end = match crate::content::run_content_session(terminal, app, &case) {
+                    Ok(end) => end,
+                    // A picture the decoder cannot read (some multi-size ICOs): said, and the
+                    // tree session resumes as it was.
+                    Err(err) => {
+                        app.status =
+                            Some(format!("Cannot open picture '{}': {err:#}", case.name()));
+                        run_case_session(terminal, app, &before, &after)?
+                    }
+                };
+            } else {
+                break;
+            }
         }
         // Before the switch, so the memory names the case being left; on quit it is the last.
         remember_session(app);
@@ -3246,6 +3266,7 @@ pub(crate) fn open_sample_picker(app: &mut App, current: &str) {
             // One external `diff` per sample: scan only the unmeasured ones, in parallel.
             let missing: Vec<String> = rows
                 .iter()
+                .filter(|row| row.detail.is_empty())
                 .map(|row| row.name.clone())
                 .filter(|name| !app.sample_diff_sizes.contains_key(name))
                 .collect();
@@ -3257,11 +3278,14 @@ pub(crate) fn open_sample_picker(app: &mut App, current: &str) {
             let rows: Vec<SampleRow> = rows
                 .into_iter()
                 .map(|mut row| {
-                    row.size = app
-                        .sample_diff_sizes
-                        .get(&row.name)
-                        .copied()
-                        .unwrap_or_default();
+                    // A changeset sample came with its size, from changesets.csv.
+                    if row.detail.is_empty() {
+                        row.size = app
+                            .sample_diff_sizes
+                            .get(&row.name)
+                            .copied()
+                            .unwrap_or_default();
+                    }
                     row
                 })
                 .collect();

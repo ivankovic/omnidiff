@@ -23,6 +23,13 @@
 //! of `source.json` only its hints, which folders do not have. The tool assumes nothing about
 //! which file became which: that is part of the truth, and the human says it.
 //!
+//! It is also opened from the code session's pickers, as a content fixture is: `o` lists the
+//! corpus changesets among the cases and `O` the changeset samples of `changesets.csv`
+//! (`main.rs`: `list_picker_cases`, `changeset_sample_rows`), and the event loop hands a picked
+//! one to [`run`], which puts the loaded code case away and gives it back untouched. The board
+//! opens the same two pickers and steps with `}`/`{` ([`picker_key`], [`open_other`]): the code
+//! session's modals and handlers, asked about this changeset's unsaved work.
+//!
 //! # Three views
 //!
 //! * **The file board** ([`board_key`], [`draw_board`]) is home: before files left, after files
@@ -133,12 +140,19 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
 use tree_sitter::Node;
 
+use crate::DiffPickerData;
 use crate::actions::{auto_match_pair, classify_match_operation};
-use crate::events::{FrameState, SessionEnd, run_case_session};
+use crate::events::{
+    FrameState, SessionEnd, handle_choose_filter_value, handle_open_diff_picker,
+    handle_open_sample_picker, open_diff_picker, open_sample_picker, run_case_session,
+};
 use crate::keylog::key_name;
 use crate::layers::LayerPaint;
 use crate::navigate::reveal_node;
-use crate::render::centered_rect;
+use crate::render::{
+    centered_rect, render_filter_choices, render_open_diff_picker, render_open_sample_picker,
+    render_text_modal,
+};
 use crate::state::{
     App, Focus, Modal, OpenTarget, PanelState, TextOverlay, TextPaintState,
     expand_leading_whitespace_for_full, expand_updated_identifiers_for_full,
@@ -162,7 +176,7 @@ const QUIET_FILES_SHOWN: usize = 5;
 
 const BOARD_FOOTER: &str = "Tab side  j/k move  / filter  z identical files  I confirm them  f counterpart  Enter open pair  p pair  S split  \
     M merge  a added  d removed  u unpair  c/C confirm  x solved  e verdict  L pool  V violations  \
-    s save  ? help  q quit";
+    s save  o cases  O samples  }/{ next/previous case  R reject sample  ? help  q quit";
 
 // ─── What the session holds ─────────────────────────────────────────────────────────────────
 
@@ -327,6 +341,8 @@ pub(crate) struct Session {
     pub(crate) filter: String,
     /// Whether `/` is taking the keys.
     pub(crate) filter_typing: bool,
+    /// The reason being typed at `R`'s prompt, while it is open.
+    pub(crate) reject_input: Option<String>,
     pub(crate) pin: Option<Pin>,
     pub(crate) overlay: Option<Overlay>,
     pub(crate) status: String,
@@ -416,6 +432,7 @@ impl Session {
             collapsed: false,
             filter: String::new(),
             filter_typing: false,
+            reject_input: None,
             pin: None,
             overlay: None,
             status: String::new(),
@@ -743,6 +760,31 @@ impl Session {
         Ok(existed != solved)
     }
 
+    /// `R`: a sample that is no use as ground truth is marked `REJECTED`, in its `source.json`
+    /// and in its row of `changesets.csv`, where the reason goes into `comment` - what
+    /// rejecting a single-file sample does to sample.csv. Its directory stays.
+    fn reject(&mut self, reason: &str) -> Result<String> {
+        ensure!(self.is_sample, "only a sample (O) can be rejected");
+        let reason = reason.trim();
+        ensure!(!reason.is_empty(), "a rejection needs a reason");
+        self.source.status = "REJECTED".to_string();
+        fs::write(self.dir.join(SOURCE_FILE_NAME), self.source.to_json()?)?;
+        let listed = set_csv_cells(
+            &self.csv_path(),
+            &self.name,
+            &[("status", "REJECTED"), ("comment", reason)],
+        )?;
+        Ok(format!(
+            "Rejected '{}': {reason}{}",
+            self.name,
+            if listed {
+                ""
+            } else {
+                " (it has no row in changesets.csv)"
+            }
+        ))
+    }
+
     /// Moves a finished sample into the corpus, keeping its `source.json` and `README.md`.
     fn promote(&mut self) -> Result<String> {
         let dataset = self.source.dataset.clone();
@@ -847,6 +889,11 @@ impl Session {
 /// The columns are found by their headers: the file is `sample_test_diffs --changesets`'s
 /// (`stats::changeset::Row`), and this tool is built without it.
 pub(crate) fn set_csv_status(path: &Path, name: &str, status: &str) -> Result<bool> {
+    set_csv_cells(path, name, &[("status", status)])
+}
+
+/// [`set_csv_status`] for any cells of the row: `(column header, value)` each.
+pub(crate) fn set_csv_cells(path: &Path, name: &str, cells: &[(&str, &str)]) -> Result<bool> {
     if !path.is_file() {
         return Ok(false);
     }
@@ -858,7 +905,11 @@ pub(crate) fn set_csv_status(path: &Path, name: &str, status: &str) -> Result<bo
             .position(|header| header == wanted)
             .with_context(|| format!("{path:?} has no {wanted} column"))
     };
-    let (name_column, status_column) = (column("name")?, column("status")?);
+    let name_column = column("name")?;
+    let cells: Vec<(usize, &str)> = cells
+        .iter()
+        .map(|(header, value)| Ok((column(header)?, *value)))
+        .collect::<Result<_>>()?;
     let mut records: Vec<csv::StringRecord> = reader.records().collect::<Result<_, _>>()?;
     let mut found = false;
     for record in &mut records {
@@ -866,7 +917,12 @@ pub(crate) fn set_csv_status(path: &Path, name: &str, status: &str) -> Result<bo
             *record = record
                 .iter()
                 .enumerate()
-                .map(|(index, cell)| if index == status_column { status } else { cell })
+                .map(|(index, cell)| {
+                    cells
+                        .iter()
+                        .find(|(column, _)| *column == index)
+                        .map_or(cell, |(_, value)| value)
+                })
                 .collect();
             found = true;
         }
@@ -2727,6 +2783,8 @@ pub(crate) enum BoardEnd {
     Stay,
     Quit,
     Open(PairRequest),
+    /// Another case was picked (`o`, `O`, `}`, `{`): the changeset session ends for it.
+    Leave(OpenTarget),
 }
 
 impl Session {
@@ -3260,13 +3318,152 @@ fn overlay_key(session: &mut Session, code: KeyCode) -> BoardEnd {
     BoardEnd::Stay
 }
 
+/// The `o` and `O` pickers, their `f` popup and the unsaved-changes question, while one is up
+/// on the board: the code session's own modals and handlers, asked about this changeset's
+/// unsaved work instead of the code case's underneath. `None` when no such modal is open.
+fn picker_key(app: &mut App, code: KeyCode) -> Option<BoardEnd> {
+    let dirty = app.changeset.as_ref()?.dirty;
+    let modal = app.modal.take()?;
+    let underneath = std::mem::replace(&mut app.dirty, dirty);
+    let target = match modal {
+        Modal::OpenDiffPicker {
+            options,
+            selected,
+            view,
+            name_input,
+        } => handle_open_diff_picker(app, code, options, selected, view, name_input),
+        Modal::OpenSamplePicker {
+            rows,
+            selected,
+            view,
+            name_input,
+        } => handle_open_sample_picker(app, code, rows, selected, view, name_input),
+        Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        } => {
+            handle_choose_filter_value(app, code, *picker, choices, selected);
+            None
+        }
+        Modal::ConfirmDiscardUnsaved { target, can_save } => match code {
+            KeyCode::Char('s' | 'S') => {
+                let saved = app.changeset.as_mut().map(|session| session.save());
+                match saved {
+                    Some(Ok(_)) => Some(target),
+                    Some(Err(error)) => {
+                        if let Some(session) = app.changeset.as_mut() {
+                            session.status =
+                                format!("Save failed ({error:#}); not opening '{}'", target.name());
+                        }
+                        None
+                    }
+                    None => None,
+                }
+            }
+            KeyCode::Char('d' | 'D') => Some(target),
+            KeyCode::Esc | KeyCode::Char('c' | 'C') => {
+                if let Some(session) = app.changeset.as_mut() {
+                    session.status = "Cancelled".to_string();
+                }
+                None
+            }
+            _ => {
+                app.modal = Some(Modal::ConfirmDiscardUnsaved { target, can_save });
+                None
+            }
+        },
+        // Any other modal is the pair view's, and has no place on the board.
+        _ => None,
+    };
+    app.dirty = underneath;
+    // The handlers report on the code session's status line; the board has its own.
+    if let (Some(status), Some(session)) = (app.status.take(), app.changeset.as_mut()) {
+        session.status = status;
+    }
+    Some(match target {
+        Some(target) => BoardEnd::Leave(target),
+        None => BoardEnd::Stay,
+    })
+}
+
+/// `o`, `O`, `}` and `{` on the board: the pickers the code session opens, on this changeset's
+/// row, and the next or previous case of the `o` picker's listing - changesets, code cases and
+/// content fixtures alike, under its sort and filters.
+fn open_other(app: &mut App, code: KeyCode) -> BoardEnd {
+    let Some((name, dirty)) = app
+        .changeset
+        .as_ref()
+        .map(|session| (session.name.clone(), session.dirty))
+    else {
+        return BoardEnd::Quit;
+    };
+    let underneath = std::mem::replace(&mut app.dirty, dirty);
+    let outer = std::mem::replace(&mut app.name, name.clone());
+    let mut end = BoardEnd::Stay;
+    match code {
+        KeyCode::Char('o') => open_diff_picker(app, &name),
+        KeyCode::Char('O') => open_sample_picker(app, &name),
+        _ => {
+            app.content_rows = crate::read_content_rows();
+            let stepped = crate::list_picker_cases().and_then(|options| {
+                crate::neighbouring_in(app, options, code == KeyCode::Char('}'))
+            });
+            match stepped {
+                Ok(Some(target)) => end = BoardEnd::Leave(target),
+                Ok(None) => {}
+                Err(error) => app.status = Some(format!("Error: {error:#}")),
+            }
+        }
+    }
+    app.dirty = underneath;
+    app.name = outer;
+    if let (Some(status), Some(session)) = (app.status.take(), app.changeset.as_mut()) {
+        session.status = status;
+    }
+    end
+}
+
 /// One key on the board, or on what is drawn over it.
 pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
+    if let Some(end) = picker_key(app, code) {
+        return end;
+    }
+    let plain = app.changeset.as_ref().is_some_and(|session| {
+        session.overlay.is_none() && session.reject_input.is_none() && !session.filter_typing
+    });
+    if plain && matches!(code, KeyCode::Char('o' | 'O' | '}' | '{')) {
+        return open_other(app, code);
+    }
     let Some(session) = app.changeset.as_mut() else {
         return BoardEnd::Quit;
     };
     if session.overlay.is_some() {
         return overlay_key(session, code);
+    }
+    if let Some(mut reason) = session.reject_input.take() {
+        match code {
+            KeyCode::Enter => {
+                session.status = match session.reject(&reason) {
+                    Ok(status) => status,
+                    Err(error) => format!("Error: {error:#}"),
+                };
+            }
+            KeyCode::Esc => session.status = "Rejection cancelled".to_string(),
+            KeyCode::Backspace => {
+                reason.pop();
+                session.reject_input = Some(reason);
+            }
+            KeyCode::Char(typed) => {
+                reason.push(typed);
+                session.reject_input = Some(reason);
+            }
+            _ => session.reject_input = Some(reason),
+        }
+        if let Some(reason) = &session.reject_input {
+            session.status = format!("Reject this sample because: {reason}_  (Enter, Esc cancels)");
+        }
+        return BoardEnd::Stay;
     }
     if session.filter_typing {
         match code {
@@ -3362,6 +3559,15 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
         KeyCode::Char('C') => session.confirm(true),
         KeyCode::Char('x') => session.toggle_solved(),
         KeyCode::Char('I') => session.confirm_quiet(),
+        KeyCode::Char('R') => {
+            if !session.is_sample {
+                Err(anyhow::anyhow!("only a sample (O) can be rejected"))
+            } else {
+                session.reject_input = Some(String::new());
+                session.status = "Reject this sample because: _  (Enter, Esc cancels)".to_string();
+                return BoardEnd::Stay;
+            }
+        }
         KeyCode::Char('z') => {
             let kept: Vec<Option<String>> = [BEFORE, AFTER]
                 .into_iter()
@@ -3719,12 +3925,100 @@ pub(crate) fn draw_board(frame: &mut ratatui::Frame, app: &mut App) {
             list_popup(frame, area, title, lines, *selected);
         }
     }
+    draw_pickers(frame, area, app);
+}
+
+/// The code session's pickers and its unsaved-changes question, when one is up over the board.
+fn draw_pickers(frame: &mut ratatui::Frame, area: Rect, app: &App) {
+    let name = app
+        .changeset
+        .as_ref()
+        .map_or("", |session| session.name.as_str());
+    match &app.modal {
+        Some(Modal::OpenDiffPicker {
+            options,
+            selected,
+            view,
+            name_input,
+        }) => render_open_diff_picker(
+            frame,
+            area,
+            options,
+            *selected,
+            view,
+            name_input.as_deref(),
+            DiffPickerData::from_app(app),
+            app.diff_comments.as_ref(),
+        ),
+        Some(Modal::OpenSamplePicker {
+            rows,
+            selected,
+            view,
+            name_input,
+        }) => render_open_sample_picker(frame, area, rows, *selected, view, name_input.as_deref()),
+        Some(Modal::ChooseFilterValue {
+            picker,
+            choices,
+            selected,
+        }) => {
+            let column = match picker.as_ref() {
+                Modal::OpenDiffPicker {
+                    options,
+                    selected,
+                    view,
+                    name_input,
+                } => {
+                    render_open_diff_picker(
+                        frame,
+                        area,
+                        options,
+                        *selected,
+                        view,
+                        name_input.as_deref(),
+                        DiffPickerData::from_app(app),
+                        app.diff_comments.as_ref(),
+                    );
+                    view.column.header()
+                }
+                Modal::OpenSamplePicker {
+                    rows,
+                    selected,
+                    view,
+                    name_input,
+                } => {
+                    render_open_sample_picker(
+                        frame,
+                        area,
+                        rows,
+                        *selected,
+                        view,
+                        name_input.as_deref(),
+                    );
+                    view.column.label()
+                }
+                _ => "",
+            };
+            render_filter_choices(frame, area, column, choices, *selected);
+        }
+        Some(Modal::ConfirmDiscardUnsaved { target, .. }) => render_text_modal(
+            frame,
+            area,
+            "Unsaved changes",
+            &format!(
+                "'{}' has unsaved changes.\n\nSave before opening '{}'?\n\n[s] Save & Open    \
+                 [d] Discard & Open    [Esc] Cancel",
+                name,
+                target.name()
+            ),
+        ),
+        _ => {}
+    }
 }
 
 /// Which view a board key went to, as the key log names it.
 fn board_mode(session: &Session) -> &'static str {
     match session.overlay {
-        None if session.filter_typing => "board-typing",
+        None if session.filter_typing || session.reject_input.is_some() => "board-typing",
         None => "board",
         Some(Overlay::Pool { .. }) => "pool",
         Some(Overlay::Violations { .. }) => "violations",
@@ -3733,8 +4027,96 @@ fn board_mode(session: &Session) -> &'static str {
     }
 }
 
-/// The changeset session's loop: the board, and under it a code session for each pair opened.
-pub(crate) fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> Result<()> {
+/// The changeset `end` opens, if it opens one: its directory, and whether it is a sample. A
+/// name the `o` picker gave is a corpus changeset unless a single-file case has it; one `O` gave
+/// is a changeset sample when `samples/changesets/` holds it.
+pub(crate) fn opened_by(end: &SessionEnd) -> Option<(PathBuf, bool)> {
+    match end {
+        SessionEnd::Open(OpenTarget::Diffs(name)) if crate::diffs_case_dir(name).is_none() => {
+            changeset_dir(name).map(|dir| (dir, false))
+        }
+        SessionEnd::Open(OpenTarget::Sample(name)) => {
+            let dir = changeset_samples_root().join(name);
+            (!name.is_empty() && dir.is_dir()).then_some((dir, true))
+        }
+        _ => None,
+    }
+}
+
+/// The code case the changeset session runs over, put away while it runs: the pair view uses
+/// the app's panels, mapping and undo stacks as its own.
+struct Underneath {
+    name: String,
+    mapping: HumanMapping,
+    before: PanelState,
+    after: PanelState,
+    focus: Focus,
+    dirty: bool,
+    undo_stack: Vec<HumanMapping>,
+    redo_stack: Vec<HumanMapping>,
+    text_solution: String,
+    layer_paint: Vec<LayerPaint>,
+}
+
+impl Underneath {
+    fn take(app: &mut App, name: &str) -> Self {
+        Underneath {
+            name: std::mem::replace(&mut app.name, name.to_string()),
+            mapping: std::mem::take(&mut app.mapping),
+            before: std::mem::replace(&mut app.before, PanelState::new(usize::MAX)),
+            after: std::mem::replace(&mut app.after, PanelState::new(usize::MAX)),
+            focus: app.focus,
+            dirty: std::mem::replace(&mut app.dirty, false),
+            undo_stack: std::mem::take(&mut app.undo_stack),
+            redo_stack: std::mem::take(&mut app.redo_stack),
+            text_solution: app.text_solution.clone(),
+            layer_paint: std::mem::take(&mut app.layer_paint),
+        }
+    }
+
+    fn restore(self, app: &mut App) {
+        app.changeset = None;
+        app.modal = None;
+        app.name = self.name;
+        app.mapping = self.mapping;
+        app.before = self.before;
+        app.after = self.after;
+        app.focus = self.focus;
+        app.dirty = self.dirty;
+        app.undo_stack = self.undo_stack;
+        app.redo_stack = self.redo_stack;
+        app.text_solution = self.text_solution;
+        app.layer_paint = self.layer_paint;
+        // The pair view ran omnidiff on its own files; the code case's run starts again.
+        app.algo_diff = None;
+        app.algo_diff_pending = None;
+        app.algo_text_spans = None;
+        app.clear_multi_select();
+        app.should_quit = false;
+    }
+}
+
+/// The changeset session: opens the changeset in `dir` over the loaded code case, runs the
+/// board and under it a code session for each pair opened, and gives the code case back as it
+/// was when the session ends - by `q`, or for another case picked on the board.
+pub(crate) fn run(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    app: &mut App,
+    dir: &Path,
+    is_sample: bool,
+) -> Result<SessionEnd> {
+    let session = Session::open(dir, is_sample)?;
+    let underneath = Underneath::take(app, &session.name);
+    app.changeset = Some(Box::new(session));
+    let end = run_board(terminal, app);
+    underneath.restore(app);
+    end
+}
+
+fn run_board(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    app: &mut App,
+) -> Result<SessionEnd> {
     let mut needs_redraw = true;
     loop {
         if needs_redraw {
@@ -3752,9 +4134,13 @@ pub(crate) fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut A
             continue;
         }
         let Some(session) = app.changeset.as_ref() else {
-            return Ok(());
+            return Ok(SessionEnd::Quit);
         };
-        let mode = board_mode(session);
+        // A picker over the board is logged as the picker it is.
+        let mode = match &app.modal {
+            Some(modal) => crate::keylog::mode_name(Some(modal)),
+            None => board_mode(session),
+        };
         let (revision, was_dirty) = (session.truth.clone(), session.dirty);
         let end = board_key(app, key.code);
         let edited = app
@@ -3766,7 +4152,8 @@ pub(crate) fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut A
         }
         let mut request = match end {
             BoardEnd::Stay => continue,
-            BoardEnd::Quit => return Ok(()),
+            BoardEnd::Quit => return Ok(SessionEnd::Quit),
+            BoardEnd::Leave(target) => return Ok(SessionEnd::Open(target)),
             BoardEnd::Open(request) => request,
         };
         loop {

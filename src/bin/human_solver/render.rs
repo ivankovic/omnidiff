@@ -1586,7 +1586,10 @@ pub(crate) fn render_open_diff_picker(
                 Some(0) | None => String::new(),
                 Some(count) => count.to_string(),
             };
-            let size_cell = measured(data.size_of(name).map(|lines| lines.to_string()));
+            let size_cell = match data.content_of(name).and_then(|row| row.files) {
+                Some(files) => format!("{files}f"),
+                None => measured(data.size_of(name).map(|lines| lines.to_string())),
+            };
             let verdict_cell = data
                 .content_of(name)
                 .map(|row| row.label.as_str())
@@ -1663,7 +1666,7 @@ pub(crate) fn render_open_diff_picker(
         rows,
         [
             Constraint::Min(20),
-            Constraint::Length(9),
+            Constraint::Length(11),
             Constraint::Length(6),
             Constraint::Length(10),
             Constraint::Length(7),
@@ -1785,7 +1788,11 @@ pub(crate) fn render_open_sample_picker(
                 Style::default()
             };
             Row::new(vec![
-                Cell::from(row.name.clone()),
+                Cell::from(if row.detail.is_empty() {
+                    row.name.clone()
+                } else {
+                    format!("{}  ({})", row.name, row.detail)
+                }),
                 Cell::from(row.language.clone()),
                 // `?` for an unknown stratum, as in the `o` picker; never filtered away.
                 Cell::from(row.bucket.clone().unwrap_or_else(|| "?".to_string())),

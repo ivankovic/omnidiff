@@ -3857,6 +3857,7 @@ fn sample_row(
         bucket: bucket.map(str::to_string),
         status,
         size,
+        detail: String::new(),
     }
 }
 
