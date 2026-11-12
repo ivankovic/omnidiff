@@ -17,7 +17,7 @@
 //! The changeset session driven by keys, as a human drives it: [`Driver`] is the loop of
 //! `changeset::run` and `run_case_session` without a terminal, drawing on a `TestBackend`.
 //!
-//! The `solve_*` functions at the end are the sessions that solved three handmade changesets,
+//! The `solve_*` functions at the end are the sessions that solved four handmade changesets,
 //! kept as the record of how their truth was made: a test replays each on a scratch copy and
 //! holds the result to the committed file, and the ignored `solve_the_handmade_changesets_in_place`
 //! (`cargo test --all-features --bin human_solver solve_the_handmade -- --ignored`) writes the
@@ -437,6 +437,231 @@ fn a_pair_without_trees_takes_a_verdict() {
         driver.status().contains("both files have trees"),
         "{}",
         driver.status()
+    );
+}
+
+/// Two whole folders: thirty-odd files a side, nearly all untouched, and no VCS to hint at
+/// anything - `source.json` has no `vcs_hints` key, and keys this tool does not know.
+fn folders_fixture() -> Driver {
+    let scratch = tempfile::tempdir().unwrap();
+    let dir = scratch.path().join("samples/changesets/folders-example");
+    let write = |side: &str, path: &str, bytes: &[u8]| {
+        let file = dir.join(side).join(format!("{path}.test"));
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, bytes).unwrap();
+    };
+    let mut files = Vec::new();
+    let mut both = |path: String, before: &[u8], after: &[u8]| {
+        write("before", &path, before);
+        write("after", &path, after);
+        let untouched = if before == after {
+            ", \"untouched\": true"
+        } else {
+            ""
+        };
+        files.push(format!(
+            "{{\"before\": \"{path}\", \"after\": \"{path}\"{untouched}}}"
+        ));
+    };
+    for index in 0..28 {
+        let code = format!("pub fn f{index:02}() -> u32 {{\n    {index}\n}}\n");
+        both(
+            format!("src/m{index:02}.rs"),
+            code.as_bytes(),
+            code.as_bytes(),
+        );
+    }
+    both(
+        "assets/logo.bin".to_string(),
+        &[0xff, 0xfe, 0, 1],
+        &[0xff, 0xfe, 0, 1],
+    );
+    both(
+        "src/edited.rs".to_string(),
+        b"pub fn edited() -> u32 {\n    1\n}\n",
+        b"pub fn edited() -> u32 {\n    2\n}\n",
+    );
+    let util = b"pub fn util(value: u32) -> u32 {\n    value + 1\n}\n";
+    write("before", "src/old/util.rs", util);
+    write("after", "src/new/util.rs", util);
+    files.push("{\"before\": \"src/old/util.rs\"}".to_string());
+    files.push("{\"after\": \"src/new/util.rs\"}".to_string());
+    fs::write(
+        dir.join(SOURCE_FILE_NAME),
+        format!(
+            "{{\"kind\": \"folders\", \"root\": \"project\", \"omitted\": 3, \"stratum\": \
+             \"range\", \"dataset\": \"handmade\", \"status\": \"SAMPLED\", \"files\": [{}]}}\n",
+            files.join(", ")
+        ),
+    )
+    .unwrap();
+    fs::write(dir.join("README.md"), "# Two folders\n\nSynthetic.\n").unwrap();
+    let mut session = Session::open(&dir, true).unwrap();
+    session.corpus_root = scratch.path().join("changesets");
+    session.fixtures_root = scratch.path().join("fixtures");
+    Driver::over(session, Some(scratch))
+}
+
+#[test]
+fn a_folder_fixture_without_hints_collapses_filters_and_confirms_its_untouched_files_at_once() {
+    let mut driver = folders_fixture();
+    // No hints at all: proposals come from equal paths and from the same bytes at another path.
+    assert!(driver.session().source.vcs_hints.is_empty());
+    assert!(driver.session().truth.files.is_empty());
+    let proposals = &driver.session().proposals;
+    assert_eq!(proposals.len(), 31);
+    assert!(proposals.iter().any(|relation| {
+        relation.relation == FileRelationKind::Renamed
+            && relation.before.as_deref() == Some("src/old/util.rs")
+            && relation.after.as_deref() == Some("src/new/util.rs")
+    }));
+
+    // The 29 files nobody touched are one line, and the two that matter are the list.
+    assert!(driver.session().collapsed);
+    assert_eq!(
+        driver.session().visible(BEFORE),
+        ["src/edited.rs", "src/old/util.rs"]
+    );
+    assert_eq!(
+        driver.session().visible(AFTER),
+        ["src/edited.rs", "src/new/util.rs"]
+    );
+    let screen = driver.screen(220, 16);
+    assert!(screen.contains("Before — 2 of 31 file(s)"), "{screen}");
+    assert!(
+        screen.contains("29 file(s) byte-identical at the same path are hidden"),
+        "{screen}"
+    );
+    assert!(!screen.contains("src/m00.rs"), "{screen}");
+    assert!(
+        screen.contains("? renamed -> src/new/util.rs (proposed)"),
+        "{screen}"
+    );
+
+    // `z` shows them, keeping the cursor on its file; a long list scrolls with the cursor.
+    driver.keys("jz");
+    assert_eq!(driver.session().visible(BEFORE).len(), 31);
+    assert_eq!(
+        driver.session().selected(BEFORE).as_deref(),
+        Some("src/old/util.rs")
+    );
+    let screen = driver.screen(220, 16);
+    assert!(screen.contains("> src/old/util.rs"), "{screen}");
+    assert!(screen.contains("Before — 31 of 31 file(s)"), "{screen}");
+    driver.keys("g");
+    assert!(driver.screen(220, 16).contains("> assets/logo.bin"));
+
+    // `/` filters both lists as it is typed; Esc clears it.
+    driver.keys("/m1");
+    assert_eq!(driver.session().visible(BEFORE).len(), 10);
+    assert_eq!(driver.session().visible(AFTER).len(), 10);
+    assert!(
+        driver
+            .screen(220, 16)
+            .contains("10 of 31 file(s) containing 'm1'")
+    );
+    driver.keys("\x08\x083.rs\n");
+    assert_eq!(
+        driver.session().visible(AFTER),
+        ["src/m03.rs", "src/m13.rs", "src/m23.rs"]
+    );
+    assert_eq!(
+        driver.session().selected(BEFORE).as_deref(),
+        Some("src/m03.rs")
+    );
+    driver.keys("/\x1bz");
+    assert_eq!(driver.session().visible(BEFORE).len(), 2);
+
+    // `I`: all 29 at once, `same` and solved, each tree matched to itself - and valid as saved.
+    driver.keys("I");
+    assert!(
+        driver
+            .status()
+            .starts_with("Confirmed 29 byte-identical file(s)"),
+        "{}",
+        driver.status()
+    );
+    let session = driver.session();
+    assert_eq!(session.truth.files.len(), 29);
+    assert!(
+        session
+            .truth
+            .files
+            .iter()
+            .all(|relation| { relation.solved && relation.relation == FileRelationKind::Same })
+    );
+    assert_eq!(
+        session.proposals.len(),
+        2,
+        "the edited and the renamed file are still proposals"
+    );
+    assert_eq!(
+        entries_between(&session.truth, "src/m07.rs", "src/m07.rs").len(),
+        15
+    );
+    let (_, violations) = driver.saved();
+    assert_eq!(violations, []);
+    driver.keys("I");
+    assert!(
+        driver.status().contains("no byte-identical file"),
+        "{}",
+        driver.status()
+    );
+
+    // The two files that changed are solved as in any changeset, and the sample is promoted
+    // with the keys of its source.json this tool does not know, and still without hints.
+    driver.keys("C\nSbxj\tj\nSbx");
+    let (truth, violations) = driver.saved();
+    assert_eq!(violations, [], "{}", driver.status());
+    assert!(truth.is_solved(&driver.session().trees));
+    assert!(driver.status().contains("promoted"), "{}", driver.status());
+    let source = fs::read_to_string(driver.session().dir.join(SOURCE_FILE_NAME)).unwrap();
+    let source: serde_json::Value = serde_json::from_str(&source).unwrap();
+    assert_eq!(source["kind"], "folders");
+    assert_eq!(source["omitted"], 3);
+    assert_eq!(source["status"], "PROMOTED");
+    assert!(source.get("vcs_hints").is_none());
+}
+
+/// Both levels at once: the board says the file moved, and its pair view shows what stayed in
+/// it beside what is matched in another file.
+#[test]
+fn a_renamed_file_shows_its_relation_on_the_board_and_both_kinds_of_match_in_its_pair() {
+    let mut driver = Driver::scratch("typescript-directory-renamed", false, false);
+    driver.keys("Cj\tj");
+    let screen = driver.screen(200, 12);
+    assert!(screen.contains("> lib/index.ts"), "{screen}");
+    assert!(screen.contains("[ ] renamed -> math/index.ts"), "{screen}");
+    assert!(screen.contains("[ ] renamed <- lib/index.ts"), "{screen}");
+
+    // A renamed pair opens as any pair does, and seeds: it is one file.
+    driver.keys("\nS");
+    assert!(
+        driver
+            .app
+            .display_name()
+            .contains("before lib/index.ts -> after math/index.ts (renamed)"),
+        "{}",
+        driver.app.display_name()
+    );
+    assert!(driver.status().starts_with("Seeded"), "{}", driver.status());
+    // One of its nodes also gets a partner in another file: `"./clamp"` in math/lerp.ts.
+    driver.keys("/./clamp\nhbj\n/\nh\t/\nh+");
+    assert!(driver.status().starts_with("Added"), "{}", driver.status());
+    driver.keys("bk\n");
+    let screen = driver.screen(200, 40);
+    assert!(screen.contains("(renamed)"), "{screen}");
+    assert!(
+        screen.contains("M export_statement"),
+        "within the file: {screen}"
+    );
+    assert!(
+        screen.contains("+> math/lerp.ts:1"),
+        "and across files: {screen}"
+    );
+    assert!(
+        screen.contains("9 unmarked"),
+        "the new export is still to decide: {screen}"
     );
 }
 
@@ -1044,7 +1269,7 @@ fn the_key_log_names_the_changeset_views() {
     );
 }
 
-// ─── The sessions that solved three handmade changesets ─────────────────────────────────────
+// ─── The sessions that solved four handmade changesets ──────────────────────────────────────
 
 /// `parse_body` leaves handlers.py for codec.py as `decode_body`.
 fn solve_python_function_moved_and_renamed(driver: &mut Driver) {
@@ -1107,9 +1332,23 @@ impl Driver {
     }
 }
 
+/// `lib/` becomes `math/`: three renames, one of them edited.
+fn solve_typescript_directory_renamed(driver: &mut Driver) {
+    // git's three renames are right. Two files kept their bytes; the engine matches them whole.
+    driver.keys("C\nSbj\tj\nS");
+    // index.ts gains an export: marked and painted by hand, then branched to Full.
+    driver.keys("\t]It:3\nv$isj\n\x1bbx");
+    driver.keys("j\tj\nSbx");
+    driver.keys("kk\tkkx");
+}
+
 type Script = fn(&mut Driver);
 
-const SOLVED_BY_SCRIPT: [(&str, Script); 3] = [
+const SOLVED_BY_SCRIPT: [(&str, Script); 4] = [
+    (
+        "typescript-directory-renamed",
+        solve_typescript_directory_renamed,
+    ),
     (
         "python-function-moved-and-renamed",
         solve_python_function_moved_and_renamed,

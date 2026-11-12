@@ -33,4 +33,6 @@ mod rust_function_copied;
 #[cfg(test)]
 mod rust_function_moved_intact;
 #[cfg(test)]
+mod typescript_directory_renamed;
+#[cfg(test)]
 mod typescript_file_renamed_unedited;

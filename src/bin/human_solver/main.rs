@@ -355,6 +355,13 @@ CHANGESETS     `human_solver <name>`, where <name> is a directory under
                  human_changeset.json is truth. One drawn dim with a ? is only
                  PROPOSED, from git's hints in source.json and from equal paths:
                  never saved, never read, until you confirm it.
+                 Two whole folders (no git behind them, hundreds of files) get
+                 their proposals from equal paths and from the same bytes at
+                 another path. Files byte-identical at the same path are folded
+                 into one count line when there are more than a few: z shows or
+                 hides them, and I confirms every one of them at once as same
+                 and solved, its tree matched to itself. / filters both lists
+                 by a piece of the path as you type (Enter keeps it, Esc clears).
                  Tab side, j/k move, g/G ends, f puts the other cursor on the
                  counterpart. p pairs the two cursor files (same if the paths
                  agree, else renamed); S makes the before file split into the

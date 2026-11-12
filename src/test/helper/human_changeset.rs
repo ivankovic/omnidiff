@@ -450,6 +450,8 @@ pub struct ChangesetSource {
     /// `human_solver`'s triage state: `SAMPLED`, `PROMOTED` or `REJECTED`.
     pub status: String,
     pub files: Vec<SourceFile>,
+    /// Absent for a fixture that has no VCS behind it (two folders): read as none.
+    #[serde(default)]
     pub vcs_hints: Vec<VcsHint>,
 }
 

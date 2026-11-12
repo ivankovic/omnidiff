@@ -1,0 +1,136 @@
+{
+  "files": [
+    {
+      "before": "lib/clamp.ts",
+      "after": "math/clamp.ts",
+      "relation": "renamed",
+      "solved": true
+    },
+    {
+      "before": "lib/index.ts",
+      "after": "math/index.ts",
+      "relation": "renamed",
+      "solved": true
+    },
+    {
+      "before": "lib/lerp.ts",
+      "after": "math/lerp.ts",
+      "relation": "renamed",
+      "solved": true
+    }
+  ],
+  "entries": [
+    {
+      "operation": "insert_with_children",
+      "after": {
+        "file": "math/index.ts",
+        "path": [
+          "export_statement:3"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "lib/clamp.ts",
+        "path": []
+      },
+      "after": {
+        "file": "math/clamp.ts",
+        "path": []
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "lib/index.ts",
+        "path": []
+      },
+      "after": {
+        "file": "math/index.ts",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "lib/index.ts",
+        "path": [
+          "export_statement:1"
+        ]
+      },
+      "after": {
+        "file": "math/index.ts",
+        "path": [
+          "export_statement:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "lib/index.ts",
+        "path": [
+          "export_statement:2"
+        ]
+      },
+      "after": {
+        "file": "math/index.ts",
+        "path": [
+          "export_statement:2"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "lib/lerp.ts",
+        "path": []
+      },
+      "after": {
+        "file": "math/lerp.ts",
+        "path": []
+      }
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "math/index.ts",
+              "range": {
+                "start_row": 2,
+                "start_column": 0,
+                "end_row": 2,
+                "end_column": 28
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "file": "math/index.ts",
+              "range": {
+                "start_row": 2,
+                "start_column": 0,
+                "end_row": 2,
+                "end_column": 28
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

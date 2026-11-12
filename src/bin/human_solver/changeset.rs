@@ -29,6 +29,12 @@
 //!   relation for a file, one is **proposed** from `source.json`'s `vcs_hints` and from equal
 //!   paths, drawn dim with a `?`: a proposal is never saved and never read by anything until the
 //!   human confirms it.
+//!   A fixture of two whole folders has no VCS behind it and no `vcs_hints`: its proposals are
+//!   equal paths and the same bytes at another path, and nothing here needs a hint to exist. It
+//!   also has hundreds of files that did not change, so the board scrolls, filters by path
+//!   (`/`), leaves out the files that are byte-identical at the same path once there are more
+//!   than a handful (`z` shows them), and confirms all of those at once (`I`): `same`, solved,
+//!   each tree matched to itself whole, which is what `solved` requires of a file.
 //! * **The pair view** is the code session itself (`run_case_session`: both trees, the `t`
 //!   painting view, every key) on any before file and any after file, related or not. While it is
 //!   open `App::mapping` is a *projection* of the changeset onto that pair ([`project`]), and
@@ -145,7 +151,11 @@ const SIDES: [&str; 2] = ["before", "after"];
 pub(crate) const PAIR_FOOTER: &str = "b/Backspace board  y pin  Y match pin with cursor  + add \
     partner  - partners  L pool  S seed  V violations  |  ";
 
-const BOARD_FOOTER: &str = "Tab side  j/k move  f counterpart  Enter open pair  p pair  S split  \
+/// Above this many files that are byte-identical at the same path, the board opens with them
+/// collapsed into one line.
+const QUIET_FILES_SHOWN: usize = 5;
+
+const BOARD_FOOTER: &str = "Tab side  j/k move  / filter  z identical files  I confirm them  f counterpart  Enter open pair  p pair  S split  \
     M merge  a added  d removed  u unpair  c/C confirm  x solved  e verdict  L pool  V violations  \
     s save  ? help  q quit";
 
@@ -298,7 +308,16 @@ pub(crate) struct Session {
     pub(crate) dirty: bool,
     /// Which list the board's keys act on.
     pub(crate) focus: usize,
+    /// Per side, the row of [`Session::visible`] the cursor is on.
     pub(crate) cursor: [usize; 2],
+    /// Whether the board leaves out the files that are byte-identical at the same path on both
+    /// sides (`z`). On when there are more than [`QUIET_FILES_SHOWN`] of them: a folder fixture
+    /// holds whole trees, and nearly all of a tree did not change.
+    pub(crate) collapsed: bool,
+    /// The board lists only paths containing this (`/`); empty lists all.
+    pub(crate) filter: String,
+    /// Whether `/` is taking the keys.
+    pub(crate) filter_typing: bool,
     pub(crate) pin: Option<Pin>,
     pub(crate) overlay: Option<Overlay>,
     pub(crate) status: String,
@@ -382,6 +401,9 @@ impl Session {
             dirty: false,
             focus: BEFORE,
             cursor: [0, 0],
+            collapsed: false,
+            filter: String::new(),
+            filter_typing: false,
             pin: None,
             overlay: None,
             status: String::new(),
@@ -395,6 +417,7 @@ impl Session {
             stats: None,
         };
         session.propose();
+        session.collapsed = session.quiet_files().len() > QUIET_FILES_SHOWN;
         session.status = format!(
             "Opened '{}': {} before file(s), {} after file(s), {} relation(s) on file, {} proposed \
              (c confirms one, C all)",
@@ -418,13 +441,93 @@ impl Session {
         }
     }
 
-    pub(crate) fn files(&self, side: usize) -> Vec<String> {
-        self.side(side).keys().cloned().collect()
+    /// Whether `path` is on both sides with the same bytes: a file that needs no marking.
+    fn is_quiet(&self, path: &str) -> bool {
+        match (self.trees.before.get(path), self.trees.after.get(path)) {
+            (Some(before), Some(after)) => before.bytes == after.bytes,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn quiet_files(&self) -> Vec<String> {
+        self.trees
+            .before
+            .keys()
+            .filter(|path| self.is_quiet(path))
+            .cloned()
+            .collect()
+    }
+
+    /// The files of `side` the board lists: those the filter keeps, without the quiet ones
+    /// while they are collapsed.
+    pub(crate) fn visible(&self, side: usize) -> Vec<String> {
+        self.side(side)
+            .keys()
+            .filter(|path| path.contains(&self.filter))
+            .filter(|path| !(self.collapsed && self.is_quiet(path)))
+            .cloned()
+            .collect()
+    }
+
+    fn clamp_cursors(&mut self) {
+        for side in [BEFORE, AFTER] {
+            let last = self.visible(side).len().saturating_sub(1);
+            self.cursor[side] = self.cursor[side].min(last);
+        }
+    }
+
+    /// `I`: every quiet file that has no relation yet becomes `same` and solved, its tree
+    /// matched to itself whole - the one thing there is to say about a file nobody touched.
+    fn confirm_quiet(&mut self) -> Result<String> {
+        let mut confirmed = 0;
+        for path in self.quiet_files() {
+            if self.has_relation(BEFORE, &path) || self.has_relation(AFTER, &path) {
+                continue;
+            }
+            let has_tree = self
+                .trees
+                .before
+                .get(&path)
+                .is_some_and(|file| file.root().is_some());
+            let touched = self.truth.entries.iter().any(|entry| {
+                [&entry.before, &entry.after]
+                    .into_iter()
+                    .flatten()
+                    .any(|node| node.file == path)
+            });
+            if has_tree && !touched {
+                let root = NodeRef {
+                    file: path.clone(),
+                    path: Vec::new(),
+                };
+                let whole = HumanChangeset::identical_subtree(&self.trees, &root, &root)?;
+                self.truth.entries.extend(whole);
+            }
+            self.drop_proposals(Some(&path), Some(&path));
+            self.truth.files.push(FileRelation {
+                before: Some(path.clone()),
+                after: Some(path),
+                relation: FileRelationKind::Same,
+                // A file with entries of its own already is not this key's to call done.
+                solved: !touched,
+                verdict: None,
+            });
+            confirmed += 1;
+        }
+        ensure!(
+            confirmed > 0,
+            "no byte-identical file at the same path is waiting for a relation"
+        );
+        self.touch();
+        Ok(format!(
+            "Confirmed {confirmed} byte-identical file(s) as same and solved, each tree matched \
+             to itself"
+        ))
     }
 
     /// The file under the board's cursor on `side`.
     pub(crate) fn selected(&self, side: usize) -> Option<String> {
-        self.side(side).keys().nth(self.cursor[side]).cloned()
+        self.visible(side).into_iter().nth(self.cursor[side])
     }
 
     fn has_relation(&self, side: usize, path: &str) -> bool {
@@ -459,6 +562,26 @@ impl Session {
                     Some(path.clone()),
                     Some(path.clone()),
                     FileRelationKind::Same,
+                ));
+            }
+        }
+        // With no VCS to ask (two folders), the same bytes at another path are a rename to
+        // propose; with one, this only adds what its hints left out.
+        let mut moved: HashMap<&[u8], Vec<&String>> = HashMap::new();
+        for (path, file) in &self.trees.before {
+            if !self.trees.after.contains_key(path) && !file.bytes.is_empty() {
+                moved.entry(&file.bytes).or_default().push(path);
+            }
+        }
+        for (path, file) in &self.trees.after {
+            if self.trees.before.contains_key(path) {
+                continue;
+            }
+            for before in moved.get(file.bytes.as_slice()).into_iter().flatten() {
+                candidates.push((
+                    Some((*before).clone()),
+                    Some(path.clone()),
+                    FileRelationKind::Renamed,
                 ));
             }
         }
@@ -627,8 +750,14 @@ impl Session {
             .with_context(|| format!("moving {:?} to {target:?}", self.dir))?;
         self.dir = target;
         self.is_sample = false;
+        // Only the status changes: the file may hold keys this tool does not know (a folder
+        // fixture's `kind`), and an absent `vcs_hints` stays absent.
         self.source.status = "PROMOTED".to_string();
-        fs::write(self.dir.join(SOURCE_FILE_NAME), self.source.to_json()?)?;
+        let source_path = self.dir.join(SOURCE_FILE_NAME);
+        let mut source: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&source_path)?)?;
+        source["status"] = "PROMOTED".into();
+        fs::write(&source_path, serde_json::to_string_pretty(&source)? + "\n")?;
         self.set_stub(true)?;
         Ok(format!(
             "promoted to changesets/{dataset}/{} with its stub",
@@ -2972,7 +3101,36 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
     if session.overlay.is_some() {
         return overlay_key(session, code);
     }
-    let count = session.side(session.focus).len();
+    if session.filter_typing {
+        match code {
+            KeyCode::Char(typed) => session.filter.push(typed),
+            KeyCode::Backspace => {
+                session.filter.pop();
+            }
+            KeyCode::Esc => {
+                session.filter.clear();
+                session.filter_typing = false;
+            }
+            KeyCode::Enter => session.filter_typing = false,
+            _ => {}
+        }
+        session.clamp_cursors();
+        session.status = if session.filter_typing {
+            format!(
+                "Paths containing: {}_  (Enter keeps, Esc clears)",
+                session.filter
+            )
+        } else if session.filter.is_empty() {
+            "Listing every path".to_string()
+        } else {
+            format!(
+                "Listing paths containing '{}' (/ changes it)",
+                session.filter
+            )
+        };
+        return BoardEnd::Stay;
+    }
+    let count = session.visible(session.focus).len();
     let focus = session.focus;
     let armed = std::mem::take(&mut session.quit_armed);
     let outcome: Result<String> = match code {
@@ -3006,11 +3164,19 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
                 .filter(|relation| relation_names(relation, focus, &file))
                 .find_map(|relation| [&relation.before, &relation.after][1 - focus].clone())
                 .context("this file has no counterpart")?;
-            let index = session
-                .side(1 - focus)
-                .keys()
-                .position(|path| *path == other)
-                .context("its counterpart is not in the changeset")?;
+            let place = |session: &Session| {
+                session
+                    .visible(1 - focus)
+                    .iter()
+                    .position(|path| *path == other)
+            };
+            if place(session).is_none() {
+                // Hidden by the filter or the collapse: show everything, keep this file.
+                session.filter.clear();
+                session.collapsed = false;
+                session.cursor[focus] = place_of(session, focus, &file);
+            }
+            let index = place(session).context("its counterpart is not in the changeset")?;
             session.cursor[1 - focus] = index;
             Ok(format!("The {} cursor is on {other}", SIDES[1 - focus]))
         })(),
@@ -3028,6 +3194,32 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
         KeyCode::Char('c') => session.confirm(false),
         KeyCode::Char('C') => session.confirm(true),
         KeyCode::Char('x') => session.toggle_solved(),
+        KeyCode::Char('I') => session.confirm_quiet(),
+        KeyCode::Char('z') => {
+            let kept: Vec<Option<String>> = [BEFORE, AFTER]
+                .into_iter()
+                .map(|side| session.selected(side))
+                .collect();
+            session.collapsed = !session.collapsed;
+            for (side, file) in kept.into_iter().enumerate() {
+                session.cursor[side] = file.map_or(0, |file| place_of(session, side, &file));
+            }
+            session.clamp_cursors();
+            let quiet = session.quiet_files().len();
+            Ok(if session.collapsed {
+                format!("Hiding {quiet} file(s) that are byte-identical at the same path")
+            } else {
+                format!("Showing all files, the {quiet} byte-identical ones too")
+            })
+        }
+        KeyCode::Char('/') => {
+            session.filter_typing = true;
+            session.status = format!(
+                "Paths containing: {}_  (Enter keeps, Esc clears)",
+                session.filter
+            );
+            return BoardEnd::Stay;
+        }
         KeyCode::Char('L') => {
             session.open_pool();
             return BoardEnd::Stay;
@@ -3063,6 +3255,15 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
         Err(error) => format!("Error: {error:#}"),
     };
     BoardEnd::Stay
+}
+
+/// Where `file` is in `side`'s visible list; the top when it is not listed.
+fn place_of(session: &Session, side: usize, file: &str) -> usize {
+    session
+        .visible(side)
+        .iter()
+        .position(|path| path == file)
+        .unwrap_or(0)
 }
 
 /// The relations of one file as the board writes them after it, proposals dim.
@@ -3109,7 +3310,7 @@ fn relation_spans(session: &Session, side: usize, file: &str) -> Vec<Span<'stati
 }
 
 fn board_lines(session: &mut Session, side: usize) -> Vec<Line<'static>> {
-    let files = session.files(side);
+    let files = session.visible(side);
     let width = files.iter().map(|file| file.len()).max().unwrap_or(0);
     session.file_stats();
     let session: &Session = session;
@@ -3219,15 +3420,45 @@ pub(crate) fn draw_board(frame: &mut ratatui::Frame, app: &mut App) {
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(chunks[1]);
     for side in [BEFORE, AFTER] {
-        let lines = board_lines(session, side);
-        let title = format!("{} — {} file(s)", ["Before", "After"][side], lines.len());
+        let mut lines = board_lines(session, side);
+        let (shown, all) = (lines.len(), session.side(side).len());
+        let quiet = session.quiet_files().len();
+        if session.collapsed && quiet > 0 {
+            lines.push(
+                format!(
+                    "  ... {quiet} file(s) byte-identical at the same path are hidden: z shows \
+                     them, I confirms them all as same and solved"
+                )
+                .dim()
+                .into(),
+            );
+        }
+        let filter = if session.filter.is_empty() {
+            String::new()
+        } else {
+            format!(" containing '{}'", session.filter)
+        };
+        let title = format!(
+            "{} — {shown} of {all} file(s){filter}",
+            ["Before", "After"][side]
+        );
+        // The cursor's row stays on screen however long the list is.
+        let height = columns[side].height.saturating_sub(2).max(1) as usize;
+        let offset = session.cursor[side]
+            .saturating_sub(height / 2)
+            .min(lines.len().saturating_sub(height));
         let block = Block::default().borders(Borders::ALL).title(title);
         let block = if session.focus == side {
             block.yellow()
         } else {
             block
         };
-        frame.render_widget(Paragraph::new(lines).block(block), columns[side]);
+        frame.render_widget(
+            Paragraph::new(lines)
+                .block(block)
+                .scroll((offset as u16, 0)),
+            columns[side],
+        );
     }
     frame.render_widget(
         Paragraph::new(format!("{}\n{BOARD_FOOTER}", session.status)).wrap(Wrap { trim: true }),
@@ -3326,6 +3557,7 @@ pub(crate) fn draw_board(frame: &mut ratatui::Frame, app: &mut App) {
 /// Which view a board key went to, as the key log names it.
 fn board_mode(session: &Session) -> &'static str {
     match session.overlay {
+        None if session.filter_typing => "board-typing",
         None => "board",
         Some(Overlay::Pool { .. }) => "pool",
         Some(Overlay::Violations { .. }) => "violations",
