@@ -347,9 +347,10 @@ C              open a commit from this repo's own git log, then a file it
 
 CHANGESETS     `human_solver <name>`, where <name> is a directory under
                  src/test/data/changesets/<dataset>/ or
-                 src/test/data/samples/changesets/, opens a whole commit: every
-                 file of both sides, where code may have moved between files.
-                 Which file became which is part of the truth, and yours to say.
+                 src/test/data/samples/changesets/, opens a whole commit or two
+                 whole folders: every file of both sides, where code may have
+                 moved between files. Which file became which is part of the
+                 truth, and yours to say.
   The board    Before files left, after files right: language, lines, nodes
                  nothing is said about, relations. A relation read from
                  human_changeset.json is truth. One drawn dim with a ? is only
@@ -419,8 +420,12 @@ CHANGESETS     `human_solver <name>`, where <name> is a directory under
                  and validates it; partial work saves as it is (solved: false).
                  A corpus changeset has its stub exactly while every file is in a
                  solved relation. A sample is promoted into
-                 src/test/data/changesets/<dataset>/ (source.json and README.md
-                 kept, stub written) by the save that finds it solved and valid.
+                 src/test/data/changesets/<dataset>/ by the save that finds it
+                 solved and valid: README.md kept, source.json and its row of
+                 changesets.csv marked PROMOTED, stub written. It stays a sample,
+                 with the reason on the status line, if its dataset is not one
+                 the format knows, its source.json does not fit its files, or it
+                 has no README.md.
 
 ?              toggle this help
 q / Esc        quit

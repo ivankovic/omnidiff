@@ -757,7 +757,7 @@ fn materialize_changeset(
                 parent: &row.parent,
                 kind: &row.kind,
                 root: folders.then_some(row.root.as_str()),
-                signals: &row.signals,
+                signals: &row.signal_names(),
                 dataset: &row.dataset,
                 files: &readme_files,
             },

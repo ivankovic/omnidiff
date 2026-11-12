@@ -1430,8 +1430,33 @@ impl Driver {
         let mut session = Session::open(&dir, true).unwrap();
         session.corpus_root = scratch.path().join("changesets");
         session.fixtures_root = scratch.path().join("fixtures");
+        // The sampler's list, beside the scratch corpus as it is beside the real one.
+        fs::copy(
+            changesets_root().with_extension("csv"),
+            scratch.path().join("changesets.csv"),
+        )
+        .unwrap();
         Driver::over(session, Some(scratch))
     }
+}
+
+#[test]
+fn a_promotion_is_recorded_in_the_samplers_list() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("changesets.csv");
+    let rows = "name,kind,signals,status,comment\n\
+                commit-x-a-1,commit,copy,SAMPLED,\n\
+                folders-x-b-1-2,folders,block-move;copy,SAMPLED,\"a, b\"\n";
+    fs::write(&path, rows).unwrap();
+    assert!(!set_csv_status(&path, "commit-x-c-3", "PROMOTED").unwrap());
+    assert_eq!(fs::read_to_string(&path).unwrap(), rows);
+    assert!(set_csv_status(&path, "folders-x-b-1-2", "PROMOTED").unwrap());
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        rows.replace("copy,SAMPLED,\"a, b\"", "copy,PROMOTED,\"a, b\"")
+    );
+    // No list at all is a changeset nothing sampled.
+    assert!(!set_csv_status(&scratch.path().join("none.csv"), "commit-x-a-1", "PROMOTED").unwrap());
 }
 
 /// What a promotion leaves: the fixture under its dataset in the corpus, the sample gone, a
@@ -1460,6 +1485,15 @@ fn assert_promoted(driver: &Driver, sample: &Path, kind: ChangesetKind) {
         Vec::<String>::new()
     );
     assert_solved_fixture(&session.dir).unwrap();
+    // The sampler's list says so too, and no other row changed.
+    let csv_path = session.corpus_root.with_extension("csv");
+    let rows = fs::read_to_string(&csv_path).unwrap();
+    let promoted: Vec<&str> = rows
+        .lines()
+        .filter(|row| row.contains(",PROMOTED,"))
+        .collect();
+    assert_eq!(promoted.len(), 1, "{rows}");
+    assert!(promoted[0].starts_with(&format!("{},", session.name)));
     assert_eq!(
         fs::read_to_string(session.stub_path()).unwrap(),
         stub_contents(&session.name)

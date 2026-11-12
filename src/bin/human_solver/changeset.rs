@@ -18,8 +18,10 @@
 //! files (`test::helper::human_changeset` is the format and its checks; issue #63).
 //!
 //! `human_solver <name>` opens it when `<name>` is a directory under
-//! `src/test/data/changesets/<dataset>/` or `src/test/data/samples/changesets/`. The tool assumes
-//! nothing about which file became which: that is part of the truth, and the human says it.
+//! `src/test/data/changesets/<dataset>/` or `src/test/data/samples/changesets/`. A changeset is a
+//! commit or two folders (`source.json`'s `kind`); the session is the same for both, and reads
+//! of `source.json` only its hints, which folders do not have. The tool assumes nothing about
+//! which file became which: that is part of the truth, and the human says it.
 //!
 //! # Three views
 //!
@@ -91,9 +93,12 @@
 //! * `+`, `-`, the pool's `a` and the board's relation keys change the changeset directly and are
 //!   not on the pair view's undo stack, which holds projections.
 //! * **Promotion**: saving a sample whose every relation is solved and whose truth validates moves
-//!   it to `src/test/data/changesets/<dataset>/` and writes its stub. It needs a `README.md` in the
-//!   sample, since the corpus requires one saying where the code is from and under what licence.
-//!   In the corpus, the stub exists exactly while the changeset is solved.
+//!   it to `src/test/data/changesets/<dataset>/`, marks it `PROMOTED` in its `source.json` and in
+//!   its row of `changesets.csv`, and writes its stub. The sample must be what the corpus will
+//!   hold it to, or the stub would fail: a dataset the format knows, a `source.json` that fits
+//!   the trees and its kind (`source_violations`), and a `README.md` saying where the code is
+//!   from and under what licence - `materialize_test_diffs --changesets` writes all three. In
+//!   the corpus, the stub exists exactly while the changeset is solved.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::fs;
@@ -111,7 +116,7 @@ use omnidiff::test::helper::human_changeset::{
     CHANGESET_DATASETS, Changeset, ChangesetEntry, ChangesetSource, ChangesetTextEntry,
     ChangesetTextMapping, ChangesetTrees, ChangesetViolation, FileRelation, FileRelationKind,
     FileSpan, HintStatus, HumanChangeset, NodeRef, SOURCE_FILE_NAME, TRUTH_FILE_NAME,
-    changeset_dir, changesets_root, source_violations, validate,
+    changeset_dir, changeset_samples_root, changesets_root, source_violations, validate,
 };
 use omnidiff::test::helper::human_content::Judgement;
 use omnidiff::test::helper::human_mapping::invariants;
@@ -141,7 +146,7 @@ use crate::state::{
     starting_solution,
 };
 use crate::stubs::{LICENSE_HEADER, module_name, set_mod_declaration};
-use crate::{HELP_TEXT, samples_root, starting_cursor_id};
+use crate::{HELP_TEXT, starting_cursor_id};
 
 const BEFORE: usize = 0;
 const AFTER: usize = 1;
@@ -348,7 +353,7 @@ pub(crate) fn find_dir(name: &str) -> Option<(PathBuf, bool)> {
     if let Some(dir) = changeset_dir(name) {
         return Some((dir, false));
     }
-    let sample = samples_root().join("changesets").join(name);
+    let sample = changeset_samples_root().join(name);
     sample.is_dir().then_some((sample, true))
 }
 
@@ -778,10 +783,22 @@ impl Session {
         self.source.status = "PROMOTED".to_string();
         fs::write(self.dir.join(SOURCE_FILE_NAME), self.source.to_json()?)?;
         self.set_stub(true)?;
+        // The sampler's list says so too, or `materialize_test_diffs --changesets` would write
+        // the sample again. A changeset nothing sampled has no row.
+        let listed = match set_csv_status(&self.csv_path(), &self.name, "PROMOTED") {
+            Ok(true) => "",
+            Ok(false) => " (it has no row in changesets.csv)",
+            Err(error) => &format!(" (changesets.csv was not updated: {error:#})"),
+        };
         Ok(format!(
-            "promoted to changesets/{dataset}/{} with its stub",
+            "promoted to changesets/{dataset}/{} with its stub{listed}",
             self.name
         ))
+    }
+
+    /// `changesets.csv`, the sampler's list of changesets, beside the corpus directory.
+    fn csv_path(&self) -> PathBuf {
+        self.corpus_root.with_extension("csv")
     }
 
     /// `s`: writes `human_changeset.json`, validates it, and keeps the stub (or promotes the
@@ -823,6 +840,46 @@ impl Session {
         }
         Ok(status)
     }
+}
+
+/// Sets the `status` of the row called `name` in the `changesets.csv` at `path`, leaving every
+/// other cell and the order of the rows as they are. `false` when there is no such file or row.
+/// The columns are found by their headers: the file is `sample_test_diffs --changesets`'s
+/// (`stats::changeset::Row`), and this tool is built without it.
+pub(crate) fn set_csv_status(path: &Path, name: &str, status: &str) -> Result<bool> {
+    if !path.is_file() {
+        return Ok(false);
+    }
+    let mut reader = csv::Reader::from_path(path)?;
+    let headers = reader.headers()?.clone();
+    let column = |wanted: &str| {
+        headers
+            .iter()
+            .position(|header| header == wanted)
+            .with_context(|| format!("{path:?} has no {wanted} column"))
+    };
+    let (name_column, status_column) = (column("name")?, column("status")?);
+    let mut records: Vec<csv::StringRecord> = reader.records().collect::<Result<_, _>>()?;
+    let mut found = false;
+    for record in &mut records {
+        if record.get(name_column) == Some(name) {
+            *record = record
+                .iter()
+                .enumerate()
+                .map(|(index, cell)| if index == status_column { status } else { cell })
+                .collect();
+            found = true;
+        }
+    }
+    if found {
+        let mut writer = csv::Writer::from_path(path)?;
+        writer.write_record(&headers)?;
+        for record in &records {
+            writer.write_record(record)?;
+        }
+        writer.flush()?;
+    }
+    Ok(found)
 }
 
 /// A solved changeset's stub, as `src/test/fixtures/changesets/` holds them.

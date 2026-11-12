@@ -125,6 +125,11 @@
 //! `;`-separated, or `control`; `untouched_paths` the untouched files a `copy` points at, likewise
 //! separated. `files` counts the changed files, which also decide `bucket` ([`file_bucket`]).
 //! `root` is the sub-folder of a `folders` row, `.` for the repository root.
+//!
+//! The CSV is the sampler's list, and the materializer's input. A fixture's own `source.json`
+//! says the same in the format's terms: `signals` as a list, and the untouched files as
+//! `files[].untouched`, which for folders is every file that did not change. `human_solver`
+//! sets `status` in both when it promotes a sample.
 
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};

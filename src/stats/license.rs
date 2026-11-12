@@ -303,8 +303,8 @@ pub struct ChangesetProvenance<'a> {
     pub kind: &'a str,
     /// The sub-folder the trees of a `folders` sample are, `.` for the repository root.
     pub root: Option<&'a str>,
-    /// The signals it was sampled with, as `changesets.csv` has them.
-    pub signals: &'a str,
+    /// The signals it was sampled with, as `source.json` lists them.
+    pub signals: &'a [&'a str],
     pub dataset: &'a str,
     /// Every file the fixture holds, with what happened to it (`modified`, `untouched`).
     pub files: &'a [(String, &'a str)],
@@ -347,8 +347,8 @@ pub fn render_changeset_readme(
     if let Some(root) = root {
         let _ = writeln!(out, "- **Folder:** `{root}`");
     }
-    let _ = writeln!(out, "- **Signals:** {signals}");
-    let _ = writeln!(out, "- **Research dataset:** {dataset}");
+    let _ = writeln!(out, "- **Signals:** {}", signals.join(", "));
+    let _ = writeln!(out, "- **Dataset:** {dataset}");
     let _ = writeln!(out, "- **Files:**");
     for (path, change) in files.iter() {
         let _ = writeln!(out, "  - `{path}` ({change})");
@@ -432,7 +432,7 @@ mod tests {
                 parent: "def456",
                 kind: "folders",
                 root: Some("src"),
-                signals: "block-move;copy",
+                signals: &["block-move", "copy"],
                 dataset: "pilot",
                 files: &[
                     ("src/a.rs".to_string(), "modified"),
@@ -443,7 +443,7 @@ mod tests {
         );
         assert!(readme.contains("- **Commit:** `abc123`\n- **Parent:** `def456`\n"));
         assert!(readme.contains(
-            "- **Kind:** folders\n- **Folder:** `src`\n- **Signals:** block-move;copy\n"
+            "- **Kind:** folders\n- **Folder:** `src`\n- **Signals:** block-move, copy\n"
         ));
         assert!(readme.contains("  - `src/a.rs` (modified)\n  - `src/b.rs` (untouched)\n"));
         assert!(readme.contains(
