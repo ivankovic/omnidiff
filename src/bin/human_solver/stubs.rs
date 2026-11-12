@@ -18,7 +18,7 @@
 //! here reads `App`.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
@@ -274,9 +274,14 @@ pub(crate) fn invariants_test_block(name: &str) -> String {
 
 /// Adds `#[cfg(test)] mod <module>;` to `fixtures/<dataset>.rs` if absent, keeping the list sorted.
 pub(crate) fn insert_mod_declaration(dataset: &str, module: &str) -> Result<()> {
-    let mod_file = fixtures_mod_file(dataset);
+    set_mod_declaration(&fixtures_mod_file(dataset), module, true)
+}
+
+/// Adds (`present`) or removes `#[cfg(test)] mod <module>;` in `mod_file`, keeping the list
+/// sorted and everything above it as it is.
+pub(crate) fn set_mod_declaration(mod_file: &Path, module: &str, present: bool) -> Result<()> {
     let content =
-        fs::read_to_string(&mod_file).with_context(|| format!("reading {:?}", mod_file))?;
+        fs::read_to_string(mod_file).with_context(|| format!("reading {:?}", mod_file))?;
 
     let mut lines = content.lines().peekable();
     let mut header_lines = Vec::new();
@@ -312,7 +317,8 @@ pub(crate) fn insert_mod_declaration(dataset: &str, module: &str) -> Result<()> 
         entries.push(mod_name.to_string());
     }
 
-    if !entries.iter().any(|e| e == module) {
+    entries.retain(|e| present || e != module);
+    if present && !entries.iter().any(|e| e == module) {
         entries.push(module.to_string());
         entries.sort();
     }
@@ -326,7 +332,7 @@ pub(crate) fn insert_mod_declaration(dataset: &str, module: &str) -> Result<()> 
         out.push_str(&format!("mod {entry};\n"));
     }
 
-    fs::write(&mod_file, out).with_context(|| format!("writing {:?}", mod_file))?;
+    fs::write(mod_file, out).with_context(|| format!("writing {:?}", mod_file))?;
     Ok(())
 }
 

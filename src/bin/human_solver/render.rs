@@ -170,16 +170,28 @@ pub(crate) fn render_panel(
                 )
             })
             .unwrap_or_default();
+        // A changeset's pair view: a node whose partner is in another file is no deletion, and a
+        // node with a second partner says so (see `PanelState::elsewhere`).
+        let elsewhere = panel.elsewhere.get(&node.id());
+        let (glyph, elsewhere_suffix) = match elsewhere {
+            Some(places) if status != NodeStatus::Matched => {
+                style = Style::default().fg(Color::Magenta);
+                ("~", format!("  ~> {}", places.join(", ")))
+            }
+            Some(places) => (glyph, format!("  +> {}", places.join(", "))),
+            None => (glyph, String::new()),
+        };
         let indent = "  ".repeat(depth);
         let marker = if disagrees { " *" } else { "" };
         let text = format!(
-            "{}{}{}{} {}{}",
+            "{}{}{}{} {}{}{}",
             indent,
             glyph,
             group_marker,
             algo_glyph,
             node_label(node, src),
-            marker
+            marker,
+            elsewhere_suffix
         );
 
         // A pending, uncommitted multi-map selection (`x`).
@@ -317,6 +329,7 @@ pub(crate) fn draw_ui(
         .split(size);
 
     let dataset_tag = match &app.origin {
+        _ if app.changeset.is_some() => "changeset".to_string(),
         CaseOrigin::Diffs => case_dataset(name).unwrap_or_else(|| "?".to_string()),
         CaseOrigin::Sample(_) => "sample".to_string(),
         CaseOrigin::GitCommitFile { .. } => "git".to_string(),
@@ -417,7 +430,7 @@ pub(crate) fn draw_ui(
     }
 
     let footer = format!(
-        "{}{}{}\nm/M match[+children]  x select for multi-map  X flip all-to-all  c clear selection  f match to EOF  d/D delete[+children]  i/I insert[+children]  a/A align (human/omnidiff)  p run omnidiff  r toggle reason  n/N next/prev mismatch  t text view  T unix diff  H hide solved  u unmark  h/l ←/→ collapse/expand  j/k ↑/↓ move  g/G top/bottom  Tab switch  s save  ? help  q quit",
+        "{}{}{}\n{}m/M match[+children]  x select for multi-map  X flip all-to-all  c clear selection  f match to EOF  d/D delete[+children]  i/I insert[+children]  a/A align (human/omnidiff)  p run omnidiff  r toggle reason  n/N next/prev mismatch  t text view  T unix diff  H hide solved  u unmark  h/l ←/→ collapse/expand  j/k ↑/↓ move  g/G top/bottom  Tab switch  s save  ? help  q quit",
         app.status.clone().unwrap_or_default(),
         if app.dirty { "  [UNSAVED]" } else { "" },
         if caches.unresolved > 0 {
@@ -427,6 +440,11 @@ pub(crate) fn draw_ui(
             )
         } else {
             String::new()
+        },
+        if app.changeset.is_some() {
+            crate::changeset::PAIR_FOOTER
+        } else {
+            ""
         },
     );
     frame.render_widget(Paragraph::new(footer).wrap(Wrap { trim: true }), chunks[2]);
@@ -735,6 +753,15 @@ pub(crate) fn render_modal(
         }
         Modal::UnixDiffView { output, scroll } => {
             render_unix_diff_modal(frame, area, output, *scroll);
+        }
+        Modal::Partners {
+            side,
+            file,
+            path,
+            partners,
+            selected,
+        } => {
+            crate::changeset::render_partners(frame, area, *side, file, path, partners, *selected);
         }
         Modal::Help { scroll } => {
             render_help_modal(frame, area, *scroll);

@@ -24,6 +24,15 @@
 //! `src/test/fixtures/<dataset>/<module>.rs` stub. Nodes are addressed by path (kind + sibling
 //! position), not node id, since ids are not stable across parses (`test::helper::path_for_node`).
 //!
+//! Three kinds of session share the binary. The code session, above, is the one most of this
+//! crate is. A picture, archive or font pair has no trees and gets the content session
+//! (`content`). A **changeset** - a whole commit, several files a side, under
+//! `src/test/data/changesets/<dataset>/` or `src/test/data/samples/changesets/` - gets the
+//! changeset session (`changeset`): a file board, the code session's views on any before file
+//! beside any after file, and a pool of what is left over across files. It writes
+//! `human_changeset.json` (`test::helper::human_changeset`) and the stub under
+//! `src/test/fixtures/changesets/`.
+//!
 //! Keybindings: press `?`, or read `HELP_TEXT` below.
 use std::io::{self, Stdout, Write};
 use std::sync::Arc;
@@ -48,6 +57,7 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 
 mod actions;
+mod changeset;
 mod content;
 mod events;
 mod flatten;
@@ -99,9 +109,10 @@ use omnidiff::tui::theme::{self, OverlayPalette, OverlayTheme};
     about = "Interactively build a human ground-truth AST mapping for a fixture"
 )]
 struct Args {
-    /// A directory under `src/test/data/diffs/<dataset>/` (e.g. "rust-add-if"). If omitted, the
-    /// case open when the tool last exited reopens (see `SessionMemory`), or else the first case
-    /// alphabetically.
+    /// A directory under `src/test/data/diffs/<dataset>/` (e.g. "rust-add-if"), or a changeset
+    /// under `src/test/data/changesets/<dataset>/` or `src/test/data/samples/changesets/`. If
+    /// omitted, the case open when the tool last exited reopens (see `SessionMemory`), or else
+    /// the first case alphabetically.
     name: Option<String>,
     /// Print where the logged keys and the time between them went (see `keylog`), and exit.
     #[arg(long)]
@@ -333,6 +344,76 @@ C              open a commit from this repo's own git log, then a file it
                  multi-map groups and every named painting at once, after a
                  confirmation. Nothing is written until s, so reopening the case
                  without saving gets it back
+
+CHANGESETS     `human_solver <name>`, where <name> is a directory under
+                 src/test/data/changesets/<dataset>/ or
+                 src/test/data/samples/changesets/, opens a whole commit: every
+                 file of both sides, where code may have moved between files.
+                 Which file became which is part of the truth, and yours to say.
+  The board    Before files left, after files right: language, lines, nodes
+                 nothing is said about, relations. A relation read from
+                 human_changeset.json is truth. One drawn dim with a ? is only
+                 PROPOSED, from git's hints in source.json and from equal paths:
+                 never saved, never read, until you confirm it.
+                 Tab side, j/k move, g/G ends, f puts the other cursor on the
+                 counterpart. p pairs the two cursor files (same if the paths
+                 agree, else renamed); S makes the before file split into the
+                 after file and its other counterparts, M merges the before file
+                 with the others into the after file - one counterpart a press;
+                 a marks the after file added, d the before file removed; u
+                 removes the relation between the two cursors, or else all of the
+                 focused file's (nodes matched between files stay matched: a
+                 relation constrains no node); c confirms the focused file's
+                 proposal, C all of them; x toggles solved on the relation at the
+                 cursors. Enter opens the pair view on the two cursor files,
+                 related or not. For a pair without trees (a picture, a binary)
+                 Enter or e asks for a verdict instead: 0-5 a level, c can't
+                 judge. L the leftover pool, V validate and list the violations
+                 (Enter opens the pair one names, at the place), s save, q quit
+                 (twice with unsaved work).
+  The pair     Everything above this section, on one before file and one after
+  view           file: the trees, m/M/f/d/D/i/I/u, the t painting view, U undo.
+                 The title names both files and their relation. What you see is
+                 the changeset as these two files read it, and every edit goes
+                 straight back into the changeset.
+                 A node whose partner is in ANOTHER file is drawn ~ with where
+                 (`~> src/b.rs:7`), not as unmatched or deleted, and a matched
+                 node with further partners carries `+> ...`; moving onto one
+                 names them on the status line. m/M/d/D/i/I/u leave such a node
+                 as it is. + matches the two cursor nodes as ONE MORE partner
+                 (a copy; identical subtrees whole, others filled as M fills) -
+                 the only key that gives a node a second partner. - lists the
+                 focused node's partners: - removes the selected one with its
+                 subtree's entries, Enter opens the pair view on its file.
+                 y pins the focused node (again: unpins); it stays pinned across
+                 the board and other pairs. Y matches the pinned node with the
+                 cursor node of the other side, as M would, in the pair view of
+                 their two files.
+                 S seeds an empty same/renamed pair from omnidiff's single-file
+                 diff: its matches and its painted matches only. What it calls
+                 deleted or inserted stays undecided - it may be in another
+                 file. Never offered between unrelated files.
+                 In t, a range painted between two files is edited in the pair
+                 view of those two files; in any other pair holding one of them
+                 it is drawn but not yours to change there. A painting is the
+                 whole changeset's: branching one (s) branches it for every file.
+                 b / Backspace / q / Esc go back to the board, L to the pool, V
+                 to the violations, s saves the whole changeset. Multi-map
+                 groups (x/X) and code in strings (Enter) have no changeset form.
+  The pool     L: every outermost subtree with no partner anywhere in it, both
+                 sides, the whole changeset - undecided [?], deleted [-] or
+                 inserted [+] - largest first (s: by file). A before and an
+                 after subtree with the same full hash are one row marked =, a
+                 CANDIDATE: a accepts it as identical with all children, Enter
+                 opens the two files at the two nodes. Nothing is matched
+                 without a key. For two subtrees that are not twins (moved and
+                 edited): y pins one, Enter on the other opens them side by side.
+  Saving       s writes human_changeset.json in the format's canonical order
+                 and validates it; partial work saves as it is (solved: false).
+                 A corpus changeset has its stub exactly while every file is in a
+                 solved relation. A sample is promoted into
+                 src/test/data/changesets/<dataset>/ (source.json and README.md
+                 kept, stub written) by the save that finds it solved and valid.
 
 ?              toggle this help
 q / Esc        quit
@@ -2416,6 +2497,34 @@ fn main() -> Result<()> {
         Some(name) => name,
         None => starting_case(memory.last_case.as_deref())?,
     };
+
+    // A changeset (a whole commit, several files a side) has a session of its own.
+    if let Some((dir, is_sample)) = diffs_case_dir(&name)
+        .is_none()
+        .then(|| changeset::find_dir(&name))
+        .flatten()
+    {
+        let session = changeset::Session::open(&dir, is_sample)
+            .with_context(|| format!("opening the changeset in {dir:?}"))?;
+        let mut app = App::new(
+            name,
+            CaseOrigin::Diffs,
+            usize::MAX,
+            usize::MAX,
+            HumanMapping::default(),
+        );
+        app.changeset = Some(Box::new(session));
+        app.key_log = key_log_path().and_then(|path| KeyLog::open(&path).ok());
+        let panic_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let _ = restore_terminal();
+            panic_hook(info);
+        }));
+        let mut terminal = setup_terminal()?;
+        let result = changeset::run(&mut terminal, &mut app);
+        restore_terminal()?;
+        return result;
+    }
 
     let (before, after) = load_case(&name)?;
     let before_root_id = starting_cursor_id(&before);

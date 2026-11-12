@@ -118,6 +118,7 @@ pub(crate) fn mode_name(modal: Option<&Modal>) -> &'static str {
         Some(Modal::ConfirmResetCase { .. }) => "reset-confirm",
         Some(Modal::ConfirmDiscardUnsaved { .. }) => "discard-confirm",
         Some(Modal::InvariantList { .. }) => "invariants",
+        Some(Modal::Partners { .. }) => "partners",
         Some(Modal::UnixDiffView { .. }) => "unix-diff",
         Some(Modal::Help { .. }) => "help",
         Some(Modal::OpenCommitPicker { .. }) | Some(Modal::OpenCommitFilePicker { .. }) => {

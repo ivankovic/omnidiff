@@ -207,6 +207,8 @@ pub(crate) fn run_event_loop(
                     Err(err) => app.status = Some(format!("Cannot open the layer: {err:#}")),
                 }
             }
+            // A changeset has its own session (`changeset::run`), which never ends here.
+            SessionEnd::Open(OpenTarget::Changeset(_)) => {}
             SessionEnd::Open(OpenTarget::LeaveLayer) => {
                 if let Some((host_before, host_after)) = host_codes.pop() {
                     leave_layer(app);
@@ -400,6 +402,8 @@ pub(crate) fn may_edit_mapping(modal: Option<&Modal>, code: KeyCode) -> bool {
                 | KeyCode::Char('i')
                 | KeyCode::Char('I')
                 | KeyCode::Char('u')
+                // A changeset's pair view: the seed from omnidiff (`changeset::pair_key`).
+                | KeyCode::Char('S')
         ),
         Some(Modal::ConfirmKindMismatch { .. }) => matches!(
             code,
@@ -590,109 +594,31 @@ pub(crate) fn run_case_session(
             needs_redraw = false;
         }
 
-        if !event::poll(Duration::from_millis(250))? {
-            if poll_algo_diff(app) {
-                // The mismatch counts read the diff, so the frame state goes with it.
-                needs_redraw = true;
-                state = None;
-            }
-            continue;
-        }
-
-        let event = event::read()?;
-        let Event::Key(key) = event else {
-            needs_redraw = true;
-            continue;
-        };
-        if key.kind != KeyEventKind::Press {
-            continue;
-        }
-
-        // For the log: which view takes the key, read before the key can change it.
-        let mode = mode_name(app.modal.as_ref());
-        let key_text = key_name(key, mode);
-        let edits_before = app.edits;
-
-        // Undo and redo live here rather than in a handler: the same two keys serve the tree
-        // panels and the `t` view, and Ctrl-r needs the modifier the handlers never see.
-        if let Some(step) = history_key(app.modal.as_ref(), key) {
-            let result = match step {
-                HistoryStep::Undo => app.undo(),
-                HistoryStep::Redo => app.redo(),
-            };
-            app.status = Some(result.unwrap_or_else(|err| format!("{err:#}")));
-            if let Some(log) = app.key_log.as_mut() {
-                log.record(&app.name, mode, &key_text, app.edits != edits_before);
-            }
-            needs_redraw = true;
-            state = None;
-            continue;
-        }
-
-        let state_preserving = is_state_preserving_key(app.modal.as_ref(), key.code);
-        let watch = EditWatch::start(app, key.code);
-
-        let open_request = if app.modal.is_some() {
-            handle_modal_key(
-                app,
-                key.code,
-                &frame_state.before_flat,
-                &frame_state.after_flat,
-                frame_state.before_root,
-                frame_state.after_root,
-                &frame_state.caches,
-                frame_state.before_src,
-                frame_state.after_src,
-                before,
-                after,
-            )
-        } else if let Some((before_root, after_root)) = frame_state.roots() {
-            // Every loader runs `ensure_parsed` when there is a tree, so the hashes exist here.
-            let before_hash = &before
-                .metadata
-                .ast_metadata
-                .as_ref()
-                .context("Before code has no AST metadata")?
-                .node_to_full_hash;
-            let after_hash = &after
-                .metadata
-                .ast_metadata
-                .as_ref()
-                .context("After code has no AST metadata")?
-                .node_to_full_hash;
-
-            handle_key(
-                app,
-                key.code,
-                &frame_state.before_flat,
-                &frame_state.after_flat,
-                before_root,
-                after_root,
-                &frame_state.caches,
-                frame_state.before_src,
-                frame_state.after_src,
-                before_hash,
-                after_hash,
-                before,
-                after,
-            )
+        // A changeset's pair view may open with a key to run (`Y`: the match of the pinned node).
+        let key = if let Some(code) = crate::changeset::take_queued_key(app) {
+            crossterm::event::KeyEvent::new(code, crossterm::event::KeyModifiers::NONE)
         } else {
-            // Text-only mode (see `FrameState::before_root`).
-            handle_tree_independent_key(
-                app,
-                key.code,
-                frame_state.before_src,
-                frame_state.after_src,
-                before,
-                after,
-                false,
-            )
+            if !event::poll(Duration::from_millis(250))? {
+                if poll_algo_diff(app) {
+                    // The mismatch counts read the diff, so the frame state goes with it.
+                    needs_redraw = true;
+                    state = None;
+                }
+                continue;
+            }
+
+            let event = event::read()?;
+            let Event::Key(key) = event else {
+                needs_redraw = true;
+                continue;
+            };
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
+            key
         };
 
-        watch.finish(app);
-        if let Some(log) = app.key_log.as_mut() {
-            log.record(&app.name, mode, &key_text, app.edits != edits_before);
-        }
+        let (open_request, state_preserving) = session_key(app, key, frame_state, before, after)?;
         // Also here, so a run that landed while keys were streaming in shows without an idle tick.
         if poll_algo_diff(app) {
             state = None;
@@ -711,6 +637,113 @@ pub(crate) fn run_case_session(
             return Ok(SessionEnd::Quit);
         }
     }
+}
+
+/// One key of a case session: undo and redo, the modal or the panels, the undo bookkeeping, the
+/// key log, and - in a changeset's pair view - the changeset's own keys and its write-back.
+/// Returns the case to switch to, if the key asked for one, and whether the cached `FrameState`
+/// is still good. Apart from `run_case_session` so a test can drive a session key by key.
+pub(crate) fn session_key(
+    app: &mut App,
+    key: crossterm::event::KeyEvent,
+    frame_state: &FrameState,
+    before: &Code,
+    after: &Code,
+) -> Result<(Option<OpenTarget>, bool)> {
+    // For the log: which view takes the key, read before the key can change it.
+    let mode = mode_name(app.modal.as_ref());
+    let key_text = key_name(key, mode);
+    let edits_before = app.edits;
+
+    // Undo and redo live here rather than in a handler: the same two keys serve the tree
+    // panels and the `t` view, and Ctrl-r needs the modifier the handlers never see.
+    if let Some(step) = history_key(app.modal.as_ref(), key) {
+        let result = match step {
+            HistoryStep::Undo => app.undo(),
+            HistoryStep::Redo => app.redo(),
+        };
+        app.status = Some(result.unwrap_or_else(|err| format!("{err:#}")));
+        crate::changeset::after_key(app, edits_before, before, after);
+        if let Some(log) = app.key_log.as_mut() {
+            log.record(&app.name, mode, &key_text, app.edits != edits_before);
+        }
+        return Ok((None, false));
+    }
+
+    let mut state_preserving = is_state_preserving_key(app.modal.as_ref(), key.code);
+    let watch = EditWatch::start(app, key.code);
+
+    let open_request = if let Some(handled) =
+        crate::changeset::pair_key(app, key.code, frame_state, before, after)
+    {
+        state_preserving = false;
+        handled
+    } else if app.modal.is_some() {
+        handle_modal_key(
+            app,
+            key.code,
+            &frame_state.before_flat,
+            &frame_state.after_flat,
+            frame_state.before_root,
+            frame_state.after_root,
+            &frame_state.caches,
+            frame_state.before_src,
+            frame_state.after_src,
+            before,
+            after,
+        )
+    } else if let Some((before_root, after_root)) = frame_state.roots() {
+        // Every loader runs `ensure_parsed` when there is a tree, so the hashes exist here.
+        let before_hash = &before
+            .metadata
+            .ast_metadata
+            .as_ref()
+            .context("Before code has no AST metadata")?
+            .node_to_full_hash;
+        let after_hash = &after
+            .metadata
+            .ast_metadata
+            .as_ref()
+            .context("After code has no AST metadata")?
+            .node_to_full_hash;
+
+        handle_key(
+            app,
+            key.code,
+            &frame_state.before_flat,
+            &frame_state.after_flat,
+            before_root,
+            after_root,
+            &frame_state.caches,
+            frame_state.before_src,
+            frame_state.after_src,
+            before_hash,
+            after_hash,
+            before,
+            after,
+        )
+    } else {
+        // Text-only mode (see `FrameState::before_root`).
+        handle_tree_independent_key(
+            app,
+            key.code,
+            frame_state.before_src,
+            frame_state.after_src,
+            before,
+            after,
+            false,
+        )
+    };
+
+    watch.finish(app);
+    // In a changeset the pair's mapping is a projection: an edit goes back into the changeset.
+    if crate::changeset::after_key(app, edits_before, before, after) {
+        state_preserving = false;
+    }
+    if let Some(log) = app.key_log.as_mut() {
+        log.record(&app.name, mode, &key_text, app.edits != edits_before);
+    }
+    Ok((open_request, state_preserving))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2084,6 +2117,17 @@ pub(crate) fn handle_modal_key(
                     app.modal = Some(Modal::InvariantList { entries, selected });
                 }
             }
+        }
+        Modal::Partners {
+            side,
+            file,
+            path,
+            partners,
+            selected,
+        } => {
+            return crate::changeset::partners_key(
+                app, code, side, file, path, partners, selected, before, after,
+            );
         }
         Modal::Help { scroll } => match code {
             KeyCode::Up | KeyCode::Char('k') => {

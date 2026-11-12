@@ -48,6 +48,10 @@ pub(crate) struct PanelState {
     /// List rows available as of the last render; 0 before the first frame. `reveal_node` reads
     /// it to decide whether a node is on screen.
     pub(crate) viewport_height: usize,
+    /// In a changeset's pair view (`changeset`): the nodes of this panel with partners the pair's
+    /// own mapping does not hold - in another file, or a second partner in this one - each with
+    /// where those partners are (`src/b.rs:7`). Empty everywhere else.
+    pub(crate) elsewhere: std::collections::HashMap<usize, Vec<String>>,
 }
 
 impl PanelState {
@@ -58,6 +62,7 @@ impl PanelState {
             collapsed: std::collections::HashSet::new(),
             scroll: 0,
             viewport_height: 0,
+            elsewhere: std::collections::HashMap::new(),
         }
     }
 }
@@ -2241,6 +2246,16 @@ pub(crate) enum Modal {
         confirm_delete: Option<String>,
         state: TextPaintState,
     },
+    /// Raised by `-` in a changeset's pair view: every partner of one node, across the changeset.
+    /// `-` removes the selected one, Enter opens the pair view on its file, Esc closes.
+    Partners {
+        /// 0 = the node is in the before tree, 1 = in the after tree.
+        side: usize,
+        file: String,
+        path: Vec<String>,
+        partners: Vec<crate::changeset::Partner>,
+        selected: usize,
+    },
     /// Raised by `T`: `diff -u` of before and after. `t` switches to `TextView`.
     UnixDiffView { output: String, scroll: u16 },
     /// Raised by `?`: every keybinding. `?` or `Esc` closes it.
@@ -2276,6 +2291,8 @@ pub(crate) enum OpenTarget {
     EnterLayer(LayerRequest),
     /// `q`/`Esc` inside an embedded layer: back to the host file.
     LeaveLayer,
+    /// From a changeset's pair view: back to the file board, or on to another pair.
+    Changeset(crate::changeset::Request),
 }
 
 impl OpenTarget {
@@ -2285,6 +2302,7 @@ impl OpenTarget {
             OpenTarget::GitCommitFile { path, .. } => path,
             OpenTarget::EnterLayer(_) => "the embedded layer",
             OpenTarget::LeaveLayer => "the host file",
+            OpenTarget::Changeset(_) => "the changeset",
         }
     }
 }
@@ -2425,6 +2443,9 @@ pub(crate) struct App {
     pub(crate) layers: Vec<LayerFrame>,
     /// The case's painted layers as the `t` view draws them; set as each session starts.
     pub(crate) layer_paint: Vec<LayerPaint>,
+    /// The open changeset (`changeset`), `None` in a code or content session. While it is `Some`
+    /// and a pair is open, `mapping` is that pair's projection of the changeset's truth.
+    pub(crate) changeset: Option<Box<crate::changeset::Session>>,
 }
 
 impl App {
@@ -2479,6 +2500,7 @@ impl App {
             multi_select_pairing: GroupPairing::default(),
             layers: Vec::new(),
             layer_paint: Vec::new(),
+            changeset: None,
         }
     }
 
@@ -2498,6 +2520,14 @@ impl App {
     /// The case's name, with the open layers after it, for the title line.
     pub(crate) fn display_name(&self) -> String {
         let mut name = self.name.clone();
+        if let Some(header) = self
+            .changeset
+            .as_ref()
+            .and_then(|session| session.pair_header())
+        {
+            name.push_str(": ");
+            name.push_str(&header);
+        }
         for frame in &self.layers {
             name.push_str(" > ");
             name.push_str(&frame.label);
