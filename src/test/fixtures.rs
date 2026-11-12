@@ -42,11 +42,14 @@
 
 // One `#[cfg(test)] mod <name>;` per fixture, per dataset (see `test::helper::DIFF_DATASETS`), and
 // one per content family (`diff::content::Family`, see `test::helper::human_content`), whose stubs
-// assert verdicts rather than the four tests above.
+// assert verdicts rather than the four tests above. `changesets` holds the multi-file fixtures, one
+// stub per solved changeset (see `test::helper::human_changeset`).
 #[cfg(test)]
 mod archives;
 #[cfg(test)]
 mod catalogs;
+#[cfg(test)]
+mod changesets;
 #[cfg(test)]
 mod crosslang;
 #[cfg(test)]

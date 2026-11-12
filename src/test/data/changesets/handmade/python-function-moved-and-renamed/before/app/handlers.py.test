@@ -1,0 +1,11 @@
+import json
+
+
+def parse_body(raw):
+    return json.loads(raw.decode("utf-8"))
+
+
+def handle_create(raw, store):
+    item = parse_body(raw)
+    store.append(item)
+    return {"status": "created", "count": len(store)}

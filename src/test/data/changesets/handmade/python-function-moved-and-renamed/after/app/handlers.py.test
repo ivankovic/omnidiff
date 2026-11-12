@@ -1,0 +1,7 @@
+from app.codec import decode_body
+
+
+def handle_create(raw, store):
+    item = decode_body(raw)
+    store.append(item)
+    return {"status": "created", "count": len(store)}

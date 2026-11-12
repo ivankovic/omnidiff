@@ -1,0 +1,7 @@
+from pathlib import Path
+
+LOGO = Path(__file__).parent / "static/logo.png"
+
+
+def logo_bytes():
+    return LOGO.read_bytes()

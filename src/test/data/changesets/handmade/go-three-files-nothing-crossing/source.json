@@ -1,0 +1,33 @@
+{
+  "stratum": "control",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "queue/len.go",
+      "after": "queue/len.go"
+    },
+    {
+      "before": "queue/pop.go",
+      "after": "queue/pop.go"
+    },
+    {
+      "before": "queue/queue.go",
+      "after": "queue/queue.go"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "queue/len.go"
+    },
+    {
+      "status": "M",
+      "path": "queue/pop.go"
+    },
+    {
+      "status": "M",
+      "path": "queue/queue.go"
+    }
+  ]
+}

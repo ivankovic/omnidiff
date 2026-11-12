@@ -1,0 +1,25 @@
+{
+  "stratum": "rename unedited",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "themes/alternate.ts",
+      "after": "themes/alternate.ts"
+    },
+    {
+      "before": "themes/default.ts",
+      "after": "themes/default.ts"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "themes/alternate.ts"
+    },
+    {
+      "status": "M",
+      "path": "themes/default.ts"
+    }
+  ]
+}

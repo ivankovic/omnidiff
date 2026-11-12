@@ -1,0 +1,5 @@
+import json
+
+
+def encode_body(item):
+    return json.dumps(item).encode("utf-8")

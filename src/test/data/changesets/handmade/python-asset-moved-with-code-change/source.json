@@ -1,0 +1,29 @@
+{
+  "stratum": "non-code move",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "site/banner.py",
+      "after": "site/banner.py"
+    },
+    {
+      "before": "site/img/logo.png"
+    },
+    {
+      "after": "site/static/logo.png"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "site/banner.py"
+    },
+    {
+      "status": "R",
+      "path": "site/static/logo.png",
+      "old_path": "site/img/logo.png",
+      "similarity": 100
+    }
+  ]
+}

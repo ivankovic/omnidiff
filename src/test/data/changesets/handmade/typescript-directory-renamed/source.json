@@ -1,0 +1,45 @@
+{
+  "stratum": "directory move",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "lib/clamp.ts"
+    },
+    {
+      "before": "lib/index.ts"
+    },
+    {
+      "before": "lib/lerp.ts"
+    },
+    {
+      "after": "math/clamp.ts"
+    },
+    {
+      "after": "math/index.ts"
+    },
+    {
+      "after": "math/lerp.ts"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "R",
+      "path": "math/clamp.ts",
+      "old_path": "lib/clamp.ts",
+      "similarity": 100
+    },
+    {
+      "status": "R",
+      "path": "math/index.ts",
+      "old_path": "lib/index.ts",
+      "similarity": 68
+    },
+    {
+      "status": "R",
+      "path": "math/lerp.ts",
+      "old_path": "lib/lerp.ts",
+      "similarity": 100
+    }
+  ]
+}

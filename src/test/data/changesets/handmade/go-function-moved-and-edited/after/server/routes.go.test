@@ -1,0 +1,12 @@
+package server
+
+import (
+	"net/http"
+	"strings"
+)
+
+func Register(mux *http.ServeMux) {
+	mux.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(strings.ToLower(clientAddress(r))))
+	})
+}

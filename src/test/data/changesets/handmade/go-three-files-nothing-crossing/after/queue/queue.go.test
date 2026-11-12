@@ -1,0 +1,10 @@
+package queue
+
+type Queue struct {
+	items []string
+	limit int
+}
+
+func (q *Queue) Push(item string) {
+	q.items = append(q.items, item)
+}

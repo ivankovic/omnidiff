@@ -1,0 +1,6 @@
+def render_row(item):
+    return f"{item.name:<20}{item.quantity:>6}{item.unit_price:>10.2f}"
+
+
+def render_table(items):
+    return "\n".join(render_row(item) for item in items)

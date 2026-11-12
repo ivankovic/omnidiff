@@ -1,0 +1,31 @@
+{
+  "stratum": "rename edited",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "src/main/java/shop/Checkout.java",
+      "after": "src/main/java/shop/Checkout.java"
+    },
+    {
+      "before": "src/main/java/shop/PriceCalc.java"
+    },
+    {
+      "after": "src/main/java/shop/PriceCalculator.java"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "src/main/java/shop/Checkout.java"
+    },
+    {
+      "status": "D",
+      "path": "src/main/java/shop/PriceCalc.java"
+    },
+    {
+      "status": "A",
+      "path": "src/main/java/shop/PriceCalculator.java"
+    }
+  ]
+}

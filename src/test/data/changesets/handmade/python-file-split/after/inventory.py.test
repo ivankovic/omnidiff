@@ -1,0 +1,16 @@
+from dataclasses import dataclass
+
+
+@dataclass
+class Item:
+    name: str
+    quantity: int
+    unit_price: float
+
+
+def total_value(items):
+    return sum(item.quantity * item.unit_price for item in items)
+
+
+def low_stock(items, threshold=5):
+    return [item for item in items if item.quantity < threshold]

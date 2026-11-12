@@ -1,0 +1,28 @@
+{
+  "stratum": "split or merge",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "after": "cache/access.go"
+    },
+    {
+      "before": "cache/get.go"
+    },
+    {
+      "before": "cache/put.go"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "R",
+      "path": "cache/access.go",
+      "old_path": "cache/get.go",
+      "similarity": 59
+    },
+    {
+      "status": "D",
+      "path": "cache/put.go"
+    }
+  ]
+}

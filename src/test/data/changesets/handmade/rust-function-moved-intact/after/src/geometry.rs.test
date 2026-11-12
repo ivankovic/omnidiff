@@ -1,0 +1,8 @@
+pub struct Rect {
+    pub width: f64,
+    pub height: f64,
+}
+
+pub fn area(rect: &Rect) -> f64 {
+    rect.width * rect.height
+}

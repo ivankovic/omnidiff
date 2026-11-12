@@ -1,0 +1,9 @@
+export const theme = {
+  background: "#0d1117",
+  foreground: "#e6edf3",
+  accent: "#58a6ff",
+  border: "#30363d",
+  shadow: "rgba(0, 0, 0, 0.6)",
+};
+
+export const prefersReducedContrast = false;

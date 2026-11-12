@@ -1,0 +1,9 @@
+use crate::geometry::Rect;
+
+pub fn diagonal(rect: &Rect) -> f64 {
+    (rect.width * rect.width + rect.height * rect.height).sqrt()
+}
+
+pub fn perimeter(rect: &Rect) -> f64 {
+    2.0 * (rect.width + rect.height)
+}

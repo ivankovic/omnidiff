@@ -1,0 +1,10 @@
+package mail;
+
+public class Composer {
+    public Message compose(String to, String subject, String body) {
+        Message message = new Message(to);
+        message.setSubject(subject);
+        message.setBody(body);
+        return message;
+    }
+}

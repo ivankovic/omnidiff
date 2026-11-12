@@ -1,0 +1,19 @@
+package server
+
+import (
+	"net/http"
+	"strings"
+)
+
+func isJSON(r *http.Request) bool {
+	return r.Header.Get("Content-Type") == "application/json"
+}
+
+func clientAddress(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		first, _, _ := strings.Cut(forwarded, ",")
+		return strings.TrimSpace(first)
+	}
+	return r.RemoteAddr
+}

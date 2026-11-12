@@ -1,0 +1,13 @@
+package mail;
+
+public class Sender {
+    private final Transport transport;
+
+    public Sender(Transport transport) {
+        this.transport = transport;
+    }
+
+    public void send(Message message) {
+        transport.deliver(message);
+    }
+}

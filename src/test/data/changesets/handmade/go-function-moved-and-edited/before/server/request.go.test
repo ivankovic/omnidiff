@@ -1,0 +1,7 @@
+package server
+
+import "net/http"
+
+func isJSON(r *http.Request) bool {
+	return r.Header.Get("Content-Type") == "application/json"
+}

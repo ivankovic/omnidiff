@@ -134,7 +134,13 @@ mod tests {
         let mut datasets_seen = 0usize;
         // The content fixtures' stubs too, though their data is not a `DIFF_DATASETS` dataset.
         let families = crate::diff::content::Family::ALL.map(crate::diff::content::Family::name);
-        for dataset in helper::DIFF_DATASETS.iter().copied().chain(families) {
+        // And the changesets', one directory whatever their dataset (`helper::human_changeset`).
+        for dataset in helper::DIFF_DATASETS
+            .iter()
+            .copied()
+            .chain(families)
+            .chain(["changesets"])
+        {
             let dir = fixtures.join(dataset);
             if !dir.exists() {
                 continue;

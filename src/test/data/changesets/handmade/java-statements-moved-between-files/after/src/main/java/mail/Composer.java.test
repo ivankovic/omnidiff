@@ -1,0 +1,15 @@
+package mail;
+
+public class Composer {
+    public Message compose(String to, String subject, String body) {
+        Message message = new Message(to);
+        message.setSubject(subject);
+        message.setBody(body);
+        String trimmed = message.subject().trim();
+        if (trimmed.length() > 78) {
+            trimmed = trimmed.substring(0, 75) + "...";
+        }
+        message.setSubject(trimmed);
+        return message;
+    }
+}

@@ -1,0 +1,7 @@
+package queue
+
+func (q *Queue) Pop() string {
+	item := q.items[0]
+	q.items = q.items[1:]
+	return item
+}

@@ -1,0 +1,13 @@
+package shop;
+
+public class PriceCalc {
+    private final double taxRate;
+
+    public PriceCalc(double taxRate) {
+        this.taxRate = taxRate;
+    }
+
+    public double total(double net) {
+        return net + net * taxRate;
+    }
+}

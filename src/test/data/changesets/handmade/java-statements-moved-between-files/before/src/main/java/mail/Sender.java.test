@@ -1,0 +1,18 @@
+package mail;
+
+public class Sender {
+    private final Transport transport;
+
+    public Sender(Transport transport) {
+        this.transport = transport;
+    }
+
+    public void send(Message message) {
+        String trimmed = message.subject().trim();
+        if (trimmed.length() > 78) {
+            trimmed = trimmed.substring(0, 75) + "...";
+        }
+        message.setSubject(trimmed);
+        transport.deliver(message);
+    }
+}

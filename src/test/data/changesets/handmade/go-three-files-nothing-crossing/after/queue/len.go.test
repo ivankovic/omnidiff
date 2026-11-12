@@ -1,0 +1,6 @@
+package queue
+
+// Len reports how many items are waiting.
+func (q *Queue) Len() int {
+	return len(q.items)
+}

@@ -1,0 +1,227 @@
+{
+  "files": [
+    {
+      "before": "src/geometry.rs",
+      "after": "src/geometry.rs",
+      "relation": "same",
+      "solved": true
+    },
+    {
+      "before": "src/measure.rs",
+      "after": "src/measure.rs",
+      "relation": "same",
+      "solved": true
+    }
+  ],
+  "entries": [
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "src/geometry.rs",
+        "path": []
+      },
+      "after": {
+        "file": "src/geometry.rs",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/geometry.rs",
+        "path": [
+          "struct_item:1"
+        ]
+      },
+      "after": {
+        "file": "src/geometry.rs",
+        "path": [
+          "struct_item:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/geometry.rs",
+        "path": [
+          "function_item:1"
+        ]
+      },
+      "after": {
+        "file": "src/geometry.rs",
+        "path": [
+          "function_item:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/geometry.rs",
+        "path": [
+          "function_item:2"
+        ]
+      },
+      "after": {
+        "file": "src/measure.rs",
+        "path": [
+          "function_item:2"
+        ]
+      }
+    },
+    {
+      "operation": "match_but_not_identical",
+      "before": {
+        "file": "src/measure.rs",
+        "path": []
+      },
+      "after": {
+        "file": "src/measure.rs",
+        "path": []
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/measure.rs",
+        "path": [
+          "use_declaration:1"
+        ]
+      },
+      "after": {
+        "file": "src/measure.rs",
+        "path": [
+          "use_declaration:1"
+        ]
+      }
+    },
+    {
+      "operation": "identical_with_children",
+      "before": {
+        "file": "src/measure.rs",
+        "path": [
+          "function_item:1"
+        ]
+      },
+      "after": {
+        "file": "src/measure.rs",
+        "path": [
+          "function_item:1"
+        ]
+      }
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/geometry.rs",
+              "range": {
+                "start_row": 9,
+                "start_column": 0,
+                "end_row": 9,
+                "end_column": 38
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/measure.rs",
+              "range": {
+                "start_row": 6,
+                "start_column": 0,
+                "end_row": 6,
+                "end_column": 38
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/geometry.rs",
+              "range": {
+                "start_row": 10,
+                "start_column": 4,
+                "end_row": 10,
+                "end_column": 36
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/measure.rs",
+              "range": {
+                "start_row": 7,
+                "start_column": 4,
+                "end_row": 7,
+                "end_column": 36
+              }
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/geometry.rs",
+              "range": {
+                "start_row": 11,
+                "start_column": 0,
+                "end_row": 11,
+                "end_column": 1
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/measure.rs",
+              "range": {
+                "start_row": 8,
+                "start_column": 0,
+                "end_row": 8,
+                "end_column": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "file": "src/geometry.rs",
+              "range": {
+                "start_row": 9,
+                "start_column": 0,
+                "end_row": 11,
+                "end_column": 1
+              }
+            }
+          ],
+          "after": [
+            {
+              "file": "src/measure.rs",
+              "range": {
+                "start_row": 6,
+                "start_column": 0,
+                "end_row": 8,
+                "end_column": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

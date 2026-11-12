@@ -1,0 +1,9 @@
+pub fn summary(values: &[f64]) -> String {
+    let total: f64 = values.iter().sum();
+    format!("total: {}", total)
+}
+
+pub fn round_to(value: f64, places: u32) -> f64 {
+    let factor = 10f64.powi(places as i32);
+    (value * factor).round() / factor
+}

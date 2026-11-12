@@ -1,0 +1,4 @@
+pub fn summary(values: &[f64]) -> String {
+    let total: f64 = values.iter().sum();
+    format!("total: {}", total)
+}

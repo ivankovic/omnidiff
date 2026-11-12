@@ -1,0 +1,25 @@
+{
+  "stratum": "block move",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "src/geometry.rs",
+      "after": "src/geometry.rs"
+    },
+    {
+      "before": "src/measure.rs",
+      "after": "src/measure.rs"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "src/geometry.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/measure.rs"
+    }
+  ]
+}

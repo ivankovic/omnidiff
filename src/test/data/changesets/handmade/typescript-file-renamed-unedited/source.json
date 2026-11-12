@@ -1,0 +1,29 @@
+{
+  "stratum": "rename unedited",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "after": "src/format.ts"
+    },
+    {
+      "before": "src/helpers.ts"
+    },
+    {
+      "before": "src/listing.ts",
+      "after": "src/listing.ts"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "R",
+      "path": "src/format.ts",
+      "old_path": "src/helpers.ts",
+      "similarity": 100
+    },
+    {
+      "status": "M",
+      "path": "src/listing.ts"
+    }
+  ]
+}

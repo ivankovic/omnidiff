@@ -1,0 +1,6 @@
+export const theme = {
+  background: "#ffffff",
+  foreground: "#1b1b1b",
+  accent: "#0b6bcb",
+  border: "#d0d7de",
+};

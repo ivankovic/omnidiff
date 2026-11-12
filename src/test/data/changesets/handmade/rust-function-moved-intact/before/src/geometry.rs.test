@@ -1,0 +1,12 @@
+pub struct Rect {
+    pub width: f64,
+    pub height: f64,
+}
+
+pub fn area(rect: &Rect) -> f64 {
+    rect.width * rect.height
+}
+
+pub fn perimeter(rect: &Rect) -> f64 {
+    2.0 * (rect.width + rect.height)
+}

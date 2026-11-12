@@ -1,0 +1,20 @@
+package server
+
+import (
+	"net/http"
+	"strings"
+)
+
+func clientAddress(r *http.Request) string {
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		return forwarded
+	}
+	return r.RemoteAddr
+}
+
+func Register(mux *http.ServeMux) {
+	mux.HandleFunc("/whoami", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(strings.ToLower(clientAddress(r))))
+	})
+}

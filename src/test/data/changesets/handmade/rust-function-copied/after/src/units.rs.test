@@ -1,0 +1,8 @@
+pub fn round_to(value: f64, places: u32) -> f64 {
+    let factor = 10f64.powi(places as i32);
+    (value * factor).round() / factor
+}
+
+pub fn celsius_to_kelvin(celsius: f64) -> f64 {
+    celsius + 273.15
+}

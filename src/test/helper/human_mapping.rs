@@ -1420,7 +1420,7 @@ fn trees_of<'t>(before: &'t Code, after: &'t Code) -> Option<(&'t Tree, &'t Tree
 /// which exists only on disk (see the module doc).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum StoredOperation {
+pub(crate) enum StoredOperation {
     Identical,
     Update,
     MatchButNotIdentical,
@@ -1448,7 +1448,7 @@ impl From<HumanOperation> for StoredOperation {
 
 impl StoredOperation {
     /// `None` for the form that expands into several entries.
-    fn in_memory(self) -> Option<HumanOperation> {
+    pub(crate) fn in_memory(self) -> Option<HumanOperation> {
         Some(match self {
             Self::Identical => HumanOperation::Identical,
             Self::Update => HumanOperation::Update,
@@ -1707,7 +1707,7 @@ fn identical_run<'t>(
 /// pre-order, child paths built the way [`super::path_for_node`] builds them. Stops early, returning
 /// `Ok(false)`, when `visit` returns false; errs when the two subtrees differ in shape or kind,
 /// which an identical pair cannot.
-fn walk_identical_subtree(
+pub(crate) fn walk_identical_subtree(
     before: Node,
     after: Node,
     before_path: Vec<String>,

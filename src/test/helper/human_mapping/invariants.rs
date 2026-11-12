@@ -1015,7 +1015,9 @@ fn presets_agree_on_what_survives(
 /// **Checked against the raw spans**, unlike every other rule: the projection is exactly what
 /// hides a double claim. Line terminators are never painted, so ranges meeting at a line break do
 /// not overlap. One violation per range that lands on an earlier range's ground, per side.
-fn painted_ranges_do_not_overlap(
+///
+/// Each side is read on its own, which is what lets `human_changeset` run this per file.
+pub(crate) fn painted_ranges_do_not_overlap(
     named: &NamedTextMapping,
     before: &Code,
     after: &Code,

@@ -1,0 +1,22 @@
+{
+  "stratum": "copy",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "src/report.rs",
+      "after": "src/report.rs"
+    },
+    {
+      "before": "src/units.rs",
+      "after": "src/units.rs",
+      "untouched": true
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "src/report.rs"
+    }
+  ]
+}

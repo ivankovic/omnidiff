@@ -1,0 +1,14 @@
+package cache
+
+func (c *Cache) Get(key string) (string, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	value, ok := c.entries[key]
+	return value, ok
+}
+
+func (c *Cache) Put(key, value string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.entries[key] = value
+}

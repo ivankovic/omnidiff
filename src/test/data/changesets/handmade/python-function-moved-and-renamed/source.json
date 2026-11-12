@@ -1,0 +1,25 @@
+{
+  "stratum": "moved and edited",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "app/codec.py",
+      "after": "app/codec.py"
+    },
+    {
+      "before": "app/handlers.py",
+      "after": "app/handlers.py"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "app/codec.py"
+    },
+    {
+      "status": "M",
+      "path": "app/handlers.py"
+    }
+  ]
+}

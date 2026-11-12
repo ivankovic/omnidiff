@@ -1,0 +1,24 @@
+{
+  "stratum": "split or merge",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "inventory.py",
+      "after": "inventory.py"
+    },
+    {
+      "after": "rendering.py"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "inventory.py"
+    },
+    {
+      "status": "A",
+      "path": "rendering.py"
+    }
+  ]
+}

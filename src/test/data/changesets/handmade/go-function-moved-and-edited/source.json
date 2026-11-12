@@ -1,0 +1,25 @@
+{
+  "stratum": "moved and edited",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "server/request.go",
+      "after": "server/request.go"
+    },
+    {
+      "before": "server/routes.go",
+      "after": "server/routes.go"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "server/request.go"
+    },
+    {
+      "status": "M",
+      "path": "server/routes.go"
+    }
+  ]
+}

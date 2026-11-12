@@ -1,0 +1,25 @@
+{
+  "stratum": "block move",
+  "dataset": "handmade",
+  "status": "PROMOTED",
+  "files": [
+    {
+      "before": "src/main/java/mail/Composer.java",
+      "after": "src/main/java/mail/Composer.java"
+    },
+    {
+      "before": "src/main/java/mail/Sender.java",
+      "after": "src/main/java/mail/Sender.java"
+    }
+  ],
+  "vcs_hints": [
+    {
+      "status": "M",
+      "path": "src/main/java/mail/Composer.java"
+    },
+    {
+      "status": "M",
+      "path": "src/main/java/mail/Sender.java"
+    }
+  ]
+}
