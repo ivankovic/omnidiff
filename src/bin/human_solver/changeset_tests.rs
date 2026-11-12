@@ -1008,6 +1008,12 @@ fn the_pair_view_goes_back_to_the_board_and_saves_the_whole_changeset() {
         assert!(driver.codes.is_some(), "{key:?}");
         assert!(driver.app.modal.is_none(), "{key:?}: {}", driver.status());
     }
+    // The board's help is the one sheet, opened at the changeset's own keys.
+    driver.keys("b?");
+    let screen = driver.screen(160, 40);
+    assert!(screen.contains("CHANGESETS"), "{screen}");
+    assert!(screen.contains("The board"), "{screen}");
+    driver.keys("?\n");
     // Quitting the board with unsaved work takes a second `q`.
     driver.keys("\t]Ib");
     assert!(matches!(

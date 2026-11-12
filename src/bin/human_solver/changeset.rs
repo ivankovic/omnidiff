@@ -3038,7 +3038,14 @@ pub(crate) fn board_key(app: &mut App, code: KeyCode) -> BoardEnd {
         }
         KeyCode::Char('s') => session.save(),
         KeyCode::Char('?') => {
-            session.overlay = Some(Overlay::Help { scroll: 0 });
+            // The one sheet for every session, opened where the changeset's keys are.
+            let scroll = HELP_TEXT
+                .lines()
+                .position(|line| line.starts_with("CHANGESETS"))
+                .unwrap_or(0);
+            session.overlay = Some(Overlay::Help {
+                scroll: scroll as u16,
+            });
             return BoardEnd::Stay;
         }
         KeyCode::Char('q') | KeyCode::Esc => {
