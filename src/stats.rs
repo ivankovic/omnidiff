@@ -24,6 +24,7 @@ use crate::code::language;
 use crate::code::metadata;
 use crate::code::{self, Code};
 
+pub mod changeset;
 pub mod filesystem;
 pub mod git;
 pub mod license;

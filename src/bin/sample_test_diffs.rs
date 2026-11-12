@@ -28,13 +28,24 @@
 //! `--pictures` is `--content pictures`. The first picture draw, 2026-10-02:
 //! `sample_test_diffs --pictures --repos-dir /var/tmp/research/full/repositories
 //! --max-commits-per-repo 50 --total 250 --seed 20261002`, then `materialize_test_diffs`.
+//!
+//! `--changesets` samples whole commits instead, for the multi-file fixtures (see
+//! `sample_changesets` and [`omnidiff::stats::changeset`], which says what a changeset holds and
+//! how its stratum is decided): it tops `src/test/data/changesets.csv` up to `--count` per
+//! (stratum, file-count bucket). `--range-length L` samples L consecutive commits squashed into
+//! one changeset, the `range` stratum; `--dry-run` writes nothing and only prints the census,
+//! how many commits fall in each cell, and `--explain` adds what each signal saw. The pilot draw,
+//! 2026-11-12: `sample_test_diffs --changesets --repos-dir
+//! /var/tmp/research/changeset-pilot/repositories --max-commits-per-repo 400 --count 2 --seed
+//! 20261112`, then the same with `--count 1 --range-length 5`, then `materialize_test_diffs
+//! --changesets`.
 use anyhow::{Result, bail};
 use clap::Parser;
 use git2::Delta;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -42,8 +53,11 @@ use omnidiff::anomalous_paths;
 use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
 use omnidiff::code::{Encoding, Language, decode_text};
 use omnidiff::diff::content::{self, Engine, Family, Format, Probe};
+use omnidiff::stats::changeset::{self, BlockIndex, FILE_BUCKETS, PRECEDENCE, Skip, Stratum};
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
-use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
+use omnidiff::stats::git::{
+    text_loc_if_in_range, walk_single_parent_commit_diffs, walk_single_parent_commits,
+};
 use omnidiff::stats::sampling::{Reservoir, loc_bucket};
 
 // The upper bound is the size `stats::expand_from_code` refuses to parse.
@@ -114,6 +128,25 @@ struct Args {
     /// strata that occur. Existing rows of the family count towards it.
     #[arg(long, default_value_t = 100)]
     total: usize,
+
+    /// Sample commits instead of files (see `sample_changesets`): `--count` is per (stratum,
+    /// file-count bucket), and `--output` defaults to `src/test/data/changesets.csv`.
+    #[arg(long, default_value_t = false)]
+    changesets: bool,
+
+    /// Under `--changesets`: sample this many consecutive single-parent commits squashed into one
+    /// changeset (the first one's parent against the last one), as the `range` stratum.
+    #[arg(long)]
+    range_length: Option<usize>,
+
+    /// Under `--changesets`: print the census and write nothing.
+    #[arg(long, default_value_t = false)]
+    dry_run: bool,
+
+    /// Under `--changesets`: print every changeset that is not a control, with what each signal
+    /// saw, for checking a signal by hand.
+    #[arg(long, default_value_t = false)]
+    explain: bool,
 }
 
 /// A pointer to a (before, after) code pair in a repository checkout.
@@ -258,6 +291,13 @@ fn main() -> Result<()> {
     let mut families = args.content.clone();
     if args.pictures && !families.contains(&Family::Pictures) {
         families.push(Family::Pictures);
+    }
+    if args.changesets {
+        let output = args.output.clone().unwrap_or_else(default_changesets_path);
+        return sample_changesets(&args, &output);
+    }
+    if args.range_length.is_some() || args.dry_run || args.explain {
+        bail!("--range-length, --dry-run and --explain go with --changesets");
     }
     if !families.is_empty() {
         return sample_content(&args, &output, &families);
@@ -745,6 +785,365 @@ fn even_quotas(available: &[(CapacityKey, usize)], total: usize) -> HashMap<Capa
     quotas
 }
 
+fn default_changesets_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("test")
+        .join("data")
+        .join("changesets.csv")
+}
+
+/// A stratum and a file-count bucket: what `--changesets` samples per.
+type Cell = (String, String);
+
+/// How many commits of each repository fall in each cell, and why the rest are not changesets.
+#[derive(Default)]
+struct Census {
+    cells: BTreeMap<String, BTreeMap<Cell, usize>>,
+    /// Commits a signal fired in, whether or not it decided the stratum.
+    signals: BTreeMap<String, BTreeMap<String, usize>>,
+    skipped: BTreeMap<String, BTreeMap<Skip, usize>>,
+    seconds: BTreeMap<String, f64>,
+}
+
+impl Census {
+    /// One table: a row a stratum that occurs, a column a bucket, then the row's total and the
+    /// commits its signal fired in at all.
+    fn table(cells: &BTreeMap<Cell, usize>, signals: &BTreeMap<String, usize>) -> String {
+        let mut strata: Vec<String> = Vec::new();
+        for (stratum, _) in cells.keys() {
+            if !strata.contains(stratum) {
+                strata.push(stratum.clone());
+            }
+        }
+        // Most specific first, as the precedence; a squash's strata after them.
+        let rank = |name: &String| {
+            let inner = name.strip_prefix("range:").unwrap_or(name);
+            (
+                name.starts_with("range:"),
+                PRECEDENCE
+                    .iter()
+                    .position(|stratum| stratum.name() == inner),
+            )
+        };
+        strata.sort_by_key(rank);
+        let mut out = format!(
+            "  {:<24}{:>7}{:>7}{:>7}{:>7}{:>8}\n",
+            "stratum", FILE_BUCKETS[0], FILE_BUCKETS[1], FILE_BUCKETS[2], "all", "signal"
+        );
+        let mut totals = [0usize; 4];
+        for stratum in &strata {
+            let counts = FILE_BUCKETS.map(|bucket| {
+                cells
+                    .get(&(stratum.clone(), bucket.to_string()))
+                    .copied()
+                    .unwrap_or(0)
+            });
+            let all: usize = counts.iter().sum();
+            for (total, count) in totals.iter_mut().zip(counts.iter().chain([&all])) {
+                *total += count;
+            }
+            let inner = stratum.strip_prefix("range:").unwrap_or(stratum);
+            out.push_str(&format!(
+                "  {:<24}{:>7}{:>7}{:>7}{:>7}{:>8}\n",
+                stratum,
+                counts[0],
+                counts[1],
+                counts[2],
+                all,
+                signals.get(inner).copied().unwrap_or(0)
+            ));
+        }
+        out.push_str(&format!(
+            "  {:<24}{:>7}{:>7}{:>7}{:>7}\n",
+            "all", totals[0], totals[1], totals[2], totals[3]
+        ));
+        out
+    }
+
+    fn print(&self) {
+        let mut all_cells: BTreeMap<Cell, usize> = BTreeMap::new();
+        let mut all_signals: BTreeMap<String, usize> = BTreeMap::new();
+        let mut all_skipped: BTreeMap<Skip, usize> = BTreeMap::new();
+        let empty = BTreeMap::new();
+        for (repository, seconds) in &self.seconds {
+            let cells = self.cells.get(repository).unwrap_or(&empty);
+            let signals = self.signals.get(repository).cloned().unwrap_or_default();
+            println!("\n{repository} ({seconds:.1}s)");
+            print!("{}", Census::table(cells, &signals));
+            for (cell, count) in cells {
+                *all_cells.entry(cell.clone()).or_default() += count;
+            }
+            for (signal, count) in signals {
+                *all_signals.entry(signal).or_default() += count;
+            }
+            for (skip, count) in self.skipped.get(repository).into_iter().flatten() {
+                println!("  not a changeset, {}: {count}", skip.name());
+                *all_skipped.entry(*skip).or_default() += count;
+            }
+        }
+        println!("\nAll {} repositories", self.seconds.len());
+        print!("{}", Census::table(&all_cells, &all_signals));
+        for (skip, count) in all_skipped {
+            println!("  not a changeset, {}: {count}", skip.name());
+        }
+    }
+}
+
+/// What one `--changesets` run is asked for.
+struct ChangesetOptions<'a> {
+    max_commits: usize,
+    /// Commits squashed into a changeset; `None` for one commit each.
+    range_length: Option<usize>,
+    count: usize,
+    dataset: &'a str,
+    explain: bool,
+}
+
+/// The state a `--changesets` run carries from repository to repository.
+#[derive(Default)]
+struct ChangesetSample {
+    existing_counts: HashMap<Cell, usize>,
+    /// (repository, commit, parent) of the rows already there.
+    existing_keys: HashSet<SampleKey>,
+    reservoirs: HashMap<Cell, Reservoir<changeset::Row>>,
+    capacities: HashMap<Cell, usize>,
+    census: Census,
+}
+
+/// `--changesets`: tops `output` up to `--count` changesets per (stratum, file-count bucket).
+/// Every commit of the last `--max-commits-per-repo` that is a changeset (see
+/// [`omnidiff::stats::changeset`]) is a candidate; a repository offers at most
+/// [`PAIRS_PER_REPOSITORY_PER_STRATUM`] per cell, chosen at random, so that one repository's habit
+/// (a project that moves a directory a week) is not a stratum. Rows already in `output` count
+/// towards their cell whatever their status, and their commits are not offered again.
+fn sample_changesets(args: &Args, output: &Path) -> Result<()> {
+    if args.range_length.is_some_and(|length| length < 2) {
+        bail!("--range-length squashes at least 2 commits");
+    }
+    let dataset = match &args.dataset {
+        Some(dataset) => dataset.clone(),
+        None => infer_dataset(&args.repos_dir).ok_or_else(|| {
+            anyhow::anyhow!("could not infer a dataset name from --repos-dir; pass --dataset")
+        })?,
+    };
+    let existing_rows = changeset::read_rows(output)?;
+    let mut sample = ChangesetSample::default();
+    for row in &existing_rows {
+        *sample
+            .existing_counts
+            .entry((row.stratum.clone(), row.bucket.clone()))
+            .or_default() += 1;
+        sample.existing_keys.insert((
+            row.repository.clone(),
+            row.commit.clone(),
+            row.parent.clone(),
+        ));
+    }
+    let repo_paths = find_git_repositories(&args.repos_dir)?;
+    println!("Found {} repositories", repo_paths.len());
+    let mut rng = match args.seed {
+        Some(seed) => StdRng::seed_from_u64(seed),
+        None => StdRng::from_rng(&mut rand::rng()),
+    };
+    let options = ChangesetOptions {
+        max_commits: args.max_commits_per_repo,
+        range_length: args.range_length,
+        count: args.count,
+        dataset: &dataset,
+        explain: args.explain,
+    };
+    for_each_repository(&repo_paths, |repo_path, repository_name| {
+        let started = std::time::Instant::now();
+        let result = sample_changeset_repository(
+            repo_path,
+            repository_name,
+            &options,
+            &mut sample,
+            &mut rng,
+        );
+        sample
+            .census
+            .seconds
+            .insert(repository_name.to_string(), started.elapsed().as_secs_f64());
+        result
+    });
+    sample.census.print();
+    if args.dry_run {
+        println!("\n--dry-run: nothing written");
+        return Ok(());
+    }
+    let mut rows = existing_rows;
+    let before = rows.len();
+    for (_, reservoir) in sample.reservoirs {
+        rows.extend(reservoir.items);
+    }
+    let added = rows.len() - before;
+    changeset::write_rows(output, rows)?;
+    println!("\nAdded {added} changesets to {output:?}");
+    Ok(())
+}
+
+/// The commit a changeset of `commit` starts from: its parent, or under `range_length` the parent
+/// of the last of that many commits down the single-parent chain. `None` when the chain is shorter,
+/// meets a merge, or runs into a commit an earlier range took (`taken`), so ranges never overlap.
+fn changeset_base<'repo>(
+    commit: &git2::Commit<'repo>,
+    range_length: Option<usize>,
+    taken: &mut HashSet<git2::Oid>,
+) -> Result<Option<git2::Commit<'repo>>> {
+    let Some(length) = range_length else {
+        return Ok(Some(commit.parent(0)?));
+    };
+    let mut chain = vec![commit.clone()];
+    while chain.len() < length {
+        let Ok(parent) = chain[chain.len() - 1].parent(0) else {
+            return Ok(None);
+        };
+        if parent.parents().len() != 1 {
+            return Ok(None);
+        }
+        chain.push(parent);
+    }
+    if chain.iter().any(|commit| taken.contains(&commit.id())) {
+        return Ok(None);
+    }
+    // A shallow clone's last commit names a parent it does not have.
+    let Ok(base) = chain[chain.len() - 1].parent(0) else {
+        return Ok(None);
+    };
+    taken.extend(chain.iter().map(|commit| commit.id()));
+    Ok(Some(base))
+}
+
+/// Classifies every changeset among the repository's last `max_commits` commits, counts it in the
+/// census, and offers the ones not yet sampled to their cell's reservoir (see `sample_changesets`).
+fn sample_changeset_repository(
+    repo_path: &Path,
+    repository_name: &str,
+    options: &ChangesetOptions,
+    sample: &mut ChangesetSample,
+    rng: &mut StdRng,
+) -> Result<()> {
+    let mut local: HashMap<Cell, Reservoir<changeset::Row>> = HashMap::new();
+    let mut index = BlockIndex::default();
+    let mut taken: HashSet<git2::Oid> = HashSet::new();
+    walk_single_parent_commits(repo_path, options.max_commits, |repo, commit| {
+        let Some(base) = changeset_base(commit, options.range_length, &mut taken)? else {
+            return Ok(());
+        };
+        let (before, after) = (base.tree()?, commit.tree()?);
+        let mut skip = |skip: Skip| {
+            let skipped = sample.census.skipped.entry(repository_name.to_string());
+            *skipped.or_default().entry(skip).or_default() += 1;
+        };
+        let files = match changeset::load_changes(repo, &before, &after)? {
+            Ok(files) => files,
+            Err(reason) => {
+                skip(reason);
+                return Ok(());
+            }
+        };
+        let changed_lines = changeset::changed_lines(&files);
+        if changed_lines > changeset::MAX_CHANGED_LINES {
+            skip(Skip::TooManyLines);
+            return Ok(());
+        }
+        // Git pairs a removed path with an added one; without both it has nothing to say that
+        // the tree diff did not.
+        let hints = if files.iter().any(|file| file.after.is_none())
+            && files.iter().any(|file| file.before.is_none())
+        {
+            changeset::vcs_hints(repo, base.id(), commit.id())?
+        } else {
+            Vec::new()
+        };
+        index.add_tree(repo, &before);
+        let classification =
+            changeset::classify(&files, &hints, &index.view(repo, &before, &files));
+
+        let bucket = changeset::file_bucket(files.len());
+        let (stratum, census_stratum) = match options.range_length {
+            Some(_) => (
+                Stratum::Range.name().to_string(),
+                format!("range:{}", classification.stratum.name()),
+            ),
+            None => {
+                let name = classification.stratum.name().to_string();
+                (name.clone(), name)
+            }
+        };
+        let cells = sample.census.cells.entry(repository_name.to_string());
+        *cells
+            .or_default()
+            .entry((census_stratum, bucket.to_string()))
+            .or_default() += 1;
+        let signals = sample.census.signals.entry(repository_name.to_string());
+        let signals = signals.or_default();
+        for signal in &classification.signals {
+            *signals.entry(signal.name().to_string()).or_default() += 1;
+        }
+        if options.explain && classification.stratum != Stratum::Control {
+            println!(
+                "\n  {} {} {} files, {changed_lines} lines: {}",
+                &commit.id().to_string()[..12],
+                classification.stratum.name(),
+                files.len(),
+                commit.summary().ok().flatten().unwrap_or("")
+            );
+            for line in &classification.evidence {
+                println!("    {line}");
+            }
+        }
+
+        let (commit_id, parent_id) = (commit.id().to_string(), base.id().to_string());
+        let key = (
+            repository_name.to_string(),
+            commit_id.clone(),
+            parent_id.clone(),
+        );
+        if sample.existing_keys.contains(&key) {
+            return Ok(());
+        }
+        let cell = (stratum.clone(), bucket.to_string());
+        sample.capacities.entry(cell.clone()).or_insert_with(|| {
+            let existing = sample.existing_counts.get(&cell).copied().unwrap_or(0);
+            options.count.saturating_sub(existing)
+        });
+        let row = changeset::Row {
+            name: changeset::fixture_name(&stratum, repository_name, &commit_id),
+            repository: repository_name.to_string(),
+            commit: commit_id,
+            parent: parent_id,
+            stratum,
+            signals: changeset::signals_column(&classification, options.range_length),
+            files: files.len(),
+            changed_lines,
+            main_language: changeset::main_language(&files),
+            bucket: bucket.to_string(),
+            dataset: options.dataset.to_string(),
+            status: "SAMPLED".to_string(),
+            comment: String::new(),
+        };
+        local
+            .entry(cell)
+            .or_default()
+            .offer(row, PAIRS_PER_REPOSITORY_PER_STRATUM, rng);
+        Ok(())
+    })?;
+    // In a fixed order: a `HashMap`'s would make a seeded draw differ from run to run.
+    let mut local: Vec<(Cell, Reservoir<changeset::Row>)> = local.into_iter().collect();
+    local.sort_by(|a, b| a.0.cmp(&b.0));
+    for (cell, reservoir) in local {
+        let capacity = sample.capacities.get(&cell).copied().unwrap_or(0);
+        let global = sample.reservoirs.entry(cell).or_default();
+        for row in reservoir.items {
+            global.offer(row, capacity, rng);
+        }
+    }
+    Ok(())
+}
+
 fn write_csv(
     path: &Path,
     existing_rows: Vec<Row>,
@@ -1187,6 +1586,10 @@ mod tests {
             encodings: false,
             pictures: false,
             total: 0,
+            changesets: false,
+            range_length: None,
+            dry_run: false,
+            explain: false,
         }
     }
 
@@ -1226,6 +1629,252 @@ mod tests {
         assert!(rows.iter().all(|r| r.dataset == "small"));
         assert_eq!(rows[0].status, "SAMPLED");
         assert_eq!(rows[1].status, "PROMOTED");
+        Ok(())
+    }
+
+    /// Distinct lines of code, four of which make a block (`stats::changeset`).
+    fn code(tag: &str, count: usize) -> String {
+        (0..count)
+            .map(|i| format!("let {tag}_{i} = compute_{tag}(input_{i}) + offset_{tag}_{i};\n"))
+            .collect()
+    }
+
+    /// A repository under `root` with one commit a tree of `trees`, oldest first.
+    fn linear_repository(root: &Path, trees: &[Vec<(&str, String)>]) -> Result<PathBuf> {
+        let dir = root.join("repo");
+        let repo = git2::Repository::init(&dir)?;
+        let mut parent: Option<git2::Oid> = None;
+        for (number, files) in trees.iter().enumerate() {
+            let mut index = git2::Index::new()?;
+            for (path, text) in files {
+                index.add(&git2::IndexEntry {
+                    ctime: git2::IndexTime::new(0, 0),
+                    mtime: git2::IndexTime::new(0, 0),
+                    dev: 0,
+                    ino: 0,
+                    mode: 0o100644,
+                    uid: 0,
+                    gid: 0,
+                    file_size: 0,
+                    id: repo.blob(text.as_bytes())?,
+                    flags: 0,
+                    flags_extended: 0,
+                    path: path.as_bytes().to_vec(),
+                })?;
+            }
+            let tree = repo.find_tree(index.write_tree_to(&repo)?)?;
+            // A second apart, so the walk's time order is the commits' order.
+            let when = git2::Time::new(1_700_000_000 + number as i64, 0);
+            let signature = git2::Signature::new("t", "t@example.com", &when)?;
+            let parents: Vec<git2::Commit> = parent
+                .map(|oid| repo.find_commit(oid))
+                .transpose()?
+                .into_iter()
+                .collect();
+            let parents: Vec<&git2::Commit> = parents.iter().collect();
+            parent =
+                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+        }
+        Ok(dir)
+    }
+
+    /// Six commits: the first tree, an edit of one file (no changeset), an edit of two (a
+    /// control), a block moved from `a.rs` to `b.rs`, `c.rs` renamed as it is, and another control.
+    fn changeset_history() -> Vec<Vec<(&'static str, String)>> {
+        let (a, b, c, moved) = (code("a", 8), code("b", 8), code("c", 8), code("moved", 6));
+        let tree = |a: String, b: String, c_path: &'static str| {
+            vec![("a.rs", a), ("b.rs", b), (c_path, c.clone())]
+        };
+        vec![
+            tree(format!("{a}{moved}"), b.clone(), "c.rs"),
+            tree(format!("{a}{moved}// one\n"), b.clone(), "c.rs"),
+            tree(
+                format!("{a}{moved}// two\n"),
+                format!("{b}// two\n"),
+                "c.rs",
+            ),
+            tree(
+                format!("{a}// two\n"),
+                format!("{b}// two\n{moved}"),
+                "c.rs",
+            ),
+            tree(
+                format!("{a}// three\n"),
+                format!("{b}// two\n{moved}"),
+                "moved/c.rs",
+            ),
+            tree(
+                format!("{a}// four\n"),
+                format!("{b}// four\n{moved}"),
+                "moved/c.rs",
+            ),
+        ]
+    }
+
+    fn changeset_args(root: &Path) -> Args {
+        let mut args = args(root.to_str().unwrap(), Some("pilot"), false);
+        args.changesets = true;
+        args.count = 5;
+        args.max_commits_per_repo = 100;
+        args.seed = Some(7);
+        args
+    }
+
+    #[test]
+    fn changesets_are_sampled_by_stratum_and_topped_up() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        linear_repository(root.path(), &changeset_history())?;
+        let output = root.path().join("changesets.csv");
+        let mut args = changeset_args(root.path());
+
+        args.dry_run = true;
+        sample_changesets(&args, &output)?;
+        assert!(!output.exists(), "--dry-run writes nothing");
+
+        args.dry_run = false;
+        sample_changesets(&args, &output)?;
+        let rows = changeset::read_rows(&output)?;
+        let strata: Vec<(&str, &str, usize)> = rows
+            .iter()
+            .map(|row| (row.stratum.as_str(), row.bucket.as_str(), row.files))
+            .collect();
+        // Sorted by stratum; the one-file commit is no changeset, and a repository gives a cell
+        // two at most (here it has just two controls).
+        assert_eq!(
+            strata,
+            [
+                ("block-move", "2-3", 2),
+                ("control", "2-3", 2),
+                ("control", "2-3", 2),
+                ("rename-unedited", "2-3", 3),
+            ]
+        );
+        let moved = &rows[0];
+        assert_eq!(moved.signals, "block-move");
+        assert_eq!(
+            moved.name,
+            format!("block-move-x-repo-{}", &moved.commit[..8])
+        );
+        assert_eq!(
+            (moved.dataset.as_str(), moved.status.as_str()),
+            ("pilot", "SAMPLED")
+        );
+        assert_eq!(moved.main_language, "Rust");
+        assert_eq!(moved.changed_lines, 12);
+        let repo = git2::Repository::open(root.path().join("repo"))?;
+        let commit = repo.find_commit(git2::Oid::from_str(&moved.commit)?)?;
+        assert_eq!(commit.parent_id(0)?.to_string(), moved.parent);
+
+        // Again: every commit is already there, and a triaged row still counts and stays.
+        let mut triaged = rows.clone();
+        triaged[0].status = "REJECTED".to_string();
+        triaged[0].comment = "not a move".to_string();
+        changeset::write_rows(&output, triaged.clone())?;
+        args.seed = Some(8);
+        sample_changesets(&args, &output)?;
+        assert_eq!(changeset::read_rows(&output)?, triaged);
+        Ok(())
+    }
+
+    #[test]
+    fn a_cell_is_topped_up_to_the_count_and_no_further() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let dir = linear_repository(root.path(), &changeset_history())?;
+        let options = ChangesetOptions {
+            max_commits: 100,
+            range_length: None,
+            count: 1,
+            dataset: "pilot",
+            explain: false,
+        };
+        let mut sample = ChangesetSample::default();
+        sample_changeset_repository(
+            &dir,
+            "repo",
+            &options,
+            &mut sample,
+            &mut StdRng::seed_from_u64(1),
+        )?;
+        let cell = |stratum: &str| (stratum.to_string(), "2-3".to_string());
+        assert_eq!(sample.reservoirs[&cell("control")].items.len(), 1);
+        // The census counts every changeset, sampled or not.
+        assert_eq!(sample.census.cells["repo"][&cell("control")], 2);
+        assert_eq!(sample.census.cells["repo"][&cell("block-move")], 1);
+        assert_eq!(sample.census.skipped["repo"][&Skip::TooFewFiles], 1);
+
+        // With the cell already full, nothing is offered room.
+        let mut full = ChangesetSample::default();
+        full.existing_counts.insert(cell("control"), 1);
+        sample_changeset_repository(
+            &dir,
+            "repo",
+            &options,
+            &mut full,
+            &mut StdRng::seed_from_u64(1),
+        )?;
+        assert!(full.reservoirs[&cell("control")].items.is_empty());
+        assert_eq!(full.reservoirs[&cell("block-move")].items.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn a_range_squashes_consecutive_commits_without_overlap() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        linear_repository(root.path(), &changeset_history())?;
+        let output = root.path().join("changesets.csv");
+        let mut args = changeset_args(root.path());
+        args.range_length = Some(2);
+        sample_changesets(&args, &output)?;
+        let rows = changeset::read_rows(&output)?;
+        // Five commits have a parent: two ranges of two, newest first, and one left over.
+        assert_eq!(rows.len(), 2);
+        let repo = git2::Repository::open(root.path().join("repo"))?;
+        for row in &rows {
+            assert_eq!(row.stratum, "range");
+            assert!(row.name.starts_with("range-x-repo-"));
+            let commit = repo.find_commit(git2::Oid::from_str(&row.commit)?)?;
+            assert_eq!(
+                commit.parent(0)?.parent_id(0)?.to_string(),
+                row.parent,
+                "the before tree is two commits back"
+            );
+        }
+        let mut signals: Vec<&str> = rows.iter().map(|row| row.signals.as_str()).collect();
+        signals.sort();
+        // The newest two: a rename and an edit. The two before: the block move.
+        assert_eq!(signals, ["range=2;block-move", "range=2;rename-unedited"]);
+        assert_ne!(rows[0].parent, rows[1].parent);
+
+        args.range_length = Some(1);
+        assert!(sample_changesets(&args, &output).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn a_seeded_changeset_draw_repeats() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        // Many controls, so that which two a repository offers is the seed's choice.
+        let trees: Vec<Vec<(&str, String)>> = (0..12)
+            .map(|i| {
+                vec![
+                    ("a.rs", format!("let a = {i};\n")),
+                    ("b.rs", format!("let b = {i};\n")),
+                ]
+            })
+            .collect();
+        linear_repository(root.path(), &trees)?;
+        let draw = |seed: u64| -> Result<Vec<changeset::Row>> {
+            let output = root.path().join(format!("{seed}.csv"));
+            let _ = fs::remove_file(&output);
+            let mut args = changeset_args(root.path());
+            args.seed = Some(seed);
+            sample_changesets(&args, &output)?;
+            changeset::read_rows(&output)
+        };
+        let first = draw(7)?;
+        assert_eq!(first.len(), PAIRS_PER_REPOSITORY_PER_STRATUM);
+        assert_eq!(draw(7)?, first);
+        assert!((8..40).any(|seed| draw(seed).unwrap() != first));
         Ok(())
     }
 }

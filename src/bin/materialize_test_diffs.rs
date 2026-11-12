@@ -28,6 +28,16 @@
 //! AGPL-3.0.
 //!
 //! Safe to re-run: byte-identical content is left alone and a missing README.md is backfilled.
+//!
+//! `--changesets` materialises the rows of `src/test/data/changesets.csv` (`sample_test_diffs
+//! --changesets`) instead, under `src/test/data/samples/changesets/<name>/`: `before/` and
+//! `after/` hold every file the changeset changes at its repository path with `.test` appended -
+//! an added file only under `after/`, a removed one only under `before/` - and each untouched
+//! file a signal points at under both. Which files those are is `stats::changeset::load_changes`'s
+//! say, as it was the sampler's: symbolic links and submodules are skipped, never followed, and a
+//! path that is not plain and relative is refused. `source.json` and `README.md` are as above,
+//! the first written through [`ChangesetSource`]. Re-running leaves a fixture that already holds
+//! exactly these files alone, and refuses one that holds anything else rather than overwrite it.
 use anyhow::{Result, bail};
 use clap::Parser;
 use git2::{Oid, Repository, Tree};
@@ -35,6 +45,7 @@ use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use omnidiff::stats::changeset;
 use omnidiff::stats::license;
 
 const DEFAULT_REPO_ROOTS: &[&str] = &[
@@ -68,6 +79,11 @@ struct Args {
     /// have no directory and are never backfilled.
     #[arg(long)]
     include_triaged: bool,
+
+    /// Materialize changesets (see the module documentation): `--sample-csv` defaults to
+    /// `src/test/data/changesets.csv` and `--output-dir` to `src/test/data/samples/changesets/`.
+    #[arg(long)]
+    changesets: bool,
 }
 
 #[derive(Serialize)]
@@ -156,19 +172,51 @@ fn read_rows(path: &Path) -> Result<Vec<Row>> {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let sample_csv = args.sample_csv.unwrap_or_else(default_sample_csv);
-    let output_dir = args.output_dir.unwrap_or_else(default_output_dir);
     let repo_roots: Vec<PathBuf> = if args.repos_dir.is_empty() {
         DEFAULT_REPO_ROOTS.iter().map(PathBuf::from).collect()
     } else {
         args.repos_dir
     };
-
-    let rows = read_rows(&sample_csv)?;
-
     let mut created = 0;
     let mut already_present = 0;
     let mut skipped = 0;
+
+    if args.changesets {
+        let sample_csv = args
+            .sample_csv
+            .unwrap_or_else(|| default_sample_csv().with_file_name("changesets.csv"));
+        let output_dir = args
+            .output_dir
+            .unwrap_or_else(|| default_output_dir().join("changesets"));
+        for row in changeset::read_rows(&sample_csv)? {
+            if row.status != "SAMPLED" {
+                continue;
+            }
+            match materialize_changeset(&row, &repo_roots, &output_dir) {
+                Ok(Resolution::Create(dir)) => {
+                    println!("created {:?}", dir);
+                    created += 1;
+                }
+                Ok(Resolution::AlreadyPresent(dir)) => {
+                    println!("already present {:?}", dir);
+                    already_present += 1;
+                }
+                Err(e) => {
+                    eprintln!("skipping {}@{}: {:?}", row.repository, row.commit, e);
+                    skipped += 1;
+                }
+            }
+        }
+        println!(
+            "Created {}, already present {}, skipped {}",
+            created, already_present, skipped
+        );
+        return Ok(());
+    }
+
+    let sample_csv = args.sample_csv.unwrap_or_else(default_sample_csv);
+    let output_dir = args.output_dir.unwrap_or_else(default_output_dir);
+    let rows = read_rows(&sample_csv)?;
 
     for row in &rows {
         if let Some(filter) = args.language.as_deref()
@@ -414,6 +462,223 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
     Ok(resolution)
 }
 
+/// A changeset fixture's `source.json`, as the design of 2026-11-12 has it (AGENT_LOG.md,
+/// "changeset ground truth"): where the changeset came from, every file it holds, and what the
+/// VCS says happened - hints, never truth.
+///
+/// To be replaced at merge by the shared type in `src/test/helper/human_changeset.rs` (branch
+/// `changesets`), which did not exist when this was written; this is the only place that writes
+/// the file.
+#[derive(Serialize)]
+struct ChangesetSource {
+    repository: String,
+    commit: String,
+    parent: String,
+    stratum: String,
+    dataset: String,
+    status: String,
+    files: Vec<ChangesetSourceFile>,
+    vcs_hints: Vec<ChangesetSourceHint>,
+}
+
+/// A file of a changeset by its repository path on each side it exists on: the fixture holds
+/// `before/<path>.test` and `after/<path>.test`.
+#[derive(Serialize)]
+struct ChangesetSourceFile {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    before: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    after: Option<String>,
+    /// True for a file the commit does not change, held because a signal points at it.
+    untouched: bool,
+}
+
+/// One line of `git diff --name-status -M` about a file the fixture holds.
+#[derive(Serialize)]
+struct ChangesetSourceHint {
+    /// `A`, `D`, `M`, `R`, `C` or `T`.
+    status: String,
+    path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    old_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    similarity: Option<u8>,
+}
+
+/// The regular files under `dir`, by path relative to it; an error if it holds anything that is
+/// neither a directory nor a regular file, which a fixture never does.
+fn files_under(dir: &Path) -> Result<Vec<(PathBuf, Vec<u8>)>> {
+    let mut found = Vec::new();
+    if !dir.exists() {
+        return Ok(found);
+    }
+    for entry in walkdir::WalkDir::new(dir).follow_links(false) {
+        let entry = entry?;
+        let kind = entry.file_type();
+        if kind.is_dir() {
+            continue;
+        }
+        if !kind.is_file() {
+            bail!("{:?} is not a regular file", entry.path());
+        }
+        found.push((
+            entry.path().strip_prefix(dir)?.to_path_buf(),
+            fs::read(entry.path())?,
+        ));
+    }
+    found.sort();
+    Ok(found)
+}
+
+/// Writes the fixture of one `changesets.csv` row (see the module documentation).
+fn materialize_changeset(
+    row: &changeset::Row,
+    repo_roots: &[PathBuf],
+    output_dir: &Path,
+) -> Result<Resolution> {
+    if row.name.contains('/') || !changeset::is_safe_path(&row.name) {
+        bail!("{:?} is not a fixture name", row.name);
+    }
+    let repo_path = find_repo_path(repo_roots, &row.repository)
+        .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
+    let repo = Repository::open(&repo_path)?;
+    let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
+    let parent = repo.find_commit(Oid::from_str(&row.parent)?)?;
+    let (before_tree, tree) = (parent.tree()?, commit.tree()?);
+
+    let files = changeset::load_changes(&repo, &before_tree, &tree)?
+        .map_err(|skip| anyhow::anyhow!("no longer a changeset: {}", skip.name()))?;
+    let mut source_files = Vec::new();
+    let mut readme_files = Vec::new();
+    // Relative to the fixture's directory.
+    let mut wanted: Vec<(PathBuf, Vec<u8>)> = Vec::new();
+    let test_path = |side: &str, path: &str| Path::new(side).join(format!("{path}.test"));
+    for file in files {
+        readme_files.push((
+            file.path.clone(),
+            match (&file.before, &file.after) {
+                (Some(_), Some(_)) => "modified",
+                (None, _) => "added",
+                (Some(_), None) => "removed",
+            },
+        ));
+        source_files.push(ChangesetSourceFile {
+            before: file.before.as_ref().map(|_| file.path.clone()),
+            after: file.after.as_ref().map(|_| file.path.clone()),
+            untouched: false,
+        });
+        if let Some(blob) = file.before {
+            wanted.push((test_path("before", &file.path), blob.bytes));
+        }
+        if let Some(blob) = file.after {
+            wanted.push((test_path("after", &file.path), blob.bytes));
+        }
+    }
+    for path in row.untouched() {
+        let bytes = changeset::regular_blob(&repo, &before_tree, path)?;
+        if changeset::regular_blob(&repo, &tree, path)? != bytes {
+            bail!("{path:?} is recorded as untouched, and the commit changes it");
+        }
+        readme_files.push((path.to_string(), "untouched"));
+        source_files.push(ChangesetSourceFile {
+            before: Some(path.to_string()),
+            after: Some(path.to_string()),
+            untouched: true,
+        });
+        wanted.push((test_path("before", path), bytes.clone()));
+        wanted.push((test_path("after", path), bytes));
+    }
+    wanted.sort();
+    // `a` beside `a.test/b` would need `a.test` to be a file and a directory.
+    for (path, _) in &wanted {
+        if wanted
+            .iter()
+            .any(|(other, _)| other != path && other.starts_with(path))
+        {
+            bail!("{path:?} is both a file and a directory of the fixture");
+        }
+    }
+
+    let dir = output_dir.join(&row.name);
+    let resolution = if dir.exists() {
+        let mut present = files_under(&dir.join("before"))?
+            .into_iter()
+            .map(|(path, bytes)| (Path::new("before").join(path), bytes))
+            .collect::<Vec<_>>();
+        present.extend(
+            files_under(&dir.join("after"))?
+                .into_iter()
+                .map(|(path, bytes)| (Path::new("after").join(path), bytes)),
+        );
+        present.sort();
+        if present != wanted {
+            bail!(
+                "{dir:?} exists and does not hold this changeset's files; remove it to \
+                 materialize the row again"
+            );
+        }
+        Resolution::AlreadyPresent(dir.clone())
+    } else {
+        for (path, bytes) in &wanted {
+            let target = dir.join(path);
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::write(target, bytes)?;
+        }
+        Resolution::Create(dir.clone())
+    };
+
+    // Neither is overwritten: a hand-corrected README.md survives a re-run, and `source.json` is
+    // `human_solver`'s to update once the changeset is triaged.
+    let missing = |path: &Path| fs::symlink_metadata(path).is_err();
+    let source_path = dir.join("source.json");
+    if missing(&source_path) {
+        let held = |path: &str| readme_files.iter().any(|(file, _)| file == path);
+        let vcs_hints = changeset::vcs_hints(&repo, parent.id(), commit.id())?
+            .into_iter()
+            .filter(|hint| held(&hint.path) || hint.old_path.as_deref().is_some_and(held))
+            .map(|hint| ChangesetSourceHint {
+                status: hint.status.to_string(),
+                path: hint.path,
+                old_path: hint.old_path,
+                similarity: hint.similarity,
+            })
+            .collect();
+        let source = ChangesetSource {
+            repository: row.repository.clone(),
+            commit: row.commit.clone(),
+            parent: row.parent.clone(),
+            stratum: row.stratum.clone(),
+            dataset: row.dataset.clone(),
+            status: row.status.clone(),
+            files: source_files,
+            vcs_hints,
+        };
+        fs::write(&source_path, serde_json::to_string_pretty(&source)?)?;
+    }
+    let readme_path = dir.join("README.md");
+    if missing(&readme_path) {
+        let license_files = license::find_license_files(&repo, &tree);
+        let repo_url = license::origin_remote_url(&repo);
+        let readme = license::render_changeset_readme(
+            repo_url.as_deref(),
+            &license::ChangesetProvenance {
+                repository: &row.repository,
+                commit: &row.commit,
+                parent: &row.parent,
+                stratum: &row.stratum,
+                dataset: &row.dataset,
+                files: &readme_files,
+            },
+            &license_files,
+        );
+        fs::write(&readme_path, readme)?;
+    }
+
+    Ok(resolution)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -640,6 +905,225 @@ mod tests {
         materialize_row(&row, &repo_roots, output_dir.path())?;
         assert!(readme.exists());
 
+        Ok(())
+    }
+
+    /// Three commits: a tree, then one that moves a block from `src/a.rs` to a new `src/b.rs`,
+    /// removes `old.rs`, copies from the untouched `lib/source.rs` and retargets a link; the
+    /// row of the second, as the sampler would write it.
+    fn changeset_repository(root: &Path) -> Result<changeset::Row> {
+        let repo_path = root.join("example-repo");
+        let repo = Repository::init(&repo_path)?;
+        let signature = git2::Signature::now("test", "test@example.com")?;
+        let lines = |tag: &str, count: usize| -> String {
+            (0..count)
+                .map(|i| format!("let {tag}_{i} = compute_{tag}(input_{i}) + offset_{tag}_{i};\n"))
+                .collect()
+        };
+        let commit = |parent: Option<Oid>, entries: &[(&str, String, u32)]| -> Result<Oid> {
+            let mut index = git2::Index::new()?;
+            for (path, text, mode) in entries {
+                index.add(&git2::IndexEntry {
+                    ctime: git2::IndexTime::new(0, 0),
+                    mtime: git2::IndexTime::new(0, 0),
+                    dev: 0,
+                    ino: 0,
+                    mode: *mode,
+                    uid: 0,
+                    gid: 0,
+                    file_size: 0,
+                    id: repo.blob(text.as_bytes())?,
+                    flags: 0,
+                    flags_extended: 0,
+                    path: path.as_bytes().to_vec(),
+                })?;
+            }
+            let tree = repo.find_tree(index.write_tree_to(&repo)?)?;
+            let parents: Vec<git2::Commit> = parent
+                .map(|id| repo.find_commit(id))
+                .transpose()?
+                .into_iter()
+                .collect();
+            let parents: Vec<&git2::Commit> = parents.iter().collect();
+            Ok(repo.commit(None, &signature, &signature, "c", &tree, &parents)?)
+        };
+        let (keep, moved, shared) = (lines("keep", 6), lines("moved", 6), lines("shared", 12));
+        let first = commit(
+            None,
+            &[
+                (
+                    "LICENSE",
+                    "Permission is hereby granted, free of charge".to_string(),
+                    0o100644,
+                ),
+                ("lib/source.rs", shared.clone(), 0o100644),
+                ("src/a.rs", format!("{keep}{moved}"), 0o100644),
+                ("old.rs", lines("old", 5), 0o100644),
+                ("link", "old.rs".to_string(), 0o120000),
+            ],
+        )?;
+        let second = commit(
+            Some(first),
+            &[
+                (
+                    "LICENSE",
+                    "Permission is hereby granted, free of charge".to_string(),
+                    0o100644,
+                ),
+                ("lib/source.rs", shared.clone(), 0o100644),
+                ("src/a.rs", keep.clone(), 0o100644),
+                ("src/b.rs", format!("{moved}{shared}"), 0o100644),
+                ("link", "src/a.rs".to_string(), 0o120000),
+            ],
+        )?;
+        Ok(changeset::Row {
+            name: changeset::fixture_name("copy", "example-repo", &second.to_string()),
+            repository: "example-repo".to_string(),
+            commit: second.to_string(),
+            parent: first.to_string(),
+            stratum: "copy".to_string(),
+            signals: "copy;block-move;untouched=lib/source.rs".to_string(),
+            files: 3,
+            changed_lines: 29,
+            main_language: "Rust".to_string(),
+            bucket: "2-3".to_string(),
+            dataset: "pilot".to_string(),
+            status: "SAMPLED".to_string(),
+            comment: String::new(),
+        })
+    }
+
+    #[test]
+    fn a_changeset_becomes_two_trees_a_source_and_a_readme() -> Result<()> {
+        let root = tempdir()?;
+        let row = changeset_repository(root.path())?;
+        let output_dir = tempdir()?;
+        let roots = [root.path().to_path_buf()];
+        let dir = match materialize_changeset(&row, &roots, output_dir.path())? {
+            Resolution::Create(dir) => dir,
+            Resolution::AlreadyPresent(_) => panic!("expected a fresh directory"),
+        };
+        assert_eq!(dir.file_name().unwrap().to_string_lossy(), row.name);
+
+        let held = |side: &str| -> Result<Vec<String>> {
+            Ok(files_under(&dir.join(side))?
+                .into_iter()
+                .map(|(path, _)| path.to_string_lossy().into_owned())
+                .collect())
+        };
+        // A removed file only before, an added one only after, the untouched source in both;
+        // the link and the unchanged licence in neither.
+        assert_eq!(
+            held("before")?,
+            ["lib/source.rs.test", "old.rs.test", "src/a.rs.test"]
+        );
+        assert_eq!(
+            held("after")?,
+            ["lib/source.rs.test", "src/a.rs.test", "src/b.rs.test"]
+        );
+        assert!(fs::read_to_string(dir.join("after/src/b.rs.test"))?.contains("compute_moved"));
+
+        let source: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(dir.join("source.json"))?)?;
+        let mut keys: Vec<&String> = source.as_object().unwrap().keys().collect();
+        keys.sort();
+        assert_eq!(
+            keys,
+            [
+                "commit",
+                "dataset",
+                "files",
+                "parent",
+                "repository",
+                "status",
+                "stratum",
+                "vcs_hints"
+            ]
+        );
+        assert_eq!(source["parent"], row.parent);
+        assert_eq!(source["stratum"], "copy");
+        assert_eq!(
+            source["files"],
+            serde_json::json!([
+                {"before": "old.rs", "untouched": false},
+                {"before": "src/a.rs", "after": "src/a.rs", "untouched": false},
+                {"after": "src/b.rs", "untouched": false},
+                {"before": "lib/source.rs", "after": "lib/source.rs", "untouched": true},
+            ])
+        );
+        // Git's own account of the files held, the link's change left out.
+        assert_eq!(
+            source["vcs_hints"],
+            serde_json::json!([
+                {"status": "D", "path": "old.rs"},
+                {"status": "M", "path": "src/a.rs"},
+                {"status": "A", "path": "src/b.rs"},
+            ])
+        );
+
+        let readme = fs::read_to_string(dir.join("README.md"))?;
+        assert!(readme.contains(&format!("- **Parent:** `{}`", row.parent)));
+        assert!(readme.contains("  - `lib/source.rs` (untouched)"));
+        assert!(readme.contains("- `LICENSE` - MIT License"));
+        Ok(())
+    }
+
+    #[test]
+    fn a_changeset_rerun_changes_nothing_and_never_overwrites() -> Result<()> {
+        let root = tempdir()?;
+        let row = changeset_repository(root.path())?;
+        let output_dir = tempdir()?;
+        let roots = [root.path().to_path_buf()];
+        let Resolution::Create(dir) = materialize_changeset(&row, &roots, output_dir.path())?
+        else {
+            panic!("expected a fresh directory");
+        };
+        fs::write(dir.join("README.md"), "hand-corrected")?;
+        fs::remove_file(dir.join("source.json"))?;
+        match materialize_changeset(&row, &roots, output_dir.path())? {
+            Resolution::AlreadyPresent(again) => assert_eq!(again, dir),
+            Resolution::Create(_) => panic!("expected the second run to find the fixture"),
+        }
+        assert_eq!(fs::read_to_string(dir.join("README.md"))?, "hand-corrected");
+        assert!(dir.join("source.json").exists(), "backfilled");
+
+        // Anything else in the fixture's trees and the row is refused, not written over.
+        fs::write(dir.join("after/src/b.rs.test"), "edited by hand")?;
+        assert!(materialize_changeset(&row, &roots, output_dir.path()).is_err());
+        assert_eq!(
+            fs::read_to_string(dir.join("after/src/b.rs.test"))?,
+            "edited by hand"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_changeset_row_cannot_write_outside_its_fixture() -> Result<()> {
+        let root = tempdir()?;
+        let row = changeset_repository(root.path())?;
+        let output_dir = tempdir()?;
+        let roots = [root.path().to_path_buf()];
+        for name in ["../escaped", "a/b", "/tmp/escaped", ".."] {
+            let mut bad = row.clone();
+            bad.name = name.to_string();
+            assert!(
+                materialize_changeset(&bad, &roots, output_dir.path()).is_err(),
+                "{name}"
+            );
+        }
+        for untouched in ["../../etc/passwd", "/etc/passwd", "link", "src", "src/a.rs"] {
+            let mut bad = row.clone();
+            bad.signals = format!("copy;untouched={untouched}");
+            assert!(
+                materialize_changeset(&bad, &roots, output_dir.path()).is_err(),
+                "{untouched}"
+            );
+        }
+        assert_eq!(
+            fs::read_dir(output_dir.path())?.count(),
+            0,
+            "nothing was written"
+        );
         Ok(())
     }
 }
