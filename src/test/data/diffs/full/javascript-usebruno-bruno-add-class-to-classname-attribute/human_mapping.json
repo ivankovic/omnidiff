@@ -2452,5 +2452,39 @@
         "export_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 142,
+              "start_column": 61,
+              "end_row": 142,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 142,
+              "start_column": 60,
+              "end_row": 142,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

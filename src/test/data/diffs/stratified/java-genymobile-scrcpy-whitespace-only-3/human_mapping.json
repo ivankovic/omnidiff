@@ -5,5 +5,27 @@
       "before_path": [],
       "after_path": []
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 48,
+              "start_column": 0,
+              "end_row": 48,
+              "end_column": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Minimal",
+      "entries": []
+    }
   ]
 }

@@ -930,5 +930,39 @@
       "operation": "match_but_not_identical",
       "with_children": false
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 77,
+              "end_row": 21,
+              "end_column": 82
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 21,
+              "start_column": 76,
+              "end_row": 21,
+              "end_column": 82
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

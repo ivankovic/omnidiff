@@ -95,5 +95,61 @@
         "class_declaration:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 18,
+              "start_column": 21,
+              "end_row": 18,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 22,
+              "end_row": 18,
+              "end_column": 24
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 18,
+              "start_column": 20,
+              "end_row": 18,
+              "end_column": 21
+            }
+          ],
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 20,
+              "end_row": 18,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 24,
+              "end_row": 18,
+              "end_column": 33
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

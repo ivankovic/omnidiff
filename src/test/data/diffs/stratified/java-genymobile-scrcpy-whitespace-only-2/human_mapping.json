@@ -5,5 +5,46 @@
       "before_path": [],
       "after_path": []
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": []
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 1,
+              "end_row": 77,
+              "end_column": 13
+            }
+          ],
+          "after": [
+            {
+              "start_row": 77,
+              "start_column": 0,
+              "end_row": 77,
+              "end_column": 12
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 77,
+              "start_column": 0,
+              "end_row": 77,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
