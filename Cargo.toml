@@ -101,7 +101,8 @@ assets = [
 
 [dependencies]
 anyhow = "1.0.100"
-clap = { version = "4.6.6", features = ["derive"] }
+# The command line (src/main.rs, src/bin/): `tui` brings it, so the library goes without.
+clap = { version = "4.6.6", features = ["derive"], optional = true }
 clap_complete = { version = "4.6.9", optional = true }
 # clap_mangen 0.3 requires clap >= 4.6.6, which is why clap's own floor above is 4.6.6 rather
 # than lower: the declared floor must be the effective one.
@@ -121,7 +122,8 @@ regex = { version = "1.12.2", optional = true }
 unicode-width = "0.2"
 rusqlite = { version = "0.41", features = ["bundled"], optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0"
+# `--mode json` and the TUI's config; the library itself writes no JSON.
+serde_json = { version = "1.0", optional = true }
 tempfile = { version = "3.10.1", optional = true }
 futures = { version = "0.3", optional = true }
 tokio = { version = "1.0", features = ["full"], optional = true }
@@ -196,9 +198,11 @@ strum = { version = "0.28.0", features = ["derive"] }
 syntect = { version = "5.2", features = ["default-fancy"], optional = true }
 two-face = { version = "0.5.2", default-features = false, features = ["syntect-fancy"], optional = true }
 
-# Unix only: libc::raise(SIGTSTP) for Ctrl-Z in tui::app.
+# Unix only, and only for the TUI: libc::raise(SIGTSTP) for Ctrl-Z in tui::app, and the
+# terminal-size ioctl in tui::headless::side_by_side. Optional like the `libc` above, so one
+# `dep:libc` (in `tui` and `stats`) turns on both and the library builds without it.
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
+libc = { version = "0.2", optional = true }
 
 # musl's malloc is markedly slower on this allocation-heavy tool; only the musl targets link
 # mimalloc.
@@ -210,6 +214,8 @@ mimalloc = "0.1"
 # compile src/test/ without that feature (see lib.rs's gate on `mod test`).
 regex = "1.12.2"
 tempfile = "3.10.1"
+# The tests read and write JSON (fixtures, ground truths) whether or not `tui` is on.
+serde_json = "1.0"
 # The archive tests write the xz they read.
 lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "xz", "encoder"] }
 
@@ -220,6 +226,9 @@ default = ["tui"]
 # Everything the TUI (src/tui/, src/main.rs) needs. Every dev-tool feature implies it: some of those
 # bins use these deps directly, and tracking which ones is not worth it.
 tui = [
+    "dep:clap",
+    "dep:serde_json",
+    "dep:libc",
     "dep:clap_complete",
     "dep:clap_mangen",
     "dep:ratatui",

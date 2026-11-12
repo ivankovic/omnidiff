@@ -283,7 +283,9 @@ pub fn assert_known_verdict_mismatches(
 ) -> Result<()> {
     let human = load(family, name)?;
     let engine = engine_diff(family, name)?;
-    // The diff is at hand, so its `--mode json` answer is checked against the schema here.
+    // The diff is at hand, so its `--mode json` answer is checked against the schema here. The
+    // JSON output is the command line's, so a library-only build (no `tui`) skips it.
+    #[cfg(feature = "tui")]
     super::json_schema::check_json_output(&crate::tui::json_output::binary_diff_json(
         Path::new("before"),
         Path::new("after"),

@@ -303,19 +303,17 @@ fn render<'a>(page: &'a Page<'a>, cache: &hayro::RenderCache<'a>) -> Result<Rgba
         page,
         cache,
         &InterpreterSettings::default(),
-        &hayro::RenderSettings {
+        &hayro::RenderSettings::default(),
+        &hayro::PixmapSettings {
             x_scale: scale,
             y_scale: scale,
             bg_color: hayro::vello_cpu::color::palette::css::WHITE,
-            ..Default::default()
         },
     );
     let (width, height) = (u32::from(pixmap.width()), u32::from(pixmap.height()));
-    let rgba = pixmap
-        .take_unpremultiplied()
-        .into_iter()
-        .flat_map(|pixel| [pixel.r, pixel.g, pixel.b, pixel.a])
-        .collect();
+    // Straight (not premultiplied) alpha, as `RgbaImage` holds it; on a white page every pixel is
+    // opaque, so this costs nothing.
+    let rgba = pixmap.take_rgba8(hayro::vello_cpu::peniko::ImageAlphaType::Alpha);
     RgbaImage::from_raw(width, height, rgba).context("a page's pixels")
 }
 

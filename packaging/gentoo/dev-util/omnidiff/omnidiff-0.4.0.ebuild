@@ -98,7 +98,8 @@ CRATES="
 	fastrand@2.5.0
 	fax@0.2.7
 	fdeflate@0.3.7
-	fearless_simd@0.4.1
+	fearless_simd@0.7.0
+	fearless_simd@1.2.0
 	filedescriptor@0.8.3
 	filetime@0.2.29
 	find-msvc-tools@0.1.12
@@ -108,7 +109,6 @@ CRATES="
 	float-cmp@0.9.0
 	fnv@1.0.7
 	foldhash@0.2.0
-	font-types@0.11.3
 	font-types@0.12.6
 	funty@2.0.0
 	futures-channel@0.3.34
@@ -126,20 +126,20 @@ CRATES="
 	getrandom@0.4.3
 	gif@0.14.2
 	git2@0.21.0
-	glifo@0.1.1
+	glifo@0.4.0
 	guillotiere@0.7.0
 	half@2.7.1
 	hashbrown@0.16.1
 	hashbrown@0.17.1
 	hashlink@0.12.2
-	hayro-ccitt@0.3.0
+	hayro-ccitt@0.4.0
 	hayro-cmap@0.1.0
-	hayro-interpret@0.7.0
-	hayro-jbig2@0.3.0
-	hayro-jpeg2000@0.3.5
+	hayro-interpret@0.8.0
+	hayro-jbig2@0.3.1
+	hayro-jpeg2000@0.4.1
 	hayro-postscript@0.1.0
-	hayro-syntax@0.7.2
-	hayro@0.7.1
+	hayro-syntax@0.8.0
+	hayro@0.8.0
 	heck@0.5.0
 	hermit-abi@0.5.3
 	hex@0.4.3
@@ -163,7 +163,7 @@ CRATES="
 	lab@0.11.0
 	lazy_static@1.5.0
 	libbz2-rs-sys@0.2.5
-	libc@0.2.189
+	libc@0.2.191
 	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
@@ -261,7 +261,8 @@ CRATES="
 	ratatui-termwiz@0.1.2
 	ratatui-widgets@0.3.2
 	ratatui@0.30.2
-	read-fonts@0.39.2
+	read-fonts@0.41.0
+	read-fonts@0.43.3
 	read-fonts@0.45.0
 	redox_syscall@0.5.18
 	ref-cast-impl@1.0.27
@@ -301,7 +302,8 @@ CRATES="
 	simd-adler32@0.3.10
 	simplecss@0.2.2
 	siphasher@1.0.3
-	skrifa@0.42.1
+	skrifa@0.44.0
+	skrifa@0.46.2
 	skrifa@0.48.0
 	slab@0.4.12
 	smallvec@1.16.1
@@ -377,7 +379,7 @@ CRATES="
 	tree-sitter-xml@0.7.0
 	tree-sitter-yaml@0.7.2
 	tree-sitter@0.25.10
-	ts-parser-perl@2.0.0
+	ts-parser-perl@2.0.5
 	two-face@0.5.2+bat-0.26.1
 	typed-path@0.12.3
 	typenum@1.20.1
@@ -391,9 +393,8 @@ CRATES="
 	uuid@1.26.1
 	valuable@0.1.1
 	vcpkg@0.2.15
-	vello_common@0.0.8
-	vello_common@0.0.9
-	vello_cpu@0.0.8
+	vello_common@0.3.0
+	vello_cpu@0.3.0
 	version_check@0.9.5
 	vsimd@0.8.0
 	vtparse@0.6.2
