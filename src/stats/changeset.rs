@@ -14,13 +14,16 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-//! Commit-level ("changeset") sampling: which stratum a commit belongs to, for
+//! Changeset sampling: what a multi-file fixture holds and which signals it carries, for
 //! `sample_test_diffs --changesets` and `materialize_test_diffs --changesets`.
 //!
-//! The unit is a commit (or a squashed run of them, the `range` stratum): every file it changes,
-//! plus any untouched file a signal points at, [`MIN_FILES`]..=[`MAX_FILES`] files in all.
+//! A changeset is of one of two kinds ([`KIND_COMMIT`], [`KIND_FOLDERS`]). A *commit* is every
+//! file one commit changes, plus any untouched file a signal points at,
+//! [`MIN_FILES`]..=[`MAX_FILES`] files in all, with the VCS's hints beside it. *Folders* are two
+//! complete directory trees as they would lie on disk, with no VCS, no hints and no notion of a
+//! commit.
 //!
-//! # What a changeset holds
+//! # What a commit holds
 //!
 //! [`load_changes`] reads the tree diff without rename detection, so a file is added, removed or
 //! modified at one path, and drops:
@@ -37,11 +40,36 @@
 //! (added plus removed, a whole added or removed file counting every line): nobody solves a
 //! larger one by hand.
 //!
+//! # What folders hold
+//!
+//! Two points in a repository's history - the tree before the first of `--range-length`
+//! consecutive single-parent commits and the tree after the last - and one sub-folder of it,
+//! complete on both sides, unchanged files included ([`choose_folder`], [`load_folder`]).
+//! Nothing is dropped by its path: a lock file or a vendored directory is there on disk too.
+//!
+//! The sub-folder is the directory, the repository root included, that holds the most changed
+//! files among those that qualify, and the deepest of them on a tie: so the deepest directory
+//! that contains every changed file when that one qualifies, and otherwise the one that keeps the
+//! most. A directory qualifies when it holds [`MIN_FILES`]..=[`MAX_FILES`] changed files, none of
+//! them over [`MAX_FILE_BYTES`], and at most `--max-tree-files` files on either side. The pair is
+//! skipped when no directory qualifies, or when the one chosen changes more than
+//! [`MAX_CHANGED_LINES`] lines.
+//!
+//! What a tree on disk would hold and a fixture does not is listed, not passed over
+//! ([`Omitted`]): an unchanged file over [`MAX_FILE_BYTES`] (with its size and blob id), a
+//! symbolic link, a submodule. The tree is known to be incomplete exactly there. Binary files
+//! under the cap are held as they are. A changed path with a link or submodule on one side is
+//! a file added or removed on the other.
+//!
 //! # Signals
 //!
 //! [`classify`] is a pure function of the changed files' blobs, the VCS's rename hints and an
 //! index of the untouched files. No signal uses the VCS's file pairing but `rename-edited`, which
-//! is defined by it. All that fire are recorded; the stratum is the first in [`PRECEDENCE`].
+//! is defined by it, and which folders therefore never carry: they are classified with no hints,
+//! over the whole sub-folder, its unchanged files being the untouched ones. A changeset carries
+//! every signal that fires, in no order of importance: a directory renamed with a function moved
+//! out of one of its files is a `directory-move`, a `rename-edited` and a `block-move` at once,
+//! and a fixture of it shows all three.
 //!
 //! Lines are compared after trimming whitespace, and blank lines, lines without a letter or digit
 //! (braces, `});`), lines that are one of [`TRIVIAL_WORDS`], imports ([`IMPORT_PREFIXES`]) and
@@ -75,18 +103,15 @@
 //!   file both removes and adds are left out first, so one edit made to two files is not a move.
 //! - `cross-language`: a removed and an added file share a stem and are of different programming
 //!   languages, and are not one blob (`Foo.java` renamed `Foo.kt` and translated in the next
-//!   commit is a rename here and an edit there; a range of the two holds the translation).
-//! - `control`: none of the above.
-//!
-//! Precedence, most specific first: `cross-language`, `split-or-merge`, `copy`, `block-move`,
-//! `moved-and-edited` - content that crosses files, the rarer first - then `directory-move`,
-//! `non-code-move`, `rename-edited`, `rename-unedited`, which pair whole files, then `control`.
+//!   commit is a rename here and an edit there; folders spanning the two hold the translation).
+//! - `control` ([`CONTROL`]): none of the above.
 //!
 //! # `changesets.csv`
 //!
-//! One [`Row`] a changeset. `signals` holds every signal that fired, `;`-separated, then one
-//! `untouched=<path>` for each untouched file the fixture holds, and for a range `range=<length>`
-//! first. `files` counts the changed files, which also decide `bucket` ([`file_bucket`]).
+//! One [`Row`] a changeset. `signals` holds every signal that fired, sorted by name and
+//! `;`-separated, or `control`; `untouched_paths` the untouched files a `copy` points at, likewise
+//! separated. `files` counts the changed files, which also decide `bucket` ([`file_bucket`]).
+//! `root` is the sub-folder of a `folders` row, `.` for the repository root.
 
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
@@ -157,55 +182,57 @@ pub const LOCK_FILES: &[&str] = &[
     "yarn.lock",
 ];
 
+/// What a changeset can show. Declared in the order of the names, which is the order a
+/// changeset's signals are listed in; none ranks above another.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Stratum {
-    CrossLanguage,
-    SplitOrMerge,
-    Copy,
+pub enum Signal {
     BlockMove,
-    MovedAndEdited,
+    Copy,
+    CrossLanguage,
     DirectoryMove,
+    MovedAndEdited,
     NonCodeMove,
     RenameEdited,
     RenameUnedited,
-    Control,
-    /// Several commits squashed; what the squash holds is in the row's signals.
-    Range,
+    SplitOrMerge,
 }
 
-/// Every signal, most specific first: a changeset's stratum is the first that fired.
-pub const PRECEDENCE: [Stratum; 10] = [
-    Stratum::CrossLanguage,
-    Stratum::SplitOrMerge,
-    Stratum::Copy,
-    Stratum::BlockMove,
-    Stratum::MovedAndEdited,
-    Stratum::DirectoryMove,
-    Stratum::NonCodeMove,
-    Stratum::RenameEdited,
-    Stratum::RenameUnedited,
-    Stratum::Control,
-];
+/// What a changeset with no signal is called, in `signals` and as a sampling cell.
+pub const CONTROL: &str = "control";
+/// A changeset that is one commit, with the VCS's hints.
+pub const KIND_COMMIT: &str = "commit";
+/// A changeset that is two directory trees, with nothing from a VCS.
+pub const KIND_FOLDERS: &str = "folders";
 
-impl Stratum {
+impl Signal {
+    pub const ALL: [Signal; 9] = [
+        Signal::BlockMove,
+        Signal::Copy,
+        Signal::CrossLanguage,
+        Signal::DirectoryMove,
+        Signal::MovedAndEdited,
+        Signal::NonCodeMove,
+        Signal::RenameEdited,
+        Signal::RenameUnedited,
+        Signal::SplitOrMerge,
+    ];
+
     pub fn name(self) -> &'static str {
         match self {
-            Stratum::CrossLanguage => "cross-language",
-            Stratum::SplitOrMerge => "split-or-merge",
-            Stratum::Copy => "copy",
-            Stratum::BlockMove => "block-move",
-            Stratum::MovedAndEdited => "moved-and-edited",
-            Stratum::DirectoryMove => "directory-move",
-            Stratum::NonCodeMove => "non-code-move",
-            Stratum::RenameEdited => "rename-edited",
-            Stratum::RenameUnedited => "rename-unedited",
-            Stratum::Control => "control",
-            Stratum::Range => "range",
+            Signal::BlockMove => "block-move",
+            Signal::Copy => "copy",
+            Signal::CrossLanguage => "cross-language",
+            Signal::DirectoryMove => "directory-move",
+            Signal::MovedAndEdited => "moved-and-edited",
+            Signal::NonCodeMove => "non-code-move",
+            Signal::RenameEdited => "rename-edited",
+            Signal::RenameUnedited => "rename-unedited",
+            Signal::SplitOrMerge => "split-or-merge",
         }
     }
 }
 
-/// The file-count buckets a stratum is sampled in.
+/// The file-count buckets a signal is sampled in.
 pub const FILE_BUCKETS: [&str; 3] = ["2-3", "4-8", "9-20"];
 
 /// Which of [`FILE_BUCKETS`] a changeset of `files` changed files falls into.
@@ -275,30 +302,38 @@ impl Untouched for NoUntouched {
     }
 }
 
-/// Untouched files given as text: what a test, or a small tree, has.
-pub struct UntouchedTexts(pub Vec<(String, String)>);
+/// Untouched files given as text: what a test has, and the unchanged files of a folder.
+#[derive(Default)]
+pub struct UntouchedTexts {
+    by_block: FxHashMap<u64, Vec<String>>,
+}
+
+impl UntouchedTexts {
+    pub fn new<'a>(files: impl IntoIterator<Item = (&'a str, &'a str)>) -> UntouchedTexts {
+        let mut by_block: FxHashMap<u64, Vec<String>> = FxHashMap::default();
+        for (path, text) in files {
+            for block in blocks_of(text) {
+                by_block.entry(block).or_default().push(path.to_string());
+            }
+        }
+        UntouchedTexts { by_block }
+    }
+}
 
 impl Untouched for UntouchedTexts {
     fn holders(&self, block: u64) -> Holders {
-        let paths: Vec<String> = self
-            .0
-            .iter()
-            .filter(|(_, text)| blocks_of(text).contains(&block))
-            .map(|(path, _)| path.clone())
-            .collect();
-        if paths.len() > BOILERPLATE_FILES {
-            Holders::Boilerplate
-        } else {
-            Holders::Paths(paths)
+        match self.by_block.get(&block) {
+            Some(paths) if paths.len() > BOILERPLATE_FILES => Holders::Boilerplate,
+            Some(paths) => Holders::Paths(paths.clone()),
+            None => Holders::Paths(Vec::new()),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Classification {
-    pub stratum: Stratum,
-    /// Every signal that fired, in [`PRECEDENCE`] order; `[Control]` when none did.
-    pub signals: Vec<Stratum>,
+    /// Every signal that fired, sorted; none for a control.
+    pub signals: Vec<Signal>,
     /// Untouched files a `copy` points at, for the fixture to hold.
     pub untouched: Vec<String>,
     /// What each signal saw, one line each, for a person checking it.
@@ -641,13 +676,13 @@ pub fn cross_language_pairs<'a>(removed: &[&'a str], added: &[&'a str]) -> Vec<(
     pairs
 }
 
-/// The stratum and signals of a changeset (see the module documentation).
+/// The signals of a changeset (see the module documentation).
 pub fn classify(
     files: &[ChangedFile],
     hints: &[VcsHint],
     untouched: &dyn Untouched,
 ) -> Classification {
-    let mut fired: FxHashSet<Stratum> = FxHashSet::default();
+    let mut fired: FxHashSet<Signal> = FxHashSet::default();
     let mut evidence = Vec::new();
     let index_of: FxHashMap<&str, usize> = files
         .iter()
@@ -676,9 +711,9 @@ pub fn classify(
             .as_ref()
             .is_some_and(|blob| is_code(&blob.bytes));
         let signal = if code {
-            Stratum::RenameUnedited
+            Signal::RenameUnedited
         } else {
-            Stratum::NonCodeMove
+            Signal::NonCodeMove
         };
         fired.insert(signal);
         evidence.push(format!(
@@ -705,7 +740,7 @@ pub fn classify(
             && is_added(&files[*new])
         {
             hinted.insert((*old, *new));
-            fired.insert(Stratum::RenameEdited);
+            fired.insert(Signal::RenameEdited);
             evidence.push(format!(
                 "rename-edited: {} -> {} ({}%)",
                 old_path,
@@ -716,7 +751,7 @@ pub fn classify(
     }
 
     for (from, to, count) in directory_moves(&removed, &added) {
-        fired.insert(Stratum::DirectoryMove);
+        fired.insert(Signal::DirectoryMove);
         evidence.push(format!("directory-move: {from}/ -> {to}/ ({count} files)"));
     }
 
@@ -725,7 +760,7 @@ pub fn classify(
         if exact.contains(&(index_of[old], index_of[new])) {
             continue;
         }
-        fired.insert(Stratum::CrossLanguage);
+        fired.insert(Signal::CrossLanguage);
         evidence.push(format!("cross-language: {old} -> {new}"));
     }
 
@@ -835,7 +870,7 @@ pub fn classify(
         if hinted.contains(&(*source, *target)) {
             continue;
         }
-        fired.insert(Stratum::BlockMove);
+        fired.insert(Signal::BlockMove);
         evidence.push(format!(
             "block-move: {} -> {} ({count} blocks)",
             files[*source].path, files[*target].path
@@ -846,7 +881,7 @@ pub fn classify(
             degree.iter().filter(|(_, count)| **count >= 2).collect();
         several.sort();
         for (file, count) in several {
-            fired.insert(Stratum::SplitOrMerge);
+            fired.insert(Signal::SplitOrMerge);
             evidence.push(format!(
                 "split-or-merge: {word} of {} ({count} files)",
                 files[*file].path
@@ -865,12 +900,13 @@ pub fn classify(
     let mut sources: Vec<String> = Vec::new();
     for ((source, target), count) in copies {
         if !index_of.contains_key(source.as_str()) && !sources.contains(&source) {
-            if sources.len() >= room {
+            // `;` separates the paths in `changesets.csv`.
+            if sources.len() >= room || source.contains(';') {
                 continue;
             }
             sources.push(source.clone());
         }
-        fired.insert(Stratum::Copy);
+        fired.insert(Signal::Copy);
         evidence.push(format!(
             "copy: {source} -> {} ({count} blocks)",
             files[target].path
@@ -896,7 +932,7 @@ pub fn classify(
             let union = from.lost_shingles.len() + to.gained_shingles.len() - shared;
             let similarity = shared as f64 / union as f64;
             if similarity >= MOVED_EDITED_SIMILARITY {
-                fired.insert(Stratum::MovedAndEdited);
+                fired.insert(Signal::MovedAndEdited);
                 evidence.push(format!(
                     "moved-and-edited: {} -> {} ({similarity:.2})",
                     files[source].path, files[target].path
@@ -905,15 +941,9 @@ pub fn classify(
         }
     }
 
-    let mut signals: Vec<Stratum> = PRECEDENCE
-        .into_iter()
-        .filter(|signal| fired.contains(signal))
-        .collect();
-    if signals.is_empty() {
-        signals.push(Stratum::Control);
-    }
+    let mut signals: Vec<Signal> = fired.into_iter().collect();
+    signals.sort();
     Classification {
-        stratum: signals[0],
         signals,
         untouched: sources,
         evidence,
@@ -927,6 +957,7 @@ pub enum Skip {
     TooManyFiles,
     FileTooLarge,
     TooManyLines,
+    NoFolder,
 }
 
 impl Skip {
@@ -936,6 +967,7 @@ impl Skip {
             Skip::TooManyFiles => "more than 20 files",
             Skip::FileTooLarge => "a file over 1 MiB",
             Skip::TooManyLines => "over 3000 changed lines",
+            Skip::NoFolder => "no sub-folder under the caps",
         }
     }
 }
@@ -1059,6 +1091,269 @@ pub fn regular_blob(repo: &Repository, tree: &Tree, path: &str) -> Result<Vec<u8
         bail!("{path:?} is not a regular file");
     }
     Ok(repo.find_blob(entry.id())?.content().to_vec())
+}
+
+/// What a tree on disk would hold at a path and a folders fixture does not.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Omitted {
+    /// `before` or `after`.
+    pub side: &'static str,
+    /// Relative to the sub-folder.
+    pub path: String,
+    /// `size` (a file over [`MAX_FILE_BYTES`]), `symlink` or `submodule`.
+    pub reason: &'static str,
+    /// Of a file or a link's target, in bytes; none for a submodule.
+    pub bytes: Option<u64>,
+    /// The blob, or the submodule's commit.
+    pub id: String,
+}
+
+/// Two complete trees of one sub-folder (see the module documentation), paths relative to it.
+pub struct Folder {
+    /// The sub-folder's path in the repository; empty for the root.
+    pub root: String,
+    pub changed: Vec<ChangedFile>,
+    /// Files with one blob on both sides, sorted by path.
+    pub unchanged: Vec<(String, Vec<u8>)>,
+    pub omitted: Vec<Omitted>,
+}
+
+impl Folder {
+    /// The sub-folder as `changesets.csv` and `source.json` name it: `.` for the root.
+    pub fn root_name(&self) -> &str {
+        if self.root.is_empty() {
+            "."
+        } else {
+            &self.root
+        }
+    }
+
+    /// The unchanged files that are text, as the untouched files of a classification.
+    pub fn untouched(&self) -> UntouchedTexts {
+        UntouchedTexts::new(self.unchanged.iter().filter_map(|(path, bytes)| {
+            std::str::from_utf8(bytes)
+                .ok()
+                .map(|text| (path.as_str(), text))
+        }))
+    }
+}
+
+/// The tree at `root` (empty for `tree` itself); `None` when `tree` has no such directory.
+fn subtree<'repo>(repo: &'repo Repository, tree: &Tree<'repo>, root: &str) -> Option<Tree<'repo>> {
+    if root.is_empty() {
+        return Some(tree.clone());
+    }
+    let entry = tree.get_path(Path::new(root)).ok()?;
+    repo.find_tree(entry.id()).ok()
+}
+
+/// Every entry under `tree` that is not a directory: its id and file mode, by path from `prefix`.
+fn entries_under(
+    repo: &Repository,
+    tree: &Tree,
+    prefix: &str,
+    found: &mut std::collections::BTreeMap<String, (Oid, i32)>,
+) {
+    for entry in tree.iter() {
+        let Ok(name) = entry.name() else { continue };
+        let path = format!("{prefix}{name}");
+        if entry.kind() == Some(ObjectType::Tree) {
+            if let Ok(inner) = repo.find_tree(entry.id()) {
+                entries_under(repo, &inner, &format!("{path}/"), found);
+            }
+        } else {
+            found.insert(path, (entry.id(), entry.filemode()));
+        }
+    }
+}
+
+/// How many files `tree` holds, counted no further than past `limit`.
+fn count_files(repo: &Repository, tree: &Tree, limit: usize) -> usize {
+    let mut count = 0;
+    for entry in tree.iter() {
+        if entry.kind() == Some(ObjectType::Tree) {
+            if let Ok(inner) = repo.find_tree(entry.id()) {
+                count += count_files(repo, &inner, limit.saturating_sub(count));
+            }
+        } else {
+            count += 1;
+        }
+        if count > limit {
+            break;
+        }
+    }
+    count
+}
+
+fn is_regular_mode(mode: i32) -> bool {
+    matches!(mode, 0o100644 | 0o100664 | 0o100755)
+}
+
+/// The sub-folder a folders fixture of `before` and `after` holds, by the rule in the module
+/// documentation; [`Skip::NoFolder`] when no directory qualifies.
+pub fn choose_folder(
+    repo: &Repository,
+    before: &Tree,
+    after: &Tree,
+    max_tree_files: usize,
+) -> Result<std::result::Result<String, Skip>> {
+    let diff = repo.diff_tree_to_tree(Some(before), Some(after), None)?;
+    let odb = repo.odb()?;
+    // Each changed file's path, and whether a side of it is over the size cap.
+    let mut changed: Vec<(String, bool)> = Vec::new();
+    for delta in diff.deltas() {
+        let (old, new) = (delta.old_file(), delta.new_file());
+        let regular = |file: &git2::DiffFile| !file.id().is_zero() && is_regular(file.mode());
+        let (has_old, has_new) = (regular(&old), regular(&new));
+        if !(has_old || has_new) || (has_old && has_new && old.id() == new.id()) {
+            continue;
+        }
+        let Some(path) = new.path().or(old.path()).and_then(Path::to_str) else {
+            continue;
+        };
+        let too_large = |present: bool, id: Oid| {
+            present
+                && odb
+                    .read_header(id)
+                    .is_ok_and(|(size, _)| size > MAX_FILE_BYTES)
+        };
+        changed.push((
+            path.to_string(),
+            too_large(has_old, old.id()) || too_large(has_new, new.id()),
+        ));
+    }
+    // A directory's changed files, and whether one of them is too large; the root is "".
+    let mut directories: FxHashMap<&str, (usize, bool)> = FxHashMap::default();
+    for (path, too_large) in &changed {
+        let mut directory = path.as_str();
+        loop {
+            directory = directory.rsplit_once('/').map_or("", |(parent, _)| parent);
+            let entry = directories.entry(directory).or_default();
+            entry.0 += 1;
+            entry.1 |= too_large;
+            if directory.is_empty() {
+                break;
+            }
+        }
+    }
+    let depth = |directory: &str| match directory {
+        "" => 0,
+        _ => directory.split('/').count(),
+    };
+    let mut candidates: Vec<(&str, usize)> = directories
+        .into_iter()
+        .filter(|(_, (files, too_large))| (MIN_FILES..=MAX_FILES).contains(files) && !too_large)
+        .map(|(directory, (files, _))| (directory, files))
+        .collect();
+    candidates.sort_by(|a, b| {
+        (b.1, depth(b.0))
+            .cmp(&(a.1, depth(a.0)))
+            .then_with(|| a.0.cmp(b.0))
+    });
+    for (directory, _) in candidates {
+        let fits = |tree: &Tree| {
+            subtree(repo, tree, directory)
+                .is_none_or(|tree| count_files(repo, &tree, max_tree_files) <= max_tree_files)
+        };
+        if (directory.is_empty() || is_safe_path(directory)) && fits(before) && fits(after) {
+            return Ok(Ok(directory.to_string()));
+        }
+    }
+    Ok(Err(Skip::NoFolder))
+}
+
+/// The complete trees of `root` in `before` and `after` (see the module documentation). An
+/// error for a path a fixture cannot hold, or a changed file over [`MAX_FILE_BYTES`], which
+/// [`choose_folder`] never picks a folder with.
+pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -> Result<Folder> {
+    if !(root.is_empty() || is_safe_path(root)) {
+        bail!("{root:?} is not a folder a fixture can hold");
+    }
+    let mut sides = [
+        std::collections::BTreeMap::new(),
+        std::collections::BTreeMap::new(),
+    ];
+    for (tree, found) in [before, after].into_iter().zip(sides.iter_mut()) {
+        if let Some(tree) = subtree(repo, tree, root) {
+            entries_under(repo, &tree, "", found);
+        }
+    }
+    let [old, new] = sides;
+    let odb = repo.odb()?;
+    let mut folder = Folder {
+        root: root.to_string(),
+        changed: Vec::new(),
+        unchanged: Vec::new(),
+        omitted: Vec::new(),
+    };
+    // What a side holds at a path that is not a regular file is listed, and is no file there.
+    let mut regular = |side: &'static str, path: &str, entry: Option<&(Oid, i32)>| {
+        let (id, mode) = entry?;
+        if is_regular_mode(*mode) {
+            return Some(*id);
+        }
+        let submodule = *mode == 0o160000;
+        folder.omitted.push(Omitted {
+            side,
+            path: path.to_string(),
+            reason: if submodule { "submodule" } else { "symlink" },
+            bytes: odb.read_header(*id).ok().map(|(size, _)| size as u64),
+            id: id.to_string(),
+        });
+        None
+    };
+    let paths: std::collections::BTreeSet<&String> = old.keys().chain(new.keys()).collect();
+    let mut files: Vec<(&String, Option<Oid>, Option<Oid>)> = Vec::new();
+    for path in paths {
+        if !is_safe_path(path) {
+            bail!("{path:?} is not a path a fixture can hold");
+        }
+        let before = regular("before", path, old.get(path));
+        let after = regular("after", path, new.get(path));
+        if before.is_some() || after.is_some() {
+            files.push((path, before, after));
+        }
+    }
+    for (path, before, after) in files {
+        let size = |id: Oid| odb.read_header(id).map_or(0, |(size, _)| size);
+        let bytes = |id: Oid| -> Result<Vec<u8>> { Ok(repo.find_blob(id)?.content().to_vec()) };
+        if before == after {
+            let id = before.unwrap_or(Oid::ZERO_SHA1);
+            if size(id) > MAX_FILE_BYTES {
+                for side in ["before", "after"] {
+                    folder.omitted.push(Omitted {
+                        side,
+                        path: path.clone(),
+                        reason: "size",
+                        bytes: Some(size(id) as u64),
+                        id: id.to_string(),
+                    });
+                }
+            } else {
+                folder.unchanged.push((path.clone(), bytes(id)?));
+            }
+            continue;
+        }
+        let side = |id: Option<Oid>| -> Result<Option<Blob>> {
+            let Some(id) = id else { return Ok(None) };
+            if size(id) > MAX_FILE_BYTES {
+                bail!("{path:?} changes and is over the size cap");
+            }
+            Ok(Some(Blob {
+                id,
+                bytes: bytes(id)?,
+            }))
+        };
+        folder.changed.push(ChangedFile {
+            path: path.clone(),
+            before: side(before)?,
+            after: side(after)?,
+        });
+    }
+    folder
+        .omitted
+        .sort_by(|a, b| (&a.path, a.side).cmp(&(&b.path, b.side)));
+    Ok(folder)
 }
 
 /// What `git diff --name-status -M -z` prints.
@@ -1262,16 +1557,22 @@ impl Untouched for TreeView<'_> {
 /// A row of `changesets.csv` (see the module documentation).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Row {
-    /// The fixture's directory under `samples/changesets/`: `<stratum>-x-<repository>-<commit>`.
+    /// The fixture's directory under `samples/changesets/` ([`fixture_name`]).
     pub name: String,
+    /// [`KIND_COMMIT`] or [`KIND_FOLDERS`].
+    pub kind: String,
     pub repository: String,
     /// The after tree's commit.
     pub commit: String,
-    /// The before tree's commit: `commit`'s parent, or for a range the first squashed commit's.
+    /// The before tree's commit: `commit`'s parent, or for folders any earlier point in history.
     pub parent: String,
-    pub stratum: String,
+    /// The sub-folder of a `folders` row, `.` for the repository root; empty for a commit.
+    pub root: String,
+    /// Every signal that fired, sorted and `;`-separated, or `control`.
     pub signals: String,
-    /// Changed files; the untouched ones are in `signals`.
+    /// The untouched files a signal points at, `;`-separated.
+    pub untouched_paths: String,
+    /// Changed files.
     pub files: usize,
     pub changed_lines: usize,
     pub main_language: String,
@@ -1282,13 +1583,15 @@ pub struct Row {
     pub comment: String,
 }
 
-pub const CSV_HEADER: [&str; 13] = [
+pub const CSV_HEADER: [&str; 15] = [
     "name",
+    "kind",
     "repository",
     "commit",
     "parent",
-    "stratum",
+    "root",
     "signals",
+    "untouched_paths",
     "files",
     "changed_lines",
     "main_language",
@@ -1298,41 +1601,50 @@ pub const CSV_HEADER: [&str; 13] = [
     "comment",
 ];
 
-/// The `signals` column of a classification; `range` is the number of commits squashed, if any.
-pub fn signals_column(classification: &Classification, range: Option<usize>) -> String {
-    let mut fields: Vec<String> = range
-        .map(|length| format!("range={length}"))
-        .into_iter()
-        .collect();
-    fields.extend(classification.signals.iter().map(|s| s.name().to_string()));
-    fields.extend(
-        classification
-            .untouched
-            .iter()
-            .map(|path| format!("untouched={path}")),
-    );
-    fields.join(";")
+/// The `signals` column of a classification.
+pub fn signals_column(classification: &Classification) -> String {
+    if classification.signals.is_empty() {
+        return CONTROL.to_string();
+    }
+    let names: Vec<&str> = classification.signals.iter().map(|s| s.name()).collect();
+    names.join(";")
 }
 
 impl Row {
-    /// The untouched files the fixture holds, from `signals`.
+    /// The untouched files the fixture holds because a signal points at them.
     pub fn untouched(&self) -> Vec<&str> {
+        self.untouched_paths
+            .split(';')
+            .filter(|path| !path.is_empty())
+            .collect()
+    }
+
+    /// What the row counts towards: each of its signals, or [`CONTROL`].
+    pub fn signal_names(&self) -> Vec<&str> {
         self.signals
             .split(';')
-            .filter_map(|field| field.strip_prefix("untouched="))
+            .filter(|name| !name.is_empty())
             .collect()
     }
 }
 
-/// `<stratum>-x-<repository>-<commit>`: lower case, the repository without a trailing `.git`,
-/// the commit abbreviated to 8 characters, as `materialize_test_diffs` names a single-file sample.
-pub fn fixture_name(stratum: &str, repository: &str, commit: &str) -> String {
+/// `commit-x-<repository>-<commit>` or `folders-x-<repository>-<parent>-<commit>`: lower case,
+/// the repository without a trailing `.git`, commits abbreviated to 8 characters, as
+/// `materialize_test_diffs` names a single-file sample. No signal is in the name: a changeset
+/// has several, and a person triaging it may find another.
+pub fn fixture_name(kind: &str, repository: &str, parent: &str, commit: &str) -> String {
     let repository = repository.strip_suffix(".git").unwrap_or(repository);
-    format!(
-        "{stratum}-x-{}-{}",
-        repository.to_lowercase(),
-        &commit[..8.min(commit.len())]
-    )
+    let short = |id: &str| id[..8.min(id.len())].to_string();
+    if kind == KIND_FOLDERS {
+        format!(
+            "{kind}-x-{}-{}-{}",
+            repository.to_lowercase(),
+            short(parent),
+            short(commit)
+        )
+    } else {
+        format!("{kind}-x-{}-{}", repository.to_lowercase(), short(commit))
+    }
 }
 
 /// The rows of `path`; none when there is no such file.
@@ -1347,31 +1659,33 @@ pub fn read_rows(path: &Path) -> Result<Vec<Row>> {
         let field = |index: usize| record.get(index).unwrap_or("").to_string();
         rows.push(Row {
             name: field(0),
-            repository: field(1),
-            commit: field(2),
-            parent: field(3),
-            stratum: field(4),
-            signals: field(5),
-            files: field(6).parse().unwrap_or(0),
-            changed_lines: field(7).parse().unwrap_or(0),
-            main_language: field(8),
-            bucket: field(9),
-            dataset: field(10),
-            status: field(11),
-            comment: field(12),
+            kind: field(1),
+            repository: field(2),
+            commit: field(3),
+            parent: field(4),
+            root: field(5),
+            signals: field(6),
+            untouched_paths: field(7),
+            files: field(8).parse().unwrap_or(0),
+            changed_lines: field(9).parse().unwrap_or(0),
+            main_language: field(10),
+            bucket: field(11),
+            dataset: field(12),
+            status: field(13),
+            comment: field(14),
         });
     }
     Ok(rows)
 }
 
-/// Writes `rows` to `path`, sorted by stratum, bucket, repository and commit.
+/// Writes `rows` to `path`, sorted by kind, repository, commit and parent.
 pub fn write_rows(path: &Path, mut rows: Vec<Row>) -> Result<()> {
     rows.sort_by(|a, b| {
-        (&a.stratum, &a.bucket, &a.repository, &a.commit).cmp(&(
-            &b.stratum,
-            &b.bucket,
+        (&a.kind, &a.repository, &a.commit, &a.parent).cmp(&(
+            &b.kind,
             &b.repository,
             &b.commit,
+            &b.parent,
         ))
     });
     if let Some(parent) = path.parent() {
@@ -1382,11 +1696,13 @@ pub fn write_rows(path: &Path, mut rows: Vec<Row>) -> Result<()> {
     for row in &rows {
         writer.write_record([
             &row.name,
+            &row.kind,
             &row.repository,
             &row.commit,
             &row.parent,
-            &row.stratum,
+            &row.root,
             &row.signals,
+            &row.untouched_paths,
             &row.files.to_string(),
             &row.changed_lines.to_string(),
             &row.main_language,

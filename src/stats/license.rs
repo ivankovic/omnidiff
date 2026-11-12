@@ -299,9 +299,14 @@ pub struct ChangesetProvenance<'a> {
     pub commit: &'a str,
     /// The commit its before tree is.
     pub parent: &'a str,
-    pub stratum: &'a str,
+    /// `commit` or `folders` (`stats::changeset`).
+    pub kind: &'a str,
+    /// The sub-folder the trees of a `folders` sample are, `.` for the repository root.
+    pub root: Option<&'a str>,
+    /// The signals it was sampled with, as `changesets.csv` has them.
+    pub signals: &'a str,
     pub dataset: &'a str,
-    /// Every file the fixture holds, with what the commit did to it (`modified`, `untouched`).
+    /// Every file the fixture holds, with what happened to it (`modified`, `untouched`).
     pub files: &'a [(String, &'a str)],
 }
 
@@ -316,7 +321,9 @@ pub fn render_changeset_readme(
         repository,
         commit,
         parent,
-        stratum,
+        kind,
+        root,
+        signals,
         dataset,
         files,
     } = provenance;
@@ -336,7 +343,11 @@ pub fn render_changeset_readme(
     }
     let _ = writeln!(out, "- **Commit:** `{commit}`");
     let _ = writeln!(out, "- **Parent:** `{parent}`");
-    let _ = writeln!(out, "- **Stratum:** {stratum}");
+    let _ = writeln!(out, "- **Kind:** {kind}");
+    if let Some(root) = root {
+        let _ = writeln!(out, "- **Folder:** `{root}`");
+    }
+    let _ = writeln!(out, "- **Signals:** {signals}");
     let _ = writeln!(out, "- **Research dataset:** {dataset}");
     let _ = writeln!(out, "- **Files:**");
     for (path, change) in files.iter() {
@@ -346,8 +357,9 @@ pub fn render_changeset_readme(
     let _ = writeln!(
         out,
         "`before/` and `after/` in this directory hold the files above, each at its path in the \
-         source repository with `.test` appended, copied verbatim from that repository at the \
-         parent and at the commit above, for use as omnidiff test-fixture input. This content is \
+         source repository (below the folder above, when there is one) with `.test` appended, \
+         copied verbatim from that repository at the parent and at the commit above, for use as \
+         omnidiff test-fixture input. This content is \
          **not** part of omnidiff's own codebase and is **not** covered by omnidiff's own AGPL-3.0 \
          license - it remains under whatever license the source repository itself applies, linked \
          below exactly as it read in that repository at this commit."
@@ -418,7 +430,9 @@ mod tests {
                 repository: "example-repo",
                 commit: "abc123",
                 parent: "def456",
-                stratum: "block-move",
+                kind: "folders",
+                root: Some("src"),
+                signals: "block-move;copy",
                 dataset: "pilot",
                 files: &[
                     ("src/a.rs".to_string(), "modified"),
@@ -428,6 +442,9 @@ mod tests {
             &files,
         );
         assert!(readme.contains("- **Commit:** `abc123`\n- **Parent:** `def456`\n"));
+        assert!(readme.contains(
+            "- **Kind:** folders\n- **Folder:** `src`\n- **Signals:** block-move;copy\n"
+        ));
         assert!(readme.contains("  - `src/a.rs` (modified)\n  - `src/b.rs` (untouched)\n"));
         assert!(readme.contains(
             "- `LICENSE` - MIT License (https://github.com/example/repo/blob/abc123/LICENSE)"

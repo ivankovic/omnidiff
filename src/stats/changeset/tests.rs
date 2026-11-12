@@ -58,8 +58,8 @@ fn nothing_special_is_control() {
     let before = lines("a", 10);
     let after = before.replace("offset_a_3", "offset_a_33");
     let result = classified(&[file("a.rs", Some(&before), Some(&after)), bystander()]);
-    assert_eq!(result.stratum, Stratum::Control);
-    assert_eq!(result.signals, vec![Stratum::Control]);
+    assert!(result.signals.is_empty());
+    assert!(result.signals.is_empty());
     assert!(result.untouched.is_empty());
 }
 
@@ -72,13 +72,13 @@ fn a_blob_under_another_path_is_a_rename_unedited() {
         bystander(),
     ]);
     // The file moved whole: its blocks are not also a block move.
-    assert_eq!(result.signals, vec![Stratum::RenameUnedited]);
+    assert_eq!(result.signals, vec![Signal::RenameUnedited]);
     // An empty file is every empty file.
     let result = classified(&[
         file("a/__init__.py", Some(""), None),
         file("b/__init__.py", None, Some("")),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn a_picture_or_binary_under_another_path_is_a_non_code_move() {
             moved("new/logo", false),
             bystander(),
         ]);
-        assert_eq!(result.signals, vec![Stratum::NonCodeMove]);
+        assert_eq!(result.signals, vec![Signal::NonCodeMove]);
     }
 }
 
@@ -112,24 +112,24 @@ fn a_rename_edited_is_what_the_vcs_reports_below_full_similarity() {
         bystander(),
     ];
     let result = classify(&files, &[rename_hint("old.rs", "new.rs", 93)], &NoUntouched);
-    assert_eq!(result.signals, vec![Stratum::RenameEdited]);
+    assert_eq!(result.signals, vec![Signal::RenameEdited]);
 
     // Unreported, the blocks are all that says where the file went.
-    assert_eq!(classified(&files).signals, vec![Stratum::BlockMove]);
+    assert_eq!(classified(&files).signals, vec![Signal::BlockMove]);
     // Full similarity is a rename unedited, and the blobs say so themselves.
     let result = classify(
         &files,
         &[rename_hint("old.rs", "new.rs", 100)],
         &NoUntouched,
     );
-    assert_eq!(result.signals, vec![Stratum::BlockMove]);
+    assert_eq!(result.signals, vec![Signal::BlockMove]);
     // A hint about files the changeset does not hold is about nothing.
     let result = classify(
         &files,
         &[rename_hint("gone.rs", "new.rs", 80)],
         &NoUntouched,
     );
-    assert_eq!(result.signals, vec![Stratum::BlockMove]);
+    assert_eq!(result.signals, vec![Signal::BlockMove]);
 }
 
 #[test]
@@ -179,7 +179,7 @@ fn three_files_under_one_prefix_substitution_are_a_directory_move() {
     let result = classify(&files, &hints, &NoUntouched);
     assert_eq!(
         result.signals,
-        vec![Stratum::DirectoryMove, Stratum::RenameEdited]
+        vec![Signal::DirectoryMove, Signal::RenameEdited]
     );
 }
 
@@ -195,7 +195,7 @@ fn a_block_removed_from_one_file_and_added_to_another_is_a_block_move() {
         file("a.rs", Some(&format!("{keep}{block}")), Some(&keep)),
         file("b.rs", Some(&other), Some(&format!("{other}{landed}"))),
     ]);
-    assert_eq!(result.signals, vec![Stratum::BlockMove]);
+    assert_eq!(result.signals, vec![Signal::BlockMove]);
     assert!(
         result.evidence[0].contains("a.rs -> b.rs"),
         "{:?}",
@@ -208,7 +208,7 @@ fn a_block_removed_from_one_file_and_added_to_another_is_a_block_move() {
         file("a.rs", Some(&format!("{keep}{short}")), Some(&keep)),
         file("b.rs", Some(&other), Some(&format!("{other}{short}"))),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -219,7 +219,7 @@ fn lines_of_structure_do_not_make_a_block() {
         file("a.rs", Some(&format!("{keep}{structure}")), Some(&keep)),
         file("b.rs", Some(&other), Some(&format!("{other}{structure}"))),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
     assert!(is_trivial("  "));
     assert!(is_trivial("});"));
     assert!(is_trivial("} else {"));
@@ -252,7 +252,7 @@ fn a_block_moved_inside_its_file_is_nothing_across_files() {
         ),
         bystander(),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -266,7 +266,7 @@ fn one_file_into_two_is_a_split_and_two_into_one_a_merge() {
     ]);
     assert_eq!(
         result.signals,
-        vec![Stratum::SplitOrMerge, Stratum::BlockMove]
+        vec![Signal::BlockMove, Signal::SplitOrMerge]
     );
     assert!(
         result
@@ -280,7 +280,7 @@ fn one_file_into_two_is_a_split_and_two_into_one_a_merge() {
         file("second.rs", Some(&second), None),
         file("whole.rs", None, Some(&whole)),
     ]);
-    assert_eq!(result.stratum, Stratum::SplitOrMerge);
+    assert!(result.signals.contains(&Signal::SplitOrMerge));
     assert!(
         result
             .evidence
@@ -302,7 +302,7 @@ fn a_block_added_that_another_file_keeps_is_a_copy() {
         ),
         file("b.rs", Some(&target), Some(&format!("{target}{block}"))),
     ]);
-    assert_eq!(result.signals, vec![Stratum::Copy]);
+    assert_eq!(result.signals, vec![Signal::Copy]);
     assert!(result.untouched.is_empty());
 
     // From a file the commit does not touch: recorded, for the fixture to hold.
@@ -310,25 +310,20 @@ fn a_block_added_that_another_file_keeps_is_a_copy() {
         file("b.rs", Some(&target), Some(&format!("{target}{block}"))),
         bystander(),
     ];
-    let tree = |paths: &[&str]| {
-        UntouchedTexts(
-            paths
-                .iter()
-                .map(|path| (path.to_string(), kept.clone()))
-                .collect(),
-        )
-    };
+    let tree =
+        |paths: &[&str]| UntouchedTexts::new(paths.iter().map(|path| (*path, kept.as_str())));
     let result = classify(&files, &[], &tree(&["lib/source.rs"]));
-    assert_eq!(result.signals, vec![Stratum::Copy]);
+    assert_eq!(result.signals, vec![Signal::Copy]);
     assert_eq!(result.untouched, vec!["lib/source.rs"]);
 
     // Another language's file is not searched for sources, and what many files hold is no copy.
-    assert_eq!(
-        classify(&files, &[], &tree(&["source.py"])).stratum,
-        Stratum::Control
+    assert!(
+        classify(&files, &[], &tree(&["source.py"]))
+            .signals
+            .is_empty()
     );
     let everywhere = tree(&["x.rs", "y.rs", "z.rs"]);
-    assert_eq!(classify(&files, &[], &everywhere).stratum, Stratum::Control);
+    assert!(classify(&files, &[], &everywhere).signals.is_empty());
 }
 
 #[test]
@@ -342,9 +337,9 @@ fn a_short_repeated_idiom_is_not_a_copy() {
             bystander(),
         ],
         &[],
-        &UntouchedTexts(vec![("a.rs".to_string(), kept)]),
+        &UntouchedTexts::new([("a.rs", kept.as_str())]),
     );
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -356,15 +351,14 @@ fn a_header_every_file_has_moves_nothing() {
         file("old.rs", Some(&old), None),
         file("new.rs", None, Some(&new)),
     ];
-    let others = UntouchedTexts(
-        ["x.rs", "y.rs", "z.rs"]
-            .iter()
-            .map(|path| (path.to_string(), format!("{header}{}", lines(path, 3))))
-            .collect(),
-    );
-    assert_eq!(classify(&files, &[], &others).stratum, Stratum::Control);
+    let texts: Vec<(&str, String)> = ["x.rs", "y.rs", "z.rs"]
+        .iter()
+        .map(|path| (*path, format!("{header}{}", lines(path, 3))))
+        .collect();
+    let others = UntouchedTexts::new(texts.iter().map(|(path, text)| (*path, text.as_str())));
+    assert!(classify(&files, &[], &others).signals.is_empty());
     // Without the rest of the tree to say so, it reads as moved.
-    assert_eq!(classified(&files).stratum, Stratum::BlockMove);
+    assert!(classified(&files).signals.contains(&Signal::BlockMove));
 
     // Nor does a header that three files of the changeset itself lose and gain.
     let files: Vec<ChangedFile> = ["a", "b", "c"]
@@ -384,7 +378,7 @@ fn a_header_every_file_has_moves_nothing() {
             ]
         })
         .collect();
-    assert_eq!(classified(&files).stratum, Stratum::Control);
+    assert!(classified(&files).signals.is_empty());
 }
 
 /// Twelve lines and the same with every third line's call renamed: no four in a row survive.
@@ -412,7 +406,7 @@ fn lines_that_leave_one_file_and_arrive_edited_in_another_are_moved_and_edited()
         file("a.rs", Some(&format!("{keep}{block}")), Some(&keep)),
         file("b.rs", Some(&other), Some(&format!("{other}{edited}"))),
     ]);
-    assert_eq!(result.signals, vec![Stratum::MovedAndEdited]);
+    assert_eq!(result.signals, vec![Signal::MovedAndEdited]);
 
     // Unrelated lines of the same length are not.
     let unrelated = lines("unrelated", 12);
@@ -420,7 +414,7 @@ fn lines_that_leave_one_file_and_arrive_edited_in_another_are_moved_and_edited()
         file("a.rs", Some(&format!("{keep}{block}")), Some(&keep)),
         file("b.rs", Some(&other), Some(&format!("{other}{unrelated}"))),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -439,7 +433,7 @@ fn one_edit_made_to_two_files_is_not_a_move() {
             Some(&format!("{other}{edited}")),
         ),
     ]);
-    assert_eq!(result.stratum, Stratum::Control);
+    assert!(result.signals.is_empty());
 }
 
 #[test]
@@ -455,38 +449,57 @@ fn one_stem_in_two_languages_is_cross_language() {
         file("Greeter.java", Some("class Greeter {}\n"), None),
         file("Greeter.kt", None, Some("class Greeter\n")),
     ]);
-    assert_eq!(result.signals, vec![Stratum::CrossLanguage]);
+    assert_eq!(result.signals, vec![Signal::CrossLanguage]);
     // Renamed and not yet translated: the same blob.
     let result = classified(&[
         file("Greeter.java", Some("class Greeter {}\n"), None),
         file("Greeter.kt", None, Some("class Greeter {}\n")),
     ]);
-    assert_eq!(result.signals, vec![Stratum::RenameUnedited]);
+    assert_eq!(result.signals, vec![Signal::RenameUnedited]);
     // A script replaced by a workflow of its name was not translated.
     assert!(cross_language_pairs(&["scripts/deploy.js"], &["ci/deploy.yml"]).is_empty());
 }
 
 #[test]
-fn the_stratum_is_the_most_specific_signal_and_every_signal_is_kept() {
-    let text = lines("a", 10);
-    let result = classified(&[
-        file("Greeter.java", Some("class Greeter {}\n"), None),
-        file("Greeter.kt", None, Some("class Greeter\n")),
-        file("old.rs", Some(&text), None),
-        file("new.rs", None, Some(&text)),
-    ]);
-    assert_eq!(result.stratum, Stratum::CrossLanguage);
+fn a_changeset_carries_every_signal_it_fires_and_none_ranks_first() {
+    // A directory renamed, one of its files translated and a function moved out of another.
+    let moved = lines("moved", 6);
+    let mut files: Vec<ChangedFile> = ["a", "b", "c"]
+        .iter()
+        .flat_map(|name| {
+            let text = lines(name, 8);
+            [
+                file(&format!("old/{name}.rs"), Some(&text), None),
+                file(&format!("new/{name}.rs"), None, Some(&text)),
+            ]
+        })
+        .collect();
+    files.push(file("old/Greeter.java", Some("class Greeter {}\n"), None));
+    files.push(file("new/Greeter.kt", None, Some("class Greeter\n")));
+    let keep = lines("keep", 6);
+    files.push(file("lib.rs", Some(&format!("{keep}{moved}")), Some(&keep)));
+    files.push(file("util.rs", None, Some(&moved)));
+    let result = classified(&files);
     assert_eq!(
         result.signals,
-        vec![Stratum::CrossLanguage, Stratum::RenameUnedited]
+        vec![
+            Signal::BlockMove,
+            Signal::CrossLanguage,
+            Signal::DirectoryMove,
+            Signal::RenameUnedited
+        ]
     );
     assert_eq!(
-        signals_column(&result, Some(5)),
-        "range=5;cross-language;rename-unedited"
+        signals_column(&result),
+        "block-move;cross-language;directory-move;rename-unedited"
     );
-    // Every name is distinct, and a stratum's bucket is its file count's.
-    let names: FxHashSet<&str> = PRECEDENCE.iter().map(|stratum| stratum.name()).collect();
-    assert_eq!(names.len(), PRECEDENCE.len());
+    assert_eq!(
+        signals_column(&classified(&[bystander(), bystander()])),
+        CONTROL
+    );
+    // The names are sorted as the signals are, and a bucket is a file count's.
+    let names: Vec<&str> = Signal::ALL.iter().map(|signal| signal.name()).collect();
+    assert!(names.is_sorted() && !names.contains(&CONTROL));
     assert_eq!(
         [2, 3, 4, 8, 9, 20].map(file_bucket),
         ["2-3", "2-3", "4-8", "4-8", "9-20", "9-20"]
@@ -546,17 +559,19 @@ fn only_plain_relative_paths_are_safe() {
 }
 
 #[test]
-fn rows_survive_the_csv_and_name_their_untouched_files() -> Result<()> {
+fn rows_survive_the_csv_and_name_their_signals_and_untouched_files() -> Result<()> {
     let dir = tempfile::tempdir()?;
     let path = dir.path().join("changesets.csv");
     assert!(read_rows(&path)?.is_empty());
-    let row = |stratum: &str, commit: &str| Row {
-        name: fixture_name(stratum, "Example-Repo.git", commit),
+    let row = |kind: &str, commit: &str| Row {
+        name: fixture_name(kind, "Example-Repo.git", &"f".repeat(40), commit),
+        kind: kind.to_string(),
         repository: "Example-Repo.git".to_string(),
         commit: commit.to_string(),
         parent: "f".repeat(40),
-        stratum: stratum.to_string(),
-        signals: format!("{stratum};untouched=src/a, b.rs;untouched=c.rs"),
+        root: if kind == KIND_FOLDERS { "src/a, b" } else { "" }.to_string(),
+        signals: "block-move;copy".to_string(),
+        untouched_paths: "src/a, b.rs;c.rs".to_string(),
         files: 3,
         changed_lines: 42,
         main_language: "Rust".to_string(),
@@ -566,18 +581,25 @@ fn rows_survive_the_csv_and_name_their_untouched_files() -> Result<()> {
         comment: "a \"quoted\" note".to_string(),
     };
     let rows = vec![
-        row("copy", &"b".repeat(40)),
-        row("block-move", &"a".repeat(40)),
+        row(KIND_FOLDERS, &"a".repeat(40)),
+        row(KIND_COMMIT, &"b".repeat(40)),
     ];
     write_rows(&path, rows.clone())?;
     let read = read_rows(&path)?;
     assert_eq!(
         read,
         vec![rows[1].clone(), rows[0].clone()],
-        "sorted by stratum"
+        "sorted by kind"
     );
-    assert_eq!(read[0].name, "block-move-x-example-repo-aaaaaaaa");
-    assert_eq!(read[1].untouched(), vec!["src/a, b.rs", "c.rs"]);
+    assert_eq!(read[0].name, "commit-x-example-repo-bbbbbbbb");
+    assert_eq!(read[1].name, "folders-x-example-repo-ffffffff-aaaaaaaa");
+    assert_eq!(read[0].untouched(), vec!["src/a, b.rs", "c.rs"]);
+    assert_eq!(read[0].signal_names(), vec!["block-move", "copy"]);
+    let mut control = rows[1].clone();
+    control.signals = CONTROL.to_string();
+    control.untouched_paths.clear();
+    assert_eq!(control.signal_names(), vec![CONTROL]);
+    assert!(control.untouched().is_empty());
     let header = std::fs::read_to_string(&path)?;
     assert!(header.starts_with(&CSV_HEADER.join(",")));
     Ok(())
@@ -760,7 +782,7 @@ fn the_index_finds_an_untouched_source_in_the_tree_it_is_asked_about() -> Result
     index.add_tree(&repo, &later);
     index.add_tree(&repo, &before);
     let result = classify(&files, &[], &index.view(&repo, &before, &files));
-    assert_eq!(result.signals, vec![Stratum::Copy]);
+    assert_eq!(result.signals, vec![Signal::Copy]);
     assert_eq!(result.untouched, vec!["lib/source.rs"]);
 
     // Seen from the tree where the source no longer holds it, there is no source.
@@ -797,5 +819,203 @@ fn git_reports_a_rename_with_its_similarity() -> Result<()> {
             .similarity
             .is_some_and(|similarity| (50..100).contains(&similarity))
     );
+    Ok(())
+}
+
+/// A repository of two commits whose trees differ in `src/app/` (two files changed, one added)
+/// and in `docs/` (one file), with a link, a large unchanged file and plenty of bystanders.
+fn folder_repository(repo: &Repository) -> Result<(Oid, Oid)> {
+    let large = vec![b'x'; MAX_FILE_BYTES + 1];
+    let others: Vec<(String, Vec<u8>)> = (0..6)
+        .map(|i| {
+            (
+                format!("vendor/lib{i}.rs"),
+                format!("let v = {i};\n").into_bytes(),
+            )
+        })
+        .collect();
+    let tree = |app: &[(&str, &str)], docs: &str| -> Vec<(String, Vec<u8>, i32)> {
+        let mut entries: Vec<(String, Vec<u8>, i32)> = vec![
+            (
+                "docs/guide.md".to_string(),
+                docs.as_bytes().to_vec(),
+                0o100644,
+            ),
+            (
+                "src/app/same.rs".to_string(),
+                b"let same = 1;\n".to_vec(),
+                0o100644,
+            ),
+            (
+                "src/app/logo.bin".to_string(),
+                vec![0, 159, 146, 150],
+                0o100644,
+            ),
+            ("src/app/big.dat".to_string(), large.clone(), 0o100644),
+            ("src/app/link".to_string(), b"same.rs".to_vec(), 0o120000),
+            (
+                "src/other.rs".to_string(),
+                b"let other = 1;\n".to_vec(),
+                0o100644,
+            ),
+        ];
+        entries.extend(app.iter().map(|(name, text)| {
+            (
+                format!("src/app/{name}"),
+                text.as_bytes().to_vec(),
+                0o100644,
+            )
+        }));
+        entries.extend(
+            others
+                .iter()
+                .map(|(path, bytes)| (path.clone(), bytes.clone(), 0o100644)),
+        );
+        entries
+    };
+    let commit = |parent: Option<Oid>, entries: Vec<(String, Vec<u8>, i32)>| -> Result<Oid> {
+        let borrowed: Vec<(&str, &[u8], i32)> = entries
+            .iter()
+            .map(|(path, bytes, mode)| (path.as_str(), bytes.as_slice(), *mode))
+            .collect();
+        commit_tree(repo, parent, &borrowed)
+    };
+    let (keep, moved) = (lines("keep", 6), lines("moved", 6));
+    let first = commit(
+        None,
+        tree(
+            &[
+                ("a.rs", &format!("{keep}{moved}")),
+                ("deep/b.rs", "let b = 1;\n"),
+            ],
+            "one\n",
+        ),
+    )?;
+    let second = commit(
+        Some(first),
+        tree(
+            &[
+                ("a.rs", &keep),
+                ("deep/b.rs", "let b = 2;\n"),
+                ("deep/c.rs", &moved),
+            ],
+            "two\n",
+        ),
+    )?;
+    Ok((first, second))
+}
+
+#[test]
+fn the_folder_is_the_deepest_directory_with_the_most_changed_files_under_the_cap() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let repo = Repository::init(dir.path())?;
+    let (first, second) = folder_repository(&repo)?;
+    let before = repo.find_commit(first)?.tree()?;
+    let after = repo.find_commit(second)?.tree()?;
+    // Everything changed is under the root, which fits: 4 changed files, 16 a side at most.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 200)?,
+        Ok(String::new())
+    );
+    // Too small for the root (16 files) or `src` (9): `src/app`, with 3 of the 4 changes.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 8)?,
+        Ok("src/app".to_string())
+    );
+    // `src/app/deep` holds two changed files in two.
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 2)?,
+        Ok("src/app/deep".to_string())
+    );
+    assert_eq!(
+        choose_folder(&repo, &before, &after, 1)?,
+        Err(Skip::NoFolder)
+    );
+    // Nothing changed between a tree and itself.
+    assert_eq!(
+        choose_folder(&repo, &after, &after, 200)?,
+        Err(Skip::NoFolder)
+    );
+    Ok(())
+}
+
+#[test]
+fn a_folder_is_two_complete_trees_with_what_is_left_out_listed() -> Result<()> {
+    let dir = tempfile::tempdir()?;
+    let repo = Repository::init(dir.path())?;
+    let (first, second) = folder_repository(&repo)?;
+    let before = repo.find_commit(first)?.tree()?;
+    let after = repo.find_commit(second)?.tree()?;
+    let folder = load_folder(&repo, &before, &after, "src/app")?;
+    assert_eq!(folder.root_name(), "src/app");
+    let changed: Vec<(&str, bool, bool)> = folder
+        .changed
+        .iter()
+        .map(|file| {
+            (
+                file.path.as_str(),
+                file.before.is_some(),
+                file.after.is_some(),
+            )
+        })
+        .collect();
+    // Relative to the folder; nothing of `docs/` or `vendor/`.
+    assert_eq!(
+        changed,
+        vec![
+            ("a.rs", true, true),
+            ("deep/b.rs", true, true),
+            ("deep/c.rs", false, true)
+        ]
+    );
+    let unchanged: Vec<&str> = folder
+        .unchanged
+        .iter()
+        .map(|(path, _)| path.as_str())
+        .collect();
+    assert_eq!(
+        unchanged,
+        vec!["logo.bin", "same.rs"],
+        "a binary file is held as it is"
+    );
+    let omitted: Vec<(&str, &str, &str, Option<u64>)> = folder
+        .omitted
+        .iter()
+        .map(|omitted| {
+            (
+                omitted.path.as_str(),
+                omitted.side,
+                omitted.reason,
+                omitted.bytes,
+            )
+        })
+        .collect();
+    let large = Some(MAX_FILE_BYTES as u64 + 1);
+    assert_eq!(
+        omitted,
+        vec![
+            ("big.dat", "after", "size", large),
+            ("big.dat", "before", "size", large),
+            ("link", "after", "symlink", Some(7)),
+            ("link", "before", "symlink", Some(7)),
+        ]
+    );
+    assert_eq!(folder.omitted[0].id.len(), 40);
+
+    // Classified over the folder, with no hints: the function went from `a.rs` to `deep/c.rs`.
+    let result = classify(&folder.changed, &[], &folder.untouched());
+    assert_eq!(result.signals, vec![Signal::BlockMove]);
+
+    assert_eq!(load_folder(&repo, &before, &after, "")?.root_name(), ".");
+    assert!(load_folder(&repo, &before, &after, "../x").is_err());
+    // A folder one side does not have is every file added.
+    let folder = load_folder(
+        &repo,
+        &repo.find_tree(repo.treebuilder(None)?.write()?)?,
+        &after,
+        "docs",
+    )?;
+    assert_eq!(folder.changed.len(), 1);
+    assert!(folder.changed[0].before.is_none());
     Ok(())
 }

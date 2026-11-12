@@ -30,14 +30,22 @@
 //! Safe to re-run: byte-identical content is left alone and a missing README.md is backfilled.
 //!
 //! `--changesets` materialises the rows of `src/test/data/changesets.csv` (`sample_test_diffs
-//! --changesets`) instead, under `src/test/data/samples/changesets/<name>/`: `before/` and
-//! `after/` hold every file the changeset changes at its repository path with `.test` appended -
-//! an added file only under `after/`, a removed one only under `before/` - and each untouched
-//! file a signal points at under both. Which files those are is `stats::changeset::load_changes`'s
-//! say, as it was the sampler's: symbolic links and submodules are skipped, never followed, and a
-//! path that is not plain and relative is refused. `source.json` and `README.md` are as above,
-//! the first written through [`ChangesetSource`]. Re-running leaves a fixture that already holds
-//! exactly these files alone, and refuses one that holds anything else rather than overwrite it.
+//! --changesets`) instead, under `src/test/data/samples/changesets/<name>/`, each file at its
+//! path with `.test` appended under `before/` and `after/`.
+//!
+//! A `commit` row holds every file the commit changes - an added file only under `after/`, a
+//! removed one only under `before/` - and each untouched file a signal points at under both.
+//! Which files those are is `stats::changeset::load_changes`'s say, as it was the sampler's:
+//! symbolic links and submodules are skipped, never followed. A `folders` row holds the two
+//! complete trees of its sub-folder, paths relative to it, unchanged files included
+//! (`stats::changeset::load_folder`); what a tree on disk would hold and the fixture does not
+//! (a file over the size cap, a link, a submodule) is listed in `source.json` as `omitted`.
+//! Either way a path that is not plain and relative is refused.
+//!
+//! `source.json` is written through [`ChangesetSource`]: a `commit` carries what git says
+//! happened (`vcs_hints`); `folders` have no such key, since two folders on disk have no VCS to
+//! ask. Re-running leaves a fixture that already holds exactly these files alone, and refuses
+//! one that holds anything else rather than overwrite it.
 use anyhow::{Result, bail};
 use clap::Parser;
 use git2::{Oid, Repository, Tree};
@@ -462,26 +470,40 @@ fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Resu
     Ok(resolution)
 }
 
-/// A changeset fixture's `source.json`, as the design of 2026-11-12 has it (AGENT_LOG.md,
-/// "changeset ground truth"): where the changeset came from, every file it holds, and what the
-/// VCS says happened - hints, never truth.
+/// A changeset fixture's `source.json`: where the changeset came from, every file it holds,
+/// and for a commit what the VCS says happened - hints, never truth.
 ///
-/// To be replaced at merge by the shared type in `src/test/helper/human_changeset.rs` (branch
-/// `changesets`), which did not exist when this was written; this is the only place that writes
-/// the file.
+/// A copy of `ChangesetSource` in `src/test/helper/human_changeset.rs` (branch `changesets`,
+/// d0bc9eac), field for field, to be replaced by it at merge; this is the only place that writes
+/// the file. What that type does not have yet: `kind`, `root`, `omitted`, and a `vcs_hints` that
+/// may be absent.
 #[derive(Serialize)]
 struct ChangesetSource {
+    /// `commit` or `folders` (`stats::changeset`).
+    kind: String,
     repository: String,
+    /// The commit whose tree is `after/`.
     commit: String,
+    /// The commit whose tree is `before/`.
     parent: String,
+    /// Folders only: the sub-folder of the repository the two trees are, `.` for its root.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    root: Option<String>,
+    /// Derived, not a ranking: the signals the changeset was sampled with, joined by `+`, or
+    /// `control`.
     stratum: String,
     dataset: String,
     status: String,
     files: Vec<ChangesetSourceFile>,
-    vcs_hints: Vec<ChangesetSourceHint>,
+    /// Folders only: what the trees held on disk and the fixture does not.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    omitted: Vec<ChangesetSourceOmitted>,
+    /// Commits only; folders have no key at all.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    vcs_hints: Option<Vec<ChangesetSourceHint>>,
 }
 
-/// A file of a changeset by its repository path on each side it exists on: the fixture holds
+/// A file of a changeset by its path on each side it exists on: the fixture holds
 /// `before/<path>.test` and `after/<path>.test`.
 #[derive(Serialize)]
 struct ChangesetSourceFile {
@@ -489,14 +511,27 @@ struct ChangesetSourceFile {
     before: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     after: Option<String>,
-    /// True for a file the commit does not change, held because a signal points at it.
+    /// Byte-identical on both sides: for a commit, held because a signal points at it; for
+    /// folders, every file the two trees share.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
     untouched: bool,
+}
+
+/// `stats::changeset::Omitted`.
+#[derive(Serialize)]
+struct ChangesetSourceOmitted {
+    side: String,
+    path: String,
+    reason: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bytes: Option<u64>,
+    id: String,
 }
 
 /// One line of `git diff --name-status -M` about a file the fixture holds.
 #[derive(Serialize)]
 struct ChangesetSourceHint {
-    /// `A`, `D`, `M`, `R`, `C` or `T`.
+    /// `A`, `D`, `M`, `R` or `C`.
     status: String,
     path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -530,6 +565,55 @@ fn files_under(dir: &Path) -> Result<Vec<(PathBuf, Vec<u8>)>> {
     Ok(found)
 }
 
+/// What a fixture holds, before anything is written.
+#[derive(Default)]
+struct ChangesetFiles {
+    source_files: Vec<ChangesetSourceFile>,
+    /// Each path with what happened to it, for the README.
+    readme_files: Vec<(String, &'static str)>,
+    /// The files to write, relative to the fixture's directory.
+    wanted: Vec<(PathBuf, Vec<u8>)>,
+    omitted: Vec<ChangesetSourceOmitted>,
+}
+
+impl ChangesetFiles {
+    fn add(
+        &mut self,
+        path: &str,
+        before: Option<Vec<u8>>,
+        after: Option<Vec<u8>>,
+        change: &'static str,
+    ) {
+        let test_path = |side: &str| Path::new(side).join(format!("{path}.test"));
+        self.readme_files.push((path.to_string(), change));
+        self.source_files.push(ChangesetSourceFile {
+            before: before.as_ref().map(|_| path.to_string()),
+            after: after.as_ref().map(|_| path.to_string()),
+            untouched: change == "untouched",
+        });
+        if let Some(bytes) = before {
+            self.wanted.push((test_path("before"), bytes));
+        }
+        if let Some(bytes) = after {
+            self.wanted.push((test_path("after"), bytes));
+        }
+    }
+
+    fn add_changed(&mut self, file: changeset::ChangedFile) {
+        let change = match (&file.before, &file.after) {
+            (Some(_), Some(_)) => "modified",
+            (None, _) => "added",
+            (Some(_), None) => "removed",
+        };
+        self.add(
+            &file.path,
+            file.before.map(|blob| blob.bytes),
+            file.after.map(|blob| blob.bytes),
+            change,
+        );
+    }
+}
+
 /// Writes the fixture of one `changesets.csv` row (see the module documentation).
 fn materialize_changeset(
     row: &changeset::Row,
@@ -539,6 +623,11 @@ fn materialize_changeset(
     if row.name.contains('/') || !changeset::is_safe_path(&row.name) {
         bail!("{:?} is not a fixture name", row.name);
     }
+    let folders = match row.kind.as_str() {
+        changeset::KIND_COMMIT => false,
+        changeset::KIND_FOLDERS => true,
+        kind => bail!("{kind:?} is not a kind of changeset"),
+    };
     let repo_path = find_repo_path(repo_roots, &row.repository)
         .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
     let repo = Repository::open(&repo_path)?;
@@ -546,56 +635,63 @@ fn materialize_changeset(
     let parent = repo.find_commit(Oid::from_str(&row.parent)?)?;
     let (before_tree, tree) = (parent.tree()?, commit.tree()?);
 
-    let files = changeset::load_changes(&repo, &before_tree, &tree)?
-        .map_err(|skip| anyhow::anyhow!("no longer a changeset: {}", skip.name()))?;
-    let mut source_files = Vec::new();
-    let mut readme_files = Vec::new();
-    // Relative to the fixture's directory.
-    let mut wanted: Vec<(PathBuf, Vec<u8>)> = Vec::new();
-    let test_path = |side: &str, path: &str| Path::new(side).join(format!("{path}.test"));
-    for file in files {
-        readme_files.push((
-            file.path.clone(),
-            match (&file.before, &file.after) {
-                (Some(_), Some(_)) => "modified",
-                (None, _) => "added",
-                (Some(_), None) => "removed",
-            },
-        ));
-        source_files.push(ChangesetSourceFile {
-            before: file.before.as_ref().map(|_| file.path.clone()),
-            after: file.after.as_ref().map(|_| file.path.clone()),
-            untouched: false,
-        });
-        if let Some(blob) = file.before {
-            wanted.push((test_path("before", &file.path), blob.bytes));
+    let mut files = ChangesetFiles::default();
+    if folders {
+        if row.root.is_empty() {
+            bail!("a folders row names its sub-folder");
         }
-        if let Some(blob) = file.after {
-            wanted.push((test_path("after", &file.path), blob.bytes));
+        let root = if row.root == "." { "" } else { &row.root };
+        let folder = changeset::load_folder(&repo, &before_tree, &tree, root)?;
+        // Changed and unchanged files, in one order by path.
+        let mut unchanged = folder.unchanged.into_iter().peekable();
+        for file in folder.changed {
+            while let Some((path, bytes)) = unchanged.next_if(|(path, _)| *path < file.path) {
+                files.add(&path, Some(bytes.clone()), Some(bytes), "untouched");
+            }
+            files.add_changed(file);
+        }
+        for (path, bytes) in unchanged {
+            files.add(&path, Some(bytes.clone()), Some(bytes), "untouched");
+        }
+        files.omitted = folder
+            .omitted
+            .into_iter()
+            .map(|omitted| ChangesetSourceOmitted {
+                side: omitted.side.to_string(),
+                path: omitted.path,
+                reason: omitted.reason.to_string(),
+                bytes: omitted.bytes,
+                id: omitted.id,
+            })
+            .collect();
+    } else {
+        for file in changeset::load_changes(&repo, &before_tree, &tree)?
+            .map_err(|skip| anyhow::anyhow!("no longer a changeset: {}", skip.name()))?
+        {
+            files.add_changed(file);
+        }
+        for path in row.untouched() {
+            let bytes = changeset::regular_blob(&repo, &before_tree, path)?;
+            if changeset::regular_blob(&repo, &tree, path)? != bytes {
+                bail!("{path:?} is recorded as untouched, and the commit changes it");
+            }
+            files.add(path, Some(bytes.clone()), Some(bytes), "untouched");
         }
     }
-    for path in row.untouched() {
-        let bytes = changeset::regular_blob(&repo, &before_tree, path)?;
-        if changeset::regular_blob(&repo, &tree, path)? != bytes {
-            bail!("{path:?} is recorded as untouched, and the commit changes it");
-        }
-        readme_files.push((path.to_string(), "untouched"));
-        source_files.push(ChangesetSourceFile {
-            before: Some(path.to_string()),
-            after: Some(path.to_string()),
-            untouched: true,
-        });
-        wanted.push((test_path("before", path), bytes.clone()));
-        wanted.push((test_path("after", path), bytes));
-    }
+    let ChangesetFiles {
+        source_files,
+        readme_files,
+        mut wanted,
+        omitted,
+    } = files;
     wanted.sort();
     // `a` beside `a.test/b` would need `a.test` to be a file and a directory.
-    for (path, _) in &wanted {
-        if wanted
-            .iter()
-            .any(|(other, _)| other != path && other.starts_with(path))
-        {
-            bail!("{path:?} is both a file and a directory of the fixture");
+    for pair in wanted.windows(2) {
+        if pair[1].0.starts_with(&pair[0].0) {
+            bail!(
+                "{:?} is both a file and a directory of the fixture",
+                pair[0].0
+            );
         }
     }
 
@@ -635,24 +731,35 @@ fn materialize_changeset(
     let source_path = dir.join("source.json");
     if missing(&source_path) {
         let held = |path: &str| readme_files.iter().any(|(file, _)| file == path);
-        let vcs_hints = changeset::vcs_hints(&repo, parent.id(), commit.id())?
-            .into_iter()
-            .filter(|hint| held(&hint.path) || hint.old_path.as_deref().is_some_and(held))
-            .map(|hint| ChangesetSourceHint {
-                status: hint.status.to_string(),
-                path: hint.path,
-                old_path: hint.old_path,
-                similarity: hint.similarity,
-            })
-            .collect();
+        // Two folders on disk have no VCS to ask.
+        let vcs_hints = if folders {
+            None
+        } else {
+            Some(
+                changeset::vcs_hints(&repo, parent.id(), commit.id())?
+                    .into_iter()
+                    .filter(|hint| matches!(hint.status, 'A' | 'D' | 'M' | 'R' | 'C'))
+                    .filter(|hint| held(&hint.path) || hint.old_path.as_deref().is_some_and(held))
+                    .map(|hint| ChangesetSourceHint {
+                        status: hint.status.to_string(),
+                        path: hint.path,
+                        old_path: hint.old_path,
+                        similarity: hint.similarity,
+                    })
+                    .collect(),
+            )
+        };
         let source = ChangesetSource {
+            kind: row.kind.clone(),
             repository: row.repository.clone(),
             commit: row.commit.clone(),
             parent: row.parent.clone(),
-            stratum: row.stratum.clone(),
+            root: folders.then(|| row.root.clone()),
+            stratum: row.signal_names().join("+"),
             dataset: row.dataset.clone(),
             status: row.status.clone(),
             files: source_files,
+            omitted,
             vcs_hints,
         };
         fs::write(&source_path, serde_json::to_string_pretty(&source)?)?;
@@ -667,7 +774,9 @@ fn materialize_changeset(
                 repository: &row.repository,
                 commit: &row.commit,
                 parent: &row.parent,
-                stratum: &row.stratum,
+                kind: &row.kind,
+                root: folders.then_some(row.root.as_str()),
+                signals: &row.signals,
                 dataset: &row.dataset,
                 files: &readme_files,
             },
@@ -977,12 +1086,14 @@ mod tests {
             ],
         )?;
         Ok(changeset::Row {
-            name: changeset::fixture_name("copy", "example-repo", &second.to_string()),
+            name: changeset::fixture_name("commit", "example-repo", "", &second.to_string()),
+            kind: "commit".to_string(),
             repository: "example-repo".to_string(),
             commit: second.to_string(),
             parent: first.to_string(),
-            stratum: "copy".to_string(),
-            signals: "copy;block-move;untouched=lib/source.rs".to_string(),
+            root: String::new(),
+            signals: "block-move;copy".to_string(),
+            untouched_paths: "lib/source.rs".to_string(),
             files: 3,
             changed_lines: 29,
             main_language: "Rust".to_string(),
@@ -1033,6 +1144,7 @@ mod tests {
                 "commit",
                 "dataset",
                 "files",
+                "kind",
                 "parent",
                 "repository",
                 "status",
@@ -1040,14 +1152,18 @@ mod tests {
                 "vcs_hints"
             ]
         );
+        assert_eq!(source["kind"], "commit");
         assert_eq!(source["parent"], row.parent);
-        assert_eq!(source["stratum"], "copy");
+        assert_eq!(
+            source["stratum"], "block-move+copy",
+            "derived from the signals"
+        );
         assert_eq!(
             source["files"],
             serde_json::json!([
-                {"before": "old.rs", "untouched": false},
-                {"before": "src/a.rs", "after": "src/a.rs", "untouched": false},
-                {"after": "src/b.rs", "untouched": false},
+                {"before": "old.rs"},
+                {"before": "src/a.rs", "after": "src/a.rs"},
+                {"after": "src/b.rs"},
                 {"before": "lib/source.rs", "after": "lib/source.rs", "untouched": true},
             ])
         );
@@ -1113,7 +1229,7 @@ mod tests {
         }
         for untouched in ["../../etc/passwd", "/etc/passwd", "link", "src", "src/a.rs"] {
             let mut bad = row.clone();
-            bad.signals = format!("copy;untouched={untouched}");
+            bad.untouched_paths = untouched.to_string();
             assert!(
                 materialize_changeset(&bad, &roots, output_dir.path()).is_err(),
                 "{untouched}"
@@ -1124,6 +1240,104 @@ mod tests {
             0,
             "nothing was written"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn folders_become_two_complete_trees_without_hints() -> Result<()> {
+        let root = tempdir()?;
+        let mut row = changeset_repository(root.path())?;
+        row.kind = "folders".to_string();
+        row.name = changeset::fixture_name("folders", "example-repo", &row.parent, &row.commit);
+        row.root = ".".to_string();
+        row.untouched_paths.clear();
+        let output_dir = tempdir()?;
+        let roots = [root.path().to_path_buf()];
+        let Resolution::Create(dir) = materialize_changeset(&row, &roots, output_dir.path())?
+        else {
+            panic!("expected a fresh directory");
+        };
+        let names = |side: &str| -> Result<Vec<String>> {
+            Ok(files_under(&dir.join(side))?
+                .into_iter()
+                .map(|(path, _)| path.to_string_lossy().into_owned())
+                .collect())
+        };
+        // The whole tree on each side, the unchanged licence and source too; not the link.
+        assert_eq!(
+            names("before")?,
+            [
+                "LICENSE.test",
+                "lib/source.rs.test",
+                "old.rs.test",
+                "src/a.rs.test"
+            ]
+        );
+        assert_eq!(
+            names("after")?,
+            [
+                "LICENSE.test",
+                "lib/source.rs.test",
+                "src/a.rs.test",
+                "src/b.rs.test"
+            ]
+        );
+
+        let source: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(dir.join("source.json"))?)?;
+        assert_eq!(source["kind"], "folders");
+        assert_eq!(source["root"], ".");
+        assert!(source.get("vcs_hints").is_none(), "folders have no VCS");
+        assert_eq!(
+            source["files"],
+            serde_json::json!([
+                {"before": "LICENSE", "after": "LICENSE", "untouched": true},
+                {"before": "lib/source.rs", "after": "lib/source.rs", "untouched": true},
+                {"before": "old.rs"},
+                {"before": "src/a.rs", "after": "src/a.rs"},
+                {"after": "src/b.rs"},
+            ])
+        );
+        // Every file marked untouched is the same bytes on both sides, and no other is.
+        for file in source["files"].as_array().unwrap() {
+            let side = |key: &str| {
+                let path = file.get(key)?.as_str()?;
+                fs::read(dir.join(key).join(format!("{path}.test"))).ok()
+            };
+            let same = side("before").is_some() && side("before") == side("after");
+            assert_eq!(same, file.get("untouched").is_some(), "{file}");
+        }
+        let omitted = source["omitted"].as_array().unwrap();
+        assert_eq!(omitted.len(), 2, "the link, on each side");
+        assert_eq!(omitted[0]["path"], "link");
+        assert_eq!(omitted[0]["reason"], "symlink");
+        let readme = fs::read_to_string(dir.join("README.md"))?;
+        assert!(readme.contains("- **Kind:** folders\n- **Folder:** `.`\n"));
+
+        // A sub-folder's paths are relative to it.
+        row.root = "src".to_string();
+        row.name.push_str("-src");
+        let Resolution::Create(sub) = materialize_changeset(&row, &roots, output_dir.path())?
+        else {
+            panic!("expected a fresh directory");
+        };
+        let after: Vec<String> = files_under(&sub.join("after"))?
+            .into_iter()
+            .map(|(path, _)| path.to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(after, ["a.rs.test", "b.rs.test"]);
+        assert!(matches!(
+            materialize_changeset(&row, &roots, output_dir.path())?,
+            Resolution::AlreadyPresent(_)
+        ));
+        for bad in ["", "../x", "/etc"] {
+            row.root = bad.to_string();
+            row.name = format!("bad-{}", bad.len());
+            assert!(
+                materialize_changeset(&row, &roots, output_dir.path()).is_err(),
+                "{bad}"
+            );
+        }
         Ok(())
     }
 }
