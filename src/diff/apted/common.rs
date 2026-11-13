@@ -553,15 +553,19 @@ pub(crate) fn compute_edit_mapping(
         return decisions;
     }
     if size1 == 0 {
-        for post in 0..size2 {
-            decisions.push(RawDecision::Insert(after.post_to_node_id[post]));
-        }
+        decisions.extend(
+            after.post_to_node_id[..size2]
+                .iter()
+                .map(|&id| RawDecision::Insert(id)),
+        );
         return decisions;
     }
     if size2 == 0 {
-        for post in 0..size1 {
-            decisions.push(RawDecision::Delete(before.post_to_node_id[post]));
-        }
+        decisions.extend(
+            before.post_to_node_id[..size1]
+                .iter()
+                .map(|&id| RawDecision::Delete(id)),
+        );
         return decisions;
     }
 
