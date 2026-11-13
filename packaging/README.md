@@ -18,9 +18,10 @@ than a recipe here.
 
 ## The one thing you cannot skip: checksums
 
-The tarball hashes belong to the **v0.2.0** tag: they hash GitHub's tag tarball, so they can only
-be regenerated after the next tag exists, and until then the recipes name the new version with the
-old hash and do not build. `make check-versions` checks the version strings, not the hashes.
+The tarball hashes in the Arch and Gentoo recipes hash GitHub's tag tarball, so they can only be
+regenerated after a release's tag exists. Between the version bump and that step the recipes name
+the new version with the previous release's hash and do not build. `make check-versions` checks
+the version strings, not the hashes.
 
 * `aur/PKGBUILD` carries the sha256 of the tag tarball
 * `gentoo/dev-util/omnidiff/Manifest` carries one `DIST` line for the tag tarball and one for each
@@ -100,7 +101,8 @@ The `LICENSE` variable enumerates the vendored crates' licenses alongside the pa
 The `.deb` is built with [`cargo-deb`](https://github.com/kornelski/cargo-deb), attached to each
 GitHub release for amd64 and arm64, and served from an apt repository on GitHub Pages. It is
 **unofficial**, and the distinction matters: a package in the Debian archive proper would require
-every one of the 300-odd dependency crates — 23 tree-sitter grammars among them — to be packaged as
+every one of the several hundred dependency crates — two dozen tree-sitter grammars among them — to
+be packaged as
 `librust-*-dev` first. Almost none are. That path is not reachable, so this is a `cargo-deb`
 artifact served from our own repository, not a route into Debian.
 
@@ -282,5 +284,6 @@ other recipe does; `brew test omnidiff` runs a real headless diff.
    names the new version.
 9. Check that the apt repository picked the release up — `curl -s
    https://ivankovic.github.io/omnidiff/apt/dists/stable/main/binary-amd64/Packages | grep ^Version`
-   should name the new version. It refreshes itself (step 2 above), so this is a check, not a task;
+   should name the new version. It refreshes itself (see "The apt repository" above), so this is a
+   check, not a task;
    if it is stale, re-run the Pages workflow.

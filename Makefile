@@ -159,7 +159,7 @@ install-hooks:
 benchmark-quality:
 	$(BENCH_QUALITY) --csv
 
-# Speed and accuracy of content diffs per family, the README's figures for content other than code.
+# Speed and accuracy of content diffs per family, src/test/README.md's figures for content other than code.
 # Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
 # materialize_test_diffs) and writes research/data/performance/content_speed/<machine>.csv.
 benchmark-content:

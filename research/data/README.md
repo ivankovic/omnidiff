@@ -16,10 +16,11 @@ data/
   performance/    output  - diff speed/memory over the sampled pairs
     baselines/            - pinned point-in-time snapshots, kept for comparison
   comparison/     output  - omnidiff against other diff tools, and against external oracles
-  rq1/            output  - whole-tree APTED against a 1-second budget (the paper's RQ2, named RQ1
+  rq1/            output  - whole-tree APTED against a 1-second budget (the paper's RQ4, named RQ1
                             in files and macros)
   coverage/       output  - line coverage of the test suite: the README badge and per-test sets
   ablation/       output  - leave-one-out heuristic study (gitignored: regenerable scratch)
+  machines.csv            - the machines timings are kept for, by CPU model name
 ```
 
 ## samples/
@@ -37,6 +38,8 @@ Note that CSVs written before 2026-08-18 carry the older byte-size labels (`smal
 per-language files are the artifact.
 
 ## corpus_stats/
+
+Its own [README](corpus_stats/README.md) states what these files show.
 
 What the corpus *looks like*, independent of any diff: per-file size percentiles
 (`code_percentiles.csv`), the whole per-file size distribution behind them
@@ -69,8 +72,9 @@ How well the diff algorithm reproduces the human-authored ground-truth mappings 
 `human_mapping_analysis.csv` the shape analysis of the mappings themselves. Three files are
 product gates rather than research artifacts, read by the *root* Makefile and filed here because
 they describe the same measurement: `quality_baseline.csv`, the per-fixture accuracy baseline
-`make check-quality` (and therefore `make deploy`) gates on; `quality_baseline.txt`, its runtime
-baseline, which only warns; and `painting_attribution.csv`, the per-fixture painting baseline
+`make check-quality` (and therefore `make deploy`) gates on; `timing/<machine>.csv` and `.txt`, its
+runtime baseline per machine, which only warns; and `painting_attribution.csv`, the per-fixture
+painting baseline
 `make check-painting-attribution` gates on. `PROVENANCE.md` lists the rest.
 
 ## performance/
@@ -80,12 +84,17 @@ produced each, written by `measure/benchmark_all_extended.sh`. The logs are kept
 they are the only record of why a given language sampled fewer pairs than expected (see that
 script's own comment about Lua sampling zero pairs).
 
-`content_speed.csv`, written by `make benchmark-content`: how long each sampled content pair
-(pictures, fonts, archives, ...) takes to diff. See `PROVENANCE.md`.
+`content_speed/<machine>.csv`, written by `make benchmark-content`: how long each sampled content
+pair (pictures, fonts, archives, ...) takes to diff, on that machine. See `PROVENANCE.md`.
 
 `baselines/` holds dated or labelled snapshots (`benchmark_2026-08-17_after_runtime_pass.csv`,
 `benchmark_<language>_baseline_pre_<change>.csv`) kept for before/after comparison across a
 specific algorithm change. These are never regenerated - that is the point of them.
+
+## comparison/
+
+OmniDiff and eight established diff tools scored against the same ground truth, and OmniDiff
+against an external oracle. Its own [README](comparison/README.md) states the results.
 
 ## rq1/
 

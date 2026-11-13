@@ -197,7 +197,7 @@ TARGETS = {
     "NumPhasesWord": "five",
     "GumTreeVersion": "v4.0.0-beta8",
     # Languages OmniDiff parses with a tree-sitter grammar and diffs structurally: the count the
-    # root README's "Supported content" section states (SQL, 2026-11-09, is the 26th). The
+    # "Supported content" section of docs/README.md states (SQL, 2026-11-09, is the 26th). The
     # fixture corpus covers \NumFixtureLanguages of them.
     "NumSupportedLanguages": "26",
 }
@@ -239,7 +239,7 @@ MACHINE = {
 # The project the dataset is the test corpus of, read off github.com/ivankovic/omnidiff with
 # `gh api repos/ivankovic/omnidiff` on 2026-11-10. Authored: a refresh means reading them again
 # and changing ProjectStatsDate with them. The repository's creation date is from the same call;
-# the release channels are the ones the root README's Installation section lists.
+# the release channels are the ones the Installation section of docs/README.md lists.
 PROJECT = {
     "ProjectStars": "1{,}313",
     "ProjectForks": "35",
@@ -1128,13 +1128,13 @@ CONTENT_FAMILIES = [
 # Which machine's `data/performance/content_speed/<machine>.csv` the paper's content timings are
 # read from. `server` is the MACHINE block's hardware, which every other corpus-wide measurement in
 # the paper ran on (2026-10-06, single-shot). `laptop.csv` holds the same pairs re-timed on
-# 2026-11-07 as the median of three runs - the README's figures - and is not comparable with it
-# (`data/performance/PROVENANCE.md`: compare figures within one file, never across two).
+# 2026-11-07 as the median of three runs - src/test/README.md's figures - and is not comparable
+# with it (`data/performance/PROVENANCE.md`: compare figures within one file, never across two).
 CONTENT_SPEED_MACHINE = "server"
 
 # The content census's per-repository cap: each repository weighs min(1, CAP / its changes), the
 # expected outcome of sampling CAP of its changes. The figure data/corpus_stats/PROVENANCE.md and
-# the root README quote ("at most 1,000 per repository"); a parameter of the reading, not a
+# src/test/README.md quote ("at most 1,000 per repository"); a parameter of the reading, not a
 # measurement.
 CONTENT_CENSUS_CAP = 1000
 

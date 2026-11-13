@@ -15,8 +15,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! `omnidiff git configure`: an interactive wizard for the `git config` commands README's "Git
-//! integration" section otherwise asks the user to run by hand.
+//! `omnidiff git configure`: an interactive wizard for the `git config` commands the "Git
+//! integration" section of `docs/README.md` otherwise asks the user to run by hand.
 
 use std::io::{self, IsTerminal};
 use std::process::Command;
@@ -187,7 +187,7 @@ fn ensure_inside_git_repo() -> Result<()> {
 
 fn print_manual_instructions() {
     eprintln!(
-        "Run these manually instead (see README's \"Git integration\" section):\n\n\
+        "Run these manually instead (see \"Git integration\" in docs/README.md):\n\n\
          git config difftool.omnidiff.cmd 'omnidiff -- \"$LOCAL\" \"$REMOTE\"'\n\
          git config diff.tool omnidiff\n\
          git config difftool.prompt false\n\n\

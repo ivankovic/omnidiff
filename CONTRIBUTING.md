@@ -59,130 +59,11 @@ Two things this does **not** mean:
 
 ## Testing
 
-Run automated tests frequently during coding.
-
-Diff quality and diff speed are measured separately (see "Quality" and "Speed" below). Check both
-on demand, and always before a release. `make deploy` already gates on quality automatically (see
-`make check-quality` in the Makefile).
-
-### Automated tests
-
-Each file in `src/` ends with its own test module, as is typical in Rust. These tests must cover
-both the happy path and corner cases. Use `src/test/helper.rs` to get handmade, high-quality test
-data.
-
-**Per-file unit tests must run in under 1 second.**
-
-The Python under `research/analysis/` and `scripts/` has its own unit tests in `research/tests/`,
-run by `make test-python` (part of `make test` and of CI's python job). They cover the pure
-functions the report scripts are built from; the scripts' shared helpers live in
-`research/analysis/_common.py`.
-
-`src/test/` also holds slower, fixture-driven tests, for example `src/test/fixtures/`.
-These tests check real diffs against a human-verified ground truth. **These tests must run in
-under 5 seconds.**
-
-### Coverage
-
-`make coverage` reports which of this repository's lines the suite executes. `cargo-llvm-cov`
-drives `cargo nextest` directly under `--all-features`, so it measures exactly the suite `make
-test` runs. It writes a browsable report to `target/llvm-cov/html/index.html` and prints a
-per-area table:
-
-| area | lines | |
-| --- | --- | --- |
-| `src/showcase/` - showcase data | 374/384 | 97.4% |
-| `src/diff/` - the engine | 12514/12861 | 97.3% |
-| `src/test/` - fixture helpers | 18600/19231 | 96.7% |
-| `src/code/` - parsing, metadata | 1625/1719 | 94.5% |
-| `src/tui/` - viewer, headless | 7789/8892 | 87.6% |
-| `src/stats/` - sampling, git | 566/662 | 85.5% |
-| `src/` - entry points, integrations | 985/1372 | 71.8% |
-| `src/bin/` - dev tools | 10801/18135 | 59.6% |
-| **product (everything but `src/bin/`)** | **42453/45121** | **94.1%** |
-| everything | 53254/63256 | 84.2% |
-
-Measured 2026-09-26 over 4777 tests. The engine and the dev tools are deliberately held to
-different standards: `src/bin/` is samplers, benchmark harnesses and `human_solver`, several of
-which exist to be run once and read.
-
-**Not a CI gate.** It costs about ten minutes and 6GB peak, since it rebuilds the workspace with
-instrumentation - and a threshold mostly teaches people to write tests that touch lines. At 97%
-the engine would never be what tripped a floor; only the dev tools would.
-
-One test knows it is being measured: `rust_completely_unrelated_main_files_resolves_fast` asserts
-a five-second wall-clock bound, which instrumentation blows through, so it skips that half of
-itself when `LLVM_PROFILE_FILE` or `CARGO_LLVM_COV` is set. It is the only wall-clock assertion in
-the library suite; add the same guard if another appears.
-
-The README badge reads `research/data/coverage/badge.json`, which `make coverage` rewrites.
-It is therefore only as current as the last run somebody committed - re-run and commit it when
-the number has moved enough to matter.
-
-### Test dependencies
-
-**No mocks.** Mocks block testing through the interface, and mocks are brittle.
-
-Use the real implementation where possible.
-
-Where the real implementation is not possible, for example for filesystem or database access, use
-a fake in-memory implementation.
-
-Install `jj` (`cargo install jj-cli`, or see jj's own install docs) if you touch
-`src/jj_configure.rs`. That module's claims about how jj invokes
-a diff tool - directory trees by default, file pairs with extensions preserved under
-`diff-invocation-mode = "file-by-file"` - were verified empirically against jj 0.44.0, and should
-be re-verified the same way rather than assumed.
-
-### Quality
-
-Run `make benchmark-quality`. This command diffs every fixture in `src/test/data/diffs/` that has a
-human-verified ground truth mapping. It reports how many nodes each fixture gets wrong. Use this
-output to see whether a change made diffs better or worse.
-
-The README's "Accurate" principle states the painting targets, compared byte by byte under both
-`--full` and `--minimal`.
-
-`make update-painting-attribution` measures them, one row per fixture and preset in
-`research/data/quality/painting_attribution.csv`, and `make check-painting-attribution` fails CI if
-any fixture gets worse. Each row carries two numbers that answer different questions:
-`real_bytes` renders omnidiff's own mapping, which is what a reader sees, and `renderer_bytes`
-renders the *human* tree mapping, so it holds no matcher error at all - what is left there only a
-change to `diff::text` can fix. Steer painting work by the second. `painting_disagreement_detail`
-(`src/test/helper/human_mapping/tests/exploratory.rs`, `MAPPING=human` for the second column)
-prints the disagreeing runs of one fixture.
-
-The tree mapping behind the painting has targets of its own:
-
-* **90% of test cases with zero mismatched visible nodes.**
-* **99% of test cases with at most 1% of visible nodes mismatched.**
-
-Both are stated in *visible* nodes - the ones carrying text of their own, per
-`omnidiff::diff::nodes::is_structurally_visible` - not all AST nodes. A wrongly-matched `block` or
-`argument_list`, whose every readable byte belongs to a child, is not the same defect as a
-wrongly-matched identifier. About 68% of nodes are visible corpus-wide, so the two counts differ.
-The benchmark prints both (`Mismatches` / `Vis Mism`), and every clamped `fixtures` test
-pins both (`assert_matches_human_mapping_within_limit(name, total, visible)`, which fails if
-*either* limit is exceeded).
-
-**Visibility is a property of the tree and the source, never of a diff.** Deriving it from the
-renderer - does `diff::text::ranges` emit a span for this node - makes both the numerator and the
-denominator move with the algorithm, so a diff that renders coarsely has almost nothing it can get
-visibly wrong. `is_structurally_visible`'s doc comment has the reasoning in full.
-
-### Speed
-
-The README's "Fast" principle states the goals (p50 <= 100ms, p99 <= 1000ms). Both are met with
-room to spare, so a change may cost some speed but not an order of magnitude. `make
-benchmark-quality` prints the total runtime and the time per fixture; `make check-quality` prints
-the p50/p90/p99 distribution against the committed baseline, and warns, never fails, on a runtime
-above 2x the baseline.
-
-Times are only comparable on one machine, so each machine keeps its own baseline. A machine is
-registered in `research/data/machines.csv` by its CPU's model name, and `scripts/machine.py` tells
-the Makefile which one it is on; `MACHINE=<name>` overrides. On a machine new to the project, add
-its row, then run `make update-timing-baseline` (and `make benchmark-content` for the content
-figures). A machine without a baseline, such as a CI runner, skips the runtime comparison.
+[src/test/README.md](src/test/README.md) describes how OmniDiff is tested: the fixture corpus and
+its ground truth, the speed, robustness and accuracy goals with their current figures, coverage,
+and the rules for writing tests (no mocks; per-file unit tests under 1 second, fixture tests under
+5). Run automated tests frequently during coding, and `make benchmark-quality` to see what a change
+did to accuracy and speed.
 
 ## Code structure
 
@@ -203,12 +84,15 @@ Follow Rust's standard project structure.
         |                  components/, widgets/
         |- showcase.rs  <- The GitHub Pages showcase's data: the diff and first-frame state the
         |- showcase/       browser viewer is fed (feature `test-fixtures`)
-        |- test/        <- Shared test helpers, plus slower fixture-driven tests (see "Testing")
+        |- test/        <- Shared test helpers, plus slower fixture-driven tests (see its README.md)
         |- bin/         <- Standalone developer tools: benchmarking, dataset sampling, and more
     |- /assets/viewer   <- The showcase's browser viewer: model.js is the TUI's viewer logic ported
     |                      to the browser, app.js the DOM wiring
+    |- /docs            <- How to install and use OmniDiff
+    |- /packaging       <- Package-manager recipes and the release checklist
     |- /research        <- Datasets and analysis scripts used to guide design decisions
-    |- README.md        <- High-level project summary. Must be readable to humans.
+    |- README.md        <- High-level project summary, linking to the other READMEs. Must be
+    |                      readable to humans.
     |- CONTRIBUTING.md  <- This file
     |- AGENTS.md        <- AI-only instructions
     |- REVIEW.md        <- Open code-health items
@@ -241,7 +125,7 @@ documented there.
   under `cargo nextest run --release` - about half, at comparable wall-clock time.
 * `coverage` - line coverage of the suite over this repository's own code, via `cargo-llvm-cov`
   driving nextest (`cargo install cargo-llvm-cov`, plus `rustup component add llvm-tools-preview`).
-  See "Coverage" above for what it reports and why it is not a gate.
+  See [Coverage](src/test/README.md#coverage) for what it reports and why it is not a gate.
 * `test-quick` - the edit loop's Rust suite, about 12 s warm against `test-rust`'s two minutes:
   every test outside the fixtures but the corpus sweeps, and the fixtures
   `src/test/data/quick_fixtures.txt` names, the cheapest set reaching every line the whole fixture
@@ -281,7 +165,8 @@ Three verbs, and which file a target lives in follows from them:
   that moves when someone else ships a GumTree release is a study of the field, not product QA.
 
 * `benchmark-quality` - runs `benchmark_optimal_solutions`: mismatch count against the
-  human-authored ground truth, per fixture, and the runtime (see "Quality" and "Speed" above).
+  human-authored ground truth, per fixture, and the runtime (see
+  [Quality](src/test/README.md#quality) and [Speed](src/test/README.md#speed)).
 * `benchmark-ablation` - re-runs `benchmark-quality` with individual solver passes disabled, to see
   what each is worth. A one-off investigation rather than a routine measurement, which is why it is
   not folded into `benchmark-quality`.
@@ -332,7 +217,7 @@ Every push and pull request runs (see `.github/workflows/ci.yml`):
   check-versions`
 * `make check-third-party-notices`
 * The quality gate (`make check-quality`) and the painting gate (`make
-  check-painting-attribution`) - see "Quality" above
+  check-painting-attribution`) - see [Quality](src/test/README.md#quality)
 * The non-fixture suite on macOS and Windows, with default features - the operating systems the
   release ships binaries for
 * `cargo check --locked` on the toolchain `Cargo.toml`'s `rust-version` names

@@ -1,25 +1,33 @@
 # Introductory paper
 
-"Content-Aware Diffing: Edit Scripts, Visualisations, and a Living Ground Truth", an ACM `sigconf`
-LaTeX paper. Its subject is diffing *content* - text, code, pictures, archives, fonts, documents,
-catalogs, cursors - and the distance between a delta (an edit script a machine executes) and a
-visualisation (what a human reads). Code is one content type among the others; it is the one with
-the deepest ground truth, and the paper says so wherever a question can only be answered for code.
-It is a research paper with a tool contribution at the end, not a tool paper: the introduction
-states five groups of research questions, each is answered in its own section, and the tool comes
-last.
+"OmniDiff: Content-Aware Diffing", an ACM `sigconf` LaTeX paper. Its subject is diffing *content* -
+text, code, pictures, archives, fonts, documents, catalogs, cursors - and the distance between a
+delta (an edit script a machine executes) and a visualisation (what a human reads). Code is one
+content type among the others; it is the one with the deepest ground truth, and the paper says so
+wherever a question can only be answered for code. It is a research paper with a tool
+contribution: the title and the abstract's second paragraph name OmniDiff, the introduction states
+five groups of research questions, each is answered in its own section, and the tool's own section
+comes after them.
 
-1 Introduction, 2 Background: Deltas and Visualisations (2.1 Deltas, 2.2 Visualisations,
-2.3 Definitions: delta, mapping, painting, projection, 2.4 Tools), 3 A Living Ground-Truth Dataset
-(methodology only, no RQ answered: project and corpus, files, sampling, ground truth, the 31
-invariants, growth, cross-validation), 4 Content of Real-World Changes (RQ1.1 what content, RQ1.2
-how large), 5 Delta versus Visualisation (RQ2.1 invariants broken by a painted script, RQ2.2 what
-reaches the reader, RQ2.3 expressibility, RQ2.4 cost), 6 Uniqueness (RQ3.1 mappings, RQ3.2
-visualisations: Minimal against Full), 7 Exact Deltas within an Interactive Budget (RQ4),
-8 State of the Art (RQ5.1 what tools show per content, RQ5.2 accuracy, RQ5.3 speed: eight
-established tools in eleven configurations), 9 OmniDiff, 10 Threats to Validity, 11 Related Work,
-12 Conclusions. The ACM conference, DOI, ISBN and rights fields are placeholders until a venue is
-chosen. The prose is in British spelling ("visualisation", "generalises").
+1. Introduction
+2. Background: Deltas and Visualisations (2.1 Deltas, 2.2 Visualisations, 2.3 Definitions: delta,
+   mapping, painting, projection, 2.4 Tools)
+3. A Living Ground-Truth Dataset (methodology only, no RQ answered: project and corpus, files,
+   sampling, ground truth, the 31 invariants, growth, cross-validation)
+4. Content of Real-World Changes (RQ1.1 what content, RQ1.2 how large)
+5. Delta versus Visualisation (RQ2.1 invariants broken by a painted script, RQ2.2 what reaches the
+   reader, RQ2.3 expressibility, RQ2.4 cost)
+6. Uniqueness (RQ3.1 mappings, RQ3.2 visualisations: Minimal against Full)
+7. Exact Deltas within an Interactive Budget (RQ4)
+8. State of the Art (RQ5.1 what tools show per content, RQ5.2 accuracy, RQ5.3 speed: eight
+   established tools in eleven configurations)
+9. OmniDiff
+10. Threats to Validity
+11. Related Work
+12. Conclusions
+
+The ACM conference, DOI, ISBN and rights fields are placeholders until a venue is chosen. The prose
+is in British spelling ("visualisation", "generalises").
 
 ## Rules that are easy to break
 
