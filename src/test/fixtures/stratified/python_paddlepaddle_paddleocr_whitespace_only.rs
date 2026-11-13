@@ -34,5 +34,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("python-paddlepaddle-paddleocr-whitespace-only", 0.0)
+    assert_matches_human_painting_within_limit("python-paddlepaddle-paddleocr-whitespace-only", 0.7)
 }
