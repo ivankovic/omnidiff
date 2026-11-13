@@ -109,6 +109,8 @@
 //! `invariants()` test, so a fixture records its own known violations beside its other clamps
 //! rather than in a corpus-wide exemption list.
 
+use std::collections::HashMap;
+
 use anyhow::Result;
 use tree_sitter::Node;
 
@@ -4113,6 +4115,12 @@ fn rows_lined_up_by<'a>(
 /// the spacing stays unpainted. A moved token may take its space along whether or not the spacing
 /// changed: the space can travel with it.
 ///
+/// Spacing on the other side that a `Match` ties to another place on this row is not counted
+/// there: it is that place's spacing, not this point's. `{ |d| f(d) }` -> `{ f(it) }`, with ` f(`
+/// matched to the space after `|d|`, leaves nothing after `{` for the space before `|d|`, which
+/// goes with the deletion. A space a match takes to another row still counts: the row's own
+/// spacing is what is compared, and a token moved off it leaves its place behind.
+///
 /// Only paintings named for `Full`: a lone painting asserts its rendering is unambiguous, not
 /// that it follows `Full`'s conventions (as for invariant 5).
 fn spaces_before_edits_follow_their_count(
@@ -4124,21 +4132,74 @@ fn spaces_before_edits_follow_their_count(
         return Ok(Vec::new());
     }
     let paintings = paintings_with_labels(mapping, before, after, RenderOptions::FULL)?;
+    let partners: Vec<SpacingPartners> = paintings
+        .iter()
+        .map(|(name, _)| {
+            mapping
+                .text_mappings
+                .iter()
+                .find(|named| named.name == *name)
+                .map(|named| matched_spacing(named, before, after))
+                .unwrap_or_default()
+        })
+        .collect();
     Ok(spaces_before_edits_follow_their_count_in(
-        &paintings, before, after,
+        &paintings, &partners, before, after,
     ))
 }
 
+/// For each side, the spacing bytes a `Match` pairs one to one with a byte of the other side:
+/// file offset to the partner's file offset.
+pub(crate) type SpacingPartners = [HashMap<usize, usize>; 2];
+
+/// [`SpacingPartners`] of one painting. Only a `Match` of one span a side with the same text pairs
+/// byte for byte; an N:M or an updating match leaves which byte is which open, and pairs nothing.
+fn matched_spacing(named: &NamedTextMapping, before: &Code, after: &Code) -> SpacingPartners {
+    let mut partners = SpacingPartners::default();
+    for entry in &named.mapping.entries {
+        let ([before_span], [after_span]) = (&entry.before[..], &entry.after[..]) else {
+            continue;
+        };
+        let offsets = |contents: &str, span: HumanTextSpan| {
+            Some(
+                super::byte_offset(contents, span.start_row, span.start_column)?
+                    ..super::byte_offset(contents, span.end_row, span.end_column)?,
+            )
+        };
+        let (Some(ours), Some(theirs)) = (
+            offsets(&before.contents, *before_span),
+            offsets(&after.contents, *after_span),
+        ) else {
+            continue;
+        };
+        let texts = [
+            before.contents.as_bytes().get(ours.clone()),
+            after.contents.as_bytes().get(theirs.clone()),
+        ];
+        let (Some(text), true) = (texts[0], texts[0] == texts[1]) else {
+            continue;
+        };
+        for k in (0..text.len()).filter(|&k| is_spacing(text[k])) {
+            partners[0].insert(ours.start + k, theirs.start + k);
+            partners[1].insert(theirs.start + k, ours.start + k);
+        }
+    }
+    partners
+}
+
 /// [`spaces_before_edits_follow_their_count`] over paintings already projected to labels, so a
-/// census can hold omnidiff's own rendering to the rule.
+/// census can hold omnidiff's own rendering to the rule. `partners` runs alongside `paintings`;
+/// a painting without an entry there (a rendering has no matches to read) pairs no spacing.
 pub(crate) fn spaces_before_edits_follow_their_count_in(
     paintings: &[(&str, PaintedLabels)],
+    partners: &[SpacingPartners],
     before: &Code,
     after: &Code,
 ) -> Vec<GroundTruthViolation> {
     if paintings.is_empty() {
         return Vec::new();
     }
+    let no_partners = SpacingPartners::default();
     let Some(core) =
         crate::diff::text::line_diff_core(&before.contents, &after.contents, ROW_LINE_UP_MAX_EDIT)
     else {
@@ -4151,7 +4212,8 @@ pub(crate) fn spaces_before_edits_follow_their_count_in(
     let label_name = |label: TextLabel| label_word(Some(label));
 
     let mut violations = Vec::new();
-    for (name, labels) in paintings {
+    for (painting, (name, labels)) in paintings.iter().enumerate() {
+        let partners = partners.get(painting).unwrap_or(&no_partners);
         for (pair, survivors) in rows_lined_up_by_survivors(&rows, labels, &core.pairs) {
             // Each side's stretches: before the first survivor, between survivors, after the last.
             let stretches = |side: usize| -> Vec<(usize, usize)> {
@@ -4185,40 +4247,79 @@ pub(crate) fn spaces_before_edits_follow_their_count_in(
                     let leading =
                         |row: Row| row.text.iter().take_while(|&&b| is_spacing(b)).count();
                     let at_row_start = index == 0;
-                    let (ours, theirs, wanted, wanted_label) = if at_row_start {
-                        let (ours, theirs) = (leading(row), leading(other));
-                        let changed = ours.saturating_sub(theirs);
-                        let removed = if side == 0 {
-                            TextLabel::Delete
+                    let other_edit = (other_start..other_end).find(|&c| !is_spacing(other.text[c]));
+                    // A spacing byte a match ties to another place on its own pair of rows: that
+                    // place's spacing, not this point's (see the doc comment).
+                    let elsewhere = |side_of: usize, at: usize, here: std::ops::Range<usize>| {
+                        let (this, that) = if side_of == side {
+                            (row, other)
                         } else {
-                            TextLabel::Insert
+                            (other, row)
                         };
-                        (ours, theirs, 0..changed, removed)
-                    } else {
-                        let other_edit =
-                            (other_start..other_end).find(|&c| !is_spacing(other.text[c]));
-                        let (ours, theirs) = match other_edit {
-                            Some(other_edit) => (edit - start, other_edit - other_start),
-                            None => (
-                                (start..end).filter(|&c| is_spacing(row.text[c])).count(),
-                                other_end - other_start,
-                            ),
-                        };
-                        let changed = ours.saturating_sub(theirs).min(edit - start);
-                        (ours, theirs, edit - changed..edit, label)
+                        let that_row = that.start..that.start + that.text.len();
+                        partners[side_of]
+                            .get(&(this.start + at))
+                            .is_some_and(|p| that_row.contains(p) && !here.contains(p))
                     };
-                    let wrong: Vec<usize> = (start..edit)
-                        .filter(|&c| {
-                            let painted = labels[side][row.start + c];
-                            if wanted.contains(&c) {
-                                painted != Some(wanted_label)
+                    let other_here =
+                        other.start + other_start..other.start + other_edit.unwrap_or(other_end);
+                    let ours_here = row.start + start..row.start + edit;
+                    // `matched`: whether spacing a match takes elsewhere is set aside, on both
+                    // sides. The rule holds if it holds either way, so reading the matches only
+                    // ever excuses a painting.
+                    let judge = |matched: bool| {
+                        let ours_counts =
+                            |c: usize| !(matched && elsewhere(side, c, other_here.clone()));
+                        let theirs_counts =
+                            |c: usize| !(matched && elsewhere(1 - side, c, ours_here.clone()));
+                        let (ours, theirs, wanted, wanted_label) = if at_row_start {
+                            let (ours, theirs) = (leading(row), leading(other));
+                            let changed = ours.saturating_sub(theirs);
+                            let removed = if side == 0 {
+                                TextLabel::Delete
                             } else {
-                                painted.is_some()
-                                    && !(label == TextLabel::Move
-                                        && painted == Some(TextLabel::Move))
-                            }
-                        })
-                        .collect();
+                                TextLabel::Insert
+                            };
+                            (ours, theirs, 0..changed, removed)
+                        } else {
+                            let (ours, theirs) = match other_edit {
+                                Some(other_edit) => (
+                                    (start..edit).filter(|&c| ours_counts(c)).count(),
+                                    (other_start..other_edit)
+                                        .filter(|&c| theirs_counts(c))
+                                        .count(),
+                                ),
+                                None => (
+                                    (start..end)
+                                        .filter(|&c| is_spacing(row.text[c]) && ours_counts(c))
+                                        .count(),
+                                    (other_start..other_end)
+                                        .filter(|&c| theirs_counts(c))
+                                        .count(),
+                                ),
+                            };
+                            let changed = ours.saturating_sub(theirs).min(edit - start);
+                            (ours, theirs, edit - changed..edit, label)
+                        };
+                        let wrong: Vec<usize> = (start..edit)
+                            .filter(|&c| ours_counts(c))
+                            .filter(|&c| {
+                                let painted = labels[side][row.start + c];
+                                if wanted.contains(&c) {
+                                    painted != Some(wanted_label)
+                                } else {
+                                    painted.is_some()
+                                        && !(label == TextLabel::Move
+                                            && painted == Some(TextLabel::Move))
+                                }
+                            })
+                            .collect();
+                        (ours, theirs, wanted, wanted_label, wrong)
+                    };
+                    let (ours, theirs, wanted, wanted_label, wrong) = judge(false);
+                    if wrong.is_empty() || (!at_row_start && judge(true).4.is_empty()) {
+                        continue;
+                    }
                     let (Some(&first), Some(&last)) = (wrong.first(), wrong.last()) else {
                         continue;
                     };
@@ -7050,6 +7151,24 @@ mod tests {
             moved_pair((11, 13), (7, 9)),
         ]);
         assert!(violations_of(30, &with_spaces, &before, &after).is_empty());
+    }
+
+    #[test]
+    fn a_space_a_match_takes_elsewhere_on_the_row_is_not_counted_there() {
+        // Ruby's `{ |d| f(d) }` -> `{ f(it) }`: ` f(` is matched to the space after `|d|`, so the
+        // one after `{` is taken, and the space before `|d|` goes with the deletion.
+        let (before, after) = (rust("m { |d| f(d) }\n"), rust("m { f(it) }\n"));
+        let mapping = full_only(vec![
+            deleted(3, 4),
+            matched((7, 10), (3, 6)),
+            matched((10, 11), (6, 8)),
+            matched((11, 12), (8, 9)),
+        ]);
+        assert!(
+            violations_of(30, &mapping, &before, &after).is_empty(),
+            "{:?}",
+            violations_of(30, &mapping, &before, &after)
+        );
     }
 
     #[test]

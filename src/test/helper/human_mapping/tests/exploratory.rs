@@ -3329,6 +3329,7 @@ fn painting_convention_engine_census() -> Result<()> {
                     ))
                     .chain(spaces_before_edits_follow_their_count_in(
                         &[(preset, labels.clone())],
+                        &[],
                         &before,
                         &after,
                     ))
@@ -4982,6 +4983,7 @@ fn invariant_gap_census() -> Result<()> {
                     ));
                     violations.extend(spaces_before_edits_follow_their_count_in(
                         &[(preset, labels.clone())],
+                        &[],
                         before,
                         after,
                     ));
