@@ -176,7 +176,7 @@ fn resolve_theme(name: Option<&str>) -> (String, &'static syntect::highlighting:
 }
 
 /// The page colours of a theme; a theme without them falls back to dark-on-light.
-fn syntax_payload(name: Option<&str>) -> SyntaxPayload {
+pub fn syntax_payload(name: Option<&str>) -> SyntaxPayload {
     let (theme, resolved) = resolve_theme(name);
     SyntaxPayload {
         theme,

@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""Rasterize a viewer still into the README's screenshot.
+"""Rasterize a still of the terminal viewer into a PNG.
 
 `render_tui_screenshot` (src/bin/) draws the frame with the TUI's own widgets into an offscreen
 terminal and prints it as styled runs; this file only turns those runs into pixels. Nothing here
-decides what is painted where, for the same reason scripts/record_diff_gif.py leaves that to the
+decides what is painted where, for the same reason scripts/showcase_shots/run.py leaves that to the
 viewer: a second implementation would drift from the product without anyone noticing.
 
-    make readme-screenshot
+    make tui-screenshot OUT=still.png
 
 Fonts come from matplotlib's bundled DejaVu Sans Mono, the GIF's face, so the two README images
 match and the output is identical on any machine that can run this.
@@ -91,7 +91,7 @@ def render(still: dict, background: str, foreground: str) -> Image.Image:
         y = PAD + row * row_h
         x = PAD
         for run in runs:
-            cells = len(run["text"])
+            cells = run["cells"]
             run_w = cells * cell_w
             bg = rgb(run["bg"]) if run["bg"] else page_bg
             fg = rgb(run["fg"]) if run["fg"] else page_fg

@@ -14,14 +14,16 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-//! A still of the viewer, drawn by the TUI's own widgets into an offscreen terminal, for the
-//! README's screenshot (`make readme-screenshot`, via the `render_tui_screenshot` binary and
-//! `scripts/render_tui_screenshot.py`). A hand-taken screenshot drifts from the product as the
-//! painting changes; this one is regenerated from it.
+//! A still of the viewer, drawn by the TUI's own widgets into an offscreen terminal. A hand-taken
+//! screenshot drifts from the product as the painting changes; a still is regenerated from it.
+//! Two things draw one: the showcase (`generate_showcase`), which shows a content pair - a
+//! picture, an archive, a font - as [`render_content`] draws it, step by step; and `make
+//! tui-screenshot` (the `render_tui_screenshot` binary and `scripts/render_tui_screenshot.py`),
+//! a picture of the terminal viewer on a code pair, from [`render`].
 //!
 //! Colours are resolved to `#rrggbb` here, where ratatui's `Color` is in scope. The terminal's own
-//! defaults (`Color::Reset`) stay `None` for the rasterizer to fill, since a still has no terminal
-//! to inherit them from.
+//! defaults (`Color::Reset`) stay `None` for whoever draws the still to fill, since a still has no
+//! terminal to inherit them from.
 
 use std::path::Path;
 
@@ -46,6 +48,9 @@ use crate::tui::theme::{OverlayTheme, format_hex_color};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Run {
     pub text: String,
+    /// How many cells the run covers. Not always `text`'s character count: a wide character
+    /// takes two cells and is one character.
+    pub cells: u16,
     /// `#rrggbb`, or `None` for the terminal's default foreground.
     pub fg: Option<String>,
     /// `#rrggbb`, or `None` for the terminal's default background.
@@ -110,6 +115,7 @@ fn shot_of(buffer: &Buffer, cols: u16, rows: u16) -> Result<Screenshot> {
                 .with_context(|| format!("no cell at column {x}, row {y}"))?;
             let run = Run {
                 text: cell.symbol().to_string(),
+                cells: 1,
                 fg: hex(cell.fg),
                 bg: hex(cell.bg),
                 bold: cell.modifier.contains(Modifier::BOLD),
@@ -118,7 +124,10 @@ fn shot_of(buffer: &Buffer, cols: u16, rows: u16) -> Result<Screenshot> {
                 underline: cell.modifier.contains(Modifier::UNDERLINED),
             };
             match runs.last_mut() {
-                Some(last) if same_style(last, &run) => last.text.push_str(&run.text),
+                Some(last) if same_style(last, &run) => {
+                    last.text.push_str(&run.text);
+                    last.cells += 1;
+                }
                 _ => runs.push(run),
             }
         }
@@ -128,7 +137,7 @@ fn shot_of(buffer: &Buffer, cols: u16, rows: u16) -> Result<Screenshot> {
 }
 
 /// One frame of a content pair's viewer, and the pictures it shows, which an offscreen terminal
-/// cannot draw: each with the cells it covers, for the rasterizer to paste in.
+/// cannot draw: each with the cells it covers, for whoever draws the still to lay over them.
 pub struct Still {
     pub shot: Screenshot,
     pub pictures: Vec<Placement>,
@@ -138,11 +147,12 @@ pub struct Still {
 /// ...), drawn once per entry of `steps` after that entry's keys: `[[], ['t']]` is the opening
 /// view, then the next picture mode. Pictures are drawn as a terminal speaking the kitty protocol
 /// with `font` pixel cells would draw them, and recorded rather than drawn ([`Still::pictures`]).
+/// Text members are highlighted in `syntax_theme`, the default one when `None`.
 pub fn render_content(
     before: &Path,
     after: &Path,
     size: (u16, u16),
-    overlay: OverlayTheme,
+    (overlay, syntax_theme): (OverlayTheme, Option<&str>),
     font: (u16, u16),
     steps: &[Vec<KeyCode>],
 ) -> Result<Vec<Still>> {
@@ -154,7 +164,13 @@ pub fn render_content(
     let mut picker = Picker::from_fontsize(FontSize::new(font.0, font.1));
     picker.set_protocol_type(ProtocolType::Kitty);
     app.set_graphics(picker);
-    app.load_still(before, after, area, overlay, None)?;
+    app.load_still(
+        before,
+        after,
+        area,
+        overlay,
+        syntax_theme.map(str::to_owned),
+    )?;
 
     let mut stills = Vec::with_capacity(steps.len());
     for keys in steps {
@@ -255,7 +271,7 @@ mod tests {
         assert_eq!((shot.cols, shot.rows), (230, 20));
         assert_eq!(shot.lines.len(), 20);
         for line in &shot.lines {
-            let width: usize = line.iter().map(|run| run.text.chars().count()).sum();
+            let width: usize = line.iter().map(|run| usize::from(run.cells)).sum();
             assert_eq!(width, 230, "every row spans the terminal");
         }
         let text: String = shot.lines[0].iter().map(|run| run.text.as_str()).collect();

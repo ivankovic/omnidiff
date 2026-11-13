@@ -22,7 +22,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OmniDiff examples</title>
-<meta name="description" content="Twenty real code changes, each shown as Unix diff marks it and as OmniDiff maps it, recorded from the command-line tool and replayed in OmniDiff's own viewer.">
+<meta name="description" content="Real changes to code, PDFs, fonts, archives and pictures, each shown as Unix diff reports it and as OmniDiff does, recorded from the command-line tool and replayed in the browser.">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="showcase.css">
 </head>
@@ -30,13 +30,13 @@
 <header id="showcase">
   <div class="showcase-row showcase-head">
     <a class="brand" href="https://github.com/ivankovic/omnidiff">OmniDiff</a>
-    <span class="tagline">Fast, robust, accurate content-aware diffing. Twenty real code changes, each shown as
-      <code>diff</code> marks it and as OmniDiff maps it, in OmniDiff's own viewer.
-      <a href="content.html">PDFs, fonts, archives and pictures</a> have examples of their own.</span>
+    <span class="tagline">Fast, robust, accurate content-aware diffing. Real changes to code, PDFs, fonts,
+      archives and pictures, each shown as <code>diff</code> reports it and as OmniDiff does.</span>
     <a class="install" href="https://github.com/ivankovic/omnidiff#quick-start">Install</a>
   </div>
   <p class="notice">Each diff here was computed ahead of time by the <code>omnidiff</code> command-line
-    tool and recorded; your browser only replays it. This is not an online service. Please
+    tool and recorded; your browser only replays it: code in a port of the terminal viewer, other
+    content as the terminal viewer drew it. This is not an online service. Please
     <a href="https://github.com/ivankovic/omnidiff#quick-start">install the tool</a>.</p>
   <div class="showcase-row showcase-controls">
     <label class="case-picker">Change
@@ -46,15 +46,29 @@
       <button id="view-diff" type="button" class="view-button">Unix <code>diff</code></button>
       <button id="view-omnidiff" type="button" class="view-button">OmniDiff</button>
     </div>
+    <label class="case-picker">Theme
+      <select id="theme-select" aria-label="Which theme the page is shown in"></select>
+    </label>
     <span id="case-stats"></span>
+  </div>
+  <div id="steps" class="showcase-row" hidden>
+    <div class="toggle" role="group" aria-label="Step through what OmniDiff shows">
+      <button id="step-previous" type="button" class="view-button" aria-label="Previous view">&#9664;</button>
+      <button id="step-next" type="button" class="view-button" aria-label="Next view">&#9654;</button>
+    </div>
+    <span id="step-count"></span>
+    <span id="step-caption"></span>
   </div>
   <div id="touch-actions">
     <button id="diff-options" type="button" class="view-button">Diff options</button>
   </div>
   <p class="hint">
     <span id="case-links"></span>
-    Keys as in the real viewer: <kbd>n</kbd>/<kbd>p</kbd> next and previous change, <kbd>/</kbd> search,
-    <kbd>M</kbd> render options, <kbd>?</kbd> help. The address bar links to what is on screen.
+    <span id="hint-code">Keys as in the real viewer: <kbd>n</kbd>/<kbd>p</kbd> next and previous change,
+      <kbd>/</kbd> search, <kbd>M</kbd> render options, <kbd>c</kbd> colors, <kbd>?</kbd> help.</span>
+    <span id="hint-content" hidden><kbd>&larr;</kbd>/<kbd>&rarr;</kbd> step through what OmniDiff shows;
+      pictures are drawn as a terminal with a graphics protocol draws them.</span>
+    The address bar links to what is on screen.
   </p>
 </header>
 <span id="measure" aria-hidden="true">MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM</span>
@@ -70,6 +84,7 @@
       <div class="body"><div class="code"><div class="rows"></div></div><canvas class="minimap" width="8"></canvas></div>
     </section>
   </div>
+  <div id="content" hidden></div>
   <div id="error" hidden></div>
   <footer><span id="footer-left"></span><span id="footer-right"></span></footer>
 </div>

@@ -12,36 +12,36 @@ Supports code in 25 languages, images, fonts, PDFs, archives, and more.
 
 Most content diffed under 100 milliseconds on a T14s laptop from 2023.
 
-**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: twenty real code
-changes, recorded from the command-line tool and compared side by side in Unix `diff` and in
-OmniDiff, and [content examples](https://ivankovic.github.io/omnidiff/showcase/content.html): an
-OpenDocument file, a compiled translation catalog, and pictures, still and animated.
+**[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: real changes to
+code, PDFs, fonts, archives and pictures on one page, each shown as Unix `diff` reports it and as
+OmniDiff does, recorded from the command-line tool, in a theme of your choice. The pictures below
+are taken from that page.
 
 ![An animation of one Python refactoring painted two ways. A vertical bar sweeps left to right and
-back across a two-pane diff. On one side of the bar, GNU diff marks whole lines as deleted and
+back across a two-pane diff. On one side of the bar, Unix diff marks whole lines as deleted and
 inserted; on the other, OmniDiff paints only the parts that changed - `sum(numbers)` and
 `len(numbers)` rather than the whole assignment, and `numbers` shown as moved rather than
 rewritten.](/assets/diff-vs-omnidiff.gif)
 
 Various light and dark themes are available:
 
-![A screenshot of OmniDiff's two-panel terminal UI in a light theme, showing the same Python
+![A screenshot of OmniDiff's two-panel viewer in a light theme, showing the same Python
 refactoring, with the changed right-hand sides highlighted rather than whole
 lines](/assets/readme-screenshot.png)
 
 Files are diffed based on type. A PDF diagram with one box renamed, and a web font with twenty
 icons redrawn:
 
-![An animation in three parts. First, git diff on a PDF prints only "Binary files
-a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf differ". Then OmniDiff, as git's
-external diff, reports that the metadata and page 1 changed and where. Then OmniDiff's viewer lists
-the changed members and shows page 1 before and after side by side, the renamed box outlined on
-both, and then the difference alone.](/assets/content/pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en.gif)
+![An animation in five parts. First, diff on a PDF prints only "Binary files
+a/CommunicationModel_en.pdf and b/CommunicationModel_en.pdf differ". Then OmniDiff's viewer lists
+the changed members and shows the metadata as text, page 1 before and after side by side with the
+renamed box outlined on both, and then the changed area alone. Last, OmniDiff's report says that
+the metadata and page 1 changed and where.](/assets/content/pdf-x-governikus-ausweisapp-522d8b0b-communicationmodel_en.gif)
 
-![An animation of a Font Awesome web font. git diff prints only "Binary files differ"; OmniDiff
-reports 21 changed members and lists each changed glyph; its viewer shows the font's name table
-with the version and style changed, one glyph before and after, and then all twenty changed icons
-in a grid, each change outlined.](/assets/content/woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif)
+![An animation of a Font Awesome web font. diff prints only "Binary files differ"; OmniDiff's
+viewer shows the font's name table with the version and style changed, one glyph before and after,
+and then all twenty changed icons in a grid, each change outlined; its report lists 21 changed
+members and each changed glyph.](/assets/content/woff2-x-fortawesome-font-awesome-b476ed9a-fa-solid-900.gif)
 
 # Quick start
 
