@@ -23,8 +23,8 @@ viewer: a second implementation would drift from the product without anyone noti
 
     make tui-screenshot OUT=still.png
 
-Fonts come from matplotlib's bundled DejaVu Sans Mono, the GIF's face, so the two README images
-match and the output is identical on any machine that can run this.
+Fonts come from matplotlib's bundled DejaVu Sans Mono, so the output is identical on any machine
+that can run this.
 """
 
 from __future__ import annotations

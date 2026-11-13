@@ -23,7 +23,8 @@
 //   node record.js <site directory> <jobs.json> <output directory>
 //
 // A job is `{ name, query, scale, width, height, selector }` - the element `selector` in a
-// `width` by `height` window - or, with `terminal: { cols, rows }` in place of `selector` and
+// `width` by `height` window, or, with `fit` in place of `height`, in a window just tall enough
+// for that element to be `fit` pixels high - or, with `terminal: { cols, rows }` in place of `selector` and
 // `height`, a content case's terminal: the window is sized so that a terminal of that many cells
 // fits under the page's strip, and the picture is exactly that terminal with its padding, so
 // every screen of one case has the same size whatever it holds.
@@ -127,6 +128,17 @@ async function main() {
       await settled(page, true);
       await page.screenshot({ path: target, clip: await box() });
     } else {
+      if (job.fit) {
+        // Twice: the strip above the element may wrap differently once the window has its size.
+        for (let pass = 0; pass < 2; pass++) {
+          const top = await page.evaluate(
+            (selector) => document.querySelector(selector).getBoundingClientRect().y,
+            job.selector,
+          );
+          await page.setViewportSize({ width: job.width, height: Math.ceil(top) + job.fit });
+          await settled(page, false);
+        }
+      }
       await page.locator(job.selector).screenshot({ path: target });
     }
     await context.close();

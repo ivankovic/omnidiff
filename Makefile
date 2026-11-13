@@ -41,8 +41,8 @@ which-machine = python3 scripts/machine.py $(MACHINE)
 
 .PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python test-homebrew build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
-	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
-	readme-screenshot content-gif readme-pictures tui-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
+	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution \
+	readme-pictures tui-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
 	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
@@ -178,22 +178,15 @@ diff-inventory:
 human-solver:
 	cargo run --release --features $(FEATURES) --bin human_solver -- $(CASE)
 
-# The README's pictures, taken from the showcase page itself in a headless browser
-# (scripts/showcase_shots/run.py): the showcase is baked, opened in Playwright's Chromium in a
-# podman container, and its screens saved, so the pictures cannot drift from the page or, through
-# it, from the product. assets/readme-screenshot.png is the viewer on one code change;
-# assets/diff-vs-omnidiff.gif that change as Unix diff marks it and as OmniDiff maps it, one wiped
-# over the other; assets/content/*.gif a content example's screens in order. Committed, so they
-# resolve on crates.io; re-run after viewer or painting changes. Needs podman, research/'s uv
-# environment, and the network for the image's first build.
+# The README's screencast, assets/omnidiff-tour.gif, recorded from the showcase page itself in a
+# headless browser (scripts/showcase_shots/run.py): the showcase is baked, opened in Playwright's
+# Chromium in a podman container, and its screens saved, so the screencast cannot drift from the
+# page or, through it, from the product. It is a code change as Unix diff and as OmniDiff read it,
+# then a PDF, a font, a picture and an archive in the viewer, and the plain-text report. Committed,
+# so it resolves on crates.io; re-run after viewer or painting changes. Needs podman, research/'s
+# uv environment, and the network for the image's first build.
 readme-pictures:
 	cd research && uv run python ../scripts/showcase_shots/run.py
-readme-screenshot:
-	cd research && uv run python ../scripts/showcase_shots/run.py --only screenshot
-diff-gif:
-	cd research && uv run python ../scripts/showcase_shots/run.py --only diff-gif
-content-gif:
-	cd research && uv run python ../scripts/showcase_shots/run.py --only content-gif
 
 # A picture of the terminal viewer itself on a code pair, which the showcase does not have (it
 # shows code in the viewer's browser port): drawn by the TUI's own widgets into an offscreen

@@ -15,13 +15,15 @@ Most diffs under 100 milliseconds on a T14s laptop from 2023.
 **[See it in the browser](https://ivankovic.github.io/omnidiff/showcase/)**: real changes to
 code, PDFs, fonts, archives and pictures on one page, each shown as Unix `diff` reports it and as
 OmniDiff does, recorded from the command-line tool, in a theme of your choice. The animation below
-is taken from that page.
+is recorded from that page.
 
-![An animation of one Python refactoring painted two ways. A vertical bar sweeps left to right and
-back across a two-pane diff. On one side of the bar, Unix diff marks whole lines as deleted and
-inserted; on the other, OmniDiff paints only the parts that changed - `sum(numbers)` and
-`len(numbers)` rather than the whole assignment, and `numbers` shown as moved rather than
-rewritten.](/assets/diff-vs-omnidiff.gif)
+![An animation of OmniDiff on five kinds of file, a caption over each screen. A Python refactoring
+as Unix diff marks it, whole lines deleted and inserted, is wiped over by OmniDiff's reading of the
+same two files, which paints only the parts that changed. Then OmniDiff's viewer shows a PDF page
+before and after with the one renamed box outlined, and that changed area alone; a web font's
+twenty redrawn icons in a grid, each change outlined; a bitmap picture side by side with its one
+changed region outlined; and a thumbnail picture inside an OpenDocument archive. Last, the PDF's
+change as the plain-text report that git, scripts and pipes get.](/assets/omnidiff-tour.gif)
 
 # Quick start
 
