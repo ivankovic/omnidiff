@@ -75,7 +75,7 @@
 
 \keywords{content-aware diffing, edit scripts, diff visualisation, source code differencing, binary file differencing, ground-truth dataset, empirical software engineering}
 
-\title{Content-Aware Diffing: Edit Scripts, Visualisations, and a Living Ground Truth}
+\title{\textsc{OmniDiff}: Content-Aware Diffing}
 
 \author{Marko Ivankovi\'{c}}
 \affiliation{%
@@ -121,6 +121,14 @@ also produces a \emph{visualisation}, an account that a human reads in order to 
 happened, which can be judged only against human reading. We study the distance between the two on
 real changes to all content, with code as the content type that has the deepest ground truth.
 
+As a tool contribution, we present \textsc{OmniDiff}, which diffs a file by what it holds: text,
+code in \NumSupportedLanguages{} languages, and six families of other content. It diffs
+\ContentCensusShownPct{}\% of the files that recent commits change as text or by their content.
+Against the human ground truth described below, it maps every visible node as the human did on
+\MappingZeroVisiblePct{}\% of code changes, and its verdict of how much a change to other content
+changed matches a human's on \ContentAccAllPerfectPct{}\% of \ContentAccAllJudged{} judged
+changes.
+
 We built a living ground-truth dataset, the test corpus of an open-source project with
 \ProjectStars{} GitHub stars, to which ground truth was added in each of the \GrowthWeeks{} weeks
 since its first hand mapping. It holds \NumFixtures{} real code changes in \NumFixtureLanguages{}
@@ -142,13 +150,6 @@ one painting \PresetFullOverMinimal{} times the bytes. A whole-tree tree-edit-di
 completes within one second for only \RqOneCodePct{}\% of \RqOnePairsAttempted{} sampled code file
 pairs, and no configuration of eight established tools renders more than \SrcDiffPerfectPct{}\% of
 code changes perfectly.
-
-As a tool contribution, we present \textsc{OmniDiff}, which diffs a file by what it holds: text,
-code in \NumSupportedLanguages{} languages, and six families of other content. It diffs
-\ContentCensusShownPct{}\% of the changed files as text or by their content. On code, it maps
-every visible node as the human did on \MappingZeroVisiblePct{}\% of changes, and on
-\ContentAccAllJudged{} judged changes to other content its verdict of how much changed matches a
-human's on \ContentAccAllPerfectPct{}\%.
 \end{abstract}
 
 \maketitle
@@ -187,13 +188,31 @@ def save(rec):
 \end{figure}
 
 Diffing, the process of comparing two versions of a file and showing what changed between them,
-underlies modern version control and, especially, modern code review. During a review, developers
-read the diff to see what changed and what stayed the same, so the quality of the diff directly
-shapes the ease and quality of the review. Whether that reading succeeds depends on how the change
-is shown, not only on the change. Reviewers name understanding the change as the main challenge of
-code review~\cite{bacchelli-bird-2013}, and ask for tools that show a change's structure rather
-than its text delta~\cite{tao-2012}. Controlled experiments show the presentation alone affecting
-the outcome. Files shown later in a review receive fewer comments, and a seeded defect in the last
+underlies modern version control and, especially, modern code review. A diffing tool does two
+things that are usually treated as one. It computes a \emph{delta}, an edit script that a machine
+can execute to turn the version before the change into the version after it, step by step. And it
+shows a \emph{visualisation}, an account of the change that a human reads in order to understand
+what happened. A delta is judged by whether it is correct and by how little it costs; a
+visualisation can be judged only against human reading.
+
+What a commit changes is content of many types. In the corpus of Section~\ref{sec:dataset}, the
+files that recent commits change are text of every kind (code, data, configuration and
+documentation), and they are also pictures, which change in \ContentCensusPicturesRepos{} of
+\ContentCensusRepos{} repositories, archives, PDFs, fonts, compiled translation catalogs and
+cursor themes. The diff that almost all developers and platforms use today treats every one of
+them the same way. A file is a sequence of text lines, the delta is an edit script between the
+two sequences, and the visualisation is that script shown as it stands. A file whose bytes git
+judges binary, chiefly by a NUL byte, is reported as \texttt{Binary files differ} and nothing
+more~\cite{gitattributes}; that is \ChangeCensusBinaryPct{}\% of the files the commits change,
+and a reviewer of such a change learns that it happened and not what it was.
+
+What is known about how a diff is read comes from code review, where developers read the diff to
+see what changed and what stayed the same, so the quality of the diff directly shapes the ease
+and quality of the review. Whether that reading succeeds depends on how the change is shown, not
+only on the change. Reviewers name understanding the change as the main challenge of code
+review~\cite{bacchelli-bird-2013}, and ask for tools that show a change's structure rather than
+its text delta~\cite{tao-2012}. Controlled experiments show the presentation alone affecting the
+outcome. Files shown later in a review receive fewer comments, and a seeded defect in the last
 file has 64\% lower odds of being found than the same defect in the
 first~\cite{fregnan-2022,rahman-2026}. The unified view of a diff costs less visual effort and
 finds more bugs than the split view of the same diff~\cite{alcocer-2023}. A change decomposed
@@ -214,42 +233,28 @@ than as deleted and inserted lines, reviewers report lower cognitive effort and 
 lines~\cite{ge-2017,brito-2021}, and syntactic deltas modelled on how developers edit are judged
 more understandable than the cheapest tree edit~\cite{decker-2020}.
 
-What a commit changes is content of many types. In the corpus of Section~\ref{sec:dataset}, the
-files that recent commits change are text of every kind (code, data, configuration and
-documentation), and they are also pictures, which change in \ContentCensusPicturesRepos{} of
-\ContentCensusRepos{} repositories, archives, PDFs, fonts, compiled translation catalogs and
-cursor themes. The diff that almost all developers and platforms use today treats every one of
-them the same way. A file is a sequence of text lines, and the tool computes an edit script
-between the two sequences. A file whose bytes git judges binary, chiefly by a NUL byte, is
-reported as \texttt{Binary files differ} and nothing more~\cite{gitattributes}; that is
-\ChangeCensusBinaryPct{}\% of the files the commits change, and a reviewer of such a change learns
-that it happened and not what it was. For text the line edit script is cheap to compute and
-correct, and it is still a poor account of many changes. A whole class of common code
-changes—extracting code into a function, wrapping a block in a condition, reordering
-declarations—is a move of existing code, which a line script can state only as a deletion plus an
-insertion. Figure~\ref{fig:motivation} shows a small example: wrapping three unchanged lines in a
+We argue that what this research observes is the distance between the delta and the
+visualisation, and that the distance is not specific to code. A line script, a tree edit script
+and a binary delta are all good at what a delta is for, and each comes apart from what a reader
+needs. The smallest byte delta between two PNG files says nothing a viewer can use, and a picture
+re-encoded without loss has a large delta and no visible change. The cheapest tree edit script
+pairs two unrelated \texttt{return} keywords. A whole class of common code changes—extracting
+code into a function, wrapping a block in a condition, reordering declarations—is a move of
+existing content, which a line script can state only as a deletion plus an insertion.
+Figure~\ref{fig:motivation} shows a small example: wrapping three unchanged lines in a
 conditional, which a line-based tool reports as three lines deleted and four inserted, and which a
-reader has to diff again in their head to see that only the wrapper is new.
-
-We argue that these are two faces of one problem, and that it is not specific to code. An edit
-script, which we call a \emph{delta}, is a recipe by which a machine converts one version of a
-file into the other. It is judged by whether it is correct and by how little it costs, and a line
-script, a tree edit script and a binary delta are all good at exactly that. A \emph{visualisation}
-is what a human needs in order to understand what happened, and it is judged against human
-reading. The two come apart for every content type. The cheapest tree edit script pairs two
-unrelated \texttt{return} keywords; the smallest byte delta between two PNG files says nothing a
-viewer can use; a picture re-encoded without loss has a large delta and no visible change. A
-visualisation may even be an account that is not minimal and cannot be executed: a move shown as a
-move, a rename shown word by word, whitespace suppressed, a picture's change described by how much
-of it a viewer would see. Section~\ref{sec:background} develops the distinction, and the rest of
-the paper measures it.
+reader has to diff again in their head to see that only the wrapper is new. A visualisation may
+therefore be an account that is not minimal and cannot be executed: a move shown as a move, a
+rename shown word by word, whitespace suppressed, a picture's change described by how much of it
+a viewer would see. Section~\ref{sec:background} develops the distinction, and the rest of the
+paper measures it.
 
 Measuring it needs a ground truth that records what humans consider the right account of a
 change, for more than one content type, and that can be kept honest as it grows. We built one as
 the test corpus of an open-source diffing tool that is under active development and in use, so the
 dataset is not a snapshot: it grows by sampling, by hand curation and from the issues users
 report, and \InvariantCount{} machine-checked invariants hold its hand-made answers to one
-convention.
+convention. The research questions of this paper are answered on it.
 
 We examined five groups of research questions. Each group is answered in its own section, in the
 order listed here. Wherever a question can be asked of all content we ask it of all content and
