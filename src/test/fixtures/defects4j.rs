@@ -850,6 +850,8 @@ mod java_defects4j_math_57_kmeansplusplusclusterer;
 #[cfg(test)]
 mod java_defects4j_math_58_gaussianfitter;
 #[cfg(test)]
+mod java_defects4j_math_59_fastmath;
+#[cfg(test)]
 mod java_defects4j_math_5_complex;
 #[cfg(test)]
 mod java_defects4j_math_6_baseoptimizer;

@@ -179,5 +179,39 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 23,
+              "end_row": 1,
+              "end_column": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 22,
+              "end_row": 1,
+              "end_column": 30
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

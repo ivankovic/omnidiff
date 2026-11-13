@@ -318,7 +318,7 @@ go-cockroachdb-cockroach-add-only,0,0
 go-cockroachdb-cockroach-add-only-2,0,0
 go-cockroachdb-cockroach-add-test-case,0,0
 go-containers-storage-add-two-constants,0,0
-go-cri-o-cri-o-change-importa,10,6
+go-cri-o-cri-o-change-importa,0,0
 go-darylhjd-mangadesk-remove-a-function-uptade-comments,0,0
 go-dweymouth-supersonic-remove-two-lines,0,0
 go-fatedier-frp-build-comment-insert-only,0,0
@@ -865,6 +865,7 @@ java-defects4j-math-41-variance,3,3
 java-defects4j-math-5-complex,0,0
 java-defects4j-math-57-kmeansplusplusclusterer,0,0
 java-defects4j-math-58-gaussianfitter,0,0
+java-defects4j-math-59-fastmath,0,0
 java-defects4j-math-6-baseoptimizer,0,0
 java-defects4j-math-6-cmaesoptimizer,0,0
 java-defects4j-math-6-powelloptimizer,4,4

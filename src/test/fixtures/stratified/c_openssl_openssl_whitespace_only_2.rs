@@ -17,6 +17,7 @@
 use anyhow::Result;
 
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 
 #[test]
@@ -28,4 +29,9 @@ fn mapping() -> Result<()> {
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("c-openssl-openssl-whitespace-only-2")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("c-openssl-openssl-whitespace-only-2", 8.63)
 }

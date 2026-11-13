@@ -6202,5 +6202,61 @@
         "var_declaration:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 356,
+              "start_column": 1,
+              "end_row": 356,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 70,
+              "start_column": 1,
+              "end_row": 70,
+              "end_column": 42
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Full",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 356,
+              "start_column": 0,
+              "end_row": 356,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 70,
+              "start_column": 0,
+              "end_row": 70,
+              "end_column": 42
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

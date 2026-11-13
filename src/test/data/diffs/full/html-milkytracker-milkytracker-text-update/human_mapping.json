@@ -177,5 +177,42 @@
         "end_tag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 32,
+              "end_row": 3,
+              "end_column": 34
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3,
+              "start_column": 32,
+              "end_row": 3,
+              "end_column": 34
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 34,
+              "end_row": 3,
+              "end_column": 36
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
