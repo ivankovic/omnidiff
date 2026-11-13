@@ -15,6 +15,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
@@ -23,12 +24,20 @@ fn mapping() -> Result<()> {
     // Residual not yet examined.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes",
-        24,
-        17,
+        28,
+        21,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
     assert_ground_truth_invariants("ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes")
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit(
+        "ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes",
+        1.14,
+    )
 }

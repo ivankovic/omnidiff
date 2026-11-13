@@ -1288,7 +1288,7 @@ ruby-homebrew-add-or-expression,0,0
 ruby-homebrew-brew-actual-logic-change,21,12
 ruby-homebrew-brew-add-extends,0,0
 ruby-homebrew-brew-change-heredoc-to-string,4,2
-ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,24,17
+ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,28,21
 ruby-homebrew-brew-enclose-block-in-rescue,0,0
 ruby-homebrew-brew-function-callsite-argument-change,0,0
 ruby-homebrew-brew-real-small-change,0,0
