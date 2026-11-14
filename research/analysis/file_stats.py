@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import csv
 import os
 import sys
 
@@ -311,28 +312,16 @@ def write_paper_variables(
     print(f"Paper variables written to {output_path}")
 
 
-def compute_full_dataset_stats(df):
-    """
-    Compute and display statistics for the full dataset.
+FILE_TYPE_COUNTS = os.path.join("data", "corpus_stats", "file_type_counts.csv")
 
-    Args:
-        df: DataFrame containing the full dataset
 
-    Returns:
-        (project_count, file_count) - repository count and total file count, every category
-    """
-    # Compute extra columns
-    tip_counts = df.group_by("category").agg(pl.len().alias("count")).sort("count", descending=True)
-    print("Type counts:")
-    print(tip_counts)
-
+def plot_file_types(categories, counts):
+    """The file-type figure (`plots/tips`), from the per-category file counts, largest first."""
     # A horizontal bar chart, not a pie. A pie fails three ways at the size the paper prints it:
     # the two smallest categories' labels and their percentages overprint into an illegible smear,
     # the five wedges are separated by hue alone and so say nothing in a greyscale print, and a
     # reader cannot rank five wedges by eye anyway. Bars are
     # sorted, individually labelled, and readable in black and white.
-    categories = list(tip_counts["category"])
-    counts = [int(c) for c in tip_counts["count"]]
     total = sum(counts) or 1
     # Sized for a single ACM column: the figure is scaled to about 3.3in wide in the paper, so a
     # 7in-wide canvas shrinks 10pt labels to under 5pt. Drawing it near its final width instead
@@ -352,7 +341,7 @@ def compute_full_dataset_stats(df):
     ax.set_yticklabels(categories, fontsize=8)
     ax.invert_yaxis()
     ax.set_xlim(0, max(counts) * 1.16 if counts else 1)
-    ax.set_xlabel("Files in the corpus", fontsize=8)
+    ax.set_xlabel("Number of files", fontsize=8)
     # No title: papers/introductory-paper/main.tex captions this figure, and a title repeating the
     # caption both wastes vertical space and goes stale independently of the caption.
     ax.tick_params(labelsize=8)
@@ -364,6 +353,32 @@ def compute_full_dataset_stats(df):
     fig.savefig("plots/tips.png", bbox_inches="tight", dpi=300)
     fig.savefig("plots/tips.pdf", bbox_inches="tight")
     plt.close(fig)
+
+
+def compute_full_dataset_stats(df):
+    """
+    Compute and display statistics for the full dataset.
+
+    Args:
+        df: DataFrame containing the full dataset
+
+    Returns:
+        (project_count, file_count) - repository count and total file count, every category
+    """
+    # Compute extra columns
+    tip_counts = df.group_by("category").agg(pl.len().alias("count")).sort("count", descending=True)
+    print("Type counts:")
+    print(tip_counts)
+
+    categories = list(tip_counts["category"])
+    counts = [int(c) for c in tip_counts["count"]]
+    # The counts behind the figure are committed, so that it can be redrawn (`--replot-file-types`)
+    # where the database is not at hand.
+    with open(FILE_TYPE_COUNTS, "w", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["category", "files"])
+        writer.writerows(zip(categories, counts))
+    plot_file_types(categories, counts)
 
     undefined_tip = df.filter(pl.col("category") == "Unknown")
     undefined_tip_extensions = (
@@ -557,6 +572,13 @@ if __name__ == "__main__":
     db_path = sys.argv[1] if len(sys.argv) > 1 else "/var/tmp/research/tiny/stats.sqlite"
 
     os.makedirs("plots", exist_ok=True)
+
+    # `--replot-file-types`: redraw the file-type figure from its committed counts and stop.
+    if db_path == "--replot-file-types":
+        with open(FILE_TYPE_COUNTS, newline="") as f:
+            rows = list(csv.DictReader(f))
+        plot_file_types([r["category"] for r in rows], [int(r["files"]) for r in rows])
+        sys.exit(0)
 
     # Load and transform data
     df = load_data(db_path)

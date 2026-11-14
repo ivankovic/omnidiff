@@ -874,4 +874,6 @@ def test_invariant_summary_scopes_scripts_to_the_painting_rules():
     values = invariants_report.macros(s)
     assert values["InvariantLineScriptFixturesPct"] == "50.0"
     assert values["InvariantLabelCount"] == 3
-    assert "-- & --" in invariants_report.table_tex(s)
+    table = invariants_report.table_tex(s)
+    assert "Hand" not in table and "Line script" not in table
+    assert table.count("\\\\") == len(invariants_report.GROUPS) + 2

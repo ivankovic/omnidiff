@@ -94,6 +94,8 @@ above.](../../plots/corpus_shape.png)
 | `code_pair_diff_stats_rust.csv` | size and lines changed of the sampled Rust pairs | `analysis/code_pair_diff_stats.py` |
 | `change_census.csv` | changes per extension: category, binary share, lines, repositories | `make measure-change-census MODE=full` |
 | `content_census.csv`, `content_census_repositories.csv` | how OmniDiff diffs each change: as text, by content, or not at all | `make measure-content-census MODE=full` |
+| `content_change_size.csv` | per sampled content pair: both file sizes, and the pixels or members that changed | `make measure-content-change-size` |
+| `file_type_counts.csv` | files per category, the counts behind the file-type figure | `make file-stats-report MODE=full` |
 | `edit_shape.csv` | edit size per language | `make measure-edit-shape MODE=full` |
 | `edit_shape_distribution.csv` | the whole edit-size distributions | `make measure-edit-shape MODE=full` |
 

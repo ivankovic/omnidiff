@@ -1220,6 +1220,10 @@ def content_census(research_dir):
         for outcome in counts:
             if outcome != "text" and diffed(outcome):
                 family_repositories[outcome] += 1
+        # The table's first and last rows: repositories with a text change, and with a change
+        # OmniDiff does not read (binary, or a family's bytes that fail to decode).
+        family_repositories["text"] += "text" in counts
+        family_repositories["left"] += any(not diffed(o) for o in counts)
 
     values = {
         "ContentCensusChanges": latex_number(total),
@@ -1233,6 +1237,8 @@ def content_census(research_dir):
         "ContentCensusLeftPct": f"{(total - shown) / total * 100:.1f}",
         "ContentCensusText": latex_number(text),
         "ContentCensusLeft": latex_number(total - shown),
+        "ContentCensusTextRepos": latex_number(family_repositories["text"]),
+        "ContentCensusLeftRepos": latex_number(family_repositories["left"]),
         "ContentCensusCapPerRepo": latex_number(CONTENT_CENSUS_CAP),
     }
     for family, stem in CONTENT_FAMILIES:
@@ -1256,9 +1262,11 @@ def content_speed(research_dir):
     if not os.path.exists(path):
         return {}
     times = collections.defaultdict(list)
+    sampled = collections.Counter()
     not_diffed = 0
     with open(path, newline="") as f:
         for r in csv.DictReader(f):
+            sampled[r["family"]] += 1
             if r["outcome"] == "diffed":
                 times[r["family"]].append(float(r["elapsed_ms"]))
             else:
@@ -1274,6 +1282,7 @@ def content_speed(research_dir):
         if not t:
             continue
         pooled += t
+        values[f"ContentSample{stem}Pairs"] = latex_number(sampled[family])
         values[f"ContentSpeed{stem}Pairs"] = latex_number(len(t))
         values[f"ContentSpeed{stem}PFifty"] = ms(_rank_percentile(t, 50))
         values[f"ContentSpeed{stem}PNinety"] = ms(_rank_percentile(t, 90))
@@ -1286,12 +1295,50 @@ def content_speed(research_dir):
         )
     pooled.sort()
     if pooled:
+        values["ContentSamplePairs"] = latex_number(sum(sampled.values()))
         values["ContentSpeedPairs"] = latex_number(len(pooled))
         values["ContentSpeedNotDiffed"] = not_diffed
         values["ContentSpeedPFifty"] = ms(_rank_percentile(pooled, 50))
         values["ContentSpeedUnderSecondPct"] = (
             f"{sum(x < 1000 for x in pooled) / len(pooled) * 100:.1f}"
         )
+    return values
+
+
+def content_change_size(research_dir):
+    """Size of a change to content other than code, per family: the median size of the larger
+    file of a sampled pair, and the median share of the content's own units that changed (pixels
+    of a picture or cursor, members of a container), over the pairs that have such a count.
+    DERIVED from `data/corpus_stats/content_change_size.csv`.
+
+    source: `make measure-content-change-size`, 2026-11-14; see data/corpus_stats/PROVENANCE.md
+            ("The size of changes to other content").
+    """
+    path = os.path.join(research_dir, "data", "corpus_stats", "content_change_size.csv")
+    if not os.path.exists(path):
+        return {}
+    sizes = collections.defaultdict(list)
+    shares = collections.defaultdict(list)
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f):
+            sizes[r["family"]].append(max(int(r["before_bytes"]), int(r["after_bytes"])))
+            if r["changed_units"] != "" and int(r["total_units"]) > 0:
+                shares[r["family"]].append(int(r["changed_units"]) / int(r["total_units"]))
+    values = {}
+    for family, stem in CONTENT_FAMILIES:
+        if not sizes.get(family):
+            continue
+        size, share = sorted(sizes[family]), sorted(shares.get(family, []))
+        values[f"ContentSize{stem}Pairs"] = latex_number(len(size))
+        values[f"ContentSize{stem}KbPFifty"] = latex_number(
+            round(_rank_percentile(size, 50) / 1000)
+        )
+        values[f"ContentSize{stem}Counted"] = latex_number(len(share))
+        if share:
+            values[f"ContentSize{stem}SharePFiftyPct"] = f"{_rank_percentile(share, 50) * 100:.1f}"
+            values[f"ContentSize{stem}UnderFivePct"] = (
+                f"{sum(x < 0.05 for x in share) / len(share) * 100:.0f}"
+            )
     return values
 
 
@@ -1937,6 +1984,7 @@ def main():
         ("change census", change_census(research_dir)),
         ("content census", content_census(research_dir)),
         ("content speed", content_speed(research_dir)),
+        ("content change size", content_change_size(research_dir)),
         ("content accuracy", content_accuracy(research_dir)),
     ):
         if not part:

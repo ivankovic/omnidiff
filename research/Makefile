@@ -51,10 +51,10 @@ LIST = $(if $(filter tiny,$(MODE)),$(LIST_TINY),$(if $(filter small,$(MODE)),$(L
 REPOSITORIES_DIR = /var/tmp/research/$(MODE)/repositories/
 RESEARCH_DIR = /var/tmp/research/$(MODE)/
 
-.PHONY: build require-full-corpus clean clean-db fetch file-stats-report measure-file-stats reclassify-tips measure-commit-stats \
+.PHONY: build require-full-corpus clean clean-db fetch file-stats-report replot-file-types measure-file-stats reclassify-tips measure-commit-stats \
 	debug-stats analyze tiny small full sample-pairs sample-pairs-all measure-pairs \
 	measure-code-pair-diffs pairs-diff-report measure-sampled matching-reasons-report \
-	shapes-report measure-edit-shape measure-change-census measure-content-census ambiguity-report rendering-report measure-tools-timing \
+	shapes-report measure-edit-shape measure-change-census measure-content-census measure-content-change-size ambiguity-report rendering-report measure-tools-timing \
 	measure-tools-accuracy timing-report install-bdiff install-srcdiff apted-budget-report measure-apted-budget \
 	paper-variables introductory-paper introductory-paper-empirical fetch-external \
 	measure-astdiff-oracle measure-astdiff-oracle-human measure-robustness-fixtures \
@@ -91,6 +91,11 @@ fetch: $(LIST) $(SCRIPTS_SAMPLING_DIR)/dataset.sh
 # which depends on this, not on measure-file-stats.
 file-stats-report:
 	uv run ./analysis/file_stats.py $(RESEARCH_DIR)/stats.sqlite
+
+# Redraws the file-type figure (plots/tips) from data/corpus_stats/file_type_counts.csv, the
+# counts file-stats-report wrote, for a change to the figure where stats.sqlite is not at hand.
+replot-file-types:
+	uv run ./analysis/file_stats.py --replot-file-types
 
 measure-file-stats: build
 	$(BIN_DIR)/file_stats --path $(REPOSITORIES_DIR) --db $(RESEARCH_DIR)/stats.sqlite
@@ -329,6 +334,14 @@ measure-change-census:
 measure-content-census:
 	cd .. && cargo build --release --features stats --bin content_census
 	uv run ./analysis/content_census.py --repositories $(REPOSITORIES_DIR) --max-commits $(EDIT_SHAPE_COMMITS)
+
+# How large a change to content other than code is: for each sampled content pair, both file sizes
+# and the share of the content's own units (pixels, members) that changed, from `omnidiff --mode
+# json`. Needs the samples materialised under src/test/data/samples/. Writes
+# data/corpus_stats/content_change_size.csv. See analysis/content_change_size.py.
+measure-content-change-size:
+	cd .. && cargo build --release
+	uv run ./analysis/content_change_size.py
 
 # Ground-truth ambiguity over the human-authored mappings: how often a real-world change admits no
 # unique correct AST mapping, i.e. how often the annotator recorded a multi-map group. This is the
