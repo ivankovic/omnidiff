@@ -14,6 +14,41 @@ what content it diffs. The [project README](../README.md) has the overview.
 
 ## Installation
 
+### One command
+
+On Linux and macOS:
+
+```
+curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh
+```
+
+The script ([`packaging/install.sh`](../packaging/install.sh)) installs through whichever of the
+routes below suits the system:
+
+- **Homebrew**, where `brew` is on `PATH`.
+- **The apt repository**, on Debian and Ubuntu. This adds the repository's signing key and a
+  sources entry as root, so the script asks first. If you answer no, or there is no terminal to ask
+  on, it installs the prebuilt binary instead.
+- **The prebuilt binary**, everywhere else: checked against the release's `SHA256SUMS.txt` and
+  unpacked under `~/.local` with its man page and shell completions, without root. On Linux this
+  is the static build, which runs on any distribution.
+
+It never builds from source, and on NixOS it prints the `nix` command instead of installing.
+Arguments go after `sh -s --`:
+
+```
+curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh -s -- --method tarball
+```
+
+| Argument | Does |
+|---|---|
+| `--method brew`, `apt` or `tarball` | Uses that route without choosing or asking |
+| `--yes` | Adds the apt repository without asking |
+| `--prefix DIR` | Unpacks the prebuilt binary under `DIR` instead of `~/.local` |
+| `--version X.Y.Z` | Takes the prebuilt binary from that release instead of the latest |
+
+Windows is not covered: use the prebuilt zip or `cargo install`.
+
 ### From crates.io
 
 ```

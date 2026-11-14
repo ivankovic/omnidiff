@@ -163,6 +163,11 @@ jobs:
           args: format --check
           src: research scripts assets
 
+      # The one-line installer is POSIX sh that runs as root on other people's machines; the
+      # runner image carries shellcheck.
+      - name: shellcheck the installer
+        run: make lint-shell
+
       # The Gentoo ebuild names every dependency crate, generated from Cargo.lock. A lock
       # change that does not reach the ebuild produces a package that fails to build for users
       # while looking perfectly fine in review, so it is checked rather than remembered.

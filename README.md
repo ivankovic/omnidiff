@@ -28,12 +28,14 @@ change as the plain-text report that git, scripts and pipes get.](/assets/omnidi
 # Quick start
 
 ```
-cargo install --locked omnidiff          # or: brew install ivankovic/omnidiff/omnidiff
+curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh
 omnidiff BEFORE AFTER                    # the interactive viewer; press ? for the keys
 omnidiff git configure                   # then: git difftool
 ```
 
-There are also prebuilt binaries, a signed apt repository, a Nix flake, and extensions for
+The installer uses Homebrew where you have it and the signed apt repository on Debian and Ubuntu
+(it asks before adding the repository's key), and otherwise unpacks the prebuilt binary under
+`~/.local`, without root. There are also `cargo install`, a Nix flake, and extensions for
 [VS Code](https://github.com/ivankovic/omnidiff-vscode) and
 [Neovim](https://github.com/ivankovic/omnidiff.nvim).
 [docs/README.md](docs/README.md#installation) has every way to install.

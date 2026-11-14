@@ -15,6 +15,25 @@ than a recipe here.
 | Nix / NixOS | `nix/package.nix`, `../flake.nix`, `../flake.lock` | works today via `nix run`; built by the Nix workflow |
 | Homebrew | `homebrew/omnidiff.rb.in`, rendered by `../scripts/render_homebrew_formula.py` | tap at `ivankovic/homebrew-omnidiff`, pushed by the release workflow |
 | VS Code | [omnidiff-vscode](https://github.com/ivankovic/omnidiff-vscode) | **published** — on the Marketplace and Open VSX |
+| One-line installer | `install.sh` | published by the Pages workflow at [ivankovic.github.io/omnidiff/install.sh](https://ivankovic.github.io/omnidiff/install.sh) |
+
+## The one-line installer
+
+`install.sh` is what `curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh` runs. It is
+not one more way to install: it picks among the ones this directory already publishes. Homebrew
+where `brew` is on `PATH`, the apt repository on Debian and Ubuntu, and otherwise the release's
+prebuilt binary (the static musl build on Linux), checked against `SHA256SUMS.txt` and unpacked
+under `~/.local` with the man page and completions from `omnidiff-completions-and-man.tar.gz`.
+
+**It adds the apt repository's key only when somebody said yes**: at its question, with `--yes`,
+or with `--method apt`. With no terminal to ask on it installs the prebuilt binary and says why.
+
+It depends on the release's asset names (`omnidiff-<target>.tar.gz`,
+`omnidiff-completions-and-man.tar.gz`, `SHA256SUMS.txt`) and on the layout of the completions
+tarball; a change to either in `release.yml` has to reach the script. `make test-install` runs it
+in containers of five distributions against the latest release, and `make lint-shell` (in CI)
+runs shellcheck over it. `pages.yml` copies it to the site's root, so a change is live after the
+next Pages run from `main`.
 
 ## The one thing you cannot skip: checksums
 

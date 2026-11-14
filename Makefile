@@ -43,7 +43,8 @@ which-machine = python3 scripts/machine.py $(MACHINE)
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution \
 	readme-pictures tui-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
-	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit
+	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit \
+	test-install lint-shell
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
 # scripts/coverage_report.py). On demand, not a gate: a threshold teaches touching lines. Rebuilds
@@ -116,6 +117,24 @@ test-homebrew:
 OMNIDIFF_SRC ?= $(CURDIR)
 test-lazygit:
 	python3 scripts/lazygit_e2e/run.py --omnidiff-src "$(OMNIDIFF_SRC)" $(LAZYGIT_E2E_ARGS)
+
+# The one-line installer (packaging/install.sh), end to end (scripts/install_e2e.py): run as
+# `curl | sh` delivers it in containers of Debian, Ubuntu, Alpine, Fedora and Arch, with and
+# without a terminal to ask about the apt repository's signing key. Installs the released
+# omnidiff, not this checkout's. Not part of `make test`: it needs podman and the network.
+test-install:
+	python3 scripts/install_e2e.py $(INSTALL_E2E_ARGS)
+
+# shellcheck over the installer, as POSIX sh. From PATH, else from its container image.
+lint-shell:
+	@if command -v shellcheck >/dev/null 2>&1; then \
+		shellcheck --shell=sh packaging/install.sh; \
+	elif command -v podman >/dev/null 2>&1; then \
+		podman run --rm -v "$(CURDIR)/packaging:/mnt:ro" docker.io/koalaman/shellcheck:stable \
+			--shell=sh /mnt/install.sh; \
+	else \
+		echo "make lint-shell needs shellcheck (or podman, to run its image)" >&2; exit 1; \
+	fi
 
 test-python:
 	cd research && uv run pytest -q
