@@ -402,7 +402,7 @@ change (Section~\ref{sec:ground-truth}).
 
 \textbf{Projection.} A projection $\pi_\theta$ takes a mapping to a painting. Its parameter
 $\theta$ is the reader's preference, for which this paper uses two presets: \emph{Minimal}, which
-paints the least amount of bytes, and \emph{Full}. The \emph{literal} projection
+paints the least amount of bytes, and \emph{Maximal}. The \emph{literal} projection
 paints exactly the bytes owned by each deleted, inserted or updated element and nothing else; it
 is what a tool does that colours an edit script as it stands.
 
@@ -434,7 +434,7 @@ is what a tool does that colours an edit script as it stands.
 
   \vspace{0.8em}
   \begin{tabular}{@{}p{0.46\linewidth}@{\hspace{0.06\linewidth}}p{0.46\linewidth}@{}}
-    \textsc{Minimal painting} & \textsc{Full painting} \\
+    \textsc{Minimal painting} & \textsc{Maximal painting} \\
     \midrule
     \begin{minipage}[t]{\linewidth}\ttfamily
       def save(rec):\\
@@ -462,7 +462,7 @@ Figure~\ref{fig:accounts} shows a few possible paintings of the change of Figure
 The line script is correct and marks three statements that did not change. The tree script is
 the cheapest correct one and marks five separate tokens, with the space between two of them left
 out. The two paintings follow the conventions of the ground truth of Section~\ref{sec:dataset}: the
-condition is one insertion, under \emph{Full} together with the indentation of its line, and the
+condition is one insertion, under \emph{Maximal} together with the indentation of its line, and the
 three statements stay unmarked, because being indented further is all that happened to them.
 
 \subsection{Tools}
@@ -634,7 +634,7 @@ consistent pairing is equally correct.
 \textbf{Paintings.} For \PresetPainted{} of the changes the annotator additionally painted
 possible renderings: the spans of text a reader should see marked as deleted, inserted, updated or
 moved. A painted change is one of two cases. In the first, it carries a \emph{Minimal} and a
-\emph{Full} painting, the annotator's finding that the change has a sparse and a generous correct
+\emph{Maximal} painting, the annotator's finding that the change has a sparse and a generous correct
 rendering; a tool's sparse output is compared with the first and its generous output with the
 second. In the second, it carries a single painting: the change has one right rendering, which
 every preset of a tool has to produce.
@@ -675,10 +675,10 @@ annotators.
 Table~\ref{tab:invariants} shows the invariants in five families. Three rules concern the \emph{form} of any painting:
 no highlight ends in a row's trailing whitespace, no two painted ranges claim the same byte, and
 a token such as \texttt{<=} or \texttt{private} is painted whole. Nine state what each
-\emph{preset} paints and how the two relate: \emph{Full} covers everything \emph{Minimal} covers;
-a line that is inserted or deleted whole is painted whole under \emph{Full}; \emph{Minimal} never
+\emph{preset} paints and how the two relate: \emph{Maximal} covers everything \emph{Minimal} covers;
+a line that is inserted or deleted whole is painted whole under \emph{Maximal}; \emph{Minimal} never
 paints a line's indentation; a renamed identifier is painted at its differing words under
-\emph{Minimal} and entire under \emph{Full}; the space before an insertion inside a line goes
+\emph{Minimal} and entire under \emph{Maximal}; the space before an insertion inside a line goes
 with the insertion exactly when the insertion changed how many spaces are there; and the two
 presets never disagree about what survived. Ten require the painting to \emph{agree} with the
 mapping: a leaf that the mapping pairs with an identical leaf is never painted deleted on one
@@ -1065,55 +1065,55 @@ Section~\ref{sec:gap} (\CostTieDifferentPct{}\%).
 visualisations, and how do those differ?
 
 Settling the mapping does not settle what the reader sees. Of the \PresetPainted{} painted
-changes, \PresetBothFixtures{} (\PresetBothPct{}\%) carry a \emph{Minimal} and a \emph{Full}
+changes, \PresetBothFixtures{} (\PresetBothPct{}\%) carry a \emph{Minimal} and a \emph{Maximal}
 painting, the annotator's finding that a reader who wants only what changed and a reader who wants
 its surroundings marked are both right. \PresetSingleFixtures{} (\PresetSinglePct{}\%) carry one
 painting that names no preset: for these a human considers the rendering settled,
 whatever the reader's preference. The remaining \PresetMinimalOnlyFixtures{} changes
-carry only a \emph{Minimal} painting and \PresetFullOnlyFixtures{} only a \emph{Full} one so far.
+carry only a \emph{Minimal} painting and \PresetMaximalOnlyFixtures{} only a \emph{Maximal} one so far.
 
 \input{figures/preset_table.tex}
 
 \begin{figure*}
   \centering
   \includegraphics[width=0.9\linewidth]{figures/preset_difference}
-  \caption{The \emph{Full} hand painting against the \emph{Minimal} one, over the changes painted
-  both ways. Left: per change, the share of the bytes \emph{Full} paints that \emph{Minimal}
+  \caption{The \emph{Maximal} hand painting against the \emph{Minimal} one, over the changes painted
+  both ways. Left: per change, the share of the bytes \emph{Maximal} paints that \emph{Minimal}
   paints as well, as a cumulative distribution. Right: per language with at least fifteen such
-  changes (count in parentheses), the share of the bytes \emph{Full} paints that \emph{Minimal}
+  changes (count in parentheses), the share of the bytes \emph{Maximal} paints that \emph{Minimal}
   leaves unpainted, by what those bytes hold.}
   \label{fig:presets}
 \end{figure*}
 
 We compared the two paintings byte by byte on the \PresetCensusFixtures{} changes that carry
 both.\footnote{One change with two paintings is left out: its paintings are two alternatives
-that name no preset.} \emph{Minimal} paints \PresetMinimalBytes{} bytes and \emph{Full}
-\PresetFullBytes{}, \PresetFullOverMinimal{} times as many. \emph{Full} never leaves unpainted a
+that name no preset.} \emph{Minimal} paints \PresetMinimalBytes{} bytes and \emph{Maximal}
+\PresetMaximalBytes{}, \PresetMaximalOverMinimal{} times as many. \emph{Maximal} never leaves unpainted a
 byte that \emph{Minimal} paints (\PresetMinimalOnlyBytes{} such bytes), which is one of the
 invariants, and the two give \PresetRelabelledBytes{} bytes different labels. The two paintings
 are byte-identical on \PresetIdenticalFixtures{} of the changes, as expected: an annotator who
 would paint both alike records a single painting instead. Table~\ref{tab:presets} shows what the
-\PresetAddedBytes{} bytes that only \emph{Full} paints hold. \PresetAddedWhitespacePct{}\% of
+\PresetAddedBytes{} bytes that only \emph{Maximal} paints hold. \PresetAddedWhitespacePct{}\% of
 them are whitespace, almost all of it the indentation and spacing of inserted and deleted lines.
 \PresetAddedCodePct{}\% are code: the unchanged part of a renamed identifier or a changed number,
-which \emph{Full} paints as part of the update, and code that moved, which \emph{Full} marks as
+which \emph{Maximal} paints as part of the update, and code that moved, which \emph{Maximal} marks as
 moved in more cases than \emph{Minimal} does. Punctuation alone, the brackets and separators that
 a change brings with it, is \PresetAddedPunctuationPct{}\%.
 
 The difference is small for most changes and large for a few. The median change has
-\PresetExtraMedian{} bytes that only \emph{Full} paints, the 90th percentile
+\PresetExtraMedian{} bytes that only \emph{Maximal} paints, the 90th percentile
 \PresetExtraPNinety{} and the largest \PresetExtraMax{}. The left panel of
 Figure~\ref{fig:presets} shows the distribution relative to the size of the painting: in the
-median change, \emph{Minimal} paints \PresetKeptMedianPct{}\% of the bytes \emph{Full} paints.
+median change, \emph{Minimal} paints \PresetKeptMedianPct{}\% of the bytes \emph{Maximal} paints.
 The right panel shows that the share differs by language, and that what is added differs as
 well: mostly whitespace in most languages, mostly code in shell scripts and CSS. We conjecture
-that in those two a changed word or value is short and the unchanged remainder that \emph{Full}
+that in those two a changed word or value is short and the unchanged remainder that \emph{Maximal}
 paints with it is long by comparison.
 
 \begin{resultbox}{RA3.2 (Visualisation uniqueness)}
   Of the \PresetPainted{} painted changes, \PresetBothFixtures{} (\PresetBothPct{}\%) admit a
   sparse and a generous correct rendering, and \PresetSingleFixtures{} (\PresetSinglePct{}\%)
-  have one rendering only. Where both exist, the generous one paints \PresetFullOverMinimal{}
+  have one rendering only. Where both exist, the generous one paints \PresetMaximalOverMinimal{}
   times the bytes, and \PresetAddedWhitespacePct{}\% of what it adds is whitespace.
 \end{resultbox}
 
@@ -1357,7 +1357,7 @@ Section~\ref{sec:tools}.
       & Phases 2 and 3 encode reader preferences that cost more than the optimum: comments and
         modifiers follow their node, names beat cost, diagnostics are held back \\ \addlinespace
     \PresetBothPct{}\% of painted changes have a sparse and a generous rendering (RA3.2)
-      & Two render presets, \emph{Minimal} and \emph{Full}, over one mapping \\ \addlinespace
+      & Two render presets, \emph{Minimal} and \emph{Maximal}, over one mapping \\ \addlinespace
     Whole-tree APTED finishes within one second for only \RqOneCodePct{}\% of code pairs (RA4)
       & APTED runs only inside one already-matched pair (Phase 3), never over the whole tree \\ \addlinespace
     No established tool that parses most code changes renders more than
@@ -1441,7 +1441,7 @@ phase~\cite{gumtreediff-2014}, pairs up whole subtrees left fully deleted on one
 inserted on the other, when they are byte-identical and large enough to rule out coincidence.
 
 \textbf{Projection.} The renderer turns the mapping into a painting under one of two presets,
-\emph{Minimal} and \emph{Full}, the two the ground truth is painted in. It is not the literal
+\emph{Minimal} and \emph{Maximal}, the two the ground truth is painted in. It is not the literal
 projection: it decides separately which whitespace, separators and brackets go
 with a change, whether a relocated node is shown as moved or left unmarked as a pure reindent,
 and how much of a changed word to mark. Its rules follow the painting invariants of
@@ -1501,7 +1501,7 @@ repositories are diffed entirely.
     \midrule
     Node mapping & \MappingFixtures{} & \MappingZeroVisiblePct{}\% & \MappingWithinOnePct{}\% & -- \\
     Painting, \emph{Minimal} & \PaintingMinimalFixtures{} & \PaintingMinimalZeroPct{}\% & \PaintingMinimalWithinOnePct{}\% & \PaintingMinimalIdealZeroPct{}\% \\
-    Painting, \emph{Full} & \PaintingFullFixtures{} & \PaintingFullZeroPct{}\% & \PaintingFullWithinOnePct{}\% & \PaintingFullIdealZeroPct{}\% \\
+    Painting, \emph{Maximal} & \PaintingMaximalFixtures{} & \PaintingMaximalZeroPct{}\% & \PaintingMaximalWithinOnePct{}\% & \PaintingMaximalIdealZeroPct{}\% \\
     Painting, one rendering & \PaintingSingleFixtures{} & \PaintingSingleZeroPct{}\% & \PaintingSingleWithinOnePct{}\% & \PaintingSingleIdealZeroPct{}\% \\
     \bottomrule
   \end{tabular}
@@ -1519,11 +1519,11 @@ cases of Section~\ref{sec:ground-truth}; where a change has one rendering, both 
 have to produce it, and a byte counts as wrong when either does not.
 Table~\ref{tab:omnidiff-accuracy} shows the result. \textsc{OmniDiff} paints every byte as the
 human did on \PaintingMinimalZeroPct{}\% of the changes under \emph{Minimal}, on
-\PaintingFullZeroPct{}\% under \emph{Full}, and on \PaintingSingleZeroPct{}\% of the changes with
+\PaintingMaximalZeroPct{}\% under \emph{Maximal}, and on \PaintingSingleZeroPct{}\% of the changes with
 one rendering. The last column separates the two steps: given the human mapping instead of its
-own, the renderer is exact on \PaintingMinimalIdealZeroPct{}\%, \PaintingFullIdealZeroPct{}\% and
+own, the renderer is exact on \PaintingMinimalIdealZeroPct{}\%, \PaintingMaximalIdealZeroPct{}\% and
 \PaintingSingleIdealZeroPct{}\%. Most of what is left is therefore the projection's and not the
-matcher's, and it is largest where RA3.2 puts the reader's preference: in what \emph{Full} adds.
+matcher's, and it is largest where RA3.2 puts the reader's preference: in what \emph{Maximal} adds.
 
 \textbf{Code: invariants.} We also hold \textsc{OmniDiff}'s output against the
 \InvariantLabelCount{} invariants that can be checked on a painting's labels alone, on the

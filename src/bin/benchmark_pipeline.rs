@@ -93,8 +93,9 @@ enum Stage {
     Metadata,
     /// `diff_code`: the node mapping.
     Map,
-    /// The ranges under `RenderOptions::FULL`: the node cache, `TextDiff` and the display filter.
-    Full,
+    /// The ranges under `RenderOptions::MAXIMAL`: the node cache, `TextDiff` and the display
+    /// filter.
+    Maximal,
     /// The same under `RenderOptions::MINIMAL`.
     Minimal,
 }
@@ -103,7 +104,7 @@ const STAGES: [Stage; 5] = [
     Stage::Parse,
     Stage::Metadata,
     Stage::Map,
-    Stage::Full,
+    Stage::Maximal,
     Stage::Minimal,
 ];
 
@@ -283,7 +284,7 @@ fn fingerprint(
         let node_cache = NodeCache::build(&before, &after);
         omnidiff::diff::text::is_comment_only_diff(&before, &after, ast_diff, &node_cache)
     });
-    let full = painted(&before, &after, ast_diff, RenderOptions::FULL);
+    let maximal = painted(&before, &after, ast_diff, RenderOptions::MAXIMAL);
     let minimal = painted(&before, &after, ast_diff, RenderOptions::MINIMAL);
 
     if let Some(dump) = dump {
@@ -291,17 +292,18 @@ fn fingerprint(
             dump.join(format!("{name}.txt")),
             format!(
                 "{mapping}\n== groups\n{groups_in_order}\n== comment only {comment_only}\n\
-                 == full\n{full}== minimal\n{minimal}"
+                 == maximal
+{maximal}== minimal\n{minimal}"
             ),
         )?;
     }
     Ok(Some(format!(
-        "{name} map={:016x} groups={:016x} group_order={:016x} full={:016x} minimal={:016x} \
+        "{name} map={:016x} groups={:016x} group_order={:016x} maximal={:016x} minimal={:016x} \
          comment_only={comment_only}",
         hash(&mapping),
         hash(&groups_sorted),
         hash(&groups_in_order),
-        hash(&full),
+        hash(&maximal),
         hash(&minimal),
     )))
 }
@@ -443,9 +445,9 @@ fn time_one(dir: &std::path::Path, until: Stage) -> Result<Option<Cost>> {
         return Ok(Some(cost));
     };
 
-    std::hint::black_box(render(&before, &after, ast_diff, RenderOptions::FULL));
-    watch.lap(Stage::Full, &mut cost);
-    if until == Stage::Full {
+    std::hint::black_box(render(&before, &after, ast_diff, RenderOptions::MAXIMAL));
+    watch.lap(Stage::Maximal, &mut cost);
+    if until == Stage::Maximal {
         return Ok(Some(cost));
     }
 

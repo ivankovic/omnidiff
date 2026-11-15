@@ -3337,7 +3337,7 @@
       ]
     },
     {
-      "name": "Full",
+      "name": "Maximal",
       "entries": [
         {
           "operation": "Delete",
@@ -3470,7 +3470,7 @@
       ]
     },
     {
-      "name": "Full (Prefer update)",
+      "name": "Maximal (Prefer update)",
       "entries": [
         {
           "operation": "Delete",

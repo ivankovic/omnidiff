@@ -425,7 +425,7 @@
       ]
     },
     {
-      "name": "Full",
+      "name": "Maximal",
       "entries": [
         {
           "operation": "Insert",
@@ -487,6 +487,17 @@
               "start_column": 22,
               "end_row": 3,
               "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 11,
+              "start_column": 9,
+              "end_row": 11,
+              "end_column": 10
             }
           ]
         }

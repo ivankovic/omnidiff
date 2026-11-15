@@ -336,7 +336,7 @@ fn collect_if_clauses(
 /// Both clauses must belong to a chain of several ([`in_if_chain`]). A lone `if` that moved is a
 /// statement, left to APTED and phase 7: pinned here, `java-defects4j-cli-14-groupimpl`'s moved
 /// `if (validate)` block maps as the human's does (19 -> 2 visible mismatches) but paints worse
-/// (+28 Full, +38 Minimal bytes), the renderer blaming what the block jumped over.
+/// (+28 Maximal, +38 Minimal bytes), the renderer blaming what the block jumped over.
 ///
 /// Only the parts are matched, the frames only when the whole frame is identical: in Lua the
 /// first clause sits bare in `if_statement` and the second in `elseif_statement`, so a swap moves

@@ -1625,7 +1625,7 @@ fn solve_python_function_moved_and_renamed(driver: &mut Driver) {
     driver.keys("lvlllll\tlvllllm");
     driver.keys("lv$\tlv$m");
     driver.keys("j^v$\tj^v$m");
-    // Full, branched for the whole changeset; its `def` line updates the whole identifier.
+    // Maximal, branched for the whole changeset; its `def` line updates the whole identifier.
     driver.keys("sj\n");
     driver.keys(":4\nuwuwu0vlll\t:8\nvlllm");
     driver.keys("lve\tlvem");
@@ -1654,7 +1654,8 @@ fn solve_go_three_files_nothing_crossing(driver: &mut Driver) {
     driver.keys(&format!("/{BACKSPACES}, bool\nvlllllli"));
     driver.keys(":4\n^vjj$i");
     driver.keys(&format!("/{BACKSPACES}, true\nvllllli"));
-    // Full: the branch widens the inserted `(` over the blank before it, which was there already.
+    // Maximal: the branch widens the inserted `(` over the blank before it, which was there
+    // already.
     driver.keys("sj\n");
     driver.keys(&format!("g/{BACKSPACES}(string\nuvi\x1bb"));
     driver.keys("xj\tjxkk\tkkx");
@@ -1673,7 +1674,7 @@ impl Driver {
 fn solve_typescript_directory_renamed(driver: &mut Driver) {
     // git's three renames are right. Two files kept their bytes; the engine matches them whole.
     driver.keys("C\nSbj\tj\nS");
-    // index.ts gains an export: marked and painted by hand, then branched to Full.
+    // index.ts gains an export: marked and painted by hand, then branched to Maximal.
     driver.keys("\t]It:3\nv$isj\n\x1bbx");
     driver.keys("j\tj\nSbx");
     driver.keys("kk\tkkx");

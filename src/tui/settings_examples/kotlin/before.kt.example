@@ -5,7 +5,7 @@ fun createPerson(name: String, age: Int) = mapOf(
     "age" to age
 )
 
-class Rectangle(val width: Int, val height: Int) {
+class Rectangle(val width: Int, val height: Int) {  
     fun area() = width * height
 
     fun describe(label: String): String {

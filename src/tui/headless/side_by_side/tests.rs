@@ -128,11 +128,11 @@ fn a_moved_function_sits_alone_and_names_its_other_copy() {
     assert_eq!(body(&text), expected, "\n{text}");
 }
 
-/// Under Full the painting differs (`return s` is `~`, the long line wraps at this width), the rows
-/// do not: they come from the mapping, which the render options never touch.
+/// Under Maximal the painting differs (`return s` is `~`, the long line wraps at this width), the
+/// rows do not: they come from the mapping, which the render options never touch.
 #[test]
-fn the_moved_function_keeps_the_same_rows_under_full() {
-    let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::FULL);
+fn the_moved_function_keeps_the_same_rows_under_maximal() {
+    let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::MAXIMAL);
     let expected = [
         "1    def total(numbers):                 → 5│",
         "2  -     s = 0                              │",
@@ -160,7 +160,12 @@ const REINDENT_AFTER: &str =
 /// The design's second example: a nested `if` added around a line that is then the same line.
 #[test]
 fn a_line_reindented_into_a_new_block_stays_beside_itself() {
-    let data = diff_of(REINDENT_BEFORE, REINDENT_AFTER, "f.py", RenderOptions::FULL);
+    let data = diff_of(
+        REINDENT_BEFORE,
+        REINDENT_AFTER,
+        "f.py",
+        RenderOptions::MAXIMAL,
+    );
     let text = laid_out(&data, Layout::SideBySide, Some(80));
     let expected = [
         "1    def f(x):                         │ 1    def f(x):",
@@ -248,7 +253,7 @@ fn wide_characters_tabs_and_long_lines_keep_the_divider_straight() {
     let before = "fn a() {\n\tlet s = \"漢字漢字漢字漢字漢字漢字漢字漢字漢字漢字漢字漢字\";\n}\n";
     let after =
         "fn a() {\n\tlet s = \"漢字漢字漢字漢字漢字漢字漢字漢字漢字😀漢字漢字e\u{301}\";\n}\n";
-    let data = diff_of(before, after, "w.rs", RenderOptions::FULL);
+    let data = diff_of(before, after, "w.rs", RenderOptions::MAXIMAL);
     for width in [60, 61, 80] {
         let text = laid_out(&data, Layout::SideBySide, Some(width));
         let geometry = Geometry::new(width, 3, 3);
@@ -278,7 +283,7 @@ fn colors_never_cross_the_divider() {
         "x = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n",
         "x = \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"\n",
         "c.py",
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     let text = render_laid_out_text_diff(
         &data,
@@ -318,7 +323,7 @@ fn a_line_exactly_the_column_wide_does_not_wrap_and_one_more_does() {
         &format!("{exact}\n"),
         &format!("{exact}y\n"),
         "e.txt",
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     let rows = body(&laid_out(&data, Layout::SideBySide, Some(70)));
     assert_eq!(rows.len(), 2, "{rows:#?}");
@@ -331,7 +336,7 @@ fn a_line_exactly_the_column_wide_does_not_wrap_and_one_more_does() {
 
 #[test]
 fn an_unknown_or_too_narrow_width_is_stacked() {
-    let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::FULL);
+    let data = diff_of(MOVE_BEFORE, MOVE_AFTER, "move.py", RenderOptions::MAXIMAL);
     let stacked = render_annotated_text_diff(&data, false, CONTEXT_LINES, None);
     // 9 and 6 lines: one digit a side, so code is (width - 2) / 2 - 5 on the left.
     let narrowest = 2 * (MIN_CODE_COLUMNS + 5) + 2;
@@ -370,7 +375,7 @@ fn auto_stays_stacked_when_too_many_shown_lines_would_wrap() {
     let long = "y".repeat(60);
     let before: String = (0..10).map(|i| format!("x{i} = '{long}'\n")).collect();
     let after: String = (0..10).map(|i| format!("x{i} = '{long}z'\n")).collect();
-    let data = diff_of(&before, &after, "l.py", RenderOptions::FULL);
+    let data = diff_of(&before, &after, "l.py", RenderOptions::MAXIMAL);
     assert!(!laid_out(&data, Layout::Auto, Some(120)).contains('┬'));
     assert!(laid_out(&data, Layout::SideBySide, Some(120)).contains('┬'));
     assert!(laid_out(&data, Layout::Auto, Some(200)).contains('┬'));
@@ -470,11 +475,11 @@ fn the_render_options_never_change_the_rows() {
     let mut with_ast = 0;
     for (index, (before, after, extension)) in examples.into_iter().chain(fixtures).enumerate() {
         let name = format!("f{extension}");
-        let full = rows_under(&before, &after, &name, RenderOptions::FULL);
+        let maximal = rows_under(&before, &after, &name, RenderOptions::MAXIMAL);
         let minimal = rows_under(&before, &after, &name, RenderOptions::MINIMAL);
-        assert_eq!(full, minimal, "case {index} ({extension})");
+        assert_eq!(maximal, minimal, "case {index} ({extension})");
         with_ast += usize::from(
-            diff_of(&before, &after, &name, RenderOptions::FULL)
+            diff_of(&before, &after, &name, RenderOptions::MAXIMAL)
                 .lines
                 .is_some(),
         );
@@ -492,7 +497,7 @@ fn every_line_of_a_fixture_is_on_one_row_in_order() {
             &before,
             &after,
             &format!("f{extension}"),
-            RenderOptions::FULL,
+            RenderOptions::MAXIMAL,
         );
         let (old_lines, new_lines) = (osc1717::line_count(&before), osc1717::line_count(&after));
         let width = 160;
@@ -534,7 +539,7 @@ fn folded_rows_name_each_sides_count_when_they_differ() {
     };
     let before = format!("{}\n\n{}", lines(0..20), lines(20..40));
     let after = format!("{}{}changed\n", lines(0..20), lines(20..39));
-    let data = diff_of(&before, &after, "fold.txt", RenderOptions::FULL);
+    let data = diff_of(&before, &after, "fold.txt", RenderOptions::MAXIMAL);
     let text = laid_out(&data, Layout::SideBySide, Some(100));
     assert!(
         text.contains("... 20 unchanged lines ...") || text.contains("unchanged lines before,"),
@@ -575,7 +580,7 @@ fn above_the_cap_the_rows_follow_gits_patch() {
         "def f(x):\n    if x:\n        return 1\n    return 0\n",
         "def f(x):\n    if x:\n        if x > 1:\n            return 1\n    return 0\n",
     );
-    let data = diff_of(before, after, "f.py", RenderOptions::FULL);
+    let data = diff_of(before, after, "f.py", RenderOptions::MAXIMAL);
     let dir = tempfile::tempdir().unwrap();
     let (old, new) = (dir.path().join("a.py"), dir.path().join("b.py"));
     std::fs::write(&old, before).unwrap();

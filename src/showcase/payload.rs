@@ -466,7 +466,7 @@ mod tests {
 
     #[test]
     fn the_diff_payload_carries_lines_ranges_counts_and_the_syntax_theme() {
-        let payload = diff_payload(&sample_data(), false, RenderOptions::FULL, None);
+        let payload = diff_payload(&sample_data(), false, RenderOptions::MAXIMAL, None);
         assert_eq!(payload.before.name, "before.rs");
         assert_eq!(payload.before.language, "Rust");
         assert_eq!(payload.before.lines.len(), 3);
@@ -476,7 +476,7 @@ mod tests {
         assert_eq!(payload.change_counts.updates, 1);
         assert_eq!(payload.summary, None, "an ordinary edit has no summary");
         assert_eq!(payload.syntax.theme, DEFAULT_SYNTAX_THEME);
-        assert_eq!(payload.render_options, RenderOptions::FULL);
+        assert_eq!(payload.render_options, RenderOptions::MAXIMAL);
     }
 
     #[test]
@@ -485,7 +485,7 @@ mod tests {
         data.after_contents = data.before_contents.clone();
         data.before_ranges.clear();
         data.after_ranges.clear();
-        let payload = diff_payload(&data, false, RenderOptions::FULL, None);
+        let payload = diff_payload(&data, false, RenderOptions::MAXIMAL, None);
         let summary = payload
             .summary
             .expect("identical content is worth a summary");

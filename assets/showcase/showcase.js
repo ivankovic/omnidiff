@@ -100,7 +100,7 @@ const OmniDiffShowcase = (() => {
     if (view === "diff") return payloads.diff;
     if (options && presets) {
       if (sameOptions(options, presets.minimal)) return payloads.minimal;
-      if (sameOptions(options, presets.full)) return payloads.full;
+      if (sameOptions(options, presets.maximal)) return payloads.maximal;
     }
     return payloads.omnidiff;
   }
@@ -142,7 +142,7 @@ const OmniDiffShowcase = (() => {
       change_counts: { insertions: 0, deletions: 0, updates: 0, moves: 0 },
       plain_text_fallback: false,
       large_residual: false,
-      render_options: presets ? presets.full : {},
+      render_options: presets ? presets.maximal : {},
       syntax: colors,
     };
   }
@@ -399,8 +399,8 @@ if (typeof module !== "undefined") {
         const load = (suffix) => fetchJson(`cases/${name}.${suffix}.json`);
         cache.set(
           name,
-          Promise.all([load("diff"), load("omnidiff"), load("minimal"), load("full"), load("syntax")]).then(
-            ([diff, omnidiff, minimal, full, syntax]) => ({ payloads: { diff, omnidiff, minimal, full }, syntax }),
+          Promise.all([load("diff"), load("omnidiff"), load("minimal"), load("maximal"), load("syntax")]).then(
+            ([diff, omnidiff, minimal, maximal, syntax]) => ({ payloads: { diff, omnidiff, minimal, maximal }, syntax }),
           ),
         );
       }

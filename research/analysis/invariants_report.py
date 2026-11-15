@@ -63,7 +63,7 @@ GROUPS = [
         "What each preset paints",
         (2, 4, 5, 6, 8, 16, 29, 30, 31),
         (
-            r"\emph{Minimal} never paints indentation; \emph{Full} paints a renamed identifier "
+            r"\emph{Minimal} never paints indentation; \emph{Maximal} paints a renamed identifier "
             r"entire; the space before an insertion follows its count"
         ),
     ),

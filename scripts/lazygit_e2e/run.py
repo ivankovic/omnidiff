@@ -123,7 +123,7 @@ RENDERERS = [
         ({"type": "extDiff", "command": "omnidiff --headless --context {{diffContext}}"},),
     ),
     # Two columns, as wide as lazygit's main view; the header row's divider says it is not stacked.
-    # The rows come from the node mapping, whatever the painting: under Full (no saved options)
+    # The rows come from the node mapping, whatever the painting: under Maximal (no saved options)
     # and Minimal alike `mean` keeps its rows and each copy of the moved `def total` sits alone.
     Renderer(
         "omnidiff-sbs",

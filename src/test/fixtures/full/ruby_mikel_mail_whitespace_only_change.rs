@@ -33,5 +33,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("ruby-mikel-mail-whitespace-only-change", 0.46)
+    assert_matches_human_painting_within_limit("ruby-mikel-mail-whitespace-only-change", 0.0)
 }

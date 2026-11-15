@@ -1,7 +1,7 @@
 require "date"
 require "ostruct"
 
-def build_order(name, total, date)
+def build_order(name, total, date)  
   OpenStruct.new(
     customer: name,
     amount: total,

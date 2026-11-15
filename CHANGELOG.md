@@ -4,6 +4,24 @@ All notable changes to OmniDiff (named CodeDiff up to v0.1.1). The format follow
 and the version numbers follow [Semantic Versioning](https://semver.org/) as far as a 0.x
 release does: a minor bump may change the JSON output or the library API, a patch bump does not.
 
+## [Unreleased]
+
+### Added
+
+- A new highlighting option, "Highlight changed spaces at the end of a line" in the `M` panel
+  (`changed_trailing_whitespace`): spaces or tabs added, removed or changed after the last
+  character of a line that otherwise stayed the same are highlighted, and so is a blank line of
+  spaces that was added or removed. A file that differs only in whitespace at line ends now shows
+  where. On in `--maximal`, off in `--minimal`, which never highlights trailing whitespace.
+
+### Changed
+
+- The fuller highlighting preset is now called Maximal instead of Full: `--maximal` on the
+  command line, `2 Maximal` in the `M` panel, and `RenderOptions::MAXIMAL` in the library.
+  `--full` and `RenderOptions::FULL` (deprecated) still work.
+- In a file without a grammar, a line that changed only in its trailing whitespace counts as the
+  same line: `--minimal` shows it unchanged, `--maximal` highlights just the whitespace.
+
 ## [0.5.0] - 2026-11-13
 
 Side-by-side output outside the viewer, lazygit integration, SQL parsed as code, and a diff that

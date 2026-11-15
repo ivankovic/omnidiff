@@ -552,7 +552,7 @@
   ],
   "text_mappings": [
     {
-      "name": "Full",
+      "name": "Maximal",
       "entries": [
         {
           "operation": "Insert",

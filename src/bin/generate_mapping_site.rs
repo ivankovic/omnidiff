@@ -2089,11 +2089,11 @@ mod tests {
         let after = Code::from_string(source, &Language::Rust);
         let mut minimal = painting(vec![]);
         minimal.name = "Minimal".to_string();
-        let mut full = painting(vec![]);
-        full.name = "Full".to_string();
+        let mut maximal = painting(vec![]);
+        maximal.name = "Maximal".to_string();
         let mapping = HumanMapping {
             entries: vec![],
-            text_mappings: vec![minimal, full],
+            text_mappings: vec![minimal, maximal],
             ..Default::default()
         };
 
@@ -2122,10 +2122,10 @@ mod tests {
             );
         }
         assert!(html.contains(r#"data-painting-name="Minimal""#));
-        assert!(html.contains(r#"data-painting-name="Full""#));
+        assert!(html.contains(r#"data-painting-name="Maximal""#));
         // Counts only `data-painting` buttons: the view switch has its own pressed button.
         assert!(html.contains(r#"data-painting="tree" data-painting-name="From the node mapping" aria-pressed="true""#), "got: {html}");
-        for (key, name) in [("p0", "Minimal"), ("p1", "Full")] {
+        for (key, name) in [("p0", "Minimal"), ("p1", "Maximal")] {
             assert!(
                 html.contains(&format!(
                     r#"data-painting="{key}" data-painting-name="{name}" aria-pressed="false""#
@@ -3110,7 +3110,7 @@ mod tests {
                 omnidiff_mismatches: 0,
                 unix_diff_mismatches: 3,
                 total_lines: 40,
-                paintings: vec!["Minimal".to_string(), "Full".to_string()],
+                paintings: vec!["Minimal".to_string(), "Maximal".to_string()],
                 note: Some("Requires a N:M match for perfect solution".to_string()),
                 unmarked_nodes: 0,
                 revision: "0123456789abcdef".to_string(),
@@ -3136,7 +3136,7 @@ mod tests {
         assert!(html.contains(r#"href="fixtures/c-linux-small-bugfix.html""#));
         assert!(html.contains(">C<"));
         assert!(
-            html.contains(">Minimal, Full</td>"),
+            html.contains(">Minimal, Maximal</td>"),
             "expected a painted fixture to list its paintings by name: {html}"
         );
         assert!(

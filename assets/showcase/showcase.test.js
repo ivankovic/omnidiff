@@ -66,19 +66,19 @@ const none = { theme: null, step: 0 };
 
 // ----- payloadFor -----------------------------------------------------------------------------
 
-const presets = { minimal: { x: false, y: false }, full: { x: true, y: true } };
+const presets = { minimal: { x: false, y: false }, maximal: { x: true, y: true } };
 const payloads = {
   diff: { id: "diff", before: { spans: [1] }, after: { spans: [2] }, syntax: { theme: "t" } },
   omnidiff: { id: "omnidiff", before: { spans: [3] }, after: { spans: [4] }, syntax: { theme: "t" } },
   minimal: { id: "minimal" },
-  full: { id: "full" },
+  maximal: { id: "maximal" },
 };
 
 {
-  assert.equal(S.payloadFor("diff", payloads, presets, presets.full).id, "diff");
+  assert.equal(S.payloadFor("diff", payloads, presets, presets.maximal).id, "diff");
   assert.equal(S.payloadFor("omnidiff", payloads, presets, null).id, "omnidiff");
   assert.equal(S.payloadFor("omnidiff", payloads, presets, { x: false, y: false }).id, "minimal");
-  assert.equal(S.payloadFor("omnidiff", payloads, presets, { x: true, y: true }).id, "full");
+  assert.equal(S.payloadFor("omnidiff", payloads, presets, { x: true, y: true }).id, "maximal");
   // Anything that is not a preset gets the default: there is nothing to recompute with.
   assert.equal(S.payloadFor("omnidiff", payloads, presets, { x: true, y: false }).id, "omnidiff");
 }
@@ -133,10 +133,10 @@ function ctx(view, entry) {
 
   // Render options are remembered for the next /api/diff and echoed in the answer.
   const c = ctx("omnidiff");
-  const filtered = S.routeApi("/api/render_options", presets.full, c);
-  assert.equal(filtered.json.id, "full");
-  assert.deepEqual(filtered.json.render_options, presets.full);
-  assert.equal(S.routeApi("/api/diff", {}, c).json.id, "full");
+  const filtered = S.routeApi("/api/render_options", presets.maximal, c);
+  assert.equal(filtered.json.id, "maximal");
+  assert.deepEqual(filtered.json.render_options, presets.maximal);
+  assert.equal(S.routeApi("/api/diff", {}, c).json.id, "maximal");
 
   // A syntax theme the site was not baked with: the same spans under its name.
   const highlight = S.routeApi("/api/highlight", { syntax_theme: "other" }, ctx("omnidiff"));
@@ -165,7 +165,7 @@ function ctx(view, entry) {
   assert.equal(themedDiff.id, "omnidiff");
   assert.deepEqual(themedDiff.before.spans, [5]);
   assert.equal(themedDiff.syntax.theme, "Solarized (light)");
-  assert.deepEqual(S.routeApi("/api/render_options", presets.full, saved).json.before, { spans: [5] });
+  assert.deepEqual(S.routeApi("/api/render_options", presets.maximal, saved).json.before, { spans: [5] });
   // Settings that name no theme (the layout, the node highlight) change nothing.
   S.routeApi("/api/settings", { layout: "single" }, saved);
   assert.equal(saved.theme, "SolarizedLight");
@@ -180,7 +180,7 @@ function ctx(view, entry) {
   assert.deepEqual(empty.before.lines, [""]);
   assert.equal(empty.before.path, "a/docs/model.pdf");
   assert.equal(empty.after.name, "model.pdf");
-  assert.deepEqual(empty.render_options, presets.full);
+  assert.deepEqual(empty.render_options, presets.maximal);
   assert.equal(empty.syntax.background, "#1e1e1e");
   content.syntaxTheme = "Solarized (light)";
   assert.equal(S.routeApi("/api/diff", {}, content).json.syntax.background, "#fdf6e3");

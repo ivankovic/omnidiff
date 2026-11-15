@@ -40,7 +40,7 @@ fn painting() -> Result<()> {
 fn invariants() -> Result<()> {
     // RECORDED, NOT ACCEPTED: the tree mapping pairs the identifier `office` with `ice`, which both
     // paintings leave unpainted. Either the mapping should not pair them, or both paintings need
-    // the rename marked (Minimal `off`, Full the whole identifier). A human has to decide.
+    // the rename marked (Minimal `off`, Maximal the whole identifier). A human has to decide.
     assert_ground_truth_invariants_with_known_violations(
         "html-mozilla-firefox-firefox-test-span",
         4,

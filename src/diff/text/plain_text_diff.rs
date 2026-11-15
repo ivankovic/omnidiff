@@ -29,7 +29,8 @@ use super::{common_prefix_byte_len, common_suffix_byte_len};
 pub(crate) const PLAIN_TEXT_MAX_EDIT: usize = 10_000;
 
 /// A line diff (Myers LCS over hashed lines) for files with no grammar, returning
-/// `(before_ranges, after_ranges)` in the shape of [`super::TextDiff::all`].
+/// `(before_ranges, after_ranges)` in the shape of [`super::TextDiff::all`], plus the ranges of
+/// trailing whitespace that changed (`trailing_whitespace`).
 ///
 /// Never produces `Move`: hashed lines carry no identity that survives relocation. Does produce
 /// `Update` with sub-line columns: rows in a hunk that share enough affix (`shared_affix`) are
@@ -45,15 +46,36 @@ pub(crate) fn plain_text_line_diff_with_max_edit(
     after: &str,
     max_edit: usize,
 ) -> (Vec<RangeMatch>, Vec<RangeMatch>) {
-    match line_diff_core(before, after, max_edit) {
-        // Re-split rather than widen `LineDiffCore`, which the matching pipeline also uses and
-        // which needs only counts and pairs.
-        Some(core) => {
-            let before_lines: Vec<&str> = before.lines().collect();
-            let after_lines: Vec<&str> = after.lines().collect();
-            debug_assert_eq!(before_lines.len(), core.before_line_count);
-            debug_assert_eq!(after_lines.len(), core.after_line_count);
-            build_line_ranges(&before_lines, &after_lines, &core.pairs)
+    let before_lines: Vec<&str> = before.lines().collect();
+    let after_lines: Vec<&str> = after.lines().collect();
+    // Paired on the rows' contents without their trailing whitespace, not through
+    // `line_diff_core`, which the matching pipeline shares: a row that changed only after its last
+    // visible character is the same row, and its trailing whitespace is a range of its own that
+    // `ranges_for_options` keeps only under `RenderOptions::changed_trailing_whitespace`.
+    let trimmed_hashes = |lines: &[&str]| -> Vec<u64> {
+        hash_lines(&lines.iter().map(|line| line.trim_end()).collect::<Vec<_>>())
+    };
+    let pairs = crate::diff::apted::myers_lcs(
+        &trimmed_hashes(&before_lines),
+        &trimmed_hashes(&after_lines),
+        max_edit,
+    );
+    match pairs {
+        Some(pairs) => {
+            let (before_ranges, after_ranges) =
+                build_line_ranges(&before_lines, &after_lines, &pairs);
+            let (before_extra, after_extra) =
+                super::trailing_whitespace::changed_trailing_whitespace(before, after);
+            (
+                super::trailing_whitespace::merged_by_position(
+                    super::trailing_whitespace::without_trailing_runs(before_ranges, before),
+                    before_extra,
+                ),
+                super::trailing_whitespace::merged_by_position(
+                    super::trailing_whitespace::without_trailing_runs(after_ranges, after),
+                    after_extra,
+                ),
+            )
         }
         None => {
             let before_line_count = before.lines().count();
@@ -305,9 +327,9 @@ fn tokens(text: &str) -> Vec<(usize, usize)> {
 /// A reordered class is a `Move` under both presets: the paintings show a class taken out of its
 /// place even though order means nothing to CSS. One that crossed a single kept class swapped with
 /// it, and that class moved too (`tsx-shadcn-ui-ui-order-of-class-names`). Under
-/// `paint_displaced_moves` (`FULL`) so is every kept class that sits inside the edited stretch of
-/// either side - between that side's first and last changed class - as the `Full` paintings mark a
-/// rearranged run (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
+/// `paint_displaced_moves` (`MAXIMAL`) so is every kept class that sits inside the edited stretch
+/// of either side - between that side's first and last changed class - as the `Maximal` paintings
+/// mark a rearranged run (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
 pub fn class_list_diff(
     before: &str,
     after: &str,
@@ -347,7 +369,8 @@ pub fn class_list_diff(
         before_kept[b] = true;
         after_kept[a] = true;
     }
-    // A class left over on both sides was reordered: pair each with the first unused one of its name.
+    // A class left over on both sides was reordered: pair each with the first unused one of its
+    // name.
     let name = |text: &'_ str, word: (usize, usize)| text[word.0..word.1].to_string();
     let mut reordered = Vec::new();
     let mut after_used = after_kept.clone();
@@ -746,8 +769,8 @@ pub(crate) enum GapOp {
 
 /// How far [`plan_gap`] looks ahead on one side to resynchronise, i.e. the longest run of pure
 /// insertions or deletions it can step over and still pair the rows after it. A gap's sides are
-/// aligned only at their ends: rows inserted among rewritten rows (a sorted CSV) would otherwise end
-/// the pairing for the rest of the gap. Bounded so the scan stays linear in the gap and an
+/// aligned only at their ends: rows inserted among rewritten rows (a sorted CSV) would otherwise
+/// end the pairing for the rest of the gap. Bounded so the scan stays linear in the gap and an
 /// unrelated block cannot find a spurious partner far away.
 pub(crate) const GAP_RESYNC_WINDOW: usize = 16;
 

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-auto make_person(const std::string &name, int age)
+auto make_person(const std::string &name, int age)  
 {
     return make_fields(
         "name", name,

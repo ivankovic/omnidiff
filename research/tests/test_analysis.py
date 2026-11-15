@@ -772,9 +772,9 @@ def test_growth_table_prints_a_dash_for_an_empty_cell():
         (["Only one solution"], "single"),
         (["Left"], "single"),
         (["Minimal"], "minimal"),
-        (["Full (outer)"], "full"),
+        (["Maximal (outer)"], "maximal"),
         (["Fuller"], "single"),
-        (["Minimal", "Full"], "both"),
+        (["Minimal", "Maximal"], "both"),
     ],
 )
 def test_graded_case_follows_the_painting_names(names, case):
@@ -782,11 +782,11 @@ def test_graded_case_follows_the_painting_names(names, case):
 
 
 def _preset_rows():
-    def row(fixture, minimal, full, text_class, runs, size):
+    def row(fixture, minimal, maximal, text_class, runs, size):
         return {
             "fixture": fixture,
             "minimal": minimal,
-            "full": full,
+            "maximal": maximal,
             "class": text_class,
             "runs": str(runs),
             "bytes": str(size),

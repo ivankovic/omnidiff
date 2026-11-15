@@ -1,5 +1,5 @@
 CREATE TABLE customers (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY,  
   name TEXT NOT NULL,
   status TEXT DEFAULT 'active'
 );

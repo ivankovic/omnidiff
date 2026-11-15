@@ -1206,13 +1206,13 @@ fn visible_diff_options_narrows_by_a_name_substring() {
 fn the_solution_picker_lists_existing_paintings_before_suggestions() {
     let mut app = test_app();
     app.mapping.text_mappings = vec![NamedTextMapping {
-        name: "Full".to_string(),
+        name: "Maximal".to_string(),
         mapping: HumanTextMapping::default(),
     }];
 
     assert_eq!(
         solution_picker_names(&app.mapping),
-        vec!["Full", "Minimal", "Only one solution"],
+        vec!["Maximal", "Minimal", "Only one solution"],
         "an existing name must not be offered twice"
     );
 }
@@ -1383,21 +1383,21 @@ fn painting_names(app: &App) -> Vec<String> {
 /// Deleting a painting is the one bulk removal in the text view, so `D` needs two presses.
 #[test]
 fn deleting_a_painting_takes_two_presses_of_d() {
-    let armed = press_in_solution_picker(&["Full", "Minimal"], &[KeyCode::Char('D')]);
+    let armed = press_in_solution_picker(&["Maximal", "Minimal"], &[KeyCode::Char('D')]);
     assert_eq!(
         painting_names(&armed),
-        vec!["Full", "Minimal"],
+        vec!["Maximal", "Minimal"],
         "one D must only arm the confirmation"
     );
     match &armed.modal {
         Some(Modal::SolutionPicker { confirm_delete, .. }) => {
-            assert_eq!(confirm_delete.as_deref(), Some("Full"))
+            assert_eq!(confirm_delete.as_deref(), Some("Maximal"))
         }
         other => panic!("expected the picker to stay open, got {other:?}"),
     }
 
     let deleted = press_in_solution_picker(
-        &["Full", "Minimal"],
+        &["Maximal", "Minimal"],
         &[KeyCode::Char('D'), KeyCode::Char('D')],
     );
     assert_eq!(painting_names(&deleted), vec!["Minimal"]);
@@ -1430,13 +1430,13 @@ fn deleting_the_last_painting_leaves_the_fixture_unpainted() {
 #[test]
 fn moving_the_cursor_cancels_a_pending_deletion() {
     let app = press_in_solution_picker(
-        &["Full", "Minimal"],
+        &["Maximal", "Minimal"],
         &[KeyCode::Char('D'), KeyCode::Char('j'), KeyCode::Char('D')],
     );
 
     assert_eq!(
         painting_names(&app),
-        vec!["Full", "Minimal"],
+        vec!["Maximal", "Minimal"],
         "j cleared the confirmation, so the second D only re-armed - on Minimal"
     );
     match &app.modal {
@@ -1453,7 +1453,7 @@ fn deleting_another_painting_leaves_you_editing_your_own() {
     // Three, not two: `starting_solution` returns the first survivor, which with two would be
     // the edited one anyway and hide an unguarded reset.
     let app = press_in_solution_picker_editing(
-        &["Full", "Minimal", "Custom"],
+        &["Maximal", "Minimal", "Custom"],
         Some("Custom"),
         &[KeyCode::Char('D'), KeyCode::Char('D')],
     );
@@ -1461,7 +1461,7 @@ fn deleting_another_painting_leaves_you_editing_your_own() {
     assert_eq!(painting_names(&app), vec!["Minimal", "Custom"]);
     assert_eq!(
         app.text_solution, "Custom",
-        "deleting 'Full' has nothing to do with which painting the reader is in"
+        "deleting 'Maximal' has nothing to do with which painting the reader is in"
     );
     assert!(
         app.status
@@ -1476,13 +1476,13 @@ fn deleting_another_painting_leaves_you_editing_your_own() {
 /// `D` on an unused suggestion must not look like it worked.
 #[test]
 fn d_on_an_unused_suggestion_deletes_nothing() {
-    // "Full" exists; j lands on an unused suggestion.
+    // "Maximal" exists; j lands on an unused suggestion.
     let app = press_in_solution_picker(
-        &["Full"],
+        &["Maximal"],
         &[KeyCode::Char('j'), KeyCode::Char('D'), KeyCode::Char('D')],
     );
 
-    assert_eq!(painting_names(&app), vec!["Full"]);
+    assert_eq!(painting_names(&app), vec!["Maximal"]);
     assert!(
         app.status
             .as_deref()
@@ -1511,10 +1511,10 @@ fn branching_keeps_both_paintings_on_file() {
     );
     assert_eq!(app.text_solution, "Minimal");
 
-    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", true, before_src, after_src);
 
     assert_eq!(
-        app.text_solution, "Full",
+        app.text_solution, "Maximal",
         "editing continues on the new one"
     );
     assert_eq!(
@@ -1525,27 +1525,27 @@ fn branching_keeps_both_paintings_on_file() {
     );
     assert_eq!(solution_entries(&app.mapping, "Minimal").len(), 1);
     assert_eq!(
-        solution_entries(&app.mapping, "Full").len(),
+        solution_entries(&app.mapping, "Maximal").len(),
         1,
         "a copy starts from what was painted"
     );
 }
 
-/// Branching `Minimal` to `Full` widens every wholly-changed line to its indentation: invariant 4
-/// requires that of `Full` and invariant 6 forbids it in `Minimal`.
+/// Branching `Minimal` to `Maximal` widens every wholly-changed line to its indentation: invariant
+/// 4 requires that of `Maximal` and invariant 6 forbids it in `Minimal`.
 #[test]
-fn branching_minimal_to_full_widens_a_wholly_changed_line_to_its_indentation() {
+fn branching_minimal_to_maximal_widens_a_wholly_changed_line_to_its_indentation() {
     let source = indented_block();
     let (mut app, _) =
         press_in_text_view(source, source, sweep_over_the_block(), KeyCode::Char('d'));
     let minimal = painted_entries(&app).remove(0).1;
     assert_eq!(minimal[0].start_column, 4, "Minimal starts past the indent");
 
-    action_save_solution_as(&mut app, "Full", true, source, source);
+    action_save_solution_as(&mut app, "Maximal", true, source, source);
 
-    let full = painted_entries(&app).remove(0).1;
+    let maximal = painted_entries(&app).remove(0).1;
     assert_eq!(
-        full,
+        maximal,
         vec![
             HumanTextSpan {
                 start_row: 1,
@@ -1583,13 +1583,13 @@ fn branching_minimal_to_full_widens_a_wholly_changed_line_to_its_indentation() {
     );
 }
 
-/// One fixture with both paintings satisfies invariant 6 on `Minimal` and 4 on `Full`.
+/// One fixture with both paintings satisfies invariant 6 on `Minimal` and 4 on `Maximal`.
 #[test]
 fn the_two_branched_paintings_satisfy_their_own_preset_rules() {
     let source = indented_block();
     let (mut app, _) =
         press_in_text_view(source, source, sweep_over_the_block(), KeyCode::Char('d'));
-    action_save_solution_as(&mut app, "Full", true, source, source);
+    action_save_solution_as(&mut app, "Maximal", true, source, source);
 
     let code = Code::from_string(source, &Language::Rust);
     let violations = human_mapping::invariants::ground_truth_invariant_violations_for(
@@ -1617,7 +1617,7 @@ fn branching_leaves_a_partly_changed_lines_indentation_alone() {
     };
     let (mut app, _) = press_in_text_view(source, source, state, KeyCode::Char('d'));
 
-    action_save_solution_as(&mut app, "Full", true, source, source);
+    action_save_solution_as(&mut app, "Maximal", true, source, source);
 
     assert_eq!(
         painted_entries(&app).remove(0).1[0].start_column,
@@ -1655,14 +1655,14 @@ fn branching_widens_a_removal_over_the_blanks_before_it() {
         },
     ]);
 
-    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", true, before_src, after_src);
 
-    let full = solution_entries(&app.mapping, "Full");
+    let maximal = solution_entries(&app.mapping, "Maximal");
     assert_eq!(
-        full[0].before[0].start_column, 4,
+        maximal[0].before[0].start_column, 4,
         "from the blank after `,`"
     );
-    assert_eq!(full[1].after[0].start_column, 4, "on the after side too");
+    assert_eq!(maximal[1].after[0].start_column, 4, "on the after side too");
     assert_eq!(
         solution_entries(&app.mapping, "Minimal")[0].before[0].start_column,
         8,
@@ -1702,15 +1702,15 @@ fn branching_does_not_widen_over_painted_whitespace_or_a_match() {
         },
     ]);
 
-    action_save_solution_as(&mut app, "Full", true, source, source);
+    action_save_solution_as(&mut app, "Maximal", true, source, source);
 
-    let full = solution_entries(&app.mapping, "Full");
+    let maximal = solution_entries(&app.mapping, "Maximal");
     assert_eq!(
-        full[0].before[0].start_column, 3,
+        maximal[0].before[0].start_column, 3,
         "a match keeps its columns"
     );
     assert_eq!(
-        full[1].before[0].start_column, 6,
+        maximal[1].before[0].start_column, 6,
         "the deletion stops where the match's range ends"
     );
 }
@@ -1734,7 +1734,8 @@ fn one_row_entry(
     }
 }
 
-/// `Minimal` marks the differing word of a renamed member, `Full` the member entire with its dot.
+/// `Minimal` marks the differing word of a renamed member, `Maximal` the member entire with its
+/// dot.
 #[test]
 fn branching_widens_an_updated_identifier_whole_with_its_dot() {
     let (before_src, after_src) = ("f(this.minIndex);\n", "f(this.maxIndex);\n");
@@ -1746,16 +1747,16 @@ fn branching_widens_an_updated_identifier_whole_with_its_dot() {
         Some((7, 10)),
     ));
 
-    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", true, before_src, after_src);
 
-    let full = &solution_entries(&app.mapping, "Full")[0];
+    let maximal = &solution_entries(&app.mapping, "Maximal")[0];
     assert_eq!(
-        (full.before[0].start_column, full.before[0].end_column),
+        (maximal.before[0].start_column, maximal.before[0].end_column),
         (6, 15),
         "`.minIndex`"
     );
     assert_eq!(
-        (full.after[0].start_column, full.after[0].end_column),
+        (maximal.after[0].start_column, maximal.after[0].end_column),
         (6, 15),
         "`.maxIndex`"
     );
@@ -1786,16 +1787,22 @@ fn branching_widens_a_plain_identifier_and_leaves_a_numbers_dot() {
         one_row_entry(HumanTextOperation::Match, Some((15, 16)), Some((15, 16))),
     ]);
 
-    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", true, before_src, after_src);
 
-    let full = solution_entries(&app.mapping, "Full");
+    let maximal = solution_entries(&app.mapping, "Maximal");
     assert_eq!(
-        (full[0].before[0].start_column, full[0].before[0].end_column),
+        (
+            maximal[0].before[0].start_column,
+            maximal[0].before[0].end_column
+        ),
         (4, 10),
         "`fooBar`, no dot to take"
     );
     assert_eq!(
-        (full[1].before[0].start_column, full[1].before[0].end_column),
+        (
+            maximal[1].before[0].start_column,
+            maximal[1].before[0].end_column
+        ),
         (15, 16),
         "`5` stays: `1.5`'s dot belongs to the number"
     );
@@ -1813,15 +1820,15 @@ fn branching_leaves_a_moved_or_crowded_identifier_alone() {
         one_row_entry(HumanTextOperation::Match, Some((5, 8)), Some((5, 8))),
     ]);
 
-    action_save_solution_as(&mut app, "Full", true, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", true, before_src, after_src);
 
-    let full = solution_entries(&app.mapping, "Full");
+    let maximal = solution_entries(&app.mapping, "Maximal");
     assert_eq!(
-        full[0].before[0].start_column, 2,
+        maximal[0].before[0].start_column, 2,
         "a move keeps its columns"
     );
     assert_eq!(
-        full[1].before[0].start_column, 5,
+        maximal[1].before[0].start_column, 5,
         "the update stops short of the move's bytes"
     );
 }
@@ -1848,7 +1855,7 @@ fn branching_leaves_a_matched_line_alone() {
         }],
     });
 
-    action_save_solution_as(&mut app, "Full", true, source, source);
+    action_save_solution_as(&mut app, "Maximal", true, source, source);
 
     let spans = painted_entries(&app).remove(0).1;
     assert_eq!(spans[0].start_column, 4, "a move keeps its own columns");
@@ -1891,11 +1898,11 @@ fn branching_empty_starts_the_new_painting_from_nothing() {
         after_src,
     );
 
-    action_save_solution_as(&mut app, "Full", false, before_src, after_src);
+    action_save_solution_as(&mut app, "Maximal", false, before_src, after_src);
 
     assert_eq!(app.mapping.text_mappings.len(), 2);
     assert_eq!(solution_entries(&app.mapping, "Minimal").len(), 1);
-    assert!(solution_entries(&app.mapping, "Full").is_empty());
+    assert!(solution_entries(&app.mapping, "Maximal").is_empty());
 }
 
 /// An existing name is never written: merging duplicates ranges, replacing loses work.
@@ -1908,7 +1915,7 @@ fn branching_to_an_existing_name_switches_without_overwriting_it() {
             mapping: HumanTextMapping::default(),
         },
         NamedTextMapping {
-            name: "Full".to_string(),
+            name: "Maximal".to_string(),
             mapping: HumanTextMapping {
                 entries: vec![HumanTextEntry {
                     operation: HumanTextOperation::Delete,
@@ -1924,12 +1931,12 @@ fn branching_to_an_existing_name_switches_without_overwriting_it() {
         },
     ];
 
-    action_save_solution_as(&mut app, "Full", true, "gone\n", "\n");
+    action_save_solution_as(&mut app, "Maximal", true, "gone\n", "\n");
 
-    assert_eq!(app.text_solution, "Full");
+    assert_eq!(app.text_solution, "Maximal");
     assert_eq!(app.mapping.text_mappings.len(), 2);
     assert_eq!(
-        solution_entries(&app.mapping, "Full").len(),
+        solution_entries(&app.mapping, "Maximal").len(),
         1,
         "the existing painting must be untouched, not merged into or replaced"
     );
@@ -1952,14 +1959,14 @@ fn loading_switches_which_painting_is_edited_without_touching_any() {
             mapping: HumanTextMapping::default(),
         },
         NamedTextMapping {
-            name: "Full".to_string(),
+            name: "Maximal".to_string(),
             mapping: HumanTextMapping::default(),
         },
     ];
 
-    action_load_solution(&mut app, "Full");
+    action_load_solution(&mut app, "Maximal");
 
-    assert_eq!(app.text_solution, "Full");
+    assert_eq!(app.text_solution, "Maximal");
     assert_eq!(app.mapping.text_mappings.len(), 2);
     assert!(!app.dirty, "switching which one you edit changes nothing");
 }
@@ -1979,10 +1986,10 @@ fn ranges_painted_under_one_name_stay_out_of_another() {
         after_src,
     );
 
-    action_load_solution(&mut app, "Full");
+    action_load_solution(&mut app, "Maximal");
 
     assert_eq!(solution_entries(&app.mapping, "Minimal").len(), 1);
-    assert!(solution_entries(&app.mapping, "Full").is_empty());
+    assert!(solution_entries(&app.mapping, "Maximal").is_empty());
 }
 
 #[test]
@@ -2748,7 +2755,7 @@ fn the_split_painting_passes_invariant_6_and_the_unsplit_one_does_not() {
     // Negative control, so the assertion above is not vacuous: the same sweep painted unsplit,
     // then renamed to `Minimal`.
     let (mut unsplit, _) = press_in_text_view_painting(
-        "Full",
+        "Maximal",
         source,
         source,
         sweep_over_the_block(),
@@ -2764,12 +2771,13 @@ fn the_split_painting_passes_invariant_6_and_the_unsplit_one_does_not() {
     );
 }
 
-/// Invariant 4 wants a wholly-deleted line painted whole in `Full`, so the sweep is kept as drawn.
+/// Invariant 4 wants a wholly-deleted line painted whole in `Maximal`, so the sweep is kept as
+/// drawn.
 #[test]
 fn a_full_painting_keeps_the_sweep_exactly_as_drawn() {
     let source = indented_block();
     let (app, _) = press_in_text_view_painting(
-        "Full",
+        "Maximal",
         source,
         source,
         sweep_over_the_block(),
@@ -2870,7 +2878,7 @@ fn a_minimal_sweep_commits_over_a_range_that_only_overlapped_the_indentation() {
     // Without the split the same sweep still collides, so the assertion above is about the split,
     // not a removed overlap check.
     let (app, _) = press_in_text_view_seeded(
-        "Full",
+        "Maximal",
         source,
         sweep_over_the_block(),
         KeyCode::Char('d'),
@@ -9895,7 +9903,7 @@ fn esc_while_naming_a_painting_returns_to_the_picker_list() {
     let mut keys = vec![KeyCode::Char('j'); 5];
     keys.extend([KeyCode::Enter, KeyCode::Char('x'), KeyCode::Esc]);
 
-    let app = press_in_solution_picker(&["Full"], &keys);
+    let app = press_in_solution_picker(&["Maximal"], &keys);
 
     assert!(
         matches!(
@@ -11707,7 +11715,7 @@ fn m_over_minimal_sweeps_pairs_the_rows_one_to_one_without_indentation() {
 fn m_over_full_sweeps_is_one_match_as_drawn() {
     let (before, after) = moved_block();
     let (app, _) = press_in_text_view_painting(
-        "Full",
+        "Maximal",
         before,
         after,
         sweeps_over_the_moved_block(),
@@ -11717,7 +11725,7 @@ fn m_over_full_sweeps_is_one_match_as_drawn() {
     assert_eq!(entries.len(), 1, "{:?}", app.status);
     assert_eq!(
         entries[0].before[0].start_column, 0,
-        "Full keeps the indentation as drawn"
+        "Maximal keeps the indentation as drawn"
     );
     assert_eq!(entries[0].before[0].end_row, 2);
 }

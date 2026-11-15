@@ -375,14 +375,14 @@ const OmniDiffModel = (() => {
     return Object.keys(b).every((key) => a[key] === b[key]);
   }
 
-  // `render_options_badge`: nothing for FULL, `[minimal]`, or the names of what differs from
-  // FULL - not of what is off, since FULL itself leaves whole-pair updates off.
+  // `render_options_badge`: nothing for MAXIMAL, `[minimal]`, or the names of what differs from
+  // MAXIMAL - not of what is off, since MAXIMAL itself leaves whole-pair updates off.
   function renderOptionsBadge(options, rows, presets) {
-    if (sameOptions(options, presets.full)) return "";
+    if (sameOptions(options, presets.maximal)) return "";
     if (sameOptions(options, presets.minimal)) return "[minimal]";
     const differing = (state) =>
       rows
-        .filter((row) => options[row.key] !== presets.full[row.key] && options[row.key] === state)
+        .filter((row) => options[row.key] !== presets.maximal[row.key] && options[row.key] === state)
         .map((row) => row.label);
     const [off, on] = [differing(false), differing(true)];
     const parts = [];

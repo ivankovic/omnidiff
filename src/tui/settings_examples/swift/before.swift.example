@@ -3,7 +3,7 @@ func reading(city: String, temp: Double) -> [String: Any] {
         "city": city,
         "celsius": temp
     ]
-}
+}  
 
 struct Forecast {
     let city: String

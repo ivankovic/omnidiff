@@ -83,7 +83,7 @@
 //! **Whitespace, and the `M` panel.** The records describe git's patch without `-w`, and so does
 //! the patch lazygit stages from: its ignore-whitespace toggle only changes what it shows, since a
 //! patch missing changes would apply to nothing (`AddCommonDiffArgs` in lazygit 0.66). What omnidiff
-//! paints follows the `M` panel's saved options like any headless run (the Full preset when none
+//! paints follows the `M` panel's saved options like any headless run (the Maximal preset when none
 //! are saved), and never changes a record: a whitespace-only line is unpainted under Minimal and
 //! still stageable as the change git has it as.
 
@@ -786,7 +786,9 @@ mod tests {
             let patch = Patch::start(&old, &new).finish();
             assert!(patch.is_some(), "{name}: git's patch");
             let pair = Pair::read(&old, &new).unwrap();
-            let (data, _) = pair.diff(crate::diff::text::RenderOptions::FULL).unwrap();
+            let (data, _) = pair
+                .diff(crate::diff::text::RenderOptions::MAXIMAL)
+                .unwrap();
             let annotation = Annotation {
                 file: file.to_string(),
                 patch,
@@ -922,7 +924,7 @@ mod tests {
             let patch = Patch::start(&old, &new).finish();
             let pair = Pair::read(&old, &new).unwrap();
             let (data, _, node_lines) = pair
-                .diff_and_node_lines(crate::diff::text::RenderOptions::FULL, true)
+                .diff_and_node_lines(crate::diff::text::RenderOptions::MAXIMAL, true)
                 .unwrap();
             let annotation = Annotation {
                 file: file.to_string(),

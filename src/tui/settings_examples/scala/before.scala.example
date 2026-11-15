@@ -1,6 +1,6 @@
 import scala.collection.mutable
 
-object Shapes {
+object Shapes {  
   def makePerson(name: String, age: Int) = Map(
     "name" -> name,
     "age" -> age
