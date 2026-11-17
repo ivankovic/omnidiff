@@ -95,6 +95,9 @@
 //!     it stays unpainted, except between two changed parts, where it goes with the right-hand one;
 //!     an inserted or deleted part takes the separator on its left (on its right at a sequence's
 //!     start).
+//! 32. [`reindented_lines_paint_their_indentation_change`] - in a `Maximal` painting, a line kept
+//!     on both sides whose indentation changed paints the change from column 0: the indentation
+//!     it gained `Insert`, the indentation it lost `Delete`.
 //!
 //! 4 and 5 read only the paintings `MAXIMAL` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
@@ -410,6 +413,9 @@ pub fn ground_truth_invariant_violations_for(
         mapping, before, after,
     )?);
     violations.extend(changed_parts_are_painted_whole(mapping, before, after)?);
+    violations.extend(reindented_lines_paint_their_indentation_change(
+        mapping, before, after,
+    )?);
 
     // An embedded layer is a file of its own: every rule reads it against its decoded pair. Its
     // sites are in the decoded text, which the host's rows do not show, so they are dropped here;
@@ -4975,6 +4981,218 @@ fn label_word(label: Option<TextLabel>) -> &'static str {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
+// Invariant 32: a kept line whose indentation changed paints the change
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+/// The leading spacing of `text`, in bytes.
+fn indentation_of(text: &[u8]) -> usize {
+    text.iter().take_while(|&&byte| is_spacing(byte)).count()
+}
+
+/// One side's part of a re-indented line's change: how many bytes from column 0, and the label
+/// they take. `None` where that side has nothing to paint.
+type IndentationChange = [Option<(usize, TextLabel)>; 2];
+
+/// What a re-indented line must paint, per side, from column 0.
+///
+/// Indentation that grew keeps the old indentation as its tail, so the new bytes are the ones in
+/// front (`java-add-exception-handling`'s lines gain 4 spaces at columns 0..4 and keep the old 8
+/// at 4..12, moved with the code); indentation that shrank lost the bytes in front of what it
+/// kept. Indentation that is neither (tabs turned into spaces) shares nothing, so each side's
+/// whole indentation is the change.
+fn indentation_change(before: &[u8], after: &[u8]) -> IndentationChange {
+    if after.ends_with(before) {
+        [None, Some((after.len() - before.len(), TextLabel::Insert))]
+    } else if before.ends_with(after) {
+        [Some((before.len() - after.len(), TextLabel::Delete)), None]
+    } else {
+        [
+            Some((before.len(), TextLabel::Delete)),
+            Some((after.len(), TextLabel::Insert)),
+        ]
+    }
+}
+
+/// How a block's first line changed its indentation, for the message.
+fn describe_indentation_change(change: IndentationChange) -> String {
+    match change {
+        [None, Some((width, _))] => {
+            format!("gains {width} byte(s) of indentation, to be painted insert")
+        }
+        [Some((width, _)), None] => {
+            format!("loses {width} byte(s) of indentation, to be painted delete")
+        }
+        _ => "changes the characters of its indentation, the old to be painted delete and the new \
+              insert"
+            .to_string(),
+    }
+}
+
+/// Rows lined up for [`reindented_lines_paint_their_indentation_change`]: first the rows that read
+/// the same with their indentation, as anchors, then, between two anchors, the rows that read the
+/// same without their leading and trailing whitespace. Trimmed text alone would pair any `}` with
+/// any other (`java-add-exception-handling` would pair the class's `}` with the method's). `None`
+/// when a line diff gives up.
+fn rows_lined_up_by_trimmed_text(rows: &[Vec<Row<'_>>; 2]) -> Option<Vec<(usize, usize)>> {
+    use std::hash::{Hash, Hasher};
+    let hash = |text: &[u8]| {
+        let mut hasher = rustc_hash::FxHasher::default();
+        text.hash(&mut hasher);
+        hasher.finish()
+    };
+    let exact = |side: usize| -> Vec<u64> { rows[side].iter().map(|row| hash(row.text)).collect() };
+    let anchors = crate::diff::apted::myers_lcs(&exact(0), &exact(1), ROW_LINE_UP_MAX_EDIT)?;
+
+    let mut pairs = Vec::new();
+    let mut from = (0usize, 0usize);
+    let ends = anchors
+        .iter()
+        .copied()
+        .chain(std::iter::once((rows[0].len(), rows[1].len())));
+    for (before_end, after_end) in ends {
+        let trimmed = |side: usize, range: std::ops::Range<usize>| -> Vec<u64> {
+            rows[side][range]
+                .iter()
+                .map(|row| hash(row.text.trim_ascii()))
+                .collect()
+        };
+        let gap = crate::diff::apted::myers_lcs(
+            &trimmed(0, from.0..before_end),
+            &trimmed(1, from.1..after_end),
+            ROW_LINE_UP_MAX_EDIT,
+        )?;
+        pairs.extend(gap.into_iter().map(|(b, a)| (from.0 + b, from.1 + a)));
+        if before_end < rows[0].len() {
+            pairs.push((before_end, after_end));
+        }
+        from = (before_end + 1, after_end + 1);
+    }
+    Some(pairs)
+}
+
+/// **Invariant 32.** In a painting named for `Maximal`, a line kept on both sides whose
+/// indentation changed paints that change from column 0: the bytes it gained `Insert` on the
+/// after side, the bytes it lost `Delete` on the before side (see [`indentation_change`] for
+/// which bytes). The rest of the indentation and the line's code are free: the paintings paint
+/// them with the code's `Match` or leave them alone (`c-openssl-openssl-whitespace-only-2`).
+///
+/// A line is *kept* when its text, without its leading and trailing whitespace, lines up with a
+/// row of the same text on the other side ([`rows_lined_up_by_trimmed_text`]) and the painting
+/// inserts or deletes none of its visible bytes on either side. Blank rows are not judged.
+///
+/// Invariant 30 judges the indentation of a row whose first token is an edit, and needs something
+/// unpainted on the row to line it up; a re-indented row is often painted moved whole, so it
+/// falls to this rule. One violation per block of consecutive kept lines, the unit a painter
+/// repaints. Lone paintings are exempt, as for 30 and 31.
+fn reindented_lines_paint_their_indentation_change(
+    mapping: &super::HumanMapping,
+    before: &Code,
+    after: &Code,
+) -> Result<Vec<GroundTruthViolation>> {
+    if mapping.text_mappings.len() < 2 {
+        return Ok(Vec::new());
+    }
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)?;
+    if paintings.is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows = [
+        rows_without_cr(&before.contents),
+        rows_without_cr(&after.contents),
+    ];
+    let Some(pairs) = rows_lined_up_by_trimmed_text(&rows) else {
+        return Ok(Vec::new());
+    };
+
+    let mut violations = Vec::new();
+    for (name, labels) in &paintings {
+        // The kept, re-indented pairs whose change is not painted, in order.
+        let mut wrong: Vec<(usize, usize, IndentationChange)> = Vec::new();
+        for &(b, a) in &pairs {
+            let pair = [rows[0][b], rows[1][a]];
+            if pair[0].text.trim_ascii().is_empty() {
+                continue;
+            }
+            let indentation = pair.map(|row| indentation_of(row.text));
+            if pair[0].text[..indentation[0]] == pair[1].text[..indentation[1]] {
+                continue;
+            }
+            let kept = (0..2).all(|side| {
+                let row = pair[side];
+                let end = row.text.trim_ascii_end().len();
+                (indentation[side]..end).all(|column| {
+                    !matches!(
+                        labels[side][row.start + column],
+                        Some(TextLabel::Insert | TextLabel::Delete)
+                    )
+                })
+            });
+            if !kept {
+                continue;
+            }
+            let change = indentation_change(
+                &pair[0].text[..indentation[0]],
+                &pair[1].text[..indentation[1]],
+            );
+            let painted = (0..2).all(|side| {
+                change[side].is_none_or(|(width, label)| {
+                    (0..width).all(|column| labels[side][pair[side].start + column] == Some(label))
+                })
+            });
+            if !painted {
+                wrong.push((b, a, change));
+            }
+        }
+
+        // Consecutive on both sides: one block.
+        let mut blocks: Vec<Vec<(usize, usize, IndentationChange)>> = Vec::new();
+        for item in wrong {
+            let continues = blocks
+                .last()
+                .and_then(|block| block.last())
+                .is_some_and(|last| last.0 + 1 == item.0 && last.1 + 1 == item.1);
+            if continues {
+                blocks.last_mut().expect("checked above").push(item);
+            } else {
+                blocks.push(vec![item]);
+            }
+        }
+        for block in blocks {
+            let (first, last) = (block[0], block[block.len() - 1]);
+            let sites = block
+                .iter()
+                .flat_map(|&(b, a, change)| {
+                    [(0usize, b), (1usize, a)]
+                        .into_iter()
+                        .filter_map(move |(side, row)| {
+                            change[side].map(|(width, _)| site_on_row(side, row, 0, width))
+                        })
+                })
+                .collect();
+            violations.push(GroundTruthViolation::new(
+                32,
+                Some(name),
+                format!(
+                    "painting '{name}' keeps {} line(s) whose indentation changed (before rows \
+                     {}-{}, after rows {}-{}) without painting the change: before row {} -> after \
+                     row {} {} from column 0",
+                    block.len(),
+                    first.0 + 1,
+                    last.0 + 1,
+                    first.1 + 1,
+                    last.1 + 1,
+                    first.0 + 1,
+                    first.1 + 1,
+                    describe_indentation_change(first.2),
+                ),
+                sites,
+            ));
+        }
+    }
+    Ok(violations)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
 // The assertions the per-fixture tests call
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -7449,5 +7667,170 @@ mod tests {
             vec![matched((17, 18), (17, 18))],
         )]);
         assert!(violations_of(31, &lone, &before, &after).is_empty());
+    }
+
+    // ── Invariant 32 ────────────────────────────────────────────────────────────────────────
+
+    fn reindent_entry(
+        operation: HumanTextOperation,
+        before: Vec<HumanTextSpan>,
+        after: Vec<HumanTextSpan>,
+    ) -> HumanTextEntry {
+        HumanTextEntry {
+            operation,
+            before,
+            after,
+        }
+    }
+
+    /// `java-add-exception-handling`'s shape: a body wrapped in a new block, its lines four
+    /// spaces deeper.
+    fn wrapped() -> (Code, Code) {
+        (
+            rust("fn f() {\n    a();\n    b();\n}\n"),
+            rust("fn f() {\n    if x {\n        a();\n        b();\n    }\n}\n"),
+        )
+    }
+
+    /// The wrapper, painted as the paintings do: inserted lines from column 0.
+    fn wrapper() -> Vec<HumanTextEntry> {
+        vec![
+            reindent_entry(HumanTextOperation::Insert, vec![], vec![span(1, 0, 1, 10)]),
+            reindent_entry(HumanTextOperation::Insert, vec![], vec![span(4, 0, 4, 5)]),
+        ]
+    }
+
+    #[test]
+    fn a_reindented_line_painting_its_new_indentation_passes() {
+        let (before, after) = wrapped();
+        let mut entries = wrapper();
+        for (b, a) in [(1, 2), (2, 3)] {
+            entries.push(reindent_entry(
+                HumanTextOperation::Insert,
+                vec![],
+                vec![span(a, 0, a, 4)],
+            ));
+            entries.push(reindent_entry(
+                HumanTextOperation::Match,
+                vec![span(b, 0, b, 8)],
+                vec![span(a, 4, a, 12)],
+            ));
+        }
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        assert!(violations_of(32, &mapping, &before, &after).is_empty());
+    }
+
+    /// Moving the whole indentation with the code hides that the line went one level deeper. One
+    /// violation for the block of two lines.
+    #[test]
+    fn a_reindented_block_painted_moved_whole_is_one_violation() {
+        let (before, after) = wrapped();
+        let mut entries = wrapper();
+        for (b, a) in [(1, 2), (2, 3)] {
+            entries.push(reindent_entry(
+                HumanTextOperation::Match,
+                vec![span(b, 0, b, 8)],
+                vec![span(a, 0, a, 12)],
+            ));
+        }
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let found = violations_of(32, &mapping, &before, &after);
+        assert_eq!(found.len(), 1, "{found:#?}");
+        assert!(found[0].contains("keeps 2 line(s)"), "{found:?}");
+        assert!(found[0].contains("gains 4 byte(s)"), "{found:?}");
+    }
+
+    /// Unpainted code does not excuse the indentation (`c-openssl-openssl-whitespace-only-2`
+    /// paints only the change).
+    #[test]
+    fn a_reindented_line_left_unpainted_is_reported() {
+        let (before, after) = wrapped();
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", wrapper())]);
+        assert_eq!(violations_of(32, &mapping, &before, &after).len(), 1);
+    }
+
+    #[test]
+    fn an_unwrapped_line_paints_the_indentation_it_lost() {
+        let (after, before) = wrapped();
+        let unwrapper = vec![
+            reindent_entry(HumanTextOperation::Delete, vec![span(1, 0, 1, 10)], vec![]),
+            reindent_entry(HumanTextOperation::Delete, vec![span(4, 0, 4, 5)], vec![]),
+        ];
+        let mut entries = unwrapper.clone();
+        for b in [2, 3] {
+            entries.push(reindent_entry(
+                HumanTextOperation::Delete,
+                vec![span(b, 0, b, 4)],
+                vec![],
+            ));
+        }
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        assert!(violations_of(32, &mapping, &before, &after).is_empty());
+
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", unwrapper)]);
+        let found = violations_of(32, &mapping, &before, &after);
+        assert_eq!(found.len(), 1, "{found:#?}");
+        assert!(found[0].contains("loses 4 byte(s)"), "{found:?}");
+    }
+
+    /// Tabs turned into spaces share no byte: both sides' indentation is the change.
+    #[test]
+    fn indentation_with_no_common_tail_is_changed_whole() {
+        assert_eq!(
+            indentation_change(b"\t", b"    "),
+            [Some((1, TextLabel::Delete)), Some((4, TextLabel::Insert))]
+        );
+        assert_eq!(
+            indentation_change(b"", b"  "),
+            [None, Some((2, TextLabel::Insert))]
+        );
+        assert_eq!(
+            indentation_change(b"\t\t", b"\t"),
+            [Some((1, TextLabel::Delete)), None]
+        );
+    }
+
+    /// A line whose code the painting inserts or deletes is not kept, whatever its text.
+    #[test]
+    fn a_line_painted_inserted_is_not_judged() {
+        let (before, after) = (rust("a();\n"), rust("    a();\n"));
+        let insert = vec![reindent_entry(
+            HumanTextOperation::Insert,
+            vec![],
+            vec![span(0, 4, 0, 8)],
+        )];
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", insert)]);
+        assert!(violations_of(32, &mapping, &before, &after).is_empty());
+    }
+
+    /// `java-add-exception-handling`: trimmed, every `}` reads the same, so a line diff over
+    /// trimmed rows alone pairs the class's `}` with the method's. Rows that read the same with
+    /// their indentation are lined up first.
+    #[test]
+    fn closing_brackets_line_up_with_their_own_indentation_first() {
+        let before = rust("class C {\n    fn f() {\n        a();\n    }\n}\n");
+        let after = rust(
+            "class C {\n    fn f() {\n        if x {\n            a();\n        }\n    }\n}\n",
+        );
+        let entries = vec![
+            reindent_entry(HumanTextOperation::Insert, vec![], vec![span(2, 0, 2, 14)]),
+            reindent_entry(HumanTextOperation::Insert, vec![], vec![span(3, 0, 3, 4)]),
+            reindent_entry(
+                HumanTextOperation::Match,
+                vec![span(2, 0, 2, 12)],
+                vec![span(3, 4, 3, 16)],
+            ),
+            reindent_entry(HumanTextOperation::Insert, vec![], vec![span(4, 0, 4, 9)]),
+        ];
+        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let found = violations_of(32, &mapping, &before, &after);
+        assert!(found.is_empty(), "{found:#?}");
+    }
+
+    #[test]
+    fn a_lone_painting_is_exempt_from_rule_32() {
+        let (before, after) = wrapped();
+        let mapping = painted(vec![("Only one solution", wrapper())]);
+        assert!(violations_of(32, &mapping, &before, &after).is_empty());
     }
 }

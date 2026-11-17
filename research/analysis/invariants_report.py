@@ -18,7 +18,7 @@
 """
 The ground-truth invariants as a measure of the gap between an edit script and a visualization.
 
-`src/test/helper/human_mapping/invariants.rs` states 31 rules a fixture's ground truth must obey
+`src/test/helper/human_mapping/invariants.rs` states 32 rules a fixture's ground truth must obey
 (its module doc lists them). They are rules about how a change is *shown*: nothing in them is
 needed for a delta to convert one file into the other. So the number of them an account of a
 change breaks is a distance from being a visualization, and this report measures it for five
@@ -30,7 +30,7 @@ accounts, from `data/quality/invariant_gap_census.csv` (the `invariant_gap_censu
 * `human_mapping_rendered` and `tool_mapping_rendered` - the human mapping and OmniDiff's own,
   through OmniDiff's renderer. Judged by the label-reading rules only; see the test's doc.
 
-`GROUPS` sorts the 31 rules into the five families the paper's table prints. `MAPPING_ONLY` are
+`GROUPS` sorts the 32 rules into the five families the paper's table prints. `MAPPING_ONLY` are
 the rules that never read a painting: they judge the tree mapping, which every account shares,
 so they are reported for `human` alone.
 
@@ -48,7 +48,7 @@ from pathlib import Path
 
 from _common import PAPER_DATASETS, REPO_ROOT, fixture_datasets, latex_number, read_rows
 
-INVARIANTS = range(1, 32)
+INVARIANTS = range(1, 33)
 
 # (key, the table's row label, the rules, an example the table prints)
 GROUPS = [
@@ -61,7 +61,7 @@ GROUPS = [
     (
         "Presets",
         "What each preset paints",
-        (2, 4, 5, 6, 8, 16, 29, 30, 31),
+        (2, 4, 5, 6, 8, 16, 29, 30, 31, 32),
         (
             r"\emph{Minimal} never paints indentation; \emph{Maximal} paints a renamed identifier "
             r"entire; the space before an insertion follows its count"
@@ -97,7 +97,7 @@ MAPPING_ONLY = (3, 14, 15, 18, 20, 26, 28)
 # 27) or as wholly removed (22): what a script does to code that survived.
 SURVIVOR_RULES = (10, 22, 27)
 # The rules about which whitespace a painting covers.
-WHITESPACE_RULES = (4, 5, 6, 30)
+WHITESPACE_RULES = (4, 5, 6, 30, 32)
 
 SUBJECTS = (
     "human",

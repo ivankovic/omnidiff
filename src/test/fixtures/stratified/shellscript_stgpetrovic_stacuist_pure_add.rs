@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -38,5 +38,10 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("shellscript-stgpetrovic-stacuist-pure-add")
+    // Invariant 32, Maximal: before row 3 -> after row 3 (1 line(s)) loses 1 byte(s) of
+    // indentation, unpainted (want delete from column 0).
+    assert_ground_truth_invariants_with_known_violations(
+        "shellscript-stgpetrovic-stacuist-pure-add",
+        1,
+    )
 }

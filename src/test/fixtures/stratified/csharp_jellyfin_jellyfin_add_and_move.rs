@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -38,5 +38,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("csharp-jellyfin-jellyfin-add-and-move")
+    // Invariant 32, Maximal: before row 2046 -> after row 2057 (1 line(s)) gains 4 byte(s) of
+    // indentation, unpainted (want insert from column 0).
+    assert_ground_truth_invariants_with_known_violations("csharp-jellyfin-jellyfin-add-and-move", 1)
 }

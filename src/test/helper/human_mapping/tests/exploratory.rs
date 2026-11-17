@@ -4767,7 +4767,7 @@ fn invariant_gap_census() -> Result<()> {
         HumanTextEntry, HumanTextMapping, HumanTextOperation, HumanTextSpan, NamedTextMapping,
     };
 
-    const INVARIANTS: usize = 31;
+    const INVARIANTS: usize = 32;
     /// The invariants the rendered accounts are judged by: the ones that read per-byte labels.
     const LABEL_INVARIANTS: [usize; 15] = [1, 4, 5, 6, 10, 11, 12, 16, 17, 19, 22, 24, 25, 27, 30];
 

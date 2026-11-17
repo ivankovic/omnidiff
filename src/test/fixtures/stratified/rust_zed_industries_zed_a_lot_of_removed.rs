@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -37,5 +37,11 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("rust-zed-industries-zed-a-lot-of-removed")
+    // Invariant 32, Maximal, 2 time(s): before 42-43 -> after 34-35 (2 line(s)) lose 8 byte(s) of
+    // indentation, unpainted (want delete from column 0); before 56-57 -> after 39-40 (2 line(s))
+    // lose 8 byte(s) of indentation, unpainted (want delete from column 0).
+    assert_ground_truth_invariants_with_known_violations(
+        "rust-zed-industries-zed-a-lot-of-removed",
+        2,
+    )
 }

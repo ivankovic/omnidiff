@@ -829,7 +829,7 @@ def test_preset_macros_give_shares_of_what_full_adds():
 # --- invariants_report ------------------------------------------------------------------------
 
 
-def test_invariant_groups_partition_the_31_rules():
+def test_invariant_groups_partition_the_32_rules():
     rules = sorted(i for _, _, group, _ in invariants_report.GROUPS for i in group)
     assert rules == list(invariants_report.INVARIANTS)
     assert set(invariants_report.MAPPING_ONLY) < set(rules)

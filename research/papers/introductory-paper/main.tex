@@ -674,13 +674,14 @@ annotators.
 
 Table~\ref{tab:invariants} shows the invariants in five families. Three rules concern the \emph{form} of any painting:
 no highlight ends in a row's trailing whitespace, no two painted ranges claim the same byte, and
-a token such as \texttt{<=} or \texttt{private} is painted whole. Nine state what each
+a token such as \texttt{<=} or \texttt{private} is painted whole. Ten state what each
 \emph{preset} paints and how the two relate: \emph{Maximal} covers everything \emph{Minimal} covers;
 a line that is inserted or deleted whole is painted whole under \emph{Maximal}; \emph{Minimal} never
 paints a line's indentation; a renamed identifier is painted at its differing words under
 \emph{Minimal} and entire under \emph{Maximal}; the space before an insertion inside a line goes
-with the insertion exactly when the insertion changed how many spaces are there; and the two
-presets never disagree about what survived. Ten require the painting to \emph{agree} with the
+with the insertion exactly when the insertion changed how many spaces are there; a line kept
+whose indentation changed paints that change under \emph{Maximal}; and the two presets never
+disagree about what survived. Ten require the painting to \emph{agree} with the
 mapping: a leaf that the mapping pairs with an identical leaf is never painted deleted on one
 side and inserted on the other, a leaf the mapping deletes has at least one painted byte, and a
 byte painted as moved is never one the mapping leaves unmatched. Four keep \emph{syntactic units}
@@ -690,7 +691,7 @@ mapping}, for example that two subtrees recorded as identical carry the same tok
 \InvariantMappingOnlyCount{} rules that read the mapping alone are rules about a painting, and
 none is needed for an edit script to be correct.
 
-The invariants also repair the ground truth. When the set reached \InvariantCount{} rules, the
+The invariants also repair the ground truth. When the set reached \InvariantRepairRuleCount{} rules, the
 ground truth of all fixtures, including the hand-written regression fixtures that this paper
 does not report on, broke them \InvariantRepairBeforeViolations{} times in
 \InvariantRepairBeforeFixtures{} fixtures. We repaired \InvariantRepairedFixtures{} fixtures, each

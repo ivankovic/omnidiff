@@ -376,7 +376,7 @@ measure-presets:
 preset-report:
 	uv run ./analysis/preset_report.py
 
-# The 31 ground-truth invariants held against five accounts of each change: the hand paintings,
+# The 32 ground-truth invariants held against five accounts of each change: the hand paintings,
 # GNU diff's line script and the human tree mapping painted as they stand, and the human and
 # OmniDiff mappings through the renderer. `measure-invariants` runs the `invariant_gap_census`
 # test (a few minutes; needs GNU diff on PATH) and writes data/quality/invariant_gap_census.csv;

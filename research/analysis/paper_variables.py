@@ -255,6 +255,8 @@ PROJECT = {
 # b87928e8. Authored because the "before" state is a commit, not a file; the paper-scope count
 # of what is left is generated (`InvariantHumanAll*`, analysis/invariants_report.py).
 INVARIANT_REPAIR = {
+    # How many rules there were then; `InvariantCount` is how many there are now.
+    "InvariantRepairRuleCount": "31",
     "InvariantRepairBeforeViolations": "435",
     "InvariantRepairBeforeFixtures": "142",
     "InvariantRepairAfterViolations": "111",
