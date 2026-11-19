@@ -2152,6 +2152,35 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn incomplete_yaml_parse_falls_back_without_losing_a_late_insertion() -> Result<()> {
+        use crate::diff::text::TextOperation;
+
+        for newline in ["\r\n", "\n"] {
+            let before: String = (0..80_000)
+                .map(|i| format!("key_{i}: value{newline}"))
+                .collect();
+            let after = format!("{before}new_key: inserted{newline}");
+            let path = Path::new("config.yaml");
+            let (data, _) =
+                compute_diff_of_texts(path, &before, path, &after, RenderOptions::FULL)?;
+
+            assert!(
+                data.plain_text_fallback,
+                "incomplete YAML needs a line diff"
+            );
+            let insertions: Vec<_> = data
+                .after_ranges
+                .iter()
+                .filter(|range| range.operation == TextOperation::Insert)
+                .collect();
+            assert_eq!(insertions.len(), 1);
+            assert_eq!(insertions[0].source.start_row, 80_000);
+            assert_eq!(insertions[0].source.end_row, 80_001);
+        }
+        Ok(())
+    }
+
     /// SQL is diffed as a tree only when both sides parse cleanly (`requires_clean_parse`).
     #[test]
     fn a_sql_pair_is_diffed_as_a_tree_only_when_both_sides_parse_cleanly() -> Result<()> {
