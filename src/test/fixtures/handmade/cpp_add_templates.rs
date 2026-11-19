@@ -24,11 +24,13 @@ fn mapping() -> Result<()> {
     // Wrap/reparent: `class_specifier` gains a `template_declaration` parent. Pins
     // `resolve_residual_forest_via_myers_lcs`'s trivial-entry filtering (`TRIVIAL_ENTRY_MAX_SIZE`)
     // and `rescue_wrapped_trivial_entries`, which re-points the wrapped `;`'s insert to its
-    // before-side twin. Keep this exact.
+    // before-side twin. Keep that part exact. The three mismatches left are `int` becoming `T` in
+    // `field_declaration.type`, `parameter_declaration.type` and `function_definition.type`: the
+    // human mapping updates each, omnidiff deletes `int` and inserts `T`.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "cpp-add-templates",
-        1,
-        1,
+        3,
+        3,
     )
 }
 
@@ -40,8 +42,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 18, three times: `int` becomes `T` in `field_declaration.type`,
-    // `parameter_declaration.type` and `function_definition.type`. Each parent is matched and each
-    // field holds one child, yet the mapping deletes `int` and inserts `T`.
-    assert_ground_truth_invariants_with_known_violations("cpp-add-templates", 3)
+    // None: the human mapping updates `int` to `T` (invariant 18's reading); omnidiff's delete and
+    // insert of it are counted as mapping mismatches above.
+    assert_ground_truth_invariants_with_known_violations("cpp-add-templates", 0)
 }
