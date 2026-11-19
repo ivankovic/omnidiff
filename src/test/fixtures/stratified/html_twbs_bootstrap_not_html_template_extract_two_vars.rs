@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `FULL` sets the limit.
+    // `MAXIMAL` sets the limit.
     assert_matches_human_painting_within_limit(
         "html-twbs-bootstrap-not-html-template-extract-two-vars",
         22.92,

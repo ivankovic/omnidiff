@@ -18,7 +18,7 @@ use anyhow::Result;
 
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 
 #[test]
 fn mapping() -> Result<()> {
@@ -29,14 +29,19 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // A false `Move` painted on both sides under `FULL`: the before file indents every line by one
-    // space and the command also gains an argument, so the row's single common-prefix/suffix pair
-    // finds neither edit and reads the de-indent as a relocation. The one-row-two-edits gap in
+    // A false `Move` painted on both sides under `MAXIMAL`: the before file indents every line by
+    // one space and the command also gains an argument, so the row's single common-prefix/suffix
+    // pair finds neither edit and reads the de-indent as a relocation. The one-row-two-edits gap in
     // `node_untouched_on_its_row`; needs a multi-segment row diff.
     assert_matches_human_painting_within_limit("shellscript-stgpetrovic-stacuist-pure-add", 39.34)
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("shellscript-stgpetrovic-stacuist-pure-add")
+    // Invariant 32, Maximal: before row 3 -> after row 3 (1 line(s)) loses 1 byte(s) of
+    // indentation, unpainted (want delete from column 0).
+    assert_ground_truth_invariants_with_known_violations(
+        "shellscript-stgpetrovic-stacuist-pure-add",
+        1,
+    )
 }

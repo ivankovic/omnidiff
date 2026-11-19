@@ -1568,28 +1568,28 @@ impl App {
 pub(crate) const FOOTER_HINTS: &str =
     "?:help  o:open  G:git  r:reload  n/p:next/prev  /:search  M:options  Tab:switch  q:quit";
 
-/// The footer's render-options badge: `None` for `FULL`, `[minimal]`, or the options that differ
-/// from `FULL` by name. An option turned off leaves something unpainted, and the setting persists
-/// across runs, so without a badge missing highlights read as omnidiff having missed them.
+/// The footer's render-options badge: `None` for `MAXIMAL`, `[minimal]`, or the options that differ
+/// from `MAXIMAL` by name. An option turned off leaves something unpainted, and the setting
+/// persists across runs, so without a badge missing highlights read as omnidiff having missed them.
 ///
-/// Compared against `FULL` rather than against "everything on": `FULL` has whole-pair updates
+/// Compared against `MAXIMAL` rather than against "everything on": `MAXIMAL` has whole-pair updates
 /// off, so an "is it off" list names that option whenever anything else is off, and has nothing
 /// to name when it alone is turned on.
 fn render_options_badge(options: RenderOptions) -> Option<String> {
-    if options == RenderOptions::FULL {
+    if options == RenderOptions::MAXIMAL {
         return None;
     }
     if options == RenderOptions::MINIMAL {
         return Some("[minimal]".to_string());
     }
-    let full = RenderOptions::FULL.options();
+    let maximal = RenderOptions::MAXIMAL.options();
     let differing = |state: bool| -> Vec<&str> {
         options
             .options()
             .into_iter()
-            .zip(full)
+            .zip(maximal)
             .zip(crate::diff::text::OPTION_INFO)
-            .filter(|(((_, on), (_, on_in_full)), _)| on != on_in_full && *on == state)
+            .filter(|(((_, on), (_, on_in_maximal)), _)| on != on_in_maximal && *on == state)
             .map(|(_, info)| info.short)
             .collect()
     };
@@ -1788,15 +1788,16 @@ fn assemble_plain_text_diff_session_data(
     }
 }
 
-/// [`compute_diff_with_options`] under [`RenderOptions::FULL`], for tests.
+/// [`compute_diff_with_options`] under [`RenderOptions::MAXIMAL`], for tests.
 #[cfg(test)]
 pub(crate) fn compute_diff(before: &Path, after: &Path) -> Result<(DiffSessionData, bool)> {
-    compute_diff_with_options(before, after, RenderOptions::FULL)
+    compute_diff_with_options(before, after, RenderOptions::MAXIMAL)
 }
 
 /// Stack size for the thread [`compute_diff_with_options`] runs the pipeline on. Deep trees
 /// overflow the recursive AST walks on a default stack, and a stack overflow aborts the process
-/// where a panic could be caught. Public so tools diffing on their own threads use the same ceiling.
+/// where a panic could be caught. Public so tools diffing on their own threads use the same
+/// ceiling.
 pub const DIFF_COMPUTE_STACK_SIZE: usize = crate::diff::PIPELINE_STACK_SIZE;
 
 /// The name of that thread, which the TUI's panic hook uses to tell a diff-computation panic
@@ -2699,7 +2700,7 @@ mod tests {
         let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
-        app.diff_viewer.set_render_options(RenderOptions::FULL);
+        app.diff_viewer.set_render_options(RenderOptions::MAXIMAL);
         app.open_settings(SettingsTab::Highlighting);
 
         // What a preset key does: applied and persisted immediately.
@@ -2767,9 +2768,9 @@ mod tests {
 
     #[test]
     fn apply_render_options_reloads_for_every_construction_time_field() -> Result<()> {
-        // The first two options and the last, `interior_whitespace`, are post-filters.
-        let construction_time = RenderOptions::default().options().len() - 1;
-        for index in 2..construction_time {
+        // The first two options and `interior_whitespace` (index 7) are post-filters.
+        let count = RenderOptions::default().options().len();
+        for index in (2..count).filter(|&index| index != 7) {
             let mut app = App::new(4.0, 60.0)?;
             app.before_path = Some(PathBuf::from("before.rs"));
             app.after_path = Some(PathBuf::from("after.rs"));
@@ -2803,6 +2804,7 @@ mod tests {
             paint_resized_moves: true,
             whole_identifier_updates: true,
             interior_whitespace: true,
+            changed_trailing_whitespace: true,
         })?;
 
         let queued: Vec<_> = std::iter::from_fn(|| app.action_rx.try_recv().ok()).collect();
@@ -3036,12 +3038,12 @@ mod tests {
         Ok(())
     }
 
-    /// `FULL` is the default, so a badge for it would sit permanently on a screen with nothing
+    /// `MAXIMAL` is the default, so a badge for it would sit permanently on a screen with nothing
     /// to report.
     #[test]
-    fn draw_viewer_does_not_badge_full_options() -> Result<()> {
+    fn draw_viewer_does_not_badge_maximal_options() -> Result<()> {
         let mut app = App::new(4.0, 60.0)?;
-        app.diff_viewer.set_render_options(RenderOptions::FULL);
+        app.diff_viewer.set_render_options(RenderOptions::MAXIMAL);
 
         let backend = ratatui::backend::TestBackend::new(120, 24);
         let mut terminal = ratatui::Terminal::new(backend)?;
@@ -3052,7 +3054,7 @@ mod tests {
 
         let text = rendered_text(&terminal);
         assert!(!text.contains("[minimal]"), "got: {text}");
-        assert!(!text.contains("[full]"), "got: {text}");
+        assert!(!text.contains("[maximal]"), "got: {text}");
         Ok(())
     }
 
@@ -3069,6 +3071,7 @@ mod tests {
             paint_resized_moves: true,
             whole_identifier_updates: true,
             interior_whitespace: true,
+            changed_trailing_whitespace: true,
         });
 
         let backend = ratatui::backend::TestBackend::new(120, 24);
@@ -3363,26 +3366,26 @@ mod tests {
     }
 
     #[test]
-    fn the_options_badge_names_what_differs_from_full() {
-        let full = RenderOptions::FULL;
-        assert_eq!(render_options_badge(full), None);
+    fn the_options_badge_names_what_differs_from_maximal() {
+        let maximal = RenderOptions::MAXIMAL;
+        assert_eq!(render_options_badge(maximal), None);
         assert_eq!(
             render_options_badge(RenderOptions::MINIMAL).as_deref(),
             Some("[minimal]")
         );
-        // Whole-pair updates is off in FULL itself, so it is not named here.
+        // Whole-pair updates is off in MAXIMAL itself, so it is not named here.
         let no_leading_whitespace = RenderOptions {
             leading_whitespace: false,
-            ..full
+            ..maximal
         };
         assert_eq!(
             render_options_badge(no_leading_whitespace).as_deref(),
             Some("[indentation off]")
         );
-        // Turning on the one option FULL leaves off is a difference too.
+        // Turning on the one option MAXIMAL leaves off is a difference too.
         let whole_pairs = RenderOptions {
             whole_pair_updates: true,
-            ..full
+            ..maximal
         };
         assert_eq!(
             render_options_badge(whole_pairs).as_deref(),

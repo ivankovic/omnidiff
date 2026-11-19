@@ -17,8 +17,9 @@ An oracle built by someone else, for a different tool, on a different AST, is th
 | `fetch_defects4j_metadata.sh` | Defects4J's per-project `active-bugs.csv` (buggy/fixed revision ids, bug-report URL) | `defects4j-meta/` | 60 KB | Defects4J (MIT) |
 | `fetch_gumtree_simple_package.sh` | Falleri & Martinez' ICSE 2024 replication package: before/after file pairs for Defects4J, BugsInPy, gh-java, gh-python, plus their 100-case qualitative study | `gumtree-simple/` | 54 MB zip, ~300 MB extracted | CC-BY-4.0 |
 
-The two go together. The oracle stores *mappings* (Eclipse JDT node type + character offsets, per
-compilation unit) but not the *source files* they refer to; the Defects4J half of it is keyed
+The first and the third go together. The oracle stores *mappings* (Eclipse JDT node type +
+character offsets, per compilation unit) but not the *source files* they refer to; the Defects4J
+half of it is keyed
 `Project/BugId/<path with / replaced by _>.json`, and the replication package's
 `dataset/defects4j/{before,after}/Project/BugId/<same name>.java` is exactly the buggy/fixed pair
 those offsets index into. Every one of the oracle's 996 Defects4J JSON files has its source pair
@@ -55,7 +56,7 @@ runs both and carries the flag through to its CSV so the two populations can be 
 
 ```
 cd research
-make fetch-external            # both scripts, idempotent
+make fetch-external            # all three scripts, idempotent
 make measure-astdiff-oracle    # -> data/comparison/astdiff_oracle_defects4j.csv + a summary
 ```
 
@@ -87,9 +88,9 @@ Current precision, recall and resolution rate, with the caveats: `../data/compar
 **All 996 compilation units are already fixture directories** under
 `src/test/data/diffs/defects4j/`, the corpus's fifth dataset, each holding the buggy/fixed pair as
 `before.java.test`/`after.java.test` and a `README.md` in the provenance format every other fixture
-carries (Defects4J's revision ids and bug report, via `fetch_defects4j_metadata.sh`). The rest are
-unsolved until someone maps them in `human_solver`, whose `o` picker lists them under the
-`defects4j` dataset like any other.
+carries (Defects4J's revision ids and bug report, via `fetch_defects4j_metadata.sh`). A unit is
+unsolved until someone maps it in `human_solver`, whose `o` picker lists them under the `defects4j`
+dataset like any other; 440 were solved when the oracle comparison last ran (2026-10-22).
 
 **The solved ones are a reported dataset, not a side experiment (2026-09-16).** `defects4j` is in
 `_common.PAPER_DATASETS`, so every research report scores it beside `small`, `full` and

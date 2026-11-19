@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-//! Speed and accuracy per content family, the README's Fast and Accurate figures for content
+//! Speed and accuracy per content family, `src/test/README.md`'s Fast and Accurate figures for content
 //! other than code (`make benchmark-content`).
 //!
 //! **Speed** is over the sampled pairs in `src/test/data/samples/` (`sample_test_diffs --content`,

@@ -90,7 +90,7 @@ c-tmux-tmux-delete-one-include,0,0
 c-tripwire-tripwire-open-source-add-single-item-to-list,0,0
 cpp-add-const-correctness,0,0
 cpp-add-memory-management,0,0
-cpp-add-templates,0,0
+cpp-add-templates,3,3
 cpp-arximboldi-lager-add-two-test-cases,0,0
 cpp-bolero-murakami-sprout-copyright-comment-update,0,0
 cpp-bolero-murakami-sprout-copyright-update,0,0

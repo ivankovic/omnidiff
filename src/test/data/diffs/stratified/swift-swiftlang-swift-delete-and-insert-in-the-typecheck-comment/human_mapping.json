@@ -35,7 +35,7 @@
   ],
   "text_mappings": [
     {
-      "name": "Full",
+      "name": "Maximal",
       "entries": [
         {
           "operation": "Delete",

@@ -24,7 +24,7 @@ class Shelf:
 
 def main():
     sizes = (120, 340)
-    dune = make_book("Dune", "Herbert", sizes[0])
+    dune = make_book("Dune", "Herbert", sizes[0])  
     odes = make_book("Odes", "Keats", sizes[1])
     shelves = [
         Shelf("novels", [dune]),

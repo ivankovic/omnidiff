@@ -31,6 +31,7 @@ mod edit_spacing;
 mod plain_text_diff;
 mod render_options;
 mod summary;
+mod trailing_whitespace;
 
 pub use plain_text_diff::{
     LineDiffCore, WholeFileClass, class_list_diff, line_diff_core, line_match_count,
@@ -1045,15 +1046,16 @@ impl RangeWalk<'_> {
         // `process(int x)` -> `process(const int x)`). A node inside the rewritten part of the row
         // keeps `Move` (`function fetchData(` in `typescript-async-await`). Reindented nodes are
         // excluded so they still reach `paint_reindent_only_moves`. Under `MINIMAL` the row index
-        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under `FULL` it
-        // may differ when the two rows also open on the same text past their indentation, so they
-        // read as one row an edit above pushed down: without that head, a shared tail is a call
-        // relocated into another statement (`return f(x);` -> `y = f(x);`,
-        // `java-defects4j-codec-6-base64inputstream`), which the `Full` paintings mark moved.
+        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under `MAXIMAL`
+        // it may differ when the two rows also open on the same text past their indentation, so
+        // they read as one row an edit above pushed down: without that head, a shared tail is a
+        // call relocated into another statement (`return f(x);` -> `y = f(x);`,
+        // `java-defects4j-codec-6-base64inputstream`), which the `Maximal` paintings mark moved.
         //
-        // Under `FULL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares its
-        // fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` -> `shape.area()`
-        // leaves the `)` in an untouched tail although its call moved (`kotlin-refactor-function`).
+        // Under `MAXIMAL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares
+        // its fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` ->
+        // `shape.area()` leaves the `)` in an untouched tail although its call moved
+        // (`kotlin-refactor-function`).
         let shifted_by_an_edit_beside_it = s_on_its_row.is_some()
             && (s.start_row == d.start_row
                 || !self.options.paint_displaced_moves
@@ -1304,7 +1306,7 @@ fn node_untouched_on_its_row(
     let in_prefix = s.end_column <= prefix && d.end_column <= prefix;
     // The suffix is capped so it never overlaps the prefix, which can leave a node in a repeated
     // tail outside it (`f(a)` -> `f(a, a)`); under `MINIMAL` an identical tail from the node on
-    // reads the same. Not under `FULL`: `rust-tauri-apps-tauri-add-use-and-function` paints
+    // reads the same. Not under `MAXIMAL`: `rust-tauri-apps-tauri-add-use-and-function` paints
     // `PhysicalSize` moved when `PhysicalRect, ` lands before it in the same import list.
     let in_suffix = (s.start_column + suffix >= source_row.len()
         && d.start_column + suffix >= destination_row.len())
@@ -1790,10 +1792,10 @@ impl Projection<'_> {
 }
 
 impl TextDiff {
-    /// [`Self::from_with_options`] under [`RenderOptions::FULL`], for callers with no opinion on
+    /// [`Self::from_with_options`] under [`RenderOptions::MAXIMAL`], for callers with no opinion on
     /// the construction-time options.
     pub fn from(before: &Code, after: &Code, diff: &ASTDiff, node_cache: &NodeCache) -> Self {
-        Self::from_with_options(before, after, diff, node_cache, RenderOptions::FULL)
+        Self::from_with_options(before, after, diff, node_cache, RenderOptions::MAXIMAL)
     }
 
     /// Builds both sides' ranges under `options`. Only the construction-time options are read
@@ -1809,8 +1811,20 @@ impl TextDiff {
         let (before_ranges_plain, after_ranges_plain) =
             plain_ranges(before, after, diff, node_cache, options);
 
-        let before_ranges = merge_ranges(&before_ranges_plain, &after_ranges_plain);
-        let after_ranges = merge_ranges(&after_ranges_plain, &before_ranges_plain);
+        let mut before_ranges = merge_ranges(&before_ranges_plain, &after_ranges_plain);
+        let mut after_ranges = merge_ranges(&after_ranges_plain, &before_ranges_plain);
+        if options.changed_trailing_whitespace {
+            let (before_extra, after_extra) =
+                trailing_whitespace::changed_trailing_whitespace(&before.contents, &after.contents);
+            before_ranges = trailing_whitespace::merged_by_position(
+                trailing_whitespace::without_trailing_runs(before_ranges, &before.contents),
+                before_extra,
+            );
+            after_ranges = trailing_whitespace::merged_by_position(
+                trailing_whitespace::without_trailing_runs(after_ranges, &after.contents),
+                after_extra,
+            );
+        }
 
         Self {
             before_ranges,

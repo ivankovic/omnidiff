@@ -143,9 +143,9 @@ const summary = () => el("summary", undefined);
 // The contract that makes remembering a painting by name safe across fixtures. Most of the corpus
 // is unpainted, so the stored name usually names a rendering this page does not have.
 {
-  const painted = ["From the node mapping", "Minimal", "Full"];
+  const painted = ["From the node mapping", "Minimal", "Maximal"];
 
-  assert.strictEqual(pickRendering(painted, "Full"), 2);
+  assert.strictEqual(pickRendering(painted, "Maximal"), 2);
   assert.strictEqual(
     pickRendering(painted, "Only one solution"),
     0,

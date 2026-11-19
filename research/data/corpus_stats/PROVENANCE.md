@@ -317,3 +317,28 @@ formats (`.traineddata`, `.rrd`, `.tplg`, `.icc`, `.pcap`, Sphinx `.doctree`).
 
 The per-repository tallies are in `/var/tmp/research/full/content_census.partial.jsonl` (not
 committed); a rerun resumes from it, so delete it to measure again.
+
+## The size of changes to other content, 2026-11-14
+
+`content_change_size.csv` has one row per sampled content pair, the 635 pairs of
+`../performance/content_speed/server.csv` as materialised under `src/test/data/samples/`: both
+file sizes in bytes, and how much of the content changed in its own unit, read from `omnidiff
+--mode json` (`analysis/content_change_size.py`, `make measure-content-change-size`; run on the
+laptop at 28089b0f plus the working tree, engine v0.5.0). The unit is the pixel for pictures and
+cursors and the member for archives, fonts, catalogs and PDFs.
+
+538 of the 635 pairs have a unit count. The 97 without are 91 pictures and 4 cursors whose
+comparison has no single pixel count (animations, and pictures OmniDiff does not decode) and 2
+PDFs. The shares are OmniDiff's reading of the pair, not a human's: a member counts as changed
+when OmniDiff lists it as changed, added or removed.
+
+The pairs are a per-family sample, so the figures describe a typical change within a family and
+say nothing about how often each family changes; the content census does that.
+
+## The file-type counts, 2026-11-14
+
+`file_type_counts.csv` holds the files per category that the file-type figure (`plots/tips`)
+draws. It was written by hand from the 2026-09-24 column of the table under "Re-measured with the
+2026-09-13 classifier" above (the five counts sum to 7,045,754), because `stats.sqlite` no longer
+exists on any machine and the figure's axis label had to change. `make replot-file-types` redraws
+the figure from it; `make file-stats-report` now writes the file itself.

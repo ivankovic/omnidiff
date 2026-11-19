@@ -5,7 +5,7 @@ function makeReading(city: string, temp: number): Fields {
     "city", city,
     "temp", temp
   );
-}
+}  
 
 class Station {
   constructor(

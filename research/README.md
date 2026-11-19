@@ -20,6 +20,7 @@ papers/          LaTeX papers; figures/ symlinks into plots/, never copies
 presentations/   conference decks (point-in-time artifacts)
 drivers/         vendored external-tool harnesses (GumTree batch driver)
 external/        fetch scripts for third-party ground truth we score against (never vendored)
+tests/           unit tests of the Python in analysis/ and ../scripts/ (`make test-python`)
 ```
 
 The flow is one-directional: `sampling` fills checkouts under `/var/tmp/research/<mode>/`
@@ -32,6 +33,18 @@ a wrong number in the paper is a `plots/` question, which is an `analysis/` ques
 The repository lists (`list_of_repositories*.csv`) live at the repository root, not here: they
 define which projects the corpus covers, which is referenced beyond research/.
 
+## What it found
+
+Two READMEs under `data/` state results rather than describe files:
+
+* [What real-world changes look like](data/corpus_stats/README.md): what commits change, and how
+  large the files and the edits are.
+* [OmniDiff compared with other diff tools](data/comparison/README.md): eight established tools on
+  the same changes, and OmniDiff against an external oracle.
+
+OmniDiff's own speed, robustness and accuracy figures are in
+[src/test/README.md](../src/test/README.md).
+
 ## Running things
 
 All research targets live in `Makefile` *in this directory* - the repository-root Makefile holds
@@ -39,10 +52,10 @@ product concerns only (build, test, install, release):
 
 ```
 cd research
-make apted-budget-report   # fast: re-render RQ2 (named RQ1 in files and macros) from data on disk
+make apted-budget-report   # fast: re-render RQ4 (named RQ1 in files and macros) from data on disk
 make introductory-paper    # fast: rebuild the paper PDF
 make fetch MODE=small      # slow: clone/update the 100-repository corpus
-make measure-apted-budget  # slow, timing-sensitive: re-measure RQ2 (idle machine!)
+make measure-apted-budget  # slow, timing-sensitive: re-measure RQ4 (idle machine!)
 ```
 
 Most corpus targets take `MODE=tiny` (default) / `MODE=small` / `MODE=full`, choosing which
@@ -60,8 +73,9 @@ measured against - read it before comparing numbers across directories, and upda
 re-measurement lands. The papers never hand-transcribe numbers: every figure and macro traces to
 a file here (see `papers/introductory-paper/README.md`).
 
-Three product-side files live in `data/quality/`, read by the *root* Makefile and filed with the
+Three product-side baselines live in `data/quality/`, read by the *root* Makefile and filed with the
 other quality data because they describe the same measurement: `quality_baseline.csv`, the
 per-fixture accuracy baseline `make check-quality` (and therefore `make deploy`) gates on;
-`quality_baseline.txt`, its runtime baseline, which only warns; and `painting_attribution.csv`,
-the baseline `make check-painting-attribution` gates on. Both gates run in CI.
+`timing/<machine>.csv` and `.txt`, its runtime baseline per machine, which only warns; and
+`painting_attribution.csv`, the baseline `make check-painting-attribution` gates on. Both gates run
+in CI.

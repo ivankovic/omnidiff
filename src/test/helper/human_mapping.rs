@@ -480,7 +480,7 @@ pub struct HumanTextMapping {
     pub entries: Vec<HumanTextEntry>,
 }
 
-/// One painting under a free-text name. `Minimal`/`Full` (optionally qualified, see
+/// One painting under a free-text name. `Minimal`/`Maximal` (optionally qualified, see
 /// [`designates_preset`]) tie it to a render preset; `Only one solution` is the conventional name
 /// for a lone painting.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -789,8 +789,8 @@ impl PaintingComparison {
 fn preset_name(options: crate::diff::text::RenderOptions) -> Option<&'static str> {
     if options == crate::diff::text::RenderOptions::MINIMAL {
         Some("Minimal")
-    } else if options == crate::diff::text::RenderOptions::FULL {
-        Some("Full")
+    } else if options == crate::diff::text::RenderOptions::MAXIMAL {
+        Some("Maximal")
     } else {
         None
     }
@@ -801,9 +801,9 @@ fn designates_minimal(name: &str) -> bool {
     designates_preset(name, "Minimal")
 }
 
-/// Whether `name` designates the `Full` preset - see [`designates_preset`].
-fn designates_full(name: &str) -> bool {
-    designates_preset(name, "Full")
+/// Whether `name` designates the `Maximal` preset - see [`designates_preset`].
+fn designates_maximal(name: &str) -> bool {
+    designates_preset(name, "Maximal")
 }
 
 /// The paintings `options` is answerable to. A lone painting claims the rendering is unambiguous,
@@ -820,7 +820,7 @@ pub fn paintings_for_mode(
         _ => {
             let wanted = preset_name(options).with_context(|| {
                 format!(
-                    "{options:?} is neither of the two named presets (Minimal/Full) a \
+                    "{options:?} is neither of the two named presets (Minimal/Maximal) a \
                      multi-painting fixture can be checked against"
                 )
             })?;
@@ -831,12 +831,10 @@ pub fn paintings_for_mode(
                 .collect();
             if candidates.is_empty() {
                 // Only when *nothing* names a preset: `Minimal` beside a misspelled `Ful` must
-                // still fail for `Full`.
-                if mapping
-                    .text_mappings
-                    .iter()
-                    .all(|named| !designates_minimal(&named.name) && !designates_full(&named.name))
-                {
+                // still fail for `Maximal`.
+                if mapping.text_mappings.iter().all(|named| {
+                    !designates_minimal(&named.name) && !designates_maximal(&named.name)
+                }) {
                     return Ok(mapping.text_mappings.iter().collect());
                 }
                 let have: Vec<&str> = mapping
@@ -860,11 +858,11 @@ pub fn paintings_for_mode(
 /// that preset. A lone painting that names no preset (`Only one solution`) says the change has
 /// one right rendering, whatever the preset: that is its own case, [`GradedCase::Single`], counted
 /// apart from both presets, because it asks something neither preset does - that `Minimal` and
-/// `Full` render the same thing, and that it is the painting.
+/// `Maximal` render the same thing, and that it is the painting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GradedCase {
     Minimal,
-    Full,
+    Maximal,
     /// Both presets against the one painting; a byte is mismatched when either disagrees.
     Single,
 }
@@ -875,8 +873,8 @@ impl GradedCase {
         use crate::diff::text::RenderOptions;
         match self {
             GradedCase::Minimal => &[RenderOptions::MINIMAL],
-            GradedCase::Full => &[RenderOptions::FULL],
-            GradedCase::Single => &[RenderOptions::MINIMAL, RenderOptions::FULL],
+            GradedCase::Maximal => &[RenderOptions::MAXIMAL],
+            GradedCase::Single => &[RenderOptions::MINIMAL, RenderOptions::MAXIMAL],
         }
     }
 
@@ -884,7 +882,7 @@ impl GradedCase {
     pub fn label(self) -> &'static str {
         match self {
             GradedCase::Minimal => "minimal",
-            GradedCase::Full => "full",
+            GradedCase::Maximal => "maximal",
             GradedCase::Single => "single",
         }
     }
@@ -896,10 +894,10 @@ impl GradedCase {
 /// [`GradedCase::Single`] case.
 pub fn graded_cases(mapping: &HumanMapping) -> Vec<GradedCase> {
     match mapping.text_mappings.as_slice() {
-        [lone] if designates_full(&lone.name) => vec![GradedCase::Full],
+        [lone] if designates_maximal(&lone.name) => vec![GradedCase::Maximal],
         [lone] if designates_minimal(&lone.name) => vec![GradedCase::Minimal],
         [_] => vec![GradedCase::Single],
-        _ => vec![GradedCase::Minimal, GradedCase::Full],
+        _ => vec![GradedCase::Minimal, GradedCase::Maximal],
     }
 }
 
@@ -1026,7 +1024,7 @@ pub fn omnidiff_diff_for_painting<'code>(
 
 /// omnidiff's own side of a painting comparison, as per-byte labels, `[before, after]`: the ranges
 /// the TUI renders under `options`. Built under `options` rather than via `TextDiff::from`
-/// (which builds under `FULL`), because some options change the build itself.
+/// (which builds under `MAXIMAL`), because some options change the build itself.
 pub fn omnidiff_painting_labels(
     diff: &PaintingDiff,
     before: &crate::code::Code,
@@ -4248,17 +4246,17 @@ mod tests {
     /// e.g. deleting one of two identical substrings.
     #[test]
     fn a_preset_collects_every_alternative_named_for_it() {
-        let mapping = named(&["Minimal (left)", "Minimal (right)", "Full"]);
+        let mapping = named(&["Minimal (left)", "Minimal (right)", "Maximal"]);
 
         let minimal = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MINIMAL)
             .expect("both Minimal alternatives should be found");
         let names: Vec<&str> = minimal.iter().map(|p| p.name.as_str()).collect();
         assert_eq!(names, vec!["Minimal (left)", "Minimal (right)"]);
 
-        let full = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::FULL)
-            .expect("the unqualified Full should be found");
-        assert_eq!(full.len(), 1);
-        assert_eq!(full[0].name, "Full");
+        let maximal = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MAXIMAL)
+            .expect("the unqualified Maximal should be found");
+        assert_eq!(maximal.len(), 1);
+        assert_eq!(maximal[0].name, "Maximal");
     }
 
     #[test]
@@ -4268,7 +4266,7 @@ mod tests {
         assert!(designates_preset("Minimal but only the strings", "Minimal"));
         // Not a qualifier: a different word that starts the same way.
         assert!(!designates_preset("Minimalist", "Minimal"));
-        assert!(!designates_preset("Full", "Minimal"));
+        assert!(!designates_preset("Maximal", "Minimal"));
         assert!(!designates_preset("", "Minimal"));
     }
 
@@ -4277,7 +4275,7 @@ mod tests {
         let mapping = named(&["Only one solution"]);
         for options in [
             crate::diff::text::RenderOptions::MINIMAL,
-            crate::diff::text::RenderOptions::FULL,
+            crate::diff::text::RenderOptions::MAXIMAL,
         ] {
             let found = paintings_for_mode(&mapping, options).expect("the single painting");
             assert_eq!(found.len(), 1);
@@ -4295,15 +4293,18 @@ mod tests {
             graded_cases(&named(&["Minimal"])),
             vec![GradedCase::Minimal]
         );
-        assert_eq!(graded_cases(&named(&["Full"])), vec![GradedCase::Full]);
         assert_eq!(
-            graded_cases(&named(&["Minimal", "Full"])),
-            vec![GradedCase::Minimal, GradedCase::Full]
+            graded_cases(&named(&["Maximal"])),
+            vec![GradedCase::Maximal]
+        );
+        assert_eq!(
+            graded_cases(&named(&["Minimal", "Maximal"])),
+            vec![GradedCase::Minimal, GradedCase::Maximal]
         );
         // No stored painting: an embedded host's implied one, which both presets answer to.
         assert_eq!(
             graded_cases(&named(&[])),
-            vec![GradedCase::Minimal, GradedCase::Full]
+            vec![GradedCase::Minimal, GradedCase::Maximal]
         );
         assert_eq!(GradedCase::Single.presets().len(), 2);
     }
@@ -4311,10 +4312,10 @@ mod tests {
     #[test]
     fn a_preset_with_no_painting_named_for_it_says_which_names_the_fixture_has() {
         let mapping = named(&["Minimal", "Something else"]);
-        let error = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::FULL)
-            .expect_err("there is no Full painting here");
+        let error = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MAXIMAL)
+            .expect_err("there is no Maximal painting here");
         let message = format!("{error:#}");
-        assert!(message.contains("no 'Full' painting"), "got: {message}");
+        assert!(message.contains("no 'Maximal' painting"), "got: {message}");
         assert!(message.contains("Something else"), "got: {message}");
     }
 
@@ -6118,7 +6119,7 @@ mod tests {
         // could differ governs moves, which the fallback never emits.
         for options in [
             crate::diff::text::RenderOptions::MINIMAL,
-            crate::diff::text::RenderOptions::FULL,
+            crate::diff::text::RenderOptions::MAXIMAL,
         ] {
             let labels = omnidiff_painting_labels(&diff, &before, &after, options);
             for (side, contents) in [(0usize, before_text), (1usize, after_text)] {

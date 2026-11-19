@@ -34,6 +34,6 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Two `Full` rows deleted in whole have their leading tab painted too (invariant 4).
+    // Two `Maximal` rows deleted in whole have their leading tab painted too (invariant 4).
     assert_ground_truth_invariants("php-nextcloud-server-real-small-change")
 }

@@ -12,7 +12,7 @@ function! NewNote(title) abort
         \ 'title', a:title,
         \ 'date', strftime('%F'))
   execute 'edit ' . path
-  call setline(1, header)
+  call setline(1, header)  
 endfunction
 
 function! WordCount() abort

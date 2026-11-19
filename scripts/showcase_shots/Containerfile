@@ -1,0 +1,34 @@
+# This file is part of the OmniDiff code diffing tool.
+#
+# Copyright (C) 2026 Marko Ivankovic
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+# The image scripts/showcase_shots/run.py takes the README's pictures in: Playwright's own image,
+# which carries the Chromium its version was tested with, the Playwright package for Node at that
+# same version, and DejaVu Sans Mono. The font is why this is an image of its own: the base image's
+# only monospace faces draw box characters from a second font at another width, and the pictures
+# would then depend on which fonts a machine happens to have.
+ARG PLAYWRIGHT_VERSION=1.65.0
+FROM mcr.microsoft.com/playwright:v${PLAYWRIGHT_VERSION}-noble
+ARG PLAYWRIGHT_VERSION
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -f
+
+RUN mkdir -p /opt/playwright && cd /opt/playwright \
+    && npm init -y >/dev/null \
+    && npm install --no-audit --no-fund "playwright@${PLAYWRIGHT_VERSION}"
+ENV NODE_PATH=/opt/playwright/node_modules

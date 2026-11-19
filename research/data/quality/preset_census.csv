@@ -1,4 +1,4 @@
-fixture,minimal,full,class,runs,bytes
+fixture,minimal,maximal,class,runs,bytes
 bazel-not-actually-supported-by-treesitter,*,*,total,0,3275
 bazel-not-actually-supported-by-treesitter,-,delete,whitespace,23,148
 bazel-not-actually-supported-by-treesitter,delete,delete,code,21,460

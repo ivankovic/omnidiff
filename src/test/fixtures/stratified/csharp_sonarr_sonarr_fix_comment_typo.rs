@@ -34,7 +34,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // `Full` deletes the first of the two `// ` copies on row 234 (ending on `/`, left-anchored),
-    // not the second, which would end its run on a space.
+    // `Maximal` deletes the first of the two `// ` copies on row 234 (ending on `/`,
+    // left-anchored), not the second, which would end its run on a space.
     assert_ground_truth_invariants("csharp-sonarr-sonarr-fix-comment-typo")
 }

@@ -41,9 +41,10 @@ which-machine = python3 scripts/machine.py $(MACHINE)
 
 .PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python test-homebrew build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
-	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution diff-gif \
-	readme-screenshot content-gif test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
-	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit
+	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution \
+	readme-pictures tui-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
+	deploy-github deploy third-party-notices check-third-party-notices test-graphics test-lazygit \
+	test-install lint-shell
 
 # Line coverage of the suite `make test` runs (`--all-features`), with a per-area summary (see
 # scripts/coverage_report.py). On demand, not a gate: a threshold teaches touching lines. Rebuilds
@@ -117,6 +118,24 @@ OMNIDIFF_SRC ?= $(CURDIR)
 test-lazygit:
 	python3 scripts/lazygit_e2e/run.py --omnidiff-src "$(OMNIDIFF_SRC)" $(LAZYGIT_E2E_ARGS)
 
+# The one-line installer (packaging/install.sh), end to end (scripts/install_e2e.py): run as
+# `curl | sh` delivers it in containers of Debian, Ubuntu, Alpine, Fedora and Arch, with and
+# without a terminal to ask about the apt repository's signing key. Installs the released
+# omnidiff, not this checkout's. Not part of `make test`: it needs podman and the network.
+test-install:
+	python3 scripts/install_e2e.py $(INSTALL_E2E_ARGS)
+
+# shellcheck over the installer, as POSIX sh. From PATH, else from its container image.
+lint-shell:
+	@if command -v shellcheck >/dev/null 2>&1; then \
+		shellcheck --shell=sh packaging/install.sh; \
+	elif command -v podman >/dev/null 2>&1; then \
+		podman run --rm -v "$(CURDIR)/packaging:/mnt:ro" docker.io/koalaman/shellcheck:stable \
+			--shell=sh /mnt/install.sh; \
+	else \
+		echo "make lint-shell needs shellcheck (or podman, to run its image)" >&2; exit 1; \
+	fi
+
 test-python:
 	cd research && uv run pytest -q
 
@@ -159,7 +178,7 @@ install-hooks:
 benchmark-quality:
 	$(BENCH_QUALITY) --csv
 
-# Speed and accuracy of content diffs per family, the README's figures for content other than code.
+# Speed and accuracy of content diffs per family, src/test/README.md's figures for content other than code.
 # Times the samples under src/test/data/samples/ (git-ignored: sample_test_diffs --content, then
 # materialize_test_diffs) and writes research/data/performance/content_speed/<machine>.csv.
 benchmark-content:
@@ -178,40 +197,29 @@ diff-inventory:
 human-solver:
 	cargo run --release --features $(FEATURES) --bin human_solver -- $(CASE)
 
-# Records the README's assets/diff-vs-omnidiff.gif from the showcase bake, painted by the viewer's
-# own model.js, so it cannot drift from the product. Committed, so it resolves on crates.io; re-run
-# after painting changes. Needs Node and research/'s uv environment.
-DIFF_GIF_CASE ?= python-refactoring
-DIFF_GIF_OUT ?= assets/diff-vs-omnidiff.gif
-diff-gif:
-	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT; \
-	cargo run --release --features test-fixtures --bin generate_showcase -- --out "$$tmp" >/dev/null && \
-	cd research && uv run python ../scripts/record_diff_gif.py \
-		--showcase "$$tmp" --case $(DIFF_GIF_CASE) --out ../$(DIFF_GIF_OUT)
+# The README's screencast, assets/omnidiff-tour.gif, recorded from the showcase page itself in a
+# headless browser (scripts/showcase_shots/run.py): the showcase is baked, opened in Playwright's
+# Chromium in a podman container, and its screens saved, so the screencast cannot drift from the
+# page or, through it, from the product. It is a code change as Unix diff and as OmniDiff read it,
+# then a PDF, a font, a picture and an archive in the viewer, and the plain-text report. Committed,
+# so it resolves on crates.io; re-run after viewer or painting changes. Needs podman, research/'s
+# uv environment, and the network for the image's first build.
+readme-pictures:
+	cd research && uv run python ../scripts/showcase_shots/run.py
 
-# Records the README's assets/readme-screenshot.png the same way: the viewer drawn by the TUI's
-# own widgets into an offscreen terminal (render_tui_screenshot), rasterized by
-# scripts/render_tui_screenshot.py in the GIF's font. Committed, so it resolves on crates.io; re-run
-# after TUI or painting changes. Needs research/'s uv environment.
-README_SCREENSHOT_CASE ?= handmade/python-refactoring
-README_SCREENSHOT_OUT ?= assets/readme-screenshot.png
-readme-screenshot:
+# A picture of the terminal viewer itself on a code pair, which the showcase does not have (it
+# shows code in the viewer's browser port): drawn by the TUI's own widgets into an offscreen
+# terminal (render_tui_screenshot) and rasterized by scripts/render_tui_screenshot.py. Not one of
+# the README's pictures; writes OUT. Needs research/'s uv environment.
+TUI_SCREENSHOT_CASE ?= handmade/python-refactoring
+tui-screenshot:
+	@test -n "$(OUT)" || { echo "usage: make tui-screenshot OUT=<file.png>"; exit 2; }
 	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT; \
-	dir=src/test/data/diffs/$(README_SCREENSHOT_CASE) && \
+	dir=src/test/data/diffs/$(TUI_SCREENSHOT_CASE) && \
 	cargo run --release --features $(FEATURES) --bin render_tui_screenshot -- \
 		"$$dir"/before.* "$$dir"/after.* --out "$$tmp/still.json" && \
 	cd research && uv run python ../scripts/render_tui_screenshot.py \
-		--still "$$tmp/still.json" --out ../$(README_SCREENSHOT_OUT)
-
-# Records assets/content/: one GIF per content example (a PDF, a font, an archive, pictures, ...)
-# in scripts/record_content_gif.py, and cases.json, which the showcase reads. Each is git's
-# "Binary files differ", omnidiff's headless report, then the viewer drawn by the TUI's own widgets
-# (render_content_stills) with its pictures pasted in as a kitty terminal shows them. Committed;
-# re-run after viewer changes. Needs research/'s uv environment.
-content-gif:
-	cargo build --release --features test-fixtures --bin render_content_stills --bin omnidiff
-	cd research && uv run python ../scripts/record_content_gif.py \
-		--omnidiff ../target/release/omnidiff --stills ../target/release/render_content_stills
+		--still "$$tmp/still.json" --out "$(abspath $(OUT))"
 
 # Regenerates THIRD-PARTY-NOTICES.md, the licenses of every crate the product binary links, from
 # Cargo.lock (cargo-about, `cargo install cargo-about --features cli`). Ships beside the binary in

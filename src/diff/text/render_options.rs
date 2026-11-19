@@ -87,11 +87,12 @@ pub enum TextOperation {
     Delete,
 }
 
-/// Which parts of a diff to paint. [`RenderOptions::MINIMAL`] and [`RenderOptions::FULL`] are
+/// Which parts of a diff to paint. [`RenderOptions::MINIMAL`] and [`RenderOptions::MAXIMAL`] are
 /// presets; each option can be toggled on its own. Turning an option on paints more, never less.
 ///
-/// Trailing whitespace is not an option: no hand painting marks it, so `ranges_for_options` always
-/// trims it.
+/// Trailing whitespace is trimmed off every range, under every option. The one exception is
+/// trailing whitespace that changed, which [`Self::changed_trailing_whitespace`] paints as ranges
+/// of its own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct RenderOptions {
     /// Whether an `Insert`/`Delete` range keeps the whitespace in front of it: the indentation of
@@ -124,7 +125,7 @@ pub struct RenderOptions {
     pub whole_pair_updates: bool,
     /// Whether a node tagged as a pure reindent (`solve_nested_condition_collapse`'s `if let`-chain
     /// collapse, `WrapGrowth`) still paints `Move`. The presets disagree, matching
-    /// `rust-next-font-imports-generator`'s separate `Minimal` and `Full` paintings.
+    /// `rust-next-font-imports-generator`'s separate `Minimal` and `Maximal` paintings.
     ///
     /// Only for tagged nodes, never any column shift: position alone cannot tell a reindent from a
     /// real relocation (`rust-add-if`).
@@ -139,7 +140,7 @@ pub struct RenderOptions {
     /// [`Self::paint_reindent_only_moves`]. Read by `shifted_by_an_edit_beside_it` (single-row
     /// nodes) and `displaced_beside_an_edit_on_its_first_row` (multi-row).
     ///
-    /// The presets disagree: `MINIMAL` paints as few bytes as it can, `FULL` keeps the displaced
+    /// The presets disagree: `MINIMAL` paints as few bytes as it can, `MAXIMAL` keeps the displaced
     /// span painted with the construct around it. Defaults to `true` when missing from a saved
     /// config.
     #[serde(default = "paint_displaced_moves_default")]
@@ -149,11 +150,11 @@ pub struct RenderOptions {
     /// only the more economical account.
     ///
     /// The presets disagree: mirroring a relocation onto the second panel doubles the bytes
-    /// `MINIMAL` paints, while `FULL` wants a `Move` that leads to a highlighted node.
+    /// `MINIMAL` paints, while `MAXIMAL` wants a `Move` that leads to a highlighted node.
     #[serde(default = "paint_resized_moves_default")]
     pub paint_resized_moves: bool,
     /// Whether a renamed identifier is highlighted whole on both sides instead of narrowed to the
-    /// differing characters. On in `FULL` only, per ground-truth invariant 16
+    /// differing characters. On in `MAXIMAL` only, per ground-truth invariant 16
     /// (`identifier_updates_are_painted_by_preset`): `getOpt` -> `getKey` is a different name, not a
     /// kept `get`.
     ///
@@ -163,11 +164,22 @@ pub struct RenderOptions {
     pub whole_identifier_updates: bool,
     /// Whether the blanks between two painted ranges on one row are painted, so a
     /// highlight never breaks over whitespace (ground-truth invariant 5,
-    /// `no_unpainted_whitespace_between_painted_regions`). On in `FULL` only: `Minimal` paintings
-    /// leave such a blank alone. A display filter like [`Self::leading_whitespace`]; see
+    /// `no_unpainted_whitespace_between_painted_regions`). On in `MAXIMAL` only: `Minimal`
+    /// paintings leave such a blank alone. A display filter like [`Self::leading_whitespace`]; see
     /// [`fill_whitespace_between_painted`] for which operation the blank takes.
     #[serde(default)]
     pub interior_whitespace: bool,
+    /// Whether trailing whitespace that changed is painted: a row that kept its text but gained,
+    /// lost or changed the whitespace after its last visible character, and a blank row of
+    /// spaces added or removed (see `trailing_whitespace` for how rows are lined up). On in
+    /// `MAXIMAL` only, per ground-truth invariant 1: a `Minimal` painting never paints trailing
+    /// whitespace, changed or not, and a `Maximal` one paints it as a run of nothing else.
+    ///
+    /// Construction-time: the ranges are built by `TextDiff::from_with_options` (and always by the
+    /// line diff of a file without a grammar), and `ranges_for_options` keeps them only under this
+    /// option.
+    #[serde(default)]
+    pub changed_trailing_whitespace: bool,
 }
 
 /// How the settings menu and the status bar name an option, and what the menu says it does.
@@ -182,7 +194,7 @@ pub struct OptionInfo {
 }
 
 /// [`RenderOptions::options`]'s names and descriptions, in the same order.
-pub const OPTION_INFO: [OptionInfo; 8] = [
+pub const OPTION_INFO: [OptionInfo; 9] = [
     OptionInfo {
         name: "Highlight the indentation of added and removed lines",
         short: "indentation",
@@ -240,6 +252,14 @@ pub const OPTION_INFO: [OptionInfo; 8] = [
         description: "On, the blank between two highlighted pieces on one row is highlighted too, \
             so one edit does not read as two with a gap. Off, such blanks stay plain.",
     },
+    OptionInfo {
+        name: "Highlight changed spaces at the end of a line",
+        short: "trailing spaces",
+        description: "On, spaces or tabs added, removed or changed after the last character of a \
+            line that otherwise stayed the same are highlighted, and so is a blank line of spaces \
+            that was added or removed. Off, whitespace at the end of a line is never highlighted. \
+            A new or removed line is highlighted up to its last character either way.",
+    },
 ];
 
 /// [`RenderOptions::paint_reindent_only_moves`]'s serde default.
@@ -268,10 +288,11 @@ impl RenderOptions {
         paint_resized_moves: false,
         whole_identifier_updates: false,
         interior_whitespace: false,
+        changed_trailing_whitespace: false,
     };
     /// The fullest reading of a diff: every option on except `whole_pair_updates`, which is
     /// outside the preset axis.
-    pub const FULL: Self = Self {
+    pub const MAXIMAL: Self = Self {
         leading_whitespace: true,
         structural_punctuation: true,
         whole_pair_updates: false,
@@ -280,11 +301,15 @@ impl RenderOptions {
         paint_resized_moves: true,
         whole_identifier_updates: true,
         interior_whitespace: true,
+        changed_trailing_whitespace: true,
     };
+    /// The name [`Self::MAXIMAL`] had up to v0.5.
+    #[deprecated(since = "0.6.0", note = "renamed to `RenderOptions::MAXIMAL`")]
+    pub const FULL: Self = Self::MAXIMAL;
 
     /// Every option with its name and value, in settings-UI order. Indexes match [`Self::toggle`]
     /// and [`OPTION_INFO`].
-    pub fn options(&self) -> [(&'static str, bool); 8] {
+    pub fn options(&self) -> [(&'static str, bool); 9] {
         let values = [
             self.leading_whitespace,
             self.structural_punctuation,
@@ -294,6 +319,7 @@ impl RenderOptions {
             self.paint_resized_moves,
             self.whole_identifier_updates,
             self.interior_whitespace,
+            self.changed_trailing_whitespace,
         ];
         std::array::from_fn(|i| (OPTION_INFO[i].name, values[i]))
     }
@@ -309,6 +335,7 @@ impl RenderOptions {
             5 => self.paint_resized_moves = !self.paint_resized_moves,
             6 => self.whole_identifier_updates = !self.whole_identifier_updates,
             7 => self.interior_whitespace = !self.interior_whitespace,
+            8 => self.changed_trailing_whitespace = !self.changed_trailing_whitespace,
             _ => {}
         }
     }
@@ -333,7 +360,7 @@ impl Default for RenderOptions {
     /// The fullest rendering, so a config or script that never mentions these options gets
     /// everything painted rather than nothing.
     fn default() -> Self {
-        Self::FULL
+        Self::MAXIMAL
     }
 }
 
@@ -350,7 +377,8 @@ pub fn is_structural_only(text: &str) -> bool {
             .all(|c| c.is_whitespace() || STRUCTURAL_PUNCTUATION.contains(&c))
 }
 
-/// One side's ranges as `options` would paint them. Trailing whitespace is always trimmed.
+/// One side's ranges as `options` would paint them. Trailing whitespace is trimmed, except a range
+/// that is a row's whole trailing run under [`RenderOptions::changed_trailing_whitespace`].
 ///
 /// A surviving range describes the same edit under every option, only padded differently. The one
 /// exception is the per-row split of [`RenderOptions::leading_whitespace`].
@@ -368,7 +396,7 @@ pub fn ranges_for_options(
 /// them. The walk already merges two ranges of one operation over the whitespace between them;
 /// what is left is mostly a blank between two operations, which no node owns.
 ///
-/// Which operation the blank takes follows the `Full` paintings, which split close to evenly
+/// Which operation the blank takes follows the `Maximal` paintings, which split close to evenly
 /// between the two sides except in two shapes: beside an `Update` the blank goes to the other side
 /// (the rename is the token, not its spacing), and after a `,` it stays with the comma. Elsewhere
 /// an `Insert` or `Delete` takes it over a `Move`, the side the paintings favour.
@@ -493,6 +521,17 @@ pub(crate) fn ranges_for_options_impl(
             // Kept although unpainted: `line_operations` colours rows from them.
             if range_match.operation == TextOperation::Identical
                 || range_match.operation == TextOperation::NotYetSet
+            {
+                return vec![range_match.clone()];
+            }
+
+            // Built only for changed trailing whitespace, and nothing to trim: the run is the edit.
+            if options.changed_trailing_whitespace
+                && matches!(
+                    range_match.operation,
+                    TextOperation::Insert | TextOperation::Delete
+                )
+                && super::trailing_whitespace::is_trailing_run(&lines, &range_match.source)
             {
                 return vec![range_match.clone()];
             }
@@ -652,8 +691,8 @@ pub(crate) fn trim_leading_whitespace(lines: &[&str], range: &TextRange) -> Opti
 /// part of the insertion (`rust-add-value-to-enum`).
 ///
 /// Whitespace alone cannot say whether the indentation belongs to matched content sharing the row
-/// (`const ` inserted before a moved declaration, `cpp-add-const-correctness`), so the caller vetoes
-/// rows holding matched ranges. Grows `source` only.
+/// (`const ` inserted before a moved declaration, `cpp-add-const-correctness`), so the caller
+/// vetoes rows holding matched ranges. Grows `source` only.
 pub(crate) fn extend_leading_whitespace(lines: &[&str], range: &TextRange) -> TextRange {
     let Some(line) = lines.get(range.start_row) else {
         return range.clone();

@@ -945,7 +945,7 @@ pub enum ASTMappingReason {
     /// A re-tag of an `Identical` node that a new wrapper (`try`, `if`, ...) now surrounds.
     /// Unlike `HeritageClauseGrowth`, painting is gated by
     /// [`crate::diff::text::RenderOptions::paint_reindent_only_moves`]: `rust-add-if`'s ground
-    /// truth paints it `Move` under `Full` only. See `solve_wrap_growth`.
+    /// truth paints it `Move` under `Maximal` only. See `solve_wrap_growth`.
     WrapGrowth,
     /// A deleted and an inserted leaf with the same text under a matched parent pair, re-paired.
     /// See `solve_orphaned_leaves`.

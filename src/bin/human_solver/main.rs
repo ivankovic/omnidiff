@@ -225,12 +225,12 @@ t              text view: read the source, and paint the human text-range ground
                  itself; with a different number of rows on each side, it is one
                  match over all of them instead, an update (a rewritten passage).
                  A blank row in the sweep drops out; a vertical selection and a
-                 Full or free-named painting are left exactly as drawn.
-                 Branching a Minimal painting to one named Full (s, Enter) does
+                 Maximal or free-named painting are left exactly as drawn.
+                 Branching a Minimal painting to one named Maximal (s, Enter) does
                  the opposite on the way across: every line whose every visible
                  character is painted deleted, or every one inserted, is widened
                  to start at column 0, which is what invariant 4 requires of a
-                 Full painting. A delete or insert that starts mid-line is also
+                 Maximal painting. A delete or insert that starts mid-line is also
                  widened left over the unpainted blanks before it (`,    gone`
                  becomes one range from the blank after the comma), never into a
                  line's indentation. An update (a match whose sides read
@@ -252,11 +252,11 @@ t              text view: read the source, and paint the human text-range ground
                  A fixture may hold several named paintings, for edits with more
                  than one defensible rendering; a check passes on ANY of them.
                  s branches the current one to another name, keeping both on
-                 file (Enter copies its ranges, e starts empty; Minimal / Full /
+                 file (Enter copies its ranges, e starts empty; Minimal / Maximal /
                  Only one solution offered, none required, free-form ok); L
                  switches which one you edit; D twice in either list deletes the
                  highlighted painting, which is how a fixture painted Only one
-                 solution becomes a Minimal + Full pair.
+                 solution becomes a Minimal + Maximal pair.
                  n / p jump BOTH panels to the next / previous hunk of the plain
                  line diff (wrapping, read off the focused side's own row), and a
                  puts the other panel on the same line number as this one and

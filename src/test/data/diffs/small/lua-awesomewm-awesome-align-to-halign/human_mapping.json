@@ -2664,7 +2664,7 @@
   ],
   "text_mappings": [
     {
-      "name": "Full",
+      "name": "Maximal",
       "entries": [
         {
           "operation": "Match",

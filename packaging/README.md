@@ -15,12 +15,32 @@ than a recipe here.
 | Nix / NixOS | `nix/package.nix`, `../flake.nix`, `../flake.lock` | works today via `nix run`; built by the Nix workflow |
 | Homebrew | `homebrew/omnidiff.rb.in`, rendered by `../scripts/render_homebrew_formula.py` | tap at `ivankovic/homebrew-omnidiff`, pushed by the release workflow |
 | VS Code | [omnidiff-vscode](https://github.com/ivankovic/omnidiff-vscode) | **published** — on the Marketplace and Open VSX |
+| One-line installer | `install.sh` | published by the Pages workflow at [ivankovic.github.io/omnidiff/install.sh](https://ivankovic.github.io/omnidiff/install.sh) |
+
+## The one-line installer
+
+`install.sh` is what `curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh` runs. It is
+not one more way to install: it picks among the ones this directory already publishes. Homebrew
+where `brew` is on `PATH`, the apt repository on Debian and Ubuntu, and otherwise the release's
+prebuilt binary (the static musl build on Linux), checked against `SHA256SUMS.txt` and unpacked
+under `~/.local` with the man page and completions from `omnidiff-completions-and-man.tar.gz`.
+
+**It adds the apt repository's key only when somebody said yes**: at its question, with `--yes`,
+or with `--method apt`. With no terminal to ask on it installs the prebuilt binary and says why.
+
+It depends on the release's asset names (`omnidiff-<target>.tar.gz`,
+`omnidiff-completions-and-man.tar.gz`, `SHA256SUMS.txt`) and on the layout of the completions
+tarball; a change to either in `release.yml` has to reach the script. `make test-install` runs it
+in containers of five distributions against the latest release, and `make lint-shell` (in CI)
+runs shellcheck over it. `pages.yml` copies it to the site's root, so a change is live after the
+next Pages run from `main`.
 
 ## The one thing you cannot skip: checksums
 
-The tarball hashes belong to the **v0.2.0** tag: they hash GitHub's tag tarball, so they can only
-be regenerated after the next tag exists, and until then the recipes name the new version with the
-old hash and do not build. `make check-versions` checks the version strings, not the hashes.
+The tarball hashes in the Arch and Gentoo recipes hash GitHub's tag tarball, so they can only be
+regenerated after a release's tag exists. Between the version bump and that step the recipes name
+the new version with the previous release's hash and do not build. `make check-versions` checks
+the version strings, not the hashes.
 
 * `aur/PKGBUILD` carries the sha256 of the tag tarball
 * `gentoo/dev-util/omnidiff/Manifest` carries one `DIST` line for the tag tarball and one for each
@@ -100,7 +120,8 @@ The `LICENSE` variable enumerates the vendored crates' licenses alongside the pa
 The `.deb` is built with [`cargo-deb`](https://github.com/kornelski/cargo-deb), attached to each
 GitHub release for amd64 and arm64, and served from an apt repository on GitHub Pages. It is
 **unofficial**, and the distinction matters: a package in the Debian archive proper would require
-every one of the 300-odd dependency crates — 23 tree-sitter grammars among them — to be packaged as
+every one of the several hundred dependency crates — two dozen tree-sitter grammars among them — to
+be packaged as
 `librust-*-dev` first. Almost none are. That path is not reachable, so this is a `cargo-deb`
 artifact served from our own repository, not a route into Debian.
 
@@ -282,5 +303,6 @@ other recipe does; `brew test omnidiff` runs a real headless diff.
    names the new version.
 9. Check that the apt repository picked the release up — `curl -s
    https://ivankovic.github.io/omnidiff/apt/dists/stable/main/binary-amd64/Packages | grep ^Version`
-   should name the new version. It refreshes itself (step 2 above), so this is a check, not a task;
+   should name the new version. It refreshes itself (see "The apt repository" above), so this is a
+   check, not a task;
    if it is stale, re-run the Pages workflow.

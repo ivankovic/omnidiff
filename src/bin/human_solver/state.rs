@@ -80,7 +80,7 @@ pub(crate) fn overlay_palette() -> OverlayPalette {
 
 /// Names offered first in the save-as picker, in this order. Suggestions, not a schema: a fixture
 /// may carry any number of paintings under any names, and a painting may be empty.
-pub(crate) const SUGGESTED_SOLUTION_NAMES: &[&str] = &["Minimal", "Full", "Only one solution"];
+pub(crate) const SUGGESTED_SOLUTION_NAMES: &[&str] = &["Minimal", "Maximal", "Only one solution"];
 
 /// Which painting to start on when a case is opened: its first existing one, or the first
 /// suggestion when it has none.
@@ -186,17 +186,17 @@ pub(crate) fn action_save_solution_as(
         Vec::new()
     };
     let count = entries.len();
-    // `Minimal` forbids a wholly-changed line's indentation and `Full` requires it, so a branch
-    // between those two presets converts (see `expand_leading_whitespace_for_full`). A free-form
+    // `Minimal` forbids a wholly-changed line's indentation and `Maximal` requires it, so a branch
+    // between those two presets converts (see `expand_leading_whitespace_for_maximal`). A free-form
     // name states no preset, so nothing is converted.
     let (extended, reached_back, identifiers) = if copy
         && human_mapping::invariants::designates_minimal(&app.text_solution)
-        && human_mapping::invariants::designates_full(target)
+        && human_mapping::invariants::designates_maximal(target)
     {
         (
-            expand_leading_whitespace_for_full(&mut entries, before_src, after_src),
-            expand_whitespace_before_removals_for_full(&mut entries, before_src, after_src),
-            expand_updated_identifiers_for_full(&mut entries, before_src, after_src),
+            expand_leading_whitespace_for_maximal(&mut entries, before_src, after_src),
+            expand_whitespace_before_removals_for_maximal(&mut entries, before_src, after_src),
+            expand_updated_identifiers_for_maximal(&mut entries, before_src, after_src),
         )
     } else {
         (0, 0, 0)
@@ -1182,13 +1182,13 @@ pub(crate) fn text_diff_hunks(before_src: &str, after_src: &str) -> Option<Vec<(
     Some(hunks)
 }
 
-/// Invariant 4, applied when branching `Minimal` to `Full`: a line whose every visible character is
-/// inserted, or every one deleted, is painted whole, indentation included (the mirror of
+/// Invariant 4, applied when branching `Minimal` to `Maximal`: a line whose every visible character
+/// is inserted, or every one deleted, is painted whole, indentation included (the mirror of
 /// [`skip_leading_whitespace`]). A row is extended only if it has a visible character, all of it
 /// is painted by one one-sided operation (a `Match` means a surviving line), its indentation is
 /// unpainted (so no overlap), and a span starts at its first visible character (a row reached by
 /// a multi-row span already has its indentation). Returns how many rows it extended.
-pub(crate) fn expand_leading_whitespace_for_full(
+pub(crate) fn expand_leading_whitespace_for_maximal(
     entries: &mut [HumanTextEntry],
     before_src: &str,
     after_src: &str,
@@ -1268,18 +1268,19 @@ pub(crate) fn expand_leading_whitespace_for_full(
     extended
 }
 
-/// The other half of branching `Minimal` to `Full`: a `Delete` or `Insert` range that starts
+/// The other half of branching `Minimal` to `Maximal`: a `Delete` or `Insert` range that starts
 /// mid-row is widened leftwards over the unpainted whitespace before it, so `,    gone` reads as
 /// one removal from just after the `,` (a list element and its separating blank go together).
-/// `Full` paintings on file do this about four times in five; the rest leave a single blank after
+/// `Maximal` paintings on file do this about four times in five; the rest leave a single blank
+/// after
 /// `=`, `return` or `&&` unpainted, which is then corrected by hand.
 ///
 /// Only within the range's first row, and only over whitespace that code precedes: a run that
-/// reaches column 0 is indentation, which [`expand_leading_whitespace_for_full`] widens for a
+/// reaches column 0 is indentation, which [`expand_leading_whitespace_for_maximal`] widens for a
 /// wholly changed line and a partly changed line keeps. Whitespace any range already paints is
 /// left alone, so nothing overlaps: the range widens up to it, closing the gap. Returns how many
 /// ranges it widened.
-pub(crate) fn expand_whitespace_before_removals_for_full(
+pub(crate) fn expand_whitespace_before_removals_for_maximal(
     entries: &mut [HumanTextEntry],
     before_src: &str,
     after_src: &str,
@@ -1342,12 +1343,12 @@ fn is_identifier_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_' || c == '$'
 }
 
-/// The third part of branching `Minimal` to `Full`: an updated `Match` (its sides read
+/// The third part of branching `Minimal` to `Maximal`: an updated `Match` (its sides read
 /// differently) that paints part of an identifier is widened to the whole identifier, on every
-/// span of both sides - `Minimal` marks only the differing words of a rename, `Full` the name
+/// span of both sides - `Minimal` marks only the differing words of a rename, `Maximal` the name
 /// entire (invariant 16). A member's `.` goes with it: `.minIndex` -> `.maxIndex` is painted from
-/// the dot, as every `Full` painting made since 2026-10-21 does (the bulk paintings of 2026-10-02
-/// left it out).
+/// the dot, as every `Maximal` painting made since 2026-10-21 does (the bulk paintings of
+/// 2026-10-02 left it out).
 ///
 /// A span is widened at its start back to where the identifier it starts in begins, then over a
 /// `.` right before that, and at its end on to where the identifier it ends in ends. A span whose
@@ -1355,7 +1356,7 @@ fn is_identifier_char(c: char) -> bool {
 /// one-sided range. Judged by text alone, so a word inside a string is widened like a name. The
 /// widening never takes a byte another range paints: a span that would is left as it was. Returns
 /// how many spans it widened.
-pub(crate) fn expand_updated_identifiers_for_full(
+pub(crate) fn expand_updated_identifiers_for_maximal(
     entries: &mut [HumanTextEntry],
     before_src: &str,
     after_src: &str,

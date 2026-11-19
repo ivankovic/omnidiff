@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 struct fields *make_person(const char *name, int age)
-{
+{  
     return pack(
         "name", name,
         "age", age

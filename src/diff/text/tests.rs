@@ -36,9 +36,9 @@ fn changed(row: usize, start: usize, end: usize) -> RangeMatch {
 }
 
 /// `args := x` from `var args x`: the blank between the moved `args` and the inserted `:=` takes
-/// the insertion under `FULL`, and stays unpainted under `MINIMAL`.
+/// the insertion under `MAXIMAL`, and stays unpainted under `MINIMAL`.
 #[test]
-fn full_paints_the_blank_between_two_differently_painted_ranges() {
+fn maximal_paints_the_blank_between_two_differently_painted_ranges() {
     let source = "args := x\n";
     let ranges = vec![
         RangeMatch {
@@ -58,7 +58,7 @@ fn full_paints_the_blank_between_two_differently_painted_ranges() {
             .find(|range| range.source == text_range_on(0, 4, 5))
             .map(|range| range.operation)
     };
-    assert_eq!(blank(RenderOptions::FULL), Some(TextOperation::Insert));
+    assert_eq!(blank(RenderOptions::MAXIMAL), Some(TextOperation::Insert));
     assert_eq!(blank(RenderOptions::MINIMAL), None);
 }
 
@@ -77,7 +77,7 @@ fn the_blank_follows_a_comma_and_avoids_an_update() {
         range(8, 9, TextOperation::Update),
         range(10, 11, TextOperation::Move),
     ];
-    let filled = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let filled = ranges_for_options(&ranges, source, RenderOptions::MAXIMAL);
     let blank_at = |start| {
         filled
             .iter()
@@ -92,14 +92,14 @@ fn the_blank_follows_a_comma_and_avoids_an_update() {
 #[test]
 fn neither_preset_turns_on_whole_pair_updates() {
     const { assert!(!RenderOptions::MINIMAL.whole_pair_updates) };
-    const { assert!(!RenderOptions::FULL.whole_pair_updates) };
+    const { assert!(!RenderOptions::MAXIMAL.whole_pair_updates) };
 }
 
-/// `rust-next-font-imports-generator`'s `Minimal` and `Full` paintings disagree on this.
+/// `rust-next-font-imports-generator`'s `Minimal` and `Maximal` paintings disagree on this.
 #[test]
-fn minimal_and_full_disagree_on_paint_reindent_only_moves() {
+fn minimal_and_maximal_disagree_on_paint_reindent_only_moves() {
     const { assert!(!RenderOptions::MINIMAL.paint_reindent_only_moves) };
-    const { assert!(RenderOptions::FULL.paint_reindent_only_moves) };
+    const { assert!(RenderOptions::MAXIMAL.paint_reindent_only_moves) };
 }
 
 /// A `NestedConditionCollapse`-tagged body paints `Move` only under `paint_reindent_only_moves`.
@@ -143,7 +143,7 @@ fn paint_reindent_only_moves_gates_only_tagged_nodes() {
         &after,
         ast.ast.as_ref().unwrap(),
         &node_cache,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     assert!(
         painted
@@ -173,11 +173,11 @@ fn paint_reindent_only_moves_gates_only_tagged_nodes() {
     );
 }
 
-/// `MINIMAL` suppresses a displacement-only `Move`; `FULL` keeps it.
+/// `MINIMAL` suppresses a displacement-only `Move`; `MAXIMAL` keeps it.
 #[test]
-fn minimal_and_full_disagree_on_paint_displaced_moves() {
+fn minimal_and_maximal_disagree_on_paint_displaced_moves() {
     const { assert!(!RenderOptions::MINIMAL.paint_displaced_moves) };
-    const { assert!(RenderOptions::FULL.paint_displaced_moves) };
+    const { assert!(RenderOptions::MAXIMAL.paint_displaced_moves) };
 }
 
 /// Whether an `Identical` range covers `before`'s row 1 at `column` under `options`: the displaced
@@ -216,7 +216,7 @@ fn identical_on_row_one_at(
 fn a_node_pushed_down_beside_an_edit_on_its_row_is_not_moved() {
     let before = "fn main() {\n    let total = compute(first, second);\n}\n";
     let after = "fn main() {\n    setup();\n    let total = compute(extra, first, second);\n}\n";
-    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+    for options in [RenderOptions::MINIMAL, RenderOptions::MAXIMAL] {
         assert!(
             identical_on_row_one_at(before, after, 24, options),
             "{options:?} must leave the displaced `first` unpainted"
@@ -224,7 +224,7 @@ fn a_node_pushed_down_beside_an_edit_on_its_row_is_not_moved() {
     }
 }
 
-/// The same tail pushed down into a different statement: the rows share no head, so `FULL` reads
+/// The same tail pushed down into a different statement: the rows share no head, so `MAXIMAL` reads
 /// a relocation (`java-defects4j-codec-6-base64inputstream`'s `return f(x);` -> `y = f(x);`),
 /// while `MINIMAL` still leaves the untouched tail alone. That is the preset split
 /// `paint_displaced_moves` makes.
@@ -233,7 +233,7 @@ fn paint_displaced_moves_gates_a_tail_pushed_down_into_another_statement() {
     let before = "fn main() {\n    foo(compute(first, second));\n}\n";
     let after = "fn main() {\n    setup();\n    bar(compute(extra, first, second));\n}\n";
     assert!(
-        !identical_on_row_one_at(before, after, 16, RenderOptions::FULL),
+        !identical_on_row_one_at(before, after, 16, RenderOptions::MAXIMAL),
         "paint_displaced_moves: true must paint the relocated `first` Move"
     );
     assert!(
@@ -243,8 +243,8 @@ fn paint_displaced_moves_gates_a_tail_pushed_down_into_another_statement() {
 }
 
 /// The multi-row half (`rust-adding-a-variable-and-test-with-comments`): a closure whose first row
-/// carries the one edit, pushed down by a line inserted above, other rows unchanged. `FULL` still
-/// paints it.
+/// carries the one edit, pushed down by a line inserted above, other rows unchanged. `MAXIMAL`
+/// still paints it.
 #[test]
 fn paint_displaced_moves_gates_a_multi_row_node_edited_on_its_first_row() {
     let before = Code::from_string(
@@ -276,7 +276,7 @@ fn paint_displaced_moves_gates_a_multi_row_node_edited_on_its_first_row() {
     };
 
     assert!(
-        multi_row_move_on_the_closure_row(RenderOptions::FULL),
+        multi_row_move_on_the_closure_row(RenderOptions::MAXIMAL),
         "paint_displaced_moves: true must keep painting the displaced closure Move"
     );
     assert!(
@@ -286,7 +286,7 @@ fn paint_displaced_moves_gates_a_multi_row_node_edited_on_its_first_row() {
 }
 
 /// Two walks naming one relocation over extents a column apart agree; neither claim is withdrawn
-/// under `FULL`, while `MINIMAL` keeps only the more economical account.
+/// under `MAXIMAL`, while `MINIMAL` keeps only the more economical account.
 #[test]
 fn reconcile_moves_keeps_two_overlapping_accounts_of_one_relocation() {
     let range_match = |source: TextRange, destination: TextRange, operation| RangeMatch {
@@ -309,7 +309,7 @@ fn reconcile_moves_keeps_two_overlapping_accounts_of_one_relocation() {
 
     let mut minimal = (before.clone(), after.clone());
     reconcile_moves(&mut minimal.0, &mut minimal.1, RenderOptions::MINIMAL);
-    reconcile_moves(&mut before, &mut after, RenderOptions::FULL);
+    reconcile_moves(&mut before, &mut after, RenderOptions::MAXIMAL);
 
     assert_eq!(
         (before[0].operation.clone(), after[0].operation.clone()),
@@ -351,7 +351,7 @@ fn reconcile_moves_believes_the_side_that_blames_fewer_rows() {
         .collect::<Vec<_>>();
     after.push(row_pair(5, 0, TextOperation::Move));
 
-    reconcile_moves(&mut before, &mut after, RenderOptions::FULL);
+    reconcile_moves(&mut before, &mut after, RenderOptions::MAXIMAL);
 
     let moved_rows = |ranges: &[RangeMatch]| {
         ranges
@@ -376,7 +376,7 @@ fn reconcile_moves_breaks_a_tie_in_favour_of_the_before_side() {
         row_pair(1, 0, TextOperation::Identical),
     ];
 
-    reconcile_moves(&mut before, &mut after, RenderOptions::FULL);
+    reconcile_moves(&mut before, &mut after, RenderOptions::MAXIMAL);
 
     let operations = |ranges: &[RangeMatch]| {
         ranges
@@ -396,16 +396,16 @@ fn reconcile_moves_breaks_a_tie_in_favour_of_the_before_side() {
 
 /// `paint_resized_moves` is the third axis the two presets disagree on.
 #[test]
-fn minimal_and_full_disagree_on_paint_resized_moves() {
+fn minimal_and_maximal_disagree_on_paint_resized_moves() {
     const { assert!(!RenderOptions::MINIMAL.paint_resized_moves) };
-    const { assert!(RenderOptions::FULL.paint_resized_moves) };
+    const { assert!(RenderOptions::MAXIMAL.paint_resized_moves) };
 }
 
 /// The first two options and `interior_whitespace` are post-filters and never need a rebuild;
 /// every other one does.
 #[test]
 fn only_the_post_filters_skip_a_rebuild() {
-    let base = RenderOptions::FULL;
+    let base = RenderOptions::MAXIMAL;
     for index in 0..base.options().len() {
         let mut toggled = base;
         toggled.toggle(index);
@@ -421,9 +421,51 @@ fn only_the_post_filters_skip_a_rebuild() {
 
 /// `whole_identifier_updates` is the fourth, and ground-truth invariant 16 is why.
 #[test]
-fn minimal_and_full_disagree_on_whole_identifier_updates() {
+fn minimal_and_maximal_disagree_on_whole_identifier_updates() {
     const { assert!(!RenderOptions::MINIMAL.whole_identifier_updates) };
-    const { assert!(RenderOptions::FULL.whole_identifier_updates) };
+    const { assert!(RenderOptions::MAXIMAL.whole_identifier_updates) };
+}
+
+/// `changed_trailing_whitespace` is the sixth, and ground-truth invariant 1 is why.
+#[test]
+fn minimal_and_maximal_disagree_on_changed_trailing_whitespace() {
+    const { assert!(!RenderOptions::MINIMAL.changed_trailing_whitespace) };
+    const { assert!(RenderOptions::MAXIMAL.changed_trailing_whitespace) };
+}
+
+/// A run of changed trailing whitespace survives the display filter under the option and only
+/// there; any other range still loses its trailing whitespace.
+#[test]
+fn only_a_changed_trailing_run_keeps_its_trailing_whitespace() {
+    let source = "foo   \nbar  \n";
+    let run = RangeMatch {
+        source: text_range_on(0, 3, 6),
+        destination: text_range_on(0, 3, 3),
+        operation: TextOperation::Delete,
+    };
+    let padded = RangeMatch {
+        source: text_range_on(1, 0, 5),
+        destination: text_range_on(1, 0, 0),
+        operation: TextOperation::Delete,
+    };
+    let ranges = vec![run.clone(), padded];
+
+    let maximal = ranges_for_options(&ranges, source, RenderOptions::MAXIMAL);
+    assert_eq!(
+        maximal
+            .iter()
+            .map(|range| range.source.clone())
+            .collect::<Vec<_>>(),
+        vec![text_range_on(0, 3, 6), text_range_on(1, 0, 3)]
+    );
+    let minimal = ranges_for_options(&ranges, source, RenderOptions::MINIMAL);
+    assert_eq!(
+        minimal
+            .iter()
+            .map(|range| range.source.clone())
+            .collect::<Vec<_>>(),
+        vec![text_range_on(1, 0, 3)]
+    );
 }
 
 /// The lone brackets and separators the painted corpus's `Minimal` drops.
@@ -454,14 +496,14 @@ fn an_empty_range_is_not_structural() {
 }
 
 #[test]
-fn full_returns_every_range_unchanged() {
+fn maximal_returns_every_range_unchanged() {
     let source = "foo(bar);\n";
     let ranges = vec![changed(0, 3, 4), changed(0, 4, 7)];
 
     assert_eq!(
-        ranges_for_options(&ranges, source, RenderOptions::FULL),
+        ranges_for_options(&ranges, source, RenderOptions::MAXIMAL),
         ranges,
-        "Full is exactly TextDiff::all"
+        "Maximal is exactly TextDiff::all"
     );
 }
 
@@ -478,7 +520,7 @@ fn minimal_drops_a_standalone_bracket_but_keeps_its_neighbour() {
 }
 
 /// A bracket *inside* a larger range is not a standalone bracket - only whole ranges are
-/// dropped, never parts of one, so a surviving range is byte-for-byte what `Full` shows.
+/// dropped, never parts of one, so a surviving range is byte-for-byte what `Maximal` shows.
 #[test]
 fn minimal_keeps_a_range_that_merely_contains_punctuation() {
     let source = "foo(bar);\n";
@@ -543,24 +585,24 @@ fn minimal_keeps_whitespace_inside_a_range() {
     );
 }
 
-/// Trailing whitespace is not an option: even `FULL` trims it.
+/// Trailing whitespace is not an option: even `MAXIMAL` trims it.
 #[test]
-fn full_keeps_leading_but_still_trims_trailing_whitespace() {
+fn maximal_keeps_leading_but_still_trims_trailing_whitespace() {
     let source = "    foo   \n";
     let ranges = vec![changed(0, 0, 10)];
 
-    let full = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let maximal = ranges_for_options(&ranges, source, RenderOptions::MAXIMAL);
 
-    assert_eq!(full.len(), 1);
+    assert_eq!(maximal.len(), 1);
     assert_eq!(
-        full[0].source,
+        maximal[0].source,
         text_range_on(0, 0, 7),
         "leading spaces survive, trailing ones do not"
     );
 }
 
 /// A multi-line block inserted on its own: with `leading_whitespace` off each row is highlighted
-/// without its indentation, including interior rows that `FULL` keeps whole.
+/// without its indentation, including interior rows that `MAXIMAL` keeps whole.
 #[test]
 fn leading_whitespace_off_splits_a_multiline_insert_per_row_trimmed() {
     let source = "    def added_function():\n        print(\"added\")\n";
@@ -689,6 +731,7 @@ fn structural_punctuation_off_alone_still_keeps_leading_whitespace() {
         paint_resized_moves: true,
         whole_identifier_updates: true,
         interior_whitespace: true,
+        changed_trailing_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -714,6 +757,7 @@ fn leading_whitespace_off_alone_still_keeps_a_range_containing_punctuation() {
         paint_resized_moves: true,
         whole_identifier_updates: true,
         interior_whitespace: true,
+        changed_trailing_whitespace: true,
     };
     let result = ranges_for_options(&ranges, source, options);
 
@@ -2034,7 +2078,7 @@ fn ranges_paints_a_wholly_new_comments_own_words_not_just_its_marker() {
         &ast,
         &node_cache,
         false,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
 
     let words_painted = after_ranges.iter().any(|r| {
@@ -2064,7 +2108,7 @@ fn a_no_gap_string_literal_does_not_break_whitespace_merging_with_a_sibling() {
         &ast,
         &node_cache,
         false,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
 
     let row1_inserts: Vec<_> = after_ranges
@@ -2305,10 +2349,10 @@ fn ranges_decomposes_a_small_change_inside_a_long_identifier() {
     );
 }
 
-/// Under `FULL`, the rename from the test above is painted whole on both sides - ground-truth
-/// invariant 16's `Full` half, via [`RenderOptions::whole_identifier_updates`].
+/// Under `MAXIMAL`, the rename from the test above is painted whole on both sides - ground-truth
+/// invariant 16's `Maximal` half, via [`RenderOptions::whole_identifier_updates`].
 #[test]
-fn full_paints_a_renamed_identifier_whole() {
+fn maximal_paints_a_renamed_identifier_whole() {
     let (before, after, ast) = diff_ast(
         "fn main() {\n    let long_identifier_name = 5;\n}",
         "fn main() {\n    let long_identifier_nome = 5;\n}",
@@ -2323,7 +2367,7 @@ fn full_paints_a_renamed_identifier_whole() {
             &ast,
             &node_cache,
             source_is_before,
-            RenderOptions::FULL,
+            RenderOptions::MAXIMAL,
         )
         .into_iter()
         .filter(|r| r.operation == TextOperation::Update)
@@ -2332,15 +2376,15 @@ fn full_paints_a_renamed_identifier_whole() {
         assert_eq!(
             updates[0].source.end_column - updates[0].source.start_column,
             "long_identifier_name".len(),
-            "FULL should paint the whole renamed identifier"
+            "MAXIMAL should paint the whole renamed identifier"
         );
     }
 }
 
 /// `whole_identifier_updates` is scoped to identifiers: a changed comment stays narrow under
-/// `FULL`.
+/// `MAXIMAL`.
 #[test]
-fn full_keeps_a_changed_comment_narrow() {
+fn maximal_keeps_a_changed_comment_narrow() {
     let (before, after, ast) = diff_ast(
         "// Copyright 2025 Example\nfn main() {}\n",
         "// Copyright 2026 Example\nfn main() {}\n",
@@ -2352,7 +2396,7 @@ fn full_keeps_a_changed_comment_narrow() {
         &ast,
         &node_cache,
         true,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     )
     .into_iter()
     .filter(|r| r.operation == TextOperation::Update)
@@ -2382,7 +2426,7 @@ fn ranges_reports_the_whole_identifier_when_whole_pair_updates_is_set() {
         true,
         RenderOptions {
             whole_pair_updates: true,
-            ..RenderOptions::FULL
+            ..RenderOptions::MAXIMAL
         },
     );
 
@@ -2416,7 +2460,7 @@ fn ranges_falls_back_to_a_whole_span_update_when_there_is_no_common_affix() {
         &ast,
         &node_cache,
         true,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
 
     let updates: Vec<_> = before_ranges
@@ -2447,7 +2491,7 @@ fn ranges_decomposes_a_small_change_inside_a_comment() {
         &ast,
         &node_cache,
         true,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
 
     let updates: Vec<_> = before_ranges
@@ -2492,7 +2536,7 @@ fn ranges_decomposition_survives_an_unrelated_earlier_insertion() {
     );
     let node_cache = NodeCache::build(&before, &after);
 
-    // `MINIMAL`: the narrow split is what this guards, and `FULL` paints the rename whole.
+    // `MINIMAL`: the narrow split is what this guards, and `MAXIMAL` paints the rename whole.
     let text_diff =
         TextDiff::from_with_options(&before, &after, &ast, &node_cache, RenderOptions::MINIMAL);
     let before_ranges = text_diff.all(0);
@@ -2550,10 +2594,10 @@ fn a_phrase_added_inside_a_string_renders_as_an_insert_not_an_update() {
     );
 }
 
-/// `IntBox` -> `Box` leaves an empty middle too. `FULL` paints a renamed identifier whole
+/// `IntBox` -> `Box` leaves an empty middle too. `MAXIMAL` paints a renamed identifier whole
 /// (`whole_identifier_updates`), so it is no deletion of `Int` there.
 #[test]
-fn a_renamed_identifier_stays_an_update_under_full() {
+fn a_renamed_identifier_stays_an_update_under_maximal() {
     let before = Code::from_string("struct IntBox;\n", &crate::code::Language::Rust);
     let after = Code::from_string("struct Box;\n", &crate::code::Language::Rust);
     let diff = crate::diff::diff_code(&before, &after);
@@ -2569,7 +2613,7 @@ fn a_renamed_identifier_stays_an_update_under_full() {
         .collect();
     assert!(
         !ops.contains(&TextOperation::Delete),
-        "FULL paints a rename whole, not a deletion of the dropped prefix: {ops:?}"
+        "MAXIMAL paints a rename whole, not a deletion of the dropped prefix: {ops:?}"
     );
 }
 
@@ -2650,7 +2694,7 @@ fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
 
 /// A row carrying two edits, one on each side of an untouched node (`cpp-add-const-correctness`).
 /// The node is in neither common affix; `node_uniquely_placed_on_its_row` reads it as untouched
-/// because its text occurs once on each row, at its own columns. `FULL` still paints it.
+/// because its text occurs once on each row, at its own columns. `MAXIMAL` still paints it.
 #[test]
 fn paint_displaced_moves_gates_a_node_between_two_edits_on_its_own_row() {
     let before = Code::from_string(
@@ -2686,8 +2730,8 @@ fn paint_displaced_moves_gates_a_node_between_two_edits_on_its_own_row() {
         "the type neither edit touched must not paint Move under MINIMAL"
     );
     assert!(
-        !type_is_identical(RenderOptions::FULL),
-        "FULL still paints a displaced node, the same split paint_displaced_moves already makes"
+        !type_is_identical(RenderOptions::MAXIMAL),
+        "MAXIMAL still paints a displaced node, the same split paint_displaced_moves already makes"
     );
 }
 
@@ -2784,10 +2828,10 @@ fn trailing_trim_keeps_a_range_that_runs_off_a_file_with_no_final_newline() {
     );
 }
 
-/// Under `FULL`, a wholly new line's insertion grows back over its indentation, even when the
+/// Under `MAXIMAL`, a wholly new line's insertion grows back over its indentation, even when the
 /// matched range before it ends at column 0 of that line.
 #[test]
-fn full_grows_an_insert_over_the_indentation_of_its_own_line() {
+fn maximal_grows_an_insert_over_the_indentation_of_its_own_line() {
     let source = "fn f() {\n    new();\n}\n";
     let ranges = [
         RangeMatch {
@@ -2801,14 +2845,14 @@ fn full_grows_an_insert_over_the_indentation_of_its_own_line() {
             operation: TextOperation::Insert,
         },
     ];
-    let painted = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let painted = ranges_for_options(&ranges, source, RenderOptions::MAXIMAL);
     assert_eq!(painted[1].source, TextRange::new(1, 0, 1, 10));
 }
 
 /// Indentation in front of an insertion on a row that also holds matched content belongs to that
 /// content, so the insertion does not grow over it (`const ` before a moved declaration).
 #[test]
-fn full_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
+fn maximal_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
     let source = "    const int x\n";
     let ranges = [
         RangeMatch {
@@ -2822,15 +2866,15 @@ fn full_does_not_grow_an_insert_over_indentation_a_matched_range_shares() {
             operation: TextOperation::Move,
         },
     ];
-    let painted = ranges_for_options(&ranges, source, RenderOptions::FULL);
+    let painted = ranges_for_options(&ranges, source, RenderOptions::MAXIMAL);
     assert_eq!(painted[0].source, TextRange::new(0, 4, 0, 9));
 }
 
 #[test]
 fn toggling_an_out_of_range_option_is_a_no_op() {
-    let mut options = RenderOptions::FULL;
+    let mut options = RenderOptions::MAXIMAL;
     options.toggle(options.options().len());
-    assert_eq!(options, RenderOptions::FULL);
+    assert_eq!(options, RenderOptions::MAXIMAL);
 }
 
 #[test]
@@ -2857,7 +2901,7 @@ fn every_member_of_an_identical_group_paints_as_a_move_even_in_place() {
     );
     let node_cache = NodeCache::build(&before, &after);
 
-    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+    for options in [RenderOptions::MINIMAL, RenderOptions::MAXIMAL] {
         let text = TextDiff::from_with_options(&before, &after, &diff, &node_cache, options);
         let moved_rows = |side: usize| -> Vec<usize> {
             text.all(side)
@@ -2915,7 +2959,7 @@ fn painted_texts(
 /// rather than lost (`python-odoo-odoo-version`'s `Odoo 20` -> `Odoo 22`).
 #[test]
 fn an_edit_beside_an_escape_inside_a_string_is_painted() {
-    for preset in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+    for preset in [RenderOptions::MINIMAL, RenderOptions::MAXIMAL] {
         for (before, after, old, new) in [
             (
                 "s = \"alpha one\\tbeta\"\n",
@@ -2943,11 +2987,11 @@ fn an_edit_beside_an_entity_in_an_attribute_value_is_painted() {
     let (before, after) = ("<a b=\"x &amp; one\"/>\n", "<a b=\"x &amp; two\"/>\n");
     let language = crate::code::Language::XML;
     assert_eq!(
-        painted_texts(language, before, after, 0, RenderOptions::FULL),
+        painted_texts(language, before, after, 0, RenderOptions::MAXIMAL),
         ["one"]
     );
     assert_eq!(
-        painted_texts(language, before, after, 1, RenderOptions::FULL),
+        painted_texts(language, before, after, 1, RenderOptions::MAXIMAL),
         ["two"]
     );
 }
@@ -2964,7 +3008,7 @@ fn a_deleted_attribute_value_is_painted_between_its_quotes() {
         before,
         after,
         0,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     assert_eq!(painted, [" Label=\"InDualCone\""]);
 }
@@ -2980,7 +3024,7 @@ fn an_inserted_css_number_with_a_unit_is_painted_whole() {
         before,
         after,
         1,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     // The raw range carries the row's newline; `ranges_for_options` trims it later.
     let painted: Vec<&str> = painted.iter().map(|text| text.trim_end()).collect();
@@ -3056,7 +3100,7 @@ fn edits_count_apart_only_across_unchanged_words_and_spaces() {
 fn a_class_list_is_diffed_class_by_class() {
     let before = "border-input text-primary dark:bg-input/30 flex";
     let after = "border-input dark:bg-input/30 data-checked:bg-primary flex";
-    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+    for options in [RenderOptions::MINIMAL, RenderOptions::MAXIMAL] {
         let (before_ranges, after_ranges) = class_list_diff(before, after, options).unwrap();
         let changed = |ranges: &[RangeMatch], text: &'static str| {
             changed_spans(ranges, text)
@@ -3064,7 +3108,8 @@ fn a_class_list_is_diffed_class_by_class() {
                 .filter(|(operation, _)| *operation != TextOperation::Move)
                 .collect::<Vec<_>>()
         };
-        // Never a piece of a class: `text-primary` goes whole, `data-checked:bg-primary` comes whole.
+        // Never a piece of a class: `text-primary` goes whole, `data-checked:bg-primary` comes
+        // whole.
         assert_eq!(
             changed(&before_ranges, before),
             [(TextOperation::Delete, "text-primary")]
@@ -3077,7 +3122,7 @@ fn a_class_list_is_diffed_class_by_class() {
 }
 
 #[test]
-fn a_reordered_class_moves_and_full_also_moves_the_displaced_ones() {
+fn a_reordered_class_moves_and_maximal_also_moves_the_displaced_ones() {
     // `b` jumps over two classes: only it moved, not a swap.
     let (before, after) = ("a b c d e", "a c d b e f");
     let moved = |options| {
@@ -3088,16 +3133,16 @@ fn a_reordered_class_moves_and_full_also_moves_the_displaced_ones() {
             .map(|(_, text)| text)
             .collect::<Vec<_>>()
     };
-    // Both presets show the reordered class; Full also the kept class inside the edited stretch.
-    let (minimal, full) = (moved(RenderOptions::MINIMAL), moved(RenderOptions::FULL));
+    // Both presets show the reordered class; Maximal also the kept class inside the edited stretch.
+    let (minimal, maximal) = (moved(RenderOptions::MINIMAL), moved(RenderOptions::MAXIMAL));
     assert_eq!(minimal.len(), 1, "{minimal:?}");
-    assert!(full.len() > minimal.len(), "{full:?}");
+    assert!(maximal.len() > minimal.len(), "{maximal:?}");
 }
 
 #[test]
 fn two_swapped_classes_both_move() {
     let (before, after) = ("x bg-border shrink-0 y", "x shrink-0 bg-border y");
-    for options in [RenderOptions::MINIMAL, RenderOptions::FULL] {
+    for options in [RenderOptions::MINIMAL, RenderOptions::MAXIMAL] {
         let (ranges, _) = class_list_diff(before, after, options).unwrap();
         let mut moved: Vec<&str> = changed_spans(&ranges, before)
             .into_iter()
@@ -3137,14 +3182,14 @@ fn shown_texts(
         .collect()
 }
 
-/// `pub fn` -> `pub async fn` gains a word and a blank: `FULL` paints ` async`, `MINIMAL` the
+/// `pub fn` -> `pub async fn` gains a word and a blank: `MAXIMAL` paints ` async`, `MINIMAL` the
 /// word alone.
 #[test]
 fn an_inserted_word_takes_the_blank_it_added() {
     let (before, after) = ("pub fn f() {}\n", "pub async fn f() {}\n");
     let language = crate::code::Language::Rust;
     assert_eq!(
-        shown_texts(language, before, after, 1, RenderOptions::FULL),
+        shown_texts(language, before, after, 1, RenderOptions::MAXIMAL),
         [" async"]
     );
     assert_eq!(
@@ -3159,7 +3204,7 @@ fn a_word_inserted_into_text_takes_the_blank_in_front_of_it() {
     let (before, after) = ("s = \"foo bar\"\n", "s = \"foo new bar\"\n");
     let language = crate::code::Language::Python;
     assert_eq!(
-        shown_texts(language, before, after, 1, RenderOptions::FULL),
+        shown_texts(language, before, after, 1, RenderOptions::MAXIMAL),
         [" new"]
     );
     assert_eq!(
@@ -3177,7 +3222,7 @@ fn an_updated_word_in_text_leaves_its_blank_alone() {
         before,
         after,
         1,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     assert_eq!(shown, ["z"]);
 }
@@ -3281,7 +3326,7 @@ fn a_token_ending_its_row_slid_by_an_edit_beside_it_is_not_moved() {
             before,
             after,
             side,
-            RenderOptions::FULL,
+            RenderOptions::MAXIMAL,
         );
         assert!(
             !painted.iter().any(|text| text.starts_with(';')),
@@ -3291,7 +3336,7 @@ fn a_token_ending_its_row_slid_by_an_edit_beside_it_is_not_moved() {
 }
 
 /// A call that ends its row and lands in another statement on a row pushed down still reads as
-/// moved under `FULL`: the two rows do not open on the same text.
+/// moved under `MAXIMAL`: the two rows do not open on the same text.
 #[test]
 fn a_call_ending_its_row_relocated_into_another_statement_is_still_moved() {
     let before = "def f(x):\n    return g(x)\n";
@@ -3301,7 +3346,7 @@ fn a_call_ending_its_row_relocated_into_another_statement_is_still_moved() {
         before,
         after,
         0,
-        RenderOptions::FULL,
+        RenderOptions::MAXIMAL,
     );
     assert!(
         painted.iter().any(|text| text.starts_with("g(x)")),

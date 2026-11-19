@@ -10,7 +10,7 @@ LICENSE), or under a commercial license (see LICENSE-COMMERCIAL).
 
 ## Overview
 
-- Apache License 2.0: 224 crates
+- Apache License 2.0: 235 crates
 - MIT License: 133 crates
 - BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License: 8 crates
 - Unicode License v3: 5 crates
@@ -1109,6 +1109,8 @@ Used by:
 - kurbo 0.13.1 (https://github.com/linebender/kurbo)
 - polycool 0.4.0 (https://github.com/linebender/kurbo)
 - static_assertions 1.1.0 (https://github.com/nvzqz/static-assertions-rs)
+- zeroize 1.9.2 (https://github.com/RustCrypto/utils)
+- zeroize_derive 1.5.0 (https://github.com/RustCrypto/utils)
 
 ```
 
@@ -4987,6 +4989,7 @@ Used by:
 - arrayvec 0.7.8 (https://github.com/bluss/arrayvec)
 - base64 0.23.1 (https://github.com/marshallpierce/rust-base64)
 - bitflags 2.13.2 (https://github.com/bitflags/bitflags)
+- bumpalo 3.20.3 (https://github.com/fitzgen/bumpalo)
 - by_address 1.2.1 (https://github.com/mbrubeck/by_address)
 - bzip2 0.6.1 (https://github.com/trifectatechfoundation/bzip2-rs)
 - cfg-if 1.0.5 (https://github.com/rust-lang/cfg-if)
@@ -5005,6 +5008,7 @@ Used by:
 - heck 0.5.0 (https://github.com/withoutboats/heck)
 - indexmap 2.14.2 (https://github.com/indexmap-rs/indexmap)
 - itertools 0.14.0 (https://github.com/rust-itertools/itertools)
+- js-sys 0.3.105 (https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys)
 - lazy_static 1.5.0 (https://github.com/rust-lang-nursery/lazy-static.rs)
 - linux-raw-sys 0.12.1 (https://github.com/sunfishcode/linux-raw-sys)
 - linux-raw-sys 0.4.15 (https://github.com/sunfishcode/linux-raw-sys)
@@ -5039,6 +5043,10 @@ Used by:
 - unicode-truncate 2.0.1 (https://github.com/Aetf/unicode-truncate)
 - unicode-width 0.2.3 (https://github.com/unicode-rs/unicode-width)
 - wasi 0.11.1+wasi-snapshot-preview1 (https://github.com/bytecodealliance/wasi)
+- wasm-bindgen-macro-support 0.2.128 (https://github.com/wasm-bindgen/wasm-bindgen/tree/main/crates/macro-support)
+- wasm-bindgen-macro 0.2.128 (https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro)
+- wasm-bindgen-shared 0.2.128 (https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared)
+- wasm-bindgen 0.2.128 (https://github.com/wasm-bindgen/wasm-bindgen)
 - yaml-rust 0.4.5 (https://github.com/chyh1990/yaml-rust)
 
 ```
@@ -5879,6 +5887,7 @@ APPENDIX: How to apply the Apache License to your work.
 Used by:
 
 - getrandom 0.2.17 (https://github.com/rust-random/getrandom)
+- getrandom 0.4.3 (https://github.com/rust-random/getrandom)
 - rand_chacha 0.3.1 (https://github.com/rust-random/rand)
 
 ```
@@ -6458,6 +6467,7 @@ Used by:
 - allocator-api2 0.2.21 (https://github.com/zakarumych/allocator-api2)
 - anyhow 1.0.104 (https://github.com/dtolnay/anyhow)
 - color 0.3.3 (https://github.com/linebender/color)
+- constant_time_eq 0.6.1 (https://codeberg.org/cesarb/constant_time_eq)
 - document-features 0.2.12 (https://github.com/slint-ui/document-features)
 - etcetera 0.10.0 (https://github.com/lunacookies/etcetera)
 - fdeflate 0.3.7 (https://github.com/image-rs/fdeflate)
@@ -6489,6 +6499,7 @@ Used by:
 - proc-macro2 1.0.107 (https://github.com/dtolnay/proc-macro2)
 - quantette 0.6.0 (https://github.com/IanManske/quantette)
 - quote 1.0.47 (https://github.com/dtolnay/quote)
+- r-efi 6.0.0 (https://github.com/r-efi/r-efi)
 - rand 0.10.3 (https://github.com/rust-random/rand)
 - rand 0.8.8 (https://github.com/rust-random/rand)
 - rand_xoshiro 0.8.1 (https://github.com/rust-random/rngs)
@@ -6511,7 +6522,7 @@ Used by:
 - thiserror 2.0.21 (https://github.com/dtolnay/thiserror)
 - time-core 0.1.9 (https://github.com/time-rs/time)
 - time 0.3.55 (https://github.com/time-rs/time)
-- typed-path 0.12.3 (https://github.com/chipsenkbeil/typed-path)
+- typed-path 0.13.0 (https://github.com/chipsenkbeil/typed-path)
 - unicode-ident 1.0.26 (https://github.com/dtolnay/unicode-ident)
 - usvg 0.48.1 (https://github.com/linebender/resvg)
 - utf8parse 0.2.2 (https://github.com/alacritty/vte)
@@ -8404,7 +8415,7 @@ THE SOFTWARE.
 Used by:
 
 - tracing-core 0.1.36 (https://github.com/tokio-rs/tracing)
-- zip 9.0.4 (https://github.com/zip-rs/zip2)
+- zip 9.7.3 (https://github.com/zip-rs/zip2)
 
 ```
 The MIT License (MIT)

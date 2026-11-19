@@ -2,7 +2,7 @@ local function record(...)
   return { ... }
 end
 
-local function make_item(name, count)
+local function make_item(name, count)  
   return record(
     "name", name,
     "count", count

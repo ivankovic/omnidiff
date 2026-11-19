@@ -1,7 +1,7 @@
 <?php
 
 class Table
-{
+{  
     public function __construct(
         private string $label,
         private array $guests,

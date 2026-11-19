@@ -1,39 +1,54 @@
 # Introductory paper
 
-"Content-Aware Diffing: Edit Scripts, Visualisations, and a Living Ground Truth", an ACM `sigconf`
-LaTeX paper. Its subject is diffing *content* - text, code, pictures, archives, fonts, documents,
-catalogs, cursors - and the distance between a delta (an edit script a machine executes) and a
-visualisation (what a human reads). Code is one content type among the others; it is the one with
-the deepest ground truth, and the paper says so wherever a question can only be answered for code.
-It is a research paper with a tool contribution at the end, not a tool paper: the introduction
-states five groups of research questions, each is answered in its own section, and the tool comes
-last.
+"OmniDiff: Content-Aware Diffing", an ACM `sigconf` LaTeX paper. Its subject is diffing *content* -
+text, code, pictures, archives, fonts, documents, catalogs, cursors - and the distance between a
+delta (an edit script a machine executes) and a visualisation (what a human reads). Code is one
+content type among the others; it is the one with the deepest ground truth. It is a research paper with a tool
+contribution: the title and the abstract's second paragraph name OmniDiff, the introduction states
+five groups of research questions, each is answered in its own section, and the tool's own section
+comes after them.
 
-1 Introduction, 2 Background: Deltas and Visualisations (2.1 Deltas, 2.2 Visualisations,
-2.3 Definitions: delta, mapping, painting, projection, 2.4 Tools), 3 A Living Ground-Truth Dataset
-(methodology only, no RQ answered: project and corpus, files, sampling, ground truth, the 31
-invariants, growth, cross-validation), 4 Content of Real-World Changes (RQ1.1 what content, RQ1.2
-how large), 5 Delta versus Visualisation (RQ2.1 invariants broken by a painted script, RQ2.2 what
-reaches the reader, RQ2.3 expressibility, RQ2.4 cost), 6 Uniqueness (RQ3.1 mappings, RQ3.2
-visualisations: Minimal against Full), 7 Exact Deltas within an Interactive Budget (RQ4),
-8 State of the Art (RQ5.1 what tools show per content, RQ5.2 accuracy, RQ5.3 speed: eight
-established tools in eleven configurations), 9 OmniDiff, 10 Threats to Validity, 11 Related Work,
-12 Conclusions. The ACM conference, DOI, ISBN and rights fields are placeholders until a venue is
-chosen. The prose is in British spelling ("visualisation", "generalises").
+1. Introduction
+2. Background: Deltas and Visualisations (2.1 Deltas, 2.2 Visualisations, 2.3 Definitions: delta,
+   mapping, painting, projection, 2.4 Tools)
+3. A Living Ground-Truth Dataset (methodology only, no RQ answered: corpus, files, sampling,
+   ground truth, the 31 invariants, growth, cross-validation)
+4. Content of Real-World Changes (RQ1.1 what content, RQ1.2 how large: code in lines, other
+   content in pixels and members)
+5. Delta versus Visualisation (RQ2.1 what reaches the reader, RQ2.2 expressibility, RQ2.3 cost)
+6. Uniqueness (RQ3.1 deltas, RQ3.2 visualisations: Minimal against Full)
+7. Exact Deltas within an Interactive Budget (RQ4: can a change be visualised within one second,
+   answered for the exact delta of code)
+8. State of the Art (RQ5.1 what tools show per content, RQ5.2 accuracy, RQ5.3 speed: eight
+   established tools in eleven configurations)
+9. OmniDiff
+10. Threats to Validity
+11. Related Work
+12. Conclusions
+
+The ACM conference, DOI, ISBN and rights fields are placeholders until a venue is chosen. The prose
+is in British spelling ("visualisation", "generalises").
 
 ## Rules that are easy to break
 
 * **No RQ answer names OmniDiff.** An RA box and its supporting argument describe the problem or
-  the state of the art. RA2.4 and RA3.1 compare the human mapping's cost with the harness's own
-  matcher; the text describes it tool-neutrally. RA1.1's census uses OmniDiff's content
-  recognition, and RA2.1's "tree script" is not OmniDiff's output but the human mapping painted
-  literally. OmniDiff's own results, including its own rendering held against the invariants,
-  are in Section 9.
-* **Content first.** Where a question can be asked of all content it is (RA1.1, RA2.2, RA5.1),
-  with code as one row or one half of the answer; where the data exists only for code the
-  question says "code". Do not reintroduce a "beyond code" framing.
-* **RA2.3 and RA3.1 read the same multi-map groups two ways**: as an N:M site the four edit
-  operations cannot express (RA2.3), and as a set of equally correct one-to-one pairings (RA3.1).
+  the state of the art. RA2.3 and RA3.1 compare the human mapping's cost with the harness's own
+  matcher; the text describes it tool-neutrally. Two answers use OmniDiff as an instrument:
+  RA1.1's census uses its content recognition, and RA1.2's sizes of changes to other content are
+  its count of changed pixels and members. OmniDiff's own results are in Section 9, and so is
+  the comparison of renderings against the invariants: its own, the hand paintings, and the line
+  script and the tree script painted as they stand (the tree script is the human mapping painted
+  literally, not OmniDiff's output). That comparison was RQ2.1 until the review of 2026-11-14 cut
+  the question; do not reintroduce it as a research question.
+* **Content first.** Where a question can be asked of all content it is (RA1.1, RA1.2, RA2.1,
+  RA5.1), with code as one row or one half of the answer. Do not reintroduce a "beyond code"
+  framing.
+* **The research questions say "delta", not "mapping"** (review of 2026-11-14), and Section 2.3
+  defines a mapping as a set of pairs of multisets, so that an N:M correspondence is a mapping.
+  The bodies of Sections 5 and 6 still speak of mappings and multi-map groups, which is the
+  ground truth's own vocabulary.
+* **RA2.2 and RA3.1 read the same multi-map groups two ways**: as an N:M site the four edit
+  operations cannot express (RA2.2), and as a set of equally correct one-to-one pairings (RA3.1).
   RA3.1 adds a second reading that needs no annotation, cost ties at a different mapping
   (`CostTieDifferent*`). Change the two sections together.
 * **Every measured number is a macro.** `main.tex` has no bare numeric literal from a
@@ -63,20 +78,23 @@ chosen. The prose is in British spelling ("visualisation", "generalises").
   OmniDiff's line-level, speed and robustness figures are at 1,217 fixtures and an earlier
   engine, and the oracle comparison at 440 units. Footnote `fn:in-progress` and the threats
   section say so; when the tool comparison is re-run on the server, drop those sentences.
-* **Three painting cases** (`human_mapping::graded_cases`): `Minimal` and `Full`, a single
-  painting naming no preset (one rendering, both presets must produce it), or a single painting
-  named for one preset. `preset_report.graded_case` mirrors the Rust rule; `PresetSingle*` is the
-  second case and is not `PaintingSingle*` (`rendering_report.py`'s older count of every lone
-  painting).
+* **Three painting cases in the data, two in the text** (`human_mapping::graded_cases`):
+  `Minimal` and `Full`, a single painting naming no preset (one rendering, both presets must
+  produce it), or a single painting named for one preset. Section 3.4 describes the first two
+  only, since the review of 2026-11-14; the measurements still grade all three.
+  `preset_report.graded_case` mirrors the Rust rule; `PresetSingle*` is the second case and is not
+  `PaintingSingle*` (`rendering_report.py`'s older count of every lone painting).
 * **The invariants table is generated** (`figures/invariants_table.tex`,
-  `analysis/invariants_report.py`): its five families (`GROUPS`) must partition the 31 rules of
+  `analysis/invariants_report.py`) and shows the hand paintings only; the scripts' figures are
+  macros, used in Section 9. Its five families (`GROUPS`) must partition the 31 rules of
   `src/test/helper/human_mapping/invariants.rs`, which a unit test checks, and the prose of
   Section 3.5 names the family sizes (three, nine, ten, four, five). A 32nd invariant means
   `INVARIANTS` in the `invariant_gap_census` test, `GROUPS`, and that paragraph.
 * **Authored project facts** - stars, forks and their date (`PROJECT`), the issue counts
   (`dataset_growth.ISSUES_*`, `ISSUE_FIXTURE_PREFIXES`) and the before/after counts of the
   invariant repair (`INVARIANT_REPAIR`) - are read off GitHub or a past commit, not measured from
-  a file. Refresh them together with their date.
+  a file. Refresh them together with their date. The stars are in the abstract and at the opening
+  of Section 9; the issue counts are no longer in the text (`GrowthIssues*` are unused).
 * **Four datasets**, `_common.PAPER_DATASETS`: Curated (`small`), Full, Stratified, Defects4J.
   `handmade` fixtures are regression tests, not a sample, and stay out of the paper. Only fixtures
   with a `human_mapping.json` are scored, and which Defects4J units are solved is how far
@@ -98,10 +116,12 @@ chosen. The prose is in British spelling ("visualisation", "generalises").
   together.
 * **Figures are vector and greyscale-safe**: each plot script writes a `.pdf` beside its `.png`,
   `main.tex` includes figures without an extension, and bars carry hatching as well as hue.
-  `plots/tips.png` needs the corpus database `stats.sqlite`, which is not committed: `make
-  file-stats-report MODE=full` re-reads it on the measuring machine.
+  `plots/tips` is drawn from `data/corpus_stats/file_type_counts.csv`: `make replot-file-types`
+  redraws it, and `make file-stats-report MODE=full` rewrites the counts from the corpus database
+  `stats.sqlite`, which is not committed.
 * **Some generated macros are unused on purpose** - `Shape*`, `Ablation*`
-  (`scripts/ablation_study.sh`, an older corpus state), `OracleHumanOmniDiff*` - so a cut result
+  (`scripts/ablation_study.sh`, an older corpus state), `OracleHumanOmniDiff*`,
+  `InvariantLineScript*` and `InvariantTreeScript*` (the cut RQ2.1) - so a cut result
   can return with a `main.tex` edit only.
 
 ## Reviews
@@ -114,8 +134,8 @@ done about it.
 This uses the ACM `acmart` document class, which is not vendored into this repository. To build
 locally you need a LaTeX distribution that includes it and the fonts it uses (Linux Libertine,
 Biolinum, Inconsolata, newtx), plus `cm-super` for full font expansion. Without those fonts acmart
-silently falls back to Computer Modern, which changes the layout and the page count (21 pages with
-the right fonts on 2026-11-10); check with
+silently falls back to Computer Modern, which changes the layout and the page count (20 pages with
+the right fonts on 2026-11-14); check with
 `pdffonts main.pdf` that the fonts are LinLibertine, LinBiolinum and Inconsolata.
 
 * Debian/Ubuntu: `sudo apt-get install texlive-publishers texlive-latex-extra texlive-fonts-extra cm-super`, then

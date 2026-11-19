@@ -35,7 +35,7 @@ use crate::diff::{
 /// `BODY` is re-tagged because `ranges()` judges `Move` from a node's own column alone, and a
 /// reindent looks like rust-add-if's genuine move. Whether `ranges()` acts on the tag is
 /// [`crate::diff::text::RenderOptions::paint_reindent_only_moves`]: `Minimal` wants the body
-/// unpainted, `Full` wants `Move`.
+/// unpainted, `Maximal` wants `Move`.
 pub fn solve(ctx: &PassCtx, diff: &mut ASTDiff) {
     let (before, after, node_cache) = (ctx.before, ctx.after, ctx.node_cache);
     let Some(before_tree) = &before.ast else {

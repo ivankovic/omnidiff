@@ -473,8 +473,8 @@ fn main() -> Result<()> {
         println!("Wrote timing baseline to {path:?}");
     }
 
-    // A file moved to another language (the `crosslang` dataset) is reported apart: the README's
-    // goals and figures are about code changed within one language. The CSV, the baseline and the
+    // A file moved to another language (the `crosslang` dataset) is reported apart: the
+    // goals of `src/test/README.md` and figures are about code changed within one language. The CSV, the baseline and the
     // gate keep every fixture. A stable sort, so each part stays worst first.
     let crosslang: std::collections::HashSet<&str> = cases
         .iter()
@@ -522,7 +522,7 @@ fn main() -> Result<()> {
 /// the tree; a looser rate stops discriminating.
 const VISIBLE_RATE_GOAL: f64 = 0.01;
 
-/// Progress against the README's two accuracy goals, in visible nodes, over solved fixtures only.
+/// Progress against `src/test/README.md`'s two accuracy goals, in visible nodes, over solved fixtures only.
 fn print_goal_progress(rows: &[Row]) {
     let scored: Vec<(usize, usize)> = rows.iter().filter_map(|r| r.visible_mismatches).collect();
     if scored.is_empty() {

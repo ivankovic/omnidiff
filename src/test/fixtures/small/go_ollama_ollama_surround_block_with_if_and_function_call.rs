@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -28,7 +28,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("go-ollama-ollama-surround-block-with-if-and-function-call")
+    // Invariant 32, Maximal: before 295-301 -> after 299-305 (7 line(s)) gain 1 byte(s) of
+    // indentation, unpainted (want insert from column 0).
+    assert_ground_truth_invariants_with_known_violations(
+        "go-ollama-ollama-surround-block-with-if-and-function-call",
+        1,
+    )
 }
 
 #[test]

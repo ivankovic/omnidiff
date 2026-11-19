@@ -7775,7 +7775,7 @@
       ]
     },
     {
-      "name": "Full (outer)",
+      "name": "Maximal (outer)",
       "entries": [
         {
           "operation": "Delete",
@@ -8450,7 +8450,7 @@
       ]
     },
     {
-      "name": "Full (inner)",
+      "name": "Maximal (inner)",
       "entries": [
         {
           "operation": "Delete",

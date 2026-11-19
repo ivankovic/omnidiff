@@ -900,7 +900,7 @@
           applyRenderOptions(this.options);
           return;
         } else if (e.key === "2") {
-          this.options = { ...state.presets.full };
+          this.options = { ...state.presets.maximal };
           applyRenderOptions(this.options);
           return;
         } else if (e.key === "Escape") {
@@ -912,7 +912,7 @@
       },
       // Every key has a tap too: a row toggles, the footer buttons are 1, 2 and Esc.
       render(container) {
-        const { body, footer } = box(container, "Render options", "↑/↓ move  Enter/Space toggle  1: minimal  2: full  Esc: close");
+        const { body, footer } = box(container, "Render options", "↑/↓ move  Enter/Space toggle  1: minimal  2: maximal  Esc: close");
         const labels = rows.map((row) => `[${this.options[row.key] ? "x" : " "}] ${row.label}`);
         listRows(body, labels, this.selected).forEach((element, index) => {
           element.addEventListener("click", () => {
@@ -922,7 +922,7 @@
         });
         dialogButtons(footer, [
           ["Minimal", () => this.key({ key: "1" })],
-          ["Full", () => this.key({ key: "2" })],
+          ["Maximal", () => this.key({ key: "2" })],
           ["Close", () => this.key({ key: "Escape" })],
         ]);
       },
@@ -1251,6 +1251,35 @@
     renderPanel(index);
   }
 
+  // ----- the embedding page ------------------------------------------------------------------
+
+  // A page that hosts the viewer and has controls of its own (the showcase's theme picker) sets
+  // the overlay theme and the syntax theme by dispatching `omnidiff:set-theme` on the document,
+  // `detail` being `{ theme, syntax_theme }`. It is the theme dialog's Enter without the dialog,
+  // and without `/api/settings`: the page that sent it already knows.
+  async function onSetTheme(event) {
+    const { theme, syntax_theme: syntaxTheme } = event.detail || {};
+    if (theme && state.info.themes.some((known) => known.id === theme)) {
+      state.themeId = theme;
+      state.palette = paletteFor(theme);
+    }
+    if (syntaxTheme && state.info.syntax_themes.includes(syntaxTheme)) {
+      state.syntaxTheme = syntaxTheme;
+      if (state.diff) {
+        try {
+          const payload = await api("/api/highlight", { syntax_theme: syntaxTheme });
+          state.model.panels[0].spans = payload.before;
+          state.model.panels[1].spans = payload.after;
+          state.syntax = payload.syntax;
+        } catch (error) {
+          setError(error.message);
+        }
+      }
+    }
+    if (state.dialog && state.dialog.cancel && state.dialog.previewSyntax) state.dialog = null;
+    render();
+  }
+
   // ----- start ----------------------------------------------------------------------------------
 
   async function init() {
@@ -1283,6 +1312,7 @@
       code.addEventListener("scroll", () => onPanelScroll(i));
     }
     document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("omnidiff:set-theme", onSetTheme);
     window.addEventListener("resize", () => {
       measure();
       render();

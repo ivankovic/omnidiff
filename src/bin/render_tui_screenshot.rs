@@ -17,7 +17,7 @@
 //! Draws the viewer into an offscreen terminal and prints it as JSON, one styled run at a time,
 //! for `scripts/render_tui_screenshot.py` to rasterize. See `tui::screenshot`.
 //!
-//!     make readme-screenshot
+//!     make tui-screenshot OUT=still.png
 
 use std::path::PathBuf;
 

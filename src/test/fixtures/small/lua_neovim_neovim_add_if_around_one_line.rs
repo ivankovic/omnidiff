@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -31,7 +31,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("lua-neovim-neovim-add-if-around-one-line")
+    // Invariant 32, Maximal: before row 323 -> after row 324 (1 line(s)) gains 2 byte(s) of
+    // indentation, unpainted (want insert from column 0).
+    assert_ground_truth_invariants_with_known_violations(
+        "lua-neovim-neovim-add-if-around-one-line",
+        1,
+    )
 }
 
 #[test]

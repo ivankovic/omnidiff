@@ -2696,8 +2696,8 @@ fn handle_solution_picker(
     new_name: Option<String>,
     confirm_delete: Option<String>,
     state: TextPaintState,
-    // Read by save-as, to widen a `Minimal` painting to `Full`
-    // (`expand_leading_whitespace_for_full`).
+    // Read by save-as, to widen a `Minimal` painting to `Maximal`
+    // (`expand_leading_whitespace_for_maximal`).
     before_src: &[u8],
     after_src: &[u8],
 ) -> Option<OpenTarget> {

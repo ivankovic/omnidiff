@@ -3,7 +3,7 @@ set -euo pipefail
 
 record() {
   printf '%s=%s\n' "$@"
-}
+}  
 
 make_record() {
   record \

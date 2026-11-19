@@ -40,7 +40,7 @@ body {
 
 #showcase code,
 #showcase kbd {
-  font: 12.5px/1 ui-monospace, "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  font: 12.5px/1 ui-monospace, "JetBrains Mono", "Fira Code", Menlo, Consolas, "DejaVu Sans Mono", monospace;
 }
 
 #showcase kbd {
@@ -134,6 +134,73 @@ body {
 
 #case-stats {
   opacity: 0.85;
+}
+
+/* A content case's stepper: which of its screens is shown, and what it is. */
+#steps {
+  margin-top: 8px;
+}
+
+#step-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.view-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* A content case is drawn over the viewer, which holds an empty pair meanwhile: its panels and
+   footer give way to the terminal the case was recorded in. */
+body.content-case #panels,
+body.content-case #status,
+body.content-case #app > footer,
+body.content-case #touch-actions {
+  display: none;
+}
+
+#content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 14px;
+}
+
+/* The viewer's own font and row height (style.css), so a cell here is a cell there. */
+.terminal {
+  position: relative;
+  white-space: pre;
+}
+
+.terminal-row {
+  height: var(--row-height);
+  overflow: hidden;
+}
+
+.still .terminal-row > span {
+  display: inline-block;
+  height: var(--row-height);
+  overflow: hidden;
+  vertical-align: top;
+}
+
+.terminal-output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.terminal-prompt {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.terminal img {
+  position: absolute;
+}
+
+.terminal img.pixelated {
+  image-rendering: pixelated;
 }
 
 /* The keys' stand-in on a touch screen, which has no `M` to press. */

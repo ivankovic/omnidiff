@@ -772,9 +772,9 @@ def test_growth_table_prints_a_dash_for_an_empty_cell():
         (["Only one solution"], "single"),
         (["Left"], "single"),
         (["Minimal"], "minimal"),
-        (["Full (outer)"], "full"),
+        (["Maximal (outer)"], "maximal"),
         (["Fuller"], "single"),
-        (["Minimal", "Full"], "both"),
+        (["Minimal", "Maximal"], "both"),
     ],
 )
 def test_graded_case_follows_the_painting_names(names, case):
@@ -782,11 +782,11 @@ def test_graded_case_follows_the_painting_names(names, case):
 
 
 def _preset_rows():
-    def row(fixture, minimal, full, text_class, runs, size):
+    def row(fixture, minimal, maximal, text_class, runs, size):
         return {
             "fixture": fixture,
             "minimal": minimal,
-            "full": full,
+            "maximal": maximal,
             "class": text_class,
             "runs": str(runs),
             "bytes": str(size),
@@ -829,7 +829,7 @@ def test_preset_macros_give_shares_of_what_full_adds():
 # --- invariants_report ------------------------------------------------------------------------
 
 
-def test_invariant_groups_partition_the_31_rules():
+def test_invariant_groups_partition_the_32_rules():
     rules = sorted(i for _, _, group, _ in invariants_report.GROUPS for i in group)
     assert rules == list(invariants_report.INVARIANTS)
     assert set(invariants_report.MAPPING_ONLY) < set(rules)
@@ -874,4 +874,6 @@ def test_invariant_summary_scopes_scripts_to_the_painting_rules():
     values = invariants_report.macros(s)
     assert values["InvariantLineScriptFixturesPct"] == "50.0"
     assert values["InvariantLabelCount"] == 3
-    assert "-- & --" in invariants_report.table_tex(s)
+    table = invariants_report.table_tex(s)
+    assert "Hand" not in table and "Line script" not in table
+    assert table.count("\\\\") == len(invariants_report.GROUPS) + 2

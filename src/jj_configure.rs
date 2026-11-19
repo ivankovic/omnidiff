@@ -213,7 +213,7 @@ fn ensure_inside_jj_repo() -> Result<()> {
 
 fn print_manual_instructions() {
     eprintln!(
-        "Run these manually instead (see README's \"Jujutsu (jj) integration\" section):\n\n\
+        "Run these manually instead (see \"Jujutsu (jj) integration\" in docs/README.md):\n\n\
          jj config set --user merge-tools.omnidiff.program omnidiff\n\
          jj config set --user merge-tools.omnidiff.diff-args '[\"--\",\"$left\",\"$right\"]'\n\
          jj config set --user merge-tools.omnidiff.diff-invocation-mode file-by-file\n\n\

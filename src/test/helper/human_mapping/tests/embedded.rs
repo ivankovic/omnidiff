@@ -241,7 +241,7 @@ fn a_host_changed_only_inside_its_painted_layers_is_painted_empty() -> Result<()
         ast: Box::new(ast),
         node_cache: NodeCache::build(&before, &after),
     };
-    // The layer painting is a minimal one: Full would also paint each insertion's indentation.
+    // The layer painting is a minimal one: Maximal would also paint each insertion's indentation.
     let comparison =
         compare_painting_for_mapping(&mapping, RenderOptions::MINIMAL, &before, &after, &diff)?;
     assert_eq!(comparison.mismatched_bytes, 0);

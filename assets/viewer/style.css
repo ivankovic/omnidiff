@@ -36,7 +36,7 @@ html, body {
   height: 100%;
   background: var(--page-bg);
   color: var(--page-fg);
-  font: 13px/var(--row-height) ui-monospace, "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  font: 13px/var(--row-height) ui-monospace, "JetBrains Mono", "Fira Code", Menlo, Consolas, "DejaVu Sans Mono", monospace;
   overflow: hidden;
 }
 

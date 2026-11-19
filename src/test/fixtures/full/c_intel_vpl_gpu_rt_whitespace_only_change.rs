@@ -33,5 +33,5 @@ fn invariants() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    assert_matches_human_painting_within_limit("c-intel-vpl-gpu-rt-whitespace-only-change", 0.04)
+    assert_matches_human_painting_within_limit("c-intel-vpl-gpu-rt-whitespace-only-change", 0.0)
 }

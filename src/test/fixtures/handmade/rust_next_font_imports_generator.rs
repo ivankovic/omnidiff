@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `FULL` depends on `reconcile_moves` not calling two overlapping accounts of one relocation
+    // `MAXIMAL` depends on `reconcile_moves` not calling two overlapping accounts of one relocation
     // (the de-indented `if let` chain, four columns apart) a conflict, which would blank the after
     // side over sixty-one rows.
     assert_matches_human_painting_within_limit("rust-next-font-imports-generator", 7.08)

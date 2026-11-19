@@ -197,7 +197,7 @@ TARGETS = {
     "NumPhasesWord": "five",
     "GumTreeVersion": "v4.0.0-beta8",
     # Languages OmniDiff parses with a tree-sitter grammar and diffs structurally: the count the
-    # root README's "Supported content" section states (SQL, 2026-11-09, is the 26th). The
+    # "Supported content" section of docs/README.md states (SQL, 2026-11-09, is the 26th). The
     # fixture corpus covers \NumFixtureLanguages of them.
     "NumSupportedLanguages": "26",
 }
@@ -239,7 +239,7 @@ MACHINE = {
 # The project the dataset is the test corpus of, read off github.com/ivankovic/omnidiff with
 # `gh api repos/ivankovic/omnidiff` on 2026-11-10. Authored: a refresh means reading them again
 # and changing ProjectStatsDate with them. The repository's creation date is from the same call;
-# the release channels are the ones the root README's Installation section lists.
+# the release channels are the ones the Installation section of docs/README.md lists.
 PROJECT = {
     "ProjectStars": "1{,}313",
     "ProjectForks": "35",
@@ -255,6 +255,8 @@ PROJECT = {
 # b87928e8. Authored because the "before" state is a commit, not a file; the paper-scope count
 # of what is left is generated (`InvariantHumanAll*`, analysis/invariants_report.py).
 INVARIANT_REPAIR = {
+    # How many rules there were then; `InvariantCount` is how many there are now.
+    "InvariantRepairRuleCount": "31",
     "InvariantRepairBeforeViolations": "435",
     "InvariantRepairBeforeFixtures": "142",
     "InvariantRepairAfterViolations": "111",
@@ -427,10 +429,10 @@ RENDERING_MACROS = [
     "PaintingNmEntries",
     "PaintingNmPct",
     "PaintingMinimalEntries",
-    "PaintingFullEntries",
-    "PaintingFullExtraSpans",
-    "PaintingFullExtraPunctuation",
-    "PaintingFullExtraPunctuationPct",
+    "PaintingMaximalEntries",
+    "PaintingMaximalExtraSpans",
+    "PaintingMaximalExtraPunctuation",
+    "PaintingMaximalExtraPunctuationPct",
 ]
 
 # Every macro the change-shape fragment (human_mapping_shapes_report.py's write_paper_fragment) is
@@ -497,7 +499,7 @@ GROWTH_MACROS = [
     "GrowthIssuesExternal",
 ]
 
-# Every macro the Minimal-against-Full fragment (preset_report.py) is expected to define.
+# Every macro the Minimal-against-Maximal fragment (preset_report.py) is expected to define.
 PRESET_MACROS = [
     "PresetPainted",
     "PresetBothFixtures",
@@ -505,13 +507,13 @@ PRESET_MACROS = [
     "PresetSingleFixtures",
     "PresetSinglePct",
     "PresetMinimalOnlyFixtures",
-    "PresetFullOnlyFixtures",
+    "PresetMaximalOnlyFixtures",
     "PresetCensusFixtures",
     "PresetMinimalBytes",
-    "PresetFullBytes",
-    "PresetFullOverMinimal",
+    "PresetMaximalBytes",
+    "PresetMaximalOverMinimal",
     "PresetAddedBytes",
-    "PresetAddedPctOfFull",
+    "PresetAddedPctOfMaximal",
     "PresetRelabelledBytes",
     "PresetMinimalOnlyBytes",
     "PresetIdenticalFixtures",
@@ -1128,13 +1130,13 @@ CONTENT_FAMILIES = [
 # Which machine's `data/performance/content_speed/<machine>.csv` the paper's content timings are
 # read from. `server` is the MACHINE block's hardware, which every other corpus-wide measurement in
 # the paper ran on (2026-10-06, single-shot). `laptop.csv` holds the same pairs re-timed on
-# 2026-11-07 as the median of three runs - the README's figures - and is not comparable with it
-# (`data/performance/PROVENANCE.md`: compare figures within one file, never across two).
+# 2026-11-07 as the median of three runs - src/test/README.md's figures - and is not comparable
+# with it (`data/performance/PROVENANCE.md`: compare figures within one file, never across two).
 CONTENT_SPEED_MACHINE = "server"
 
 # The content census's per-repository cap: each repository weighs min(1, CAP / its changes), the
 # expected outcome of sampling CAP of its changes. The figure data/corpus_stats/PROVENANCE.md and
-# the root README quote ("at most 1,000 per repository"); a parameter of the reading, not a
+# src/test/README.md quote ("at most 1,000 per repository"); a parameter of the reading, not a
 # measurement.
 CONTENT_CENSUS_CAP = 1000
 
@@ -1220,6 +1222,10 @@ def content_census(research_dir):
         for outcome in counts:
             if outcome != "text" and diffed(outcome):
                 family_repositories[outcome] += 1
+        # The table's first and last rows: repositories with a text change, and with a change
+        # OmniDiff does not read (binary, or a family's bytes that fail to decode).
+        family_repositories["text"] += "text" in counts
+        family_repositories["left"] += any(not diffed(o) for o in counts)
 
     values = {
         "ContentCensusChanges": latex_number(total),
@@ -1233,6 +1239,8 @@ def content_census(research_dir):
         "ContentCensusLeftPct": f"{(total - shown) / total * 100:.1f}",
         "ContentCensusText": latex_number(text),
         "ContentCensusLeft": latex_number(total - shown),
+        "ContentCensusTextRepos": latex_number(family_repositories["text"]),
+        "ContentCensusLeftRepos": latex_number(family_repositories["left"]),
         "ContentCensusCapPerRepo": latex_number(CONTENT_CENSUS_CAP),
     }
     for family, stem in CONTENT_FAMILIES:
@@ -1256,9 +1264,11 @@ def content_speed(research_dir):
     if not os.path.exists(path):
         return {}
     times = collections.defaultdict(list)
+    sampled = collections.Counter()
     not_diffed = 0
     with open(path, newline="") as f:
         for r in csv.DictReader(f):
+            sampled[r["family"]] += 1
             if r["outcome"] == "diffed":
                 times[r["family"]].append(float(r["elapsed_ms"]))
             else:
@@ -1274,6 +1284,7 @@ def content_speed(research_dir):
         if not t:
             continue
         pooled += t
+        values[f"ContentSample{stem}Pairs"] = latex_number(sampled[family])
         values[f"ContentSpeed{stem}Pairs"] = latex_number(len(t))
         values[f"ContentSpeed{stem}PFifty"] = ms(_rank_percentile(t, 50))
         values[f"ContentSpeed{stem}PNinety"] = ms(_rank_percentile(t, 90))
@@ -1286,12 +1297,50 @@ def content_speed(research_dir):
         )
     pooled.sort()
     if pooled:
+        values["ContentSamplePairs"] = latex_number(sum(sampled.values()))
         values["ContentSpeedPairs"] = latex_number(len(pooled))
         values["ContentSpeedNotDiffed"] = not_diffed
         values["ContentSpeedPFifty"] = ms(_rank_percentile(pooled, 50))
         values["ContentSpeedUnderSecondPct"] = (
             f"{sum(x < 1000 for x in pooled) / len(pooled) * 100:.1f}"
         )
+    return values
+
+
+def content_change_size(research_dir):
+    """Size of a change to content other than code, per family: the median size of the larger
+    file of a sampled pair, and the median share of the content's own units that changed (pixels
+    of a picture or cursor, members of a container), over the pairs that have such a count.
+    DERIVED from `data/corpus_stats/content_change_size.csv`.
+
+    source: `make measure-content-change-size`, 2026-11-14; see data/corpus_stats/PROVENANCE.md
+            ("The size of changes to other content").
+    """
+    path = os.path.join(research_dir, "data", "corpus_stats", "content_change_size.csv")
+    if not os.path.exists(path):
+        return {}
+    sizes = collections.defaultdict(list)
+    shares = collections.defaultdict(list)
+    with open(path, newline="") as f:
+        for r in csv.DictReader(f):
+            sizes[r["family"]].append(max(int(r["before_bytes"]), int(r["after_bytes"])))
+            if r["changed_units"] != "" and int(r["total_units"]) > 0:
+                shares[r["family"]].append(int(r["changed_units"]) / int(r["total_units"]))
+    values = {}
+    for family, stem in CONTENT_FAMILIES:
+        if not sizes.get(family):
+            continue
+        size, share = sorted(sizes[family]), sorted(shares.get(family, []))
+        values[f"ContentSize{stem}Pairs"] = latex_number(len(size))
+        values[f"ContentSize{stem}KbPFifty"] = latex_number(
+            round(_rank_percentile(size, 50) / 1000)
+        )
+        values[f"ContentSize{stem}Counted"] = latex_number(len(share))
+        if share:
+            values[f"ContentSize{stem}SharePFiftyPct"] = f"{_rank_percentile(share, 50) * 100:.1f}"
+            values[f"ContentSize{stem}UnderFivePct"] = (
+                f"{sum(x < 0.05 for x in share) / len(share) * 100:.0f}"
+            )
     return values
 
 
@@ -1388,7 +1437,7 @@ def rendering_accuracy(research_dir):
     * Painting: per fixture and graded case of `data/quality/painting_attribution.csv`
       (`painting_failure_census`), whether no byte is painted differently from the hand painting
       (`real_bytes` is zero), and whether at most 1% of the fixture's bytes are. The cases are
-      `human_mapping::GradedCase`: `minimal`, `full`, and `single` for a lone painting that names
+      `human_mapping::GradedCase`: `minimal`, `maximal`, and `single` for a lone painting that names
       no preset, which both presets have to reproduce.
 
     DERIVED. Both files are written by the product's own gates, so they follow the corpus; the
@@ -1418,7 +1467,7 @@ def rendering_accuracy(research_dir):
     if os.path.exists(path):
         with open(path, newline="") as f:
             rows = [r for r in csv.DictReader(f) if in_paper_scope(r["fixture"], datasets)]
-        for case in ("minimal", "full", "single"):
+        for case in ("minimal", "maximal", "single"):
             of_case = [r for r in rows if r["preset"] == case]
             if not of_case:
                 continue
@@ -1717,7 +1766,7 @@ def build(
 
     out += [
         "",
-        "% --- Minimal against Full: the three painting cases and what the Full hand painting",
+        "% --- Minimal against Maximal: the three painting cases and what the Maximal hand painting",
         "% adds to the Minimal one. Generated by analysis/preset_report.py from the mapping files",
         "% and data/quality/preset_census.csv; refresh with `make preset-report` (fast) or",
         "% `make measure-presets`.",
@@ -1937,6 +1986,7 @@ def main():
         ("change census", change_census(research_dir)),
         ("content census", content_census(research_dir)),
         ("content speed", content_speed(research_dir)),
+        ("content change size", content_change_size(research_dir)),
         ("content accuracy", content_accuracy(research_dir)),
     ):
         if not part:

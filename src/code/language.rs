@@ -139,7 +139,7 @@ pub const XML_FORMAT_EXTENSIONS: &[&str] = &[
 ];
 
 /// Every file extension OmniDiff recognises, lower-cased, and the language it means. The one
-/// table behind [`language_for_extension`] and the README's language list.
+/// table behind [`language_for_extension`] and the language list in `docs/README.md`.
 pub const EXTENSIONS: &[(&[&str], Language)] = &[
     (&["bash", "sh"], Language::ShellScript),
     (&["bazel"], Language::Bazel),
@@ -285,8 +285,8 @@ pub fn parse_tree(
     Some(tree)
 }
 
-/// The languages in the README's "Supported content" section, generated so they cannot drift from
-/// this file: one table of the languages with a grammar, and the extensions that are recognised
+/// The languages in the "Supported content" section of `docs/README.md`, generated so they
+/// cannot drift from this file: one table of the languages with a grammar, and the extensions that are recognised
 /// but diffed as plain text because no grammar is compiled in.
 pub fn supported_languages_markdown() -> String {
     use strum::IntoEnumIterator;
@@ -509,14 +509,15 @@ mod tests {
         );
     }
 
-    /// The README's language section is this file's output between two HTML comment markers, so
-    /// adding a grammar or an extension without updating it fails here, with the text to paste.
+    /// The language section of `docs/README.md` is this file's output between two HTML comment
+    /// markers, so adding a grammar or an extension without updating it fails here, with the
+    /// text to paste.
     #[test]
     fn the_readme_lists_exactly_the_supported_languages() {
         let readme = std::fs::read_to_string(
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md"),
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/README.md"),
         )
-        .expect("README.md at the crate root")
+        .expect("docs/README.md in the repository")
         // git's Windows autocrlf default checks the README out with CRLF.
         .replace("\r\n", "\n");
         let start = "<!-- languages:start -->\n";
@@ -533,7 +534,7 @@ mod tests {
         assert_eq!(
             readme[from..to].trim_end(),
             expected.trim_end(),
-            "README.md's language section is stale; paste this between the markers:\n\n{expected}"
+            "docs/README.md's language section is stale; paste this between the markers:\n\n{expected}"
         );
     }
 
