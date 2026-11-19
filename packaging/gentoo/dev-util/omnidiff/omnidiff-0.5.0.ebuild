@@ -59,6 +59,7 @@ CRATES="
 	compact_str@0.9.1
 	confy@2.0.0
 	const-oid@0.10.2
+	constant_time_eq@0.6.1
 	convert_case@0.10.0
 	cpufeatures@0.2.17
 	cpufeatures@0.3.1
@@ -168,7 +169,7 @@ CRATES="
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
 	libsqlite3-sys@0.39.1
-	libz-sys@1.1.31
+	libz-sys@1.1.33
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6
@@ -381,7 +382,7 @@ CRATES="
 	tree-sitter@0.25.10
 	ts-parser-perl@2.0.5
 	two-face@0.5.2+bat-0.26.1
-	typed-path@0.12.3
+	typed-path@0.13.0
 	typenum@1.20.1
 	ucd-trie@0.1.7
 	unicode-ident@1.0.26
@@ -447,7 +448,9 @@ CRATES="
 	zerocopy@0.8.59
 	zerofrom-derive@0.1.8
 	zerofrom@0.1.8
-	zip@9.0.4
+	zeroize@1.9.2
+	zeroize_derive@1.5.0
+	zip@9.7.3
 	zlib-rs@0.6.8
 	zmij@1.0.23
 	zune-core@0.5.3
