@@ -38,7 +38,9 @@
 //!
 //! A file without a grammar, or too big to parse, is diffed line by line; it has no
 //! definitions, and [`Diff::is_structural`] says so. For a library, depend on the crate with
-//! `default-features = false`, which leaves out the terminal viewer.
+//! `default-features = false`, which leaves out the terminal viewer. The `git` feature adds
+//! `omnidiff::git`: a commit, a range, or the staged or unstaged changes of a repository, each
+//! changed file a [`Diff`].
 //!
 //! # Stability
 //!
@@ -73,6 +75,11 @@ pub use crate::library::{
     ChangeKind, Definition, DefinitionChange, DefinitionKind, Diff, Error, Operation, Position,
     Preset, Side, Span, TextChange,
 };
+
+/// A git repository's commits, staged and unstaged changes, each file a [`Diff`]. Needs the
+/// `git` feature.
+#[cfg(feature = "git")]
+pub use crate::library::git;
 
 use crate::code::Code;
 

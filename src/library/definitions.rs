@@ -240,7 +240,7 @@ impl Definition {
 
 /// What happened to a definition between the two sides.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ChangeKind {
     Added,
     Removed,

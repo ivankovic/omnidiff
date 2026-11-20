@@ -99,6 +99,15 @@ mod inner {
 fn helper() {}
 "#;
 
+/// A caller can diff on one thread and read on another.
+#[test]
+fn the_results_cross_threads() {
+    fn shareable<T: Send + Sync>() {}
+    shareable::<Diff>();
+    shareable::<DefinitionChange>();
+    shareable::<Error>();
+}
+
 #[test]
 fn every_definition_is_told_what_happened_to_it() {
     let diff = Diff::new(BEFORE, AFTER, Language::Rust);

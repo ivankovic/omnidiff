@@ -39,6 +39,8 @@
 
 mod changes;
 pub mod definitions;
+#[cfg(feature = "git")]
+pub mod git;
 mod qualified_name;
 
 use std::ops::Range;
@@ -163,6 +165,10 @@ pub enum Error {
     },
     /// A file is not text: not UTF-8, and not UTF-16 or UTF-32 with a byte order mark.
     NotText { path: PathBuf },
+    /// A git operation failed: the repository could not be opened, a revision did not resolve,
+    /// an object could not be read.
+    #[cfg(feature = "git")]
+    Git(Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl std::fmt::Display for Error {
@@ -170,6 +176,8 @@ impl std::fmt::Display for Error {
         match self {
             Error::Io { path, source } => write!(f, "cannot read {}: {source}", path.display()),
             Error::NotText { path } => write!(f, "{} is not text", path.display()),
+            #[cfg(feature = "git")]
+            Error::Git(source) => write!(f, "git: {source}"),
         }
     }
 }
@@ -179,6 +187,8 @@ impl std::error::Error for Error {
         match self {
             Error::Io { source, .. } => Some(source),
             Error::NotText { .. } => None,
+            #[cfg(feature = "git")]
+            Error::Git(source) => Some(&**source),
         }
     }
 }
@@ -300,6 +310,18 @@ impl Diff {
             Some(before.as_ref().to_path_buf()),
             Some(after.as_ref().to_path_buf()),
         ];
+        self.definitions = OnceLock::new();
+        self
+    }
+
+    /// Reads each side's project files from `before` and `after` instead of the filesystem.
+    #[cfg(feature = "git")]
+    pub(crate) fn with_project_files(
+        mut self,
+        before: Arc<dyn ProjectFiles + Send + Sync>,
+        after: Arc<dyn ProjectFiles + Send + Sync>,
+    ) -> Self {
+        self.projects = [before, after];
         self.definitions = OnceLock::new();
         self
     }

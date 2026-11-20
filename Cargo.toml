@@ -111,6 +111,20 @@ confy = { version = "2.0.0", optional = true }
 crossbeam-channel = { version = "0.5.15", optional = true }
 csv = { version = "1.4.0", optional = true }
 git2 = { version = "0.21", optional = true }
+# The `git` feature's repository access: pure Rust, no network, no C (see src/library/git.rs).
+gix = { version = "0.90", optional = true, default-features = false, features = [
+    "sha1",
+    "revision",
+    "blob-diff",
+    "index",
+    "status",
+    "dirwalk",
+    "excludes",
+    "attributes",
+    # Makes `ThreadSafeRepository` `Send + Sync` (Arc, not Rc), so a `Diff` built from a tree can
+    # cross threads.
+    "parallel",
+] }
 indoc = { version = "2.0.7", optional = true }
 libc = { version = "0.2", optional = true }
 num_cpus = { version = "1.17.0", optional = true }
@@ -243,6 +257,9 @@ tui = [
     "dep:tracing-subscriber",
     "dep:tracing-error",
 ]
+# `omnidiff::git`: a repository's commits, staged and unstaged changes as `omnidiff::Diff`s.
+# Opt-in: it adds gix and about 80 crates; the TUI's review picker runs the `git` binary instead.
+git = ["dep:gix"]
 # Gates `omnidiff::test`, whose data files are excluded from the published crate, so it must not
 # be public API there. Needed by every src/bin/ dev tool; `stats` includes it.
 test-fixtures = ["dep:csv", "dep:quick-xml", "dep:regex", "dep:tempfile", "tui"]

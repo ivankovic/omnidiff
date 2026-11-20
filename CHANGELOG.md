@@ -18,6 +18,11 @@ release does: a minor bump may change the JSON output or the library API, a patc
   ranges and positions, and `enclosing_definition` the definition around a byte, like git's hunk
   header. Use the crate with `default-features = false` to leave out the terminal viewer
   ([#109](https://github.com/ivankovic/omnidiff/issues/109)).
+- The `git` feature adds `omnidiff::git`: `Repository::open(path)`, then `commit("HEAD")`,
+  `range("main", "HEAD")`, `staged()` or `unstaged()` (untracked files included), each changed
+  file an `omnidiff::Diff` read lazily from the object store, and
+  `changed_definitions()` across all of them. Qualified names are read from the revision's own
+  `go.mod` and `__init__.py`. Built on gix: pure Rust, no network, no C.
 
 - A new highlighting option, "Highlight changed spaces at the end of a line" in the `M` panel
   (`changed_trailing_whitespace`): spaces or tabs added, removed or changed after the last

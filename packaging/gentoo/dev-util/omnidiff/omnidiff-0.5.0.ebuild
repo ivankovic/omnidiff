@@ -16,6 +16,7 @@ CRATES="
 	anstyle@1.0.14
 	anyhow@1.0.104
 	approx@0.5.1
+	arc-swap@1.9.5
 	arrayref@0.3.9
 	arrayvec@0.7.8
 	atomic@0.6.1
@@ -35,11 +36,13 @@ CRATES="
 	block-buffer@0.12.1
 	brotli-decompressor@5.0.3
 	brotli@8.0.4
+	bstr@1.14.0
 	bumpalo@3.20.3
 	by_address@1.2.1
 	bytemuck@1.25.2
 	bytemuck_derive@1.12.1
 	byteorder-lite@0.1.0
+	byteorder@1.5.0
 	bytes@1.12.1
 	bzip2@0.6.1
 	castaway@0.2.4
@@ -53,6 +56,7 @@ CRATES="
 	clap_derive@4.6.7
 	clap_lex@1.1.1
 	clap_mangen@0.3.3
+	clru@0.6.3
 	color@0.3.3
 	color_quant@1.1.0
 	colorchoice@1.0.5
@@ -61,11 +65,14 @@ CRATES="
 	const-oid@0.10.2
 	constant_time_eq@0.6.1
 	convert_case@0.10.0
+	core_detect@1.0.0
 	cpufeatures@0.2.17
 	cpufeatures@0.3.1
 	crc32fast@1.5.2
 	critical-section@1.2.0
 	crossbeam-channel@0.5.17
+	crossbeam-deque@0.8.8
+	crossbeam-epoch@0.9.21
 	crossbeam-utils@0.8.23
 	crossterm@0.28.1
 	crossterm@0.29.0
@@ -79,7 +86,12 @@ CRATES="
 	darling@0.24.1
 	darling_core@0.24.1
 	darling_macro@0.24.1
+	dashmap@6.2.1
 	data-url@0.3.2
+	defmt-macros@1.2.0
+	defmt-parser@1.1.0
+	defmt@0.3.101
+	defmt@1.2.0
 	deltae@0.3.2
 	deranged@0.5.8
 	derive_more-impl@2.1.1
@@ -87,7 +99,9 @@ CRATES="
 	digest@0.10.7
 	digest@0.11.3
 	document-features@0.2.12
+	dunce@1.0.5
 	either@1.18.0
+	encoding_rs@0.8.44
 	equivalent@1.0.2
 	errno@0.3.14
 	etcetera@0.10.0
@@ -96,6 +110,7 @@ CRATES="
 	fallible-streaming-iterator@0.1.9
 	fancy-regex@0.11.0
 	fancy-regex@0.16.2
+	faster-hex@0.10.1
 	fastrand@2.5.0
 	fax@0.2.7
 	fdeflate@0.3.7
@@ -127,9 +142,63 @@ CRATES="
 	getrandom@0.4.3
 	gif@0.14.2
 	git2@0.21.0
+	gix-actor@0.44.1
+	gix-attributes@0.37.1
+	gix-bitmap@0.6.1
+	gix-chunk@0.10.1
+	gix-command@0.12.1
+	gix-commitgraph@0.42.0
+	gix-config-value@0.21.1
+	gix-config@0.62.2
+	gix-date@0.18.1
+	gix-diff@0.70.0
+	gix-dir@0.32.0
+	gix-discover@0.57.1
+	gix-error@0.5.2
+	gix-filter@0.36.1
+	gix-fs@0.24.1
+	gix-glob@0.29.1
+	gix-hash@0.28.1
+	gix-hashtable@0.18.1
+	gix-ignore@0.24.1
+	gix-imara-diff@0.3.3
+	gix-index@0.58.0
+	gix-lock@26.0.1
+	gix-macros@0.2.1
+	gix-note@0.3.1
+	gix-object@0.66.1
+	gix-odb@0.87.0
+	gix-pack@0.77.0
+	gix-packetline@0.24.1
+	gix-parallel@0.50.1
+	gix-path@0.14.1
+	gix-pathspec@0.22.1
+	gix-protocol@0.68.0
+	gix-quote@0.10.1
+	gix-ref@0.69.1
+	gix-refspec@0.47.1
+	gix-revision@0.52.0
+	gix-revwalk@0.38.0
+	gix-sec@0.16.1
+	gix-shallow@0.15.1
+	gix-status@0.37.0
+	gix-submodule@0.36.1
+	gix-tempfile@26.0.1
+	gix-trace@0.3.1
+	gix-transport@0.62.0
+	gix-traverse@0.64.0
+	gix-url@0.40.1
+	gix-utils@0.5.2
+	gix-validate@0.13.1
+	gix-worktree-stream@0.39.0
+	gix-worktree@0.59.0
+	gix-zlib@0.4.0
+	gix@0.90.0
 	glifo@0.4.0
 	guillotiere@0.7.0
 	half@2.7.1
+	hash32@0.3.1
+	hashbrown@0.14.5
 	hashbrown@0.16.1
 	hashbrown@0.17.1
 	hashlink@0.12.2
@@ -141,6 +210,7 @@ CRATES="
 	hayro-postscript@0.1.0
 	hayro-syntax@0.8.0
 	hayro@0.8.0
+	heapless@0.8.0
 	heck@0.5.0
 	hermit-abi@0.5.3
 	hex@0.4.3
@@ -157,6 +227,11 @@ CRATES="
 	is_terminal_polyfill@1.70.2
 	itertools@0.14.0
 	itoa@1.0.18
+	jiff-core@0.1.8
+	jiff-static@0.2.46
+	jiff-tzdb-platform@0.1.3
+	jiff-tzdb@0.1.10
+	jiff@0.2.46
 	jobserver@0.1.35
 	js-sys@0.3.105
 	kasuari@0.4.12
@@ -183,6 +258,7 @@ CRATES="
 	mac_address@1.1.8
 	matchers@0.2.0
 	memchr@2.8.3
+	memmap2@0.9.12
 	memmem@0.1.1
 	memoffset@0.9.1
 	metrohash@1.0.7
@@ -192,9 +268,11 @@ CRATES="
 	miniz_oxide@0.9.1
 	mio@1.2.3
 	moxcms@0.8.1
+	multiversion_no_op@1.0.0
 	nix@0.29.0
 	nix@0.31.3
 	nom@7.1.3
+	nonempty@0.12.0
 	nu-ansi-term@0.50.3
 	num-conv@0.2.2
 	num-derive@0.4.2
@@ -215,6 +293,7 @@ CRATES="
 	parking_lot@0.12.5
 	parking_lot_core@0.9.12
 	peniko@0.6.1
+	percent-encoding@2.3.2
 	pest@2.9.2
 	pest_derive@2.9.2
 	pest_generator@2.9.2
@@ -235,10 +314,12 @@ CRATES="
 	plist@1.10.1
 	png@0.18.1
 	polycool@0.4.0
+	portable-atomic-util@0.2.8
 	portable-atomic@1.15.0
 	powerfmt@0.2.0
 	ppv-lite86@0.2.21
 	proc-macro2@1.0.107
+	prodash@31.0.1
 	pxfm@0.1.30
 	quantette@0.6.0
 	quick-error@2.0.1
@@ -293,6 +374,7 @@ CRATES="
 	serde_derive@1.0.229
 	serde_json@1.0.151
 	serde_spanned@1.1.1
+	sha1dc@0.1.5
 	sha2@0.10.9
 	sha2@0.11.0
 	sharded-slab@0.1.7
@@ -301,6 +383,7 @@ CRATES="
 	signal-hook-registry@1.4.8
 	signal-hook@0.3.18
 	simd-adler32@0.3.10
+	simdutf8@0.1.5
 	simplecss@0.2.2
 	siphasher@1.0.3
 	skrifa@0.44.0
@@ -342,6 +425,7 @@ CRATES="
 	time@0.3.55
 	tiny-skia-path@0.12.0
 	tiny-skia@0.12.0
+	tinyvec@1.13.3
 	tokio-macros@2.7.2
 	tokio@1.54.1
 	toml@0.9.12+spec-1.1.0
@@ -385,7 +469,9 @@ CRATES="
 	typed-path@0.13.0
 	typenum@1.20.1
 	ucd-trie@0.1.7
+	unicode-bom@2.0.3
 	unicode-ident@1.0.26
+	unicode-normalization@0.1.26
 	unicode-segmentation@1.13.3
 	unicode-truncate@2.0.1
 	unicode-width@0.2.3
