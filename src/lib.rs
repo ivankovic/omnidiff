@@ -14,24 +14,43 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-//! Syntax-aware code diffing on tree-sitter ASTs.
+//! Syntax-aware diffing on tree-sitter syntax trees, for code in 26 languages.
 //!
-//! [`diff_strings`] is the entry point: it parses both sides into [`code::Code`] and returns a
-//! [`diff::Diff`]: the mapping between the two syntax trees plus the changed text ranges it implies.
-//! The `tui` feature adds the terminal viewer built on it.
+//! [`Diff`] is the entry point: [`Diff::files`] reads two files, [`Diff::new`] takes two strings
+//! in a [`Language`]. It tells what changed in each function, type and module, named the way the
+//! language's imports name them, and which stretches of text changed:
+//!
+//! ```
+//! use omnidiff::{Diff, Language};
+//!
+//! let before = "struct Parser;\nimpl Parser {\n    fn parse(&self) {}\n}\n";
+//! let after = "struct Parser;\nimpl Parser {\n    fn parse(&self) { todo!() }\n    fn peek(&self) {}\n}\n";
+//! let diff = Diff::new(before, after, Language::Rust);
+//!
+//! for change in diff.changed_functions() {
+//!     println!("{} {}", change.kind(), change.qualified_name());
+//! }
+//! // modified Parser::parse
+//! // added Parser::peek
+//! # let names: Vec<_> = diff.changed_functions().map(|c| (c.kind().as_str(), c.qualified_name())).collect();
+//! # assert_eq!(names, [("modified", "Parser::parse"), ("added", "Parser::peek")]);
+//! ```
+//!
+//! A file without a grammar, or too big to parse, is diffed line by line; it has no
+//! definitions, and [`Diff::is_structural`] says so. For a library, depend on the crate with
+//! `default-features = false`, which leaves out the terminal viewer.
 //!
 //! # Stability
 //!
-//! This crate is published for the `omnidiff` binary. Its stable contracts are the command line
-//! and the `--mode json` output, which the editor integrations consume. The library API - the
-//! `diff` module's submodules (`apted`, `cost`, `nodes`, `text`, `text_range`), the `tui` module,
-//! and the `tree_sitter` and `ratatui` types in their signatures - is the binary's internals made
-//! visible, and changes between 0.x minor versions without notice. [`diff_strings`] and the
-//! [`code`] and [`diff`] module roots are the parts meant for use from another crate.
+//! The command line, the `--mode json` output (which the editor integrations consume) and the
+//! types at the crate root - [`Diff`] and what it returns - are the supported interfaces. Every
+//! other module (`code`, `diff` and its submodules, `tui`) is the binary's internals made
+//! visible, and changes between 0.x minor versions without notice.
 #[cfg(feature = "stats")]
 pub mod anomalous_paths;
 pub mod code;
 pub mod diff;
+mod library;
 #[cfg(feature = "stats")]
 pub mod stats;
 // Needs no TUI dependency itself, but its one consumer (the TUI's review picker) is behind `tui`, so
@@ -49,21 +68,27 @@ pub mod showcase;
 #[cfg(any(test, feature = "test-fixtures"))]
 pub mod test;
 
-use crate::{
-    code::{Code, Language},
-    diff::Diff,
-    diff::diff_code,
+pub use crate::code::Language;
+pub use crate::library::{
+    ChangeKind, Definition, DefinitionChange, DefinitionKind, Diff, Error, Operation, Position,
+    Preset, Side, Span, TextChange,
 };
 
-/// Diffs two programs given as source strings in `language`.
-pub fn diff_strings(before: &str, after: &str, language: &Language) -> Diff {
+use crate::code::Code;
+
+/// Diffs two programs given as source strings in `language`, returning the engine's node mapping.
+#[deprecated(
+    since = "0.6.0",
+    note = "use `omnidiff::Diff::new`, which keeps the trees the mapping's ids refer to"
+)]
+pub fn diff_strings(before: &str, after: &str, language: &Language) -> diff::Diff {
     let (code_before, code_after) = code::build_sides(
         code::worth_building_in_parallel(before, after),
         || Code::from_string(before, language),
         || Code::from_string(after, language),
     );
 
-    let mut diff = diff_code(&code_before, &code_after);
+    let mut diff = diff::diff_code(&code_before, &code_after);
     diff.language = *language;
     diff
 }
@@ -73,6 +98,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(deprecated)]
     fn diff_empty_strings() {
         let d = diff_strings("", "", &Language::Rust);
 

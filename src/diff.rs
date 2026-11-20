@@ -303,7 +303,7 @@ thread_local! {
 
 /// Runs `work` on a [`PIPELINE_STACK_SIZE`] thread, or inline when already on one. A panic is
 /// re-raised on the caller's thread.
-fn on_pipeline_stack<R: Send>(work: impl FnOnce() -> R + Send) -> R {
+pub(crate) fn on_pipeline_stack<R: Send>(work: impl FnOnce() -> R + Send) -> R {
     if ON_PIPELINE_STACK.get() {
         return work();
     }
