@@ -141,7 +141,6 @@ CRATES="
 	getrandom@0.3.4
 	getrandom@0.4.3
 	gif@0.14.2
-	git2@0.21.0
 	gix-actor@0.44.1
 	gix-attributes@0.37.1
 	gix-bitmap@0.6.1
@@ -232,7 +231,6 @@ CRATES="
 	jiff-tzdb-platform@0.1.3
 	jiff-tzdb@0.1.10
 	jiff@0.2.46
-	jobserver@0.1.35
 	js-sys@0.3.105
 	kasuari@0.4.12
 	kurbo@0.13.1
@@ -240,11 +238,9 @@ CRATES="
 	lazy_static@1.5.0
 	libbz2-rs-sys@0.2.5
 	libc@0.2.191
-	libgit2-sys@0.18.8+1.9.7
 	libm@0.2.16
 	libmimalloc-sys@0.1.49
 	libsqlite3-sys@0.39.1
-	libz-sys@1.1.33
 	line-clipping@0.3.8
 	linebender_resource_handle@0.1.1
 	linked-hash-map@0.5.6

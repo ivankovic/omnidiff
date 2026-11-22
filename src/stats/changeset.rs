@@ -136,8 +136,8 @@ use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::rc::Rc;
 
+use crate::stats::git::{Delta, ObjectId, Repository, Tree, tree_diff};
 use anyhow::{Result, bail};
-use git2::{DiffOptions, FileMode, ObjectType, Oid, Patch, Repository, Tree};
 use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 
 use crate::anomalous_paths;
@@ -278,7 +278,7 @@ pub fn file_bucket(files: usize) -> &'static str {
 /// One side of a changed file.
 #[derive(Debug, Clone)]
 pub struct Blob {
-    pub id: Oid,
+    pub id: ObjectId,
     pub bytes: Vec<u8>,
 }
 
@@ -286,7 +286,8 @@ impl Blob {
     /// A blob of `bytes`, with the id git gives them.
     pub fn of(bytes: &[u8]) -> Blob {
         Blob {
-            id: Oid::hash_object(ObjectType::Blob, bytes).unwrap_or(Oid::ZERO_SHA1),
+            id: gix::objs::compute_hash(gix::hash::Kind::Sha1, gix::objs::Kind::Blob, bytes)
+                .unwrap_or_else(|_| gix::hash::Kind::Sha1.null()),
             bytes: bytes.to_vec(),
         }
     }
@@ -486,31 +487,19 @@ fn shingles(lines: &[(u32, &str)], changed: &FxHashSet<u32>) -> FxHashSet<u64> {
 fn line_diff(before: &str, after: &str) -> (FxHashSet<u32>, FxHashSet<u32>) {
     let mut removed = FxHashSet::default();
     let mut added = FxHashSet::default();
-    let mut options = DiffOptions::new();
-    options.context_lines(0).force_text(true);
-    let Ok(patch) = Patch::from_buffers(
-        before.as_bytes(),
-        None,
-        after.as_bytes(),
-        None,
-        Some(&mut options),
-    ) else {
-        return (removed, added);
-    };
-    for hunk in 0..patch.num_hunks() {
-        for line in 0..patch.num_lines_in_hunk(hunk).unwrap_or(0) {
-            let Ok(line) = patch.line_in_hunk(hunk, line) else {
-                continue;
-            };
-            match (line.origin(), line.old_lineno(), line.new_lineno()) {
-                ('-', Some(number), _) => {
-                    removed.insert(number);
-                }
-                ('+', _, Some(number)) => {
-                    added.insert(number);
-                }
-                _ => {}
-            }
+    // git's default: Myers, its sliders slid down without the indent heuristic.
+    use gix::diff::blob::{Algorithm, Diff, InternedInput};
+    let input = InternedInput::new(before, after);
+    let mut diff = Diff::compute(Algorithm::Myers, &input);
+    diff.postprocess_no_heuristic(&input);
+    for (index, number) in (0..input.before.len() as u32).zip(1..) {
+        if diff.is_removed(index) {
+            removed.insert(number);
+        }
+    }
+    for (index, number) in (0..input.after.len() as u32).zip(1..) {
+        if diff.is_added(index) {
+            added.insert(number);
         }
     }
     (removed, added)
@@ -636,7 +625,7 @@ fn is_code(bytes: &[u8]) -> bool {
 
 /// Removed and added paths holding one blob, each path in one pair: `(removed, added)` indexes.
 fn exact_renames(files: &[ChangedFile]) -> Vec<(usize, usize)> {
-    let mut removed: FxHashMap<Oid, Vec<usize>> = FxHashMap::default();
+    let mut removed: FxHashMap<ObjectId, Vec<usize>> = FxHashMap::default();
     for (index, file) in files.iter().enumerate() {
         if let (Some(before), None) = (&file.before, &file.after)
             && !before.bytes.is_empty()
@@ -1015,11 +1004,9 @@ impl Skip {
     }
 }
 
-fn is_regular(mode: FileMode) -> bool {
-    matches!(
-        mode,
-        FileMode::Blob | FileMode::BlobGroupWritable | FileMode::BlobExecutable
-    )
+/// A regular file's mode, executable or not (and git's old group-writable one).
+fn is_regular(mode: u16) -> bool {
+    matches!(mode, 0o100644 | 0o100664 | 0o100755)
 }
 
 /// True for a repository path a fixture can hold under its own directory: relative, and nothing
@@ -1052,28 +1039,25 @@ pub fn load_changes(
     before: &Tree,
     after: &Tree,
 ) -> Result<std::result::Result<Vec<ChangedFile>, Skip>> {
-    let diff = repo.diff_tree_to_tree(Some(before), Some(after), None)?;
     let mut candidates = Vec::new();
-    for delta in diff.deltas() {
-        let (old, new) = (delta.old_file(), delta.new_file());
-        let (has_old, has_new) = (!old.id().is_zero(), !new.id().is_zero());
-        if (has_old && !is_regular(old.mode())) || (has_new && !is_regular(new.mode())) {
+    for Delta { old, new, .. } in tree_diff(repo, Some(before), after, false)? {
+        let (has_old, has_new) = (old.exists(), new.exists());
+        if (has_old && !is_regular(old.mode)) || (has_new && !is_regular(new.mode)) {
             continue;
         }
-        if has_old && has_new && old.id() == new.id() {
+        if has_old && has_new && old.id == new.id {
             continue;
         }
-        let Some(path) = new.path().or(old.path()) else {
+        let Some(text) = new.path.to_str() else {
             continue;
         };
-        let Some(text) = path.to_str() else { continue };
         if is_anomalous(text) || is_lock_file(text) || !is_safe_path(text) {
             continue;
         }
         candidates.push((
             text.to_string(),
-            has_old.then(|| old.id()),
-            has_new.then(|| new.id()),
+            has_old.then_some(old.id),
+            has_new.then_some(new.id),
         ));
     }
     if candidates.len() < MIN_FILES {
@@ -1086,12 +1070,11 @@ pub fn load_changes(
     }
     let mut files = Vec::new();
     for (path, old, new) in candidates {
-        let side = |id: Option<Oid>| -> Result<Option<Blob>> {
+        let side = |id: Option<ObjectId>| -> Result<Option<Blob>> {
             let Some(id) = id else { return Ok(None) };
-            let blob = repo.find_blob(id)?;
             Ok(Some(Blob {
                 id,
-                bytes: blob.content().to_vec(),
+                bytes: repo.find_blob(id)?.take_data(),
             }))
         };
         let (before, after) = (side(old)?, side(new)?);
@@ -1129,11 +1112,13 @@ pub fn regular_blob(repo: &Repository, tree: &Tree, path: &str) -> Result<Vec<u8
     if !is_safe_path(path) {
         bail!("{path:?} is not a path a fixture can hold");
     }
-    let entry = tree.get_path(Path::new(path))?;
-    if entry.kind() != Some(ObjectType::Blob) || !matches!(entry.filemode(), 0o100644 | 0o100755) {
+    let Some(entry) = tree.lookup_entry_by_path(path)? else {
+        bail!("{path:?} is not in the tree");
+    };
+    if !matches!(entry.mode().value(), 0o100644 | 0o100755) {
         bail!("{path:?} is not a regular file");
     }
-    Ok(repo.find_blob(entry.id())?.content().to_vec())
+    Ok(repo.find_blob(entry.object_id())?.take_data())
 }
 
 /// Two complete trees of one sub-folder (see the module documentation), paths relative to it.
@@ -1171,8 +1156,8 @@ fn subtree<'repo>(repo: &'repo Repository, tree: &Tree<'repo>, root: &str) -> Op
     if root.is_empty() {
         return Some(tree.clone());
     }
-    let entry = tree.get_path(Path::new(root)).ok()?;
-    repo.find_tree(entry.id()).ok()
+    let entry = tree.lookup_entry_by_path(root).ok()??;
+    repo.find_tree(entry.object_id()).ok()
 }
 
 /// Every entry under `tree` that is not a directory: its id and file mode, by path from `prefix`.
@@ -1180,17 +1165,20 @@ fn entries_under(
     repo: &Repository,
     tree: &Tree,
     prefix: &str,
-    found: &mut std::collections::BTreeMap<String, (Oid, i32)>,
+    found: &mut std::collections::BTreeMap<String, (ObjectId, u16)>,
 ) {
     for entry in tree.iter() {
-        let Ok(name) = entry.name() else { continue };
+        let Ok(entry) = entry else { continue };
+        let Ok(name) = std::str::from_utf8(entry.filename()) else {
+            continue;
+        };
         let path = format!("{prefix}{name}");
-        if entry.kind() == Some(ObjectType::Tree) {
-            if let Ok(inner) = repo.find_tree(entry.id()) {
+        if entry.mode().is_tree() {
+            if let Ok(inner) = repo.find_tree(entry.object_id()) {
                 entries_under(repo, &inner, &format!("{path}/"), found);
             }
         } else {
-            found.insert(path, (entry.id(), entry.filemode()));
+            found.insert(path, (entry.object_id(), entry.mode().value()));
         }
     }
 }
@@ -1199,8 +1187,9 @@ fn entries_under(
 fn count_files(repo: &Repository, tree: &Tree, limit: usize) -> usize {
     let mut count = 0;
     for entry in tree.iter() {
-        if entry.kind() == Some(ObjectType::Tree) {
-            if let Ok(inner) = repo.find_tree(entry.id()) {
+        let Ok(entry) = entry else { continue };
+        if entry.mode().is_tree() {
+            if let Ok(inner) = repo.find_tree(entry.object_id()) {
                 count += count_files(repo, &inner, limit.saturating_sub(count));
             }
         } else {
@@ -1211,10 +1200,6 @@ fn count_files(repo: &Repository, tree: &Tree, limit: usize) -> usize {
         }
     }
     count
-}
-
-fn is_regular_mode(mode: i32) -> bool {
-    matches!(mode, 0o100644 | 0o100664 | 0o100755)
 }
 
 /// True for a path in a language OmniDiff parses with a tree-sitter grammar: a file a person
@@ -1239,29 +1224,26 @@ pub fn choose_folder(
     after: &Tree,
     max_tree_files: usize,
 ) -> Result<std::result::Result<String, Skip>> {
-    let diff = repo.diff_tree_to_tree(Some(before), Some(after), None)?;
-    let odb = repo.odb()?;
     // Each changed file's path, and whether a side of it is over the size cap.
     let mut changed: Vec<(String, bool)> = Vec::new();
-    for delta in diff.deltas() {
-        let (old, new) = (delta.old_file(), delta.new_file());
-        let regular = |file: &git2::DiffFile| !file.id().is_zero() && is_regular(file.mode());
+    for Delta { old, new, .. } in tree_diff(repo, Some(before), after, false)? {
+        let regular = |file: &crate::stats::git::DiffFile| file.exists() && is_regular(file.mode);
         let (has_old, has_new) = (regular(&old), regular(&new));
-        if !(has_old || has_new) || (has_old && has_new && old.id() == new.id()) {
+        if !(has_old || has_new) || (has_old && has_new && old.id == new.id) {
             continue;
         }
-        let Some(path) = new.path().or(old.path()).and_then(Path::to_str) else {
+        let Some(path) = new.path.to_str() else {
             continue;
         };
-        let too_large = |present: bool, id: Oid| {
+        let too_large = |present: bool, id: ObjectId| {
             present
-                && odb
-                    .read_header(id)
-                    .is_ok_and(|(size, _)| size > MAX_FILE_BYTES)
+                && repo
+                    .find_header(id)
+                    .is_ok_and(|header| header.size() > MAX_FILE_BYTES as u64)
         };
         changed.push((
             path.to_string(),
-            too_large(has_old, old.id()) || too_large(has_new, new.id()),
+            too_large(has_old, old.id) || too_large(has_new, new.id),
         ));
     }
     /// What a directory's changed files come to; the root is "".
@@ -1334,7 +1316,6 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
         }
     }
     let [old, new] = sides;
-    let odb = repo.odb()?;
     let mut folder = Folder {
         root: root.to_string(),
         changed: Vec::new(),
@@ -1342,9 +1323,9 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
         omitted: Vec::new(),
     };
     // What a side holds at a path that is not a regular file is listed, and is no file there.
-    let mut regular = |side: &'static str, path: &str, entry: Option<&(Oid, i32)>| {
+    let mut regular = |side: &'static str, path: &str, entry: Option<&(ObjectId, u16)>| {
         let (id, mode) = entry?;
-        if is_regular_mode(*mode) {
+        if is_regular(*mode) {
             return Some(*id);
         }
         let submodule = *mode == 0o160000;
@@ -1352,13 +1333,13 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
             side: side.to_string(),
             path: path.to_string(),
             reason: if submodule { "submodule" } else { "symlink" }.to_string(),
-            bytes: odb.read_header(*id).ok().map(|(size, _)| size as u64),
+            bytes: repo.find_header(*id).ok().map(|header| header.size()),
             id: id.to_string(),
         });
         None
     };
     let paths: std::collections::BTreeSet<&String> = old.keys().chain(new.keys()).collect();
-    let mut files: Vec<(&String, Option<Oid>, Option<Oid>)> = Vec::new();
+    let mut files: Vec<(&String, Option<ObjectId>, Option<ObjectId>)> = Vec::new();
     for path in paths {
         if !is_safe_path(path) {
             bail!("{path:?} is not a path a fixture can hold");
@@ -1370,10 +1351,13 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
         }
     }
     for (path, before, after) in files {
-        let size = |id: Oid| odb.read_header(id).map_or(0, |(size, _)| size);
-        let bytes = |id: Oid| -> Result<Vec<u8>> { Ok(repo.find_blob(id)?.content().to_vec()) };
+        let size = |id: ObjectId| {
+            repo.find_header(id)
+                .map_or(0, |header| header.size() as usize)
+        };
+        let bytes = |id: ObjectId| -> Result<Vec<u8>> { Ok(repo.find_blob(id)?.take_data()) };
         if before == after {
-            let id = before.unwrap_or(Oid::ZERO_SHA1);
+            let id = before.unwrap_or_else(|| repo.object_hash().null());
             if size(id) > MAX_FILE_BYTES {
                 for side in ["before", "after"] {
                     folder.omitted.push(Omitted {
@@ -1389,7 +1373,7 @@ pub fn load_folder(repo: &Repository, before: &Tree, after: &Tree, root: &str) -
             }
             continue;
         }
-        let side = |id: Option<Oid>| -> Result<Option<Blob>> {
+        let side = |id: Option<ObjectId>| -> Result<Option<Blob>> {
             let Some(id) = id else { return Ok(None) };
             if size(id) > MAX_FILE_BYTES {
                 bail!("{path:?} changes and is over the size cap");
@@ -1444,10 +1428,10 @@ pub fn parse_name_status(output: &[u8]) -> Vec<VcsHint> {
 }
 
 /// Git's own account of `parent..commit`, renames detected (`-M`, git's default threshold).
-pub fn vcs_hints(repo: &Repository, parent: Oid, commit: Oid) -> Result<Vec<VcsHint>> {
+pub fn vcs_hints(repo: &Repository, parent: ObjectId, commit: ObjectId) -> Result<Vec<VcsHint>> {
     let output = std::process::Command::new("git")
         .arg("--git-dir")
-        .arg(repo.path())
+        .arg(repo.git_dir())
         .args(["diff", "--name-status", "-M", "-z", "--no-ext-diff"])
         .arg(parent.to_string())
         .arg(commit.to_string())
@@ -1471,9 +1455,9 @@ pub struct BlockIndex {
     path_ids: FxHashMap<String, u32>,
     by_block: FxHashMap<u64, Vec<u32>>,
     /// A directory already indexed with this content, and a file.
-    seen_trees: FxHashSet<(String, Oid)>,
-    seen_blobs: FxHashSet<(u32, Oid)>,
-    blob_blocks: RefCell<FxHashMap<Oid, Rc<FxHashSet<u64>>>>,
+    seen_trees: FxHashSet<(String, ObjectId)>,
+    seen_blobs: FxHashSet<(u32, ObjectId)>,
+    blob_blocks: RefCell<FxHashMap<ObjectId, Rc<FxHashSet<u64>>>>,
 }
 
 impl BlockIndex {
@@ -1483,19 +1467,22 @@ impl BlockIndex {
     }
 
     fn add_directory(&mut self, repo: &Repository, tree: &Tree, prefix: &str) {
-        if !self.seen_trees.insert((prefix.to_string(), tree.id())) {
+        if !self.seen_trees.insert((prefix.to_string(), tree.id)) {
             return;
         }
         for entry in tree.iter() {
-            let Ok(name) = entry.name() else { continue };
+            let Ok(entry) = entry else { continue };
+            let Ok(name) = std::str::from_utf8(entry.filename()) else {
+                continue;
+            };
             let path = format!("{prefix}{name}");
-            match entry.kind() {
-                Some(ObjectType::Tree) => {
-                    if let Ok(subtree) = repo.find_tree(entry.id()) {
+            match entry.mode().value() {
+                0o040000 => {
+                    if let Ok(subtree) = repo.find_tree(entry.object_id()) {
                         self.add_directory(repo, &subtree, &format!("{path}/"));
                     }
                 }
-                Some(ObjectType::Blob) if matches!(entry.filemode(), 0o100644 | 0o100755) => {
+                0o100644 | 0o100755 => {
                     if language_for_path(Path::new(&path)).is_none() || is_anomalous(&path) {
                         continue;
                     }
@@ -1509,16 +1496,16 @@ impl BlockIndex {
                             id
                         }
                     };
-                    if !self.seen_blobs.insert((id, entry.id())) {
+                    if !self.seen_blobs.insert((id, entry.object_id())) {
                         continue;
                     }
-                    let Ok(blob) = repo.find_blob(entry.id()) else {
+                    let Ok(blob) = repo.find_blob(entry.object_id()) else {
                         continue;
                     };
-                    if blob.content().len() > UNTOUCHED_MAX_BYTES {
+                    if blob.data.len() > UNTOUCHED_MAX_BYTES {
                         continue;
                     }
-                    let Ok(text) = std::str::from_utf8(blob.content()) else {
+                    let Ok(text) = std::str::from_utf8(&blob.data) else {
                         continue;
                     };
                     for block in blocks_of(text) {
@@ -1548,7 +1535,7 @@ impl BlockIndex {
         }
     }
 
-    fn blocks_of_blob(&self, repo: &Repository, id: Oid) -> Rc<FxHashSet<u64>> {
+    fn blocks_of_blob(&self, repo: &Repository, id: ObjectId) -> Rc<FxHashSet<u64>> {
         let mut cache = self.blob_blocks.borrow_mut();
         if cache.len() > 4096 {
             cache.clear();
@@ -1559,7 +1546,7 @@ impl BlockIndex {
                 let blocks = repo
                     .find_blob(id)
                     .ok()
-                    .and_then(|blob| std::str::from_utf8(blob.content()).ok().map(blocks_of))
+                    .and_then(|blob| std::str::from_utf8(&blob.data).ok().map(blocks_of))
                     .unwrap_or_default();
                 Rc::new(blocks)
             })
@@ -1590,13 +1577,14 @@ impl Untouched for TreeView<'_> {
                 continue;
             }
             // The path held the block in some tree; whether in this one is the blob's say.
-            let Ok(entry) = self.tree.get_path(Path::new(path)) else {
+            let Ok(Some(entry)) = self.tree.lookup_entry_by_path(path) else {
                 continue;
             };
-            if entry.kind() == Some(ObjectType::Blob)
+            // Any blob object, a symlink's too.
+            if entry.mode().is_blob_or_symlink()
                 && self
                     .index
-                    .blocks_of_blob(self.repo, entry.id())
+                    .blocks_of_blob(self.repo, entry.object_id())
                     .contains(&block)
             {
                 paths.push(path.clone());

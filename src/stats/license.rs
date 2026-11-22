@@ -19,7 +19,7 @@
 //! commit-pinned link to the license file plus a best-effort label, not the license text. See
 //! `README.md`'s "Third-party test fixtures".
 
-use git2::{Repository, Tree};
+use gix::{Repository, Tree};
 use std::fmt::Write as _;
 
 /// A license/notice file in a sampled repository at the sampled commit (not HEAD), so it is what
@@ -44,37 +44,35 @@ const LICENSE_DIRECTORY_NAMES: &[&str] = &["license", "licenses", "licence", "li
 /// was found, which `render_readme` reports explicitly.
 pub fn find_license_files(repo: &Repository, tree: &Tree) -> Vec<LicenseFile> {
     let mut found = Vec::new();
-    collect_license_files_in(repo, tree, "", &mut found);
+    collect_license_files_in(tree, "", &mut found);
     for entry in tree.iter() {
-        if entry.kind() != Some(git2::ObjectType::Tree) {
+        let Ok(entry) = entry else { continue };
+        if !entry.mode().is_tree() {
             continue;
         }
-        let Ok(name) = entry.name() else { continue };
+        let Ok(name) = std::str::from_utf8(entry.filename()) else {
+            continue;
+        };
         if !LICENSE_DIRECTORY_NAMES.contains(&name.to_lowercase().as_str()) {
             continue;
         }
-        let Ok(object) = entry.to_object(repo) else {
+        let Ok(subtree) = repo.find_tree(entry.oid()) else {
             continue;
         };
-        let Some(subtree) = object.as_tree() else {
-            continue;
-        };
-        collect_license_files_in(repo, subtree, name, &mut found);
+        collect_license_files_in(&subtree, name, &mut found);
     }
-    // Explicit, rather than relying on git2's iteration order.
+    // Explicit, rather than relying on the tree's order.
     found.sort_by(|a, b| a.filename.cmp(&b.filename));
     found
 }
 
 /// Appends `tree`'s direct license blobs to `found`, named with `dir_prefix` (`""` for the root).
-fn collect_license_files_in(
-    repo: &Repository,
-    tree: &Tree,
-    dir_prefix: &str,
-    found: &mut Vec<LicenseFile>,
-) {
+fn collect_license_files_in(tree: &Tree, dir_prefix: &str, found: &mut Vec<LicenseFile>) {
     for entry in tree.iter() {
-        let Ok(name) = entry.name() else { continue };
+        let Ok(entry) = entry else { continue };
+        let Ok(name) = std::str::from_utf8(entry.filename()) else {
+            continue;
+        };
         let lower = name.to_lowercase();
         if !LICENSE_FILENAME_PREFIXES
             .iter()
@@ -82,13 +80,14 @@ fn collect_license_files_in(
         {
             continue;
         }
-        let Ok(object) = entry.to_object(repo) else {
+        // Any blob, a symlink's too (its text is its target); not a directory or a submodule.
+        let Ok(object) = entry.object() else {
             continue;
         };
-        let Some(blob) = object.as_blob() else {
+        if object.kind != gix::object::Kind::Blob {
             continue;
-        };
-        let text = String::from_utf8_lossy(blob.content()).into_owned();
+        }
+        let text = String::from_utf8_lossy(&object.data).into_owned();
         let label = classify_license(&text);
         let filename = if dir_prefix.is_empty() {
             name.to_string()
@@ -152,9 +151,10 @@ fn classify_license(text: &str) -> &'static str {
 
 /// The `origin` remote's URL, if configured: the upstream, not the local checkout.
 pub fn origin_remote_url(repo: &Repository) -> Option<String> {
-    repo.find_remote("origin")
-        .ok()
-        .and_then(|remote| remote.url().ok().map(str::to_string))
+    // As configured: not rewritten by `url.*.insteadOf`, nor normalised by parsing it.
+    repo.config_snapshot()
+        .string("remote.origin.url")
+        .map(|url| url.to_string())
 }
 
 /// A link to `path` in `repo_url` pinned to `commit`, so it survives upstream edits. Only the

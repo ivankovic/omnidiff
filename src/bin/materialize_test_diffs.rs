@@ -55,7 +55,7 @@
 //! format (one an earlier version of the format wrote), keeping its `status`.
 use anyhow::{Result, bail};
 use clap::Parser;
-use git2::{Oid, Repository, Tree};
+use omnidiff::stats::git::{Repository, Tree, find_commit, first_parent_tree, is_shallow_boundary};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -363,14 +363,14 @@ fn backfill_promoted_readme(row: &Row, repo_roots: &[PathBuf]) -> Result<Resolut
     // Best-effort: a commit that has aged out of a shallow clone still gets a README.md, with
     // `unverifiable_reason` saying why, rather than one claiming "no license". `repo_url` is
     // resolved outside the fallible closure because the repository usually outlives the commit.
-    let repo = find_repo_path(repo_roots, &row.repository).and_then(|p| Repository::open(p).ok());
+    let repo = find_repo_path(repo_roots, &row.repository).and_then(|p| gix::open(p).ok());
     let repo_url = repo.as_ref().and_then(license::origin_remote_url);
 
     let lookup: Result<Vec<license::LicenseFile>> = (|| {
         let repo = repo.as_ref().ok_or_else(|| {
             anyhow::anyhow!("repository {} not found in any root", row.repository)
         })?;
-        let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
+        let commit = find_commit(repo, &row.commit)?;
         let tree = commit.tree()?;
         Ok(license::find_license_files(repo, &tree))
     })();
@@ -405,13 +405,13 @@ fn backfill_promoted_readme(row: &Row, repo_roots: &[PathBuf]) -> Result<Resolut
 fn materialize_row(row: &Row, repo_roots: &[PathBuf], output_dir: &Path) -> Result<Resolution> {
     let repo_path = find_repo_path(repo_roots, &row.repository)
         .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
-    let repo = Repository::open(&repo_path)?;
+    let repo = gix::open(&repo_path)?;
 
-    let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
-    if commit.parents().len() != 1 {
+    let commit = find_commit(&repo, &row.commit)?;
+    if commit.parent_ids().count() != 1 || is_shallow_boundary(&repo, &commit.id) {
         bail!("commit {} does not have exactly one parent", row.commit);
     }
-    let parent_tree = commit.parent(0)?.tree()?;
+    let parent_tree = first_parent_tree(&commit)?;
     let tree = commit.tree()?;
 
     let path = Path::new(&row.path);
@@ -606,9 +606,9 @@ fn materialize_changeset(
     let folders = kind == ChangesetKind::Folders;
     let repo_path = find_repo_path(repo_roots, &row.repository)
         .ok_or_else(|| anyhow::anyhow!("repository {} not found in any root", row.repository))?;
-    let repo = Repository::open(&repo_path)?;
-    let commit = repo.find_commit(Oid::from_str(&row.commit)?)?;
-    let parent = repo.find_commit(Oid::from_str(&row.parent)?)?;
+    let repo = gix::open(&repo_path)?;
+    let commit = find_commit(&repo, &row.commit)?;
+    let parent = find_commit(&repo, &row.parent)?;
     let (before_tree, tree) = (parent.tree()?, commit.tree()?);
 
     let mut files = ChangesetFiles::default();
@@ -726,7 +726,7 @@ fn materialize_changeset(
             None
         } else {
             Some(commit_hints(
-                changeset::vcs_hints(&repo, parent.id(), commit.id())?,
+                changeset::vcs_hints(&repo, parent.id, commit.id)?,
                 &changed,
             ))
         };
@@ -772,33 +772,35 @@ fn materialize_changeset(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use git2::Sort;
+    use omnidiff::stats::git::{ObjectId, Status, testing, tree_diff};
     use omnidiff::test::helper;
     use tempfile::tempdir;
 
     /// Finds the first single-parent commit in `repo_path` and the path of a file it modified.
     fn find_a_modified_file(repo_path: &Path) -> (String, String) {
-        let repo = Repository::open(repo_path).unwrap();
-        let mut walk = repo.revwalk().unwrap();
-        walk.set_sorting(Sort::TIME).unwrap();
-        walk.push_head().unwrap();
+        let repo = gix::open(repo_path).unwrap();
+        let walk = repo
+            .rev_walk([repo.head_id().unwrap()])
+            .sorting(gix::revision::walk::Sorting::ByCommitTime(
+                gix::traverse::commit::simple::CommitTimeOrder::NewestFirst,
+            ))
+            .all()
+            .unwrap();
 
-        for id in walk {
-            let id = id.unwrap();
-            let commit = repo.find_commit(id).unwrap();
-            if commit.parents().len() != 1 {
+        for info in walk {
+            let info = info.unwrap();
+            if info.parent_ids.len() != 1 {
                 continue;
             }
-            let parent_tree = commit.parent(0).unwrap().tree().unwrap();
+            let commit = repo.find_commit(info.id).unwrap();
+            let parent_tree = first_parent_tree(&commit).unwrap();
             let tree = commit.tree().unwrap();
-            let diff = repo
-                .diff_tree_to_tree(Some(&parent_tree), Some(&tree), None)
-                .unwrap();
-            for delta in diff.deltas() {
-                if delta.status() == git2::Delta::Modified
-                    && let Some(path) = delta.new_file().path()
-                {
-                    return (id.to_string(), path.to_string_lossy().into_owned());
+            for delta in tree_diff(&repo, Some(&parent_tree), &tree, false).unwrap() {
+                if delta.status == Status::Modified {
+                    return (
+                        info.id.to_string(),
+                        delta.new.path.to_string_lossy().into_owned(),
+                    );
                 }
             }
         }
@@ -876,31 +878,21 @@ mod tests {
     fn a_move_to_another_language_takes_each_side_from_its_own_path() -> Result<()> {
         let root = tempdir()?;
         let repo_path = root.path().join("example-repo");
-        let repo = Repository::init(&repo_path)?;
-        let signature = git2::Signature::now("test", "test@example.com")?;
+        let repo = testing::init(&repo_path)?;
         // A one-file tree: a commit that deletes the parent's file and adds `file` in its place.
-        let commit_tree = |file: &str, content: &str| -> Result<Oid> {
-            let mut builder = repo.treebuilder(None)?;
-            builder.insert(file, repo.blob(content.as_bytes())?, 0o100644)?;
-            Ok(builder.write()?)
+        let commit_tree = |file: &str, content: &str| -> Result<ObjectId> {
+            testing::tree_of_files(&repo, &[(file, content.as_bytes())])
         };
         let java = commit_tree("Greeter.java", "class Greeter {}\n")?;
-        let parent = repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            "Java",
-            &repo.find_tree(java)?,
-            &[],
-        )?;
+        let parent = testing::commit_with_message(&repo, java, None, 1_700_000_000, true, "Java")?;
         let kotlin = commit_tree("Greeter.kt", "class Greeter\n")?;
-        let commit = repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
+        let commit = testing::commit_with_message(
+            &repo,
+            kotlin,
+            Some(parent),
+            1_700_000_001,
+            true,
             "Kotlin",
-            &repo.find_tree(kotlin)?,
-            &[&repo.find_commit(parent)?],
         )?;
 
         let mut row = row_for(&repo_path, commit.to_string(), "Greeter.kt".to_string());
@@ -1003,40 +995,21 @@ mod tests {
     /// row of the second, as the sampler would write it.
     fn changeset_repository(root: &Path) -> Result<changeset::Row> {
         let repo_path = root.join("example-repo");
-        let repo = Repository::init(&repo_path)?;
-        let signature = git2::Signature::now("test", "test@example.com")?;
+        let repo = testing::init(&repo_path)?;
         let lines = |tag: &str, count: usize| -> String {
             (0..count)
                 .map(|i| format!("let {tag}_{i} = compute_{tag}(input_{i}) + offset_{tag}_{i};\n"))
                 .collect()
         };
-        let commit = |parent: Option<Oid>, entries: &[(&str, String, u32)]| -> Result<Oid> {
-            let mut index = git2::Index::new()?;
-            for (path, text, mode) in entries {
-                index.add(&git2::IndexEntry {
-                    ctime: git2::IndexTime::new(0, 0),
-                    mtime: git2::IndexTime::new(0, 0),
-                    dev: 0,
-                    ino: 0,
-                    mode: *mode,
-                    uid: 0,
-                    gid: 0,
-                    file_size: 0,
-                    id: repo.blob(text.as_bytes())?,
-                    flags: 0,
-                    flags_extended: 0,
-                    path: path.as_bytes().to_vec(),
-                })?;
-            }
-            let tree = repo.find_tree(index.write_tree_to(&repo)?)?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|id| repo.find_commit(id))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            Ok(repo.commit(None, &signature, &signature, "c", &tree, &parents)?)
-        };
+        let commit =
+            |parent: Option<ObjectId>, entries: &[(&str, String, u32)]| -> Result<ObjectId> {
+                let entries: Vec<(&str, &[u8], u32)> = entries
+                    .iter()
+                    .map(|(path, text, mode)| (*path, text.as_bytes(), *mode))
+                    .collect();
+                let tree = testing::tree(&repo, &entries)?;
+                testing::commit(&repo, tree, parent, 1_700_000_000, false)
+            };
         let (keep, moved, shared) = (lines("keep", 6), lines("moved", 6), lines("shared", 12));
         let first = commit(
             None,

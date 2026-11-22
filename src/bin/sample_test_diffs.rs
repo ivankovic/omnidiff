@@ -42,7 +42,6 @@
 //! --changesets`.
 use anyhow::{Result, bail};
 use clap::Parser;
-use git2::Delta;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
@@ -59,7 +58,8 @@ use omnidiff::stats::changeset::{
 };
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
 use omnidiff::stats::git::{
-    text_loc_if_in_range, walk_single_parent_commit_diffs, walk_single_parent_commits,
+    Commit, ObjectId, Repository, Status, first_parent, is_shallow_boundary, text_loc_if_in_range,
+    walk_single_parent_commit_diffs, walk_single_parent_commits,
 };
 use omnidiff::stats::sampling::{Reservoir, loc_bucket};
 use omnidiff::test::helper::human_changeset::CHANGESET_DATASETS;
@@ -377,9 +377,9 @@ const ENCODINGS_DATASET: &str = "encodings";
 
 /// The line count of a blob in the size limits that is text in UTF-16 or UTF-32, by its byte
 /// order mark; `None` for UTF-8 and for anything that does not decode.
-fn encoded_loc(repo: &git2::Repository, oid: git2::Oid) -> Option<usize> {
+fn encoded_loc(repo: &Repository, oid: ObjectId) -> Option<usize> {
     let blob = repo.find_blob(oid).ok()?;
-    let bytes = blob.content();
+    let bytes = &blob.data;
     if bytes.len() < MIN_BYTES || bytes.len() > MAX_BYTES || Encoding::of(bytes) == Encoding::Utf8 {
         return None;
     }
@@ -412,17 +412,15 @@ fn sample_repository(
     walk_single_parent_commit_diffs(repo_path, max_commits, false, |repo, id, delta| {
         // The schema locates both blobs by one `path`, so only in-place edits qualify (rename
         // detection is off).
-        if delta.status() != Delta::Modified {
+        if delta.status != Status::Modified {
             return Ok(());
         }
         // A mode-only change.
-        if delta.old_file().id() == delta.new_file().id() {
+        if delta.old.id == delta.new.id {
             return Ok(());
         }
 
-        let Some(path) = delta.new_file().path() else {
-            return Ok(());
-        };
+        let path = delta.new.path.as_path();
         if anomalous_paths::is_anomalous(path) {
             return Ok(());
         }
@@ -431,8 +429,8 @@ fn sample_repository(
         // Text in another encoding is sampled grammar or not: without one, it is painted.
         if encodings {
             let (Some(before_loc), Some(after_loc)) = (
-                encoded_loc(repo, delta.old_file().id()),
-                encoded_loc(repo, delta.new_file().id()),
+                encoded_loc(repo, delta.old.id),
+                encoded_loc(repo, delta.new.id),
             ) else {
                 return Ok(());
             };
@@ -470,8 +468,8 @@ fn sample_repository(
         // Only `.ts` needs content to disambiguate (Qt Linguist vs. TypeScript); gating on it
         // avoids a blob read for every other file.
         if language == Language::TypeScript
-            && let Ok(blob) = repo.find_blob(delta.new_file().id())
-            && let Ok(text) = std::str::from_utf8(blob.content())
+            && let Ok(blob) = repo.find_blob(delta.new.id)
+            && let Ok(text) = std::str::from_utf8(&blob.data)
             && let Some(refined) = language_for_path_and_content(path, text)
         {
             language = refined;
@@ -493,14 +491,11 @@ fn sample_repository(
         }
 
         // The larger side decides the bucket, as in `sample_code_pairs`.
-        let Some(before_loc) =
-            text_loc_if_in_range(repo, delta.old_file().id(), MIN_BYTES, MAX_BYTES)
+        let Some(before_loc) = text_loc_if_in_range(repo, delta.old.id, MIN_BYTES, MAX_BYTES)
         else {
             return Ok(());
         };
-        let Some(after_loc) =
-            text_loc_if_in_range(repo, delta.new_file().id(), MIN_BYTES, MAX_BYTES)
-        else {
+        let Some(after_loc) = text_loc_if_in_range(repo, delta.new.id, MIN_BYTES, MAX_BYTES) else {
             return Ok(());
         };
         let bucket = stratified.then(|| loc_bucket(before_loc.max(after_loc)));
@@ -610,9 +605,9 @@ fn may_be(family: Family, path: &Path) -> bool {
 
 /// A side the sample can hold: content of one of `families` by its bytes (which also drops Git
 /// LFS pointers, text files named `.png`), within its family's size limit, probed from its header.
-fn content_side(repo: &git2::Repository, oid: git2::Oid, families: &[Family]) -> Option<Probe> {
+fn content_side(repo: &Repository, oid: ObjectId, families: &[Family]) -> Option<Probe> {
     let blob = repo.find_blob(oid).ok()?;
-    let bytes = blob.content();
+    let bytes = &blob.data;
     let family = content::sniff(bytes)?.family();
     if !families.contains(&family) || bytes.len() < MIN_BYTES || bytes.len() > max_bytes(family) {
         return None;
@@ -656,7 +651,7 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
         None => StdRng::from_rng(&mut rand::rng()),
     };
 
-    let mut seen_pairs: HashSet<(git2::Oid, git2::Oid)> = HashSet::new();
+    let mut seen_pairs: HashSet<(ObjectId, ObjectId)> = HashSet::new();
     let mut strata: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
     let mut stratum_family: HashMap<CapacityKey, Family> = HashMap::new();
     for_each_repository(&repo_paths, |repo_path, repository_name| {
@@ -666,14 +661,10 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
             args.max_commits_per_repo,
             false,
             |repo, id, delta| {
-                if delta.status() != Delta::Modified
-                    || delta.old_file().id() == delta.new_file().id()
-                {
+                if delta.status != Status::Modified || delta.old.id == delta.new.id {
                     return Ok(());
                 }
-                let Some(path) = delta.new_file().path() else {
-                    return Ok(());
-                };
+                let path = delta.new.path.as_path();
                 if anomalous_paths::is_anomalous(path)
                     || !families.iter().any(|family| may_be(*family, path))
                 {
@@ -688,8 +679,8 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                     return Ok(());
                 }
                 let (Some(before), Some(after)) = (
-                    content_side(repo, delta.old_file().id(), families),
-                    content_side(repo, delta.new_file().id(), families),
+                    content_side(repo, delta.old.id, families),
+                    content_side(repo, delta.new.id, families),
                 ) else {
                     return Ok(());
                 };
@@ -697,7 +688,7 @@ fn sample_content(args: &Args, output: &Path, families: &[Family]) -> Result<()>
                 if before.format.family() != family {
                     return Ok(());
                 }
-                if !seen_pairs.insert((delta.old_file().id(), delta.new_file().id())) {
+                if !seen_pairs.insert((delta.old.id, delta.new.id)) {
                     return Ok(());
                 }
                 let bucket = format!(
@@ -1063,31 +1054,32 @@ fn select_changesets(
 /// `None` when the chain is shorter, meets a merge, or runs into a commit an earlier pair took
 /// (`taken`), so pairs never overlap.
 fn changeset_base<'repo>(
-    commit: &git2::Commit<'repo>,
+    repo: &'repo Repository,
+    commit: &Commit<'repo>,
     length: Option<usize>,
-    taken: &mut HashSet<git2::Oid>,
-) -> Result<Option<git2::Commit<'repo>>> {
+    taken: &mut HashSet<ObjectId>,
+) -> Result<Option<Commit<'repo>>> {
     let Some(length) = length else {
-        return Ok(Some(commit.parent(0)?));
+        return Ok(Some(first_parent(commit)?));
     };
     let mut chain = vec![commit.clone()];
     while chain.len() < length {
-        let Ok(parent) = chain[chain.len() - 1].parent(0) else {
+        let Ok(parent) = first_parent(&chain[chain.len() - 1]) else {
             return Ok(None);
         };
-        if parent.parents().len() != 1 {
+        if parent.parent_ids().count() != 1 || is_shallow_boundary(repo, &parent.id) {
             return Ok(None);
         }
         chain.push(parent);
     }
-    if chain.iter().any(|commit| taken.contains(&commit.id())) {
+    if chain.iter().any(|commit| taken.contains(&commit.id)) {
         return Ok(None);
     }
     // A shallow clone's last commit names a parent it does not have.
-    let Ok(base) = chain[chain.len() - 1].parent(0) else {
+    let Ok(base) = first_parent(&chain[chain.len() - 1]) else {
         return Ok(None);
     };
-    taken.extend(chain.iter().map(|commit| commit.id()));
+    taken.extend(chain.iter().map(|commit| commit.id));
     Ok(Some(base))
 }
 
@@ -1103,12 +1095,12 @@ fn sample_changeset_repository(
 ) -> Result<()> {
     let mut local: BTreeMap<Cell, Reservoir<changeset::Row>> = BTreeMap::new();
     let mut index = BlockIndex::default();
-    let mut taken: HashSet<git2::Oid> = HashSet::new();
+    let mut taken: HashSet<ObjectId> = HashSet::new();
     let kind = options.kind();
     let mut census = RepositoryCensus::default();
     walk_single_parent_commits(repo_path, options.max_commits, |repo, commit| {
         let length = options.folders.map(|(length, _)| length);
-        let Some(base) = changeset_base(commit, length, &mut taken)? else {
+        let Some(base) = changeset_base(repo, commit, length, &mut taken)? else {
             return Ok(());
         };
         let (before, after) = (base.tree()?, commit.tree()?);
@@ -1143,7 +1135,7 @@ fn sample_changeset_repository(
                 let hints = if files.iter().any(|file| file.after.is_none())
                     && files.iter().any(|file| file.before.is_none())
                 {
-                    changeset::vcs_hints(repo, base.id(), commit.id())?
+                    changeset::vcs_hints(repo, base.id, commit.id)?
                 } else {
                     Vec::new()
                 };
@@ -1159,7 +1151,7 @@ fn sample_changeset_repository(
             return Ok(());
         }
 
-        let (commit_id, parent_id) = (commit.id().to_string(), base.id().to_string());
+        let (commit_id, parent_id) = (commit.id.to_string(), base.id.to_string());
         let row = changeset::Row {
             name: changeset::fixture_name(kind, repository_name, &parent_id, &commit_id),
             kind: kind.to_string(),
@@ -1192,7 +1184,10 @@ fn sample_changeset_repository(
                 &commit_id[..12],
                 row.signals,
                 files.len(),
-                commit.summary().ok().flatten().unwrap_or("")
+                commit
+                    .message()
+                    .map(|message| message.summary().to_string())
+                    .unwrap_or_default()
             );
             for line in &classification.evidence {
                 println!("    {line}");
@@ -1290,13 +1285,14 @@ fn write_csv(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use omnidiff::stats::git::testing;
 
     /// One walk samples every family asked for, each into its own dataset, and nothing else.
     #[test]
     fn several_families_share_one_walk() -> Result<()> {
         let root = tempfile::tempdir()?;
         let dir = root.path().join("repo");
-        let repo = git2::Repository::init(&dir)?;
+        let repo = testing::init(&dir)?;
         let png = |pixel: u8| {
             let mut bytes = Vec::new();
             image::RgbaImage::from_pixel(4, 4, image::Rgba([pixel, 0, 0, 255]))
@@ -1317,26 +1313,18 @@ mod tests {
             writer.finish().unwrap();
             bytes
         };
-        let mut parent: Option<git2::Oid> = None;
-        for (pixel, text) in [(0u8, "one"), (255, "two")] {
-            let mut builder = repo.treebuilder(None)?;
-            for (name, bytes) in [
-                ("logo.png", png(pixel)),
-                ("bundle.zip", zip(text)),
-                ("notes.txt", text.as_bytes().to_vec()),
-            ] {
-                builder.insert(name, repo.blob(&bytes)?, 0o100644)?;
-            }
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+        let mut parent: Option<ObjectId> = None;
+        for (seconds, (pixel, text)) in (1_700_000_000..).zip([(0u8, "one"), (255, "two")]) {
+            let (png, zip) = (png(pixel), zip(text));
+            let tree = testing::tree_of_files(
+                &repo,
+                &[
+                    ("logo.png", &png),
+                    ("bundle.zip", &zip),
+                    ("notes.txt", text.as_bytes()),
+                ],
+            )?;
+            parent = Some(testing::commit(&repo, tree, parent, seconds, true)?);
         }
 
         let output = root.path().join("sample.csv");
@@ -1373,7 +1361,7 @@ mod tests {
     #[test]
     fn encodings_take_utf16_and_utf32_text_and_nothing_else() {
         let dir = tempfile::tempdir().unwrap();
-        let repo = git2::Repository::init(dir.path()).unwrap();
+        let repo = testing::init(dir.path()).unwrap();
         let utf16: Vec<u8> = "\u{feff}a\nb\n"
             .encode_utf16()
             .flat_map(u16::to_le_bytes)
@@ -1382,7 +1370,7 @@ mod tests {
             .chars()
             .flat_map(|c| (c as u32).to_be_bytes())
             .collect();
-        let blob = |bytes: &[u8]| repo.blob(bytes).unwrap();
+        let blob = |bytes: &[u8]| repo.write_blob(bytes).unwrap().detach();
         assert_eq!(encoded_loc(&repo, blob(&utf16)), Some(2));
         assert_eq!(encoded_loc(&repo, blob(&utf32)), Some(1));
         assert_eq!(encoded_loc(&repo, blob(b"a\nb\n")), None, "UTF-8");
@@ -1398,7 +1386,7 @@ mod tests {
     fn a_repository_gives_at_most_four_pairs_a_family() -> Result<()> {
         let root = tempfile::tempdir()?;
         let dir = root.path().join("repo");
-        let repo = git2::Repository::init(&dir)?;
+        let repo = testing::init(&dir)?;
         use image::ImageFormat::*;
         let formats = [
             (Png, "png"),
@@ -1408,26 +1396,22 @@ mod tests {
             (Ico, "ico"),
             (Jpeg, "jpg"),
         ];
-        let mut parent: Option<git2::Oid> = None;
-        for pixel in [0u8, 255] {
-            let mut builder = repo.treebuilder(None)?;
+        let mut parent: Option<ObjectId> = None;
+        for (seconds, pixel) in (1_700_000_000..).zip([0u8, 255]) {
+            let mut files = Vec::new();
             for (format, ext) in formats {
                 let mut bytes = Vec::new();
                 image::RgbImage::from_pixel(8, 8, image::Rgb([pixel, 0, 0]))
                     .write_to(&mut std::io::Cursor::new(&mut bytes), format)
                     .unwrap();
-                builder.insert(format!("picture.{ext}"), repo.blob(&bytes)?, 0o100644)?;
+                files.push((format!("picture.{ext}"), bytes));
             }
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
+            let files: Vec<(&str, &[u8])> = files
+                .iter()
+                .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
                 .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let tree = testing::tree_of_files(&repo, &files)?;
+            parent = Some(testing::commit(&repo, tree, parent, seconds, true)?);
         }
         let output = root.path().join("sample.csv");
         let mut args = args(root.path().to_str().unwrap(), None, false);
@@ -1446,25 +1430,21 @@ mod tests {
     #[test]
     fn encodings_take_at_most_two_a_repository() -> Result<()> {
         let dir = tempfile::tempdir()?;
-        let repo = git2::Repository::init(dir.path())?;
-        let mut parent: Option<git2::Oid> = None;
+        let repo = testing::init(dir.path())?;
+        let mut parent: Option<ObjectId> = None;
         for round in 0..6 {
             let text: Vec<u8> = format!("\u{feff}\"key\" = \"{round}\";\n")
                 .encode_utf16()
                 .flat_map(u16::to_le_bytes)
                 .collect();
-            let mut builder = repo.treebuilder(None)?;
-            builder.insert("Localizable.strings", repo.blob(&text)?, 0o100644)?;
-            let tree = repo.find_tree(builder.write()?)?;
-            let signature = git2::Signature::now("t", "t@example.com")?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let tree = testing::tree_of_files(&repo, &[("Localizable.strings", &text)])?;
+            parent = Some(testing::commit(
+                &repo,
+                tree,
+                parent,
+                1_700_000_000 + round,
+                true,
+            )?);
         }
         let mut reservoirs: HashMap<CapacityKey, Reservoir<Row>> = HashMap::new();
         let mut capacities: HashMap<CapacityKey, usize> = HashMap::new();
@@ -1735,38 +1715,17 @@ mod tests {
     /// A repository under `root` with one commit a tree of `trees`, oldest first.
     fn linear_repository(root: &Path, trees: &[Vec<(&str, String)>]) -> Result<PathBuf> {
         let dir = root.join("repo");
-        let repo = git2::Repository::init(&dir)?;
-        let mut parent: Option<git2::Oid> = None;
+        let repo = testing::init(&dir)?;
+        let mut parent: Option<ObjectId> = None;
         for (number, files) in trees.iter().enumerate() {
-            let mut index = git2::Index::new()?;
-            for (path, text) in files {
-                index.add(&git2::IndexEntry {
-                    ctime: git2::IndexTime::new(0, 0),
-                    mtime: git2::IndexTime::new(0, 0),
-                    dev: 0,
-                    ino: 0,
-                    mode: 0o100644,
-                    uid: 0,
-                    gid: 0,
-                    file_size: 0,
-                    id: repo.blob(text.as_bytes())?,
-                    flags: 0,
-                    flags_extended: 0,
-                    path: path.as_bytes().to_vec(),
-                })?;
-            }
-            let tree = repo.find_tree(index.write_tree_to(&repo)?)?;
-            // A second apart, so the walk's time order is the commits' order.
-            let when = git2::Time::new(1_700_000_000 + number as i64, 0);
-            let signature = git2::Signature::new("t", "t@example.com", &when)?;
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid))
-                .transpose()?
-                .into_iter()
+            let files: Vec<(&str, &[u8])> = files
+                .iter()
+                .map(|(path, text)| (*path, text.as_bytes()))
                 .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            parent =
-                Some(repo.commit(Some("HEAD"), &signature, &signature, "c", &tree, &parents)?);
+            let tree = testing::tree_of_files(&repo, &files)?;
+            // A second apart, so the walk's time order is the commits' order.
+            let seconds = 1_700_000_000 + number as i64;
+            parent = Some(testing::commit(&repo, tree, parent, seconds, true)?);
         }
         Ok(dir)
     }
@@ -1856,9 +1815,12 @@ mod tests {
         );
         assert_eq!(moved.main_language, "Rust");
         assert_eq!(moved.changed_lines, 12);
-        let repo = git2::Repository::open(root.path().join("repo"))?;
-        let commit = repo.find_commit(git2::Oid::from_str(&moved.commit)?)?;
-        assert_eq!(commit.parent_id(0)?.to_string(), moved.parent);
+        let repo = gix::open(root.path().join("repo"))?;
+        let commit = omnidiff::stats::git::find_commit(&repo, &moved.commit)?;
+        assert_eq!(
+            omnidiff::stats::git::first_parent_id(&commit)?.to_string(),
+            moved.parent
+        );
 
         // Again: every commit is already there, and a triaged row still counts and stays.
         let mut triaged = rows.clone();
@@ -2002,16 +1964,16 @@ mod tests {
         let rows = changeset::read_rows(&output)?;
         // Five commits have a parent: two pairs two commits apart, newest first, and one left.
         assert_eq!(rows.len(), 2);
-        let repo = git2::Repository::open(root.path().join("repo"))?;
+        let repo = gix::open(root.path().join("repo"))?;
         for row in &rows {
             assert_eq!((row.kind.as_str(), row.root.as_str()), ("folders", "."));
             assert_eq!(
                 row.name,
                 format!("folders-x-repo-{}-{}", &row.parent[..8], &row.commit[..8])
             );
-            let commit = repo.find_commit(git2::Oid::from_str(&row.commit)?)?;
+            let commit = omnidiff::stats::git::find_commit(&repo, &row.commit)?;
             assert_eq!(
-                commit.parent(0)?.parent_id(0)?.to_string(),
+                omnidiff::stats::git::first_parent_id(&first_parent(&commit)?)?.to_string(),
                 row.parent,
                 "the before tree is two commits back"
             );

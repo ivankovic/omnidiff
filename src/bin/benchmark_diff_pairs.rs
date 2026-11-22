@@ -16,7 +16,7 @@
  */
 use anyhow::{Result, anyhow};
 use clap::Parser;
-use git2::Repository;
+use gix::Repository;
 use serde::Deserialize;
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
@@ -168,13 +168,13 @@ fn open_repo<'a>(
         if repos.len() >= OPEN_REPOS_MAX {
             repos.clear();
         }
-        repos.insert(name.to_string(), Repository::open(repo_root.join(name))?);
+        repos.insert(name.to_string(), gix::open(repo_root.join(name))?);
     }
     Ok(repos.get(name).unwrap())
 }
 
 fn blob_content(repo: &Repository, treeish: &str, path: &str) -> Result<Vec<u8>> {
-    let tree = repo.revparse_single(treeish)?.peel_to_tree()?;
+    let tree = repo.rev_parse_single(treeish)?.object()?.peel_to_tree()?;
     omnidiff::stats::git::blob_bytes(repo, &tree, Path::new(path))
 }
 
@@ -592,16 +592,14 @@ mod tests {
             .to_string_lossy()
             .into_owned();
 
-        let repo = Repository::open(&repo_path)?;
-        let mut walk = repo.revwalk()?;
-        walk.push_head()?;
+        let repo = gix::open(&repo_path)?;
+        let walk = repo.rev_walk([repo.head_id()?]).all()?;
 
         let mut commit_with_parent = None;
-        for id in walk {
-            let id = id?;
-            let commit = repo.find_commit(id)?;
-            if commit.parents().len() == 1 {
-                commit_with_parent = Some(id.to_string());
+        for info in walk {
+            let info = info?;
+            if info.parent_ids.len() == 1 {
+                commit_with_parent = Some(info.id.to_string());
                 break;
             }
         }
@@ -639,17 +637,14 @@ mod tests {
             .to_string_lossy()
             .into_owned();
 
-        let repo = Repository::open(&repo_path)?;
-        let mut walk = repo.revwalk()?;
-        walk.push_head()?;
-        let commit = walk
+        let repo = gix::open(&repo_path)?;
+        let commit = repo
+            .rev_walk([repo.head_id()?])
+            .all()?
             .filter_map(Result::ok)
-            .find(|id| {
-                repo.find_commit(*id)
-                    .map(|c| c.parents().len() == 1)
-                    .unwrap_or(false)
-            })
+            .find(|info| info.parent_ids.len() == 1)
             .unwrap()
+            .id
             .to_string();
 
         let pair = SampledPair {

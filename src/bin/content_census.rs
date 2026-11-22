@@ -43,7 +43,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use clap::Parser;
-use git2::{Oid, Repository};
+use omnidiff::stats::git::{ObjectId, Repository, first_parent_tree, tree_diff};
 
 use omnidiff::diff::content::{self, Engine};
 
@@ -62,27 +62,25 @@ struct Args {
 }
 
 /// The blob ids of every file a commit changed, by path: before (in its first parent) and after.
-type Changes = HashMap<String, (Option<Oid>, Option<Oid>)>;
+type Changes = HashMap<String, (Option<ObjectId>, Option<ObjectId>)>;
 
 /// [`Changes`] of `commit`, from one tree diff. Looking each path up in the trees instead parses
 /// the whole of a directory's tree object per lookup: a directory of a hundred thousand keys
 /// (rpm-software-management-distribution-gpg-keys) made that 150 ms a file.
 fn changes(repo: &Repository, commit: &str) -> Option<Changes> {
-    let commit = repo.find_commit(Oid::from_str(commit).ok()?).ok()?;
+    let commit = omnidiff::stats::git::find_commit(repo, commit).ok()?;
     let tree = commit.tree().ok()?;
-    let parent = commit.parent(0).ok().and_then(|parent| parent.tree().ok());
-    let diff = repo
-        .diff_tree_to_tree(parent.as_ref(), Some(&tree), None)
-        .ok()?;
-    let id = |file: git2::DiffFile| (!file.id().is_zero()).then(|| file.id());
+    let parent = first_parent_tree(&commit).ok();
+    let deltas = tree_diff(repo, parent.as_ref(), &tree, false).ok()?;
+    let id = |file: &omnidiff::stats::git::DiffFile| file.exists().then_some(file.id);
     Some(
-        diff.deltas()
-            .filter_map(|delta| {
-                let path = delta.new_file().path().or(delta.old_file().path())?;
-                Some((
-                    path.to_string_lossy().into_owned(),
-                    (id(delta.old_file()), id(delta.new_file())),
-                ))
+        deltas
+            .iter()
+            .map(|delta| {
+                (
+                    delta.new.path.to_string_lossy().into_owned(),
+                    (id(&delta.old), id(&delta.new)),
+                )
             })
             .collect(),
     )
@@ -94,7 +92,7 @@ fn outcome(repo: &Repository, changes: Option<&Changes>, path: &str, diff: bool)
         return "missing".to_string();
     };
     let blob =
-        |id: Option<Oid>| -> Option<Vec<u8>> { Some(repo.find_blob(id?).ok()?.content().to_vec()) };
+        |id: Option<ObjectId>| -> Option<Vec<u8>> { Some(repo.find_blob(id?).ok()?.take_data()) };
     let (before, after) = (blob(before), blob(after));
     if before.is_none() && after.is_none() {
         return "missing".to_string();
@@ -137,7 +135,7 @@ fn outcome(repo: &Repository, changes: Option<&Changes>, path: &str, diff: bool)
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let repo = Repository::open(&args.repo)?;
+    let repo = gix::open(&args.repo)?;
     // A panicking diff is an outcome, not news on stderr for every one of them.
     std::panic::set_hook(Box::new(|_| {}));
     let mut out = BufWriter::new(std::io::stdout().lock());
@@ -161,11 +159,12 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use omnidiff::stats::git::testing;
 
     /// A repository with one commit after a root: `a.txt` edited, `b.png` added, `c.bin` edited.
     fn repository() -> (tempfile::TempDir, Repository, String) {
         let dir = tempfile::tempdir().unwrap();
-        let repo = Repository::init(dir.path()).unwrap();
+        let repo = testing::init(dir.path()).unwrap();
         let png = {
             let mut bytes = Vec::new();
             image::RgbaImage::from_pixel(2, 2, image::Rgba([1, 2, 3, 255]))
@@ -176,21 +175,9 @@ mod tests {
                 .unwrap();
             bytes
         };
-        let commit = |files: &[(&str, &[u8])], parent: Option<Oid>| {
-            let mut builder = repo.treebuilder(None).unwrap();
-            for (name, bytes) in files {
-                let blob = repo.blob(bytes).unwrap();
-                builder.insert(name, blob, 0o100644).unwrap();
-            }
-            let tree = repo.find_tree(builder.write().unwrap()).unwrap();
-            let signature = git2::Signature::now("t", "t@example.com").unwrap();
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid).unwrap())
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            repo.commit(None, &signature, &signature, "c", &tree, &parents)
-                .unwrap()
+        let commit = |files: &[(&str, &[u8])], parent: Option<ObjectId>| {
+            let tree = testing::tree_of_files(&repo, files).unwrap();
+            testing::commit(&repo, tree, parent, 1_700_000_000, false).unwrap()
         };
         let root = commit(&[("a.txt", b"one\n"), ("c.bin", &[0xFF, 0x00, 0x01])], None);
         let head = commit(
