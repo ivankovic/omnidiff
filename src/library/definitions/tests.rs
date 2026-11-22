@@ -36,7 +36,8 @@ fn assert_definitions(language: Language, source: &str, expected: &[(&str, &str)
 /// a `classify` arm whose kind is missing from the list would drop its definitions.
 #[test]
 fn the_kind_filter_drops_no_definition() {
-    let samples = include_str!("tests.rs");
+    // A Windows checkout has CRLF line endings, and `include_str!` keeps them.
+    let samples = include_str!("tests.rs").replace("\r\n", "\n");
     let mut checked = 0;
     for language in <Language as strum::IntoEnumIterator>::iter() {
         let marker = format!("        Language::{language:?},\n        r##\"");
