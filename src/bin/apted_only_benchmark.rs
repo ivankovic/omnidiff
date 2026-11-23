@@ -25,7 +25,7 @@
 
 use anyhow::{Context, Result, anyhow};
 use clap::Parser;
-use git2::Repository;
+use gix::Repository;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -108,13 +108,13 @@ fn open_repo<'a>(
     name: &str,
 ) -> Result<&'a Repository> {
     if !repos.contains_key(name) {
-        repos.insert(name.to_string(), Repository::open(repo_root.join(name))?);
+        repos.insert(name.to_string(), gix::open(repo_root.join(name))?);
     }
     Ok(repos.get(name).unwrap())
 }
 
 fn blob_content(repo: &Repository, treeish: &str, path: &str) -> Result<Vec<u8>> {
-    let tree = repo.revparse_single(treeish)?.peel_to_tree()?;
+    let tree = repo.rev_parse_single(treeish)?.object()?.peel_to_tree()?;
     omnidiff::stats::git::blob_bytes(repo, &tree, Path::new(path))
 }
 

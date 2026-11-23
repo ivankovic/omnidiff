@@ -34,6 +34,7 @@
 //! A side is the blob at `path` in the commit and in its first parent, as their tree diff says;
 //! a file added, deleted or renamed has one side, and is judged by it. `missing` marks a line whose commit or path is not
 //! in the repository.
+//! A file-type replacement is a deletion then addition at one path; the added side determines its verdict.
 
 use std::collections::HashMap;
 use std::io::{BufRead, BufWriter, Write};
@@ -43,7 +44,9 @@ use std::time::Duration;
 
 use anyhow::Result;
 use clap::Parser;
-use git2::{Oid, Repository};
+use gix::bstr::ByteSlice;
+use gix::diff::tree_with_rewrites::Change;
+use gix::{ObjectId, Repository};
 
 use omnidiff::diff::content::{self, Engine};
 
@@ -62,27 +65,46 @@ struct Args {
 }
 
 /// The blob ids of every file a commit changed, by path: before (in its first parent) and after.
-type Changes = HashMap<String, (Option<Oid>, Option<Oid>)>;
+type Changes = HashMap<String, (Option<ObjectId>, Option<ObjectId>)>;
 
 /// [`Changes`] of `commit`, from one tree diff. Looking each path up in the trees instead parses
 /// the whole of a directory's tree object per lookup: a directory of a hundred thousand keys
 /// (rpm-software-management-distribution-gpg-keys) made that 150 ms a file.
 fn changes(repo: &Repository, commit: &str) -> Option<Changes> {
-    let commit = repo.find_commit(Oid::from_str(commit).ok()?).ok()?;
-    let tree = commit.tree().ok()?;
-    let parent = commit.parent(0).ok().and_then(|parent| parent.tree().ok());
-    let diff = repo
-        .diff_tree_to_tree(parent.as_ref(), Some(&tree), None)
+    let info = repo
+        .rev_walk([ObjectId::from_hex(commit.as_bytes()).ok()?])
+        .all()
+        .ok()?
+        .next()?
         .ok()?;
-    let id = |file: git2::DiffFile| (!file.id().is_zero()).then(|| file.id());
+    let commit = info.object().ok()?;
+    let tree = commit.tree().ok()?;
+    let parent = info
+        .parent_ids()
+        .next()
+        .map(|id| repo.find_commit(id)?.tree())
+        .transpose()
+        .ok()?;
+    let diff = omnidiff::stats::git::file_changes(
+        repo,
+        parent.as_ref(),
+        &tree,
+        gix::diff::Options::default(),
+    )
+    .ok()?;
     Some(
-        diff.deltas()
-            .filter_map(|delta| {
-                let path = delta.new_file().path().or(delta.old_file().path())?;
-                Some((
-                    path.to_string_lossy().into_owned(),
-                    (id(delta.old_file()), id(delta.new_file())),
-                ))
+        diff.into_iter()
+            .map(|delta| {
+                let path = delta.location().to_str_lossy().into_owned();
+                let ids = match delta {
+                    Change::Addition { id, .. } => (None, Some(id)),
+                    Change::Deletion { id, .. } => (Some(id), None),
+                    Change::Modification {
+                        previous_id, id, ..
+                    } => (Some(previous_id), Some(id)),
+                    Change::Rewrite { source_id, id, .. } => (Some(source_id), Some(id)),
+                };
+                (path, ids)
             })
             .collect(),
     )
@@ -94,7 +116,7 @@ fn outcome(repo: &Repository, changes: Option<&Changes>, path: &str, diff: bool)
         return "missing".to_string();
     };
     let blob =
-        |id: Option<Oid>| -> Option<Vec<u8>> { Some(repo.find_blob(id?).ok()?.content().to_vec()) };
+        |id: Option<ObjectId>| -> Option<Vec<u8>> { Some(repo.find_blob(id?).ok()?.detach().data) };
     let (before, after) = (blob(before), blob(after));
     if before.is_none() && after.is_none() {
         return "missing".to_string();
@@ -137,7 +159,7 @@ fn outcome(repo: &Repository, changes: Option<&Changes>, path: &str, diff: bool)
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let repo = Repository::open(&args.repo)?;
+    let repo = gix::open(&args.repo)?;
     // A panicking diff is an outcome, not news on stderr for every one of them.
     std::panic::set_hook(Box::new(|_| {}));
     let mut out = BufWriter::new(std::io::stdout().lock());
@@ -165,7 +187,7 @@ mod tests {
     /// A repository with one commit after a root: `a.txt` edited, `b.png` added, `c.bin` edited.
     fn repository() -> (tempfile::TempDir, Repository, String) {
         let dir = tempfile::tempdir().unwrap();
-        let repo = Repository::init(dir.path()).unwrap();
+        let repo = gix::init(dir.path()).unwrap();
         let png = {
             let mut bytes = Vec::new();
             image::RgbaImage::from_pixel(2, 2, image::Rgba([1, 2, 3, 255]))
@@ -176,23 +198,31 @@ mod tests {
                 .unwrap();
             bytes
         };
-        let commit = |files: &[(&str, &[u8])], parent: Option<Oid>| {
-            let mut builder = repo.treebuilder(None).unwrap();
+        let commit = |files: &[(&str, &[u8])], parent: Option<ObjectId>| {
+            let mut tree = repo.empty_tree().edit().unwrap();
             for (name, bytes) in files {
-                let blob = repo.blob(bytes).unwrap();
-                builder.insert(name, blob, 0o100644).unwrap();
+                let blob = repo.write_blob(bytes).unwrap();
+                tree.upsert(*name, gix::object::tree::EntryKind::Blob, blob)
+                    .unwrap();
             }
-            let tree = repo.find_tree(builder.write().unwrap()).unwrap();
-            let signature = git2::Signature::now("t", "t@example.com").unwrap();
-            let parents: Vec<git2::Commit> = parent
-                .map(|oid| repo.find_commit(oid).unwrap())
-                .into_iter()
-                .collect();
-            let parents: Vec<&git2::Commit> = parents.iter().collect();
-            repo.commit(None, &signature, &signature, "c", &tree, &parents)
+            let tree = tree.write().unwrap();
+            let signature = gix::actor::SignatureRef {
+                name: "t".into(),
+                email: "t@example.com".into(),
+                time: "0 +0000",
+            };
+            repo.commit_as(signature, signature, "HEAD", "c", tree, parent)
                 .unwrap()
+                .detach()
         };
-        let root = commit(&[("a.txt", b"one\n"), ("c.bin", &[0xFF, 0x00, 0x01])], None);
+        let root = commit(
+            &[
+                ("a.txt", b"one\n"),
+                ("c.bin", &[0xFF, 0x00, 0x01]),
+                ("nested/deleted.txt", b"gone\n"),
+            ],
+            None,
+        );
         let head = commit(
             &[
                 ("a.txt", b"two\n"),
@@ -213,7 +243,48 @@ mod tests {
         assert_eq!(outcome("b.png", true), "pictures");
         assert_eq!(outcome("b.png", false), "pictures");
         assert_eq!(outcome("c.bin", true), "binary");
+        assert_eq!(outcome("nested/deleted.txt", true), "text");
+        assert_eq!(changed.as_ref().unwrap().len(), 4);
         assert_eq!(outcome("nowhere", true), "missing");
         assert!(changes(&repo, "0123").is_none());
+    }
+
+    #[test]
+    fn replacing_a_picture_with_a_symlink_and_back_uses_the_added_side() -> Result<()> {
+        use gix::object::tree::EntryKind;
+
+        let (_dir, repo, head) = repository();
+        let original = repo.head_tree()?;
+        let picture = original.lookup_entry_by_path("b.png")?.unwrap().object_id();
+        let target = repo.write_blob(b"target.png")?.detach();
+        let mut tree = original.edit()?;
+        let mut parent = ObjectId::from_hex(head.as_bytes())?;
+        let signature = gix::actor::SignatureRef {
+            name: "t".into(),
+            email: "t@example.com".into(),
+            time: "0 +0000",
+        };
+        for (kind, id, expected) in [
+            (EntryKind::Link, target, "text"),
+            (EntryKind::Blob, picture, "pictures"),
+        ] {
+            tree.upsert("b.png", kind, id)?;
+            parent = repo
+                .commit_as(
+                    signature,
+                    signature,
+                    "HEAD",
+                    "replace",
+                    tree.write()?,
+                    [parent],
+                )?
+                .detach();
+            let changed = changes(&repo, &parent.to_string()).unwrap();
+            assert_eq!(changed["b.png"], (None, Some(id)));
+            for diff in [false, true] {
+                assert_eq!(outcome(&repo, Some(&changed), "b.png", diff), expected);
+            }
+        }
+        Ok(())
     }
 }
