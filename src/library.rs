@@ -154,6 +154,61 @@ pub struct TextChange {
     pub other: Option<Span>,
 }
 
+/// How big a [`Diff`] is, in lines ([`Diff::stats`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct Stats {
+    inserted: usize,
+    deleted: usize,
+    updated: usize,
+    moved: usize,
+}
+
+impl Stats {
+    /// Lines only in the after side.
+    pub fn inserted(&self) -> usize {
+        self.inserted
+    }
+
+    /// Lines only in the before side.
+    pub fn deleted(&self) -> usize {
+        self.deleted
+    }
+
+    /// Lines of the after side whose construct is on both sides, with different text.
+    pub fn updated(&self) -> usize {
+        self.updated
+    }
+
+    /// Lines of the after side that are the same text somewhere else in the before side.
+    pub fn moved(&self) -> usize {
+        self.moved
+    }
+
+    /// Whether nothing changed but whitespace the preset ignores, or nothing at all.
+    pub fn is_empty(&self) -> bool {
+        *self == Stats::default()
+    }
+}
+
+impl std::ops::Add for Stats {
+    type Output = Stats;
+
+    fn add(self, other: Stats) -> Stats {
+        Stats {
+            inserted: self.inserted + other.inserted,
+            deleted: self.deleted + other.deleted,
+            updated: self.updated + other.updated,
+            moved: self.moved + other.moved,
+        }
+    }
+}
+
+impl std::iter::Sum for Stats {
+    fn sum<I: Iterator<Item = Stats>>(iter: I) -> Stats {
+        iter.fold(Stats::default(), |a, b| a + b)
+    }
+}
+
 /// Why [`Diff::files`] could not diff a pair.
 #[non_exhaustive]
 #[derive(Debug)]
@@ -263,9 +318,19 @@ impl Diff {
         Ok(Self::from_texts(&before_text, &after_text, before, after))
     }
 
-    /// Two sides read from anywhere (files, a git object store), named by `before_path` and
-    /// `after_path`, which pick each side's language and place the file for qualified names.
-    pub(crate) fn from_texts(
+    /// Two sides read from anywhere (files, a git object store, an editor's buffer), named by
+    /// `before_path` and `after_path`, which pick each side's language as [`Diff::files`] does
+    /// and place the file for qualified names. The paths need not exist.
+    ///
+    /// ```
+    /// use omnidiff::{Diff, Operation, Side};
+    ///
+    /// let diff = Diff::from_texts("a = 1\n", "a = 1\nb = 2\n", "x.py".as_ref(), "x.py".as_ref());
+    /// assert_eq!(diff.language(), omnidiff::Language::Python);
+    /// let after = diff.line_operations(Side::After, Default::default());
+    /// assert_eq!(after[..2], [None, Some(Operation::Insert)]);
+    /// ```
+    pub fn from_texts(
         before_text: &str,
         after_text: &str,
         before_path: &Path,
@@ -391,6 +456,52 @@ impl Diff {
                 })
             })
             .collect()
+    }
+
+    /// What happened to each line of `side`, one entry per line of its text (the empty one after
+    /// a final newline included): the operation of a change touching the line, or `None` for a
+    /// line left as it was. Lines, not spans: a line holding an updated token is an updated
+    /// line. For a gutter, a status bar, a line-based renderer.
+    pub fn line_operations(&self, side: Side, preset: Preset) -> Vec<Option<Operation>> {
+        crate::diff::text::line_operations(
+            &self.painted(preset)[side.index()],
+            self.text(side).split('\n').count(),
+        )
+        .into_iter()
+        .map(|op| match op {
+            TextOperation::Insert => Some(Operation::Insert),
+            TextOperation::Delete => Some(Operation::Delete),
+            TextOperation::Update => Some(Operation::Update),
+            TextOperation::Move => Some(Operation::Move),
+            _ => None,
+        })
+        .collect()
+    }
+
+    /// How big the diff is, in lines: deleted lines counted on the before side, inserted,
+    /// updated and moved ones on the after side, so that a line on both counts once.
+    ///
+    /// ```
+    /// use omnidiff::{Diff, Language};
+    ///
+    /// let diff = Diff::new("a\nb\n", "a\nc\nd\n", Language::Unknown);
+    /// let stats = diff.stats(Default::default());
+    /// assert_eq!((stats.deleted(), stats.inserted()), (1, 2));
+    /// ```
+    pub fn stats(&self, preset: Preset) -> Stats {
+        let [before, after] = self.painted(preset);
+        let counts = crate::diff::text::change_counts(
+            self.text(Side::Before),
+            self.text(Side::After),
+            before,
+            after,
+        );
+        Stats {
+            inserted: counts.insertions,
+            deleted: counts.deletions,
+            updated: counts.updates,
+            moved: counts.moves,
+        }
     }
 
     /// Each side's painted ranges under `preset`, built once.
