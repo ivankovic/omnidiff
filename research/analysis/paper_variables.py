@@ -1164,11 +1164,29 @@ def change_census(research_dir):
         rows = list(csv.DictReader(f))
     changes = sum(int(r["changes"]) for r in rows)
     binary = sum(int(r["binary_changes"]) for r in rows)
+
+    # The code share of RA1.1 is over the changes git reads as text, by the `code::tip` category
+    # of each extension (`Code(...)`), not over every changed file: the edit-shape walk's
+    # `EditsCodeSharePct` divides by all edits, binary ones included, which is not "within text".
+    # `.glif` (UFO glyph sources) is reported separately because nine font repositories commit
+    # hundreds of thousands of them and pull the share down on their own.
+    def text_changes(r):
+        return int(r["changes"]) - int(r["binary_changes"])
+
+    text = sum(text_changes(r) for r in rows)
+    code = sum(text_changes(r) for r in rows if r["category"].startswith("Code"))
+    glif = [r for r in rows if r["key"] == ".glif"]
+    glif_changes = sum(text_changes(r) for r in glif)
     return {
         "ChangeCensusChanges": latex_number(changes),
         "ChangeCensusBinary": latex_number(binary),
         "ChangeCensusBinaryPct": f"{binary / changes * 100:.1f}",
         "ChangeCensusTextPct": f"{(changes - binary) / changes * 100:.1f}",
+        "ChangeCensusCodeOfTextPct": f"{code / text * 100:.1f}",
+        "ChangeCensusGlifChanges": latex_number(glif_changes),
+        "ChangeCensusGlifRepos": sum(int(r["repositories"]) for r in glif),
+        "ChangeCensusGlifOfTextPct": f"{glif_changes / text * 100:.1f}",
+        "ChangeCensusCodeOfTextNoGlifPct": f"{code / (text - glif_changes) * 100:.1f}",
     }
 
 
