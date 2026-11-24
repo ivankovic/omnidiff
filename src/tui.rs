@@ -20,6 +20,7 @@ pub mod clipboard;
 pub mod color_depth;
 pub mod components;
 pub mod display_columns;
+pub mod embed;
 pub mod events;
 pub mod headless;
 pub mod json_output;

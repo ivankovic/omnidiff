@@ -23,6 +23,14 @@ release does: a minor bump may change the JSON output or the library API, a patc
   file an `omnidiff::Diff` read lazily from the object store, and
   `changed_definitions()` across all of them. Qualified names are read from the revision's own
   `go.mod` and `__init__.py`. Built on gix: pure Rust, no network, no C.
+- `omnidiff::Diff::from_texts(before, after, before_path, after_path)` diffs two texts named by
+  paths that need not exist, each side in the language its name and contents say.
+  `line_operations(side, preset)` says what happened to each line, and `stats(preset)` how big the
+  diff is in inserted, deleted, updated and moved lines (`omnidiff::Stats`, which adds up across
+  files).
+- `omnidiff::tui::embed::DiffView`: one file's diff as the viewer draws it, for another ratatui
+  application to host in a `Rect` of its own, driven by the keys the host passes on and handing
+  back the ones it has no use for.
 
 - A new highlighting option, "Highlight changed spaces at the end of a line" in the `M` panel
   (`changed_trailing_whitespace`): spaces or tabs added, removed or changed after the last

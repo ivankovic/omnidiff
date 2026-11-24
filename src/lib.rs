@@ -73,7 +73,7 @@ pub mod test;
 pub use crate::code::Language;
 pub use crate::library::{
     ChangeKind, Definition, DefinitionChange, DefinitionKind, Diff, Error, Operation, Position,
-    Preset, Side, Span, TextChange,
+    Preset, Side, Span, Stats, TextChange,
 };
 
 /// A git repository's commits, staged and unstaged changes, each file a [`Diff`]. Needs the
