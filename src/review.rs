@@ -18,8 +18,9 @@
 //! and how to turn any one of those changes into the two files on disk the diff engine reads.
 //! The TUI's review picker (`tui::components::review_dialog`) is its caller.
 //!
-//! Talks to the `git` binary, not `git2`, whose OpenSSL/libssh2 build `cargo install omnidiff`
-//! should not pay for; anyone reviewing has `git` on `PATH`.
+//! Talks to the `git` binary, not the library's gix-based `omnidiff::git` (the `git` feature):
+//! gix would add about 64 s and 3.8 MB to every `cargo install omnidiff` (measured 2026-11-20),
+//! and anyone reviewing has `git` on `PATH`.
 //!
 //! A side is materialized at `<workspace>/<revision>/<path>`: the basename picks the grammar, and
 //! the revision directory keeps same-named files apart. The working tree's file is diffed in place,

@@ -21,7 +21,7 @@ pub mod json_schema;
 
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "stats")]
-use git2::{Repository, Signature};
+use gix::Repository;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -950,7 +950,8 @@ fn initialize_repository() -> Result<(PathBuf, Repository)> {
     let temp_dir = tempdir().expect("Failed to create temporary directory");
     let repo_path = temp_dir.path().to_path_buf();
 
-    let repo = Repository::init(repo_path.clone()).expect("Failed to initialize git repository");
+    let repo =
+        crate::stats::git::testing::init(&repo_path).expect("Failed to initialize git repository");
     let _ = temp_dir.keep();
 
     Ok((repo_path, repo))
@@ -985,12 +986,9 @@ fn read_fake_git_repo_testdata() -> Result<Vec<(u32, PathBuf)>> {
 
 #[cfg(feature = "stats")]
 fn add_commits(repo: &Repository, repo_path: &Path, dirs: Vec<(u32, PathBuf)>) -> Result<()> {
-    let signature =
-        Signature::now("Test Author", "test@example.com").expect("Failed to create signature");
-
     for (commit_num, dir_path) in dirs {
         copy_test_files_to_repo(&dir_path, commit_num, repo_path)?;
-        create_commit(repo, &signature, commit_num)?;
+        create_commit(repo, repo_path, commit_num)?;
     }
     Ok(())
 }
@@ -1039,52 +1037,54 @@ fn path_in_repo(file_path: &Path, commit_num: u32, repo_path: &Path) -> PathBuf 
     repo_path.join(relative_path)
 }
 
+/// Every file under `dir` but `.git`, by path relative to `root` with `/` between components.
 #[cfg(feature = "stats")]
-fn create_commit(repo: &Repository, signature: &Signature, commit_num: u32) -> Result<()> {
-    let commit_message = format!("Commit {}", commit_num);
-
-    let mut index = repo.index().expect("Failed to open index");
-    index
-        .add_all(["*"], git2::IndexAddOption::DEFAULT, None)
-        .expect("Failed to add files to index");
-    index.write().expect("Failed to write index");
-
-    let tree_id = index.write_tree().expect("Failed to write tree");
-    let tree = repo.find_tree(tree_id).expect("Failed to find tree");
-
-    let parent_commit = if commit_num > 1 {
-        let obj = repo
-            .head()
-            .expect("Failed to get HEAD")
-            .resolve()
-            .expect("Failed to resolve HEAD");
-        Some(obj.peel_to_commit().expect("Failed to peel to commit"))
-    } else {
-        None
-    };
-
-    if let Some(parent) = parent_commit {
-        repo.commit(
-            Some("HEAD"),
-            signature,
-            signature,
-            &commit_message,
-            &tree,
-            &[&parent],
-        )
-        .expect("Failed to create commit");
-    } else {
-        repo.commit(
-            Some("HEAD"),
-            signature,
-            signature,
-            &commit_message,
-            &tree,
-            &[],
-        )
-        .expect("Failed to create initial commit");
+fn worktree_files(root: &Path, dir: &Path, files: &mut Vec<(String, Vec<u8>)>) -> Result<()> {
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.file_name().is_some_and(|name| name == ".git") {
+            continue;
+        }
+        if path.is_dir() {
+            worktree_files(root, &path, files)?;
+        } else {
+            let relative = path
+                .strip_prefix(root)?
+                .to_string_lossy()
+                .replace('\\', "/");
+            files.push((relative, fs::read(&path)?));
+        }
     }
+    Ok(())
+}
 
+/// Commits everything in the working tree on top of `HEAD`, and makes it the index, as
+/// `git add -A && git commit` would; a second apart, so a walk by time is the commits' order.
+#[cfg(feature = "stats")]
+fn create_commit(repo: &Repository, repo_path: &Path, commit_num: u32) -> Result<()> {
+    use crate::stats::git::testing;
+
+    let mut files = Vec::new();
+    worktree_files(repo_path, repo_path, &mut files)?;
+    let files: Vec<(&str, &[u8])> = files
+        .iter()
+        .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
+        .collect();
+    let tree = testing::tree_of_files(repo, &files)?;
+    let parent = match commit_num {
+        1 => None,
+        _ => Some(repo.head_id()?.detach()),
+    };
+    testing::commit_with_message(
+        repo,
+        tree,
+        parent,
+        1_700_000_000 + i64::from(commit_num),
+        true,
+        &format!("Commit {commit_num}"),
+    )?;
+    let mut index = repo.index_from_tree(&tree)?;
+    index.write(Default::default())?;
     Ok(())
 }
 

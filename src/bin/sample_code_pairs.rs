@@ -16,7 +16,6 @@
  */
 use anyhow::Result;
 use clap::Parser;
-use git2::Delta;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::HashMap;
@@ -26,7 +25,7 @@ use omnidiff::anomalous_paths;
 use omnidiff::code::Language;
 use omnidiff::code::language::{language_for_path, language_for_path_and_content, to_treesitter};
 use omnidiff::stats::filesystem::{find_git_repositories, for_each_repository};
-use omnidiff::stats::git::{text_loc_if_in_range, walk_single_parent_commit_diffs};
+use omnidiff::stats::git::{Status, text_loc_if_in_range, walk_single_parent_commit_diffs};
 use omnidiff::stats::sampling::{LOC_BUCKETS, Reservoir, loc_bucket};
 
 // The upper bound is the size `stats::expand_from_code` refuses to parse.
@@ -130,18 +129,15 @@ fn sample_repository(
     rng: &mut StdRng,
 ) -> Result<()> {
     walk_single_parent_commit_diffs(repo_path, max_commits, true, |repo, id, delta| {
-        if !matches!(delta.status(), Delta::Modified | Delta::Renamed) {
+        if !matches!(delta.status, Status::Modified | Status::Renamed) {
             return Ok(());
         }
         // A pure rename is a trivial diff pair.
-        if delta.old_file().id() == delta.new_file().id() {
+        if delta.old.id == delta.new.id {
             return Ok(());
         }
 
-        let Some(path) = delta.new_file().path() else {
-            return Ok(());
-        };
-        let old_path = delta.old_file().path().unwrap_or(path);
+        let (path, old_path) = (delta.new.path.as_path(), delta.old.path.as_path());
         if anomalous_paths::is_anomalous(path) || anomalous_paths::is_anomalous(old_path) {
             return Ok(());
         }
@@ -152,8 +148,8 @@ fn sample_repository(
         // Only `.ts` needs content to disambiguate (Qt Linguist vs. TypeScript); gating on it
         // avoids a blob read for every other file.
         if language == Language::TypeScript
-            && let Ok(blob) = repo.find_blob(delta.new_file().id())
-            && let Ok(text) = std::str::from_utf8(blob.content())
+            && let Ok(blob) = repo.find_blob(delta.new.id)
+            && let Ok(text) = std::str::from_utf8(&blob.data)
             && let Some(refined) = language_for_path_and_content(path, text)
         {
             language = refined;
@@ -168,10 +164,10 @@ fn sample_repository(
         }
 
         // The larger side decides the bucket; a binary or out-of-range side skips the pair.
-        let loc = text_loc_if_in_range(repo, delta.old_file().id(), MIN_BYTES, MAX_BYTES)
+        let loc = text_loc_if_in_range(repo, delta.old.id, MIN_BYTES, MAX_BYTES)
             .zip(text_loc_if_in_range(
                 repo,
-                delta.new_file().id(),
+                delta.new.id,
                 MIN_BYTES,
                 MAX_BYTES,
             ))

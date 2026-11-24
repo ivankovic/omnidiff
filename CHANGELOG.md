@@ -8,11 +8,32 @@ release does: a minor bump may change the JSON output or the library API, a patc
 
 ### Added
 
+- A library API for other Rust crates: `omnidiff::Diff::files(before, after)` or
+  `omnidiff::Diff::new(before, after, language)`, then `changed_functions()`, `changed_types()`,
+  `changed_modules()`, `changed_top_level_definitions()` and `changed_definitions()`: what
+  happened to each function, method, type, module and impl block (added, removed, modified, moved,
+  renamed, and whether only comments or whitespace changed), each named the way the language's
+  imports name it (`crate::parser::Parser::parse`, `com.acme.Parser.parse`,
+  `Acme\Parser::parse`), in 20 languages. `ranges(side, preset)` gives the changed text as byte
+  ranges and positions, and `enclosing_definition` the definition around a byte, like git's hunk
+  header. Use the crate with `default-features = false` to leave out the terminal viewer
+  ([#109](https://github.com/ivankovic/omnidiff/issues/109)).
+- The `git` feature adds `omnidiff::git`: `Repository::open(path)`, then `commit("HEAD")`,
+  `range("main", "HEAD")`, `staged()` or `unstaged()` (untracked files included), each changed
+  file an `omnidiff::Diff` read lazily from the object store, and
+  `changed_definitions()` across all of them. Qualified names are read from the revision's own
+  `go.mod` and `__init__.py`. Built on gix: pure Rust, no network, no C.
+
 - A new highlighting option, "Highlight changed spaces at the end of a line" in the `M` panel
   (`changed_trailing_whitespace`): spaces or tabs added, removed or changed after the last
   character of a line that otherwise stayed the same are highlighted, and so is a blank line of
   spaces that was added or removed. A file that differs only in whitespace at line ends now shows
   where. On in `--maximal`, off in `--minimal`, which never highlights trailing whitespace.
+
+### Deprecated
+
+- `omnidiff::diff_strings`: its node ids pointed into syntax trees it had already dropped. Use
+  `omnidiff::Diff::new`.
 
 ### Changed
 

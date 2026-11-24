@@ -91,6 +91,10 @@ jobs:
 
       - run: cargo clippy --locked --lib --no-default-features -- -D warnings -D unused-crate-dependencies
 
+      # The same library with `omnidiff::git` (gix). Its tests run in the `stats` jobs, since the
+      # stats feature includes it.
+      - run: cargo clippy --locked --lib --no-default-features --features git -- -D warnings -D unused-crate-dependencies
+
   audit:
     name: cargo audit
     runs-on: ubuntu-latest
