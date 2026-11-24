@@ -2863,7 +2863,7 @@ dependencies = [
  "tree-sitter-swift",
  "tree-sitter-typescript",
  "tree-sitter-vim",
- "tree-sitter-vue-updated",
+ "tree-sitter-vue-next",
  "tree-sitter-xml",
  "tree-sitter-yaml",
  "ts-parser-perl",
@@ -4726,13 +4726,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "tree-sitter-vue-updated"
+name = "tree-sitter-vue-next"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78cced828e25f82c788b240454a9def2a29f58f8f78214c20f51032a2b840dde"
+checksum = "e9ac89acaa8165aaabfa8ae9683aa423b0d2bf42c815dae5ca031a36a75525f1"
 dependencies = [
  "cc",
- "tree-sitter",
+ "tree-sitter-language",
 ]
 
 [[package]]

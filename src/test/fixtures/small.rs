@@ -415,7 +415,6 @@ mod vimscript_neovim_neovim_improved_asserts;
 #[cfg(test)]
 mod vimscript_neovim_neovim_test_debian_package_parsing_awful_string_matching;
 #[cfg(test)]
-#[cfg(test)]
 mod vue_louislam_uptime_kuma;
 #[cfg(test)]
 mod vue_louislam_uptime_kuma_remove_prefix_from_string;

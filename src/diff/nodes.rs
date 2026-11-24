@@ -262,11 +262,11 @@ pub fn is_reference(node_kind: &str, language: &Language) -> bool {
                 || node_kind == "script_element"
                 || node_kind == "style_element"
         }
-        // Vue has HTML's shape: the root `component` rule and one wrapper element per SFC block.
+        // Vue has HTML's shape: the root `document` rule and one wrapper element per SFC block.
         // Most elements inside a `<template>` are small, so they need the same reference
         // treatment as HTML's elements; like HTML, `<script>`/`<style>` contents are opaque.
         Language::Vue => {
-            node_kind == "component"
+            node_kind == "document"
                 || node_kind == "template_element"
                 || node_kind == "element"
                 || node_kind == "script_element"

@@ -7363,6 +7363,35 @@ THE SOFTWARE.
 
 Used by:
 
+- tree-sitter-vue-next 0.1.0 (https://github.com/jamie8johnson/tree-sitter-vue)
+
+```
+Copyright (c) 2024 Amaan Qureshi &lt;amaanq12@gmail.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+## MIT License
+
+Used by:
+
 - ratatui-macros 0.7.2 (https://github.com/ratatui/ratatui)
 
 ```
@@ -8132,7 +8161,6 @@ Used by:
 - tree-sitter-sequel 0.3.11 (https://github.com/derekstride/tree-sitter-sql.git)
 - tree-sitter-typescript 0.23.2 (https://github.com/tree-sitter/tree-sitter-typescript)
 - tree-sitter-vim 0.4.0 (https://github.com/tree-sitter-grammars/tree-sitter-vim)
-- tree-sitter-vue-updated 0.1.0 (https://github.com/c-gamble/tree-sitter-vue)
 - tree-sitter-xml 0.7.0 (https://github.com/tree-sitter-grammars/tree-sitter-xml)
 - tree-sitter 0.25.10 (https://github.com/tree-sitter/tree-sitter)
 - vsimd 0.8.0 (https://github.com/Nugine/simd)

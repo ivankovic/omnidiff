@@ -1036,6 +1036,7 @@ mod tests {
             Language::TSX,
             Language::TypeScript,
             Language::Vimscript,
+            Language::Vue,
             Language::YAML,
             Language::XML,
             Language::Unknown,

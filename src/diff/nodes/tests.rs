@@ -1372,14 +1372,14 @@ fn sql_comparisons_cross_match_but_never_with_logic() {
 /// The reference kinds a Vue SFC parses to, and that the tag-end tokens of its tags sit in one
 /// family like HTML's.
 #[test]
-fn vue_sfc_structure_is_anchored_on_the_component_and_its_blocks() {
+fn vue_sfc_structure_is_anchored_on_the_document_and_its_blocks() {
     let code = Code::from_string(
         "<template>\n  <ul><li v-for=\"x in xs\">{{ x }}</li></ul>\n</template>\n\
          <script setup>\nconst xs = [1] // raw text, never an AST side\n</script>\n",
         &Language::Vue,
     );
     let root = code.ast.as_ref().expect("a clean parse").root_node();
-    assert_eq!(root.kind(), "component", "the grammar's root rule");
+    assert_eq!(root.kind(), "document", "the grammar's root rule");
     // The wrappers and every element inside the template are references; a tag's leaves are not.
     fn collect_reference_kinds<'a>(node: tree_sitter::Node<'a>, lang: &Language) -> Vec<&'a str> {
         let mut out = Vec::new();
@@ -1395,7 +1395,7 @@ fn vue_sfc_structure_is_anchored_on_the_component_and_its_blocks() {
     assert_eq!(
         collect_reference_kinds(root, &Language::Vue),
         [
-            "component",
+            "document",
             "template_element",
             "element",
             "element",
