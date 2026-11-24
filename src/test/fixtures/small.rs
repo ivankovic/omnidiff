@@ -415,6 +415,16 @@ mod vimscript_neovim_neovim_improved_asserts;
 #[cfg(test)]
 mod vimscript_neovim_neovim_test_debian_package_parsing_awful_string_matching;
 #[cfg(test)]
+mod vue_louislam_uptime_kuma;
+#[cfg(test)]
+mod vue_louislam_uptime_kuma_remove_prefix_from_string;
+#[cfg(test)]
+mod vue_n8n_io_n8n_update_name;
+#[cfg(test)]
+mod vue_nextcloud_server_update;
+#[cfg(test)]
+mod vue_nextcloud_server_update_2;
+#[cfg(test)]
 mod xml_microsoft_terminal_multiline_string_constant_change;
 #[cfg(test)]
 mod xml_mozilla_firefox_firefox_add_a_few_attributes;

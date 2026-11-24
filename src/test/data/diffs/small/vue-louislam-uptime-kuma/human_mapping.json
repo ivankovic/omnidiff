@@ -1,0 +1,37 @@
+{
+  "entries": [],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 238,
+              "start_column": 89,
+              "end_row": 238,
+              "end_column": 102
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maximal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 238,
+              "start_column": 88,
+              "end_row": 238,
+              "end_column": 102
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
