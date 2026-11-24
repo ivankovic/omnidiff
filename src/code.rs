@@ -507,6 +507,7 @@ pub enum Language {
     TSX,
     TypeScript,
     Vimscript,
+    Vue,
     XML,
     YAML,
 }

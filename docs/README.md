@@ -301,7 +301,7 @@ The language is detected from the file extension. A file with an unknown extensi
 plain text, line by line, so nothing is refused.
 
 <!-- languages:start -->
-26 languages are parsed with a tree-sitter grammar and diffed structurally:
+27 languages are parsed with a tree-sitter grammar and diffed structurally:
 
 | Language | File extensions |
 |---|---|
@@ -329,6 +329,7 @@ plain text, line by line, so nothing is refused.
 | TSX | `.tsx` |
 | TypeScript | `.ts`, `.mts`, `.cts` |
 | Vimscript | `.vim` |
+| Vue | `.vue` |
 | XML | `.xml`, `.xht`, `.xhtml`, `.svg`, `.glif`, `.plist`, `.ui`, `.qrc`, `.glade`, `.xib`, `.storyboard`, `.xaml`, `.vcxproj`, `.filters`, `.csproj`, `.fsproj`, `.vbproj`, `.props`, `.targets`, `.nuspec`, `.resx`, `.wxs`, `.iml`, `.manifest`, `.config`, `.policy`, `.xsd`, `.xsl`, `.xslt`, `.xlf`, `.xliff`, `.kml`, `.gpx`, `.rss`, `.atom`, `.graphml`, `.dae` |
 | YAML | `.yaml`, `.yml` |
 

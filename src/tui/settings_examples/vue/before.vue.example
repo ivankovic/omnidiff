@@ -1,0 +1,23 @@
+<template>
+  <main class="notice">
+    <h1>Watering schedule</h1>
+    <p v-if="parched">Water everything today</p>
+    <p v-else :title="day" id="plan">Soil is moist enough</p>
+    <input v-model.trim="day" placeholder="Which pot">
+  </main>
+</template>
+
+<script setup>
+const days = ['Saturday', 'Sunday']
+const day = 'Saturday'
+
+function postpone(pots) {
+  console.log('watering:' + pots)
+}
+</script>
+
+<style scoped>
+.notice {
+  color: #0a4d2c;
+}
+</style>

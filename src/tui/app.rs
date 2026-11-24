@@ -2174,6 +2174,27 @@ mod tests {
         Ok(())
     }
 
+    /// A Vue pair through the same gate as SQL (`requires_clean_parse`).
+    #[test]
+    fn a_vue_pair_is_diffed_as_a_tree_only_when_both_sides_parse_cleanly() -> Result<()> {
+        let diff = |before: &str, after: &str| {
+            let path = Path::new("component.vue");
+            compute_diff_of_texts(path, before, path, after, RenderOptions::default())
+                .map(|(data, _)| data.plain_text_fallback)
+        };
+        let clean = "<template>\n  <div id=\"a\">x</div>\n</template>\n";
+        let renamed = "<template>\n  <div id=\"b\">x</div>\n</template>\n";
+        assert!(!diff(clean, renamed)?, "both sides parse: a tree diff");
+
+        // A mangled tag, which the HTML-shaped grammar leaves inside an ERROR node.
+        let broken = "<template>\n  <div id=\"b\" uno</div>\n</template>\n";
+        assert!(
+            diff(clean, broken)?,
+            "one side with a parse error: the line diff"
+        );
+        Ok(())
+    }
+
     #[test]
     fn open_files_loads_both_panels_and_starts_diff() -> Result<()> {
         let mut app = App::new(4.0, 60.0)?;

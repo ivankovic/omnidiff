@@ -1,0 +1,48 @@
+{
+  "entries": [],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 20,
+              "start_column": 12,
+              "end_row": 20,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 20,
+              "start_column": 12,
+              "end_row": 20,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 54,
+              "start_column": 12,
+              "end_row": 54,
+              "end_column": 19
+            }
+          ],
+          "after": [
+            {
+              "start_row": 54,
+              "start_column": 12,
+              "end_row": 54,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

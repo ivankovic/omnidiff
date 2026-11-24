@@ -170,6 +170,7 @@ pub const EXTENSIONS: &[(&[&str], Language)] = &[
     (&["ts", "mts", "cts"], Language::TypeScript),
     (&["tsx"], Language::TSX),
     (&["vim"], Language::Vimscript),
+    (&["vue"], Language::Vue),
     (&["yaml", "yml"], Language::YAML),
     (&["xml", "xht", "xhtml"], Language::XML),
     (XML_FORMAT_EXTENSIONS, Language::XML),
@@ -218,6 +219,7 @@ pub fn stable_name(language: Language) -> &'static str {
         Language::TSX => "TSX",
         Language::TypeScript => "TypeScript",
         Language::Vimscript => "Vimscript",
+        Language::Vue => "Vue",
         Language::XML => "XML",
         Language::YAML => "YAML",
     }
@@ -250,10 +252,15 @@ pub fn human_name(language: Language) -> String {
 /// SQL's dialects differ more than one grammar covers: of 7,055 corpus `.sql` files, the best grammar
 /// (`tree-sitter-sequel`) parsed 37% without errors, and left about a third of the bytes inside
 /// `ERROR` nodes, which tend to swallow the rest of a file. A diff over such a tree is worse than the
-/// line diff it replaces, so a SQL file that does not parse cleanly keeps the line diff. The other
-/// grammars parse nearly all of their corpus files and recover locally from the rest.
+/// line diff it replaces, so a SQL file that does not parse cleanly keeps the line diff.
+///
+/// Vue (`tree-sitter-vue-next`) parsed all 20 of the corpus's `.vue` sides without errors, but 20
+/// sides is too few to show how it recovers, and a Vue `ERROR` node can take a whole template with
+/// it; until the corpus shows otherwise it is gated the same way, so a file it does not cover keeps
+/// the line diff.
+/// The other grammars parse nearly all of their corpus files and recover locally from the rest.
 pub fn requires_clean_parse(language: Language) -> bool {
-    language == Language::SQL
+    language == Language::SQL || language == Language::Vue
 }
 
 /// The most nodes (root included, anonymous ones too) a side's tree may have and still be diffed
@@ -366,6 +373,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::TSX => Some(tree_sitter_typescript::LANGUAGE_TSX.into()),
         Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
         Language::Vimscript => Some(tree_sitter_vim::language()),
+        Language::Vue => Some(tree_sitter_vue_next::LANGUAGE.into()),
         Language::YAML => Some(tree_sitter_yaml::LANGUAGE.into()),
         Language::XML => Some(tree_sitter_xml::LANGUAGE_XML.into()),
         // Bazel, Dart, MarkDown, ProtoBuf and Lisp are not supported at this time.
@@ -577,6 +585,7 @@ mod tests {
                 "TSX",
                 "TypeScript",
                 "Vimscript",
+                "Vue",
                 "XML",
                 "YAML",
             ]

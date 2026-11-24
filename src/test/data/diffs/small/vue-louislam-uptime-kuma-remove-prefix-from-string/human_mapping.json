@@ -1,0 +1,81 @@
+{
+  "entries": [],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 267,
+              "start_column": 159,
+              "end_row": 267,
+              "end_column": 167
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 272,
+              "start_column": 239,
+              "end_row": 272,
+              "end_column": 247
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maximal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 267,
+              "start_column": 159,
+              "end_row": 267,
+              "end_column": 167
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 272,
+              "start_column": 239,
+              "end_row": 272,
+              "end_column": 247
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 272,
+              "start_column": 247,
+              "end_row": 272,
+              "end_column": 248
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 267,
+              "start_column": 167,
+              "end_row": 267,
+              "end_column": 168
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

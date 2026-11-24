@@ -195,6 +195,13 @@ tree-sitter-sequel = "0.3.11"
 tree-sitter-swift = "0.7"
 tree-sitter-typescript = "0.23"
 tree-sitter-vim = "0.4"
+# tree-sitter-vue-next is the published fork of tree-sitter-grammars/tree-sitter-vue, the maintained
+# Vue grammar, which is not on crates.io itself. Of the 20 .vue sides in the test corpus (10
+# sampled pairs, 5 of them promoted to painted fixtures) it parsed all 20 Error-free. Its scanner
+# exports only `tree_sitter_vue_*`; tree-sitter-vue-updated was rejected because its vendored copy
+# of the html scanner exports `tree_sitter_html_external_scanner_*`, which displaces
+# tree-sitter-html's own scanner at link time and breaks HTML parsing.
+tree-sitter-vue-next = "0.1.0"
 tree-sitter-xml = "0.7.0"
 tree-sitter-yaml = "0.7"
 # tree-sitter-perl/tree-sitter-perl, the grammar nvim-treesitter uses, is published under this name;
