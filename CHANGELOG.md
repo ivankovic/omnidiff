@@ -4,7 +4,10 @@ All notable changes to OmniDiff (named CodeDiff up to v0.1.1). The format follow
 and the version numbers follow [Semantic Versioning](https://semver.org/) as far as a 0.x
 release does: a minor bump may change the JSON output or the library API, a patch bump does not.
 
-## [Unreleased]
+## [0.6.0] - 2026-11-24
+
+A library API for other Rust crates (changed definitions, git revisions, an embeddable viewer),
+Vue parsed as code, and the Maximal preset.
 
 ### Added
 
@@ -31,12 +34,18 @@ release does: a minor bump may change the JSON output or the library API, a patc
 - `omnidiff::tui::embed::DiffView`: one file's diff as the viewer draws it, for another ratatui
   application to host in a `Rect` of its own, driven by the keys the host passes on and handing
   back the ones it has no use for.
-
 - A new highlighting option, "Highlight changed spaces at the end of a line" in the `M` panel
   (`changed_trailing_whitespace`): spaces or tabs added, removed or changed after the last
   character of a line that otherwise stayed the same are highlighted, and so is a blank line of
   spaces that was added or removed. A file that differs only in whitespace at line ends now shows
   where. On in `--maximal`, off in `--minimal`, which never highlights trailing whitespace.
+- Vue single-file components (`.vue`) are diffed as code, with the tree-sitter-grammars Vue
+  grammar, when a file parses without errors; other Vue files keep the line diff
+  ([#117](https://github.com/ivankovic/omnidiff/issues/117)).
+- A one-line installer: `curl -fsSL https://ivankovic.github.io/omnidiff/install.sh | sh` installs
+  through Homebrew where you have it, the signed apt repository on Debian and Ubuntu (it asks
+  before adding the key), and otherwise the prebuilt binary under `~/.local`, checked against
+  the release's `SHA256SUMS.txt`.
 
 ### Deprecated
 
@@ -50,6 +59,10 @@ release does: a minor bump may change the JSON output or the library API, a patc
   `--full` and `RenderOptions::FULL` (deprecated) still work.
 - In a file without a grammar, a line that changed only in its trailing whitespace counts as the
   same line: `--minimal` shows it unchanged, `--maximal` highlights just the whitespace.
+
+### Security
+
+- `libz-sys` 1.1.33, for RUSTSEC-2026-0544, and `zip` 9.7.3, for RUSTSEC-2026-0548.
 
 ## [0.5.0] - 2026-11-13
 
