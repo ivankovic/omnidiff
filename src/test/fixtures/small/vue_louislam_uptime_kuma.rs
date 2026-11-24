@@ -14,10 +14,9 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-//! This fixture's language has no tree-sitter grammar, so there is no tree to map
-//! and no `mapping()` test here. omnidiff renders the pair with its plain-text
-//! fallback diff (`plain_text_line_diff`), and that is what the `painting()` test
-//! below is graded against - see `PaintingDiff::PlainText`.
+//! Painted by hand against the plain-text fallback, before `.vue` had a grammar: a text-level
+//! painting, graded against what the tree diff renders now that both sides parse. The painting
+//! and the tree diff agree byte for byte.
 
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;

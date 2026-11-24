@@ -87,7 +87,8 @@ pub fn type_from_extension(ext: &str) -> Option<Type> {
             code("Script")
         }
         "pl" | "pm" | "pod6" | "raku" => code("Perl"),
-        "phpt" | "jsp" | "erb" | "haml" | "slim" | "vue" | "svelte" | "astro" | "less" | "sass"
+        // `vue` is diffed with a grammar, so it returns above, never here.
+        "phpt" | "jsp" | "erb" | "haml" | "slim" | "svelte" | "astro" | "less" | "sass"
         | "coffee" | "elm" | "purs" | "mjml" | "pcss" | "es" => code("Web"),
         "hx" | "cr" | "d" | "erl" | "hrl" | "ex" | "exs" | "hs" | "lhs" | "jl" | "nim" | "zig"
         | "vala" | "vapi" | "odin" | "pony" | "c3" | "vb" | "bas" | "gd" | "as" | "groovy"

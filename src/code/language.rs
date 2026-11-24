@@ -170,6 +170,7 @@ pub const EXTENSIONS: &[(&[&str], Language)] = &[
     (&["ts", "mts", "cts"], Language::TypeScript),
     (&["tsx"], Language::TSX),
     (&["vim"], Language::Vimscript),
+    (&["vue"], Language::Vue),
     (&["yaml", "yml"], Language::YAML),
     (&["xml", "xht", "xhtml"], Language::XML),
     (XML_FORMAT_EXTENSIONS, Language::XML),
@@ -218,6 +219,7 @@ pub fn stable_name(language: Language) -> &'static str {
         Language::TSX => "TSX",
         Language::TypeScript => "TypeScript",
         Language::Vimscript => "Vimscript",
+        Language::Vue => "Vue",
         Language::XML => "XML",
         Language::YAML => "YAML",
     }
@@ -253,7 +255,7 @@ pub fn human_name(language: Language) -> String {
 /// line diff it replaces, so a SQL file that does not parse cleanly keeps the line diff. The other
 /// grammars parse nearly all of their corpus files and recover locally from the rest.
 pub fn requires_clean_parse(language: Language) -> bool {
-    language == Language::SQL
+    language == Language::SQL || language == Language::Vue
 }
 
 /// The most nodes (root included, anonymous ones too) a side's tree may have and still be diffed
@@ -366,6 +368,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::TSX => Some(tree_sitter_typescript::LANGUAGE_TSX.into()),
         Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
         Language::Vimscript => Some(tree_sitter_vim::language()),
+        Language::Vue => Some(tree_sitter_vue_updated::language()),
         Language::YAML => Some(tree_sitter_yaml::LANGUAGE.into()),
         Language::XML => Some(tree_sitter_xml::LANGUAGE_XML.into()),
         // Bazel, Dart, MarkDown, ProtoBuf and Lisp are not supported at this time.
@@ -577,6 +580,7 @@ mod tests {
                 "TSX",
                 "TypeScript",
                 "Vimscript",
+                "Vue",
                 "XML",
                 "YAML",
             ]

@@ -80,6 +80,7 @@ pub const EXAMPLES: &[SettingsExample] = &[
     example!("css", "css", Language::CSS, &[]),
     example!("html", "html", Language::HTML, MARKUP_NO_EFFECT),
     example!("xml", "xml", Language::XML, MARKUP_NO_EFFECT),
+    example!("vue", "vue", Language::Vue, MARKUP_NO_EFFECT),
     example!("json", "json", Language::JSON, &[(6, JSON_NO_NAMES)]),
     example!("yaml", "yaml", Language::YAML, &[]),
     example!("c", "c", Language::C, &[]),
@@ -114,8 +115,8 @@ const PLAIN_TEXT_NO_EFFECT: &[(usize, &str)] = &[
 const NO_SYNTAX: &str = "Text without a grammar is compared line by line, with no names, brackets \
     or moves to tell apart, so this setting changes nothing in it.";
 
-/// What HTML and XML cannot show: their structure is tags and attributes, not punctuation, and no
-/// edit we tried had the two sides measure a moved tag or attribute differently.
+/// What HTML, XML and Vue cannot show: their structure is tags and attributes, not punctuation,
+/// and no edit we tried had the two sides measure a moved tag or attribute differently.
 const MARKUP_NO_EFFECT: &[(usize, &str)] = &[
     (
         1,

@@ -83,6 +83,7 @@ pub(crate) fn language_to_syntect(lang: &crate::code::Language) -> Option<&'stat
         TSX => Some("TypeScriptReact"),
         TypeScript => Some("TypeScript"),
         Vimscript => Some("VimL"),
+        Vue => Some("Vue Component"),
         YAML => Some("YAML"),
         XML => Some("XML"),
         Unknown => None,

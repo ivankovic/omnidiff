@@ -457,6 +457,7 @@ CRATES="
 	tree-sitter-swift@0.7.3
 	tree-sitter-typescript@0.23.2
 	tree-sitter-vim@0.4.0
+	tree-sitter-vue-updated@0.1.0
 	tree-sitter-xml@0.7.0
 	tree-sitter-yaml@0.7.2
 	tree-sitter@0.25.10

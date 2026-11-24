@@ -11,7 +11,7 @@ LICENSE), or under a commercial license (see LICENSE-COMMERCIAL).
 ## Overview
 
 - Apache License 2.0: 235 crates
-- MIT License: 133 crates
+- MIT License: 134 crates
 - BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License: 8 crates
 - Unicode License v3: 5 crates
 - zlib License: 2 crates
@@ -8132,6 +8132,7 @@ Used by:
 - tree-sitter-sequel 0.3.11 (https://github.com/derekstride/tree-sitter-sql.git)
 - tree-sitter-typescript 0.23.2 (https://github.com/tree-sitter/tree-sitter-typescript)
 - tree-sitter-vim 0.4.0 (https://github.com/tree-sitter-grammars/tree-sitter-vim)
+- tree-sitter-vue-updated 0.1.0 (https://github.com/c-gamble/tree-sitter-vue)
 - tree-sitter-xml 0.7.0 (https://github.com/tree-sitter-grammars/tree-sitter-xml)
 - tree-sitter 0.25.10 (https://github.com/tree-sitter/tree-sitter)
 - vsimd 0.8.0 (https://github.com/Nugine/simd)
