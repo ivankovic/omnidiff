@@ -26,6 +26,42 @@
 //! `DIFFSITTER_BIN` and `SRCDIFF_BIN` at built binaries. `treesitter_parse_ms` is timed as a reference lower bound,
 //! and GumTree and BDiff each get a second, warm-process timing that excludes JVM or interpreter
 //! startup (`gumtree_warm_batch`, `bdiff_warm_batch`).
+//!
+//! **OmniDiff is timed as a whole process, like every other tool** (`omnidiff_ms`, since
+//! 2026-11-24). Each repeat writes the pair to files named as the fixture's are (`before.rs`),
+//! runs `omnidiff --headless --maximal --color never BEFORE AFTER` and reads its output back from
+//! a pipe (`omnidiff_process_command`): process start, both parses, the diff and the plain-text
+//! rendering a script, a pager or git's `diff.external` gets. Before, OmniDiff was timed in-process
+//! on pre-parsed code and paid no startup, which every external tool pays. The binary is built by
+//! the run itself (`build_omnidiff_binary`, `cargo build --release --bin omnidiff`), so what is
+//! timed is always the current tree. The in-process time is still recorded, as
+//! `omnidiff_inprocess_ms`: `diff_code` and the line projection alone, no parse, no rendering.
+//!
+//! **Every tool is also scored against the hand painting** (`--accuracy-csv`'s
+//! `*_painting_<case>_mismatches`), byte by byte, where the line and node columns score against the
+//! human *mapping*. A tool reports no labels, so the question is changed or not: a byte the tool
+//! reports changed against a byte the painting gives any label (`human_mapping::changed_bytes`).
+//! A line-only tool reports every byte of each touched line, a tool with sub-line output its own
+//! ranges, both without line breaks, which no painting labels. The cases are those OmniDiff's own
+//! painting is graded in (`human_mapping::graded_cases`): a fixture with `Minimal` and `Maximal`
+//! paintings is scored against both, from the same tool output, and one with a single painting
+//! that names no preset against that one (`single`). OmniDiff goes through the same projection, but
+//! from the rendering of each preset the case reads, since it has one per preset where the other
+//! tools have one output: `--minimal` against the `Minimal` painting, `--maximal` against the
+//! `Maximal` one, and both against a `single` painting, a byte mismatched when either disagrees.
+//! These are not OmniDiff's own painting figures (`painting_attribution.csv`), which compare
+//! labels: a byte painted `update` where the painting says `move` agrees here.
+//!
+//! **The line columns are scored against the hand painting too**
+//! (`*_painting_line_<case>_mismatches`): each tool's line labels, computed exactly as for
+//! `*_line_mismatches`, OmniDiff's included, against the lines the painting touches, a line
+//! touched when any byte of it is painted (`human_mapping::compare_changed_lines_with_case`). Both
+//! raw cases are kept; the score is the fewest mismatches over them (`painting_line_score`), so a
+//! tool matches a fixture with a `Minimal` and a `Maximal` painting when it agrees with either -
+//! both readings are correct, and a line tool has one output. Every painting column is blank on a
+//! fixture with no painting, so it is left out rather than scored as perfect, and which fixtures
+//! are painted is read from the fixtures each run. `cd research && make measure-tools-painting`
+//! regenerates the CSV, the painting tables and their macros.
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
@@ -68,6 +104,12 @@ struct Args {
     /// mapping's touched/untouched call, for this one fixture, instead of the summary table.
     #[arg(long)]
     details: Option<String>,
+
+    /// Print the name of every fixture a full run would score, one per line, and exit. The chunked
+    /// driver (`research/measure/benchmark_other_chunked.py`) splits this list so a long run is
+    /// many short processes that each write their own CSV, and resumes after a crash.
+    #[arg(long)]
+    list_fixtures: bool,
 
     /// Output results as a CSV file. Default path: "./research/data/comparison/benchmark_other.csv"
     #[arg(long, value_name = "PATH", num_args = 0..=1)]
@@ -279,6 +321,101 @@ fn write_temp_pair(
     Ok((before_file, after_file))
 }
 
+/// Builds the release `omnidiff` binary from this source tree and returns its path, so the
+/// timing run can never time a stale build: cargo rebuilds when anything it depends on changed
+/// and is a no-op otherwise. The path comes from cargo's own artifact message rather than being
+/// guessed, so `CARGO_TARGET_DIR` is honoured.
+fn build_omnidiff_binary() -> Result<std::path::PathBuf> {
+    // `CARGO` is set at run time under `cargo run`; the build-time value covers a direct start.
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| env!("CARGO").into());
+    eprintln!("Building the release omnidiff binary from this tree...");
+    let output = std::process::Command::new(cargo)
+        .current_dir(env!("CARGO_MANIFEST_DIR"))
+        .args([
+            "build",
+            "--release",
+            "--bin",
+            "omnidiff",
+            "--message-format=json-render-diagnostics",
+        ])
+        .stderr(std::process::Stdio::inherit())
+        .output()
+        .context("running cargo build for the omnidiff binary")?;
+    if !output.status.success() {
+        bail!(
+            "cargo build --release --bin omnidiff failed ({})",
+            output.status
+        );
+    }
+    omnidiff_executable_from_cargo_messages(&String::from_utf8_lossy(&output.stdout))
+}
+
+/// The `omnidiff` executable named by cargo's `--message-format=json` artifact messages.
+fn omnidiff_executable_from_cargo_messages(messages: &str) -> Result<std::path::PathBuf> {
+    messages
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .filter(|message| message["reason"] == "compiler-artifact")
+        .filter(|message| message["target"]["name"] == "omnidiff")
+        .find_map(|message| message["executable"].as_str().map(std::path::PathBuf::from))
+        .context("cargo built no omnidiff executable")
+}
+
+/// The command a timing repeat runs: `omnidiff --headless --maximal --color never BEFORE AFTER`,
+/// which is how a script, a pager or git's `diff.external` gets OmniDiff's plain-text output. It
+/// parses both files, diffs them and renders the stacked text report. `--maximal` pins the preset,
+/// so a render setting saved on the machine cannot change what is timed, and it is the fuller of
+/// the two paintings. `--color never` keeps the output independent of `NO_COLOR`.
+fn omnidiff_process_command(
+    omnidiff_bin: &std::path::Path,
+    before: &std::path::Path,
+    after: &std::path::Path,
+) -> std::process::Command {
+    let mut command = std::process::Command::new(omnidiff_bin);
+    command
+        .args(["--headless", "--maximal", "--color", "never"])
+        .arg(before)
+        .arg(after)
+        .stdin(std::process::Stdio::null());
+    command
+}
+
+/// Milliseconds for one whole-process run of `omnidiff_process_command` on the pair, timed the way
+/// every external tool is: from writing the two files to having read the process's output back.
+/// The files get the fixture's own names (`before.rs`, `after.rs`), because omnidiff picks the
+/// language from the file name, as it would in a repository.
+fn time_omnidiff_process(
+    omnidiff_bin: &std::path::Path,
+    before: &Code,
+    after: &Code,
+) -> Result<f64> {
+    let file_name = |code: &Code, fallback: &str| -> std::ffi::OsString {
+        code.metadata
+            .path
+            .as_ref()
+            .and_then(|path| path.file_name())
+            .map_or_else(|| fallback.into(), |name| name.to_os_string())
+    };
+    let started = std::time::Instant::now();
+    let dir = tempfile::tempdir().context("creating a temp dir for the omnidiff run")?;
+    let before_path = dir.path().join(file_name(before, "before"));
+    let after_path = dir.path().join(file_name(after, "after"));
+    std::fs::write(&before_path, before.contents.as_bytes()).context("writing before file")?;
+    std::fs::write(&after_path, after.contents.as_bytes()).context("writing after file")?;
+    let output = omnidiff_process_command(omnidiff_bin, &before_path, &after_path)
+        .output()
+        .with_context(|| format!("running {}", omnidiff_bin.display()))?;
+    let elapsed = started.elapsed().as_secs_f64() * 1000.0;
+    if !output.status.success() {
+        bail!(
+            "omnidiff exited with {}: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    Ok(elapsed)
+}
+
 /// Milliseconds tree-sitter takes to reparse `source` from scratch: a lower bound every AST-aware
 /// tool pays before diffing, timed for context and never scored.
 fn treesitter_parse_ms(source: &Code, parser: &mut tree_sitter::Parser) -> f64 {
@@ -296,12 +433,13 @@ struct Row {
     /// One entry per `ExternalTool::ALL`; `None` when the tool does not support the language or
     /// failed on this fixture.
     tools: Vec<Option<(usize, usize)>>,
-    /// Milliseconds from parsed `Code` to omnidiff's line labels, one per repeat.
-    ///
-    /// Excludes parsing (`main` parses every fixture first), while a tool's timing is its whole
-    /// subprocess, so it is not comparable to `tool_ms` alone: add `treesitter_ms` for end to end.
-    /// The two stay separate so both "algorithm only" and "end to end" are answerable.
-    omnidiff_ms: Vec<f64>,
+    /// Milliseconds for one whole `omnidiff` process per repeat (`time_omnidiff_process`), timed
+    /// as every external tool is; `None` when the process failed on this fixture.
+    omnidiff_ms: Option<Vec<f64>>,
+    /// Milliseconds from parsed `Code` to omnidiff's line labels inside this process, one per
+    /// repeat: no process start, no parse (`main` parses every fixture first), no rendering. Kept
+    /// as the algorithm-only reference; not comparable to `tool_ms`.
+    omnidiff_inprocess_ms: Vec<f64>,
     /// Milliseconds inside `ExternalTool::line_labels`, one per repeat; `None` exactly where
     /// `tools` is.
     tool_ms: Vec<Option<Vec<f64>>>,
@@ -321,6 +459,7 @@ fn score_fixture(
     before: &Code,
     after: &Code,
     repeats: usize,
+    omnidiff_bin: &std::path::Path,
     gumtree_warm_ms: Option<Vec<f64>>,
     bdiff_warm_ms: Option<Vec<f64>>,
 ) -> Result<Row> {
@@ -331,7 +470,7 @@ fn score_fixture(
 
     // Accuracy is deterministic, so it is scored on the first repeat only.
     let mut omnidiff_mismatches = 0usize;
-    let mut omnidiff_ms = Vec::with_capacity(repeats);
+    let mut omnidiff_inprocess_ms = Vec::with_capacity(repeats);
     for i in 0..repeats {
         let started = std::time::Instant::now();
         let omnidiff_diff = diff::diff_code(before, after);
@@ -340,13 +479,24 @@ fn score_fixture(
             .context("omnidiff produced no AST mapping")?;
         let (omnidiff_before, omnidiff_after) =
             human_mapping::touched_lines(before, after, &omnidiff_ast, &node_cache);
-        omnidiff_ms.push(started.elapsed().as_secs_f64() * 1000.0);
+        omnidiff_inprocess_ms.push(started.elapsed().as_secs_f64() * 1000.0);
         if i == 0 {
             omnidiff_mismatches =
                 human_mapping::line_disagreement_count(&human_before, &omnidiff_before)
                     + human_mapping::line_disagreement_count(&human_after, &omnidiff_after);
         }
     }
+
+    let omnidiff_ms = match (0..repeats)
+        .map(|_| time_omnidiff_process(omnidiff_bin, before, after))
+        .collect::<Result<Vec<f64>>>()
+    {
+        Ok(ms) => Some(ms),
+        Err(err) => {
+            eprintln!("  {name}: the omnidiff process failed, untimed: {err:#}");
+            None
+        }
+    };
 
     let mut tools = Vec::with_capacity(ExternalTool::ALL.len());
     let mut tool_ms = Vec::with_capacity(ExternalTool::ALL.len());
@@ -398,6 +548,7 @@ fn score_fixture(
         omnidiff: (omnidiff_mismatches, total_lines),
         tools,
         omnidiff_ms,
+        omnidiff_inprocess_ms,
         tool_ms,
         treesitter_ms,
         gumtree_warm_ms,
@@ -453,38 +604,32 @@ fn main() -> Result<()> {
     if selection.0.is_some() && args.accuracy_csv.is_none() {
         bail!("--tools only applies to --accuracy-csv runs");
     }
-    // Load only the named fixtures: loading the whole corpus parses every fixture, which dominates
-    // a scoped run. Cloned out of the shared `Arc` because `ensure_parsed` needs `&mut Code`.
-    let mut test_diffs: HashMap<String, (Code, Code)> = if args.fixtures.is_empty() {
-        (*helper::handmade_test_code_pairs()?).clone()
+    // Every fixture is read up front but parsed only while it is being measured, then dropped: a
+    // parsed tree with its metadata is many times the size of its text, and the whole corpus parsed
+    // at once (about 2,800 fixtures with the unsolved Defects4J units) does not fit in 16 GB. The
+    // warm batch drivers only write each fixture's text to disk, so they take the unparsed pairs.
+    let dirs: Vec<(String, std::path::PathBuf)> = if args.fixtures.is_empty() {
+        helper::handmade_test_case_dirs()?
     } else {
         args.fixtures
             .iter()
             .map(|name| {
-                let pair = (*helper::handmade_test_code_pair(name)
-                    .with_context(|| format!("no fixture named '{name}'"))?)
-                .clone();
-                Ok((name.clone(), pair))
+                let dir = helper::diffs_case_dir(name)
+                    .with_context(|| format!("no fixture named '{name}'"))?;
+                Ok((name.clone(), dir))
             })
             .collect::<Result<_>>()?
     };
-
-    // `Code`'s `Clone` drops `ast_metadata`, and `metadata_of` never writes it back through `&Code`,
-    // so without this every `diff_code` call in every repeat would recompute it.
-    for (before, after) in test_diffs.values_mut() {
-        if before.metadata.language.is_some() {
-            before.ensure_parsed()?;
-        }
-        if after.metadata.language.is_some() {
-            after.ensure_parsed()?;
+    let mut test_diffs: HashMap<String, (Code, Code)> = HashMap::new();
+    for (name, dir) in dirs {
+        if let Some(pair) = helper::code_pair_from_dir_unparsed(&dir)? {
+            test_diffs.insert(name, pair);
         }
     }
 
     if let Some(name) = args.details {
-        let (before, after) = test_diffs
-            .get(&name)
-            .with_context(|| format!("no fixture named '{}'", name))?;
-        return print_details(&name, before, after);
+        let (before, after) = parsed_pair(&test_diffs, &name)?;
+        return print_details(&name, &before, &after);
     }
 
     let mut names: Vec<String> = test_diffs
@@ -494,6 +639,13 @@ fn main() -> Result<()> {
         .collect();
     names.sort();
 
+    if args.list_fixtures {
+        for name in &names {
+            println!("{name}");
+        }
+        return Ok(());
+    }
+
     // Before the warm batch passes, which only exist to produce timings.
     if let Some(path) = args.accuracy_csv {
         let path = path.unwrap_or_else(|| {
@@ -501,6 +653,17 @@ fn main() -> Result<()> {
         });
         return run_accuracy(&names, &test_diffs, &path, &selection);
     }
+
+    let omnidiff_bin = build_omnidiff_binary()?;
+    let version = std::process::Command::new(&omnidiff_bin)
+        .arg("--version")
+        .output()
+        .with_context(|| format!("running {} --version", omnidiff_bin.display()))?;
+    eprintln!(
+        "Timing {} ({}) as a whole process per fixture",
+        omnidiff_bin.display(),
+        String::from_utf8_lossy(&version.stdout).trim()
+    );
 
     let warm_fixtures: Vec<(&str, &Code, &Code)> = names
         .iter()
@@ -544,9 +707,14 @@ fn main() -> Result<()> {
     let mut rows = Vec::with_capacity(names.len());
     for (i, name) in names.iter().enumerate() {
         eprintln!("[{}/{}] {name}", i + 1, names.len());
-        let (before, after) = test_diffs
-            .get(name)
-            .expect("name came from test_diffs.keys()");
+        let (before, after) = match parsed_pair(&test_diffs, name) {
+            Ok(pair) => pair,
+            Err(err) => {
+                eprintln!("  {name}: skipped ({err:#})");
+                continue;
+            }
+        };
+        let (before, after) = (&before, &after);
         let warm_ms = gumtree_warm_available.then(|| {
             gumtree_warm_runs
                 .iter()
@@ -565,7 +733,15 @@ fn main() -> Result<()> {
             .filter(|v| !v.is_empty());
         // A fixture no grammar parses (e.g. `handmade/bazel-not-actually-supported-by-treesitter`)
         // is skipped, not allowed to abort the whole run.
-        match score_fixture(name, before, after, args.repeats, warm_ms, bdiff_warm) {
+        match score_fixture(
+            name,
+            before,
+            after,
+            args.repeats,
+            &omnidiff_bin,
+            warm_ms,
+            bdiff_warm,
+        ) {
             Ok(row) => rows.push(row),
             Err(err) => eprintln!("  {name}: skipped ({err:#})"),
         }
@@ -702,17 +878,25 @@ fn mean_coefficient_of_variation<'a>(samples: impl Iterator<Item = &'a [f64]>) -
 
 fn print_runtime_table(rows: &[Row]) {
     let tool_names: Vec<&str> = ExternalTool::ALL.iter().map(|t| t.name()).collect();
-    let label_width = ["omnidiff", "treesitter_parse", "gumtree_warm", "bdiff_warm"]
-        .iter()
-        .chain(&tool_names)
-        .map(|s| s.len())
-        .max()
-        .unwrap_or(0);
+    let label_width = [
+        "omnidiff",
+        "omnidiff_inprocess",
+        "treesitter_parse",
+        "gumtree_warm",
+        "bdiff_warm",
+    ]
+    .iter()
+    .chain(&tool_names)
+    .map(|s| s.len())
+    .max()
+    .unwrap_or(0);
 
     println!();
     println!(
         "Per-tool runtime (time to produce line-level touched/untouched labels, {} repeat(s)/fixture):",
-        rows.first().map(|r| r.omnidiff_ms.len()).unwrap_or(0)
+        rows.first()
+            .map(|r| r.omnidiff_inprocess_ms.len())
+            .unwrap_or(0)
     );
     println!(
         "{:<label_width$}  {:>10}  {:>10}  {:>8}",
@@ -742,22 +926,40 @@ fn print_runtime_table(rows: &[Row]) {
         label_width = label_width
     );
 
-    let omnidiff_flat: Vec<f64> = rows
+    let omnidiff_runs: Vec<&[f64]> = rows
         .iter()
-        .flat_map(|r| r.omnidiff_ms.iter().copied())
+        .filter_map(|r| r.omnidiff_ms.as_deref())
         .collect();
-    let omnidiff_total: f64 = omnidiff_flat.iter().sum();
-    println!(
-        "{:<label_width$}  {:>10.1}  {:>10.3}  {:>7}  (n={})",
-        "omnidiff",
-        omnidiff_total,
-        omnidiff_total / omnidiff_flat.len().max(1) as f64,
-        mean_coefficient_of_variation(rows.iter().map(|r| r.omnidiff_ms.as_slice()))
-            .map(|cv| format!("{cv:.1}"))
-            .unwrap_or_else(|| "-".to_string()),
-        omnidiff_flat.len(),
-        label_width = label_width
-    );
+    let inprocess_runs: Vec<&[f64]> = rows
+        .iter()
+        .map(|r| r.omnidiff_inprocess_ms.as_slice())
+        .collect();
+    for (label, runs, note) in [
+        (
+            "omnidiff",
+            &omnidiff_runs,
+            "  <- whole process, as every tool",
+        ),
+        (
+            "omnidiff_inprocess",
+            &inprocess_runs,
+            "  <- diff_code alone, no process start, parse or rendering",
+        ),
+    ] {
+        let flat: Vec<f64> = runs.iter().flat_map(|s| s.iter().copied()).collect();
+        let total: f64 = flat.iter().sum();
+        println!(
+            "{:<label_width$}  {:>10.1}  {:>10.3}  {:>7}  (n={}){note}",
+            label,
+            total,
+            total / flat.len().max(1) as f64,
+            mean_coefficient_of_variation(runs.iter().copied())
+                .map(|cv| format!("{cv:.1}"))
+                .unwrap_or_else(|| "-".to_string()),
+            flat.len(),
+            label_width = label_width
+        );
+    }
     for (i, tool_name) in tool_names.iter().enumerate() {
         // Mean over scored fixtures only, not every row, or out-of-scope rows would count as 0ms.
         let scored: Vec<&[f64]> = rows
@@ -960,6 +1162,11 @@ struct AccuracyRow {
     total_leaf_nodes: usize,
     /// Denominator for the `*_visible_node_mismatches` columns.
     total_visible_nodes: usize,
+    /// Bytes of both files: the denominator of the `*_painting_*_mismatches` columns.
+    total_bytes: usize,
+    /// The `GradedCase` labels the fixture's hand paintings grade, `;`-joined in
+    /// `PAINTING_CASES` order; empty when it has no painting.
+    painting_cases: String,
     /// omnidiff first (if selected), then `ExternalTool::ALL` order.
     scores: Vec<ToolScore>,
 }
@@ -971,12 +1178,101 @@ struct ToolScore {
     node_mismatches: Option<usize>,
     leaf_node_mismatches: Option<usize>,
     visible_node_mismatches: Option<usize>,
+    /// Bytes where the tool's changed bytes disagree with the hand painting, per
+    /// `PAINTING_CASES` entry; `None` where the fixture does not grade that case or the tool was
+    /// not scored (see `painting_mismatches`).
+    painting_mismatches: [Option<usize>; 3],
+    /// Lines where the tool's line labels (the `line_mismatches` ones) disagree with the lines the
+    /// hand painting touches, per `PAINTING_CASES` entry; `None` as for `painting_mismatches`.
+    painting_line_mismatches: [Option<usize>; 3],
     /// `ok`, `unsupported` (no parser for this language; deliberately not scored 0, which reads
     /// as perfect), `error`, or `line_only` (no sub-line output, so no node columns).
     status: &'static str,
 }
 
-/// Scores every selected tool's line- and node-level agreement with the human mapping. Both
+/// The cases a hand painting can grade, in the CSV's column order; see `human_mapping::GradedCase`.
+const PAINTING_CASES: [human_mapping::GradedCase; 3] = [
+    human_mapping::GradedCase::Minimal,
+    human_mapping::GradedCase::Maximal,
+    human_mapping::GradedCase::Single,
+];
+
+/// One tool's byte-level disagreement with the hand painting, per `PAINTING_CASES` entry: the
+/// bytes `changed` says the tool reports changed against the bytes the painting gives any label
+/// (`human_mapping::compare_changed_bytes_with_case`). `None` for a case `cases` does not hold, and
+/// for one whose comparison failed, which is reported rather than scored as zero.
+fn painting_mismatches(
+    name: &str,
+    tool: &str,
+    mapping: &human_mapping::HumanMapping,
+    cases: &[human_mapping::GradedCase],
+    before: &Code,
+    after: &Code,
+    mut changed: impl FnMut(omnidiff::diff::text::RenderOptions) -> Result<[Vec<bool>; 2]>,
+) -> [Option<usize>; 3] {
+    PAINTING_CASES.map(|case| {
+        if !cases.contains(&case) {
+            return None;
+        }
+        match human_mapping::compare_changed_bytes_with_case(
+            mapping,
+            case,
+            before,
+            after,
+            &mut changed,
+        ) {
+            Ok(comparison) => Some(comparison.mismatched_bytes),
+            Err(err) => {
+                eprintln!(
+                    "  {name}: {tool} painting scoring ({}) failed: {err:#}",
+                    case.label()
+                );
+                None
+            }
+        }
+    })
+}
+
+/// A fixture's line-level painting score from its `painting_line_mismatches`: the fewest
+/// mismatched lines over the cases it grades. A fixture with a `Minimal` and a `Maximal` painting
+/// is matched when the tool agrees with either, since both readings are correct and a line-level
+/// tool has one output; a single painting is the only one. `None` for an unpainted fixture, which
+/// is left out rather than scored as perfect. `benchmark_other_report.painting_line_score` is the
+/// same rule.
+fn painting_line_score(mismatches: &[Option<usize>; 3]) -> Option<usize> {
+    mismatches.iter().flatten().copied().min()
+}
+
+/// One tool's line-level disagreement with the hand painting, per `PAINTING_CASES` entry
+/// (`human_mapping::compare_changed_lines_with_case`); `None` exactly as in `painting_mismatches`.
+fn painting_line_mismatches(
+    name: &str,
+    tool: &str,
+    mapping: &human_mapping::HumanMapping,
+    cases: &[human_mapping::GradedCase],
+    before: &Code,
+    after: &Code,
+    lines: &[Vec<bool>; 2],
+) -> [Option<usize>; 3] {
+    PAINTING_CASES.map(|case| {
+        if !cases.contains(&case) {
+            return None;
+        }
+        match human_mapping::compare_changed_lines_with_case(mapping, case, before, after, lines) {
+            Ok(mismatches) => Some(mismatches),
+            Err(err) => {
+                eprintln!(
+                    "  {name}: {tool} line painting scoring ({}) failed: {err:#}",
+                    case.label()
+                );
+                None
+            }
+        }
+    })
+}
+
+/// Scores every selected tool's line- and node-level agreement with the human mapping, and its
+/// byte-level agreement with the hand painting where the fixture has one. The line and node
 /// granularities derive from one synthetic `ASTDiff` (`human_mapping::as_ast_diff`).
 fn score_accuracy(
     name: &str,
@@ -987,6 +1283,13 @@ fn score_accuracy(
 ) -> Result<AccuracyRow> {
     let node_cache = omnidiff::diff::NodeCache::build(before, after);
     let truth_ast = human_mapping::as_ast_diff(name, before, after)?;
+    let mapping = human_mapping::load_with(name, before, after)?;
+    let painting_cases = if human_mapping::has_painting(&mapping, before, after) {
+        human_mapping::graded_cases(&mapping)
+    } else {
+        Vec::new()
+    };
+    let no_painting = [None; 3];
 
     let (truth_before_lines, truth_after_lines) =
         human_mapping::touched_lines(before, after, &truth_ast, &node_cache);
@@ -1038,11 +1341,11 @@ fn score_accuracy(
 
     if selection.includes("omnidiff") {
         let diff = omnidiff::diff::diff_code(before, after);
-        let ast = diff.ast.as_ref().context("omnidiff produced no AST")?;
+        let ast = diff.ast.context("omnidiff produced no AST")?;
         let (cd_before_lines, cd_after_lines) =
-            human_mapping::touched_lines(before, after, ast, &node_cache);
+            human_mapping::touched_lines(before, after, &ast, &node_cache);
         let (cd_before_spans, cd_after_spans) =
-            human_mapping::changed_spans(before, after, ast, &node_cache);
+            human_mapping::changed_spans(before, after, &ast, &node_cache);
         let cd_before_nodes = human_mapping::nodes_touched_by(&before_extents, &cd_before_spans);
         let cd_after_nodes = human_mapping::nodes_touched_by(&after_extents, &cd_after_spans);
         scores.push(ToolScore {
@@ -1073,6 +1376,40 @@ fn score_accuracy(
                     &visible_filter(&cd_after_nodes, &after_extents, &after_visible_ids),
                 ),
             ),
+            // What omnidiff paints under each preset the case reads, as the TUI and `--headless`
+            // render it: omnidiff has a rendering per preset where every other tool has one output.
+            painting_line_mismatches: painting_line_mismatches(
+                name,
+                "omnidiff",
+                &mapping,
+                &painting_cases,
+                before,
+                after,
+                &[cd_before_lines.clone(), cd_after_lines.clone()],
+            ),
+            painting_mismatches: {
+                let painting_diff = human_mapping::PaintingDiff::Ast {
+                    ast: Box::new(ast),
+                    node_cache,
+                };
+                painting_mismatches(
+                    name,
+                    "omnidiff",
+                    &mapping,
+                    &painting_cases,
+                    before,
+                    after,
+                    |options| {
+                        human_mapping::omnidiff_changed_bytes(
+                            &mapping,
+                            options,
+                            before,
+                            after,
+                            &painting_diff,
+                        )
+                    },
+                )
+            },
             status: "ok",
         });
     }
@@ -1089,14 +1426,17 @@ fn score_accuracy(
                 node_mismatches: None,
                 leaf_node_mismatches: None,
                 visible_node_mismatches: None,
+                painting_mismatches: no_painting,
+                painting_line_mismatches: no_painting,
                 status: "unsupported",
             });
             continue;
         }
-        let line_mismatches = match tool.line_labels(before, after) {
+        let lines = tool.line_labels(before, after);
+        let line_mismatches = match &lines {
             Ok((tool_before, tool_after)) => Some(
-                disagreement(&truth_before_lines, &tool_before)
-                    + disagreement(&truth_after_lines, &tool_after),
+                disagreement(&truth_before_lines, tool_before)
+                    + disagreement(&truth_after_lines, tool_after),
             ),
             Err(err) => {
                 eprintln!("  {name}: {} line scoring failed: {err:#}", tool.name());
@@ -1104,12 +1444,49 @@ fn score_accuracy(
             }
         };
         let node_result = tool_node_spans(tool, before, after);
+        // The bytes the tool reports changed: its ranges where it reports finer than lines, every
+        // byte of each touched line where it does not. Unscored wherever `status` is not.
+        let changed = match (&node_result, &lines) {
+            (Some(Ok((before_spans, after_spans))), Ok(_)) => Some([
+                human_mapping::changed_bytes(&before.contents, before_spans),
+                human_mapping::changed_bytes(&after.contents, after_spans),
+            ]),
+            (None, Ok((before_lines, after_lines))) => Some([
+                human_mapping::changed_bytes_of_lines(&before.contents, before_lines),
+                human_mapping::changed_bytes_of_lines(&after.contents, after_lines),
+            ]),
+            _ => None,
+        };
+        let painting_lines = match &lines {
+            Ok((before_lines, after_lines)) => painting_line_mismatches(
+                name,
+                tool.name(),
+                &mapping,
+                &painting_cases,
+                before,
+                after,
+                &[before_lines.clone(), after_lines.clone()],
+            ),
+            Err(_) => no_painting,
+        };
+        let painting = match changed {
+            Some(changed) => painting_mismatches(
+                name,
+                tool.name(),
+                &mapping,
+                &painting_cases,
+                before,
+                after,
+                |_| Ok(changed.clone()),
+            ),
+            None => no_painting,
+        };
         let (node_mismatches, leaf_node_mismatches, visible_node_mismatches, status) =
-            match node_result {
+            match &node_result {
                 None => (None, None, None, "line_only"),
                 Some(Ok((tool_before_spans, tool_after_spans))) => {
-                    let tb = human_mapping::nodes_touched_by(&before_extents, &tool_before_spans);
-                    let ta = human_mapping::nodes_touched_by(&after_extents, &tool_after_spans);
+                    let tb = human_mapping::nodes_touched_by(&before_extents, tool_before_spans);
+                    let ta = human_mapping::nodes_touched_by(&after_extents, tool_after_spans);
                     (
                         Some(
                             disagreement(&truth_before_nodes, &tb)
@@ -1149,6 +1526,8 @@ fn score_accuracy(
             node_mismatches,
             leaf_node_mismatches,
             visible_node_mismatches,
+            painting_mismatches: painting,
+            painting_line_mismatches: painting_lines,
             status,
         });
     }
@@ -1171,6 +1550,13 @@ fn score_accuracy(
         total_leaf_nodes: before_extents.iter().filter(|e| e.is_leaf).count()
             + after_extents.iter().filter(|e| e.is_leaf).count(),
         total_visible_nodes: truth_before_visible.len() + truth_after_visible.len(),
+        total_bytes: before.contents.len() + after.contents.len(),
+        painting_cases: PAINTING_CASES
+            .iter()
+            .filter(|case| painting_cases.contains(case))
+            .map(|case| case.label())
+            .collect::<Vec<_>>()
+            .join(";"),
         scores,
     })
 }
@@ -1193,6 +1579,8 @@ fn write_accuracy_csv(rows: &[AccuracyRow], path: &std::path::Path) -> Result<()
         "total_nodes".to_string(),
         "total_leaf_nodes".to_string(),
         "total_visible_nodes".to_string(),
+        "total_bytes".to_string(),
+        "painting_cases".to_string(),
     ];
     let tool_names: Vec<&str> = rows
         .first()
@@ -1203,6 +1591,12 @@ fn write_accuracy_csv(rows: &[AccuracyRow], path: &std::path::Path) -> Result<()
         header.push(format!("{name}_node_mismatches"));
         header.push(format!("{name}_leaf_node_mismatches"));
         header.push(format!("{name}_visible_node_mismatches"));
+        for case in PAINTING_CASES {
+            header.push(format!("{name}_painting_{}_mismatches", case.label()));
+        }
+        for case in PAINTING_CASES {
+            header.push(format!("{name}_painting_line_{}_mismatches", case.label()));
+        }
         header.push(format!("{name}_status"));
     }
     writer.write_record(&header)?;
@@ -1218,6 +1612,8 @@ fn write_accuracy_csv(rows: &[AccuracyRow], path: &std::path::Path) -> Result<()
             row.total_nodes.to_string(),
             row.total_leaf_nodes.to_string(),
             row.total_visible_nodes.to_string(),
+            row.total_bytes.to_string(),
+            row.painting_cases.clone(),
         ];
         let cell = |value: Option<usize>| value.map(|v| v.to_string()).unwrap_or_default();
         for score in &row.scores {
@@ -1225,6 +1621,8 @@ fn write_accuracy_csv(rows: &[AccuracyRow], path: &std::path::Path) -> Result<()
             record.push(cell(score.node_mismatches));
             record.push(cell(score.leaf_node_mismatches));
             record.push(cell(score.visible_node_mismatches));
+            record.extend(score.painting_mismatches.map(cell));
+            record.extend(score.painting_line_mismatches.map(cell));
             record.push(score.status.to_string());
         }
         writer.write_record(&record)?;
@@ -1234,6 +1632,21 @@ fn write_accuracy_csv(rows: &[AccuracyRow], path: &std::path::Path) -> Result<()
 }
 
 /// `--accuracy-csv`: scores every fixture, prints per-tool summaries, and writes the CSV.
+/// One fixture's pair, parsed with its AST metadata, from the unparsed copy `main` holds. The copy
+/// stays unparsed; the returned pair is dropped by the caller once the fixture is measured.
+fn parsed_pair(test_diffs: &HashMap<String, (Code, Code)>, name: &str) -> Result<(Code, Code)> {
+    let (before, after) = test_diffs
+        .get(name)
+        .with_context(|| format!("no fixture named '{name}'"))?;
+    let (mut before, mut after) = (before.clone(), after.clone());
+    for side in [&mut before, &mut after] {
+        if side.metadata.language.is_some() {
+            side.ensure_parsed()?;
+        }
+    }
+    Ok((before, after))
+}
+
 fn run_accuracy(
     names: &[String],
     test_diffs: &HashMap<String, (Code, Code)>,
@@ -1246,10 +1659,10 @@ fn run_accuracy(
         if index % 25 == 0 {
             eprintln!("accuracy: {}/{}...", index, names.len());
         }
-        let (before, after) = test_diffs
-            .get(name)
-            .expect("name came from test_diffs.keys()");
-        match score_accuracy(name, before, after, &provenance, selection) {
+        let scored = parsed_pair(test_diffs, name).and_then(|(before, after)| {
+            score_accuracy(name, &before, &after, &provenance, selection)
+        });
+        match scored {
             Ok(row) => rows.push(row),
             Err(err) => eprintln!("  {name}: skipped ({err:#})"),
         }
@@ -1357,6 +1770,49 @@ fn run_accuracy(
         }
     }
 
+    // Per fixture, as the paper's painting table reads it: exact is no mismatched byte, within 1%
+    // is at most 1% of the bytes of the two files.
+    println!(
+        "\nChanged bytes against the hand painting, per case: fixtures scored / exact / within 1%"
+    );
+    print!("{:<14}", "tool");
+    for case in PAINTING_CASES {
+        print!(" {:>22}", case.label());
+    }
+    println!();
+    for (i, name) in tool_names.iter().enumerate() {
+        print!("{name:<14}");
+        for (case_index, _) in PAINTING_CASES.iter().enumerate() {
+            let scored: Vec<(usize, usize)> = rows
+                .iter()
+                .filter_map(|row| {
+                    let mismatches = row.scores.get(i)?.painting_mismatches[case_index]?;
+                    Some((mismatches, row.total_bytes))
+                })
+                .collect();
+            let exact = scored.iter().filter(|(m, _)| *m == 0).count();
+            let within = scored.iter().filter(|(m, total)| m * 100 <= *total).count();
+            print!(" {:>22}", format!("{} / {exact} / {within}", scored.len()));
+        }
+        println!();
+    }
+
+    println!(
+        "\nLines against the hand painting, either preset: fixtures scored / perfect / mismatched lines"
+    );
+    for (i, name) in tool_names.iter().enumerate() {
+        let scored: Vec<usize> = rows
+            .iter()
+            .filter_map(|row| painting_line_score(&row.scores.get(i)?.painting_line_mismatches))
+            .collect();
+        println!(
+            "{name:<14} {:>7} {:>7} {:>10}",
+            scored.len(),
+            scored.iter().filter(|m| **m == 0).count(),
+            scored.iter().sum::<usize>()
+        );
+    }
+
     write_accuracy_csv(&rows, path)?;
     println!("\nWrote {}", path.display());
     Ok(())
@@ -1371,6 +1827,7 @@ fn write_csv(rows: &[Row], path: &std::path::Path) -> Result<()> {
         "total_lines".to_string(),
         "omnidiff_mismatches".to_string(),
         "omnidiff_ms".to_string(),
+        "omnidiff_inprocess_ms".to_string(),
         "treesitter_parse_ms".to_string(),
     ];
     header.extend(ExternalTool::ALL.iter().flat_map(|t| {
@@ -1388,7 +1845,8 @@ fn write_csv(rows: &[Row], path: &std::path::Path) -> Result<()> {
             row.name.clone(),
             row.omnidiff.1.to_string(),
             row.omnidiff.0.to_string(),
-            join_ms(&row.omnidiff_ms),
+            row.omnidiff_ms.as_deref().map(join_ms).unwrap_or_default(),
+            join_ms(&row.omnidiff_inprocess_ms),
             join_ms(&row.treesitter_ms),
         ];
         // Blank, not 0, for an unscored tool: `benchmark_other_report.py` excludes blanks.
@@ -1709,5 +2167,106 @@ mod tests {
             serde_json::from_str(r#"[{"mode": "teleport", "src_line": 1, "dest_line": 1}]"#)
                 .expect("valid test JSON");
         assert!(bdiff_touched_from_script(&code, &code, &script).is_err());
+    }
+
+    #[test]
+    fn omnidiff_process_command_is_the_headless_maximal_plain_text_invocation() {
+        let command = omnidiff_process_command(
+            std::path::Path::new("/bin/omnidiff"),
+            std::path::Path::new("/tmp/x/before.rs"),
+            std::path::Path::new("/tmp/x/after.rs"),
+        );
+        assert_eq!(command.get_program(), "/bin/omnidiff");
+        let args: Vec<&std::ffi::OsStr> = command.get_args().collect();
+        assert_eq!(
+            args,
+            [
+                "--headless",
+                "--maximal",
+                "--color",
+                "never",
+                "/tmp/x/before.rs",
+                "/tmp/x/after.rs"
+            ]
+        );
+    }
+
+    /// A stand-in for the binary that records what it was given, so the test can check the files
+    /// carry the fixture's names (omnidiff picks the language from them) and its contents.
+    #[cfg(unix)]
+    fn recording_binary(
+        dir: &std::path::Path,
+        record: &std::path::Path,
+        status: i32,
+    ) -> std::path::PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let script = dir.join("fake-omnidiff");
+        std::fs::write(
+            &script,
+            format!(
+                "#!/bin/sh\nfor arg in \"$@\"; do echo \"${{arg##*/}}\"; done > '{}'\ncat \"$5\" \"$6\" >> '{}'\necho rendered\nexit {status}\n",
+                record.display(),
+                record.display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        script
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn time_omnidiff_process_runs_the_binary_on_files_named_as_the_fixture_s() {
+        let dir = tempfile::tempdir().unwrap();
+        let record = dir.path().join("record");
+        let binary = recording_binary(dir.path(), &record, 0);
+        let mut before = Code::from_string("fn a() {}\n", &Language::Rust);
+        let mut after = Code::from_string("fn b() {}\n", &Language::Rust);
+        before.metadata.path = Some("src/test/data/diffs/small/x/before.rs".into());
+        after.metadata.path = Some("src/test/data/diffs/small/x/after.rs".into());
+
+        let ms = time_omnidiff_process(&binary, &before, &after).expect("the run succeeds");
+        assert!(ms > 0.0);
+        assert_eq!(
+            std::fs::read_to_string(&record).unwrap(),
+            "--headless\n--maximal\n--color\nnever\nbefore.rs\nafter.rs\nfn a() {}\nfn b() {}\n"
+        );
+    }
+
+    /// A failed run is an error, never a time: a crash is fast.
+    #[cfg(unix)]
+    #[test]
+    fn time_omnidiff_process_rejects_a_failing_run() {
+        let dir = tempfile::tempdir().unwrap();
+        let binary = recording_binary(dir.path(), &dir.path().join("record"), 2);
+        let code = Code::from_string("x\n", &Language::Rust);
+        assert!(time_omnidiff_process(&binary, &code, &code).is_err());
+    }
+
+    #[test]
+    fn omnidiff_executable_from_cargo_messages_takes_the_omnidiff_binary_artifact() {
+        let messages = [
+            r#"{"reason":"compiler-artifact","target":{"name":"omnidiff","kind":["lib"]},"executable":null}"#,
+            "not json",
+            r#"{"reason":"compiler-artifact","target":{"name":"omnidiff","kind":["bin"]},"executable":"/t/release/omnidiff"}"#,
+            r#"{"reason":"build-finished","success":true}"#,
+        ]
+        .join("\n");
+        assert_eq!(
+            omnidiff_executable_from_cargo_messages(&messages).unwrap(),
+            std::path::PathBuf::from("/t/release/omnidiff")
+        );
+        assert!(omnidiff_executable_from_cargo_messages("").is_err());
+    }
+
+    #[test]
+    fn painting_line_score_takes_either_preset_and_skips_an_unpainted_fixture() {
+        // Minimal and Maximal: agreeing with either one is a match.
+        assert_eq!(painting_line_score(&[Some(4), Some(0), None]), Some(0));
+        assert_eq!(painting_line_score(&[Some(2), Some(5), None]), Some(2));
+        // A single painting is the only reference.
+        assert_eq!(painting_line_score(&[None, None, Some(3)]), Some(3));
+        // No painting: not scored, rather than perfect.
+        assert_eq!(painting_line_score(&[None, None, None]), None);
     }
 }

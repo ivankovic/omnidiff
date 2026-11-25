@@ -55,7 +55,7 @@ RESEARCH_DIR = /var/tmp/research/$(MODE)/
 	debug-stats analyze tiny small full sample-pairs sample-pairs-all measure-pairs \
 	measure-code-pair-diffs pairs-diff-report measure-sampled matching-reasons-report \
 	shapes-report measure-edit-shape measure-change-census measure-content-census measure-content-change-size ambiguity-report rendering-report measure-tools-timing \
-	measure-tools-accuracy timing-report install-bdiff install-srcdiff apted-budget-report measure-apted-budget \
+	measure-tools-accuracy measure-tools-painting timing-report install-bdiff install-srcdiff apted-budget-report measure-apted-budget \
 	paper-variables introductory-paper introductory-paper-empirical fetch-external \
 	measure-astdiff-oracle measure-astdiff-oracle-human measure-robustness-fixtures \
 	measure-presets preset-report measure-invariants invariants-report measure-dataset-growth dataset-growth-report
@@ -448,12 +448,27 @@ measure-per-test-coverage:
 # visible granularity. Both take `--fixtures a,b,c` to score a subset, and `--accuracy-csv` also
 # takes `--tools name,...`; a scoped run parses only the fixtures asked for (0.6s against 18.8s for
 # one fixture), which is worth knowing when iterating on a single tool adapter.
+#
+# Both run through measure/benchmark_other_chunked.py: one benchmark_other process per chunk of
+# fixtures, each chunk's CSV kept under /var/tmp/omnidiff-benchmark-chunks/<mode>/ and merged at the
+# end. Re-running the same target after a crash resumes at the first missing chunk; pass
+# CHUNK_ARGS=--fresh to start over. CHUNK_ARGS also takes --chunk-size N and --pause SECONDS (idle
+# between chunks, to keep a laptop's temperature down).
+CHUNK_ARGS ?=
 measure-tools-timing:
-	cd .. && cargo run --release --features test-fixtures --bin benchmark_other -- --csv
+	python3 ./measure/benchmark_other_chunked.py timing $(CHUNK_ARGS)
 	$(MAKE) timing-report
 
 measure-tools-accuracy:
-	cd .. && cargo run --release --features test-fixtures --bin benchmark_other -- --accuracy-csv
+	python3 ./measure/benchmark_other_chunked.py accuracy $(CHUNK_ARGS)
+
+# Every tool against the hand paintings, end to end from whatever fixtures are painted today:
+# benchmark_accuracy.csv (its `*_painting_*` columns come from the same run as the mapping ones),
+# then the painting tables (plots/benchmark_other_painting_{lines,bytes}*.tex) and their macros.
+# Nothing lists the painted fixtures; each run reads which ones carry a painting. timing-report
+# also re-renders the timing charts from the committed benchmark_other.csv, which is unchanged.
+measure-tools-painting: measure-tools-accuracy
+	$(MAKE) timing-report
 
 timing-report:
 	uv run ./analysis/benchmark_other_report.py

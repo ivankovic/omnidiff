@@ -902,6 +902,21 @@ pub fn code_pair_from_dir(path: &Path) -> Result<Option<(Code, Code)>> {
 /// that diffs must use [`code_pair_from_dir`]: without cached metadata every `metadata_of`
 /// recomputes it.
 pub fn code_pair_from_dir_without_metadata(path: &Path) -> Result<Option<(Code, Code)>> {
+    let Some((mut before, mut after)) = code_pair_from_dir_unparsed(path)? else {
+        return Ok(None);
+    };
+    let mut parser = tree_sitter::Parser::new();
+    before.parse(&mut parser);
+    after.parse(&mut parser);
+    Ok(Some((before, after)))
+}
+
+/// The `before.<ext>.test` / `after.<ext>.test` pair in `path` as read from disk: contents and
+/// `metadata` (path, language) set, no tree parsed. `None`, not an error, if either file is missing.
+///
+/// For a pass that holds every fixture at once but parses one at a time: a parsed tree with its
+/// metadata is many times the size of its text, so the whole corpus parsed does not fit in memory.
+pub fn code_pair_from_dir_unparsed(path: &Path) -> Result<Option<(Code, Code)>> {
     let mut before_code = None;
     let mut after_code = None;
 
@@ -924,14 +939,9 @@ pub fn code_pair_from_dir_without_metadata(path: &Path) -> Result<Option<(Code, 
         }
     }
 
-    let (Some(mut before), Some(mut after)) = (before_code, after_code) else {
+    let (Some(before), Some(after)) = (before_code, after_code) else {
         return Ok(None);
     };
-
-    let mut parser = tree_sitter::Parser::new();
-    before.parse(&mut parser);
-    after.parse(&mut parser);
-
     Ok(Some((before, after)))
 }
 
