@@ -274,19 +274,23 @@ pub static AST_NODE_CAP: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(MAX_AST_NODES);
 
 /// `contents` parsed with `parser`, already set to `language`'s grammar; `None` when the parse fails,
-/// [`requires_clean_parse`] rejects the tree, or it has more than [`AST_NODE_CAP`] nodes.
+/// leaves non-whitespace input unparsed, [`requires_clean_parse`] rejects the tree, or it has more
+/// than [`AST_NODE_CAP`] nodes.
 pub fn parse_tree(
     parser: &mut tree_sitter::Parser,
     contents: &str,
     language: Language,
 ) -> Option<tree_sitter::Tree> {
     let tree = parser.parse(contents, None)?;
-    if requires_clean_parse(language) && tree.root_node().has_error() {
+    let root = tree.root_node();
+    if root.end_byte() < contents.trim_end().len() {
+        return None;
+    }
+    if requires_clean_parse(language) && root.has_error() {
         return None;
     }
     // `descendant_count` is stored in the tree, so this costs nothing.
-    if tree.root_node().descendant_count() > AST_NODE_CAP.load(std::sync::atomic::Ordering::Relaxed)
-    {
+    if root.descendant_count() > AST_NODE_CAP.load(std::sync::atomic::Ordering::Relaxed) {
         return None;
     }
     Some(tree)
@@ -384,6 +388,55 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn assert_incomplete_yaml_parse_is_rejected(newline: &str) {
+        let prefix = format!("key: value{newline}");
+        let contents = format!("{prefix}new_key: inserted{newline}");
+        let mut parser = tree_sitter::Parser::new();
+        parser
+            .set_language(&to_treesitter(&Language::YAML).unwrap())
+            .unwrap();
+        // Force a partial tree independently of the YAML scanner's overflow bug.
+        parser
+            .set_included_ranges(&[tree_sitter::Range {
+                start_byte: 0,
+                end_byte: prefix.len(),
+                start_point: tree_sitter::Point::new(0, 0),
+                end_point: tree_sitter::Point::new(1, 0),
+            }])
+            .unwrap();
+        let tree = parser.parse(&contents, None).expect("YAML parse");
+        assert!(!tree.root_node().has_error());
+        assert!(tree.root_node().end_byte() < contents.trim_end().len());
+        assert!(
+            parse_tree(&mut parser, &contents, Language::YAML).is_none(),
+            "an incomplete tree must not be used for structural diffing"
+        );
+    }
+
+    #[test]
+    fn yaml_parse_rejects_an_incomplete_lf_tree() {
+        assert_incomplete_yaml_parse_is_rejected("\n");
+    }
+
+    #[test]
+    fn yaml_parse_rejects_an_incomplete_crlf_tree() {
+        assert_incomplete_yaml_parse_is_rejected("\r\n");
+    }
+
+    #[test]
+    fn yaml_parse_accepts_complete_input_with_trailing_whitespace() {
+        for newline in ["\r\n", "\n"] {
+            let contents = format!("key: value{newline}  {newline}{newline}");
+            let mut parser = tree_sitter::Parser::new();
+            parser
+                .set_language(&to_treesitter(&Language::YAML).unwrap())
+                .unwrap();
+            let tree = parse_tree(&mut parser, &contents, Language::YAML)
+                .expect("complete YAML should retain its AST");
+            assert!(!tree.root_node().has_error());
+        }
+    }
 
     #[test]
     fn language_for_invalid_extensions() {
