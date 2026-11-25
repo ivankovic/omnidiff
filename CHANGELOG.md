@@ -15,6 +15,11 @@ release does: a minor bump may change the JSON output or the library API, a patc
   ([#114](https://github.com/ivankovic/omnidiff/issues/114)).
 - A file in any language whose tree does not reach its end is diffed line by line instead of
   showing no changes past where the tree stops.
+- A very long line of code is no longer slow to highlight: a 16,000-element list on one line took
+  6 to 18 seconds, and now takes a tenth of a second.
+- Deeply nested code is no longer slow in headless and JSON output: finding the enclosing
+  declaration of each change took time quadratic in the nesting depth, 4 seconds for 4,096 nested
+  blocks, now 0.2.
 
 ## [0.6.0] - 2026-11-24
 

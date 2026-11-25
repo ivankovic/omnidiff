@@ -2681,8 +2681,12 @@ fn renamed_names_are_identifiers_and_operators_outside_content() {
 fn a_node_in_a_repeated_tail_is_untouched_on_its_row_under_minimal() {
     let untouched = |read_rows_carrying_several_edits| {
         node_untouched_on_its_row(
-            &SourceText::new("f(a)\n"),
-            &SourceText::new("f(a, a)\n"),
+            &RowPair::new(
+                &SourceText::new("f(a)\n"),
+                &SourceText::new("f(a, a)\n"),
+                0,
+                0,
+            ),
             &TextRange::new(0, 2, 0, 3),
             &TextRange::new(0, 5, 0, 6),
             read_rows_carrying_several_edits,
