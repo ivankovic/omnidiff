@@ -300,6 +300,14 @@ name = "benchmark_other_e2e"
 path = "tests/benchmark_other_e2e.rs"
 required-features = ["test-fixtures"]
 
+# Every language at `size_limits check`'s sizes, through the real `omnidiff` binary and
+# size_limits' own `parse` child; both binaries need test-fixtures. Unix only, which the file gates
+# itself.
+[[test]]
+name = "size_limits"
+path = "tests/size_limits.rs"
+required-features = ["test-fixtures"]
+
 # The TUI's color depth, end to end: the real `omnidiff` binary on a pseudo-terminal, so gated like
 # that binary. Linux only, which the file gates itself.
 [[test]]
@@ -317,6 +325,13 @@ name = "render_tui_screenshot"
 path = "src/bin/render_tui_screenshot.rs"
 # A still of the terminal viewer (`make tui-screenshot`), drawn by the TUI's own widgets. A
 # checkout-only dev tool: gated like fake_diff_tool, so `cargo install --path .` leaves it out.
+required-features = ["test-fixtures"]
+
+[[bin]]
+# How large an input OmniDiff handles, per language and dimension (lines, depth, line width, token
+# length): generated pairs, each diffed in a child process under a time and memory cap.
+name = "size_limits"
+path = "src/bin/size_limits/main.rs"
 required-features = ["test-fixtures"]
 
 [[bin]]
