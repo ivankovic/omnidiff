@@ -8,11 +8,11 @@ overview.
 [PROVENANCE.md](PROVENANCE.md) records every run: tool versions and how each was built, the traps
 that produce a silently wrong number, and what each column means. Read it before quoting a figure.
 
-**These figures are not at the current corpus or engine.** The tool comparison was last run on
-2026-09-26, over the 1,217 fixtures the paper reported then, on the server (Intel Xeon E3-1275
-v5), with the OmniDiff of that day. The fixture corpus has grown since and
-[OmniDiff's own current figures](../../../src/test/README.md#goals-and-measurements) are measured
-differently, so the two are not comparable.
+**These figures are from 2026-11-25**, over the 1,705 fixtures the paper reports, on the laptop
+(Intel Core i7-1370P, confined to four performance cores; see PROVENANCE.md), with that day's
+OmniDiff. They are at the same corpus state as the paper. [OmniDiff's own current
+figures](../../../src/test/README.md#goals-and-measurements) are measured differently, so the two
+are not comparable.
 
 ## The tools
 
@@ -32,24 +32,28 @@ fixtures (n). Compare percentages across rows, not counts.
 
 ## Accuracy
 
-For every line of both files: did the tool mark it changed, and does the human mapping agree? A
-fixture is perfect when no line disagrees. Line level is the one granularity every tool can be
-scored at, including the ones whose output carries more detail.
+For every line of both files: did the tool mark it changed, and does the hand painting agree? A
+line is changed in the painting when any of its bytes is painted. Where a fixture has a Minimal and
+a Maximal painting, a tool agrees when it agrees with either. A fixture is perfect when no line
+disagrees. Line level is the one granularity every tool can be scored at, including the ones whose
+output carries more detail. Only painted fixtures count: 1,478 of the 1,705.
 
 | Tool | n | Perfect | At least 99% | 95-99% | Under 95% |
 |---|---|---|---|---|---|
-| Unix `diff` | 1,217 | 713 (59%) | 249 (20%) | 160 (13%) | 95 (8%) |
-| `git` (Myers) | 1,217 | 718 (59%) | 248 (20%) | 159 (13%) | 92 (8%) |
-| `git` (minimal) | 1,217 | 718 (59%) | 248 (20%) | 159 (13%) | 92 (8%) |
-| `git` (patience) | 1,217 | 717 (59%) | 247 (20%) | 160 (13%) | 93 (8%) |
-| `git` (histogram) | 1,217 | 717 (59%) | 247 (20%) | 161 (13%) | 92 (8%) |
-| BDiff | 1,217 | 688 (57%) | 254 (21%) | 179 (15%) | 96 (8%) |
-| `nvim -d` | 1,217 | 728 (60%) | 247 (20%) | 156 (13%) | 86 (7%) |
-| diffsitter | 891 | 482 (54%) | 204 (23%) | 115 (13%) | 90 (10%) |
-| difftastic | 1,182 | 755 (64%) | 197 (17%) | 135 (11%) | 95 (8%) |
-| GumTree | 1,005 | 621 (62%) | 158 (16%) | 128 (13%) | 98 (10%) |
-| srcDiff | 519 | 409 (79%) | 68 (13%) | 32 (6%) | 10 (2%) |
-| **OmniDiff** | 1,217 | **1,094 (90%)** | 66 (5%) | 33 (3%) | 24 (2%) |
+| Unix `diff` | 1,478 | 881 (60%) | 339 (23%) | 169 (11%) | 89 (6%) |
+| `git` (Myers) | 1,478 | 888 (60%) | 334 (23%) | 170 (12%) | 86 (6%) |
+| `git` (minimal, patience, histogram) | 1,478 | 888 (60%) | 334 (23%) | 170 (12%) | 86 (6%) |
+| BDiff | 1,478 | 825 (56%) | 366 (25%) | 197 (13%) | 90 (6%) |
+| `nvim -d` | 1,478 | 902 (61%) | 333 (23%) | 166 (11%) | 77 (5%) |
+| diffsitter | 1,194 | 781 (65%) | 261 (22%) | 99 (8%) | 53 (4%) |
+| difftastic | 1,451 | 989 (68%) | 263 (18%) | 122 (8%) | 77 (5%) |
+| GumTree | 1,258 | 828 (66%) | 198 (16%) | 140 (11%) | 92 (7%) |
+| srcDiff | 786 | 667 (85%) | 81 (10%) | 30 (4%) | 8 (1%) |
+| **OmniDiff** | 1,478 | **1,193 (81%)** | 171 (12%) | 65 (4%) | 49 (3%) |
+
+Against the lines the human *mapping* touches instead, over all 1,705 fixtures, OmniDiff is perfect
+on 91%, srcDiff on 78% of what it parses, difftastic and GumTree on 61%, and the line tools on 57%.
+The byte-level comparison with each painting is in the paper's `tab:painting-bytes`.
 
 Three things to know when reading the table:
 
@@ -59,34 +63,34 @@ Three things to know when reading the table:
 - **This is not OmniDiff's accuracy figure.** Line agreement is coarser than the node mapping and
   the byte-by-byte painting OmniDiff is held to, where its numbers are lower. See
   [src/test/README.md](../../../src/test/README.md#accurate).
-- The four git algorithms differ on a handful of fixtures at this granularity.
+- The four git algorithms differ on a handful of fixtures at this granularity, and not at all
+  against the paintings.
 
-`benchmark_accuracy.csv` also has node-level columns for the tools that report sub-line detail;
-PROVENANCE.md explains the three node denominators.
+`benchmark_accuracy.csv` also has node-level columns for the tools that report sub-line detail,
+and byte-level columns against each painting; PROVENANCE.md explains them.
 
 ## Speed
 
-Wall clock per fixture in milliseconds, three repeats, pooled. An external tool's time is its whole
-process: spawn, its own parse, its diff. OmniDiff's is its parse and its diff with no process
-start, which every other tool pays.
+Wall clock per fixture in milliseconds, three repeats, pooled. Every tool's time is its whole
+process, OmniDiff's included: spawn, its own parse, its diff.
 
 | Tool | p50 | p90 | p99 |
 |---|---|---|---|
-| Unix `diff` | 1.9 | 2.4 | 4.1 |
-| `git` (Myers) | 2.0 | 2.7 | 5.4 |
-| `git` (histogram) | 1.9 | 2.6 | 5.3 |
-| BDiff, inside a running interpreter | 3.6 | 14.0 | 277 |
-| **OmniDiff** | **4.6** | **77.4** | **420** |
-| diffsitter | 5.4 | 38.4 | 189 |
-| GumTree, inside a running JVM | 14.0 | 435 | 5,389 |
-| srcDiff | 31.0 | 230 | 818 |
-| `nvim -d` | 33.6 | 70.9 | 150 |
-| difftastic | 35.0 | 114 | 637 |
-| BDiff, per invocation | 307 | 331 | 605 |
-| GumTree, per invocation | 535 | 1,027 | 6,571 |
+| Unix `diff` | 1.4 | 2.1 | 3.4 |
+| BDiff, inside a running interpreter | 3.2 | 12.0 | 144 |
+| diffsitter | 5.5 | 28.2 | 134 |
+| `nvim -d` | 7.8 | 16.1 | 18.9 |
+| **OmniDiff** | **11.9** | **67.6** | **360** |
+| `git` (histogram) | 12.2 | 13.2 | 15.5 |
+| `git` (Myers) | 12.9 | 14.4 | 16.8 |
+| GumTree, inside a running JVM | 21.3 | 335 | 3,557 |
+| srcDiff | 27.9 | 151 | 772 |
+| difftastic | 37.4 | 89.3 | 406 |
+| GumTree, per invocation | 300 | 670 | 3,961 |
+| BDiff, per invocation | 405 | 472 | 609 |
 
-The machine was mostly idle, not verifiably idle throughout: the maxima are noisy, the medians
-are not.
+Not comparable with the server's figures of 2026-09-26: a different machine, and OmniDiff was then
+timed without its process start.
 
 ## Against an external oracle
 
@@ -94,27 +98,28 @@ Alikhanifard and Tsantalis' node-mapping benchmark (TOSEM 2025) holds 800 Defect
 mappings were built by hand from six tools' output, for Java, on Eclipse JDT trees.
 [research/external/](../../external/README.md) describes it and how it is fetched.
 
-OmniDiff over all 800 cases (2026-10-22): **99.43% precision, 98.93% recall** at statement and
+OmniDiff over all 800 cases (2026-11-25): **99.26% precision, 98.95% recall** at statement and
 sub-expression level. The reference figures from that paper are RefactoringMiner 3.0 at 99.7 /
 99.3, GumTree 3.0 simple at 98.4 / 97.8 and GumTree 3.0 greedy at 97.5 / 93.1.
 
 The comparison is not like for like. The paper's figures are on JDT trees and OmniDiff's on
-tree-sitter trees, matched by byte span: 78% of the oracle's records resolve to a tree-sitter
+tree-sitter trees, matched by byte span: 79% of the oracle's records resolve to a tree-sitter
 node, and the rest are left out of OmniDiff's denominator. Quote that rate with the figures.
 
-This project's own human mappings, on the 440 units they cover, agree with the oracle at 99.62%
-precision and 99.64% recall.
+This project's own human mappings, on the 445 units they cover, agree with the oracle at 99.52%
+precision and 99.54% recall.
 
 ## The files
 
 | File | Holds | Written by |
 |---|---|---|
-| `benchmark_accuracy.csv` | per fixture and tool: mismatched lines and nodes, and a status | `make measure-tools-accuracy` |
+| `benchmark_accuracy.csv` | per fixture and tool: mismatched lines and nodes against the mapping, lines and bytes against each painting, and a status | `make measure-tools-accuracy` |
 | `benchmark_other.csv` | the same run with timings | `make measure-tools-timing` |
 | `astdiff_oracle_defects4j.csv` | OmniDiff against the oracle, per compilation unit | `make measure-astdiff-oracle` |
 | `astdiff_oracle_defects4j_human.csv` | the human mappings against the oracle | `make measure-astdiff-oracle-human` |
 
 The targets live in `research/Makefile`. The tool runs need all six external tools installed and
 their paths set (`GUMTREE_BIN`, `DIFFT_BIN`, `DIFFSITTER_BIN`, `BDIFF_PYTHON`, `NVIM_BIN`,
-`SRCDIFF_BIN`): a tool whose variable is unset is skipped without an error. `make timing-report`
-regenerates the paper's tables and charts from these files.
+`SRCDIFF_BIN`): a tool whose variable is unset is skipped without an error. Both tool runs are
+chunked and resume after a crash (`research/measure/benchmark_other_chunked.py`). `make
+timing-report` regenerates the paper's tables and charts from these files.

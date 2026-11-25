@@ -136,7 +136,7 @@ correspondence cannot be expressed by the common operations (insert, delete, upd
 delta, show a reader nothing that anyone chose to change. A visualisation is also not unique:
 \PresetBothPct{}\% of painted changes have two or more correct visualisations. Of eight
 established diffing tools, none that parses most code changes shows more than
-\DifftasticPerfectPct{}\% of them as the human ground truth does.
+\DifftasticPaintingLinePerfectPct{}\% of them as the human visualisation does.
 \end{abstract}
 
 \maketitle
@@ -510,8 +510,10 @@ We fetched, parsed and measured the corpus on a single machine: an \MachineCpu{}
 \MachineRamGb{}\,GB of RAM, running \MachineOs{}. The checkouts and the measurement database sit
 on \MachineDiskCount{} \MachineDiskSizeTb{}\,TB \MachineDiskModel{} drives in \MachineDiskArray{}.
 We record this because some results are hardware-bound, notably the wall-clock budget in
-Section~\ref{sec:speed} and the per-tool timing of
-Section~\ref{sec:tools}.
+Section~\ref{sec:speed}. The per-tool timing of Section~\ref{sec:tools} and \textsc{OmniDiff}'s
+own fixture timings were taken on a second machine, an \TimingMachineCpu{} with
+\TimingMachineRamGb{}\,GB of RAM running \TimingMachineOs{}, confined to \TimingMachineCores{}
+performance cores so that no tool competed with another for a core.
 
 \subsection{What the repositories hold}
 \label{sec:files}
@@ -573,11 +575,7 @@ than 3000 lines of code, and the larger of the two sizes was used. In each strat
 above.\footnote{\label{fn:in-progress}The dataset and this paper are being written in parallel.
 Drawing and solving the stratified sample, and hand-annotating the Defects4J list below, are both
 still in progress, and the ambiguity pass over those two is not finished. Every figure in this
-paper is over the \NumFixtures{} changes solved so far, except the cost comparison of
-Section~\ref{sec:gap}, the tool comparison of Section~\ref{sec:tools} and the line-level, speed
-and robustness figures of Section~\ref{sec:omnidiff}, which were measured at an earlier stage of
-the dataset, over the \UnixDiffFixtures{} changes solved then, and, for \textsc{OmniDiff}'s own
-rows in them, with an earlier version of the tool. Every figure that depends on the ambiguity
+paper is over the \NumFixtures{} changes solved so far. Every figure that depends on the ambiguity
 pass is a lower bound for those two datasets.}
 
 We further extended the dataset with the AST node-mapping oracle of Alikhanifard and
@@ -865,8 +863,8 @@ visualised from its exact delta within one second, whatever the rendering costs.
   whose whole-tree APTED computation completes within the time on the axis, per artifact
   category; the height of each curve at the dashed line is RA1.3, and the pairs the budget killed
   are the gap to 100\%. Right: wall-clock per diff for every tool configuration of
-  Section~\ref{sec:tools}, every repeated run over every fixture, with \textsc{OmniDiff} charged
-  for its parse and drawn dash-dotted; the dotted curve is the tree-sitter parse alone, the floor
+  Section~\ref{sec:tools}, every repeated run over every fixture, each timed as a whole process,
+  with \textsc{OmniDiff} drawn dash-dotted; the dotted curve is the tree-sitter parse alone, the floor
   every AST-aware tool pays first. The dashed line is the same one second in both panels.}
   \label{fig:time-budget}
 \end{figure*}
@@ -1178,37 +1176,58 @@ own tool's figures are reported in Section~\ref{sec:omnidiff}, on the same basis
 same ground truth.
 
 \textbf{Line-level agreement.} None of the eleven configurations reports a node mapping or a
-painting in a form that can be compared directly, so we compare them on source lines against the human visualisation: the
-lines the human mapping touches. Because the
-tools cover different subsets of the changes (RA3.1), percentages are used.
+painting in a form that can be compared directly, so we compare them on source lines against the
+human visualisation: the lines the hand painting touches, a line counting as changed when any of
+its bytes is painted, over the \UnixDiffPaintingLineFixtures{} changes that carry a painting.
+Where a change has a \emph{Minimal} and a \emph{Maximal} painting, a tool agrees when it agrees
+with either. Because the tools cover different subsets of the changes (RA3.1), percentages are
+used.
 
 We report agreement per change rather than pooled over lines in
-Table~\ref{tab:agreement-buckets}, and Figure~\ref{fig:agreement-by-dataset} splits the same
-reading by the dataset each change was sampled from. \emph{Perfect} means zero mismatched lines.
-$\ge$99\% is ``a developer has to look twice''; 95--99\% is ``a developer has to check''. Below
-95\% the tool is no longer usable.
+Table~\ref{tab:painting-line-buckets}. \emph{Perfect} means zero mismatched lines. $\ge$99\% is
+``a developer has to look twice''; 95--99\% is ``a developer has to check''. Below 95\% the tool
+is no longer usable.
 
 \begin{resultbox}{RA3.2 (Tool accuracy)}
-srcDiff renders \SrcDiffPerfectPct{}\% of the code changes it parses perfectly, but it parses
-five languages; no tool that parses most of the changes renders much more than three fifths of
-them perfectly, the best being difftastic at \DifftasticPerfectPct{}\%.
+srcDiff shows \SrcDiffPaintingLinePerfectPct{}\% of the painted code changes it parses with the
+same lines as the hand painting, but it parses five languages; no tool that parses most of the
+changes does so for much more than two thirds of them, the best being difftastic at
+\DifftasticPaintingLinePerfectPct{}\%.
 \end{resultbox}
+
+\input{figures/benchmark_other_painting_lines.tex}
+
+\textbf{Byte-level agreement.} A line is a coarse unit: a tool that marks a whole line agrees with
+a painting that marks one word of it. Table~\ref{tab:painting-bytes} compares each tool's changed
+bytes with the bytes the hand painting paints, against each painting of a change separately. A
+line-only tool is almost never exact against a \emph{Minimal} painting, which leaves the unchanged
+part of a line unpainted; against \emph{Maximal} it does better, and the sub-line tools do better
+still on the changes with one rendering.
+
+\input{figures/benchmark_other_painting_bytes.tex}
+
+\textbf{Against the human mapping.} The same line-level reading against the lines the human
+mapping touches covers every change, painted or not, \UnixDiffFixtures{} in all. There too srcDiff
+is the most accurate established tool on the changes it parses, at \SrcDiffPerfectPct{}\%, and
+no tool that parses most of them reaches more than \DifftasticPerfectPct{}\%
+(Table~\ref{tab:agreement-buckets}), and
+Figure~\ref{fig:agreement-by-dataset} splits it by the dataset each change was sampled from.
 
 \input{figures/benchmark_other_buckets_combined.tex}
 
 \begin{figure*}
   \centering
   \includegraphics[width=\linewidth]{figures/benchmark_other_buckets_by_dataset}
-  \caption{The line-level agreement of Table~\ref{tab:agreement-buckets}, split by the dataset
+  \caption{The line-level agreement with the human mapping of Table~\ref{tab:agreement-buckets}, split by the dataset
   of Section~\ref{sec:dataset} each fixture was drawn from, with the pooled reading on the right.
   Each bar is one configuration over the fixtures it supports ($n$ beside the bar); the segments
   are the four agreement buckets, and the Perfect segment carries its share.}
   \label{fig:agreement-by-dataset}
 \end{figure*}
 
-The split by dataset in Figure~\ref{fig:agreement-by-dataset} orders the datasets the same way for
-every configuration: each scores its own best on either the Stratified sample or the Defects4J
-changes, and all five line-granularity configurations do best on Defects4J. Bug fixes are short,
+The split by dataset in Figure~\ref{fig:agreement-by-dataset} orders the datasets almost the same
+way for every configuration: each scores its own best on either the Stratified sample or the
+Defects4J changes, and all five line-granularity configurations do best on Defects4J. Bug fixes are short,
 localised edits, which is the shape a line-based diff recovers most reliably, so the ordering is a
 property of the datasets rather than of any tool.
 
@@ -1224,28 +1243,27 @@ interpreter, for the same reason.
 \begin{table}
   \caption{Wall-clock time percentiles for the eleven tool configurations, milliseconds, sorted
   fastest to slowest by median, with \textsc{OmniDiff} on the last row. \emph{Max} is the slowest
-  single one of the \TimingRepeats{} runs over any fixture. Every configuration is timed as a whole
-  process except \textsc{OmniDiff}, which is timed in-process and so pays no process startup; see
-  Section~\ref{sec:threats}.}
+  single one of the \TimingRepeats{} runs over any fixture. Every configuration, \textsc{OmniDiff}
+  included, is timed as a whole process.}
   \label{tab:speed-vs-others}
   \small
   \begin{tabular}{lrrrr}
     \toprule
     Tool & p50 & p90 & p99 & Max \\
     \midrule
-    \texttt{git} (histogram) & \SpeedGitHistogramPFifty{} & \SpeedGitHistogramPNinety{} & \SpeedGitHistogramPNinetyNine{} & \SpeedGitHistogramMax{} \\
-    \texttt{git} (minimal) & \SpeedGitMinimalPFifty{} & \SpeedGitMinimalPNinety{} & \SpeedGitMinimalPNinetyNine{} & \SpeedGitMinimalMax{} \\
     Unix \texttt{diff} & \SpeedUnixDiffPFifty{} & \SpeedUnixDiffPNinety{} & \SpeedUnixDiffPNinetyNine{} & \SpeedUnixDiffMax{} \\
-    \texttt{git} (patience) & \SpeedGitPatiencePFifty{} & \SpeedGitPatiencePNinety{} & \SpeedGitPatiencePNinetyNine{} & \SpeedGitPatienceMax{} \\
-    \texttt{git} (Myers) & \SpeedGitMyersPFifty{} & \SpeedGitMyersPNinety{} & \SpeedGitMyersPNinetyNine{} & \SpeedGitMyersMax{} \\
     BDiff (warm interpreter) & \SpeedBDiffWarmPFifty{} & \SpeedBDiffWarmPNinety{} & \SpeedBDiffWarmPNinetyNine{} & \SpeedBDiffWarmMax{} \\
     diffsitter & \SpeedDiffsitterPFifty{} & \SpeedDiffsitterPNinety{} & \SpeedDiffsitterPNinetyNine{} & \SpeedDiffsitterMax{} \\
+    \texttt{nvim -d} & \SpeedNvimDiffPFifty{} & \SpeedNvimDiffPNinety{} & \SpeedNvimDiffPNinetyNine{} & \SpeedNvimDiffMax{} \\
+    \texttt{git} (histogram) & \SpeedGitHistogramPFifty{} & \SpeedGitHistogramPNinety{} & \SpeedGitHistogramPNinetyNine{} & \SpeedGitHistogramMax{} \\
+    \texttt{git} (patience) & \SpeedGitPatiencePFifty{} & \SpeedGitPatiencePNinety{} & \SpeedGitPatiencePNinetyNine{} & \SpeedGitPatienceMax{} \\
+    \texttt{git} (minimal) & \SpeedGitMinimalPFifty{} & \SpeedGitMinimalPNinety{} & \SpeedGitMinimalPNinetyNine{} & \SpeedGitMinimalMax{} \\
+    \texttt{git} (Myers) & \SpeedGitMyersPFifty{} & \SpeedGitMyersPNinety{} & \SpeedGitMyersPNinetyNine{} & \SpeedGitMyersMax{} \\
     GumTree (warm JVM) & \SpeedGumTreeWarmPFifty{} & \SpeedGumTreeWarmPNinety{} & \SpeedGumTreeWarmPNinetyNine{} & \SpeedGumTreeWarmMax{} \\
     srcDiff & \SpeedSrcDiffPFifty{} & \SpeedSrcDiffPNinety{} & \SpeedSrcDiffPNinetyNine{} & \SpeedSrcDiffMax{} \\
-    \texttt{nvim -d} & \SpeedNvimDiffPFifty{} & \SpeedNvimDiffPNinety{} & \SpeedNvimDiffPNinetyNine{} & \SpeedNvimDiffMax{} \\
     difftastic & \SpeedDifftasticPFifty{} & \SpeedDifftasticPNinety{} & \SpeedDifftasticPNinetyNine{} & \SpeedDifftasticMax{} \\
-    BDiff (cold, per-invocation) & \SpeedBDiffColdPFifty{} & \SpeedBDiffColdPNinety{} & \SpeedBDiffColdPNinetyNine{} & \SpeedBDiffColdMax{} \\
     GumTree (cold, per-invocation) & \SpeedGumTreeColdPFifty{} & \SpeedGumTreeColdPNinety{} & \SpeedGumTreeColdPNinetyNine{} & \SpeedGumTreeColdMax{} \\
+    BDiff (cold, per-invocation) & \SpeedBDiffColdPFifty{} & \SpeedBDiffColdPNinety{} & \SpeedBDiffColdPNinetyNine{} & \SpeedBDiffColdMax{} \\
     \midrule
     \textsc{OmniDiff} & \SpeedOmniDiffPFifty{} & \SpeedOmniDiffPNinety{} & \SpeedOmniDiffPNinetyNine{} & \SpeedOmniDiffMax{} \\
     \bottomrule
@@ -1254,7 +1272,7 @@ interpreter, for the same reason.
 
 \begin{resultbox}{RA3.3 (Tool cost)}
 The eleven configurations span more than two orders of magnitude at the median, from Unix
-\texttt{diff}'s \SpeedUnixDiffPFifty{}\,ms to GumTree's \SpeedGumTreeColdPFifty{}\,ms per
+\texttt{diff}'s \SpeedUnixDiffPFifty{}\,ms to BDiff's \SpeedBDiffColdPFifty{}\,ms per
 invocation. At the 99th percentile the same range runs from \SpeedUnixDiffPNinetyNine{}\,ms to
 \SpeedGumTreeColdPNinetyNine{}\,ms, three orders of magnitude apart.
 \end{resultbox}
@@ -1311,8 +1329,8 @@ Section~\ref{sec:tools}.
       & Two render presets, \emph{Minimal} and \emph{Maximal}, over one mapping \\ \addlinespace
     Whole-tree APTED finishes within one second for only \RqOneCodePct{}\% of code pairs (RA1.3)
       & APTED runs only inside one already-matched pair (Phase 3), never over the whole tree \\ \addlinespace
-    No established tool that parses most code changes renders more than
-      \DifftasticPerfectPct{}\% of them perfectly (RA3.2)
+    No established tool that parses most code changes shows more than
+      \DifftasticPaintingLinePerfectPct{}\% of them as the hand painting does (RA3.2)
       & The bar the evaluation has to clear, on the same basis \\ \addlinespace
     Files reach \AstMax{} nodes (Section~\ref{sec:files})
       & The Robust target below \\
@@ -1473,10 +1491,12 @@ the changes, and its rendering of the human mapping on
 \InvariantLabelHumanFixturesPct{}\%.
 
 \textbf{Code: comparison with established tools.} On the line-level basis of
-Section~\ref{sec:tools} and its \OmniDiffFixtures{} changes,\textsuperscript{\ref{fn:in-progress}}
-\textsc{OmniDiff} renders \OmniDiffPerfectPct{}\% of the changes perfectly, against
-\DifftasticPerfectPct{}\% for the best established tool that parses most of them. It marks \OmniDiffLineMismatches{} lines differently from the human mapping,
-a rate of \OmniDiffLineRate{}\%, the lowest of any tool measured. Table~\ref{tab:omnidiff-by-dataset} splits the result by
+Section~\ref{sec:tools}, against the hand painting on its \OmniDiffPaintingLineFixtures{} painted
+changes, \textsc{OmniDiff} shows \OmniDiffPaintingLinePerfectPct{}\% of them with the same lines,
+against \DifftasticPaintingLinePerfectPct{}\% for the best established tool that parses most of
+them. Against the lines the human mapping touches, over all \OmniDiffFixtures{} changes, it marks
+\OmniDiffLineMismatches{} lines differently, a rate of \OmniDiffLineRate{}\%, the lowest of any
+tool measured. Table~\ref{tab:omnidiff-by-dataset} splits the result by
 dataset.
 
 \input{figures/benchmark_omnidiff_by_dataset.tex}
@@ -1506,8 +1526,9 @@ completed, one needed more memory, and the rest ran past even that five-minute b
 \textsc{OmniDiff}'s median wall-clock time is \SpeedOmniDiffPFifty{}\,ms, its 90th percentile
 \SpeedOmniDiffPNinety{}\,ms and its 99th percentile \SpeedOmniDiffPNinetyNine{}\,ms, parse
 included. The right panel of Figure~\ref{fig:time-budget} places that curve among the eleven
-configurations of Table~\ref{tab:speed-vs-others}: at the median the line-based tools sit to its
-left and the AST-aware tools to its right, and besides diffsitter, over the \DiffsitterFixtures{}
+configurations of Table~\ref{tab:speed-vs-others}: at the median it sits among the line-based
+tools, with Unix \texttt{diff}, \texttt{nvim -d} and diffsitter faster and the four \texttt{git}
+configurations about as fast, and besides diffsitter, over the \DiffsitterFixtures{}
 changes its grammars cover, it is the only AST-aware curve that reaches 100\% before the budget
 line.
 
@@ -1590,20 +1611,17 @@ the regions and members it reports are not scored, except that a member the anno
 to be among them. The six levels are also coarser than a node mapping, so a perfect content
 verdict and a perfect code rendering are not the same achievement.
 
-\textbf{Internal validity.} \textsc{OmniDiff} is timed in-process while every external tool is
-timed as a whole process, so it pays no process-startup cost that the others pay in full. We state
-this rather than correct for it, and report GumTree and BDiff both cold and warm so that a reader
-can see how large the effect is for the two tools where it dominates. Per-tool mean runtimes are
+\textbf{Internal validity.} Every tool, \textsc{OmniDiff} included, is timed as a whole process,
+so each pays its own process start. For GumTree and BDiff that start dominates, and we report
+both cold and warm figures so that a reader can see how large it is. Per-tool mean runtimes are
 additionally distorted by run order, whichever tool runs first per change absorbing cold-cache
 cost; to minimise this effect we quote percentiles rather than means throughout, and every timing
 number is the result of repeated runs.
 
-The parts of this paper were not all measured at one state of the dataset and the tool. The tool
-comparison, the cost comparison and \textsc{OmniDiff}'s line-level, speed and robustness figures
-are over the \UnixDiffFixtures{} changes solved at an earlier stage and, for
-\textsc{OmniDiff}, an earlier version; the node-level, painting-level and invariant figures are
-over the \NumFixtures{} changes and the current version (footnote~\ref{fn:in-progress}). We keep
-the two apart in the text rather than mix them in one table.
+Every figure over the dataset is at one state of the dataset and the tool: the \NumFixtures{}
+changes solved so far and the current version. The fixture timings were taken on a different
+machine from the corpus measurements (Section~\ref{sec:project}), so the two are not compared
+with each other in absolute terms.
 
 The ground truth is authored by the same people who built \textsc{OmniDiff}, which is a real risk
 of bias in its favour. Three things limit it: the mappings are authored against the change itself
@@ -1684,9 +1702,10 @@ difftastic~\cite{difftastic} and diffsitter~\cite{diffsitter} share that parsing
 optimise for a diff a human reads comfortably rather than for fidelity of the underlying node
 mapping, so RA3.2 measures them against an objective they did not choose. Against all of them,
 Unix \texttt{diff} and \texttt{git diff}~\cite{myers-1986} remain the baseline: on our dataset
-they are the fastest measured, and at the line level they render \UnixDiffPerfectPct{}\% of the
-changes perfectly, against \DifftasticPerfectPct{}\% for difftastic. BDiff's~\cite{bdiff} block
-awareness does not move that metric, and neither does the choice among \texttt{git}'s four
+Unix \texttt{diff} is the fastest measured, and at the line level they show
+\UnixDiffPaintingLinePerfectPct{}\% of the painted changes as the hand painting does, against
+\DifftasticPaintingLinePerfectPct{}\% for difftastic. BDiff's~\cite{bdiff} block awareness does not
+improve that metric, and neither does the choice among \texttt{git}'s four
 algorithms~\cite{nugroho-histogram}.
 
 \textbf{Ground truth and its ambiguity.} GumTree's own evaluation, and most that followed it,
@@ -1739,7 +1758,8 @@ standard operations at all (RA2.2), and on \CostHumanHigherPct{}\% the cheapest 
 the one humans prefer (RA2.3). Neither the mapping nor its rendering is unique (RA2.4, RA2.5).
 Established tools meet developers' speed requirements, the line-based ones within tens of
 milliseconds (RA3.3), and fall short of the human-preferred rendering: no established tool that
-parses most code changes renders much more than three fifths of them perfectly (RA3.2).
+parses most code changes shows much more than two thirds of them as the hand painting does
+(RA3.2).
 \textsc{OmniDiff} diffs \ContentCensusShownPct{}\% of changed files as text or by their content,
 which leaves \ContentCensusLeftPct{}\% that a reader sees only as differing bytes, at a speed
 that meets its target for pictures, catalogs and cursors and not yet for archives, fonts and

@@ -41,6 +41,20 @@ The same run prints the accuracy figures (verdicts against `human_content.json` 
 `src/test/data/<family>/`), which are not written to a file: 39 judged pictures, 6 judged cursors,
 nothing judged in the other families yet.
 
+## `robustness_fixtures.csv` (2026-11-25)
+
+Re-run with the 2026-11-25 refresh of the tool comparison, **on the laptop** (`laptop` in
+`../machines.csv`) under the same systemd limits (four performance cores, `CPUQuota=400%`,
+`MemoryMax=12G`), so its times are the laptop's, not the `MACHINE` block's. 2256 fixture
+directories, every one `ok`; the paper's scope is now 1705. Slowest 465.7 ms, peak heap 62.0 MB.
+
+**The memory columns of runs between commit 7b752937 and this one are wrong.** The counting
+allocator counted per thread, and that commit moved `diff_code`'s pipeline onto a thread of its
+own, so the measuring thread saw only its own few hundred bytes: the first run of this refresh
+reported 430 bytes for every fixture. The allocator now counts the whole process in a window
+opened per pair (see its doc comment in `src/bin/benchmark_diff_pairs.rs`). The 2026-09-26 file
+below predates that commit and is unaffected.
+
 ## `robustness_fixtures.csv` (2026-09-26)
 
 The paper's robustness run, over the fixture corpus rather than a sampled pair set. Written by

@@ -5,26 +5,29 @@ text, code, pictures, archives, fonts, documents, catalogs, cursors - and the di
 delta (an edit script a machine executes) and a visualisation (what a human reads). Code is one
 content type among the others; it is the one with the deepest ground truth. It is a research paper with a tool
 contribution: the title and the abstract's second paragraph name OmniDiff, the introduction states
-five groups of research questions, each is answered in its own section, and the tool's own section
+three groups of research questions, each is answered in its own section, and the tool's own section
 comes after them.
 
 1. Introduction
 2. Background: Deltas and Visualisations (2.1 Deltas, 2.2 Visualisations, 2.3 Definitions: delta,
    mapping, painting, projection, 2.4 Tools)
 3. A Living Ground-Truth Dataset (methodology only, no RQ answered: corpus, files, sampling,
-   ground truth, the 31 invariants, growth, cross-validation)
+   ground truth, the invariants, growth, cross-validation)
 4. Content of Real-World Changes (RQ1.1 what content, RQ1.2 how large: code in lines, other
-   content in pixels and members)
-5. Delta versus Visualisation (RQ2.1 what reaches the reader, RQ2.2 expressibility, RQ2.3 cost)
-6. Uniqueness (RQ3.1 deltas, RQ3.2 visualisations: Minimal against Full)
-7. Exact Deltas within an Interactive Budget (RQ4: can a change be visualised within one second,
-   answered for the exact delta of code)
-8. State of the Art (RQ5.1 what tools show per content, RQ5.2 accuracy, RQ5.3 speed: eight
-   established tools in eleven configurations)
-9. OmniDiff
-10. Threats to Validity
-11. Related Work
-12. Conclusions
+   content in pixels and members; RQ1.3 can a change be visualised within one second, answered
+   for tree edit distance on code)
+5. Cost (RQ2.1 what reaches the reader, RQ2.2 expressibility, RQ2.3 cost, RQ2.4 mapping
+   uniqueness, RQ2.5 visualisation uniqueness: Minimal against Maximal)
+6. State of the Art (RQ3.1 what tools show per content, RQ3.2 accuracy against the hand painting,
+   RQ3.3 speed: eight established tools in eleven configurations)
+7. OmniDiff
+8. Threats to Validity
+9. Related Work
+10. Conclusions
+
+The groups were five until the review of 2026-11-24 merged "Delta versus visualisation" and
+"Uniqueness" into Cost and the one-second question into Content. Sections 5 and 6 of older
+reviews are today's Section 5, Section 7 is the end of Section 4, Section 8 is Section 6.
 
 The ACM conference, DOI, ISBN and rights fields are placeholders until a venue is chosen. The prose
 is in British spelling ("visualisation", "generalises").
@@ -32,25 +35,24 @@ is in British spelling ("visualisation", "generalises").
 ## Rules that are easy to break
 
 * **No RQ answer names OmniDiff.** An RA box and its supporting argument describe the problem or
-  the state of the art. RA2.3 and RA3.1 compare the human mapping's cost with the harness's own
+  the state of the art. RA2.3 and RA2.4 compare the human mapping's cost with the harness's own
   matcher; the text describes it tool-neutrally. Two answers use OmniDiff as an instrument:
   RA1.1's census uses its content recognition, and RA1.2's sizes of changes to other content are
-  its count of changed pixels and members. OmniDiff's own results are in Section 9, and so is
-  the comparison of renderings against the invariants: its own, the hand paintings, and the line
-  script and the tree script painted as they stand (the tree script is the human mapping painted
-  literally, not OmniDiff's output). That comparison was RQ2.1 until the review of 2026-11-14 cut
-  the question; do not reintroduce it as a research question.
+  its count of changed pixels and members. OmniDiff's own results are in Section 7, and so is
+  the comparison of its renderings and the hand paintings against the invariants. The line
+  script and tree script comparison was RQ2.1 until the review of 2026-11-14 cut the question,
+  and the review of 2026-11-24 cut it from Section 7 too; do not reintroduce it.
 * **Content first.** Where a question can be asked of all content it is (RA1.1, RA1.2, RA2.1,
-  RA5.1), with code as one row or one half of the answer. Do not reintroduce a "beyond code"
+  RA3.1), with code as one row or one half of the answer. Do not reintroduce a "beyond code"
   framing.
 * **The research questions say "delta", not "mapping"** (review of 2026-11-14), and Section 2.3
   defines a mapping as a set of pairs of multisets, so that an N:M correspondence is a mapping.
-  The bodies of Sections 5 and 6 still speak of mappings and multi-map groups, which is the
+  The body of Section 5 still speaks of mappings and multi-map groups, which is the
   ground truth's own vocabulary.
-* **RA2.2 and RA3.1 read the same multi-map groups two ways**: as an N:M site the four edit
-  operations cannot express (RA2.2), and as a set of equally correct one-to-one pairings (RA3.1).
-  RA3.1 adds a second reading that needs no annotation, cost ties at a different mapping
-  (`CostTieDifferent*`). Change the two sections together.
+* **RA2.2 and RA2.4 read the same multi-map groups two ways**: as an N:M site the four edit
+  operations cannot express (RA2.2), and as a set of equally correct one-to-one pairings (RA2.4).
+  RA2.4 adds a second reading that needs no annotation, cost ties at a different mapping
+  (`CostTieDifferent*`). Change the two together.
 * **Every measured number is a macro.** `main.tex` has no bare numeric literal from a
   measurement. Macros live in `figures/variables.tex`, written by
   `research/analysis/paper_variables.py`, which documents each block's source. Generated blocks
@@ -67,34 +69,42 @@ is in British spelling ("visualisation", "generalises").
   `data/quality/PROVENANCE.md`) and the `CORPUS` block; `make ambiguity-report`,
   `rendering-report` and `shapes-report`; `make measure-presets`, `measure-invariants` and
   `measure-dataset-growth` (or their `*-report` halves when only the reports changed); `make
-  measure-tools-accuracy` before `make measure-tools-timing`; `make
+  measure-tools-accuracy` before `make measure-tools-timing` (both chunked and resumable, see
+  `measure/benchmark_other_chunked.py`; run them as a capped systemd unit, as
+  `data/comparison/PROVENANCE.md` describes); `make
   measure-robustness-fixtures`; `make measure-astdiff-oracle` and
   `measure-astdiff-oracle-human`. Afterwards, re-read the prose's ordering claims (best tool,
   fastest tool): macros cannot check them. `benchmark_other_report.py` warns when srcDiff and
   difftastic are no longer the two established tools with the highest Perfect share.
-* **The paper is not at one corpus state.** The node-level, painting-level, invariant, preset
-  and growth numbers are at the current corpus and engine (1,699 fixtures on 2026-11-10); the tool
-  comparison, the cost comparison (`cost_preference` is scoped to the comparison's fixtures) and
-  OmniDiff's line-level, speed and robustness figures are at 1,217 fixtures and an earlier
-  engine, and the oracle comparison at 440 units. Footnote `fn:in-progress` and the threats
-  section say so; when the tool comparison is re-run on the server, drop those sentences.
+* **The paper is at one corpus state** since 2026-11-25: every fixture-based block is at 1,705
+  fixtures and one engine (`cost_preference` is scoped to the comparison's fixtures, so a
+  partial refresh splits it again). The fixture timings - the tool comparison and OmniDiff's
+  robustness run - are the laptop's (`TIMING_MACHINE`), the corpus measurements, RQ1.3 and the
+  content timings the server's (`MACHINE`); Section 3.1 names both. Re-timing on a different
+  machine means changing `TIMING_MACHINE` and that paragraph.
+* **Table 7 (`tab:painting-line-buckets`) scores tools against the hand painting**, at line
+  level, on the painted fixtures; a tool agrees with a change painted twice when it agrees with
+  either painting. RA3.2 quotes it (`*PaintingLinePerfectPct`). The byte-level table
+  (`tab:painting-bytes`) and the mapping-based table and figure (`tab:agreement-buckets`,
+  `*PerfectPct`) stand beside it; quote the painting macros wherever the paper says "as the hand
+  painting does".
 * **Three painting cases in the data, two in the text** (`human_mapping::graded_cases`):
-  `Minimal` and `Full`, a single painting naming no preset (one rendering, both presets must
+  `Minimal` and `Maximal`, a single painting naming no preset (one rendering, both presets must
   produce it), or a single painting named for one preset. Section 3.4 describes the first two
   only, since the review of 2026-11-14; the measurements still grade all three.
   `preset_report.graded_case` mirrors the Rust rule; `PresetSingle*` is the second case and is not
   `PaintingSingle*` (`rendering_report.py`'s older count of every lone painting).
 * **The invariants table is generated** (`figures/invariants_table.tex`,
   `analysis/invariants_report.py`) and shows the hand paintings only; the scripts' figures are
-  macros, used in Section 9. Its five families (`GROUPS`) must partition the 31 rules of
+  macros, used in Section 7. Its five families (`GROUPS`) must partition the 32 rules of
   `src/test/helper/human_mapping/invariants.rs`, which a unit test checks, and the prose of
-  Section 3.5 names the family sizes (three, nine, ten, four, five). A 32nd invariant means
+  Section 3.5 names the family sizes (three, ten, ten, four, five). A 33rd invariant means
   `INVARIANTS` in the `invariant_gap_census` test, `GROUPS`, and that paragraph.
 * **Authored project facts** - stars, forks and their date (`PROJECT`), the issue counts
   (`dataset_growth.ISSUES_*`, `ISSUE_FIXTURE_PREFIXES`) and the before/after counts of the
   invariant repair (`INVARIANT_REPAIR`) - are read off GitHub or a past commit, not measured from
   a file. Refresh them together with their date. The stars are in the abstract and at the opening
-  of Section 9; the issue counts are no longer in the text (`GrowthIssues*` are unused).
+  of Section 7; the issue counts are no longer in the text (`GrowthIssues*` are unused).
 * **Four datasets**, `_common.PAPER_DATASETS`: Curated (`small`), Full, Stratified, Defects4J.
   `handmade` fixtures are regression tests, not a sample, and stay out of the paper. Only fixtures
   with a `human_mapping.json` are scored, and which Defects4J units are solved is how far
@@ -105,7 +115,7 @@ is in British spelling ("visualisation", "generalises").
   ambiguity pass is complete.
 * **`Defects4J` is not a valid macro name**; macros spell it `DefectsFourJ`
   (`benchmark_other_report.macro_stem`, `ambiguity_report.PER_LIST_DATASETS`).
-* **"RQ1" in file and macro names is the paper's RQ4** (`data/rq1/`, `\RqOne*`, the `RQ1_GROUP_*`
+* **"RQ1" in file and macro names is the paper's RQ1.3** (RQ4 until 2026-11-24) (`data/rq1/`, `\RqOne*`, the `RQ1_GROUP_*`
   lists in `research/Makefile`); see `analysis/apted_only_report.py`'s docstring.
 * **Lists that must stay in step**: `paper_variables.COMMON_SUBSET_TOOLS` with
   `benchmark_other_report.PAPER_MACRO_STEMS`, and the dataset list in
