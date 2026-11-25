@@ -11,13 +11,43 @@ LICENSE), or under a commercial license (see LICENSE-COMMERCIAL).
 ## Overview
 
 - Apache License 2.0: 235 crates
-- MIT License: 134 crates
+- MIT License: 133 crates
 - BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License: 8 crates
 - Unicode License v3: 5 crates
 - zlib License: 2 crates
 - BSD Zero Clause License: 1 crate
 - BSD 2-Clause &quot;Simplified&quot; License: 1 crate
 - bzip2 and libbzip2 License v1.0.6: 1 crate
+
+## Vendored source
+
+One more third party's code is compiled into the binary from this repository rather than as a
+crate, so it is not counted above: the YAML grammar, tree-sitter-yaml 0.7.2
+(https://github.com/tree-sitter-grammars/tree-sitter-yaml), in `vendor/tree-sitter-yaml/` with two
+fixes of OmniDiff's (see `build.rs`), under the MIT license:
+
+```
+Copyright (c) 2024 tree-sitter-grammars contributors
+Copyright (c) 2019-2021 Ika
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## BSD Zero Clause License
 
@@ -7397,36 +7427,6 @@ Used by:
 ```
 Copyright (c) 2024 Dheepak Krishnamurthy
 Copyright (c) 2025 The Ratatui Developers
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the &quot;Software&quot;), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-```
-
-## MIT License
-
-Used by:
-
-- tree-sitter-yaml 0.7.2 (https://github.com/tree-sitter-grammars/tree-sitter-yaml)
-
-```
-Copyright (c) 2024 tree-sitter-grammars contributors
-Copyright (c) 2019-2021 Ika
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the &quot;Software&quot;), to deal

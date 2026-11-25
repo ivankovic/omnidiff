@@ -4,6 +4,18 @@ All notable changes to OmniDiff (named CodeDiff up to v0.1.1). The format follow
 and the version numbers follow [Semantic Versioning](https://semver.org/) as far as a 0.x
 release does: a minor bump may change the JSON output or the library API, a patch bump does not.
 
+## [Unreleased]
+
+### Fixed
+
+- A YAML file longer than 32,768 lines no longer shows an empty diff when the change is past that
+  line: the YAML grammar (tree-sitter-yaml 0.7.2) lost its place there and ended its tree, so
+  nothing below was compared. OmniDiff now builds the grammar with that fix, and with a second one
+  for YAML nested about 250 levels deep, which made the grammar end the whole program
+  ([#114](https://github.com/ivankovic/omnidiff/issues/114)).
+- A file in any language whose tree does not reach its end is diffed line by line instead of
+  showing no changes past where the tree stops.
+
 ## [0.6.0] - 2026-11-24
 
 A library API for other Rust crates (changed definitions, git revisions, an embeddable viewer),

@@ -273,8 +273,25 @@ pub const MAX_AST_NODES: usize = 300_000;
 pub static AST_NODE_CAP: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(MAX_AST_NODES);
 
+/// Whether `tree`'s root spans every byte of `contents` that is not whitespace (a leading byte-order
+/// mark counts as whitespace).
+///
+/// A diff reads the tree, not the text: what lies outside the root belongs to no node, is never
+/// compared, and every change there goes unreported. A grammar's scanner that loses its place
+/// does this - tree-sitter-yaml 0.7.2 kept its row in an `int16_t`, so a document past 32,768
+/// lines ended its tree at that row and a change below it gave an empty diff (issue #114). A tree
+/// that does not cover its file is dropped, and the pair diffed as plain text.
+pub fn covers_contents(tree: &tree_sitter::Tree, contents: &str) -> bool {
+    let root = tree.root_node();
+    let blank = |text: Option<&str>| {
+        text.is_some_and(|text| text.trim_start_matches('\u{feff}').trim().is_empty())
+    };
+    blank(contents.get(..root.start_byte())) && blank(contents.get(root.end_byte()..))
+}
+
 /// `contents` parsed with `parser`, already set to `language`'s grammar; `None` when the parse fails,
-/// [`requires_clean_parse`] rejects the tree, or it has more than [`AST_NODE_CAP`] nodes.
+/// [`requires_clean_parse`] rejects the tree, the tree does not [cover](covers_contents) the
+/// contents, or it has more than [`AST_NODE_CAP`] nodes.
 pub fn parse_tree(
     parser: &mut tree_sitter::Parser,
     contents: &str,
@@ -282,6 +299,9 @@ pub fn parse_tree(
 ) -> Option<tree_sitter::Tree> {
     let tree = parser.parse(contents, None)?;
     if requires_clean_parse(language) && tree.root_node().has_error() {
+        return None;
+    }
+    if !covers_contents(&tree, contents) {
         return None;
     }
     // `descendant_count` is stored in the tree, so this costs nothing.
@@ -374,7 +394,7 @@ pub fn to_treesitter(language: &Language) -> Option<tree_sitter::Language> {
         Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
         Language::Vimscript => Some(tree_sitter_vim::language()),
         Language::Vue => Some(tree_sitter_vue_next::LANGUAGE.into()),
-        Language::YAML => Some(tree_sitter_yaml::LANGUAGE.into()),
+        Language::YAML => Some(crate::code::yaml::LANGUAGE.into()),
         Language::XML => Some(tree_sitter_xml::LANGUAGE_XML.into()),
         // Bazel, Dart, MarkDown, ProtoBuf and Lisp are not supported at this time.
         _ => None,
@@ -480,6 +500,55 @@ mod tests {
         assert_eq!(
             language_for_path_and_content(std::path::Path::new("app.ts"), ""),
             Some(Language::TypeScript)
+        );
+    }
+
+    #[test]
+    fn a_tree_must_cover_every_non_blank_byte() {
+        let parse = |text: &str| {
+            let mut parser = tree_sitter::Parser::new();
+            parser
+                .set_language(&to_treesitter(&Language::Rust).unwrap())
+                .unwrap();
+            parser.parse(text, None).unwrap()
+        };
+        let text = "\u{feff}\n  fn main() {}\n\n";
+        assert!(covers_contents(&parse(text), text));
+        // The same tree held against more text than it was parsed from: the tail is in no node.
+        let tree = parse("fn main() {}\n");
+        assert!(covers_contents(&tree, "fn main() {}\n   \n"));
+        assert!(!covers_contents(&tree, "fn main() {}\nfn lost() {}\n"));
+        assert!(!covers_contents(&tree, "fn"));
+    }
+
+    /// tree-sitter-yaml 0.7.2 kept its row in an `int16_t`: past row 32,767 it lost its place, the
+    /// tree ended there, and a change below it went unreported (issue #114). The vendored scanner
+    /// (`build.rs`) keeps rows in an `int32_t`. 33,000 one-line mappings stay under the node cap,
+    /// so the tree is the one a diff reads.
+    #[test]
+    fn a_yaml_document_past_32768_rows_parses_to_its_end() {
+        let text: String = (0..33_000).map(|i| format!("k{i}: {i}\n")).collect();
+        let tree = crate::code::Code::from_string(&text, &Language::YAML)
+            .ast
+            .expect("kept: clean, covering, under the node cap");
+        assert!(!tree.root_node().has_error());
+        assert_eq!(tree.root_node().end_position().row, 33_000);
+    }
+
+    /// tree-sitter-yaml 0.7.2 wrote past tree-sitter's 1,024-byte scanner state at about 250 nested
+    /// mappings, which aborts the process on tree-sitter's own assertion: this test dies rather
+    /// than fails if it comes back.
+    #[test]
+    fn deeply_nested_yaml_parses_without_aborting() {
+        let depth = 400;
+        let mut text: String = (0..depth)
+            .map(|i| format!("{}k{i}:\n", " ".repeat(i)))
+            .collect();
+        text.push_str(&format!("{}v: 1\n", " ".repeat(depth)));
+        assert!(
+            crate::code::Code::from_string(&text, &Language::YAML)
+                .ast
+                .is_some()
         );
     }
 

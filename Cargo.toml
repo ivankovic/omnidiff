@@ -39,6 +39,11 @@ include = [
     "/src/tui/json_output.schema.json",
     # The settings page's examples (`tui::settings_examples`), compiled in with `include_str!`.
     "/src/tui/settings_examples/**/*.example",
+    # The YAML grammar build.rs compiles.
+    "/build.rs",
+    "/vendor/tree-sitter-yaml/LICENSE",
+    "/vendor/tree-sitter-yaml/src/**/*.c",
+    "/vendor/tree-sitter-yaml/src/**/*.h",
     "!/src/bin/**",
     "!/src/test/data/**",
     # One stub per fixture, compiled only under `cfg(test)` and useless without src/test/data.
@@ -203,7 +208,9 @@ tree-sitter-vim = "0.4"
 # tree-sitter-html's own scanner at link time and breaks HTML parsing.
 tree-sitter-vue-next = "0.1.0"
 tree-sitter-xml = "0.7.0"
-tree-sitter-yaml = "0.7"
+# YAML is compiled from vendor/tree-sitter-yaml (build.rs), tree-sitter-yaml 0.7.2 with two scanner
+# fixes no release carries yet; `tree-sitter-language` is what its binding needs (`code::yaml`).
+tree-sitter-language = "0.1"
 # tree-sitter-perl/tree-sitter-perl, the grammar nvim-treesitter uses, is published under this name;
 # the crate named `tree-sitter-perl` is another grammar (ganezdragon's), which parsed 481 of 825
 # corpus Perl files without errors against this one's 789, and requires tree-sitter 0.26.
@@ -228,6 +235,9 @@ libc = { version = "0.2", optional = true }
 # mimalloc.
 [target.'cfg(target_env = "musl")'.dependencies]
 mimalloc = "0.1"
+
+[build-dependencies]
+cc = "1.2"
 
 [dev-dependencies]
 # The same two crates the `test-fixtures` feature enables, for the `#[cfg(test)]` builds that
