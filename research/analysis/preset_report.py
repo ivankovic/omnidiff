@@ -326,10 +326,18 @@ def plot(s: dict, out: Path) -> None:
         "punctuation": ("#1a9e96", "..."),
         "code": ("#4a3aa7", ""),
     }
+    # Each bar is everything Maximal paints, so it spans 100%: the bytes only Maximal paints, by
+    # kind, then a grey segment for the bytes Minimal paints too. (The author's review of
+    # 2026-11-24 asked why the bars did not add up to 100%: the grey remainder was not drawn.)
     offsets = [0.0] * len(languages)
-    for text_class in CLASSES:
-        color, hatch = styles[text_class]
-        widths = [pct(v["added"][text_class], v["maximal"]) for _, v in languages]
+    segments = [
+        (styles[c][0], styles[c][1], c.capitalize(), lambda v, c=c: v["added"][c]) for c in CLASSES
+    ]
+    segments.append(
+        ("#d4d2cb", "", "Painted by Minimal too", lambda v: v["maximal"] - sum(v["added"].values()))
+    )
+    for color, hatch, label, bytes_of in segments:
+        widths = [pct(bytes_of(v), v["maximal"]) for _, v in languages]
         right.barh(
             range(len(languages)),
             widths,
@@ -339,19 +347,27 @@ def plot(s: dict, out: Path) -> None:
             hatch=hatch,
             edgecolor=SURFACE,
             linewidth=0.6,
-            label=text_class.capitalize(),
+            label=label,
             zorder=2,
         )
         offsets = [o + w for o, w in zip(offsets, widths, strict=True)]
     right.set_yticks(range(len(languages)))
     right.set_yticklabels([f"{name} ({v['fixtures']})" for name, v in languages], fontsize=7)
     right.grid(axis="x", color=GRIDLINE, zorder=0)
+    right.set_xlim(0, 100)
     right.set_xlabel(
-        "Painted by Maximal only (% of Maximal's painted bytes)",
+        "Share of the bytes Maximal paints (%)",
         fontsize=7.5,
         color=INK_SECONDARY,
     )
-    right.legend(fontsize=7, frameon=False, loc="lower right", labelcolor=INK_SECONDARY)
+    right.legend(
+        fontsize=7,
+        frameon=False,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=2,
+        labelcolor=INK_SECONDARY,
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out.with_suffix(".pdf"), bbox_inches="tight", facecolor=SURFACE)
     fig.savefig(out.with_suffix(".png"), dpi=170, bbox_inches="tight", facecolor=SURFACE)

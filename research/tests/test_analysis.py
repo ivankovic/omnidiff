@@ -131,6 +131,107 @@ def test_pct_is_zero_where_the_total_is_zero():
     assert list(benchmark_other_report.pct(mismatches, total)) == [25.0, 0.0, 0.0]
 
 
+def test_omnidiff_speed_is_read_as_is_once_it_is_timed_as_a_process():
+    # Since the whole-process change: `omnidiff_ms` is the process, the in-process column gets the
+    # parse added back as before.
+    rows = [
+        {
+            "omnidiff_ms": "30;31",
+            "omnidiff_inprocess_ms": "2;3",
+            "treesitter_parse_ms": "1;1",
+        }
+    ]
+    assert benchmark_other_report.omnidiff_timed_as_process(rows)
+    assert benchmark_other_report.speed_sample(rows, "omnidiff") == [30.0, 31.0]
+    assert benchmark_other_report.speed_sample(rows, "omnidiff_inprocess") == [3.0, 4.0]
+
+
+def test_omnidiff_speed_of_an_older_csv_still_adds_the_parse():
+    rows = [{"omnidiff_ms": "2;3", "treesitter_parse_ms": "1;1"}]
+    assert not benchmark_other_report.omnidiff_timed_as_process(rows)
+    assert benchmark_other_report.speed_sample(rows, "omnidiff") == [3.0, 4.0]
+
+
+def _painted_row(cases, line=None, byte=None, total_lines=100, total_bytes=1000, status="ok"):
+    """A `benchmark_accuracy.csv` row for tool `t`, with painting cells for `cases` only."""
+    row = {"solution": "x", "total_lines": str(total_lines), "total_bytes": str(total_bytes)}
+    row["t_status"] = status
+    for case in ("minimal", "maximal", "single"):
+        row[f"t_painting_line_{case}_mismatches"] = str(line[case]) if case in cases else ""
+        row[f"t_painting_{case}_mismatches"] = str(byte[case]) if case in cases else ""
+    return row
+
+
+def test_painting_line_score_matches_when_the_tool_agrees_with_either_preset():
+    both = _painted_row(
+        ["minimal", "maximal"],
+        line={"minimal": 4, "maximal": 0},
+        byte={"minimal": 9, "maximal": 0},
+    )
+    assert benchmark_other_report.painting_line_score(both, "t") == 0
+    single = _painted_row(["single"], line={"single": 2}, byte={"single": 5})
+    assert benchmark_other_report.painting_line_score(single, "t") == 2
+
+
+def test_a_fixture_with_no_painting_is_skipped_not_scored_as_perfect():
+    unpainted = _painted_row([])
+    assert benchmark_other_report.painting_line_score(unpainted, "t") is None
+    assert benchmark_other_report.painting_line_bucket_counts([unpainted], "t") is None
+    assert benchmark_other_report.painting_case_shares([unpainted], "t", "minimal") is None
+    out_of_scope = _painted_row(
+        ["single"], line={"single": 0}, byte={"single": 0}, status="unsupported"
+    )
+    assert benchmark_other_report.painting_line_score(out_of_scope, "t") is None
+
+
+def test_painting_within_one_percent_is_of_the_bytes_of_both_files():
+    rows = [
+        _painted_row(["single"], line={"single": 0}, byte={"single": 0}),
+        _painted_row(["single"], line={"single": 0}, byte={"single": 10}),  # exactly 1%
+        _painted_row(["single"], line={"single": 0}, byte={"single": 11}),
+    ]
+    n, exact, within = benchmark_other_report.painting_case_shares(rows, "t", "single")
+    assert (n, round(exact), round(within)) == (3, 33, 67)
+
+
+@pytest.mark.parametrize("fixtures", [1, 7, 250])
+def test_painting_tables_and_macros_generate_for_any_number_of_fixtures(
+    fixtures, tmp_path, monkeypatch
+):
+    # Every other fixture painted, alternating the two shapes of painting.
+    rows = []
+    for i in range(fixtures):
+        row = {"solution": f"f{i}", "total_lines": "50", "total_bytes": "500"}
+        for tool in benchmark_other_report.PAPER_MACRO_STEMS:
+            row[f"{tool}_status"] = "ok"
+            for case in ("minimal", "maximal", "single"):
+                graded = (i % 2 == 0) and ((case == "single") == (i % 4 == 0))
+                row[f"{tool}_painting_line_{case}_mismatches"] = str(i % 3) if graded else ""
+                row[f"{tool}_painting_{case}_mismatches"] = str(i % 7) if graded else ""
+        rows.append(row)
+    painted = (fixtures + 1) // 2
+    for include_omnidiff in (False, True):
+        lines_tex = tmp_path / f"lines{include_omnidiff}.tex"
+        bytes_tex = tmp_path / f"bytes{include_omnidiff}.tex"
+        assert benchmark_other_report.write_painting_line_table(rows, lines_tex, include_omnidiff)
+        assert benchmark_other_report.write_painting_byte_table(rows, bytes_tex, include_omnidiff)
+        text = lines_tex.read_text()
+        assert f"Unix \\texttt{{diff}} & {painted} &" in text
+        assert ("OmniDiff" in text) == include_omnidiff
+        assert "\\begin{tabular}" in bytes_tex.read_text()
+    macros = "\n".join(benchmark_other_report.painting_macro_lines(rows))
+    assert f"\\newcommand{{\\UnixDiffPaintingLineFixtures}}{{{painted}}}" in macros
+    assert "OmniDiffPaintingLinePerfectPct" in macros
+
+
+def test_painting_tables_are_not_written_from_a_csv_without_the_columns(tmp_path):
+    rows = [{"solution": "x", "total_lines": "3", "unix_diff_status": "line_only"}]
+    path = tmp_path / "lines.tex"
+    assert not benchmark_other_report.write_painting_line_table(rows, path, False)
+    assert not path.exists()
+    assert not benchmark_other_report.write_painting_byte_table(rows, path, False)
+
+
 # --- edit_shape_stats --------------------------------------------------------------------------
 
 

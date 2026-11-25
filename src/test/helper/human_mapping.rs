@@ -1285,6 +1285,292 @@ fn project_labels(labels: &[Option<TextLabel>], offsets: &[usize]) -> Vec<Option
     projected
 }
 
+// ─── Changed or not, against the hand painting ──────────────────────────────────────────────
+//
+// The painting comparison above reads labels: a byte painted `update` where the painting says
+// `move` is a mismatch. A diff tool other than omnidiff reports no labels, only which text it
+// considers changed, so `benchmark_other` asks every tool, omnidiff included, the coarser question:
+// a byte is changed when the tool reports it and painted when the painting gives it any label.
+
+/// Per byte of `contents`, whether any of `spans` covers it. Positions past the end of a row or of
+/// the file clamp to it. Line breaks are never changed - `\n`, and the `\r` of a `\r\n` - because a
+/// painting never labels one ([`label_bytes`]), and a tool that marks a whole line would otherwise
+/// disagree with it on every line break.
+pub fn changed_bytes(contents: &str, spans: &[crate::diff::text_range::TextRange]) -> Vec<bool> {
+    let row_starts = RowIndex::new(contents).starts;
+    let offset = |row: usize, column: usize| -> usize {
+        let Some(&start) = row_starts.get(row) else {
+            return contents.len();
+        };
+        let row_end = row_starts
+            .get(row + 1)
+            .map_or(contents.len(), |next| next - 1);
+        (start + column).min(row_end)
+    };
+    let mut changed = vec![false; contents.len()];
+    for span in spans {
+        let start = offset(span.start_row, span.start_column);
+        // An end at column 0 of a row is the break before it, which is cleared below; a row past
+        // the file clamps to its end.
+        let end = if span.end_column == 0 && span.end_row < row_starts.len() {
+            row_starts[span.end_row]
+        } else {
+            offset(span.end_row, span.end_column)
+        };
+        if start < end {
+            changed[start..end].fill(true);
+        }
+    }
+    let bytes = contents.as_bytes();
+    for index in 0..changed.len() {
+        if bytes[index] == b'\n' {
+            changed[index] = false;
+            if index > 0 && bytes[index - 1] == b'\r' {
+                changed[index - 1] = false;
+            }
+        }
+    }
+    changed
+}
+
+/// [`changed_bytes`] for a tool that reports whole lines: every byte of each touched line, without
+/// its line break. `touched` has one entry per `contents.split('\n')` row, as
+/// [`touched_lines`] and [`unix_diff_line_labels`] give it.
+pub fn changed_bytes_of_lines(contents: &str, touched: &[bool]) -> Vec<bool> {
+    let spans: Vec<crate::diff::text_range::TextRange> = contents
+        .split('\n')
+        .zip(touched)
+        .enumerate()
+        .filter(|(_, (_, touched))| **touched)
+        .map(|(row, (line, _))| crate::diff::text_range::TextRange::new(row, 0, row, line.len()))
+        .collect();
+    changed_bytes(contents, &spans)
+}
+
+/// omnidiff's changed bytes under `options`: every byte its rendering paints, whatever the label,
+/// with its rendering of each painted embedded layer written into the host, as
+/// [`compare_painting_with_diff`] grades it.
+pub fn omnidiff_changed_bytes(
+    mapping: &HumanMapping,
+    options: crate::diff::text::RenderOptions,
+    before: &Code,
+    after: &Code,
+    diff: &PaintingDiff,
+) -> Result<[Vec<bool>; 2]> {
+    let mut ours = omnidiff_painting_labels(diff, before, after, options);
+    for region in embedded_regions(mapping, before, after, diff, options)? {
+        region.write(&mut ours, |region| &region.ours);
+    }
+    Ok(ours.map(|side| side.iter().map(Option::is_some).collect()))
+}
+
+/// Compares a tool's changed bytes with the hand painting `case` grades, collapsed to painted or
+/// not ([`changed_bytes`]). `changed` gives the tool's bytes, `[before, after]`, for a preset: an
+/// external tool has one output and returns it for both, omnidiff renders each. A byte is
+/// mismatched when it disagrees under any preset of the case, as in [`compare_case_with_diff`].
+///
+/// Where a preset has several paintings, and where a painted embedded layer has several, the one
+/// closest to the tool's bytes is the verdict: the paintings are alternatives.
+pub fn compare_changed_bytes_with_case(
+    mapping: &HumanMapping,
+    case: GradedCase,
+    before: &Code,
+    after: &Code,
+    mut changed: impl FnMut(crate::diff::text::RenderOptions) -> Result<[Vec<bool>; 2]>,
+) -> Result<CaseComparison> {
+    let implied;
+    let mapping = match implied_host_painting(mapping, before, after) {
+        Some(painting) => {
+            implied = HumanMapping {
+                text_mappings: vec![painting],
+                ..mapping.clone()
+            };
+            &implied
+        }
+        None => mapping,
+    };
+    let mut wrong = [
+        vec![false; before.contents.len()],
+        vec![false; after.contents.len()],
+    ];
+    let mut solution = String::new();
+    for &options in case.presets() {
+        let ours = changed(options)?;
+        ensure!(
+            ours[0].len() == before.contents.len() && ours[1].len() == after.contents.len(),
+            "a tool's changed bytes must have one entry per byte of each file"
+        );
+        let (painting, theirs) =
+            closest_painted_bytes(mapping, options, before, after, &ours, |theirs| {
+                mask_disagreement(&ours, theirs)
+            })?;
+        solution = painting;
+        for side in 0..2 {
+            for ((wrong, ours), theirs) in
+                wrong[side].iter_mut().zip(&ours[side]).zip(&theirs[side])
+            {
+                *wrong |= ours != theirs;
+            }
+        }
+    }
+    Ok(CaseComparison {
+        case,
+        solution,
+        mismatched_bytes: wrong.iter().flatten().filter(|&&wrong| wrong).count(),
+        total_bytes: before.contents.len() + after.contents.len(),
+    })
+}
+
+/// A host stretch per side, `[before, after]`.
+type ByteSpans = [std::ops::Range<usize>; 2];
+
+/// How many bytes of two `[before, after]` masks disagree.
+fn mask_disagreement(ours: &[Vec<bool>; 2], theirs: &[Vec<bool>; 2]) -> usize {
+    (0..2)
+        .map(|side| {
+            ours[side]
+                .iter()
+                .zip(&theirs[side])
+                .filter(|(ours, theirs)| ours != theirs)
+                .count()
+        })
+        .sum()
+}
+
+/// The painted bytes, `[before, after]`, of the painting `options` answers to that `distance`
+/// puts closest to the tool, with its name. Each painted embedded layer's own closest painting, by
+/// bytes against `ours`, is written over the host's bytes for it, as [`closest_painting_labels`]
+/// does.
+fn closest_painted_bytes(
+    mapping: &HumanMapping,
+    options: crate::diff::text::RenderOptions,
+    before: &Code,
+    after: &Code,
+    ours: &[Vec<bool>; 2],
+    distance: impl Fn(&[Vec<bool>; 2]) -> usize,
+) -> Result<(String, [Vec<bool>; 2])> {
+    let painted = |labels: [Vec<Option<TextLabel>>; 2]| -> [Vec<bool>; 2] {
+        labels.map(|side| side.iter().map(Option::is_some).collect())
+    };
+    // Each layer's verdict depends only on its own bytes, so it is chosen once for every host
+    // painting.
+    let mut layers: Vec<(ByteSpans, [Vec<bool>; 2])> = Vec::new();
+    for layer in &mapping.embedded {
+        if layer.mapping.text_mappings.is_empty() {
+            continue;
+        }
+        let decoded = layer.resolve(before, after)?;
+        let offsets = [&decoded.before_offsets, &decoded.after_offsets];
+        let spans = [0, 1].map(|side| {
+            offsets[side][0]..*offsets[side].last().expect("a byte map is never empty")
+        });
+        let ours_here = [0, 1].map(|side| ours[side][spans[side].clone()].to_vec());
+        let mut best: Option<(usize, [Vec<bool>; 2])> = None;
+        for painting in paintings_for_mode(&layer.mapping, options)? {
+            let labels =
+                human_painting_labels(painting, &decoded.before.contents, &decoded.after.contents)?;
+            let theirs = painted([0, 1].map(|side| project_labels(&labels[side], offsets[side])));
+            let mismatched = mask_disagreement(&ours_here, &theirs);
+            if best.as_ref().is_none_or(|(least, _)| mismatched < *least) {
+                best = Some((mismatched, theirs));
+            }
+        }
+        let (_, theirs) = best.context("a painted layer has a painting for every preset")?;
+        layers.push((spans, theirs));
+    }
+
+    let mut best: Option<(String, [Vec<bool>; 2], usize)> = None;
+    for painting in paintings_for_mode(mapping, options)? {
+        let mut theirs = painted(human_painting_labels(
+            painting,
+            &before.contents,
+            &after.contents,
+        )?);
+        for (spans, layer) in &layers {
+            for side in 0..2 {
+                theirs[side][spans[side].clone()].copy_from_slice(&layer[side]);
+            }
+        }
+        let mismatched = distance(&theirs);
+        if best
+            .as_ref()
+            .is_none_or(|(_, _, least)| mismatched < *least)
+        {
+            best = Some((painting.name.clone(), theirs, mismatched));
+        }
+    }
+    let (name, theirs, _) =
+        best.context("a preset with no candidate paintings should have been rejected above")?;
+    Ok((name, theirs))
+}
+
+/// Per `contents.split('\n')` row, whether any byte of it is set in `changed`: the lines a
+/// painting touches, from [`changed_bytes`]-style bytes. A row whose only painted byte would be its
+/// line break is untouched, because no painting labels a break.
+pub fn lines_of_changed_bytes(contents: &str, changed: &[bool]) -> Vec<bool> {
+    let mut offset = 0;
+    contents
+        .split('\n')
+        .map(|line| {
+            let touched = changed[offset..offset + line.len()].iter().any(|&b| b);
+            offset += line.len() + 1;
+            touched
+        })
+        .collect()
+}
+
+/// A line-level tool's agreement with the hand painting `case` grades: per side, the lines the
+/// painting touches ([`lines_of_changed_bytes`], any label) against `tool_lines`, one entry per
+/// `split('\n')` row as [`touched_lines`] gives them. Returns the mismatched lines; a line is
+/// mismatched when it disagrees under any preset of the case. Of several paintings for a preset,
+/// the one with the fewest mismatched lines is the verdict.
+pub fn compare_changed_lines_with_case(
+    mapping: &HumanMapping,
+    case: GradedCase,
+    before: &Code,
+    after: &Code,
+    tool_lines: &[Vec<bool>; 2],
+) -> Result<usize> {
+    let implied;
+    let mapping = match implied_host_painting(mapping, before, after) {
+        Some(painting) => {
+            implied = HumanMapping {
+                text_mappings: vec![painting],
+                ..mapping.clone()
+            };
+            &implied
+        }
+        None => mapping,
+    };
+    let contents = [&before.contents, &after.contents];
+    ensure!(
+        (0..2).all(|side| tool_lines[side].len() == contents[side].split('\n').count()),
+        "a tool's line labels must have one entry per line of each file"
+    );
+    let ours = [0, 1].map(|side| changed_bytes_of_lines(contents[side], &tool_lines[side]));
+    let painted_lines = |theirs: &[Vec<bool>; 2]| -> [Vec<bool>; 2] {
+        [0, 1].map(|side| lines_of_changed_bytes(contents[side], &theirs[side]))
+    };
+    let mut wrong = [0, 1].map(|side| vec![false; tool_lines[side].len()]);
+    for &options in case.presets() {
+        let (_, theirs) =
+            closest_painted_bytes(mapping, options, before, after, &ours, |theirs| {
+                mask_disagreement(tool_lines, &painted_lines(theirs))
+            })?;
+        let theirs = painted_lines(&theirs);
+        for side in 0..2 {
+            for ((wrong, ours), theirs) in wrong[side]
+                .iter_mut()
+                .zip(&tool_lines[side])
+                .zip(&theirs[side])
+            {
+                *wrong |= ours != theirs;
+            }
+        }
+    }
+    Ok(wrong.iter().flatten().filter(|&&wrong| wrong).count())
+}
+
 /// Asserts omnidiff's rendering matches the human painting in every case the fixture grades
 /// ([`graded_cases`]: both presets, or the lone painting's `Single` case), within `max_percent`
 /// of the fixture's bytes - a recorded distance, not a target.
@@ -6137,6 +6423,233 @@ mod tests {
             }
         }
         Ok(())
+    }
+
+    /// A painting of one change: `delete` on the before side and `insert` on the after side.
+    fn changed_bytes_painting(
+        name: &str,
+        before: Vec<HumanTextSpan>,
+        after: Vec<HumanTextSpan>,
+    ) -> NamedTextMapping {
+        let mut entries = Vec::new();
+        if !before.is_empty() {
+            entries.push(HumanTextEntry {
+                operation: HumanTextOperation::Delete,
+                before,
+                after: Vec::new(),
+            });
+        }
+        if !after.is_empty() {
+            entries.push(HumanTextEntry {
+                operation: HumanTextOperation::Insert,
+                before: Vec::new(),
+                after,
+            });
+        }
+        NamedTextMapping {
+            name: name.to_string(),
+            mapping: HumanTextMapping { entries },
+        }
+    }
+
+    fn painted_only(paintings: Vec<NamedTextMapping>) -> HumanMapping {
+        HumanMapping {
+            text_mappings: paintings,
+            ..Default::default()
+        }
+    }
+
+    /// A line tool marks each touched line's bytes and not its break - `\r\n` included - because a
+    /// painting never labels one, and a whole-line painting then agrees with it exactly.
+    #[test]
+    fn changed_bytes_of_lines_marks_each_touched_line_without_its_line_break() {
+        let contents = "keep\r\nchange me\r\nkeep\n";
+        let changed = changed_bytes_of_lines(contents, &[false, true, false, false]);
+        let marked: String = contents
+            .char_indices()
+            .filter(|(index, _)| changed[*index])
+            .map(|(_, c)| c)
+            .collect();
+        assert_eq!(marked, "change me");
+
+        let before = Code::from_string("a\nold line\nc\n", &Language::Rust);
+        let after = Code::from_string("a\nnew line\nc\n", &Language::Rust);
+        // Painted as a human paints a replaced line: from its first column to the next row's.
+        let mapping = painted_only(vec![changed_bytes_painting(
+            "Only one solution",
+            vec![span(1, 0, 2, 0)],
+            vec![span(1, 0, 2, 0)],
+        )]);
+        let lines = [
+            vec![false, true, false, false],
+            vec![false, true, false, false],
+        ];
+        let comparison =
+            compare_changed_bytes_with_case(&mapping, GradedCase::Single, &before, &after, |_| {
+                Ok([
+                    changed_bytes_of_lines(&before.contents, &lines[0]),
+                    changed_bytes_of_lines(&after.contents, &lines[1]),
+                ])
+            })
+            .unwrap();
+        assert_eq!(comparison.mismatched_bytes, 0);
+        assert_eq!(comparison.total_bytes, 26);
+    }
+
+    /// A tool's ranges: only the bytes they cover, an end at column 0 of a row stopping at the
+    /// break, and positions past a row or the file clamped rather than dropped.
+    #[test]
+    fn changed_bytes_marks_a_range_tool_s_own_ranges_and_clamps_past_the_end() {
+        use crate::diff::text_range::TextRange;
+        let contents = "let x = 1;\nlet y = 2;\n";
+        let marked = |spans: &[TextRange]| -> String {
+            let changed = changed_bytes(contents, spans);
+            contents
+                .char_indices()
+                .map(|(index, c)| match c {
+                    '\n' => '\n',
+                    _ if changed[index] => c,
+                    _ => '.',
+                })
+                .collect()
+        };
+        assert_eq!(
+            marked(&[TextRange::new(0, 8, 0, 9)]),
+            "........1.\n..........\n"
+        );
+        assert_eq!(
+            marked(&[TextRange::new(0, 4, 1, 0)]),
+            "....x = 1;\n..........\n"
+        );
+        assert_eq!(
+            marked(&[TextRange::new(1, 4, 1, 99), TextRange::new(5, 0, 6, 0)]),
+            "..........\n....y = 2;\n"
+        );
+    }
+
+    /// With `Minimal` and `Maximal` paintings, one tool output is scored against each: here the
+    /// tool's ranges are the Minimal reading exactly and miss the bracket the Maximal one adds.
+    #[test]
+    fn compare_changed_bytes_with_case_scores_one_output_against_both_presets() {
+        use crate::diff::text_range::TextRange;
+        let before = Code::from_string("f(a);\n", &Language::Rust);
+        let after = Code::from_string("f(a, b);\n", &Language::Rust);
+        let mapping = painted_only(vec![
+            changed_bytes_painting("Minimal", vec![], vec![span(0, 5, 0, 6)]),
+            // ", b" and the closing parenthesis as well.
+            changed_bytes_painting("Maximal", vec![], vec![span(0, 3, 0, 7)]),
+        ]);
+        assert_eq!(
+            graded_cases(&mapping),
+            vec![GradedCase::Minimal, GradedCase::Maximal]
+        );
+        let tool = [
+            changed_bytes(&before.contents, &[]),
+            changed_bytes(&after.contents, &[TextRange::new(0, 5, 0, 6)]),
+        ];
+        let score = |case| {
+            compare_changed_bytes_with_case(&mapping, case, &before, &after, |_| Ok(tool.clone()))
+                .unwrap()
+        };
+        let minimal = score(GradedCase::Minimal);
+        assert_eq!(
+            (minimal.solution.as_str(), minimal.mismatched_bytes),
+            ("Minimal", 0)
+        );
+        let maximal = score(GradedCase::Maximal);
+        assert_eq!(
+            (maximal.solution.as_str(), maximal.mismatched_bytes),
+            ("Maximal", 3)
+        );
+        assert_eq!(maximal.total_bytes, 15);
+
+        let wrong_length = |_| Ok([vec![false; 1], vec![false; 1]]);
+        assert!(
+            compare_changed_bytes_with_case(
+                &mapping,
+                GradedCase::Minimal,
+                &before,
+                &after,
+                wrong_length
+            )
+            .is_err(),
+            "masks of the wrong length are refused"
+        );
+    }
+
+    /// A lone painting grades both presets at once: a byte is wrong when either preset's output
+    /// disagrees, so an output per preset (omnidiff's) can be wrong in the union of the two.
+    #[test]
+    fn compare_changed_bytes_with_case_reads_both_presets_for_a_single_painting() {
+        use crate::diff::text::RenderOptions;
+        let before = Code::from_string("ab\n", &Language::Rust);
+        let after = Code::from_string("ab\n", &Language::Rust);
+        let mapping = painted_only(vec![changed_bytes_painting(
+            "Only one solution",
+            vec![span(0, 0, 0, 1)],
+            vec![],
+        )]);
+        assert_eq!(graded_cases(&mapping), vec![GradedCase::Single]);
+        let comparison = compare_changed_bytes_with_case(
+            &mapping,
+            GradedCase::Single,
+            &before,
+            &after,
+            |options| {
+                // Minimal paints nothing (1 wrong byte), Maximal both bytes (another wrong one).
+                let before_side = if options == RenderOptions::MINIMAL {
+                    vec![false, false, false]
+                } else {
+                    vec![true, true, false]
+                };
+                Ok([before_side, vec![false; 3]])
+            },
+        )
+        .unwrap();
+        assert_eq!(comparison.mismatched_bytes, 2);
+    }
+
+    /// The lines a painting touches are those with any painted byte; a line tool is scored per
+    /// preset, each case on its own painting.
+    #[test]
+    fn compare_changed_lines_with_case_scores_lines_against_each_preset_s_painting() {
+        let before = Code::from_string("a\nb\nc\n", &Language::Rust);
+        let after = Code::from_string("a\nB\nc\nd\n", &Language::Rust);
+        let mapping = painted_only(vec![
+            // Minimal: only the inserted line.
+            changed_bytes_painting("Minimal", vec![], vec![span(3, 0, 4, 0)]),
+            // Maximal: also the case change on line 2, one byte of it on each side.
+            changed_bytes_painting(
+                "Maximal",
+                vec![span(1, 0, 1, 1)],
+                vec![span(1, 0, 1, 1), span(3, 0, 4, 0)],
+            ),
+        ]);
+        // What `diff` says: line 2 replaced, line 4 inserted.
+        let tool = [
+            vec![false, true, false, false],
+            vec![false, true, false, true, false],
+        ];
+        let score =
+            |case| compare_changed_lines_with_case(&mapping, case, &before, &after, &tool).unwrap();
+        assert_eq!(score(GradedCase::Maximal), 0);
+        assert_eq!(score(GradedCase::Minimal), 2);
+        assert_eq!(
+            lines_of_changed_bytes("ab\ncd\n", &[false, false, true, true, false, false, false]),
+            vec![false, true, false],
+            "a line break alone does not touch its line"
+        );
+        assert!(
+            compare_changed_lines_with_case(
+                &mapping,
+                GradedCase::Minimal,
+                &before,
+                &after,
+                &[vec![], vec![]]
+            )
+            .is_err(),
+            "labels of the wrong length are refused"
+        );
     }
 
     mod embedded;

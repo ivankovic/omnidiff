@@ -71,6 +71,23 @@ And one LaTeX macro fragment:
     simply absent, which `paper_variables.py` reports as a missing-macro warning rather than
     silently dropping.
 
+Against the hand painting (since 2026-11-24), from the accuracy CSV's painting columns, on the
+painted fixtures only - which ones are painted is read off the CSV's blank cells each run:
+
+  - benchmark_other_painting_lines.tex (and `_with_omnidiff`): the line table's buckets with the
+    lines the painting touches as the reference, a tool matching a fixture with Minimal and Maximal
+    paintings when it agrees with either (`painting_line_score`). Macros
+    `\\<Tool>PaintingLineFixtures` and `\\<Tool>PaintingLinePerfectPct`.
+  - benchmark_other_painting_bytes.tex (and `_with_omnidiff`): changed bytes against painted
+    bytes, Exact and Within 1% per graded case (`painting_case_shares`). Macros
+    `\\<Tool>Painting{Minimal,Maximal,Single}{Fixtures,ExactPct,WithinOnePct}`.
+
+Neither is written, and their macros are absent, when the accuracy CSV predates the columns.
+`make measure-tools-painting` regenerates the CSV, these tables and the macros together.
+
+OmniDiff's speed series is its whole process since the same date (`omnidiff_timed_as_process`);
+the in-process time is `\\SpeedOmniDiffInProcess*`.
+
 Usage (from research/):
     uv run ./analysis/benchmark_other_report.py
     uv run ./analysis/benchmark_other_report.py --csv benchmark_other.csv --plots-dir plots/
@@ -218,7 +235,7 @@ def rows_for(id_: str, rows: list[dict]) -> list[dict]:
     draws from whichever rows the batch driver actually covered that run - its own opt-in
     availability check, not a per-fixture language scope (see `plot_runtime`'s doc comment). Every
     other id is `applicable_rows` - `ExternalTool::supports`'s per-fixture language scope."""
-    if id_ in ("treesitter_parse", "omnidiff") or id_ in TEXT_TOOLS:
+    if id_ in ("treesitter_parse", "omnidiff", "omnidiff_inprocess") or id_ in TEXT_TOOLS:
         # Every text-based tool is language-agnostic (`ExternalTool::supports` returns true for
         # all of them), so like omnidiff they always draw from the full corpus.
         return rows
@@ -1021,6 +1038,8 @@ def plot_runtime(rows: list[dict], tools: list[str], output_path: Path) -> None:
             ["omnidiff"] + tools + [w for w in ("gumtree_warm", "bdiff_warm") if has_warm(rows, w)]
         )
         if i not in FIGURE_OMITS
+        # A series with no timings at all (a tool not installed for this run) has no violin.
+        and any(ms_values(r, f"{i}_ms") for r in rows_for(i, rows))
     ]
     labels = [DISPLAY_NAMES[i] for i in ids]
     colors = [COLORS[i] for i in ids]
@@ -1221,6 +1240,262 @@ def write_variance_table(rows: list[dict], tools: list[str], output_path: Path) 
         print(f"{name:<{name_width}}  {n:>4}  {median:>10.1f}%  {p90:>7.1f}%")
 
 
+# --- Against the hand painting ---------------------------------------------------------------
+#
+# `benchmark_accuracy.csv` also scores every tool against the hand paintings, on the fixtures that
+# have one (`benchmark_other.rs`'s module doc comment): `<tool>_painting_<case>_mismatches`, bytes
+# the tool reports changed against bytes the painting labels, and
+# `<tool>_painting_line_<case>_mismatches`, the tool's line labels against the lines the painting
+# touches. `case` is one of `PAINTING_CASES`, the graded cases of OmniDiff's own painting table.
+# Which fixtures are painted is read off the blank cells each run, never listed here.
+PAINTING_CASES = [("minimal", "Minimal"), ("maximal", "Maximal"), ("single", "Single")]
+PAINTING_CASE_TITLES = {
+    "minimal": r"\emph{Minimal}",
+    "maximal": r"\emph{Maximal}",
+    "single": "One rendering",
+}
+
+
+def _cell(row: dict, column: str) -> int | None:
+    value = row.get(column, "")
+    return int(value) if value != "" else None
+
+
+def painting_case_scores(rows: list[dict], tool: str, case: str) -> list[tuple[int, int]]:
+    """`(mismatched bytes, bytes of both files)` per fixture whose painting grades `case` and that
+    `tool` was scored on. A blank cell - an unpainted fixture, a case it does not grade, a tool
+    outside its scope - is left out, never read as zero."""
+    column = f"{tool}_painting_{case}_mismatches"
+    return [
+        (mismatches, int(r["total_bytes"]))
+        for r in rows
+        if r.get(f"{tool}_status") != "unsupported" and (mismatches := _cell(r, column)) is not None
+    ]
+
+
+def painting_case_shares(rows: list[dict], tool: str, case: str) -> tuple[int, float, float] | None:
+    """`(n, Exact %, Within 1% %)` for `tool` against the `case` paintings, as OmniDiff's own
+    painting table defines them: Exact is no mismatched byte, Within 1% at most 1% of the bytes of
+    the two files. None when nothing was scored."""
+    scores = painting_case_scores(rows, tool, case)
+    if not scores:
+        return None
+    exact = sum(m == 0 for m, _ in scores)
+    within = sum(m * 100 <= total for m, total in scores)
+    return len(scores), 100.0 * exact / len(scores), 100.0 * within / len(scores)
+
+
+def painting_line_score(row: dict, tool: str) -> int | None:
+    """A fixture's line-level painting score for `tool`: the fewest mismatched lines over the cases
+    its painting grades. With a `Minimal` and a `Maximal` painting a tool matches when it agrees
+    with either - both are correct readings and a line tool has one output - and a single painting
+    is the only reference. None for an unpainted or unscored fixture. Mirrors
+    `benchmark_other.rs`'s `painting_line_score`; the per-case columns stay in the CSV for any
+    other rule."""
+    if row.get(f"{tool}_status") == "unsupported":
+        return None
+    values = [
+        v
+        for case, _ in PAINTING_CASES
+        if (v := _cell(row, f"{tool}_painting_line_{case}_mismatches")) is not None
+    ]
+    return min(values) if values else None
+
+
+def painting_line_bucket_counts(rows: list[dict], tool: str):
+    """`bucket_counts` for the line-level painting score: `(fixtures scored, [count per BUCKETS
+    entry])`, or None when `tool` scored no painted fixture. Same buckets and denominator
+    (`total_lines`) as the mapping-based line table."""
+    pairs = [
+        (score, int(r["total_lines"]))
+        for r in rows
+        if (score := painting_line_score(r, tool)) is not None
+    ]
+    if not pairs:
+        return None
+    return len(pairs), _bucket(pairs)
+
+
+def _bucket(pairs) -> list[int]:
+    """How many `(mismatches, total)` pairs fall in each `BUCKETS` entry, first match winning."""
+    counts = [0] * len(BUCKETS)
+    for mismatches, total in pairs:
+        agreement_pct = 100.0 * (total - mismatches) / total if total else 100.0
+        for index, (_, predicate) in enumerate(BUCKETS):
+            if predicate(mismatches, agreement_pct):
+                counts[index] += 1
+                break
+    return counts
+
+
+def _table_name(tool: str) -> str:
+    return latex_name(tool).replace("&", "\\&")
+
+
+def write_painting_line_table(accuracy_rows, output_path, include_omnidiff):
+    r"""The mapping-based line table (`write_combined_bucket_table`) scored against the hand
+    painting instead: per fixture, a tool's line labels against the lines the painting touches,
+    with the either-preset rule of `painting_line_score`. Painted fixtures only, so each tool's
+    $n$ is its scored painted subset, and it changes as fixtures are painted. Written only when the
+    accuracy CSV carries the painting columns; returns whether it wrote the table."""
+    tools = [
+        t
+        for group in ("line", "subline")
+        for t in GRANULARITY[group]
+        if include_omnidiff or t != "omnidiff"
+    ]
+    if all(painting_line_bucket_counts(accuracy_rows, t) is None for t in tools):
+        print(f"note: no painting columns in the accuracy CSV - not writing {output_path}")
+        return False
+    backslash = "\\"
+    row_end = backslash * 2
+    header_labels = " & ".join(label for label, _ in BUCKETS)
+    suffix = "-with-omnidiff" if include_omnidiff else ""
+    lines = [
+        "% Auto-generated by research/analysis/benchmark_other_report.py. Do not edit by hand -",
+        "% regenerate: make measure-tools-painting (from research/).",
+        r"\begin{table*}",
+        (
+            r"  \caption{Per-fixture line-level agreement with the hand painting, bucketed, on the"
+            r" painted fixtures. A line counts as changed in the painting when any of its bytes is"
+            r" painted. Where a fixture has a \emph{Minimal} and a \emph{Maximal} painting, a tool"
+            r" agrees when it agrees with either. ``Perfect'' means zero mismatched lines. Each tool"
+            r" is scored on its own applicable subset ($n$).}"
+        ),
+        f"  \\label{{tab:painting-line-buckets{suffix}}}",
+        r"  \small",
+        r"  \begin{tabular}{lrrrrr}",
+        r"    \toprule",
+        f"    Tool & $n$ & {header_labels} {row_end}",
+        r"    \midrule",
+    ]
+    titles = {
+        "line": r"    \multicolumn{6}{l}{\emph{Line-only tools}} " + row_end,
+        "subline": r"    \multicolumn{6}{l}{\emph{Tools reporting sub-line detail}} " + row_end,
+    }
+    blocks = []
+    for group in ("line", "subline"):
+        block = []
+        for tool in GRANULARITY[group]:
+            if tool == "omnidiff" and not include_omnidiff:
+                continue
+            result = painting_line_bucket_counts(accuracy_rows, tool)
+            if result is None:
+                continue
+            scored, counts = result
+            cells = " & ".join(
+                f"{count} ({100.0 * count / scored:.0f}" + backslash + "%)" for count in counts
+            )
+            block.append(f"    {_table_name(tool)} & {scored} & {cells} {row_end}")
+        # A group none of whose tools was scored this run gets no heading either.
+        if block:
+            blocks.append([titles[group]] + block)
+    for index, block in enumerate(blocks):
+        if index:
+            lines.append(r"    \addlinespace")
+        lines += block
+    lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}"]
+    output_path.write_text("\n".join(lines) + "\n")
+    print(f"Table written to {output_path}")
+    return True
+
+
+def write_painting_byte_table(accuracy_rows, output_path, include_omnidiff):
+    r"""Every tool's changed bytes against the hand painting, per graded case, as shares of
+    changes: Exact (no mismatched byte) and Within 1\% (at most 1\% of the bytes of the two
+    files), with $n$ per case - the columns of OmniDiff's own painting table, collapsed to changed
+    or not because the other tools report no labels. Returns whether it wrote the table."""
+    tools = [
+        t
+        for group in ("line", "subline")
+        for t in GRANULARITY[group]
+        if include_omnidiff or t != "omnidiff"
+    ]
+    shares = {
+        t: [painting_case_shares(accuracy_rows, t, c) for c, _ in PAINTING_CASES] for t in tools
+    }
+    if all(cell is None for row in shares.values() for cell in row):
+        print(f"note: no painting columns in the accuracy CSV - not writing {output_path}")
+        return False
+    backslash = "\\"
+    row_end = backslash * 2
+    suffix = "-with-omnidiff" if include_omnidiff else ""
+    case_heads = " & ".join(
+        f"\\multicolumn{{3}}{{c}}{{{PAINTING_CASE_TITLES[c]}}}" for c, _ in PAINTING_CASES
+    )
+    sub_heads = " & ".join(["$n$ & Exact & Within 1\\%"] * len(PAINTING_CASES))
+    rules = " ".join(
+        f"\\cmidrule(lr){{{2 + 3 * i}-{4 + 3 * i}}}" for i in range(len(PAINTING_CASES))
+    )
+    lines = [
+        "% Auto-generated by research/analysis/benchmark_other_report.py. Do not edit by hand -",
+        "% regenerate: make measure-tools-painting (from research/).",
+        r"\begin{table*}",
+        (
+            r"  \caption{Each tool's changed bytes against the hand painting, per change, in the"
+            r" painting cases of the ground truth. A line-only tool marks every byte of each line"
+            r" it reports, a tool with sub-line output its own ranges; a byte is painted when the"
+            r" painting gives it any label. \emph{Exact}: no byte differs. \emph{Within 1\%}: at"
+            r" most 1\% of the bytes of the two files. A fixture with a \emph{Minimal} and a"
+            r" \emph{Maximal} painting is scored against each, from the same output.}"
+        ),
+        f"  \\label{{tab:painting-bytes{suffix}}}",
+        r"  \small",
+        r"  \setlength{\tabcolsep}{4pt}",
+        "  \\begin{tabular}{@{}l" + "rrr" * len(PAINTING_CASES) + "@{}}",
+        r"    \toprule",
+        f"    & {case_heads} {row_end}",
+        f"    {rules}",
+        f"    Tool & {sub_heads} {row_end}",
+        r"    \midrule",
+    ]
+    for tool in tools:
+        if all(cell is None for cell in shares[tool]):
+            continue
+        cells = []
+        for cell in shares[tool]:
+            if cell is None:
+                cells += ["--", "--", "--"]
+            else:
+                n, exact, within = cell
+                cells += [
+                    str(n),
+                    f"{exact:.0f}" + backslash + "%",
+                    f"{within:.0f}" + backslash + "%",
+                ]
+        lines.append(f"    {_table_name(tool)} & {' & '.join(cells)} {row_end}")
+    lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}"]
+    output_path.write_text("\n".join(lines) + "\n")
+    print(f"Table written to {output_path}")
+    return True
+
+
+def painting_macro_lines(accuracy_rows: list[dict]) -> list[str]:
+    """The painting macros, per tool of `PAPER_MACRO_STEMS`: `\\<Tool>PaintingLineFixtures` and
+    `\\<Tool>PaintingLinePerfectPct` (the line table's n and first column), and for each case
+    `\\<Tool>Painting<Case>Fixtures`, `...ExactPct` and `...WithinOnePct` (the byte table's
+    cells). A tool or case with nothing scored defines nothing."""
+    lines = ["% Against the hand painting, on the painted fixtures."]
+    for id_ in ordered(list(PAPER_MACRO_STEMS)):
+        stem = PAPER_MACRO_STEMS[id_]
+        result = painting_line_bucket_counts(accuracy_rows, id_)
+        if result is not None:
+            scored, counts = result
+            lines.append(f"\\newcommand{{\\{stem}PaintingLineFixtures}}{{{scored}}}")
+            lines.append(
+                f"\\newcommand{{\\{stem}PaintingLinePerfectPct}}{{{100.0 * counts[0] / scored:.0f}}}"
+            )
+        for case, title in PAINTING_CASES:
+            shares = painting_case_shares(accuracy_rows, id_, case)
+            if shares is None:
+                continue
+            n, exact, within = shares
+            lines.append(f"\\newcommand{{\\{stem}Painting{title}Fixtures}}{{{n}}}")
+            lines.append(f"\\newcommand{{\\{stem}Painting{title}ExactPct}}{{{exact:.1f}}}")
+            lines.append(f"\\newcommand{{\\{stem}Painting{title}WithinOnePct}}{{{within:.1f}}}")
+    return lines
+
+
 # LaTeX macro stem for each series id, for `write_paper_fragment`. Deliberately a separate mapping
 # from `DISPLAY_NAMES`: those are chart labels and may be reworded freely, while these are baked
 # into `main.tex`'s macro names and into `paper_variables.py`'s expected-macro list, so renaming one
@@ -1247,6 +1522,7 @@ PAPER_MACRO_STEMS = {
     "srcdiff": "SrcDiff",
 }
 PAPER_SPEED_STEMS = PAPER_MACRO_STEMS | {
+    "omnidiff_inprocess": "OmniDiffInProcess",
     "gumtree": "GumTreeCold",
     "gumtree_warm": "GumTreeWarm",
     "bdiff": "BDiffCold",
@@ -1295,66 +1571,67 @@ def common_subset(rows: list[dict], tools: list[str]) -> list[dict]:
     return [r for r in rows if all(r.get(f"{t}_status") in ("ok", "line_only") for t in tools)]
 
 
-def speed_percentiles(rows: list[dict], id_: str) -> tuple[float, float, float] | None:
-    """`(p50, p90, p99)` in milliseconds over *every individual repeat* of `id_`, pooled across
-    fixtures - the same population `plot_runtime` draws, so the table and the figure cannot
-    disagree. Pooling is sound here because `benchmark_other` runs a uniform `--repeats` for every
-    fixture and tool, so no fixture is over-weighted; that would stop being true if repeats ever
-    became adaptive (as they are in `benchmark_diff_pairs`, which skips repeats for already-slow
-    pairs). Returns None for a series with no measurements.
+def omnidiff_timed_as_process(rows: list[dict]) -> bool:
+    """Whether this timing CSV times OmniDiff as a whole process, as every external tool is.
 
-    For `omnidiff` the parse is added back in. `benchmark_other` calls `ensure_parsed()` on every
-    fixture *before* timing starts, so `omnidiff_ms` covers `diff_code` alone - no parse, no
-    process spawn, no IO - while every external tool's timed region is its whole subprocess:
-    temp-file write, spawn, that tool's own parse and diff, and parsing its output back. Reporting
-    the two side by side compared different things and flattered omnidiff by its entire parse cost
-    (p50 7.09 ms against diffsitter's 8.62, which became 10.07 once the parse it had
-    already measured was included - reversing the ordering the paper stated).
-
-    `treesitter_parse_ms` is measured per repeat by the same harness, so this needs no re-run: it
-    is a reporting fix, not new data. The remaining asymmetry runs the *other* way and is stated in
-    the paper rather than silently carried - omnidiff still pays no process-startup cost, which
-    every external tool pays in full."""
-    values = [v for r in rows_for(id_, rows) for v in ms_values(r, f"{id_}_ms")]
-    if id_ == "omnidiff":
-        # Paired per repeat, not pooled separately, so a fixture's parse is added to that same
-        # fixture's diff rather than to some other fixture's.
-        values = []
-        for r in rows_for(id_, rows):
-            diff_ms = ms_values(r, "omnidiff_ms")
-            parse_ms = ms_values(r, "treesitter_parse_ms")
-            if not diff_ms:
-                continue
-            if len(parse_ms) == len(diff_ms):
-                values.extend(d + p for d, p in zip(diff_ms, parse_ms, strict=True))
-            else:
-                # A row missing its parse column contributes the diff alone: understating one row
-                # is better than dropping it and quietly shrinking the population.
-                values.extend(diff_ms)
-    if not values:
-        return None
-    array = np.array(values, dtype=float)
-    return tuple(float(np.percentile(array, p)) for p in (50, 90, 99))
+    Since 2026-11-24 `benchmark_other` spawns the release `omnidiff` binary per repeat
+    (`omnidiff --headless --maximal --color never BEFORE AFTER`), and `omnidiff_ms` is that whole
+    process - start, both parses, the diff, the rendering - while the old in-process time moved to
+    `omnidiff_inprocess_ms`. That column's presence is what tells the two formats apart, so a CSV
+    measured before the change still reads as it did."""
+    return bool(rows) and "omnidiff_inprocess_ms" in rows[0]
 
 
-def speed_sample(rows: list[dict], id_: str) -> list[float]:
-    """Every individual wall-clock measurement for `id_`, in milliseconds, on the same population
-    and with the same omnidiff parse handling as `speed_percentiles` - which is the point: the max
-    the paper quotes has to come from the sample its percentiles come from, or the two describe
-    different runs."""
-    if id_ != "omnidiff":
-        return [v for r in rows_for(id_, rows) for v in ms_values(r, f"{id_}_ms")]
+def _with_parse_added(rows: list[dict], column: str) -> list[float]:
+    """Every repeat of an in-process OmniDiff column with that fixture's `treesitter_parse_ms`
+    added, paired per repeat so a fixture's parse is added to that same fixture's diff."""
     values: list[float] = []
-    for r in rows_for(id_, rows):
-        diff_ms = ms_values(r, "omnidiff_ms")
+    for r in rows:
+        diff_ms = ms_values(r, column)
         parse_ms = ms_values(r, "treesitter_parse_ms")
         if not diff_ms:
             continue
         if len(parse_ms) == len(diff_ms):
             values.extend(d + p for d, p in zip(diff_ms, parse_ms, strict=True))
         else:
+            # A row missing its parse column contributes the diff alone: understating one row
+            # is better than dropping it and quietly shrinking the population.
             values.extend(diff_ms)
     return values
+
+
+def speed_sample(rows: list[dict], id_: str) -> list[float]:
+    """Every individual wall-clock measurement for `id_`, in milliseconds, pooled across fixtures -
+    the population `speed_percentiles` and the paper's max both come from, so they cannot describe
+    different runs.
+
+    `omnidiff` is its whole process in a CSV that times it so (`omnidiff_timed_as_process`), read
+    as-is like every external tool. The in-process series - `omnidiff_inprocess`, or `omnidiff` in
+    an older CSV - covers `diff_code` alone, because `benchmark_other` parses every fixture before
+    timing starts, so its parse is added back in: reporting the bare diff beside whole processes
+    once flattered OmniDiff by its entire parse cost (p50 7.09 ms against diffsitter's 8.62, which
+    became 10.07 with the parse - reversing the ordering the paper stated). It still pays no
+    process start, which is why the whole-process number replaced it."""
+    in_process = id_ == "omnidiff_inprocess" or (
+        id_ == "omnidiff" and not omnidiff_timed_as_process(rows)
+    )
+    if in_process:
+        return _with_parse_added(rows_for(id_, rows), f"{id_}_ms")
+    return [v for r in rows_for(id_, rows) for v in ms_values(r, f"{id_}_ms")]
+
+
+def speed_percentiles(rows: list[dict], id_: str) -> tuple[float, float, float] | None:
+    """`(p50, p90, p99)` in milliseconds over *every individual repeat* of `id_`, pooled across
+    fixtures - the same population `plot_runtime` draws, so the table and the figure cannot
+    disagree. Pooling is sound here because `benchmark_other` runs a uniform `--repeats` for every
+    fixture and tool, so no fixture is over-weighted; that would stop being true if repeats ever
+    became adaptive (as they are in `benchmark_diff_pairs`, which skips repeats for already-slow
+    pairs). Returns None for a series with no measurements. See `speed_sample` for OmniDiff."""
+    values = speed_sample(rows, id_)
+    if not values:
+        return None
+    array = np.array(values, dtype=float)
+    return tuple(float(np.percentile(array, p)) for p in (50, 90, 99))
 
 
 def timing_repeats(rows: list[dict]) -> int | None:
@@ -1508,10 +1785,15 @@ def write_paper_fragment(
                 f"\\newcommand{{\\Common{PAPER_MACRO_STEMS[id_]}LineRate}}{{{100.0 * mismatches / total:.3f}}}"
             )
 
+    if accuracy_rows is not None:
+        lines += painting_macro_lines(accuracy_rows)
+
     lines.append("% Speed: pooled per-repeat wall-clock, milliseconds.")
     speed_ids = ordered(
         ["omnidiff"] + tools + [w for w in ("gumtree_warm", "bdiff_warm") if has_warm(rows, w)]
     )
+    if has_warm(rows, "omnidiff_inprocess"):
+        speed_ids.append("omnidiff_inprocess")
     for id_ in speed_ids:
         percentiles = speed_percentiles(rows, id_)
         if percentiles is None or id_ not in PAPER_SPEED_STEMS:
@@ -1603,6 +1885,18 @@ if __name__ == "__main__":
             plots_dir / "benchmark_other_buckets_combined.tex",
             include_omnidiff=False,
         )
+        # Against the hand painting - see `write_painting_line_table`, `write_painting_byte_table`.
+        for include_omnidiff, suffix in ((False, ""), (True, "_with_omnidiff")):
+            write_painting_line_table(
+                accuracy_rows,
+                plots_dir / f"benchmark_other_painting_lines{suffix}.tex",
+                include_omnidiff=include_omnidiff,
+            )
+            write_painting_byte_table(
+                accuracy_rows,
+                plots_dir / f"benchmark_other_painting_bytes{suffix}.tex",
+                include_omnidiff=include_omnidiff,
+            )
         # Per-dataset readings - see plot_dataset_buckets.
         datasets = fixture_datasets()
         plot_dataset_buckets(

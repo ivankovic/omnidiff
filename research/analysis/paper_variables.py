@@ -129,15 +129,15 @@ STRATIFIED_PER_CELL = 10
 # first. The check at the bottom of this file compares NumFixtures against the corpus on disk
 # precisely because the previous values silently outlived the corpus they described.
 CORPUS = {
-    "NumFixtures": 1699,
-    "NodesMatched": 18_631_192,
-    "NodesTotal": 18_638_860,
+    "NumFixtures": 1705,
+    "NodesMatched": 18_727_278,
+    "NodesTotal": 18_734_940,
     # Distinct languages across the fixture corpus, from `analyze_human_mappings`' own "By
-    # language" census restricted to these fixtures (25 as of 2026-11-10, SQL the newest; `defects4j` is Java only, and the excluded handmade
+    # language" census restricted to these fixtures (26 as of 2026-11-25, Vue the newest; `defects4j` is Java only, and the excluded handmade
     # fixtures cover no language the sampled ones lack).
     # Not the same number as the empirical study's \NumLanguages, which counts languages in the
     # 100-repository measure-file-stats corpus.
-    "NumFixtureLanguages": 25,
+    "NumFixtureLanguages": 26,
 }
 
 # Same corpus, same run, counting only nodes that carry text of their own and therefore reach the
@@ -145,8 +145,8 @@ CORPUS = {
 # alongside the all-node figure because the all-node denominator includes every ancestor of every
 # change up to the root, so it partly measures how deep a grammar's tree is.
 CORPUS_VISIBLE = {
-    "VisibleNodesMatched": 12_590_174,
-    "VisibleNodesTotal": 12_595_261,
+    "VisibleNodesMatched": 12_656_138,
+    "VisibleNodesTotal": 12_661_223,
 }
 
 # Leave-one-out ablation deltas, in mismatches, against an all-enabled baseline. A positive number
@@ -233,6 +233,19 @@ MACHINE = {
     "MachineDiskUsableTb": "43.7",
     "MachineFilesystem": "ext4",
     "MachineOs": "Linux~6.8",
+}
+
+# The machine the fixture timings were taken on: the tool comparison (`benchmark_other.csv`) and
+# OmniDiff's fixture robustness run, refreshed 2026-11-25 when the server was not available for
+# them. `laptop` in data/machines.csv. The run was confined to four performance cores (`AllowedCPUs=0-7`,
+# eight threads) with a quota of four cores' time (`CPUQuota=400%`), so that no tool competed with
+# another for a core and the machine stayed cool; see data/comparison/PROVENANCE.md. The corpus
+# measurements, RQ1.3's APTED budget and the content timings stay on the MACHINE block's hardware.
+TIMING_MACHINE = {
+    "TimingMachineCpu": "Intel Core i7-1370P",
+    "TimingMachineRamGb": "32",
+    "TimingMachineCores": "four",
+    "TimingMachineOs": "Linux~6.18",
 }
 
 
@@ -343,10 +356,11 @@ RQ_ONE_MACROS = [
 
 # Every macro the comparison fragment (benchmark_other_report.py's write_paper_fragment) is
 # expected to define: four accuracy macros for each of the six tools scored at the line level,
-# and three wall-clock percentiles for each of the seven timing series. GumTree appears in both
-# halves under different stems - `GumTree*` for its accuracy row, `SpeedGumTreeCold*`/
-# `SpeedGumTreeWarm*` for its two timing series - which is why this list is written out per half
-# rather than as one product over a single tool list.
+# three wall-clock percentiles for each of the seven timing series and OmniDiff's in-process
+# reference, and the painting macros, which a CSV measured before 2026-11-24 does not have.
+# GumTree appears in both halves under different stems - `GumTree*` for its accuracy row,
+# `SpeedGumTreeCold*`/`SpeedGumTreeWarm*` for its two timing series - which is why this list is
+# written out per half rather than as one product over a single tool list.
 COMPARISON_MACROS = (
     [
         f"{tool}{suffix}"
@@ -370,6 +384,20 @@ COMPARISON_MACROS = (
             "SrcDiff",
         )
         for suffix in ("PFifty", "PNinety", "PNinetyNine")
+    ]
+    + [f"SpeedOmniDiffInProcess{suffix}" for suffix in ("PFifty", "PNinety", "PNinetyNine")]
+    # Against the hand painting (benchmark_other_report.painting_macro_lines), for the same six
+    # tools: the line table's n and Perfect share, and the byte table's cells per graded case.
+    + [
+        f"{tool}PaintingLine{suffix}"
+        for tool in ("OmniDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
+        for suffix in ("Fixtures", "PerfectPct")
+    ]
+    + [
+        f"{tool}Painting{case}{suffix}"
+        for tool in ("OmniDiff", "UnixDiff", "GumTree", "Difftastic", "Diffsitter", "SrcDiff")
+        for case in ("Minimal", "Maximal", "Single")
+        for suffix in ("Fixtures", "ExactPct", "WithinOnePct")
     ]
 )
 
@@ -1164,11 +1192,29 @@ def change_census(research_dir):
         rows = list(csv.DictReader(f))
     changes = sum(int(r["changes"]) for r in rows)
     binary = sum(int(r["binary_changes"]) for r in rows)
+
+    # The code share of RA1.1 is over the changes git reads as text, by the `code::tip` category
+    # of each extension (`Code(...)`), not over every changed file: the edit-shape walk's
+    # `EditsCodeSharePct` divides by all edits, binary ones included, which is not "within text".
+    # `.glif` (UFO glyph sources) is reported separately because nine font repositories commit
+    # hundreds of thousands of them and pull the share down on their own.
+    def text_changes(r):
+        return int(r["changes"]) - int(r["binary_changes"])
+
+    text = sum(text_changes(r) for r in rows)
+    code = sum(text_changes(r) for r in rows if r["category"].startswith("Code"))
+    glif = [r for r in rows if r["key"] == ".glif"]
+    glif_changes = sum(text_changes(r) for r in glif)
     return {
         "ChangeCensusChanges": latex_number(changes),
         "ChangeCensusBinary": latex_number(binary),
         "ChangeCensusBinaryPct": f"{binary / changes * 100:.1f}",
         "ChangeCensusTextPct": f"{(changes - binary) / changes * 100:.1f}",
+        "ChangeCensusCodeOfTextPct": f"{code / text * 100:.1f}",
+        "ChangeCensusGlifChanges": latex_number(glif_changes),
+        "ChangeCensusGlifRepos": sum(int(r["repositories"]) for r in glif),
+        "ChangeCensusGlifOfTextPct": f"{glif_changes / text * 100:.1f}",
+        "ChangeCensusCodeOfTextNoGlifPct": f"{code / (text - glif_changes) * 100:.1f}",
     }
 
 
@@ -1710,6 +1756,7 @@ def build(
         "% --- Measurement machine (AUTHORED - see script's MACHINE block).",
     ]
     out += [command(name, value) for name, value in MACHINE.items()]
+    out += [command(name, value) for name, value in TIMING_MACHINE.items()]
 
     out += [
         "",

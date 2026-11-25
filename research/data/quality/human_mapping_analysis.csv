@@ -91,7 +91,7 @@ c-tmux-tmux-delete-one-include,stratified,C,981,980,18295,18275,6812,6809,true,6
 c-tripwire-tripwire-open-source-add-single-item-to-list,full,C,359,360,12613,12629,1201,1204,true,1194,0,7,0,0,0,2,2388,0,14,0,0,0,3,0,1201,1201,0,0,0,0,0,0,0,0
 cpp-add-const-correctness,handmade,CPP,15,15,274,287,116,122,true,108,0,8,0,0,6,0,216,0,16,0,0,6,0,0,116,115,1,0,0,0,0,0,0,0
 cpp-add-memory-management,handmade,CPP,13,14,246,294,89,107,true,80,0,5,4,0,22,0,160,0,10,4,0,22,0,0,85,82,1,0,2,0,0,0,0,0
-cpp-add-templates,handmade,CPP,14,15,241,252,105,119,true,87,3,12,3,0,17,0,174,6,24,3,0,17,0,0,102,54,48,0,0,0,0,0,0,0
+cpp-add-templates,handmade,CPP,14,15,241,252,105,119,true,87,3,15,0,0,14,0,174,6,30,0,0,14,0,0,105,54,51,0,0,0,0,0,0,3
 cpp-arximboldi-lager-add-two-test-cases,full,CPP,251,292,5931,7076,2322,2796,true,2321,0,1,0,0,0,6,4642,0,2,0,0,0,474,0,2322,2322,0,0,0,0,0,0,0,0
 cpp-bolero-murakami-sprout-copyright-comment-update,full,CPP,91,91,3901,3901,809,809,true,807,1,1,0,0,0,0,1614,2,2,0,0,0,0,0,809,809,0,0,0,0,0,0,0,0
 cpp-bolero-murakami-sprout-copyright-update,full,CPP,60,60,2113,2113,489,489,true,487,1,1,0,0,0,0,974,2,2,0,0,0,0,0,489,489,0,0,0,0,0,0,0,0
@@ -319,7 +319,7 @@ go-cockroachdb-cockroach-add-only,stratified,Go,74,82,1849,2255,416,459,true,412
 go-cockroachdb-cockroach-add-only-2,stratified,Go,68,145,2163,5217,470,1305,true,467,0,3,0,0,0,23,934,0,6,0,0,0,835,0,470,470,0,0,0,0,0,0,0,0
 go-cockroachdb-cockroach-add-test-case,stratified,Go,566,693,16490,20100,5621,6761,true,5618,0,3,0,0,0,5,11236,0,6,0,0,0,1140,0,5621,5621,0,0,0,0,0,0,0,0
 go-containers-storage-add-two-constants,full,Go,866,868,36093,36177,7462,7472,true,7460,0,2,0,0,0,2,14920,0,4,0,0,0,10,0,7462,7462,0,0,0,0,0,0,0,0
-go-cri-o-cri-o-change-importa,full,Go,118,118,2227,2218,560,560,true,552,0,3,0,1,0,1,1104,0,6,0,5,0,5,0,555,555,0,0,0,0,0,0,0,10
+go-cri-o-cri-o-change-importa,full,Go,118,118,2227,2218,560,560,true,554,1,5,0,0,0,0,1108,2,10,0,0,0,0,0,560,560,0,0,0,1,0,0,0,0
 go-darylhjd-mangadesk-remove-a-function-uptade-comments,full,Go,614,609,16482,16358,2430,2400,true,2397,2,1,0,1,0,0,4794,4,2,0,30,0,0,0,2400,2400,0,0,0,0,0,0,0,0
 go-dweymouth-supersonic-remove-two-lines,full,Go,169,167,4654,4579,1546,1528,true,1520,0,8,0,2,0,0,3040,0,16,0,18,0,0,0,1528,1528,0,0,0,0,0,0,0,0
 go-fatedier-frp-build-comment-insert-only,stratified,Go,21,21,529,534,161,161,true,159,1,1,0,0,0,0,318,2,2,0,0,0,0,0,161,161,0,0,0,0,0,0,0,0
@@ -1316,7 +1316,7 @@ java-defects4j-math-55-vector3d,defects4j,Java,545,562,18358,19206,3061,3367,fal
 java-defects4j-math-56-multidimensionalcounter,defects4j,Java,303,297,8886,8773,1268,1235,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 java-defects4j-math-57-kmeansplusplusclusterer,defects4j,Java,333,333,12566,12569,2050,2050,true,2040,0,10,0,0,0,0,4080,0,20,0,0,0,0,0,2050,2050,0,0,0,0,0,0,0,0
 java-defects4j-math-58-gaussianfitter,defects4j,Java,336,336,13601,13574,2049,2039,true,2031,0,8,1,1,0,0,4062,0,16,1,9,0,0,0,2039,2039,0,0,0,0,0,0,0,0
-java-defects4j-math-59-fastmath,defects4j,Java,3494,3494,103525,103525,24181,24181,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+java-defects4j-math-59-fastmath,defects4j,Java,3494,3494,103525,103525,24181,24181,true,0,0,0,0,0,0,0,48362,0,0,0,0,0,0,48362,0,0,0,0,0,0,0,0,0,0
 java-defects4j-math-6-baseoptimizer,defects4j,Java,231,231,7566,7582,610,613,true,600,0,9,1,0,4,0,1200,0,18,1,0,4,0,0,609,609,0,0,0,0,0,0,0,0
 java-defects4j-math-6-cmaesoptimizer,defects4j,Java,1317,1318,50763,50802,9925,9932,true,9917,0,8,0,0,0,1,19834,0,16,0,0,0,7,0,9925,9925,0,0,0,0,0,0,0,0
 java-defects4j-math-6-gaussnewtonoptimizer,defects4j,Java,181,180,7207,7215,1241,1239,false,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1840,7 +1840,7 @@ ruby-homebrew-add-or-expression,small,Ruby,299,300,10991,11110,3070,3076,true,30
 ruby-homebrew-brew-actual-logic-change,small,Ruby,623,633,25328,25781,4728,4848,true,4686,0,26,9,1,17,9,9381,0,52,9,4,17,113,9,4712,4698,14,0,0,0,2,0,0,21
 ruby-homebrew-brew-add-extends,stratified,Ruby,168,169,6580,6609,1194,1198,true,1185,0,9,0,0,4,0,2370,0,18,0,0,4,0,0,1194,1194,0,0,0,0,0,0,0,0
 ruby-homebrew-brew-change-heredoc-to-string,small,Ruby,297,295,9978,9956,2101,2106,true,2084,0,13,4,0,9,0,4168,0,26,4,0,9,0,0,2097,2069,0,28,0,0,0,0,0,4
-ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,small,Ruby,384,434,14602,16831,2777,3452,true,2670,8,58,21,5,18,17,5340,16,116,21,20,18,698,0,2736,2728,1,0,7,0,0,0,0,24
+ruby-homebrew-brew-decent-amount-of-new-code-and-some-changes,small,Ruby,384,434,14602,16831,2777,3452,true,2668,8,58,23,5,20,17,5336,16,116,23,20,20,698,0,2734,2726,1,0,7,0,0,0,0,28
 ruby-homebrew-brew-enclose-block-in-rescue,small,Ruby,225,229,9402,9494,1427,1440,true,1416,0,11,0,0,3,1,2832,0,22,0,0,3,10,0,1427,1357,70,0,0,0,0,0,0,0
 ruby-homebrew-brew-function-callsite-argument-change,small,Ruby,695,690,24802,24627,5148,5125,true,5090,1,25,3,3,0,1,10180,2,50,3,29,0,9,0,5116,5116,0,0,0,0,0,0,0,0
 ruby-homebrew-brew-real-small-change,small,Ruby,231,222,7510,7282,1580,1551,true,1496,2,49,17,2,4,0,2992,4,98,17,16,4,0,0,1547,1532,15,0,0,0,0,0,0,0
@@ -2237,6 +2237,11 @@ vimscript-neovim-neovim-test-debian-package-parsing-awful-string-matching,small,
 vimscript-preservim-tagbar-add-if-statements,full,Vimscript,4120,4129,134971,135154,24439,24490,true,24432,0,7,0,0,0,3,48864,0,14,0,0,0,51,0,24439,24439,0,0,0,0,0,0,0,0
 vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme,full,Vimscript,207,254,9314,10412,1993,2194,true,1992,0,1,0,0,6,6,3984,0,2,0,0,6,195,0,1993,1974,0,0,19,0,0,0,0,0
 vimscript-protesilaos-tempus-themes-vim-change-two-values,full,Vimscript,198,198,8897,8897,1897,1897,true,1893,2,2,0,0,0,0,3786,4,4,0,0,0,0,0,1897,1897,0,0,0,0,0,0,0,0
+vue-louislam-uptime-kuma,small,Vue,1736,1736,93029,93015,11305,11305,true,0,0,0,0,0,0,0,22610,0,0,0,0,0,0,22610,0,0,0,0,0,0,0,0,0,0
+vue-louislam-uptime-kuma-remove-prefix-from-string,small,Vue,1700,1700,90488,90470,10887,10887,true,0,0,0,0,0,0,0,21774,0,0,0,0,0,0,21774,0,0,0,0,0,0,0,0,0,0
+vue-n8n-io-n8n-update-name,small,Vue,336,336,10826,10824,848,848,true,0,0,0,0,0,0,0,1696,0,0,0,0,0,0,1696,0,0,0,0,0,0,0,0,0,0
+vue-nextcloud-server-update,small,Vue,91,91,1462,1465,202,202,true,0,0,0,0,0,0,0,404,0,0,0,0,0,0,404,0,0,0,0,0,0,0,0,0,0
+vue-nextcloud-server-update-2,small,Vue,266,266,7831,7837,617,617,true,0,0,0,0,0,0,0,1234,0,0,0,0,0,0,1234,0,0,0,0,0,0,0,0,0,0
 xml-adoptopenjdk-icedtea-web-update-version-string,full,XML,229,229,9798,9799,1741,1741,true,1733,1,7,0,0,0,0,3466,2,14,0,0,0,0,0,1741,1741,0,0,0,0,0,0,0,0
 xml-antlr-antlr3-comment-out-part-of-code-interesting-case,full,XML,49,50,1300,1320,299,253,true,244,1,7,0,1,1,0,488,2,14,0,47,1,0,0,252,252,0,0,0,0,0,0,0,0
 xml-eclipse-ee4j-jaxb-istack-commons-update-version-string,full,XML,49,49,1612,1603,298,298,true,290,1,7,0,0,0,0,580,2,14,0,0,0,0,0,298,298,0,0,0,0,0,0,0,0

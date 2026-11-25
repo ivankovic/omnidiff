@@ -2,7 +2,7 @@
 %%% Do NOT edit. File created by BibTeX with style
 %%% ACM-Reference-Format-Journals [18-Jan-2012].
 
-\begin{thebibliography}{68}
+\begin{thebibliography}{67}
 
 %%% ====================================================================
 %%% NOTE TO THE USER: you can override these defaults by providing
@@ -154,21 +154,6 @@
 \newblock
 \urldef\tempurl%
 \url{https://doi.org/10.1007/s10664-018-9676-8}
-\showDOI{\tempurl}
-
-
-\bibitem[Bille(2005)]%
-        {bille-2005}
-\bibfield{author}{\bibinfo{person}{Philip Bille}.}
-  \bibinfo{year}{2005}\natexlab{}.
-\newblock \showarticletitle{A Survey on Tree Edit Distance and Related
-  Problems}.
-\newblock \bibinfo{journal}{\emph{Theoretical Computer Science}}
-  \bibinfo{volume}{337}, \bibinfo{number}{1--3} (\bibinfo{year}{2005}),
-  \bibinfo{pages}{217--239}.
-\newblock
-\urldef\tempurl%
-\url{https://doi.org/10.1016/j.tcs.2004.12.030}
 \showDOI{\tempurl}
 
 

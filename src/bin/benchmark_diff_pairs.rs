@@ -19,12 +19,12 @@ use clap::Parser;
 use gix::Repository;
 use serde::Deserialize;
 use std::alloc::{GlobalAlloc, Layout, System};
-use std::cell::Cell;
 use std::collections::HashMap;
 use std::io::Write;
 use std::panic::{self, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
@@ -33,47 +33,58 @@ use omnidiff::code::language::language_for_path;
 use omnidiff::diff::diff_code;
 use omnidiff::stats::count_nodes;
 
-/// Counts heap allocation per thread, not per process, so a timed-out thread left running cannot
-/// pollute the next pair's numbers.
+/// Counts heap allocation for the whole process, in a window opened per pair.
+///
+/// It used to count per thread, so that a timed-out thread left running could not pollute the next
+/// pair's numbers. That stopped measuring anything once `diff_code` began running its pipeline on a
+/// thread of its own (commit 7b752937): the measuring thread then saw only its own few hundred
+/// bytes, and the 2026-11-25 fixture run reported 430 bytes for every fixture. Pairs are measured
+/// one at a time, so a process-wide window is exact as long as no earlier pair is still running.
+/// A pair that times out leaves its thread running, and the pairs measured after it may count that
+/// thread's allocations too; the run reports how many timed out, so read the memory figures of a
+/// run with timeouts as upper bounds.
 struct CountingAllocator;
 
-thread_local! {
-    static CURRENT_BYTES: Cell<usize> = const { Cell::new(0) };
-    static PEAK_BYTES: Cell<usize> = const { Cell::new(0) };
-    static TOTAL_BYTES: Cell<usize> = const { Cell::new(0) };
-}
+static CURRENT_BYTES: AtomicUsize = AtomicUsize::new(0);
+static PEAK_BYTES: AtomicUsize = AtomicUsize::new(0);
+static TOTAL_BYTES: AtomicUsize = AtomicUsize::new(0);
 
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr = unsafe { System.alloc(layout) };
         if !ptr.is_null() {
             let size = layout.size();
-            TOTAL_BYTES.with(|c| c.set(c.get() + size));
-            let current = CURRENT_BYTES.with(|c| {
-                let v = c.get() + size;
-                c.set(v);
-                v
-            });
-            PEAK_BYTES.with(|c| c.set(c.get().max(current)));
+            TOTAL_BYTES.fetch_add(size, Ordering::Relaxed);
+            let current = CURRENT_BYTES.fetch_add(size, Ordering::Relaxed) + size;
+            PEAK_BYTES.fetch_max(current, Ordering::Relaxed);
         }
         ptr
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         unsafe { System.dealloc(ptr, layout) };
-        CURRENT_BYTES.with(|c| c.set(c.get().saturating_sub(layout.size())));
+        CURRENT_BYTES.fetch_sub(layout.size(), Ordering::Relaxed);
     }
 }
 
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
-/// Returns this thread's (peak, total) allocated bytes and resets the counters.
-fn take_thread_allocation_stats() -> (usize, usize) {
-    let peak = PEAK_BYTES.with(|c| c.replace(0));
-    let total = TOTAL_BYTES.with(|c| c.replace(0));
-    CURRENT_BYTES.with(|c| c.set(0));
-    (peak, total)
+/// Opens an allocation window: the peak restarts from what is live now, and the total from zero.
+/// Returns the live bytes at the start, which [`close_allocation_window`] subtracts.
+fn open_allocation_window() -> usize {
+    let live = CURRENT_BYTES.load(Ordering::Relaxed);
+    PEAK_BYTES.store(live, Ordering::Relaxed);
+    TOTAL_BYTES.store(0, Ordering::Relaxed);
+    live
+}
+
+/// The window's (peak above its starting point, total allocated) bytes.
+fn close_allocation_window(live_at_open: usize) -> (usize, usize) {
+    let peak = PEAK_BYTES
+        .load(Ordering::Relaxed)
+        .saturating_sub(live_at_open);
+    (peak, TOTAL_BYTES.load(Ordering::Relaxed))
 }
 
 #[derive(Parser)]
@@ -289,11 +300,12 @@ fn measure_codes(mut row: Row, before_code: Code, after_code: Code, budget: Budg
         return row;
     }
 
-    // The first call runs on its own thread so a hang can be abandoned after `timeout`; its
-    // fresh allocator counters make it the memory measurement as well as the first sample.
+    // The first call runs on its own thread so a hang can be abandoned after `timeout`, inside an
+    // allocation window that makes it the memory measurement as well as the first sample.
     let before_arc = Arc::new(before_code);
     let after_arc = Arc::new(after_code);
     let (tx, rx) = mpsc::channel();
+    let live_at_open = open_allocation_window();
     {
         let before_arc = Arc::clone(&before_arc);
         let after_arc = Arc::clone(&after_arc);
@@ -306,7 +318,8 @@ fn measure_codes(mut row: Row, before_code: Code, after_code: Code, budget: Budg
                 let result =
                     panic::catch_unwind(AssertUnwindSafe(|| diff_code(&before_arc, &after_arc)));
                 let elapsed_ms = start.elapsed().as_secs_f64() * 1000.0;
-                let (peak_memory_bytes, total_allocated_bytes) = take_thread_allocation_stats();
+                let (peak_memory_bytes, total_allocated_bytes) =
+                    close_allocation_window(live_at_open);
                 let _ = tx.send((result, elapsed_ms, peak_memory_bytes, total_allocated_bytes));
             })
             .expect("spawning the diff thread");

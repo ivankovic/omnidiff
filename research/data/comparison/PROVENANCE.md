@@ -181,6 +181,33 @@ that marks a whole changed line from one that marks the three characters that ch
 these two tools that difference is the only thing they add over `git diff`. Any claim about
 sub-line quality has to come from the node columns, not the line ones.
 
+**Against the hand painting (columns added 2026-11-24, not yet measured).** The line and node
+columns score against the human *mapping*; these score against the hand *paintings*, on the
+fixtures that have one. Per fixture, `total_bytes` (both files) and `painting_cases`, the graded
+cases its paintings make (`human_mapping::graded_cases`: `minimal;maximal`, `single`, or a lone
+`minimal` / `maximal`; empty when unpainted). Per tool and case (`minimal`, `maximal`, `single`):
+
+- `<tool>_painting_<case>_mismatches`: bytes where the tool's changed bytes disagree with the
+  painting's painted bytes (any label counts as painted; labels are not compared). A line-only
+  tool's changed bytes are every byte of each line it touches, a tool with sub-line output its
+  reported ranges (the node columns' spans), both without line breaks, which no painting labels.
+  OmniDiff's are what it renders under the preset of the case (`--minimal` for `minimal`,
+  `--maximal` for `maximal`, both for `single`, a byte wrong when either is). Exact = 0; Within
+  1% = at most 1% of `total_bytes`, the definitions of OmniDiff's own painting table.
+- `<tool>_painting_line_<case>_mismatches`: the tool's line labels, exactly those
+  `_line_mismatches` scores, against the lines the painting touches (any painted byte on the
+  line); denominator `total_lines`. **The score is the minimum over the cases present**: with a
+  Minimal and a Maximal painting, a tool matches when it agrees with either. Both raw columns stay
+  so that another rule can be computed.
+
+Where a preset has several paintings, the one closest to the tool is the verdict, as for OmniDiff.
+Every painting cell is blank on an unpainted fixture, for an unsupported tool, and where scoring
+failed (reported on stderr), so a blank is never a perfect score. Nothing lists the painted
+fixtures: `cd research && make measure-tools-painting` rescans them, rewrites this CSV and
+regenerates `plots/benchmark_other_painting_{lines,bytes}{,_with_omnidiff}.tex` and the
+`\<Tool>PaintingLine*` and `\<Tool>Painting{Minimal,Maximal,Single}*` macros. These are not
+OmniDiff's figures in `../quality/painting_attribution.csv`, which compare labels.
+
 **`_status` distinguishes an unscored cell from a zero.** `ok` = scored; `unsupported` = the tool
 has no parser/generator for that language, so the fixture is out of its coverage (an empty cell,
 never a 0, which would read as a perfect score); `error` = the tool was expected to handle the
@@ -188,6 +215,52 @@ language and failed; `line_only` = the node columns of a tool with no sub-line o
 diff and the four git algorithms - *not* BDiff or `nvim -d`, see above).
 
 **Tool versions are not recorded per row - record them here on every refresh.**
+
+**OmniDiff is timed as a whole process from the next refresh on (code changed 2026-11-24).**
+`benchmark_other.csv`'s `omnidiff_ms` is then one run of the release binary per repeat,
+`omnidiff --headless --maximal --color never BEFORE AFTER` on files named as the fixture's, output
+read from a pipe, timed from writing the files to reading the output back, as every external tool
+is. The run builds that binary itself (`cargo build --release --bin omnidiff`, a no-op when it is
+current), so it is the tree's own. The old in-process time, `diff_code` on pre-parsed code, is
+`omnidiff_inprocess_ms`; `benchmark_other_report.py` tells the two formats apart by that column,
+and in a CSV without it still reads `omnidiff_ms` as in-process with the parse added. The
+2026-09-26 file below predates this.
+
+Refreshed **2026-11-25**, both CSVs, over 1767 fixtures with a human mapping (1705 of them in the
+paper's scope), **on the laptop** (`laptop` in `../machines.csv`, Intel Core i7-1370P, 32 GB, Gentoo,
+Linux 6.18), not the server: the server was not available for it. The first refresh at one corpus
+state since 2026-09-26, and the first with the painting columns and OmniDiff timed as a whole
+process. The binaries, each verified by running it:
+
+| tool | version | path |
+| --- | --- | --- |
+| GumTree | 4.0.0-beta8 (tag `v4.0.0-beta8`, 07152426), JDK 17.0.21.1 Temurin | `/var/tmp/gumtree-installed/gumtree-4.0.0-beta8/bin/gumtree`, `JAVA_HOME=/var/tmp/jdk17/jdk-17.0.21.1+2` |
+| difftastic | 0.69.0 | `/var/tmp/omnidiff-tools/bin/difft` |
+| diffsitter | 0.9.0 | `/var/tmp/omnidiff-tools/bin/diffsitter` |
+| Neovim | 0.11.4 (release tarball; the system's is 0.12.6) | `/var/tmp/nvim-0.11.4/nvim-linux-x86_64/bin/nvim` |
+| BDiff | 0.1.0 (53aa914b) on Python 3.12.15 | `/var/tmp/bdiff-install/venv/bin/python` |
+| srcDiff | `ef42b33` on srcML `c9f0014` | `/var/tmp/srcdiff-install/srcDiff/build/bin/srcdiff` |
+
+Two installs did not go as the Makefile has them on this machine. `make install-bdiff` fails on
+Python 3.14, which numpy 1.26.4 and scipy 1.15.2 have no wheels for; the venv was made from a
+uv-installed Python 3.12, after which the target ran unchanged. `make install-srcdiff` uses `apt`,
+which Gentoo does not have; the same commits and cmake options were built by hand, with srcML's
+antlr 2.7.7 tarball unpacked by `tar` and passed as `FETCHCONTENT_SOURCE_DIR_ANTLRSRC`, because
+Gentoo's cmake would not unpack it. srcDiff segfaulted on a handful of fixtures, scored `error` as
+above.
+
+**How it was run, and why.** The first attempts did not finish. `benchmark_other` then loaded and
+parsed every fixture before scoring any (it now parses one at a time, see its `parsed_pair`), which
+was killed at a 16 GB cap; the timing run then hit the per-process limit on open files in the warm
+GumTree batch, and, raised past that, the laptop reset 54 minutes into it, with memory, pressure and
+temperature normal at that moment but the package at 95-100 C for long stretches before. Both CSVs
+are now produced by `measure/benchmark_other_chunked.py`, one `benchmark_other` process per 25
+fixtures, each chunk's CSV kept and the whole merged at the end, so that a crash costs a chunk and a
+re-run resumes. The accuracy CSV of this refresh is from the last single-process run, before the
+driver existed; the timing CSV is from the driver. The timing ran as a systemd user unit confined to
+four performance cores (`AllowedCPUs=0-7`) with `CPUQuota=400%`, `MemoryMax=12G`, `Nice=5`, and a 5 s
+pause between chunks: load stayed under 7 and no tool competed with another for a core. Per-fixture
+times are therefore not comparable with the server's 2026-09-26 file, only with each other.
 
 Refreshed **2026-09-26**, both CSVs, over 1278 fixtures (1217 of them in the paper's scope), to add
 srcDiff - 162 fixtures more than 2026-09-16, almost all of them newly solved Defects4J units (274
