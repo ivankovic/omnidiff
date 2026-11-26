@@ -404,11 +404,7 @@ fn run_binary(
             Some(content) => content_notice(&args.paths, before, after, content),
             None => binary_notice(&args.paths, before, after, differed),
         };
-        let notice = match record_file {
-            Some(file) => osc1717::tag_lines(&notice, &osc1717::file_record(file)),
-            None => notice,
-        };
-        tui::headless::write_stdout(&notice)?;
+        tui::headless::write_stdout(&tagged(notice, record_file))?;
     }
     Ok(exit_code_for(
         differed,
@@ -417,8 +413,30 @@ fn run_binary(
     ))
 }
 
+/// A notice's lines, each tagged `f` when OSC 1717 records name `record_file`.
+fn tagged(notice: String, record_file: Option<&str>) -> String {
+    match record_file {
+        Some(file) => osc1717::tag_lines(&notice, &osc1717::file_record(file)),
+        None => notice,
+    }
+}
+
+/// What a text pair is as content too - an SVG pair, drawn - or `None`. The text is UTF-8 wherever
+/// this can be content (an SVG must be, and no other format sniffs as text), so its bytes are the
+/// file's.
+fn content_of_text(pair: &Pair) -> Option<omnidiff::diff::content::ContentDiff> {
+    let PairContents::Text { before, after } = &pair.contents else {
+        return None;
+    };
+    let (before, after) = (before.as_bytes(), after.as_bytes());
+    omnidiff::diff::content::pair_kind(before, after)?;
+    omnidiff::diff::content::diff(before, after).ok().flatten()
+}
+
 /// A headless or JSON run on one pair: each side read once ([`Pair`]), then reported as binary or
-/// diffed as text, with OSC 1717 records naming `record_file` if given.
+/// diffed as text, with OSC 1717 records naming `record_file` if given. A text pair that is
+/// content too (an SVG) is both: its content's notice above the text diff, or `content` in the
+/// JSON beside the hunks - what it draws, and what it is made of.
 fn run_non_interactive(
     args: &Args,
     before: &Path,
@@ -439,9 +457,14 @@ fn run_non_interactive(
             record_file,
         );
     }
+    let content = content_of_text(&pair);
     let differed = if should_run_json(args) {
-        tui::json_output::run(pair, render_options(args))?
+        tui::json_output::run(pair, render_options(args), content.as_ref())?
     } else {
+        if let Some(content) = &content {
+            let notice = content_notice(&args.paths, before, after, content);
+            tui::headless::write_stdout(&tagged(notice, record_file))?;
+        }
         tui::headless::run(
             pair,
             use_color(args.color),
@@ -1262,6 +1285,34 @@ mod tests {
     fn a_binary_pair_under_the_git_external_diff_form_still_exits_zero() {
         assert_eq!(exit_code_for(true, false, true), 0);
         assert_eq!(exit_code_for(true, true, true), 0);
+    }
+
+    #[test]
+    fn an_svg_text_pair_is_drawn_and_diffed_as_text_too() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let svg = |name: &str, fill: &str| -> Result<PathBuf> {
+            let path = dir.path().join(name);
+            std::fs::write(
+                &path,
+                format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="{fill}"/></svg>"#
+                ),
+            )?;
+            Ok(path)
+        };
+        let (before, after) = (svg("a.svg", "red")?, svg("b.svg", "blue")?);
+        let pair = Pair::read(&before, &after)?;
+        assert!(!pair.is_binary(), "its markup still diffs");
+        let content = content_of_text(&pair).expect("and it is a picture pair");
+        assert!(content.as_picture().is_some());
+
+        let added = Pair::read(Path::new("/dev/null"), &after)?;
+        assert!(content_of_text(&added).is_some(), "an added SVG");
+
+        let text = dir.path().join("c.txt");
+        std::fs::write(&text, "plain\n")?;
+        assert!(content_of_text(&Pair::read(&text, &text)?).is_none());
+        Ok(())
     }
 
     #[test]

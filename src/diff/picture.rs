@@ -54,10 +54,9 @@
 //! Pictures of different sizes are not compared pixel by pixel - nothing says which pixel became
 //! which. When they keep their aspect ratio they are compared at the smaller one's size, the
 //! larger scaled down to it by averaging, and tagged resized; otherwise they are tagged canvas (a
-//! crop or a
-//! padding, not found) and called edited, as nothing was compared. An SVG joins them drawn
-//! (`content::svg`): what the file paints is what two of them compare, each at its own size, and
-//! one `usvg` will not open stays text.
+//! crop or a padding, not found) and called edited, as nothing was compared. An SVG joins them
+//! drawn (`content::svg`): what the file paints is what two of them compare, a small pair drawn
+//! larger, and one `usvg` will not open or draw in full stays text.
 
 use std::borrow::Cow;
 use std::hash::Hasher;
@@ -529,11 +528,16 @@ fn pack(pixels: &RgbaImage, delay_ms: u32) -> Result<PackedFrame> {
 /// Decodes `bytes` as a picture: its description and its frames as 8-bit RGBA - one for a still
 /// picture, all of them for an animated GIF, PNG or WebP.
 pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
+    decode_at(bytes, 1.0)
+}
+
+/// [`decode`], an SVG drawn `svg_scale` times its own size (see `content::svg::pair_scale`).
+fn decode_at(bytes: &[u8], svg_scale: f32) -> Result<(PictureInfo, Frames)> {
     // An SVG is drawn, not parsed as markup (see `content::svg`): what the file draws is what
-    // two of them compare, at each side's own size. `sniff` has already opened it, so this
-    // redrawing is for the pixels; the size cap is `svg`'s own, not the canvas check below.
+    // two of them compare. `sniff` has already parsed it, so this is for the pixels; the size
+    // cap is `svg`'s own, not the canvas check below.
     if super::content::svg::is_svg(bytes) {
-        let pixels = super::content::svg::render(bytes)?;
+        let pixels = super::content::svg::render(bytes, svg_scale)?;
         let (width, height) = pixels.dimensions();
         return Ok((
             PictureInfo {
@@ -661,9 +665,13 @@ pub type Decoded = Option<(PictureInfo, Frames)>;
 /// enough to be worth a second thread. A side whose decoder panics is an error.
 pub fn decode_pair(before: &[u8], after: &[u8]) -> Result<(Decoded, Decoded)> {
     use super::content::{contained, joined};
+    // A small pair of SVGs is drawn larger, both sides alike (see `content::svg`).
+    let svg_scale = super::content::svg::pair_scale(before, after);
     let side = |bytes: &[u8]| {
         contained("decoding a picture", || {
-            (!bytes.is_empty()).then(|| decode(bytes)).transpose()
+            (!bytes.is_empty())
+                .then(|| decode_at(bytes, svg_scale))
+                .transpose()
         })
     };
     let (before, after) = std::thread::scope(|scope| {
@@ -1680,10 +1688,11 @@ mod tests {
         else {
             panic!("pixel-wise: {diff:?}");
         };
-        assert_eq!((*changed_pixels, *total_pixels), (48 * 48, 48 * 48));
+        // A 48-pixel pair is drawn up to 256 (`content::svg::MIN_COMPARE_SIZE`).
+        assert_eq!((*changed_pixels, *total_pixels), (256 * 256, 256 * 256));
         assert_eq!(regions.len(), 1);
         let region = regions[0];
-        assert_eq!((region.width, region.height), (48, 48));
+        assert_eq!((region.width, region.height), (256, 256));
     }
 
     #[test]
@@ -1691,6 +1700,20 @@ mod tests {
         // The attribute spacing differs, the drawing does not.
         let diff = diff(&svg(true), &svg(true)).expect("both sides draw");
         assert_eq!(diff.verdict(), v("invisible"));
+    }
+
+    #[test]
+    fn a_small_svg_s_sub_pixel_edit_is_drawn_large_enough_to_see() {
+        // A 16-pixel icon whose bar moves by a fifth of one of its pixels.
+        let icon = |x: &str| {
+            format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect x="{x}" y="2" width="4" height="12"/></svg>"#
+            )
+            .into_bytes()
+        };
+        let diff = diff(&icon("6"), &icon("6.2")).expect("both sides draw");
+        assert_ne!(diff.verdict(), v("invisible"));
+        assert_eq!(diff.after.expect("a side").width, 256);
     }
 
     #[test]

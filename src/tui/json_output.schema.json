@@ -29,7 +29,7 @@
       "const": true
     },
     "content": {
-      "description": "For a binary pair OmniDiff diffs by content (pictures, archives, fonts, cursors, message catalogs, PDFs): what changed in it. Absent otherwise.",
+      "description": "For a pair OmniDiff diffs by content (pictures, archives, fonts, cursors, message catalogs, PDFs): what changed in it. A binary pair has only this; a text pair that is content too (an SVG, drawn) has it beside its text diff's hunks. Absent otherwise.",
       "$ref": "#/$defs/content"
     },
     "picture": {

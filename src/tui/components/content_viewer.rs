@@ -70,13 +70,13 @@ impl ContentViewer {
                 let (decoded_before, decoded_after) = picture::decode_pair(before, after).ok()?;
                 Some(ContentViewer::Picture(PictureViewer::from_decoded(
                     names.0.clone(),
-                    names.1,
+                    names.1.clone(),
                     decoded_before,
                     decoded_after,
                     picker,
                     annotating,
                     // An SVG pair's markup joins the picture view's `t` cycle.
-                    svg_text_view(&names.0, before, after),
+                    svg_text_view((&names.0, &names.1), before, after),
                 )))
             }
             Engine::Container(family) => {

@@ -65,11 +65,11 @@ use super::text_pair_view::TextPairView;
 use crate::diff::content::{self, Engine};
 use crate::diff::picture::{self, Comparison, FrameCounts, FrameStep, Frames, PictureDiff, Region};
 
-/// The text view of a picture pair ([`PictureMode::Text`]), if its markup may diff: an SVG pair's,
-/// every side present an SVG that decodes as UTF-8 (a side that is absent the empty text), and
-/// none past the text view's own size cap. `named` picks the language, as a file name does - the
-/// before side's, for a full pair, a member key's, for one in an archive.
-pub fn svg_text_view(named: &str, before: &[u8], after: &[u8]) -> Option<TextPairView> {
+/// The markup of a picture pair for its text view ([`PictureMode::Text`]), if it may diff: an SVG
+/// pair's, every side present an SVG that decodes as UTF-8 (a side that is absent the empty
+/// text). `names` pick the language, as a file name does - a present side's, since an absent one
+/// is git's `/dev/null`; a member key, for one in an archive.
+pub fn svg_text_view(names: (&str, &str), before: &[u8], after: &[u8]) -> Option<Markup> {
     fn side(bytes: &[u8]) -> Option<&str> {
         match bytes.is_empty() {
             // git's `/dev/null`, for a side a file was added to or deleted from.
@@ -77,8 +77,32 @@ pub fn svg_text_view(named: &str, before: &[u8], after: &[u8]) -> Option<TextPai
             false => content::svg::is_svg(bytes).then(|| std::str::from_utf8(bytes).ok())?,
         }
     }
-    let (before, after) = (side(before)?, side(after)?);
-    Some(TextPairView::new(Path::new(named), before, after))
+    let (before_text, after_text) = (side(before)?, side(after)?);
+    let name = if before.is_empty() { names.1 } else { names.0 };
+    Some(Markup {
+        name: name.to_string(),
+        texts: Some((before_text.to_string(), after_text.to_string())),
+        view: None,
+    })
+}
+
+/// A picture pair's markup ([`svg_text_view`]): kept as text, and diffed the first time the text
+/// view is shown, so a pair only ever looked at as pictures never pays for the diff.
+pub struct Markup {
+    name: String,
+    texts: Option<(String, String)>,
+    view: Option<Box<TextPairView>>,
+}
+
+impl Markup {
+    /// The markup diffed, built on the first call.
+    fn view(&mut self) -> &mut TextPairView {
+        let (name, texts) = (&self.name, &mut self.texts);
+        self.view.get_or_insert_with(|| {
+            let (before, after) = texts.take().unwrap_or_default();
+            Box::new(TextPairView::new(Path::new(name), &before, &after))
+        })
+    }
 }
 
 /// What pictures are shown over: transparency is compared as over white (`diff::picture`), and
@@ -532,7 +556,7 @@ pub struct PictureViewer {
     shown: Option<(Built, Panes)>,
     /// The pair's markup diffed in a pane (see [`PictureMode::Text`]): an SVG pair's, and only an
     /// SVG pair's.
-    text_view: Option<TextPairView>,
+    text_view: Option<Markup>,
     /// For a human recording a verdict (`human_solver`): nothing the engine decided is shown - no
     /// outlined regions, no difference view, no "how much changed" - only the two pictures and
     /// what their files say they are.
@@ -568,7 +592,11 @@ impl PictureViewer {
             after_decoded,
             picker,
             annotating,
-            svg_text_view(&before.display().to_string(), &before_bytes, &after_bytes),
+            svg_text_view(
+                (&before.display().to_string(), &after.display().to_string()),
+                &before_bytes,
+                &after_bytes,
+            ),
         ))
     }
 
@@ -582,9 +610,8 @@ impl PictureViewer {
         after: picture::Decoded,
         picker: Picker,
         annotating: bool,
-        text: Option<TextPairView>,
+        text_view: Option<Markup>,
     ) -> Self {
-        let text_view = text;
         let diff = picture::compare_decoded(before.as_ref(), after.as_ref());
         let (before_frames, after_frames) = (
             before.map(|(_, frames)| frames),
@@ -705,15 +732,19 @@ impl PictureViewer {
 
     /// Handles a picture view key: `t` cycles the view, `h`/`l` or the arrows move the swipe
     /// divider, and for an animation `,`/`.` step a frame back or on and space plays or pauses.
-    /// In the text view ([`PictureMode::Text`]) the keys are its scroll's first (`J`/`K`, the
-    /// pages), and `t` leaves it. False for any other key, which the viewer leaves to the rest of
-    /// the app.
+    /// In the text view ([`PictureMode::Text`]) the keys are its own (`J`/`K`, the pages), and
+    /// `t` leaves it; no picture key acts on the pictures it hides. False for any other key,
+    /// which the viewer leaves to the rest of the app.
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
-        if let Some(view) = self.text_view.as_mut()
-            && self.mode == PictureMode::Text
-            && view.handle_key(code)
+        if self.mode == PictureMode::Text
+            && let Some(markup) = self.text_view.as_mut()
         {
-            return true;
+            if markup.view().handle_key(code) {
+                return true;
+            }
+            if code != KeyCode::Char('t') {
+                return false;
+            }
         }
         let animated = self.timeline.len() > 1;
         match code {
@@ -735,6 +766,12 @@ impl PictureViewer {
                 self.mode = self.next_mode();
                 while self.annotating && self.mode.is_engines() {
                     self.mode = self.next_mode();
+                }
+                // Diffed now, so its status is there before it is first drawn.
+                if self.mode == PictureMode::Text
+                    && let Some(markup) = self.text_view.as_mut()
+                {
+                    markup.view();
                 }
             }
             KeyCode::Char('h') | KeyCode::Left if self.mode == PictureMode::Swipe => {
@@ -770,7 +807,12 @@ impl PictureViewer {
     /// One line for the status bar: what each side is, how much changed, and the view. Without
     /// "how much changed" when annotating.
     pub fn status(&self) -> String {
-        if let (PictureMode::Text, Some(view)) = (&self.mode, &self.text_view) {
+        if let (PictureMode::Text, Some(view)) = (
+            &self.mode,
+            self.text_view
+                .as_ref()
+                .and_then(|markup| markup.view.as_ref()),
+        ) {
             return view.status();
         }
         if self.annotating {
@@ -903,9 +945,9 @@ impl PictureViewer {
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
         self.advance_playback();
         if self.mode == PictureMode::Text
-            && let Some(view) = self.text_view.as_mut()
+            && let Some(markup) = self.text_view.as_mut()
         {
-            view.draw(
+            markup.view().draw(
                 frame,
                 area,
                 &format!("{} -> {}", self.before_name, self.after_name),
@@ -1727,6 +1769,45 @@ mod tests {
         assert!(viewer.handle_key(KeyCode::Char('J')));
         viewer.handle_key(KeyCode::Char('t'));
         assert!(!viewer.handle_key(KeyCode::Char('J')));
+    }
+
+    #[test]
+    fn in_the_markup_view_no_picture_key_acts_on_the_hidden_pictures() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        assert_eq!(after_tats(&mut viewer, 5), PictureMode::Text);
+        for key in ['+', '+', '-', 'h', 'l', ' '] {
+            assert!(!viewer.handle_key(KeyCode::Char(key)), "{key}");
+        }
+        assert_eq!(viewer.zoom.level, 0, "zoom unchanged");
+        assert_eq!(after_tats(&mut viewer, 1), PictureMode::SideBySide);
+    }
+
+    #[test]
+    fn an_added_svg_s_markup_is_named_by_the_side_that_is_there() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (_, b) = svg_pair(&dir);
+        let mut viewer = viewer(Path::new("/dev/null"), &b);
+        assert_eq!(after_tats(&mut viewer, 5), PictureMode::Text);
+        assert!(
+            viewer.status().contains("diffed as XML"),
+            "{}",
+            viewer.status()
+        );
+    }
+
+    #[test]
+    fn the_markup_is_diffed_only_when_its_view_is_first_shown() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        let built = |viewer: &PictureViewer| viewer.text_view.as_ref().unwrap().view.is_some();
+        assert!(!built(&viewer));
+        after_tats(&mut viewer, 4);
+        assert!(!built(&viewer));
+        after_tats(&mut viewer, 1);
+        assert!(built(&viewer));
     }
 
     #[test]
