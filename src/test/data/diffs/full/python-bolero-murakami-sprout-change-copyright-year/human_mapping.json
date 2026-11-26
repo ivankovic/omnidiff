@@ -167,5 +167,55 @@
         "if_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 24,
+              "end_row": 2,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 24,
+              "end_row": 2,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 21,
+              "end_row": 2,
+              "end_column": 25
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 21,
+              "end_row": 2,
+              "end_column": 25
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
