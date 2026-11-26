@@ -587,31 +587,6 @@
       ]
     },
     {
-      "operation": "update",
-      "before_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:4",
-        "block:1",
-        "expression_statement:1",
-        "macro_invocation:1",
-        "token_tree:1",
-        "string_literal:1",
-        "string_content:1"
-      ],
-      "after_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:4",
-        "block:1",
-        "expression_statement:1",
-        "macro_invocation:1",
-        "token_tree:1",
-        "string_literal:1",
-        "string_content:1"
-      ]
-    },
-    {
       "operation": "identical",
       "before_path": [
         "impl_item:2",
@@ -650,19 +625,6 @@
       ]
     },
     {
-      "operation": "delete",
-      "before_path": [
-        "impl_item:2",
-        "declaration_list:1",
-        "function_item:4",
-        "block:1",
-        "expression_statement:1",
-        "macro_invocation:1",
-        "token_tree:1",
-        "identifier:1"
-      ]
-    },
-    {
       "operation": "identical",
       "before_path": [
         "impl_item:2",
@@ -902,6 +864,132 @@
         "impl_item:2",
         "declaration_list:1",
         "}:1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "impl_item:2",
+          "declaration_list:1",
+          "function_item:4",
+          "block:1",
+          "expression_statement:1",
+          "macro_invocation:1",
+          "token_tree:1",
+          "string_literal:1",
+          "string_content:1"
+        ],
+        [
+          "impl_item:2",
+          "declaration_list:1",
+          "function_item:4",
+          "block:1",
+          "expression_statement:1",
+          "macro_invocation:1",
+          "token_tree:1",
+          "identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "impl_item:2",
+          "declaration_list:1",
+          "function_item:4",
+          "block:1",
+          "expression_statement:1",
+          "macro_invocation:1",
+          "token_tree:1",
+          "string_literal:1",
+          "string_content:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 74,
+              "start_column": 27,
+              "end_row": 74,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 74,
+              "start_column": 29,
+              "end_row": 74,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 74,
+              "start_column": 25,
+              "end_row": 74,
+              "end_column": 39
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 74,
+              "start_column": 27,
+              "end_row": 74,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 74,
+              "start_column": 29,
+              "end_row": 74,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 74,
+              "start_column": 25,
+              "end_row": 74,
+              "end_column": 39
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 74,
+              "start_column": 28,
+              "end_row": 74,
+              "end_column": 29
+            }
+          ]
+        }
       ]
     }
   ]

@@ -1884,5 +1884,112 @@
         "highlight_statement:133"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 93,
+              "start_column": 29,
+              "end_row": 93,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 93,
+              "start_column": 29,
+              "end_row": 93,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 93,
+              "start_column": 63,
+              "end_row": 93,
+              "end_column": 67
+            }
+          ],
+          "after": [
+            {
+              "start_row": 93,
+              "start_column": 66,
+              "end_row": 93,
+              "end_column": 67
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 93,
+              "start_column": 29,
+              "end_row": 93,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 93,
+              "start_column": 29,
+              "end_row": 93,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 93,
+              "start_column": 63,
+              "end_row": 93,
+              "end_column": 67
+            }
+          ],
+          "after": [
+            {
+              "start_row": 93,
+              "start_column": 66,
+              "end_row": 93,
+              "end_column": 67
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 93,
+              "start_column": 33,
+              "end_row": 93,
+              "end_column": 63
+            }
+          ],
+          "after": [
+            {
+              "start_row": 93,
+              "start_column": 36,
+              "end_row": 93,
+              "end_column": 66
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

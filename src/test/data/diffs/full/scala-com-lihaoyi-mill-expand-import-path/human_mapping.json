@@ -402,5 +402,23 @@
         "object_definition:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 30,
+              "end_row": 5,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

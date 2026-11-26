@@ -5726,5 +5726,47 @@
         "ERROR:185"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 194,
+              "start_column": 19,
+              "end_row": 194,
+              "end_column": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 194,
+              "start_column": 15,
+              "end_row": 194,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 194,
+              "start_column": 15,
+              "end_row": 194,
+              "end_column": 23
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

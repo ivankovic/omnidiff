@@ -947,5 +947,47 @@
         "if_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 108,
+              "start_column": 67,
+              "end_row": 108,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 108,
+              "start_column": 61,
+              "end_row": 108,
+              "end_column": 67
+            }
+          ],
+          "after": [
+            {
+              "start_row": 108,
+              "start_column": 61,
+              "end_row": 108,
+              "end_column": 68
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

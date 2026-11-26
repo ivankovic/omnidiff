@@ -156,5 +156,23 @@
         "module:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 0,
+              "start_column": 36,
+              "end_row": 0,
+              "end_column": 38
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

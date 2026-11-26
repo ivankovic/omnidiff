@@ -1918,5 +1918,47 @@
         "export_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 208,
+              "start_column": 16,
+              "end_row": 208,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 208,
+              "start_column": 16,
+              "end_row": 208,
+              "end_column": 21
+            }
+          ],
+          "after": [
+            {
+              "start_row": 208,
+              "start_column": 16,
+              "end_row": 208,
+              "end_column": 27
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

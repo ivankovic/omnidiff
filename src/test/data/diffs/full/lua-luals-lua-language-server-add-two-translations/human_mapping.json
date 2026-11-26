@@ -3203,5 +3203,41 @@
         "assignment_statement:356"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 235,
+              "start_column": 0,
+              "end_row": 235,
+              "end_column": 25
+            },
+            {
+              "start_row": 236,
+              "start_column": 0,
+              "end_row": 236,
+              "end_column": 29
+            },
+            {
+              "start_row": 237,
+              "start_column": 0,
+              "end_row": 237,
+              "end_column": 25
+            },
+            {
+              "start_row": 238,
+              "start_column": 0,
+              "end_row": 238,
+              "end_column": 29
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

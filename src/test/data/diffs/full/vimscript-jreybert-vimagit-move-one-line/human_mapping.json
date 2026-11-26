@@ -1431,5 +1431,85 @@
         "let_statement:4"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 280,
+              "start_column": 3,
+              "end_row": 280,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 279,
+              "start_column": 2,
+              "end_row": 279,
+              "end_column": 42
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 280,
+              "start_column": 3,
+              "end_row": 280,
+              "end_column": 43
+            }
+          ],
+          "after": [
+            {
+              "start_row": 279,
+              "start_column": 2,
+              "end_row": 279,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 280,
+              "start_column": 1,
+              "end_row": 280,
+              "end_column": 3
+            }
+          ],
+          "after": [
+            {
+              "start_row": 279,
+              "start_column": 0,
+              "end_row": 279,
+              "end_column": 2
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 280,
+              "start_column": 0,
+              "end_row": 280,
+              "end_column": 1
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

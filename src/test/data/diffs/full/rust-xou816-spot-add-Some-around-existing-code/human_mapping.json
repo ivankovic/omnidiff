@@ -736,5 +736,80 @@
         "impl_item:4"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 276,
+              "start_column": 30,
+              "end_row": 276,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 276,
+              "start_column": 47,
+              "end_row": 276,
+              "end_column": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 276,
+              "start_column": 30,
+              "end_row": 276,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 276,
+              "start_column": 47,
+              "end_row": 276,
+              "end_column": 48
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 276,
+              "start_column": 30,
+              "end_row": 276,
+              "end_column": 42
+            }
+          ],
+          "after": [
+            {
+              "start_row": 276,
+              "start_column": 35,
+              "end_row": 276,
+              "end_column": 47
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

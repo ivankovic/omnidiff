@@ -294,5 +294,39 @@
         "class_definition:2"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 7,
+              "end_row": 18,
+              "end_column": 18
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 18,
+              "start_column": 6,
+              "end_row": 18,
+              "end_column": 18
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
