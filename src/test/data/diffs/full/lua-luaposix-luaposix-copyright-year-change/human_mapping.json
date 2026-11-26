@@ -227,5 +227,55 @@
         "return_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 23,
+              "end_row": 2,
+              "end_column": 24
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 23,
+              "end_row": 2,
+              "end_column": 24
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maximal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 20,
+              "end_row": 2,
+              "end_column": 24
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 20,
+              "end_row": 2,
+              "end_column": 24
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

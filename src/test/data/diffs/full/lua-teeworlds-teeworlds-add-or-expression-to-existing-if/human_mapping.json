@@ -1267,5 +1267,39 @@
         "function_call:14"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 506,
+              "start_column": 42,
+              "end_row": 506,
+              "end_column": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maximal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 506,
+              "start_column": 41,
+              "end_row": 506,
+              "end_column": 60
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -2289,5 +2289,23 @@
         "return_statement:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 151,
+              "start_column": 61,
+              "end_row": 152,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

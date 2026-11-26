@@ -153,5 +153,55 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 37,
+              "end_row": 1,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 37,
+              "end_row": 1,
+              "end_column": 38
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Maximal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 1,
+              "start_column": 33,
+              "end_row": 1,
+              "end_column": 39
+            }
+          ],
+          "after": [
+            {
+              "start_row": 1,
+              "start_column": 33,
+              "end_row": 1,
+              "end_column": 39
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
