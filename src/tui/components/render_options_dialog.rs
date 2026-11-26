@@ -30,7 +30,8 @@ use crate::tui::actions::Action;
 use crate::tui::settings_examples::{Painted, SettingsExample, example_for, painted};
 use crate::tui::theme::OverlayTheme;
 
-const HINT: &str = "↑/↓ move  Space toggle  1 Minimal  2 Maximal  Tab next tab  Enter or Esc close";
+const HINT: &str =
+    "↑/↓ move  Space toggle  1 Minimal  2 Extended  Tab next tab  Enter or Esc close";
 
 /// What the page is about: an example in the open diff's language, or non-code content, which
 /// these settings do not shape.
@@ -264,8 +265,8 @@ fn focus_row(text: &str, painted: &[Option<TextOperation>], marked: &[bool]) -> 
 fn preset_name(options: RenderOptions) -> &'static str {
     if options == RenderOptions::MINIMAL {
         "Minimal"
-    } else if options == RenderOptions::MAXIMAL {
-        "Maximal"
+    } else if options == RenderOptions::EXTENDED {
+        "Extended"
     } else {
         "custom"
     }
@@ -365,7 +366,7 @@ impl Component for RenderOptionsDialog {
                 Ok(Some(Action::RenderOptionsChanged(self.options)))
             }
             KeyCode::Char('2') => {
-                self.options = RenderOptions::MAXIMAL;
+                self.options = RenderOptions::EXTENDED;
                 Ok(Some(Action::RenderOptionsChanged(self.options)))
             }
             _ => Ok(None),
@@ -568,7 +569,7 @@ mod tests {
 
     #[test]
     fn digits_jump_straight_to_the_named_presets() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
 
         let to_minimal = dialog.handle_key_event(key(KeyCode::Char('1'))).unwrap();
         assert_eq!(
@@ -576,10 +577,10 @@ mod tests {
             Some(Action::RenderOptionsChanged(RenderOptions::MINIMAL))
         );
 
-        let to_maximal = dialog.handle_key_event(key(KeyCode::Char('2'))).unwrap();
+        let to_extended = dialog.handle_key_event(key(KeyCode::Char('2'))).unwrap();
         assert_eq!(
-            to_maximal,
-            Some(Action::RenderOptionsChanged(RenderOptions::MAXIMAL))
+            to_extended,
+            Some(Action::RenderOptionsChanged(RenderOptions::EXTENDED))
         );
     }
 
@@ -605,7 +606,7 @@ mod tests {
     /// Bound to MINIMAL, a doubled `M`/`m` would turn every field off and persist it.
     #[test]
     fn the_key_that_opens_the_panel_is_inert_inside_it() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
 
         assert_eq!(
             dialog.handle_key_event(key(KeyCode::Char('m'))).unwrap(),
@@ -615,14 +616,14 @@ mod tests {
             dialog.handle_key_event(key(KeyCode::Char('f'))).unwrap(),
             None
         );
-        assert_eq!(dialog.options, RenderOptions::MAXIMAL);
+        assert_eq!(dialog.options, RenderOptions::EXTENDED);
     }
 
     /// A preset pressed and then `Esc`: the preset stands, since it was applied and saved when
     /// it was pressed. `Esc` never sends a cancel from this panel.
     #[test]
     fn esc_after_a_preset_keeps_the_preset() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
 
         dialog.handle_key_event(key(KeyCode::Char('1'))).unwrap();
         assert_eq!(dialog.options, RenderOptions::MINIMAL);
@@ -635,7 +636,7 @@ mod tests {
 
     #[test]
     fn selection_does_not_move_past_the_last_row() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
         for _ in 0..10 {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
@@ -653,7 +654,7 @@ mod tests {
     #[test]
     fn space_on_the_last_row_switches_the_node_highlight() {
         let mut dialog =
-            RenderOptionsDialog::new(RenderOptions::MAXIMAL).with_node_highlight(false);
+            RenderOptionsDialog::new(RenderOptions::EXTENDED).with_node_highlight(false);
         on_the_node_row(&mut dialog);
         assert_eq!(
             dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
@@ -665,7 +666,7 @@ mod tests {
         );
         assert_eq!(
             dialog.options,
-            RenderOptions::MAXIMAL,
+            RenderOptions::EXTENDED,
             "no rendering option moved"
         );
     }
@@ -673,7 +674,7 @@ mod tests {
     /// Selected, the row explains itself and marks nothing in the example.
     #[test]
     fn the_node_row_explains_itself() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
         on_the_node_row(&mut dialog);
         let text = screen(&mut dialog, 160, 40);
         assert!(text.contains("[ ] Node highlight"), "{text}");
@@ -701,7 +702,7 @@ mod tests {
 
     #[test]
     fn the_page_is_the_whole_screen() {
-        let dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
         let area = Rect::new(0, 0, 200, 50);
         assert_eq!(dialog.popup_area(area), area);
     }
@@ -709,7 +710,7 @@ mod tests {
     /// The selected setting's effect is marked in the example, and named in words below it.
     #[test]
     fn the_selected_settings_effect_is_marked_in_the_example() {
-        let mut dialog = RenderOptionsDialog::new(RenderOptions::MAXIMAL);
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
         let text = screen(&mut dialog, 160, 40);
         assert!(text.contains("example in Rust"), "{text}");
         assert!(text.contains("◆"), "{text}");
@@ -732,7 +733,7 @@ mod tests {
     #[test]
     fn non_code_content_says_there_is_nothing_to_set() {
         let mut dialog = RenderOptionsDialog::for_content(
-            RenderOptions::MAXIMAL,
+            RenderOptions::EXTENDED,
             PageContent::NonCode,
             OverlayTheme::default(),
         );

@@ -76,7 +76,7 @@ impl Side {
     }
 }
 
-/// How much of a change [`Diff::ranges`] reports, as the viewer's `--minimal` and `--maximal`.
+/// How much of a change [`Diff::ranges`] reports, as the viewer's `--minimal` and `--extended`.
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Preset {
@@ -85,21 +85,21 @@ pub enum Preset {
     #[default]
     Minimal,
     /// Everything that changed, including re-indentation and changed trailing whitespace.
-    Maximal,
+    Extended,
 }
 
 impl Preset {
     fn options(self) -> RenderOptions {
         match self {
             Preset::Minimal => RenderOptions::MINIMAL,
-            Preset::Maximal => RenderOptions::MAXIMAL,
+            Preset::Extended => RenderOptions::EXTENDED,
         }
     }
 
     fn index(self) -> usize {
         match self {
             Preset::Minimal => 0,
-            Preset::Maximal => 1,
+            Preset::Extended => 1,
         }
     }
 }

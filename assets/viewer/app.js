@@ -900,7 +900,7 @@
           applyRenderOptions(this.options);
           return;
         } else if (e.key === "2") {
-          this.options = { ...state.presets.maximal };
+          this.options = { ...state.presets.extended };
           applyRenderOptions(this.options);
           return;
         } else if (e.key === "Escape") {
@@ -912,7 +912,7 @@
       },
       // Every key has a tap too: a row toggles, the footer buttons are 1, 2 and Esc.
       render(container) {
-        const { body, footer } = box(container, "Render options", "↑/↓ move  Enter/Space toggle  1: minimal  2: maximal  Esc: close");
+        const { body, footer } = box(container, "Render options", "↑/↓ move  Enter/Space toggle  1: minimal  2: extended  Esc: close");
         const labels = rows.map((row) => `[${this.options[row.key] ? "x" : " "}] ${row.label}`);
         listRows(body, labels, this.selected).forEach((element, index) => {
           element.addEventListener("click", () => {
@@ -922,7 +922,7 @@
         });
         dialogButtons(footer, [
           ["Minimal", () => this.key({ key: "1" })],
-          ["Maximal", () => this.key({ key: "2" })],
+          ["Extended", () => this.key({ key: "2" })],
           ["Close", () => this.key({ key: "Escape" })],
         ]);
       },

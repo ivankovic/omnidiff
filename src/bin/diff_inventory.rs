@@ -46,14 +46,14 @@ struct Args {
 
 /// How far a fixture's text painting has been taken (see `HumanMapping::text_mappings`).
 ///
-/// `Single` vs `MinimalAndMaximal` is a finding about the fixture, not progress: one painting means
-/// the painter judged its rendering unambiguous, two that it genuinely forks. See
+/// `Single` vs `MinimalAndExtended` is a finding about the fixture, not progress: one painting
+/// means the painter judged its rendering unambiguous, two that it genuinely forks. See
 /// `research/data/quality/text_painting_findings.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PaintingState {
     None,
     Single,
-    MinimalAndMaximal,
+    MinimalAndExtended,
     Other,
 }
 
@@ -63,7 +63,7 @@ impl PaintingState {
         match names.len() {
             0 => PaintingState::None,
             1 => PaintingState::Single,
-            2 if has("Minimal") && has("Maximal") => PaintingState::MinimalAndMaximal,
+            2 if has("Minimal") && has("Extended") => PaintingState::MinimalAndExtended,
             _ => PaintingState::Other,
         }
     }
@@ -72,7 +72,7 @@ impl PaintingState {
         match self {
             PaintingState::None => "none",
             PaintingState::Single => "single",
-            PaintingState::MinimalAndMaximal => "minimal+maximal",
+            PaintingState::MinimalAndExtended => "minimal+extended",
             PaintingState::Other => "other",
         }
     }
@@ -107,7 +107,7 @@ struct Row {
     /// `error_nodes` as a percentage of `before_nodes + after_nodes`, to 3 decimal places; blank
     /// when there is no tree. Separates "one bad region" from "the grammar gave up" across sizes.
     error_pct: String,
-    /// `none`, `single`, `minimal+maximal` or `other` - see [`PaintingState`].
+    /// `none`, `single`, `minimal+extended` or `other` - see [`PaintingState`].
     painting: String,
     /// The painting names, `|`-separated.
     painting_names: String,
@@ -358,11 +358,11 @@ mod tests {
             PaintingState::Single
         );
         assert_eq!(
-            PaintingState::of(&["Maximal".to_string(), "Minimal".to_string()]),
-            PaintingState::MinimalAndMaximal
+            PaintingState::of(&["Extended".to_string(), "Minimal".to_string()]),
+            PaintingState::MinimalAndExtended
         );
         assert_eq!(
-            PaintingState::of(&["Maximal".to_string(), "Tight".to_string()]),
+            PaintingState::of(&["Extended".to_string(), "Tight".to_string()]),
             PaintingState::Other
         );
         assert_eq!(

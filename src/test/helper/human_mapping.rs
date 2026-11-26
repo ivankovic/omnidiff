@@ -480,7 +480,7 @@ pub struct HumanTextMapping {
     pub entries: Vec<HumanTextEntry>,
 }
 
-/// One painting under a free-text name. `Minimal`/`Maximal` (optionally qualified, see
+/// One painting under a free-text name. `Minimal`/`Extended` (optionally qualified, see
 /// [`designates_preset`]) tie it to a render preset; `Only one solution` is the conventional name
 /// for a lone painting.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -789,8 +789,8 @@ impl PaintingComparison {
 fn preset_name(options: crate::diff::text::RenderOptions) -> Option<&'static str> {
     if options == crate::diff::text::RenderOptions::MINIMAL {
         Some("Minimal")
-    } else if options == crate::diff::text::RenderOptions::MAXIMAL {
-        Some("Maximal")
+    } else if options == crate::diff::text::RenderOptions::EXTENDED {
+        Some("Extended")
     } else {
         None
     }
@@ -801,9 +801,9 @@ fn designates_minimal(name: &str) -> bool {
     designates_preset(name, "Minimal")
 }
 
-/// Whether `name` designates the `Maximal` preset - see [`designates_preset`].
-fn designates_maximal(name: &str) -> bool {
-    designates_preset(name, "Maximal")
+/// Whether `name` designates the `Extended` preset - see [`designates_preset`].
+fn designates_extended(name: &str) -> bool {
+    designates_preset(name, "Extended")
 }
 
 /// The paintings `options` is answerable to. A lone painting claims the rendering is unambiguous,
@@ -820,7 +820,7 @@ pub fn paintings_for_mode(
         _ => {
             let wanted = preset_name(options).with_context(|| {
                 format!(
-                    "{options:?} is neither of the two named presets (Minimal/Maximal) a \
+                    "{options:?} is neither of the two named presets (Minimal/Extended) a \
                      multi-painting fixture can be checked against"
                 )
             })?;
@@ -831,9 +831,9 @@ pub fn paintings_for_mode(
                 .collect();
             if candidates.is_empty() {
                 // Only when *nothing* names a preset: `Minimal` beside a misspelled `Ful` must
-                // still fail for `Maximal`.
+                // still fail for `Extended`.
                 if mapping.text_mappings.iter().all(|named| {
-                    !designates_minimal(&named.name) && !designates_maximal(&named.name)
+                    !designates_minimal(&named.name) && !designates_extended(&named.name)
                 }) {
                     return Ok(mapping.text_mappings.iter().collect());
                 }
@@ -858,11 +858,11 @@ pub fn paintings_for_mode(
 /// that preset. A lone painting that names no preset (`Only one solution`) says the change has
 /// one right rendering, whatever the preset: that is its own case, [`GradedCase::Single`], counted
 /// apart from both presets, because it asks something neither preset does - that `Minimal` and
-/// `Maximal` render the same thing, and that it is the painting.
+/// `Extended` render the same thing, and that it is the painting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GradedCase {
     Minimal,
-    Maximal,
+    Extended,
     /// Both presets against the one painting; a byte is mismatched when either disagrees.
     Single,
 }
@@ -873,8 +873,8 @@ impl GradedCase {
         use crate::diff::text::RenderOptions;
         match self {
             GradedCase::Minimal => &[RenderOptions::MINIMAL],
-            GradedCase::Maximal => &[RenderOptions::MAXIMAL],
-            GradedCase::Single => &[RenderOptions::MINIMAL, RenderOptions::MAXIMAL],
+            GradedCase::Extended => &[RenderOptions::EXTENDED],
+            GradedCase::Single => &[RenderOptions::MINIMAL, RenderOptions::EXTENDED],
         }
     }
 
@@ -882,7 +882,7 @@ impl GradedCase {
     pub fn label(self) -> &'static str {
         match self {
             GradedCase::Minimal => "minimal",
-            GradedCase::Maximal => "maximal",
+            GradedCase::Extended => "extended",
             GradedCase::Single => "single",
         }
     }
@@ -894,10 +894,10 @@ impl GradedCase {
 /// [`GradedCase::Single`] case.
 pub fn graded_cases(mapping: &HumanMapping) -> Vec<GradedCase> {
     match mapping.text_mappings.as_slice() {
-        [lone] if designates_maximal(&lone.name) => vec![GradedCase::Maximal],
+        [lone] if designates_extended(&lone.name) => vec![GradedCase::Extended],
         [lone] if designates_minimal(&lone.name) => vec![GradedCase::Minimal],
         [_] => vec![GradedCase::Single],
-        _ => vec![GradedCase::Minimal, GradedCase::Maximal],
+        _ => vec![GradedCase::Minimal, GradedCase::Extended],
     }
 }
 
@@ -1024,7 +1024,7 @@ pub fn omnidiff_diff_for_painting<'code>(
 
 /// omnidiff's own side of a painting comparison, as per-byte labels, `[before, after]`: the ranges
 /// the TUI renders under `options`. Built under `options` rather than via `TextDiff::from`
-/// (which builds under `MAXIMAL`), because some options change the build itself.
+/// (which builds under `EXTENDED`), because some options change the build itself.
 pub fn omnidiff_painting_labels(
     diff: &PaintingDiff,
     before: &crate::code::Code,
@@ -4532,17 +4532,17 @@ mod tests {
     /// e.g. deleting one of two identical substrings.
     #[test]
     fn a_preset_collects_every_alternative_named_for_it() {
-        let mapping = named(&["Minimal (left)", "Minimal (right)", "Maximal"]);
+        let mapping = named(&["Minimal (left)", "Minimal (right)", "Extended"]);
 
         let minimal = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MINIMAL)
             .expect("both Minimal alternatives should be found");
         let names: Vec<&str> = minimal.iter().map(|p| p.name.as_str()).collect();
         assert_eq!(names, vec!["Minimal (left)", "Minimal (right)"]);
 
-        let maximal = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MAXIMAL)
-            .expect("the unqualified Maximal should be found");
-        assert_eq!(maximal.len(), 1);
-        assert_eq!(maximal[0].name, "Maximal");
+        let extended = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::EXTENDED)
+            .expect("the unqualified Extended should be found");
+        assert_eq!(extended.len(), 1);
+        assert_eq!(extended[0].name, "Extended");
     }
 
     #[test]
@@ -4552,7 +4552,7 @@ mod tests {
         assert!(designates_preset("Minimal but only the strings", "Minimal"));
         // Not a qualifier: a different word that starts the same way.
         assert!(!designates_preset("Minimalist", "Minimal"));
-        assert!(!designates_preset("Maximal", "Minimal"));
+        assert!(!designates_preset("Extended", "Minimal"));
         assert!(!designates_preset("", "Minimal"));
     }
 
@@ -4561,7 +4561,7 @@ mod tests {
         let mapping = named(&["Only one solution"]);
         for options in [
             crate::diff::text::RenderOptions::MINIMAL,
-            crate::diff::text::RenderOptions::MAXIMAL,
+            crate::diff::text::RenderOptions::EXTENDED,
         ] {
             let found = paintings_for_mode(&mapping, options).expect("the single painting");
             assert_eq!(found.len(), 1);
@@ -4580,17 +4580,17 @@ mod tests {
             vec![GradedCase::Minimal]
         );
         assert_eq!(
-            graded_cases(&named(&["Maximal"])),
-            vec![GradedCase::Maximal]
+            graded_cases(&named(&["Extended"])),
+            vec![GradedCase::Extended]
         );
         assert_eq!(
-            graded_cases(&named(&["Minimal", "Maximal"])),
-            vec![GradedCase::Minimal, GradedCase::Maximal]
+            graded_cases(&named(&["Minimal", "Extended"])),
+            vec![GradedCase::Minimal, GradedCase::Extended]
         );
         // No stored painting: an embedded host's implied one, which both presets answer to.
         assert_eq!(
             graded_cases(&named(&[])),
-            vec![GradedCase::Minimal, GradedCase::Maximal]
+            vec![GradedCase::Minimal, GradedCase::Extended]
         );
         assert_eq!(GradedCase::Single.presets().len(), 2);
     }
@@ -4598,10 +4598,10 @@ mod tests {
     #[test]
     fn a_preset_with_no_painting_named_for_it_says_which_names_the_fixture_has() {
         let mapping = named(&["Minimal", "Something else"]);
-        let error = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::MAXIMAL)
-            .expect_err("there is no Maximal painting here");
+        let error = paintings_for_mode(&mapping, crate::diff::text::RenderOptions::EXTENDED)
+            .expect_err("there is no Extended painting here");
         let message = format!("{error:#}");
-        assert!(message.contains("no 'Maximal' painting"), "got: {message}");
+        assert!(message.contains("no 'Extended' painting"), "got: {message}");
         assert!(message.contains("Something else"), "got: {message}");
     }
 
@@ -6405,7 +6405,7 @@ mod tests {
         // could differ governs moves, which the fallback never emits.
         for options in [
             crate::diff::text::RenderOptions::MINIMAL,
-            crate::diff::text::RenderOptions::MAXIMAL,
+            crate::diff::text::RenderOptions::EXTENDED,
         ] {
             let labels = omnidiff_painting_labels(&diff, &before, &after, options);
             for (side, contents) in [(0usize, before_text), (1usize, after_text)] {
@@ -6527,8 +6527,8 @@ mod tests {
         );
     }
 
-    /// With `Minimal` and `Maximal` paintings, one tool output is scored against each: here the
-    /// tool's ranges are the Minimal reading exactly and miss the bracket the Maximal one adds.
+    /// With `Minimal` and `Extended` paintings, one tool output is scored against each: here the
+    /// tool's ranges are the Minimal reading exactly and miss the bracket the Extended one adds.
     #[test]
     fn compare_changed_bytes_with_case_scores_one_output_against_both_presets() {
         use crate::diff::text_range::TextRange;
@@ -6537,11 +6537,11 @@ mod tests {
         let mapping = painted_only(vec![
             changed_bytes_painting("Minimal", vec![], vec![span(0, 5, 0, 6)]),
             // ", b" and the closing parenthesis as well.
-            changed_bytes_painting("Maximal", vec![], vec![span(0, 3, 0, 7)]),
+            changed_bytes_painting("Extended", vec![], vec![span(0, 3, 0, 7)]),
         ]);
         assert_eq!(
             graded_cases(&mapping),
-            vec![GradedCase::Minimal, GradedCase::Maximal]
+            vec![GradedCase::Minimal, GradedCase::Extended]
         );
         let tool = [
             changed_bytes(&before.contents, &[]),
@@ -6556,12 +6556,12 @@ mod tests {
             (minimal.solution.as_str(), minimal.mismatched_bytes),
             ("Minimal", 0)
         );
-        let maximal = score(GradedCase::Maximal);
+        let extended = score(GradedCase::Extended);
         assert_eq!(
-            (maximal.solution.as_str(), maximal.mismatched_bytes),
-            ("Maximal", 3)
+            (extended.solution.as_str(), extended.mismatched_bytes),
+            ("Extended", 3)
         );
-        assert_eq!(maximal.total_bytes, 15);
+        assert_eq!(extended.total_bytes, 15);
 
         let wrong_length = |_| Ok([vec![false; 1], vec![false; 1]]);
         assert!(
@@ -6596,7 +6596,7 @@ mod tests {
             &before,
             &after,
             |options| {
-                // Minimal paints nothing (1 wrong byte), Maximal both bytes (another wrong one).
+                // Minimal paints nothing (1 wrong byte), Extended both bytes (another wrong one).
                 let before_side = if options == RenderOptions::MINIMAL {
                     vec![false, false, false]
                 } else {
@@ -6618,9 +6618,9 @@ mod tests {
         let mapping = painted_only(vec![
             // Minimal: only the inserted line.
             changed_bytes_painting("Minimal", vec![], vec![span(3, 0, 4, 0)]),
-            // Maximal: also the case change on line 2, one byte of it on each side.
+            // Extended: also the case change on line 2, one byte of it on each side.
             changed_bytes_painting(
-                "Maximal",
+                "Extended",
                 vec![span(1, 0, 1, 1)],
                 vec![span(1, 0, 1, 1), span(3, 0, 4, 0)],
             ),
@@ -6632,7 +6632,7 @@ mod tests {
         ];
         let score =
             |case| compare_changed_lines_with_case(&mapping, case, &before, &after, &tool).unwrap();
-        assert_eq!(score(GradedCase::Maximal), 0);
+        assert_eq!(score(GradedCase::Extended), 0);
         assert_eq!(score(GradedCase::Minimal), 2);
         assert_eq!(
             lines_of_changed_bytes("ab\ncd\n", &[false, false, true, true, false, false, false]),

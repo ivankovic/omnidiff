@@ -327,8 +327,8 @@ fn tokens(text: &str) -> Vec<(usize, usize)> {
 /// A reordered class is a `Move` under both presets: the paintings show a class taken out of its
 /// place even though order means nothing to CSS. One that crossed a single kept class swapped with
 /// it, and that class moved too (`tsx-shadcn-ui-ui-order-of-class-names`). Under
-/// `paint_displaced_moves` (`MAXIMAL`) so is every kept class that sits inside the edited stretch
-/// of either side - between that side's first and last changed class - as the `Maximal` paintings
+/// `paint_displaced_moves` (`EXTENDED`) so is every kept class that sits inside the edited stretch
+/// of either side - between that side's first and last changed class - as the `Extended` paintings
 /// mark a rearranged run (`tsx-shadcn-ui-ui-real-small-change`). `None` past `PLAIN_TEXT_MAX_EDIT`.
 pub fn class_list_diff(
     before: &str,

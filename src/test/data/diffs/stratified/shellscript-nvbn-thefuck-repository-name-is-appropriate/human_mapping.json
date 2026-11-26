@@ -771,7 +771,7 @@
       ]
     },
     {
-      "name": "Maximal (Prefer deleting outer)",
+      "name": "Extended (Prefer deleting outer)",
       "entries": [
         {
           "operation": "Insert",
@@ -915,7 +915,7 @@
       ]
     },
     {
-      "name": "Maximal (Prefer deleting inner)",
+      "name": "Extended (Prefer deleting inner)",
       "entries": [
         {
           "operation": "Insert",

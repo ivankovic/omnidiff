@@ -40,7 +40,7 @@ fn every_example_parses_without_an_error() {
 }
 
 /// The page's promise: selecting an option shows what it changes. Each option, flipped alone
-/// from the `Minimal` preset or from the `Maximal` one, must repaint some byte of the example -
+/// from the `Minimal` preset or from the `Extended` one, must repaint some byte of the example -
 /// unless the example says why it cannot. Not from both: the options compose, so one can have
 /// nothing to show while another is off (a re-indented block shows as moved only once displaced
 /// code does), and the page names that other option instead.
@@ -48,9 +48,9 @@ fn every_example_parses_without_an_error() {
 fn every_option_changes_every_example() {
     let mut missing = Vec::new();
     for example in EXAMPLES {
-        for (index, (name, _)) in RenderOptions::MAXIMAL.options().into_iter().enumerate() {
+        for (index, (name, _)) in RenderOptions::EXTENDED.options().into_iter().enumerate() {
             let declared = example.no_effect.iter().any(|&(i, _)| i == index);
-            let shows = [RenderOptions::MINIMAL, RenderOptions::MAXIMAL]
+            let shows = [RenderOptions::MINIMAL, RenderOptions::EXTENDED]
                 .into_iter()
                 .any(|preset| {
                     let mut flipped = preset;

@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // A false `Move` painted on both sides under `MAXIMAL`: the before file indents every line by
+    // A false `Move` painted on both sides under `EXTENDED`: the before file indents every line by
     // one space and the command also gains an argument, so the row's single common-prefix/suffix
     // pair finds neither edit and reads the de-indent as a relocation. The one-row-two-edits gap in
     // `node_untouched_on_its_row`; needs a multi-segment row diff.
@@ -38,7 +38,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before row 3 -> after row 3 (1 line(s)) loses 1 byte(s) of
+    // Invariant 32, Extended: before row 3 -> after row 3 (1 line(s)) loses 1 byte(s) of
     // indentation, unpainted (want delete from column 0).
     assert_ground_truth_invariants_with_known_violations(
         "shellscript-stgpetrovic-stacuist-pure-add",

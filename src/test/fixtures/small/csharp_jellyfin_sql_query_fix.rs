@@ -32,7 +32,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before row 61 -> after row 61 (1 line(s)) gains 16 byte(s) of
+    // Invariant 32, Extended: before row 61 -> after row 61 (1 line(s)) gains 16 byte(s) of
     // indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations("csharp-jellyfin-sql-query-fix", 1)
 }

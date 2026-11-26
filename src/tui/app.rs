@@ -1568,28 +1568,28 @@ impl App {
 pub(crate) const FOOTER_HINTS: &str =
     "?:help  o:open  G:git  r:reload  n/p:next/prev  /:search  M:options  Tab:switch  q:quit";
 
-/// The footer's render-options badge: `None` for `MAXIMAL`, `[minimal]`, or the options that differ
-/// from `MAXIMAL` by name. An option turned off leaves something unpainted, and the setting
+/// The footer's render-options badge: `None` for `EXTENDED`, `[minimal]`, or the options that
+/// differ from `EXTENDED` by name. An option turned off leaves something unpainted, and the setting
 /// persists across runs, so without a badge missing highlights read as omnidiff having missed them.
 ///
-/// Compared against `MAXIMAL` rather than against "everything on": `MAXIMAL` has whole-pair updates
-/// off, so an "is it off" list names that option whenever anything else is off, and has nothing
-/// to name when it alone is turned on.
+/// Compared against `EXTENDED` rather than against "everything on": `EXTENDED` has whole-pair
+/// updates off, so an "is it off" list names that option whenever anything else is off, and has
+/// nothing to name when it alone is turned on.
 fn render_options_badge(options: RenderOptions) -> Option<String> {
-    if options == RenderOptions::MAXIMAL {
+    if options == RenderOptions::EXTENDED {
         return None;
     }
     if options == RenderOptions::MINIMAL {
         return Some("[minimal]".to_string());
     }
-    let maximal = RenderOptions::MAXIMAL.options();
+    let extended = RenderOptions::EXTENDED.options();
     let differing = |state: bool| -> Vec<&str> {
         options
             .options()
             .into_iter()
-            .zip(maximal)
+            .zip(extended)
             .zip(crate::diff::text::OPTION_INFO)
-            .filter(|(((_, on), (_, on_in_maximal)), _)| on != on_in_maximal && *on == state)
+            .filter(|(((_, on), (_, on_in_extended)), _)| on != on_in_extended && *on == state)
             .map(|(_, info)| info.short)
             .collect()
     };
@@ -1788,10 +1788,10 @@ fn assemble_plain_text_diff_session_data(
     }
 }
 
-/// [`compute_diff_with_options`] under [`RenderOptions::MAXIMAL`], for tests.
+/// [`compute_diff_with_options`] under [`RenderOptions::EXTENDED`], for tests.
 #[cfg(test)]
 pub(crate) fn compute_diff(before: &Path, after: &Path) -> Result<(DiffSessionData, bool)> {
-    compute_diff_with_options(before, after, RenderOptions::MAXIMAL)
+    compute_diff_with_options(before, after, RenderOptions::EXTENDED)
 }
 
 /// Stack size for the thread [`compute_diff_with_options`] runs the pipeline on. Deep trees
@@ -2721,7 +2721,7 @@ mod tests {
         let _config = theme::use_config_for_this_thread(config.path());
 
         let mut app = App::new(4.0, 60.0).expect("construct App");
-        app.diff_viewer.set_render_options(RenderOptions::MAXIMAL);
+        app.diff_viewer.set_render_options(RenderOptions::EXTENDED);
         app.open_settings(SettingsTab::Highlighting);
 
         // What a preset key does: applied and persisted immediately.
@@ -3059,12 +3059,12 @@ mod tests {
         Ok(())
     }
 
-    /// `MAXIMAL` is the default, so a badge for it would sit permanently on a screen with nothing
+    /// `EXTENDED` is the default, so a badge for it would sit permanently on a screen with nothing
     /// to report.
     #[test]
-    fn draw_viewer_does_not_badge_maximal_options() -> Result<()> {
+    fn draw_viewer_does_not_badge_extended_options() -> Result<()> {
         let mut app = App::new(4.0, 60.0)?;
-        app.diff_viewer.set_render_options(RenderOptions::MAXIMAL);
+        app.diff_viewer.set_render_options(RenderOptions::EXTENDED);
 
         let backend = ratatui::backend::TestBackend::new(120, 24);
         let mut terminal = ratatui::Terminal::new(backend)?;
@@ -3075,7 +3075,7 @@ mod tests {
 
         let text = rendered_text(&terminal);
         assert!(!text.contains("[minimal]"), "got: {text}");
-        assert!(!text.contains("[maximal]"), "got: {text}");
+        assert!(!text.contains("[extended]"), "got: {text}");
         Ok(())
     }
 
@@ -3387,26 +3387,26 @@ mod tests {
     }
 
     #[test]
-    fn the_options_badge_names_what_differs_from_maximal() {
-        let maximal = RenderOptions::MAXIMAL;
-        assert_eq!(render_options_badge(maximal), None);
+    fn the_options_badge_names_what_differs_from_extended() {
+        let extended = RenderOptions::EXTENDED;
+        assert_eq!(render_options_badge(extended), None);
         assert_eq!(
             render_options_badge(RenderOptions::MINIMAL).as_deref(),
             Some("[minimal]")
         );
-        // Whole-pair updates is off in MAXIMAL itself, so it is not named here.
+        // Whole-pair updates is off in EXTENDED itself, so it is not named here.
         let no_leading_whitespace = RenderOptions {
             leading_whitespace: false,
-            ..maximal
+            ..extended
         };
         assert_eq!(
             render_options_badge(no_leading_whitespace).as_deref(),
             Some("[indentation off]")
         );
-        // Turning on the one option MAXIMAL leaves off is a difference too.
+        // Turning on the one option EXTENDED leaves off is a difference too.
         let whole_pairs = RenderOptions {
             whole_pair_updates: true,
-            ..maximal
+            ..extended
         };
         assert_eq!(
             render_options_badge(whole_pairs).as_deref(),

@@ -1595,7 +1595,7 @@ mod tests {
             Pair::read(&before_path, &after_path)?,
             false,
             CONTEXT_LINES,
-            RenderOptions::MAXIMAL,
+            RenderOptions::EXTENDED,
             None,
             None,
             LayoutRequest::default(),
@@ -1615,11 +1615,11 @@ mod tests {
         let (expected, _) = crate::tui::app::compute_diff_with_options(
             &before_path,
             &after_path,
-            RenderOptions::MAXIMAL,
+            RenderOptions::EXTENDED,
         )?;
         let pair = Pair::read(&before_path, &after_path)?;
         assert!(pair.differed && !pair.is_binary());
-        let (actual, _) = pair.diff(RenderOptions::MAXIMAL)?;
+        let (actual, _) = pair.diff(RenderOptions::EXTENDED)?;
         assert_eq!(actual, expected);
         std::fs::write(&after_path, [0xff, 0xfe, 0x00]).unwrap();
         assert!(Pair::read(&before_path, &after_path)?.is_binary());

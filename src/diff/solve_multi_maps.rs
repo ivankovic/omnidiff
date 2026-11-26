@@ -210,7 +210,7 @@ fn find_copies(
         let Some(&parent) = meta.node_to_parent.get(&id) else {
             continue;
         };
-        // Its parent gone too. Maximal among candidates, not among unpaired subtrees: a copied
+        // Its parent gone too. Extended among candidates, not among unpaired subtrees: a copied
         // statement inside a new block is the copy, the block around it is new.
         if !unpaired(parent, map) {
             continue;

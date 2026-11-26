@@ -25,7 +25,7 @@
 //!   * `mapping_details()` - specific nodes asserted by hand; accompanies `mapping()`, never
 //!     replaces it.
 //!   * `painting()` - the rendering against `text_mappings`, clamped to a percentage of disagreeing
-//!     bytes under both the `Minimal` and `Maximal` presets of
+//!     bytes under both the `Minimal` and `Extended` presets of
 //!     [`RenderOptions`](crate::diff::text::RenderOptions). Only for painted fixtures.
 //!   * `invariants()` - the ground truth checked against itself.
 //!

@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `Maximal` claims the inserted line's indentation, both `(user_id` parameter lists and both
+    // `Extended` claims the inserted line's indentation, both `(user_id` parameter lists and both
     // URL literals as Move, none of which omnidiff paints: all paint omnidiff does not produce.
     assert_matches_human_painting_within_limit("python-api-change", 8.91)
 }

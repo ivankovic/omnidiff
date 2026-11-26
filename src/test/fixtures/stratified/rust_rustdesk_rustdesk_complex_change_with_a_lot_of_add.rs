@@ -40,7 +40,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before 782-783 -> after 815-816 (2 line(s)) gain 4 byte(s) of
+    // Invariant 32, Extended: before 782-783 -> after 815-816 (2 line(s)) gain 4 byte(s) of
     // indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations(
         "rust-rustdesk-rustdesk-complex-change-with-a-lot-of-add",

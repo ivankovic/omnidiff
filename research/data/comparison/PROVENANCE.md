@@ -184,20 +184,20 @@ sub-line quality has to come from the node columns, not the line ones.
 **Against the hand painting (columns added 2026-11-24, not yet measured).** The line and node
 columns score against the human *mapping*; these score against the hand *paintings*, on the
 fixtures that have one. Per fixture, `total_bytes` (both files) and `painting_cases`, the graded
-cases its paintings make (`human_mapping::graded_cases`: `minimal;maximal`, `single`, or a lone
-`minimal` / `maximal`; empty when unpainted). Per tool and case (`minimal`, `maximal`, `single`):
+cases its paintings make (`human_mapping::graded_cases`: `minimal;extended`, `single`, or a lone
+`minimal` / `extended`; empty when unpainted). Per tool and case (`minimal`, `extended`, `single`):
 
 - `<tool>_painting_<case>_mismatches`: bytes where the tool's changed bytes disagree with the
   painting's painted bytes (any label counts as painted; labels are not compared). A line-only
   tool's changed bytes are every byte of each line it touches, a tool with sub-line output its
   reported ranges (the node columns' spans), both without line breaks, which no painting labels.
   OmniDiff's are what it renders under the preset of the case (`--minimal` for `minimal`,
-  `--maximal` for `maximal`, both for `single`, a byte wrong when either is). Exact = 0; Within
+  `--extended` for `extended`, both for `single`, a byte wrong when either is). Exact = 0; Within
   1% = at most 1% of `total_bytes`, the definitions of OmniDiff's own painting table.
 - `<tool>_painting_line_<case>_mismatches`: the tool's line labels, exactly those
   `_line_mismatches` scores, against the lines the painting touches (any painted byte on the
   line); denominator `total_lines`. **The score is the minimum over the cases present**: with a
-  Minimal and a Maximal painting, a tool matches when it agrees with either. Both raw columns stay
+  Minimal and an Extended painting, a tool matches when it agrees with either. Both raw columns stay
   so that another rule can be computed.
 
 Where a preset has several paintings, the one closest to the tool is the verdict, as for OmniDiff.
@@ -205,7 +205,7 @@ Every painting cell is blank on an unpainted fixture, for an unsupported tool, a
 failed (reported on stderr), so a blank is never a perfect score. Nothing lists the painted
 fixtures: `cd research && make measure-tools-painting` rescans them, rewrites this CSV and
 regenerates `plots/benchmark_other_painting_{lines,bytes}{,_with_omnidiff}.tex` and the
-`\<Tool>PaintingLine*` and `\<Tool>Painting{Minimal,Maximal,Single}*` macros. These are not
+`\<Tool>PaintingLine*` and `\<Tool>Painting{Minimal,Extended,Single}*` macros. These are not
 OmniDiff's figures in `../quality/painting_attribution.csv`, which compare labels.
 
 **`_status` distinguishes an unscored cell from a zero.** `ok` = scored; `unsupported` = the tool
@@ -218,7 +218,7 @@ diff and the four git algorithms - *not* BDiff or `nvim -d`, see above).
 
 **OmniDiff is timed as a whole process from the next refresh on (code changed 2026-11-24).**
 `benchmark_other.csv`'s `omnidiff_ms` is then one run of the release binary per repeat,
-`omnidiff --headless --maximal --color never BEFORE AFTER` on files named as the fixture's, output
+`omnidiff --headless --extended --color never BEFORE AFTER` on files named as the fixture's, output
 read from a pipe, timed from writing the files to reading the output back, as every external tool
 is. The run builds that binary itself (`cargo build --release --bin omnidiff`, a no-op when it is
 current), so it is the tree's own. The old in-process time, `diff_code` on pre-parsed code, is

@@ -6,6 +6,13 @@ release does: a minor bump may change the JSON output or the library API, a patc
 
 ## [Unreleased]
 
+### Changed
+
+- The fuller highlighting preset is now called Extended instead of Maximal: `--extended` on the
+  command line, `2 Extended` in the `M` panel, and `RenderOptions::EXTENDED` in the library.
+  `--maximal` and `--full` still work, and `RenderOptions::MAXIMAL` and `RenderOptions::FULL` are
+  kept as deprecated aliases.
+
 ### Fixed
 
 - A YAML file longer than 32,768 lines no longer shows an empty diff when the change is past that

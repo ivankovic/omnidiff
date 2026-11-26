@@ -1467,7 +1467,7 @@
       ]
     },
     {
-      "name": "Maximal",
+      "name": "Extended",
       "entries": [
         {
           "operation": "Match",
@@ -1647,7 +1647,7 @@
             ]
           },
           {
-            "name": "Maximal",
+            "name": "Extended",
             "entries": [
               {
                 "operation": "Match",

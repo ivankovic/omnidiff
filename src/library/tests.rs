@@ -200,7 +200,7 @@ fn a_file_diffed_against_itself_has_no_changes() {
     assert!(!diff.has_changes());
     assert_eq!(diff.changed_definitions().count(), 0);
     assert!(diff.ranges(Side::Before, Preset::Minimal).is_empty());
-    assert!(diff.ranges(Side::After, Preset::Maximal).is_empty());
+    assert!(diff.ranges(Side::After, Preset::Extended).is_empty());
 }
 
 #[test]

@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before 295-301 -> after 299-305 (7 line(s)) gain 1 byte(s) of
+    // Invariant 32, Extended: before 295-301 -> after 299-305 (7 line(s)) gain 1 byte(s) of
     // indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations(
         "go-ollama-ollama-surround-block-with-if-and-function-call",

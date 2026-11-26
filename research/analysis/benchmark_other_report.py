@@ -75,12 +75,12 @@ Against the hand painting (since 2026-11-24), from the accuracy CSV's painting c
 painted fixtures only - which ones are painted is read off the CSV's blank cells each run:
 
   - benchmark_other_painting_lines.tex (and `_with_omnidiff`): the line table's buckets with the
-    lines the painting touches as the reference, a tool matching a fixture with Minimal and Maximal
+    lines the painting touches as the reference, a tool matching a fixture with Minimal and Extended
     paintings when it agrees with either (`painting_line_score`). Macros
     `\\<Tool>PaintingLineFixtures` and `\\<Tool>PaintingLinePerfectPct`.
   - benchmark_other_painting_bytes.tex (and `_with_omnidiff`): changed bytes against painted
     bytes, Exact and Within 1% per graded case (`painting_case_shares`). Macros
-    `\\<Tool>Painting{Minimal,Maximal,Single}{Fixtures,ExactPct,WithinOnePct}`.
+    `\\<Tool>Painting{Minimal,Extended,Single}{Fixtures,ExactPct,WithinOnePct}`.
 
 Neither is written, and their macros are absent, when the accuracy CSV predates the columns.
 `make measure-tools-painting` regenerates the CSV, these tables and the macros together.
@@ -1248,10 +1248,10 @@ def write_variance_table(rows: list[dict], tools: list[str], output_path: Path) 
 # `<tool>_painting_line_<case>_mismatches`, the tool's line labels against the lines the painting
 # touches. `case` is one of `PAINTING_CASES`, the graded cases of OmniDiff's own painting table.
 # Which fixtures are painted is read off the blank cells each run, never listed here.
-PAINTING_CASES = [("minimal", "Minimal"), ("maximal", "Maximal"), ("single", "Single")]
+PAINTING_CASES = [("minimal", "Minimal"), ("extended", "Extended"), ("single", "Single")]
 PAINTING_CASE_TITLES = {
     "minimal": r"\emph{Minimal}",
-    "maximal": r"\emph{Maximal}",
+    "extended": r"\emph{Extended}",
     "single": "One rendering",
 }
 
@@ -1287,7 +1287,7 @@ def painting_case_shares(rows: list[dict], tool: str, case: str) -> tuple[int, f
 
 def painting_line_score(row: dict, tool: str) -> int | None:
     """A fixture's line-level painting score for `tool`: the fewest mismatched lines over the cases
-    its painting grades. With a `Minimal` and a `Maximal` painting a tool matches when it agrees
+    its painting grades. With a `Minimal` and an `Extended` painting a tool matches when it agrees
     with either - both are correct readings and a line tool has one output - and a single painting
     is the only reference. None for an unpainted or unscored fixture. Mirrors
     `benchmark_other.rs`'s `painting_line_score`; the per-case columns stay in the CSV for any
@@ -1358,7 +1358,7 @@ def write_painting_line_table(accuracy_rows, output_path, include_omnidiff):
         (
             r"  \caption{Per-fixture line-level agreement with the hand painting, bucketed, on the"
             r" painted fixtures. A line counts as changed in the painting when any of its bytes is"
-            r" painted. Where a fixture has a \emph{Minimal} and a \emph{Maximal} painting, a tool"
+            r" painted. Where a fixture has a \emph{Minimal} and an \emph{Extended} painting, a tool"
             r" agrees when it agrees with either. ``Perfect'' means zero mismatched lines. Each tool"
             r" is scored on its own applicable subset ($n$).}"
         ),
@@ -1437,7 +1437,7 @@ def write_painting_byte_table(accuracy_rows, output_path, include_omnidiff):
             r" it reports, a tool with sub-line output its own ranges; a byte is painted when the"
             r" painting gives it any label. \emph{Exact}: no byte differs. \emph{Within 1\%}: at"
             r" most 1\% of the bytes of the two files. A fixture with a \emph{Minimal} and a"
-            r" \emph{Maximal} painting is scored against each, from the same output.}"
+            r" \emph{Extended} painting is scored against each, from the same output.}"
         ),
         f"  \\label{{tab:painting-bytes{suffix}}}",
         r"  \small",
@@ -1575,7 +1575,7 @@ def omnidiff_timed_as_process(rows: list[dict]) -> bool:
     """Whether this timing CSV times OmniDiff as a whole process, as every external tool is.
 
     Since 2026-11-24 `benchmark_other` spawns the release `omnidiff` binary per repeat
-    (`omnidiff --headless --maximal --color never BEFORE AFTER`), and `omnidiff_ms` is that whole
+    (`omnidiff --headless --extended --color never BEFORE AFTER`), and `omnidiff_ms` is that whole
     process - start, both parses, the diff, the rendering - while the old in-process time moved to
     `omnidiff_inprocess_ms`. That column's presence is what tells the two formats apart, so a CSV
     measured before the change still reads as it did."""

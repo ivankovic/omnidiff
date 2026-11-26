@@ -26,7 +26,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before 1799-1800 -> after 1803-1804 (2 line(s)) gain 2 byte(s) of
+    // Invariant 32, Extended: before 1799-1800 -> after 1803-1804 (2 line(s)) gain 2 byte(s) of
     // indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations("lua-neovim-neovim-add-new-logic", 1)
 }

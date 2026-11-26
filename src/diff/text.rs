@@ -1067,14 +1067,14 @@ impl RangeWalk<'_> {
         // `process(int x)` -> `process(const int x)`). A node inside the rewritten part of the row
         // keeps `Move` (`function fetchData(` in `typescript-async-await`). Reindented nodes are
         // excluded so they still reach `paint_reindent_only_moves`. Under `MINIMAL` the row index
-        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under `MAXIMAL`
-        // it may differ when the two rows also open on the same text past their indentation, so
-        // they read as one row an edit above pushed down: without that head, a shared tail is a
-        // call relocated into another statement (`return f(x);` -> `y = f(x);`,
-        // `java-defects4j-codec-6-base64inputstream`), which the `Maximal` paintings mark moved.
+        // may differ, since `node_untouched_on_its_row` compares the rows' content. Under
+        // `EXTENDED` it may differ when the two rows also open on the same text past their
+        // indentation, so they read as one row an edit above pushed down: without that head, a
+        // shared tail is a call relocated into another statement (`return f(x);` -> `y = f(x);`,
+        // `java-defects4j-codec-6-base64inputstream`), which the `Extended` paintings mark moved.
         //
-        // Under `MAXIMAL` a closing bracket whose opening bracket moved keeps `Move`: a pair shares
-        // its fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` ->
+        // Under `EXTENDED` a closing bracket whose opening bracket moved keeps `Move`: a pair
+        // shares its fate (`text_painting_findings.md` rule 2), and `calculateArea(w, h)` ->
         // `shape.area()` leaves the `)` in an untouched tail although its call moved
         // (`kotlin-refactor-function`).
         let shifted_by_an_edit_beside_it = s_on_its_row.is_some()
@@ -1301,7 +1301,7 @@ impl RangeWalk<'_> {
 ///
 /// Built once per row pair a walk meets ([`RangeWalk::row_pair`]), not once per node: every node
 /// on a row reads the same pair, and rebuilding it per node is quadratic in a row's length. A
-/// 16,384-element list on one line took 6.5 s under `MAXIMAL` and 18 s under `MINIMAL` that way,
+/// 16,384-element list on one line took 6.5 s under `EXTENDED` and 18 s under `MINIMAL` that way,
 /// 0.1 s split one element a line.
 struct RowPair {
     rows: (usize, usize),
@@ -1371,7 +1371,7 @@ fn node_untouched_on_its_row(
     let in_prefix = s.end_column <= prefix && d.end_column <= prefix;
     // The suffix is capped so it never overlaps the prefix, which can leave a node in a repeated
     // tail outside it (`f(a)` -> `f(a, a)`); under `MINIMAL` an identical tail from the node on
-    // reads the same. Not under `MAXIMAL`: `rust-tauri-apps-tauri-add-use-and-function` paints
+    // reads the same. Not under `EXTENDED`: `rust-tauri-apps-tauri-add-use-and-function` paints
     // `PhysicalSize` moved when `PhysicalRect, ` lands before it in the same import list.
     let in_suffix = (s.start_column + suffix >= source_row.len()
         && d.start_column + suffix >= destination_row.len())
@@ -1851,10 +1851,10 @@ impl Projection<'_> {
 }
 
 impl TextDiff {
-    /// [`Self::from_with_options`] under [`RenderOptions::MAXIMAL`], for callers with no opinion on
-    /// the construction-time options.
+    /// [`Self::from_with_options`] under [`RenderOptions::EXTENDED`], for callers with no opinion
+    /// on the construction-time options.
     pub fn from(before: &Code, after: &Code, diff: &ASTDiff, node_cache: &NodeCache) -> Self {
-        Self::from_with_options(before, after, diff, node_cache, RenderOptions::MAXIMAL)
+        Self::from_with_options(before, after, diff, node_cache, RenderOptions::EXTENDED)
     }
 
     /// Builds both sides' ranges under `options`. Only the construction-time options are read

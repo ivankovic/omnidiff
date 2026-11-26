@@ -106,7 +106,7 @@ Appearance
                    Highlighting: a checkbox per setting, an example diff in the open
                    file's language (Rust when none is open) painted as you choose, and
                    the selected setting's effect on it in bold and marked with a diamond
-                   in the gutter; 1/2 pick the Minimal/Maximal presets, and the last row is
+                   in the gutter; 1/2 pick the Minimal/Extended presets, and the last row is
                    the node highlight (H). Trailing whitespace is never painted,
                    regardless of any setting.
                    Layout: the panel layout (v), and the width from which auto shows

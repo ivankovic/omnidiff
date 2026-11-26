@@ -28,7 +28,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariants 9 and 30, Maximal: row 102 paints the space before the inserted `1.64em; // ...`
+    // Invariants 9 and 30, Extended: row 102 paints the space before the inserted `1.64em; // ...`
     // as Move on both sides, where the tree mapping reads it Delete/Insert and the spacing did not
     // change.
     assert_ground_truth_invariants_with_known_violations(

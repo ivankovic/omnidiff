@@ -156,7 +156,7 @@ def _painted_row(cases, line=None, byte=None, total_lines=100, total_bytes=1000,
     """A `benchmark_accuracy.csv` row for tool `t`, with painting cells for `cases` only."""
     row = {"solution": "x", "total_lines": str(total_lines), "total_bytes": str(total_bytes)}
     row["t_status"] = status
-    for case in ("minimal", "maximal", "single"):
+    for case in ("minimal", "extended", "single"):
         row[f"t_painting_line_{case}_mismatches"] = str(line[case]) if case in cases else ""
         row[f"t_painting_{case}_mismatches"] = str(byte[case]) if case in cases else ""
     return row
@@ -164,9 +164,9 @@ def _painted_row(cases, line=None, byte=None, total_lines=100, total_bytes=1000,
 
 def test_painting_line_score_matches_when_the_tool_agrees_with_either_preset():
     both = _painted_row(
-        ["minimal", "maximal"],
-        line={"minimal": 4, "maximal": 0},
-        byte={"minimal": 9, "maximal": 0},
+        ["minimal", "extended"],
+        line={"minimal": 4, "extended": 0},
+        byte={"minimal": 9, "extended": 0},
     )
     assert benchmark_other_report.painting_line_score(both, "t") == 0
     single = _painted_row(["single"], line={"single": 2}, byte={"single": 5})
@@ -204,7 +204,7 @@ def test_painting_tables_and_macros_generate_for_any_number_of_fixtures(
         row = {"solution": f"f{i}", "total_lines": "50", "total_bytes": "500"}
         for tool in benchmark_other_report.PAPER_MACRO_STEMS:
             row[f"{tool}_status"] = "ok"
-            for case in ("minimal", "maximal", "single"):
+            for case in ("minimal", "extended", "single"):
                 graded = (i % 2 == 0) and ((case == "single") == (i % 4 == 0))
                 row[f"{tool}_painting_line_{case}_mismatches"] = str(i % 3) if graded else ""
                 row[f"{tool}_painting_{case}_mismatches"] = str(i % 7) if graded else ""
@@ -873,9 +873,9 @@ def test_growth_table_prints_a_dash_for_an_empty_cell():
         (["Only one solution"], "single"),
         (["Left"], "single"),
         (["Minimal"], "minimal"),
-        (["Maximal (outer)"], "maximal"),
+        (["Extended (outer)"], "extended"),
         (["Fuller"], "single"),
-        (["Minimal", "Maximal"], "both"),
+        (["Minimal", "Extended"], "both"),
     ],
 )
 def test_graded_case_follows_the_painting_names(names, case):
@@ -883,11 +883,11 @@ def test_graded_case_follows_the_painting_names(names, case):
 
 
 def _preset_rows():
-    def row(fixture, minimal, maximal, text_class, runs, size):
+    def row(fixture, minimal, extended, text_class, runs, size):
         return {
             "fixture": fixture,
             "minimal": minimal,
-            "maximal": maximal,
+            "extended": extended,
             "class": text_class,
             "runs": str(runs),
             "bytes": str(size),

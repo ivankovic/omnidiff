@@ -4445,7 +4445,7 @@
       ]
     },
     {
-      "name": "Maximal (Inner parenthesis)",
+      "name": "Extended (Inner parenthesis)",
       "entries": [
         {
           "operation": "Delete",
@@ -4644,7 +4644,7 @@
       ]
     },
     {
-      "name": "Maximal (Outer parenthesis)",
+      "name": "Extended (Outer parenthesis)",
       "entries": [
         {
           "operation": "Delete",

@@ -104,19 +104,19 @@ ground-truth mappings in `src/test/data/diffs/`:
 
 Neither is met yet. 1,479 of the 2,302 fixtures carry a hand-painted ground truth - every byte of
 both files labelled with what a human says happened to it - and OmniDiff's own highlighting is
-compared against it byte by byte, under each of its two highlighting presets (`--full`, which keeps
-brackets, separators and leading whitespace, and `--minimal`, which drops them):
+compared against it byte by byte, under each of its two highlighting presets (`--extended`, which
+keeps brackets, separators and leading whitespace, and `--minimal`, which drops them):
 
 | preset | zero mismatched bytes | at most 1% mismatched | mismatched bytes, whole corpus |
 |---|---|---|---|
-| `--full` | **873 (59.0%)** | **1,291 (87.3%)** | 112,321 of 75.9M (0.15%) |
+| `--extended` | **873 (59.0%)** | **1,291 (87.3%)** | 112,321 of 75.9M (0.15%) |
 | `--minimal` | **1,021 (69.0%)** | **1,354 (91.5%)** | 55,930 of 75.9M (0.07%) |
 
 The whole-corpus rate is far below 1% because most of each file is unchanged and nobody gets that
 wrong; the per-test-case numbers are the ones that count, since a reader meets the mistakes one
 diff at a time. Most of what is left is not in the matching: rendering the human's own node
-mapping still disagrees with the painting on 92% of the `--full` bytes and 92% of the `--minimal`
-ones, so the highlighting rules own the gap more than the matcher does.
+mapping still disagrees with the painting on 92% of the `--extended` bytes and 92% of the
+`--minimal` ones, so the highlighting rules own the gap more than the matcher does.
 
 `make update-painting-attribution` measures this and writes one row per fixture and preset to
 `research/data/quality/painting_attribution.csv`, which the table is counted from;
@@ -223,8 +223,8 @@ Run `make benchmark-quality`. This command diffs every fixture in `src/test/data
 human-verified ground truth mapping. It reports how many nodes each fixture gets wrong. Use this
 output to see whether a change made diffs better or worse.
 
-[Accurate](#accurate) above states the painting targets, compared byte by byte under both `--full`
-and `--minimal`.
+[Accurate](#accurate) above states the painting targets, compared byte by byte under both
+`--extended` and `--minimal`.
 
 `make update-painting-attribution` measures them, one row per fixture and preset in
 `research/data/quality/painting_attribution.csv`, and `make check-painting-attribution` fails CI if

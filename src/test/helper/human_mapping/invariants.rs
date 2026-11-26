@@ -24,13 +24,13 @@
 //! 1. [`minimal_never_paints_trailing_whitespace`] - a painting `Minimal` answers to paints no byte
 //!    of a row's trailing whitespace; any other painting ([`rows_end_on_visible_characters`]) may
 //!    paint trailing whitespace only as a run of nothing else.
-//! 2. [`maximal_painting_covers_minimal`] - every byte painted under `Minimal` is painted under
-//!    `Maximal`.
+//! 2. [`extended_painting_covers_minimal`] - every byte painted under `Minimal` is painted under
+//!    `Extended`.
 //! 3. [`delimiter_pairs_agree`] - a bracket and its partner carry one verdict in the tree mapping.
-//! 4. [`maximal_paints_a_wholly_changed_line_whole`] - a `Maximal` line whose every visible
+//! 4. [`extended_paints_a_wholly_changed_line_whole`] - an `Extended` line whose every visible
 //!    character is inserted, or every one deleted, has no unpainted byte before its last visible
 //!    character.
-//! 5. [`no_unpainted_whitespace_between_painted_regions`] - a `Maximal` painting never breaks one
+//! 5. [`no_unpainted_whitespace_between_painted_regions`] - an `Extended` painting never breaks one
 //!    highlight in two over whitespace.
 //! 6. [`minimal_never_paints_leading_whitespace`] - a `Minimal` painting never claims a line's
 //!    indentation (the mirror of 5).
@@ -52,7 +52,7 @@
 //! 15. [`match_but_not_identical_entries_differ`] - a `MatchButNotIdentical` entry's two subtrees
 //!     do not read byte-identically with every descendant paired inside.
 //! 16. [`identifier_updates_are_painted_by_preset`] - a renamed identifier is painted at its own
-//!     preset's granularity: `Minimal` marks the differing words or characters, `Maximal` marks it
+//!     preset's granularity: `Minimal` marks the differing words or characters, `Extended` marks it
 //!     entire.
 //! 17. [`boolean_flips_are_one_edit`] - a boolean the mapping pairs is not painted `Delete` on one
 //!     side and `Insert` on the other.
@@ -86,20 +86,20 @@
 //! 28. [`removed_nodes_are_not_made_of_kept_ones`] - a node the mapping deletes or inserts is not
 //!     made of exactly the children of one node of its own kind on the other side.
 //! 29. [`whitespace_only_changes_split_by_preset`] - when the two files differ only in whitespace,
-//!     `Minimal` paints nothing and `Maximal` paints the whitespace that changed.
-//! 30. [`spaces_before_edits_follow_their_count`] - in a `Maximal` painting, the space before an
+//!     `Minimal` paints nothing and `Extended` paints the whitespace that changed.
+//! 30. [`spaces_before_edits_follow_their_count`] - in an `Extended` painting, the space before an
 //!     edit inside a line goes with the edit exactly when the edit changed how many spaces are
 //!     there; at a line's start, a change of indentation is painted from column 0.
-//! 31. [`changed_parts_are_painted_whole`] - in a `Maximal` painting, a number, version part or
+//! 31. [`changed_parts_are_painted_whole`] - in an `Extended` painting, a number, version part or
 //!     word of a comment or string that changed is painted whole and no further: a separator beside
 //!     it stays unpainted, except between two changed parts, where it goes with the right-hand one;
 //!     an inserted or deleted part takes the separator on its left (on its right at a sequence's
 //!     start).
-//! 32. [`reindented_lines_paint_their_indentation_change`] - in a `Maximal` painting, a line kept
+//! 32. [`reindented_lines_paint_their_indentation_change`] - in an `Extended` painting, a line kept
 //!     on both sides whose indentation changed paints the change from column 0: the indentation
 //!     it gained `Insert`, the indentation it lost `Delete`.
 //!
-//! 4 and 5 read only the paintings `MAXIMAL` answers to (see [`paintings_with_labels`]); `MINIMAL`
+//! 4 and 5 read only the paintings `EXTENDED` answers to (see [`paintings_with_labels`]); `MINIMAL`
 //! is free to leave whitespace alone. 9 is the only rule comparing the two ground truths'
 //! rendered labels: they may chunk an edit differently, but cannot disagree about what survives.
 //! 10 to 15 read the tree mapping through [`Caches`], so they can ask about pairs and do not
@@ -157,7 +157,7 @@ pub struct GroundTruthViolation {
 }
 
 impl std::fmt::Display for GroundTruthViolation {
-    /// `[9] painting 'Maximal' before paints ...` - the rule's number, then its sentence. Not part
+    /// `[9] painting 'Extended' before paints ...` - the rule's number, then its sentence. Not part
     /// of
     /// `message` because `human_solver`'s popup shows the number in its own column.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -242,13 +242,13 @@ fn sites_from_offsets(side: usize, contents: &str, offsets: &[usize]) -> Vec<Vio
     sites
 }
 
-/// What invariants 2 and 8 carry while scoring one `Minimal` alternative against every `Maximal`
+/// What invariants 2 and 8 carry while scoring one `Minimal` alternative against every `Extended`
 /// one: both report only the closest counterpart, since the alternatives are a disjunction (see
-/// [`maximal_painting_covers_minimal`]).
-struct ClosestMaximal<'a> {
+/// [`extended_painting_covers_minimal`]).
+struct ClosestExtended<'a> {
     /// Bytes the two disagree about - the number being minimised.
     count: usize,
-    /// The `Maximal` alternative's own name (invariant 2's message).
+    /// The `Extended` alternative's own name (invariant 2's message).
     name: &'a str,
     /// 1-based rows, per side, for the message's row list.
     rows: [Vec<usize>; 2],
@@ -295,7 +295,7 @@ pub fn ground_truth_invariant_violations_for(
     }
 
     // Invariant 1 in its strict form for every painting `Minimal` answers to, a lone one
-    // included, and in its loose form for a painting only `Maximal` reads.
+    // included, and in its loose form for a painting only `Extended` reads.
     let answers_to_minimal: Vec<&str> = paintings_answering(mapping, RenderOptions::MINIMAL)
         .into_iter()
         .map(|named| named.name.as_str())
@@ -313,7 +313,7 @@ pub fn ground_truth_invariant_violations_for(
     for named in &mapping.text_mappings {
         violations.extend(painted_ranges_do_not_overlap(named, before, after));
     }
-    violations.extend(maximal_painting_covers_minimal(mapping, before, after)?);
+    violations.extend(extended_painting_covers_minimal(mapping, before, after)?);
     violations.extend(presets_agree_on_what_survives(mapping, before, after)?);
     // Built once: resolving the mapping's paths into `Caches` is most of what a tree-reading rule
     // costs on a large fixture, and 3 and 9 read the same caches the context holds.
@@ -400,9 +400,9 @@ pub fn ground_truth_invariant_violations_for(
         violations.extend(single_valued_fields_hold_a_pair(context, before, after));
         violations.extend(wrapped_tokens_are_paired(context, before, after));
     }
-    // Invariants 4 and 5 read only the paintings `MAXIMAL` answers to.
+    // Invariants 4 and 5 read only the paintings `EXTENDED` answers to.
     let (leading, interior, minimal_indentation) =
-        maximal_painting_whitespace_violations(mapping, before, after)?;
+        extended_painting_whitespace_violations(mapping, before, after)?;
     violations.extend(leading);
     violations.extend(interior);
     violations.extend(minimal_indentation);
@@ -494,15 +494,16 @@ pub(crate) fn painted_labels(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Invariant 1: trailing whitespace is never painted by Minimal, and by Maximal only when it changed
+// Invariant 1: trailing whitespace is never painted by Minimal, and by Extended only when it
+// changed
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-/// **Invariant 1**, the `Maximal` half: no painted run may end in a row's **trailing**
+/// **Invariant 1**, the `Extended` half: no painted run may end in a row's **trailing**
 /// whitespace, a stripe of colour hanging off the end of a line, pointing at nothing.
 ///
 /// A run ending on a space mid-row is the ordinary shape of an edit (deleting `foo ` from
 /// `foo bar`), and a run that is *entirely* whitespace has no visible character to end on; both
-/// pass. The second is how `Maximal` paints trailing whitespace that changed, the change
+/// pass. The second is how `Extended` paints trailing whitespace that changed, the change
 /// `RenderOptions::changed_trailing_whitespace` paints: the run is the whitespace alone, never
 /// glued to the code before it. A row with nothing visible is skipped for the same reason.
 ///
@@ -622,31 +623,31 @@ pub(crate) fn minimal_never_paints_trailing_whitespace(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Invariant 2: Maximal paints everything Minimal paints
+// Invariant 2: Extended paints everything Minimal paints
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
-/// Whatever `Minimal` paints, `Maximal` paints too.
+/// Whatever `Minimal` paints, `Extended` paints too.
 ///
 /// The presets differ in *how much* of an edit to highlight, not in *what* the edit is. Only
-/// painted-or-not is compared, since `Maximal` routinely widens a `Move` into the enclosing
+/// painted-or-not is compared, since `Extended` routinely widens a `Move` into the enclosing
 /// `Update`. A lone painting answers for both presets, so nothing is compared. With several
-/// alternatives per preset, each `Minimal` need only be covered by *some* `Maximal`: holding one
-/// arm of a disjunction to another's `Maximal` asserts a pairing the painter never claimed.
-fn maximal_painting_covers_minimal(
+/// alternatives per preset, each `Minimal` need only be covered by *some* `Extended`: holding one
+/// arm of a disjunction to another's `Extended` asserts a pairing the painter never claimed.
+fn extended_painting_covers_minimal(
     mapping: &super::HumanMapping,
     before: &Code,
     after: &Code,
 ) -> Result<Vec<GroundTruthViolation>> {
-    let (Ok(minimal), Ok(maximal)) = (
+    let (Ok(minimal), Ok(extended)) = (
         paintings_for_mode(mapping, RenderOptions::MINIMAL),
-        paintings_for_mode(mapping, RenderOptions::MAXIMAL),
+        paintings_for_mode(mapping, RenderOptions::EXTENDED),
     ) else {
         return Ok(Vec::new());
     };
     // A single painting is trivially its own superset.
     if minimal
         .iter()
-        .all(|m| maximal.iter().any(|f| std::ptr::eq(*m, *f)))
+        .all(|m| extended.iter().any(|f| std::ptr::eq(*m, *f)))
     {
         return Ok(Vec::new());
     }
@@ -654,19 +655,19 @@ fn maximal_painting_covers_minimal(
     let mut violations = Vec::new();
     for minimal in &minimal {
         let minimal_labels = painted_labels(minimal, before, after)?;
-        let mut closest: Option<ClosestMaximal> = None;
-        for maximal in &maximal {
-            let maximal_labels = painted_labels(maximal, before, after)?;
+        let mut closest: Option<ClosestExtended> = None;
+        for extended in &extended {
+            let extended_labels = painted_labels(extended, before, after)?;
             let mut missing = 0usize;
             let mut rows: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
             let mut offsets: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
             for (side, contents) in [(0usize, &before.contents), (1usize, &after.contents)] {
-                for (offset, (minimal, maximal)) in minimal_labels[side]
+                for (offset, (minimal, extended)) in minimal_labels[side]
                     .iter()
-                    .zip(maximal_labels[side].iter())
+                    .zip(extended_labels[side].iter())
                     .enumerate()
                 {
-                    if minimal.is_some() && maximal.is_none() {
+                    if minimal.is_some() && extended.is_none() {
                         missing += 1;
                         rows[side].push(row_of(contents, offset));
                         offsets[side].push(offset);
@@ -674,18 +675,18 @@ fn maximal_painting_covers_minimal(
                 }
             }
             if closest.as_ref().is_none_or(|best| missing < best.count) {
-                closest = Some(ClosestMaximal {
+                closest = Some(ClosestExtended {
                     count: missing,
-                    name: maximal.name.as_str(),
+                    name: extended.name.as_str(),
                     rows,
                     offsets,
                     detail: String::new(),
                 });
             }
         }
-        if let Some(ClosestMaximal {
+        if let Some(ClosestExtended {
             count: missing,
-            name: maximal,
+            name: extended,
             rows,
             offsets,
             ..
@@ -696,8 +697,9 @@ fn maximal_painting_covers_minimal(
                 2,
                 Some(&minimal.name),
                 format!(
-                    "painting '{}' paints {missing} byte(s) that '{maximal}' leaves unpainted, on \
-                     {} - a Maximal painting must cover everything its Minimal counterpart covers",
+                    "painting '{}' paints {missing} byte(s) that '{extended}' leaves unpainted, on \
+                     {} - an Extended painting must cover everything its Minimal counterpart \
+                     covers",
                     minimal.name,
                     site_rows(&rows),
                 ),
@@ -748,7 +750,7 @@ fn paintings_answering(
         .into_iter()
         .filter(|named| {
             several
-                || !(designates_minimal(&named.name) || designates_maximal(&named.name))
+                || !(designates_minimal(&named.name) || designates_extended(&named.name))
                 || designates_minimal(&named.name) == wanted_minimal
         })
         .collect()
@@ -761,10 +763,10 @@ pub fn designates_minimal(name: &str) -> bool {
     super::designates_preset(name, "Minimal")
 }
 
-/// Whether a painting's name declares it the `Maximal` reading. `pub` for `human_solver`, which
+/// Whether a painting's name declares it the `Extended` reading. `pub` for `human_solver`, which
 /// keeps invariant 4 for the painter when branching a painting.
-pub fn designates_maximal(name: &str) -> bool {
-    super::designates_preset(name, "Maximal")
+pub fn designates_extended(name: &str) -> bool {
+    super::designates_preset(name, "Extended")
 }
 
 /// Rows of `contents` as `(row index, byte offset of the row, the row itself)`.
@@ -777,8 +779,8 @@ fn rows_of(contents: &str) -> impl Iterator<Item = (usize, usize, &str)> {
     })
 }
 
-/// **Invariant 4.** If a `Maximal` painting calls *every* visible character on a line inserted, or
-/// every one deleted, the whole line up to its last visible character - whitespace included - is
+/// **Invariant 4.** If an `Extended` painting calls *every* visible character on a line inserted,
+/// or every one deleted, the whole line up to its last visible character - whitespace included - is
 /// accounted for. A line entering or leaving the file does so whole; unpainted whitespace in it
 /// reads as several edits to a surviving line. The data-side counterpart of
 /// `RenderOptions::leading_whitespace`.
@@ -788,7 +790,7 @@ fn rows_of(contents: &str) -> impl Iterator<Item = (usize, usize, &str)> {
 /// genuinely be unchanged. Any verdict on the whitespace passes, only **unpainted** bytes are
 /// reported: pairing shared indentation in a `Match` is a stronger claim, not a weaker one
 /// (`go-lazygit-switch-to-strings` row 22). A line with nothing visible is skipped.
-pub(crate) fn maximal_paints_a_wholly_changed_line_whole(
+pub(crate) fn extended_paints_a_wholly_changed_line_whole(
     painting: &str,
     labels: &PaintedLabels,
     before: &Code,
@@ -849,7 +851,7 @@ pub(crate) fn maximal_paints_a_wholly_changed_line_whole(
     violations
 }
 
-/// **Invariant 5.** A `Maximal` painting never leaves an all-whitespace run unpainted between two
+/// **Invariant 5.** An `Extended` painting never leaves an all-whitespace run unpainted between two
 /// painted regions on the same row: that breaks one highlight into two edits. A gap holding any
 /// visible character is a real gap between two edits and passes.
 pub(crate) fn no_unpainted_whitespace_between_painted_regions(
@@ -942,7 +944,7 @@ pub(crate) fn minimal_never_paints_leading_whitespace(
 
 /// The three preset-scoped whitespace rules, as `(invariant 4, invariant 5, invariant 6)`, kept
 /// apart so a corpus sweep can say which one a fixture fails.
-pub fn maximal_painting_whitespace_violations(
+pub fn extended_painting_whitespace_violations(
     mapping: &super::HumanMapping,
     before: &Code,
     after: &Code,
@@ -954,15 +956,16 @@ pub fn maximal_painting_whitespace_violations(
     let mut leading = Vec::new();
     let mut interior = Vec::new();
     let mut minimal_indentation = Vec::new();
-    // A lone painting asserts its rendering is unambiguous, not that it follows `Maximal`'s
-    // conventions, so invariant 5 applies only to a painting actually named for `Maximal`.
-    let named_for_maximal = mapping.text_mappings.len() > 1;
-    for (painting, labels) in paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)?
+    // A lone painting asserts its rendering is unambiguous, not that it follows `Extended`'s
+    // conventions, so invariant 5 applies only to a painting actually named for `Extended`.
+    let named_for_extended = mapping.text_mappings.len() > 1;
+    for (painting, labels) in
+        paintings_with_labels(mapping, before, after, RenderOptions::EXTENDED)?
     {
-        leading.extend(maximal_paints_a_wholly_changed_line_whole(
+        leading.extend(extended_paints_a_wholly_changed_line_whole(
             painting, &labels, before, after,
         ));
-        if named_for_maximal {
+        if named_for_extended {
             interior.extend(no_unpainted_whitespace_between_painted_regions(
                 painting, &labels, before, after,
             ));
@@ -985,22 +988,23 @@ pub fn maximal_painting_whitespace_violations(
 /// other. `Move` says the bytes *survive*; two renderings of one edit cannot disagree about that.
 ///
 /// `Move` against `Update` is the ordinary widening between presets (see
-/// [`maximal_painting_covers_minimal`]) and is not reported. Alternatives are a disjunction, as in
-/// invariant 2: each `Minimal` is scored against its closest `Maximal`. A lone painting is skipped.
+/// [`extended_painting_covers_minimal`]) and is not reported. Alternatives are a disjunction, as in
+/// invariant 2: each `Minimal` is scored against its closest `Extended`. A lone painting is
+/// skipped.
 fn presets_agree_on_what_survives(
     mapping: &super::HumanMapping,
     before: &Code,
     after: &Code,
 ) -> Result<Vec<GroundTruthViolation>> {
-    let (Ok(minimal), Ok(maximal)) = (
+    let (Ok(minimal), Ok(extended)) = (
         paintings_for_mode(mapping, RenderOptions::MINIMAL),
-        paintings_for_mode(mapping, RenderOptions::MAXIMAL),
+        paintings_for_mode(mapping, RenderOptions::EXTENDED),
     ) else {
         return Ok(Vec::new());
     };
     if minimal
         .iter()
-        .all(|m| maximal.iter().any(|f| std::ptr::eq(*m, *f)))
+        .all(|m| extended.iter().any(|f| std::ptr::eq(*m, *f)))
     {
         return Ok(Vec::new());
     }
@@ -1017,9 +1021,9 @@ fn presets_agree_on_what_survives(
     let mut violations = Vec::new();
     for minimal in &minimal {
         let minimal_labels = painted_labels(minimal, before, after)?;
-        let mut closest: Option<ClosestMaximal> = None;
-        for maximal in &maximal {
-            let maximal_labels = painted_labels(maximal, before, after)?;
+        let mut closest: Option<ClosestExtended> = None;
+        for extended in &extended {
+            let extended_labels = painted_labels(extended, before, after)?;
             let mut count = 0usize;
             let mut first = String::new();
             let mut rows: [Vec<usize>; 2] = [Vec::new(), Vec::new()];
@@ -1027,7 +1031,7 @@ fn presets_agree_on_what_survives(
             for (side, contents) in [(0usize, &before.contents), (1usize, &after.contents)] {
                 for (offset, (left, right)) in minimal_labels[side]
                     .iter()
-                    .zip(maximal_labels[side].iter())
+                    .zip(extended_labels[side].iter())
                     .enumerate()
                 {
                     let (Some(left), Some(right)) = (left, right) else {
@@ -1039,7 +1043,7 @@ fn presets_agree_on_what_survives(
                     if count == 0 {
                         first = format!(
                             "the first reads {left:?} under '{}' and {right:?} under '{}'",
-                            minimal.name, maximal.name,
+                            minimal.name, extended.name,
                         );
                     }
                     rows[side].push(row_of(contents, offset));
@@ -1048,16 +1052,16 @@ fn presets_agree_on_what_survives(
                 }
             }
             if closest.as_ref().is_none_or(|best| count < best.count) {
-                closest = Some(ClosestMaximal {
+                closest = Some(ClosestExtended {
                     count,
-                    name: maximal.name.as_str(),
+                    name: extended.name.as_str(),
                     rows,
                     offsets,
                     detail: first,
                 });
             }
         }
-        if let Some(ClosestMaximal {
+        if let Some(ClosestExtended {
             count,
             rows,
             offsets,
@@ -1309,7 +1313,7 @@ fn move_against_unmatched(
                 || !unmatched[side].get(offset).copied().unwrap_or(false)
                 // Whitespace lives between tokens, where the tree has no node, so neither ground
                 // truth really describes it: `unmatched_bytes` gives it the enclosing verdict while
-                // a `Maximal` painting takes indentation with its construct.
+                // an `Extended` painting takes indentation with its construct.
                 || contents.as_bytes()[offset].is_ascii_whitespace()
             {
                 continue;
@@ -2711,7 +2715,7 @@ pub(crate) fn identical_pairs_are_not_painted_removed(
 ///
 /// Overlap, not containment: Minimal paints part of a token (`Linked` inserted and `HashMap`
 /// matched in `HashMap` -> `LinkedHashMap`). Named leaves only, as for 22; it also keeps out the
-/// alternative paintings of an ambiguous parenthesis ("Maximal (outer)", "Maximal (inner)"), of
+/// alternative paintings of an ambiguous parenthesis ("Extended (outer)", "Extended (inner)"), of
 /// which the mapping can agree with one.
 fn painted_matches_hold_the_mapping_partner(
     named: &NamedTextMapping,
@@ -2854,7 +2858,7 @@ fn match_but_not_identical_entries_differ(
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // Invariant 16: an identifier the mapping calls edited is painted narrow by Minimal, whole by
-// Maximal
+// Extended
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 /// Byte offsets inside an identifier at which a word may be cut: 0, both ends of any run of `_`,
@@ -3052,7 +3056,7 @@ fn is_identifier_leaf(leaf: Node, contents: &str) -> bool {
 }
 
 /// **Invariant 16.** When the tree mapping pairs two identifiers that differ, `Minimal` paints
-/// only the differing words or characters and `Maximal` paints the whole identifier on both sides.
+/// only the differing words or characters and `Extended` paints the whole identifier on both sides.
 ///
 /// The presets are two conventions (`text_painting_findings.md`, rule 1), and a rename is the edit
 /// where they must differ. Only paintings named for a preset are checked: a lone painting is held
@@ -3065,8 +3069,8 @@ pub(crate) fn identifier_updates_are_painted_by_preset(
     after: &Code,
 ) -> Vec<GroundTruthViolation> {
     let minimal = super::designates_preset(painting, "Minimal");
-    let maximal = super::designates_preset(painting, "Maximal");
-    if !minimal && !maximal {
+    let extended = super::designates_preset(painting, "Extended");
+    if !minimal && !extended {
         return Vec::new();
     }
     let mut violations = Vec::new();
@@ -3098,7 +3102,7 @@ pub(crate) fn identifier_updates_are_painted_by_preset(
                 &after.contents
             };
             let labels = &painted[side];
-            if maximal {
+            if extended {
                 if whole_leaf_label(labels, node).is_some_and(|label| label.is_some()) {
                     continue;
                 }
@@ -3107,7 +3111,7 @@ pub(crate) fn identifier_updates_are_painted_by_preset(
                     Some(painting),
                     format!(
                         "painting {painting:?} {} row {} does not paint the whole of {text:?}, \
-                         which the mapping pairs with {other:?} - a Maximal painting marks a \
+                         which the mapping pairs with {other:?} - an Extended painting marks a \
                          renamed identifier entire on both sides",
                         side_name(side),
                         row_of(contents, node.start_byte()),
@@ -3849,7 +3853,7 @@ fn removed_nodes_are_not_made_of_kept_ones(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-// Invariant 29: a whitespace-only change is empty under Minimal and painted under Maximal
+// Invariant 29: a whitespace-only change is empty under Minimal and painted under Extended
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
 /// Whether the two files differ only in whitespace: the same visible characters, split into the
@@ -3921,9 +3925,9 @@ fn unshared_paintable_bytes(run: &str, other: &str) -> usize {
         .count()
 }
 
-/// For one painting `Maximal` answers to, every changed whitespace run it under-paints: `(side,
+/// For one painting `Extended` answers to, every changed whitespace run it under-paints: `(side,
 /// run, painted, needed)`.
-fn maximal_whitespace_shortfalls(
+fn extended_whitespace_shortfalls(
     labels: &PaintedLabels,
     contents: [&str; 2],
     runs: &[Vec<std::ops::Range<usize>>; 2],
@@ -3959,18 +3963,18 @@ fn maximal_whitespace_shortfalls(
 
 /// **Invariant 29.** When the two files differ only in whitespace (see
 /// [`is_whitespace_only_change`]), the presets split: `Minimal` paints nothing, which
-/// `human_solver`'s `Z` records, and `Maximal` paints the whitespace that changed.
+/// `human_solver`'s `Z` records, and `Extended` paints the whitespace that changed.
 ///
 /// "Paints the whitespace" is counted, not placed: in each run of whitespace that changed,
-/// `Maximal` paints at least as many bytes as the run has that its counterpart lacks. Removing 22
+/// `Extended` paints at least as many bytes as the run has that its counterpart lacks. Removing 22
 /// of 34 spaces of indentation paints 22 of the 34, whichever 22 the painter picked, with any
 /// label. Line breaks are never painted, so a change made only of them (a blank line added, `\r\n`
 /// ->
-/// `\n`) asks nothing of `Maximal`.
+/// `\n`) asks nothing of `Extended`.
 ///
 /// A lone painting answers for both presets and cannot be empty and painted at once, so it is one
-/// violation: the fixture needs a `Minimal` and a `Maximal` painting. Unless nothing changed that a
-/// painting could show, in which case an empty lone painting passes.
+/// violation: the fixture needs a `Minimal` and an `Extended` painting. Unless nothing changed that
+/// a painting could show, in which case an empty lone painting passes.
 fn whitespace_only_changes_split_by_preset(
     mapping: &super::HumanMapping,
     before: &Code,
@@ -4023,7 +4027,7 @@ fn whitespace_only_changes_split_by_preset(
         let labels = painted_labels(lone, before, after)?;
         let name = lone.name.as_str();
         let painted = painted_offsets(&labels, 0).len() + painted_offsets(&labels, 1).len();
-        let shortfalls = maximal_whitespace_shortfalls(&labels, contents, &runs);
+        let shortfalls = extended_whitespace_shortfalls(&labels, contents, &runs);
         if painted > 0 {
             violations.push(GroundTruthViolation::new(
                 29,
@@ -4031,7 +4035,7 @@ fn whitespace_only_changes_split_by_preset(
                 format!(
                     "the files differ only in whitespace, and lone painting '{name}' paints \
                      {painted} byte(s) - it answers for Minimal too, which paints nothing here: \
-                     keep it as 'Maximal' and add an empty 'Minimal' (Z)"
+                     keep it as 'Extended' and add an empty 'Minimal' (Z)"
                 ),
                 painted_sites(&labels),
             ));
@@ -4041,8 +4045,8 @@ fn whitespace_only_changes_split_by_preset(
                 Some(name),
                 format!(
                     "the files differ only in whitespace, and lone painting '{name}' is empty - it \
-                     answers for Maximal too, which paints the whitespace that changed: {}; add a \
-                     'Maximal' painting",
+                     answers for Extended too, which paints the whitespace that changed: {}; \
+                     add an 'Extended' painting",
                     shortfall_summary(&shortfalls)
                 ),
                 shortfall_sites(&shortfalls),
@@ -4066,14 +4070,14 @@ fn whitespace_only_changes_split_by_preset(
             ));
         }
     }
-    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)? {
-        let shortfalls = maximal_whitespace_shortfalls(&labels, contents, &runs);
+    for (name, labels) in paintings_with_labels(mapping, before, after, RenderOptions::EXTENDED)? {
+        let shortfalls = extended_whitespace_shortfalls(&labels, contents, &runs);
         if !shortfalls.is_empty() {
             violations.push(GroundTruthViolation::new(
                 29,
                 Some(name),
                 format!(
-                    "the files differ only in whitespace, and Maximal painting '{name}' leaves \
+                    "the files differ only in whitespace, and Extended painting '{name}' leaves \
                      some of it unpainted: {}",
                     shortfall_summary(&shortfalls)
                 ),
@@ -4180,7 +4184,7 @@ fn rows_lined_up_by<'a>(
     paired
 }
 
-/// **Invariant 30.** In a painting named for `Maximal`, the spacing right before an edit inside a
+/// **Invariant 30.** In a painting named for `Extended`, the spacing right before an edit inside a
 /// line goes with the edit exactly when the edit changed how much spacing is there.
 ///
 /// The rows are lined up by what survives on them (see [`rows_lined_up_by_survivors`]), and each
@@ -4207,8 +4211,8 @@ fn rows_lined_up_by<'a>(
 /// goes with the deletion. A space a match takes to another row still counts: the row's own
 /// spacing is what is compared, and a token moved off it leaves its place behind.
 ///
-/// Only paintings named for `Maximal`: a lone painting asserts its rendering is unambiguous, not
-/// that it follows `Maximal`'s conventions (as for invariant 5).
+/// Only paintings named for `Extended`: a lone painting asserts its rendering is unambiguous, not
+/// that it follows `Extended`'s conventions (as for invariant 5).
 fn spaces_before_edits_follow_their_count(
     mapping: &super::HumanMapping,
     before: &Code,
@@ -4217,7 +4221,7 @@ fn spaces_before_edits_follow_their_count(
     if mapping.text_mappings.len() < 2 {
         return Ok(Vec::new());
     }
-    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)?;
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::EXTENDED)?;
     let partners: Vec<SpacingPartners> = paintings
         .iter()
         .map(|(name, _)| {
@@ -4594,7 +4598,7 @@ fn part_in_scope(code: &Code, offset: usize, text: &[u8]) -> bool {
     false
 }
 
-/// **Invariant 31.** In a painting named for `Maximal`, a number, a version part, or a word of a
+/// **Invariant 31.** In a painting named for `Extended`, a number, a version part, or a word of a
 /// comment or string that changed is painted whole, and no further than the separator beside it:
 /// `7.0-alpha-61516` -> `…61517` paints `61516`, not `6`, and not `-61516`.
 ///
@@ -4611,7 +4615,7 @@ fn part_in_scope(code: &Code, offset: usize, text: &[u8]) -> bool {
 /// invariant 30 ([`rows_lined_up_by_survivors`]); a painted stretch is widened to whole parts, and
 /// within it the two sides are compared piece by piece once their common start and end are set
 /// aside. Stretches that do not compare that simply (a rewrite) are not judged. Only paintings
-/// named for `Maximal`, as for invariant 30.
+/// named for `Extended`, as for invariant 30.
 fn changed_parts_are_painted_whole(
     mapping: &super::HumanMapping,
     before: &Code,
@@ -4620,7 +4624,7 @@ fn changed_parts_are_painted_whole(
     if mapping.text_mappings.len() < 2 {
         return Ok(Vec::new());
     }
-    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)?;
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::EXTENDED)?;
     if paintings.is_empty() {
         return Ok(Vec::new());
     }
@@ -4817,7 +4821,7 @@ fn changed_parts_are_painted_whole(
                             piece.end,
                             format!(
                                 "leaves {unpainted} of the {} byte(s) of `{}` unpainted, which \
-                                 becomes `{}` - Maximal paints a changed part whole",
+                                 becomes `{}` - Extended paints a changed part whole",
                                 piece.end - piece.start,
                                 piece_text(side, i),
                                 piece_text(1 - side, replaced[1 - side][index]),
@@ -4863,7 +4867,7 @@ fn changed_parts_are_painted_whole(
                         } else {
                             format!(
                                 "paints the unchanged `{shown}` beside the changed `{}` {} - \
-                                 Maximal stops at the separator",
+                                 Extended stops at the separator",
                                 piece_text(side, i),
                                 label_word(got),
                             )
@@ -5070,7 +5074,7 @@ fn rows_lined_up_by_trimmed_text(rows: &[Vec<Row<'_>>; 2]) -> Option<Vec<(usize,
     Some(pairs)
 }
 
-/// **Invariant 32.** In a painting named for `Maximal`, a line kept on both sides whose
+/// **Invariant 32.** In a painting named for `Extended`, a line kept on both sides whose
 /// indentation changed paints that change from column 0: the bytes it gained `Insert` on the
 /// after side, the bytes it lost `Delete` on the before side (see [`indentation_change`] for
 /// which bytes). The rest of the indentation and the line's code are free: the paintings paint
@@ -5092,7 +5096,7 @@ fn reindented_lines_paint_their_indentation_change(
     if mapping.text_mappings.len() < 2 {
         return Ok(Vec::new());
     }
-    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::MAXIMAL)?;
+    let paintings = paintings_with_labels(mapping, before, after, RenderOptions::EXTENDED)?;
     if paintings.is_empty() {
         return Ok(Vec::new());
     }
@@ -5414,7 +5418,7 @@ mod tests {
         let source = rust("let value = 1;\n");
         let mapping = painted(vec![
             ("Minimal", vec![moved(4, 5)]),
-            ("Maximal", vec![deleted(4, 5)]),
+            ("Extended", vec![deleted(4, 5)]),
         ]);
 
         let reported = survival_violations(&mapping, &source, &source);
@@ -5422,7 +5426,7 @@ mod tests {
         assert!(reported[0].contains("5 byte(s)"), "got {reported:?}");
     }
 
-    /// The pair the presets are *expected* to differ on: `Maximal` widening a `Move` into the
+    /// The pair the presets are *expected* to differ on: `Extended` widening a `Move` into the
     /// `Update` that contains it. Both readings agree the code survived, so there is nothing to
     /// report.
     #[test]
@@ -5436,7 +5440,7 @@ mod tests {
         };
         let mapping = painted(vec![
             ("Minimal", vec![moved(4, 5)]),
-            ("Maximal", vec![updated]),
+            ("Extended", vec![updated]),
         ]);
 
         assert!(
@@ -5445,20 +5449,20 @@ mod tests {
         );
     }
 
-    /// Alternatives are a disjunction: one `Maximal` reading contradicting a `Minimal` says nothing
-    /// while another agrees with it.
+    /// Alternatives are a disjunction: one `Extended` reading contradicting a `Minimal` says
+    /// nothing while another agrees with it.
     #[test]
     fn a_minimal_consistent_with_some_full_alternative_is_not_reported() {
         let source = rust("let value = 1;\n");
         let mapping = painted(vec![
             ("Minimal", vec![moved(4, 5)]),
-            ("Maximal (left)", vec![deleted(4, 5)]),
-            ("Maximal (right)", vec![moved(4, 5)]),
+            ("Extended (left)", vec![deleted(4, 5)]),
+            ("Extended (right)", vec![moved(4, 5)]),
         ]);
 
         assert!(
             survival_violations(&mapping, &source, &source).is_empty(),
-            "'Maximal (right)' agrees, which is all a disjunction needs"
+            "'Extended (right)' agrees, which is all a disjunction needs"
         );
     }
 
@@ -5536,7 +5540,7 @@ mod tests {
         let before = rust("let value = 1;\n");
         let mapping = painted(vec![
             ("Minimal", vec![deleted(4, 5)]),
-            ("Maximal", vec![deleted(0, 9)]),
+            ("Extended", vec![deleted(0, 9)]),
         ]);
 
         assert!(
@@ -5554,7 +5558,7 @@ mod tests {
         let before = rust("let x = 1;  \n");
         let after = rust("\n");
         // `1;  ` - one column past the semicolon, into the trailing spaces.
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", vec![deleted(8, 4)])]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", vec![deleted(8, 4)])]);
 
         let found = violations_of(1, &mapping, &before, &after);
         assert_eq!(found.len(), 1, "got {found:#?}");
@@ -5586,14 +5590,17 @@ mod tests {
         );
     }
 
-    /// Under `Maximal` a run with no visible character is exempt, as a blank row is: it is how
+    /// Under `Extended` a run with no visible character is exempt, as a blank row is: it is how
     /// that preset paints a commit stripping trailing spaces.
     #[test]
-    fn a_maximal_run_that_is_entirely_whitespace_is_exempt() {
+    fn a_extended_run_that_is_entirely_whitespace_is_exempt() {
         let before = rust("let x = 1;  \n");
         let after = rust("let x = 1;\n");
         // Just the two trailing spaces: trailing, but with nothing visible inside the run.
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", vec![deleted(10, 2)])]);
+        let mapping = painted(vec![
+            ("Minimal", vec![]),
+            ("Extended", vec![deleted(10, 2)]),
+        ]);
 
         assert!(
             violations_of(1, &mapping, &before, &after).is_empty(),
@@ -5602,14 +5609,14 @@ mod tests {
     }
 
     #[test]
-    fn a_maximal_row_with_nothing_visible_on_it_is_exempt() {
+    fn a_extended_row_with_nothing_visible_on_it_is_exempt() {
         // The painted row is all whitespace, so nothing on it could legally end a run.
         let before = rust("fn f() {\n    \n}\n");
         let after = rust("fn f() {\n}\n");
         let mapping = painted(vec![
             ("Minimal", vec![]),
             (
-                "Maximal",
+                "Extended",
                 vec![HumanTextEntry {
                     operation: HumanTextOperation::Delete,
                     before: vec![span(1, 0, 1, 4)],
@@ -5626,7 +5633,10 @@ mod tests {
     fn a_minimal_painting_of_changed_trailing_whitespace_is_reported() {
         let before = rust("let x = 1;  \n");
         let after = rust("let x = 1;\n");
-        let mapping = painted(vec![("Minimal", vec![deleted(10, 2)]), ("Maximal", vec![])]);
+        let mapping = painted(vec![
+            ("Minimal", vec![deleted(10, 2)]),
+            ("Extended", vec![]),
+        ]);
 
         let found = violations_of(1, &mapping, &before, &after);
         assert_eq!(found.len(), 1, "got {found:#?}");
@@ -5671,7 +5681,7 @@ mod tests {
                     after: Vec::new(),
                 }],
             ),
-            ("Maximal", vec![]),
+            ("Extended", vec![]),
         ]);
 
         assert!(violations_of(1, &mapping, &before, &after).is_empty());
@@ -5690,7 +5700,7 @@ mod tests {
         };
         let mapping = painted(vec![
             ("Minimal", vec![update(4, 9)]),
-            ("Maximal", vec![update(8, 9)]),
+            ("Extended", vec![update(8, 9)]),
         ]);
 
         let found = violations(&mapping, &before, &after);
@@ -5709,7 +5719,7 @@ mod tests {
         };
         let mapping = painted(vec![
             ("Minimal", vec![update(8, 9)]),
-            ("Maximal", vec![update(4, 9)]),
+            ("Extended", vec![update(4, 9)]),
         ]);
 
         assert!(violations(&mapping, &before, &after).is_empty());
@@ -5820,7 +5830,7 @@ mod tests {
 
         let unmatched = all_unmatched(source.contents.len(), source.contents.len());
         let reported =
-            move_against_unmatched("Maximal", &painted, &tree, &unmatched, &source, &source);
+            move_against_unmatched("Extended", &painted, &tree, &unmatched, &source, &source);
         assert_eq!(reported.len(), 1, "got {reported:#?}");
         assert!(reported[0].message.contains("after"), "got {reported:#?}");
         assert_eq!(reported[0].sites, vec![site_on_row(1, 0, 4, 5)]);
@@ -6350,7 +6360,7 @@ mod tests {
         let (before, after) = (rust("a.b();\n"), rust("a.b().c();\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![inserted(5, 4)],
         );
         assert!(violations_of(24, &mapping, &before, &after).is_empty());
@@ -6361,7 +6371,7 @@ mod tests {
         let (before, after) = (rust("a.b();\n"), rust("a.b().c();\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![inserted(6, 3)],
         );
         let found = violations_of(24, &mapping, &before, &after);
@@ -6377,7 +6387,7 @@ mod tests {
         let (before, after) = (rust("a.b();\n"), rust("a.c();\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![matched((2, 3), (2, 3))],
         );
         assert!(violations_of(24, &mapping, &before, &after).is_empty());
@@ -6393,13 +6403,13 @@ mod tests {
         };
         let member_only = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![insert(vec![span(1, 0, 1, 3)])],
         );
         assert!(violations_of(24, &member_only, &before, &after).is_empty());
         let with_dot = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![insert(vec![span(0, 5, 0, 6), span(1, 0, 1, 3)])],
         );
         let found = violations_of(24, &with_dot, &before, &after);
@@ -6420,10 +6430,17 @@ mod tests {
             before: Vec::new(),
             after: vec![span(1, 0, 1, end_column)],
         };
-        let whole = with_painting(mapping_by_text(&before, &after), "Maximal", vec![insert(4)]);
+        let whole = with_painting(
+            mapping_by_text(&before, &after),
+            "Extended",
+            vec![insert(4)],
+        );
         assert!(violations_of(25, &whole, &before, &after).is_empty());
-        let without_semicolon =
-            with_painting(mapping_by_text(&before, &after), "Maximal", vec![insert(3)]);
+        let without_semicolon = with_painting(
+            mapping_by_text(&before, &after),
+            "Extended",
+            vec![insert(3)],
+        );
         let found = violations_of(25, &without_semicolon, &before, &after);
         assert_eq!(found.len(), 1, "{found:?}");
         assert!(
@@ -6521,7 +6538,7 @@ mod tests {
         }
         // Only `Object y = ` is painted: the call and the `;` read as they did.
         let at = after.contents.find("Object").expect("present");
-        let mapping = with_painting(mapping, "Maximal", vec![inserted(at, "Object y = ".len())]);
+        let mapping = with_painting(mapping, "Extended", vec![inserted(at, "Object y = ".len())]);
         (before, after, mapping)
     }
 
@@ -6659,7 +6676,7 @@ mod tests {
         let (before, after) = (rust("x = 1;\n"), rust("y = 1;\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![deleted(0, 1), inserted(0, 1)],
         );
         assert!(violations_of(25, &mapping, &before, &after).is_empty());
@@ -6670,7 +6687,7 @@ mod tests {
         let (before, after) = (rust("let x = 1;\n"), rust("let x = 1;\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![deleted(4, 1), inserted(4, 1)],
         );
         let found = violations_mentioning(
@@ -6691,7 +6708,7 @@ mod tests {
         let (before, after) = (rust("let x = 1;\n"), rust("let y = 1;\n"));
         let split = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![deleted(4, 1), inserted(4, 1)],
         );
         let found = violations_of(27, &split, &before, &after);
@@ -6707,7 +6724,7 @@ mod tests {
 
         let one_edit = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![matched((4, 5), (4, 5))],
         );
         assert!(violations_of(27, &one_edit, &before, &after).is_empty());
@@ -6718,7 +6735,7 @@ mod tests {
         let (before, after) = (rust("let x = 1;\n"), rust("let x = 1;\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![deleted(4, 1)],
         );
         assert!(violations_mentioning(&mapping, &before, &after, "gone on one side").is_empty());
@@ -6727,7 +6744,7 @@ mod tests {
     #[test]
     fn a_removed_named_leaf_nobody_painted_is_reported_and_punctuation_is_not() {
         let (before, after) = (rust("f(x, y);\n"), rust("f(x);\n"));
-        let mapping = with_painting(mapping_by_text(&before, &after), "Maximal", Vec::new());
+        let mapping = with_painting(mapping_by_text(&before, &after), "Extended", Vec::new());
         let found =
             violations_mentioning(&mapping, &before, &after, "removed leaf/leaves unpainted");
         assert_eq!(found.len(), 1, "{found:?}");
@@ -6744,7 +6761,7 @@ mod tests {
         let (before, after) = (rust("f(x, y);\n"), rust("f(x);\n"));
         let mapping = with_painting(
             mapping_by_text(&before, &after),
-            "Maximal",
+            "Extended",
             vec![deleted(3, 3)],
         );
         assert!(
@@ -7332,14 +7349,17 @@ mod tests {
     }
 
     #[test]
-    fn a_whitespace_only_change_painted_empty_and_maximal_passes() {
+    fn a_whitespace_only_change_painted_empty_and_extended_passes() {
         let (before, after) = widened_space();
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", vec![inserted(8, 1)])]);
+        let mapping = painted(vec![
+            ("Minimal", vec![]),
+            ("Extended", vec![inserted(8, 1)]),
+        ]);
         assert!(violations_of(29, &mapping, &before, &after).is_empty());
         // Any placement and any label: the added space painted as part of a `Move` of both.
         let moved_pair = painted(vec![
             ("Minimal", vec![]),
-            ("Maximal", vec![matched((7, 8), (7, 9))]),
+            ("Extended", vec![matched((7, 8), (7, 9))]),
         ]);
         assert!(violations_of(29, &moved_pair, &before, &after).is_empty());
     }
@@ -7349,7 +7369,7 @@ mod tests {
         let (before, after) = widened_space();
         let mapping = painted(vec![
             ("Minimal", vec![inserted(8, 1)]),
-            ("Maximal", vec![inserted(8, 1)]),
+            ("Extended", vec![inserted(8, 1)]),
         ]);
         assert_eq!(
             violations_of(29, &mapping, &before, &after),
@@ -7363,11 +7383,11 @@ mod tests {
     #[test]
     fn a_full_painting_leaving_changed_whitespace_unpainted_is_reported() {
         let (before, after) = widened_space();
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", vec![])]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", vec![])]);
         assert_eq!(
             violations_of(29, &mapping, &before, &after),
             [
-                "the files differ only in whitespace, and Maximal painting 'Maximal' leaves some \
+                "the files differ only in whitespace, and Extended painting 'Extended' leaves some \
                  of it unpainted: 1 changed whitespace run(s) under-painted, the first on after \
                  row 1 (0 of the 1 byte(s) it changed painted)"
             ]
@@ -7399,10 +7419,10 @@ mod tests {
         };
         let both = painted(vec![
             ("Minimal", vec![]),
-            ("Maximal", vec![row_one(0, 4), row_one(1, 1)]),
+            ("Extended", vec![row_one(0, 4), row_one(1, 1)]),
         ]);
         assert!(violations_of(29, &both, &before, &after).is_empty());
-        let only_the_spaces = painted(vec![("Minimal", vec![]), ("Maximal", vec![row_one(0, 4)])]);
+        let only_the_spaces = painted(vec![("Minimal", vec![]), ("Extended", vec![row_one(0, 4)])]);
         assert_eq!(
             violations_of(29, &only_the_spaces, &before, &after).len(),
             1
@@ -7420,7 +7440,7 @@ mod tests {
         let empty_lone = painted(vec![("Only one solution", vec![])]);
         let found = violations_of(29, &empty_lone, &before, &after);
         assert_eq!(found.len(), 1, "{found:?}");
-        assert!(found[0].contains("add a 'Maximal' painting"), "{found:?}");
+        assert!(found[0].contains("add an 'Extended' painting"), "{found:?}");
     }
 
     /// A blank line added changes only line breaks, which no painting can colour.
@@ -7436,34 +7456,36 @@ mod tests {
         let (before, after) = (rust("let v = a;\n"), rust("let v = b;\n"));
         let mapping = painted(vec![
             ("Minimal", vec![matched((8, 9), (8, 9))]),
-            ("Maximal", vec![]),
+            ("Extended", vec![]),
         ]);
         assert!(violations_of(29, &mapping, &before, &after).is_empty());
     }
 
     // ── Invariant 30 ────────────────────────────────────────────────────────────────────────
 
-    /// A `Maximal` painting beside an empty `Minimal`: rule 30 judges only paintings named
-    /// `Maximal`.
-    fn maximal_only(entries: Vec<HumanTextEntry>) -> HumanMapping {
-        painted(vec![("Minimal", vec![]), ("Maximal", entries)])
+    /// An `Extended` painting beside an empty `Minimal`: rule 30 judges only paintings named
+    /// `Extended`.
+    fn extended_only(entries: Vec<HumanTextEntry>) -> HumanMapping {
+        painted(vec![("Minimal", vec![]), ("Extended", entries)])
     }
 
     #[test]
     fn an_inserted_word_between_two_takes_the_space_before_it() {
         let (before, after) = (rust("pub fn f() {}\n"), rust("pub async fn f() {}\n"));
         // ` async`: the space before it, not the one after.
-        assert!(violations_of(30, &maximal_only(vec![inserted(3, 6)]), &before, &after).is_empty());
+        assert!(
+            violations_of(30, &extended_only(vec![inserted(3, 6)]), &before, &after).is_empty()
+        );
         assert_eq!(
-            violations_of(30, &maximal_only(vec![inserted(4, 5)]), &before, &after),
+            violations_of(30, &extended_only(vec![inserted(4, 5)]), &before, &after),
             [
-                "painting 'Maximal' after row 1 holds the insert `async`, and the spacing at that \
+                "painting 'Extended' after row 1 holds the insert `async`, and the spacing at that \
                  point went from 1 to 2, so the 1 byte(s) of spacing next to it are painted \
                  insert - 1 byte(s) of it are not"
             ]
         );
         assert_eq!(
-            violations_of(30, &maximal_only(vec![inserted(4, 6)]), &before, &after).len(),
+            violations_of(30, &extended_only(vec![inserted(4, 6)]), &before, &after).len(),
             1,
             "`async ` takes the space after it, not the one before"
         );
@@ -7472,9 +7494,9 @@ mod tests {
     #[test]
     fn a_deleted_tail_takes_the_space_before_it() {
         let (before, after) = (rust("if (a && b) {}\n"), rust("if (a) {}\n"));
-        assert!(violations_of(30, &maximal_only(vec![deleted(5, 5)]), &before, &after).is_empty());
+        assert!(violations_of(30, &extended_only(vec![deleted(5, 5)]), &before, &after).is_empty());
         assert_eq!(
-            violations_of(30, &maximal_only(vec![deleted(6, 4)]), &before, &after).len(),
+            violations_of(30, &extended_only(vec![deleted(6, 4)]), &before, &after).len(),
             1
         );
     }
@@ -7484,8 +7506,8 @@ mod tests {
         let (before, after) = (rust("let v = a;\n"), rust("let v = b;\n"));
         let replaced =
             |from: usize, count: usize| vec![deleted(from, count), inserted(from, count)];
-        assert!(violations_of(30, &maximal_only(replaced(8, 1)), &before, &after).is_empty());
-        let found = violations_of(30, &maximal_only(replaced(7, 2)), &before, &after);
+        assert!(violations_of(30, &extended_only(replaced(8, 1)), &before, &after).is_empty());
+        let found = violations_of(30, &extended_only(replaced(7, 2)), &before, &after);
         assert_eq!(found.len(), 2, "one per side: {found:?}");
         assert!(
             found[0].contains("so its spacing stays unpainted"),
@@ -7498,12 +7520,12 @@ mod tests {
         let (before, after) = (rust("let v = a + b;\n"), rust("let v = b + a;\n"));
         let moved_pair = |from: (usize, usize), to: (usize, usize)| matched(from, to);
         // `a` and `b` trade places; with or without the space before each, both pass.
-        let bare = maximal_only(vec![
+        let bare = extended_only(vec![
             moved_pair((8, 9), (12, 13)),
             moved_pair((12, 13), (8, 9)),
         ]);
         assert!(violations_of(30, &bare, &before, &after).is_empty());
-        let with_spaces = maximal_only(vec![
+        let with_spaces = extended_only(vec![
             moved_pair((7, 9), (11, 13)),
             moved_pair((11, 13), (7, 9)),
         ]);
@@ -7515,7 +7537,7 @@ mod tests {
         // Ruby's `{ |d| f(d) }` -> `{ f(it) }`: ` f(` is matched to the space after `|d|`, so the
         // one after `{` is taken, and the space before `|d|` goes with the deletion.
         let (before, after) = (rust("m { |d| f(d) }\n"), rust("m { f(it) }\n"));
-        let mapping = maximal_only(vec![
+        let mapping = extended_only(vec![
             deleted(3, 4),
             matched((7, 10), (3, 6)),
             matched((10, 11), (6, 8)),
@@ -7531,11 +7553,13 @@ mod tests {
     #[test]
     fn unchanged_indentation_before_a_new_first_token_stays_unpainted() {
         let (before, after) = (rust("    f();\n"), rust("    await f();\n"));
-        assert!(violations_of(30, &maximal_only(vec![inserted(4, 6)]), &before, &after).is_empty());
+        assert!(
+            violations_of(30, &extended_only(vec![inserted(4, 6)]), &before, &after).is_empty()
+        );
         assert_eq!(
-            violations_of(30, &maximal_only(vec![inserted(0, 10)]), &before, &after),
+            violations_of(30, &extended_only(vec![inserted(0, 10)]), &before, &after),
             [
-                "painting 'Maximal' after row 1 starts with the insert `await`, and the \
+                "painting 'Extended' after row 1 starts with the insert `await`, and the \
                  indentation went from 4 to 4, so its spacing stays unpainted - 4 byte(s) of it are not"
             ]
         );
@@ -7544,9 +7568,9 @@ mod tests {
     #[test]
     fn grown_indentation_is_painted_from_the_start_of_the_row() {
         let (before, after) = (rust("  f();\n"), rust("    await f();\n"));
-        let at_the_start = maximal_only(vec![inserted(0, 2), inserted(4, 6)]);
+        let at_the_start = extended_only(vec![inserted(0, 2), inserted(4, 6)]);
         assert!(violations_of(30, &at_the_start, &before, &after).is_empty());
-        let next_to_the_token = maximal_only(vec![inserted(2, 8)]);
+        let next_to_the_token = extended_only(vec![inserted(2, 8)]);
         assert_eq!(
             violations_of(30, &next_to_the_token, &before, &after).len(),
             1
@@ -7566,25 +7590,25 @@ mod tests {
     fn a_changed_version_part_is_painted_whole_and_no_further() {
         // `61516` is columns 13..18 on both sides.
         let (before, after) = (rust("// 7.0-alpha-61516\n"), rust("// 7.0-alpha-61517\n"));
-        let whole = maximal_only(vec![matched((13, 18), (13, 18))]);
+        let whole = extended_only(vec![matched((13, 18), (13, 18))]);
         assert!(violations_of(31, &whole, &before, &after).is_empty());
         assert_eq!(
             violations_of(
                 31,
-                &maximal_only(vec![matched((17, 18), (17, 18))]),
+                &extended_only(vec![matched((17, 18), (17, 18))]),
                 &before,
                 &after
             ),
             [
-                "painting 'Maximal' before row 1 leaves 4 of the 5 byte(s) of `61516` unpainted, \
-                 which becomes `61517` - Maximal paints a changed part whole",
-                "painting 'Maximal' after row 1 leaves 4 of the 5 byte(s) of `61517` unpainted, \
-                 which becomes `61516` - Maximal paints a changed part whole",
+                "painting 'Extended' before row 1 leaves 4 of the 5 byte(s) of `61516` unpainted, \
+                 which becomes `61517` - Extended paints a changed part whole",
+                "painting 'Extended' after row 1 leaves 4 of the 5 byte(s) of `61517` unpainted, \
+                 which becomes `61516` - Extended paints a changed part whole",
             ]
         );
         let found = violations_of(
             31,
-            &maximal_only(vec![matched((12, 18), (12, 18))]),
+            &extended_only(vec![matched((12, 18), (12, 18))]),
             &before,
             &after,
         );
@@ -7599,18 +7623,18 @@ mod tests {
     fn a_separator_between_two_changed_parts_goes_with_the_right_hand_one() {
         // `1.0.2` -> `1.1.3`: `0` at 5, the dot at 6, `2` at 7.
         let (before, after) = (rust("// 1.0.2\n"), rust("// 1.1.3\n"));
-        let right = maximal_only(vec![matched((5, 6), (5, 6)), matched((6, 8), (6, 8))]);
+        let right = extended_only(vec![matched((5, 6), (5, 6)), matched((6, 8), (6, 8))]);
         assert!(violations_of(31, &right, &before, &after).is_empty());
-        let one_update = maximal_only(vec![matched((5, 8), (5, 8))]);
+        let one_update = extended_only(vec![matched((5, 8), (5, 8))]);
         assert!(violations_of(31, &one_update, &before, &after).is_empty());
-        let unpainted = maximal_only(vec![matched((5, 6), (5, 6)), matched((7, 8), (7, 8))]);
+        let unpainted = extended_only(vec![matched((5, 6), (5, 6)), matched((7, 8), (7, 8))]);
         let found = violations_of(31, &unpainted, &before, &after);
         assert_eq!(found.len(), 2, "{found:?}");
         assert!(
             found[0].contains("between the changed `0` and `2` unpainted"),
             "{found:?}"
         );
-        let moved_dot = maximal_only(vec![
+        let moved_dot = extended_only(vec![
             matched((5, 6), (5, 6)),
             matched((6, 7), (6, 7)),
             matched((7, 8), (7, 8)),
@@ -7621,8 +7645,10 @@ mod tests {
     #[test]
     fn an_inserted_part_takes_the_separator_on_its_left() {
         let (before, after) = (rust("// 1.2\n"), rust("// 1.2.3\n"));
-        assert!(violations_of(31, &maximal_only(vec![inserted(6, 2)]), &before, &after).is_empty());
-        let found = violations_of(31, &maximal_only(vec![inserted(7, 1)]), &before, &after);
+        assert!(
+            violations_of(31, &extended_only(vec![inserted(6, 2)]), &before, &after).is_empty()
+        );
+        let found = violations_of(31, &extended_only(vec![inserted(7, 1)]), &before, &after);
         assert_eq!(found.len(), 1, "{found:?}");
         assert!(
             found[0].contains("takes the separator on its left"),
@@ -7633,8 +7659,10 @@ mod tests {
     #[test]
     fn a_part_inserted_at_the_start_takes_the_separator_on_its_right() {
         let (before, after) = (rust("// 2.3\n"), rust("// 1.2.3\n"));
-        assert!(violations_of(31, &maximal_only(vec![inserted(3, 2)]), &before, &after).is_empty());
-        let found = violations_of(31, &maximal_only(vec![inserted(3, 1)]), &before, &after);
+        assert!(
+            violations_of(31, &extended_only(vec![inserted(3, 2)]), &before, &after).is_empty()
+        );
+        let found = violations_of(31, &extended_only(vec![inserted(3, 1)]), &before, &after);
         assert_eq!(found.len(), 1, "{found:?}");
         assert!(
             found[0].contains("takes the separator on its right"),
@@ -7646,16 +7674,16 @@ mod tests {
     fn an_escape_sequence_is_part_of_its_word() {
         // `\\0` is columns 9..12, `\\000` 9..14.
         let (before, after) = (rust("let s = \"\\\\0\";\n"), rust("let s = \"\\\\000\";\n"));
-        let whole = maximal_only(vec![matched((9, 12), (9, 14))]);
+        let whole = extended_only(vec![matched((9, 12), (9, 14))]);
         assert!(violations_of(31, &whole, &before, &after).is_empty());
-        let digits_only = maximal_only(vec![matched((11, 12), (11, 14))]);
+        let digits_only = extended_only(vec![matched((11, 12), (11, 14))]);
         assert_eq!(violations_of(31, &digits_only, &before, &after).len(), 2);
     }
 
     #[test]
     fn a_code_identifier_is_left_to_invariant_16() {
         let (before, after) = (rust("let v = alpha;\n"), rust("let v = alphb;\n"));
-        let one_letter = maximal_only(vec![matched((12, 13), (12, 13))]);
+        let one_letter = extended_only(vec![matched((12, 13), (12, 13))]);
         assert!(violations_of(31, &one_letter, &before, &after).is_empty());
     }
 
@@ -7716,7 +7744,7 @@ mod tests {
                 vec![span(a, 4, a, 12)],
             ));
         }
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", entries)]);
         assert!(violations_of(32, &mapping, &before, &after).is_empty());
     }
 
@@ -7733,7 +7761,7 @@ mod tests {
                 vec![span(a, 0, a, 12)],
             ));
         }
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", entries)]);
         let found = violations_of(32, &mapping, &before, &after);
         assert_eq!(found.len(), 1, "{found:#?}");
         assert!(found[0].contains("keeps 2 line(s)"), "{found:?}");
@@ -7745,7 +7773,7 @@ mod tests {
     #[test]
     fn a_reindented_line_left_unpainted_is_reported() {
         let (before, after) = wrapped();
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", wrapper())]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", wrapper())]);
         assert_eq!(violations_of(32, &mapping, &before, &after).len(), 1);
     }
 
@@ -7764,10 +7792,10 @@ mod tests {
                 vec![],
             ));
         }
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", entries)]);
         assert!(violations_of(32, &mapping, &before, &after).is_empty());
 
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", unwrapper)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", unwrapper)]);
         let found = violations_of(32, &mapping, &before, &after);
         assert_eq!(found.len(), 1, "{found:#?}");
         assert!(found[0].contains("loses 4 byte(s)"), "{found:?}");
@@ -7799,7 +7827,7 @@ mod tests {
             vec![],
             vec![span(0, 4, 0, 8)],
         )];
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", insert)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", insert)]);
         assert!(violations_of(32, &mapping, &before, &after).is_empty());
     }
 
@@ -7822,7 +7850,7 @@ mod tests {
             ),
             reindent_entry(HumanTextOperation::Insert, vec![], vec![span(4, 0, 4, 9)]),
         ];
-        let mapping = painted(vec![("Minimal", vec![]), ("Maximal", entries)]);
+        let mapping = painted(vec![("Minimal", vec![]), ("Extended", entries)]);
         let found = violations_of(32, &mapping, &before, &after);
         assert!(found.is_empty(), "{found:#?}");
     }

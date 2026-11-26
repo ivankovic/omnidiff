@@ -58,7 +58,7 @@ fn mapping_vs_painting_disagreement_detail_for_fixture() -> Result<()> {
     Ok(())
 }
 
-/// EXPLORATORY: just the Minimal/Maximal percentages for the comma-separated `FIXTURES`, to
+/// EXPLORATORY: just the Minimal/Extended percentages for the comma-separated `FIXTURES`, to
 /// re-measure a few fixtures after a change: `FIXTURES=a,b,c cargo test --lib --features
 /// test-fixtures measure_stub_fixtures -- --ignored --nocapture`.
 #[test]
@@ -69,15 +69,15 @@ fn measure_stub_fixtures() -> Result<()> {
     let names = std::env::var("FIXTURES").unwrap_or_default();
     for name in names.split(',').map(str::trim).filter(|s| !s.is_empty()) {
         let minimal = compare_painting(name, RenderOptions::MINIMAL)?;
-        let maximal = compare_painting(name, RenderOptions::MAXIMAL)?;
+        let extended = compare_painting(name, RenderOptions::EXTENDED)?;
         eprintln!(
-            "{name}: minimal {:.3}% ({}/{}), maximal {:.3}% ({}/{})",
+            "{name}: minimal {:.3}% ({}/{}), extended {:.3}% ({}/{})",
             minimal.percent(),
             minimal.mismatched_bytes,
             minimal.total_bytes,
-            maximal.percent(),
-            maximal.mismatched_bytes,
-            maximal.total_bytes
+            extended.percent(),
+            extended.mismatched_bytes,
+            extended.total_bytes
         );
     }
     Ok(())
@@ -85,8 +85,8 @@ fn measure_stub_fixtures() -> Result<()> {
 
 /// EXPLORATORY: every run of bytes where omnidiff's rendering disagrees with the closest human
 /// painting for one fixture (`compare_painting`'s byte projection): `FIXTURE=<name>
-/// MODE=<minimal|maximal> cargo test --lib --features test-fixtures painting_disagreement_detail --
-/// --ignored --nocapture`.
+/// MODE=<minimal|extended> cargo test --lib --features test-fixtures painting_disagreement_detail
+/// -- --ignored --nocapture`.
 ///
 /// `MAPPING=human` renders the human tree mapping instead, with omnidiff's reasons borrowed as
 /// `painting_failure_census` does - the runs only a rendering change can fix.
@@ -97,8 +97,8 @@ fn painting_disagreement_detail() -> Result<()> {
 
     let name = std::env::var("FIXTURE").unwrap_or_else(|_| "rust-add-if".to_string());
     let mode = std::env::var("MODE").unwrap_or_else(|_| "minimal".to_string());
-    let options = if mode.eq_ignore_ascii_case("maximal") {
-        RenderOptions::MAXIMAL
+    let options = if mode.eq_ignore_ascii_case("extended") {
+        RenderOptions::EXTENDED
     } else {
         RenderOptions::MINIMAL
     };
@@ -682,8 +682,8 @@ fn cross_fixture_convention_census() -> Result<()> {
         for named in &mapping.text_mappings {
             let preset = if super::invariants::designates_minimal(&named.name) {
                 "Minimal"
-            } else if super::invariants::designates_maximal(&named.name) {
-                "Maximal"
+            } else if super::invariants::designates_extended(&named.name) {
+                "Extended"
             } else {
                 continue;
             };
@@ -1118,7 +1118,7 @@ fn painting_failure_census() -> Result<()> {
         let mut single_measured = false;
         for (preset, options) in [
             ("minimal", RenderOptions::MINIMAL),
-            ("maximal", RenderOptions::MAXIMAL),
+            ("extended", RenderOptions::EXTENDED),
         ] {
             if !cases.iter().any(|case| case.presets().contains(&options)) {
                 continue;
@@ -3069,10 +3069,10 @@ fn painting_convention_census() -> Result<()> {
                 &named.name,
             ) {
                 "Minimal"
-            } else if crate::test::helper::human_mapping::invariants::designates_maximal(
+            } else if crate::test::helper::human_mapping::invariants::designates_extended(
                 &named.name,
             ) {
-                "Maximal"
+                "Extended"
             } else {
                 "other"
             };
@@ -3284,9 +3284,9 @@ fn painting_convention_census() -> Result<()> {
 }
 
 /// EXPLORATORY: the painting invariants held against omnidiff's *own* painting under each preset:
-/// 1 (rows end on visible characters), 4 and 5 (`Maximal` whitespace), 6 (`Minimal` indentation),
+/// 1 (rows end on visible characters), 4 and 5 (`Extended` whitespace), 6 (`Minimal` indentation),
 /// 24 (call dot), 25 (statement end, with the human tree mapping deciding which statements were
-/// removed) and 30 (`Maximal` spacing before an edit). Prints each break as `fixture  preset
+/// removed) and 30 (`Extended` spacing before an edit). Prints each break as `fixture  preset
 /// message` and a count per invariant and preset.
 ///
 /// `cargo test --profile ci --lib --features test-fixtures painting_convention_engine_census --
@@ -3297,7 +3297,7 @@ fn painting_convention_engine_census() -> Result<()> {
     use crate::diff::text::RenderOptions;
     use crate::test::helper::human_mapping::invariants::{
         PaintedLabels, TreeContext, call_dots_go_with_their_member,
-        maximal_paints_a_wholly_changed_line_whole, minimal_never_paints_leading_whitespace,
+        extended_paints_a_wholly_changed_line_whole, minimal_never_paints_leading_whitespace,
         minimal_never_paints_trailing_whitespace, no_unpainted_whitespace_between_painted_regions,
         removed_statements_take_their_terminator, rows_end_on_visible_characters,
         spaces_before_edits_follow_their_count_in,
@@ -3318,14 +3318,14 @@ fn painting_convention_engine_census() -> Result<()> {
         let diff = crate::test::helper::human_mapping::omnidiff_diff_for_painting(&before, &after)?;
         for (preset, options) in [
             ("Minimal", RenderOptions::MINIMAL),
-            ("Maximal", RenderOptions::MAXIMAL),
+            ("Extended", RenderOptions::EXTENDED),
         ] {
             let labels: PaintedLabels =
                 crate::test::helper::human_mapping::omnidiff_painting_labels(
                     &diff, &before, &after, options,
                 );
-            let by_preset = if preset == "Maximal" {
-                maximal_paints_a_wholly_changed_line_whole(preset, &labels, &before, &after)
+            let by_preset = if preset == "Extended" {
+                extended_paints_a_wholly_changed_line_whole(preset, &labels, &before, &after)
                     .into_iter()
                     .chain(no_unpainted_whitespace_between_painted_regions(
                         preset, &labels, &before, &after,
@@ -3345,7 +3345,7 @@ fn painting_convention_engine_census() -> Result<()> {
                 .chain(removed_statements_take_their_terminator(
                     preset, &labels, &context, &before, &after,
                 ))
-                .chain(if preset == "Maximal" {
+                .chain(if preset == "Extended" {
                     rows_end_on_visible_characters(preset, &labels, &before, &after)
                 } else {
                     minimal_never_paints_trailing_whitespace(preset, &labels, &before, &after)
@@ -4599,11 +4599,11 @@ fn painted_text_class(text: &str) -> &'static str {
     }
 }
 
-/// CENSUS: what the `Maximal` hand painting adds to the `Minimal` one, for every fixture that
+/// CENSUS: what the `Extended` hand painting adds to the `Minimal` one, for every fixture that
 /// carries both. Reads the ground truth alone; nothing here runs `diff_code`.
 ///
 /// Writes `research/data/quality/preset_census.csv`, one row per fixture and per combination of
-/// (`Minimal` label, `Maximal` label, text class): how many maximal runs of bytes carry that
+/// (`Minimal` label, `Extended` label, text class): how many maximal runs of bytes carry that
 /// combination, over both sides, and how many bytes they hold. `-` is an unpainted byte, and a
 /// byte neither painting paints is not counted. A row whose class is `total` gives the fixture's
 /// size, both files together. A preset with several candidate paintings is read through its
@@ -4638,37 +4638,37 @@ fn preset_census() -> Result<()> {
             return Ok(None);
         };
         if mapping.text_mappings.len() < 2
-            || graded_cases(&mapping) != [GradedCase::Minimal, GradedCase::Maximal]
+            || graded_cases(&mapping) != [GradedCase::Minimal, GradedCase::Extended]
         {
             return Ok(None);
         }
-        let (Ok(minimal), Ok(maximal)) = (
+        let (Ok(minimal), Ok(extended)) = (
             paintings_for_mode(&mapping, RenderOptions::MINIMAL),
-            paintings_for_mode(&mapping, RenderOptions::MAXIMAL),
+            paintings_for_mode(&mapping, RenderOptions::EXTENDED),
         ) else {
             return Ok(None);
         };
-        let (Some(minimal), Some(maximal)) = (minimal.first(), maximal.first()) else {
+        let (Some(minimal), Some(extended)) = (minimal.first(), extended.first()) else {
             return Ok(None);
         };
-        if std::ptr::eq(*minimal, *maximal) {
-            // Paintings that name no preset are alternatives, not a Minimal and a Maximal.
+        if std::ptr::eq(*minimal, *extended) {
+            // Paintings that name no preset are alternatives, not a Minimal and an Extended.
             return Ok(None);
         }
         let minimal = painted_labels(minimal, before, after)?;
-        let maximal = painted_labels(maximal, before, after)?;
+        let extended = painted_labels(extended, before, after)?;
         let mut tally: BTreeMap<Key, [usize; 2]> = BTreeMap::new();
         for (side, contents) in [&before.contents, &after.contents].into_iter().enumerate() {
-            let (minimal, maximal) = (&minimal[side], &maximal[side]);
+            let (minimal, extended) = (&minimal[side], &extended[side]);
             let mut index = 0usize;
             while index < contents.len() {
-                let pair = (minimal[index], maximal[index]);
+                let pair = (minimal[index], extended[index]);
                 if pair == (None, None) {
                     index += 1;
                     continue;
                 }
                 let start = index;
-                while index < contents.len() && (minimal[index], maximal[index]) == pair {
+                while index < contents.len() && (minimal[index], extended[index]) == pair {
                     index += 1;
                 }
                 let text = String::from_utf8_lossy(&contents.as_bytes()[start..index]);
@@ -4692,7 +4692,7 @@ fn preset_census() -> Result<()> {
         .join("quality")
         .join("preset_census.csv");
     let mut writer = csv::Writer::from_path(&csv_path)?;
-    writer.write_record(["fixture", "minimal", "maximal", "class", "runs", "bytes"])?;
+    writer.write_record(["fixture", "minimal", "extended", "class", "runs", "bytes"])?;
     let mut fixtures = 0usize;
     for (name, measured) in names.iter().zip(measured) {
         let Some((total, tally)) = measured else {
@@ -4700,11 +4700,11 @@ fn preset_census() -> Result<()> {
         };
         fixtures += 1;
         writer.write_record([name.as_str(), "*", "*", "total", "0", &total.to_string()])?;
-        for ((minimal, maximal, class), [runs, bytes]) in tally {
+        for ((minimal, extended, class), [runs, bytes]) in tally {
             writer.write_record([
                 name.as_str(),
                 minimal,
-                maximal,
+                extended,
                 class,
                 &runs.to_string(),
                 &bytes.to_string(),
@@ -4713,7 +4713,7 @@ fn preset_census() -> Result<()> {
     }
     writer.flush()?;
     eprintln!(
-        "{fixtures} fixture(s) with a Minimal and a Maximal painting -> {}",
+        "{fixtures} fixture(s) with a Minimal and an Extended painting -> {}",
         csv_path.display()
     );
     Ok(())
@@ -4733,7 +4733,7 @@ fn preset_census() -> Result<()> {
 ///
 /// The first three are paintings in the ground truth's own format, judged by
 /// [`ground_truth_invariant_violations_for`] unchanged. An edit script has no presets, so both
-/// scripts are filed as the `Minimal` and the `Maximal` painting alike. The rendered accounts are
+/// scripts are filed as the `Minimal` and the `Extended` painting alike. The rendered accounts are
 /// not converted to paintings: a painting's move-or-update verdict is derived from its text,
 /// which a rendered range does not always survive. They are judged on their per-byte labels by
 /// the rules that read labels (`LABEL_INVARIANTS`), and their other columns are left empty.
@@ -4754,8 +4754,8 @@ fn invariant_gap_census() -> Result<()> {
     use crate::test::helper::human_mapping::invariants::{
         GroundTruthViolation, LeafStatus, PaintedLabels, TreeContext, boolean_flips_are_one_edit,
         call_dots_go_with_their_member, edited_leaves_are_painted,
-        ground_truth_invariant_violations_for, identical_pairs_are_not_painted_removed,
-        identifier_updates_are_painted_by_preset, maximal_paints_a_wholly_changed_line_whole,
+        extended_paints_a_wholly_changed_line_whole, ground_truth_invariant_violations_for,
+        identical_pairs_are_not_painted_removed, identifier_updates_are_painted_by_preset,
         minimal_never_paints_leading_whitespace, minimal_never_paints_trailing_whitespace,
         no_unpainted_whitespace_between_painted_regions,
         paired_leaves_are_not_deleted_and_inserted, removed_leaves_are_painted,
@@ -4894,7 +4894,7 @@ fn invariant_gap_census() -> Result<()> {
                 "line_script",
                 Some(vec![
                     named("Minimal", entries.clone()),
-                    named("Maximal", entries),
+                    named("Extended", entries),
                 ]),
             )?;
         }
@@ -4937,7 +4937,7 @@ fn invariant_gap_census() -> Result<()> {
             "tree_script",
             Some(vec![
                 named("Minimal", entries.clone()),
-                named("Maximal", entries),
+                named("Extended", entries),
             ]),
         )?;
 
@@ -4963,7 +4963,7 @@ fn invariant_gap_census() -> Result<()> {
             let mut paintings: Vec<(&str, PaintedLabels)> = Vec::new();
             for (preset, options) in [
                 ("Minimal", RenderOptions::MINIMAL),
-                ("Maximal", RenderOptions::MAXIMAL),
+                ("Extended", RenderOptions::EXTENDED),
             ] {
                 let text_diff =
                     TextDiff::from_with_options(before, after, ast, &node_cache, options);
@@ -4977,13 +4977,13 @@ fn invariant_gap_census() -> Result<()> {
                         &ranges_for_options(&text_diff.all(1), &after.contents, options),
                     ),
                 ];
-                violations.extend(if preset == "Maximal" {
+                violations.extend(if preset == "Extended" {
                     rows_end_on_visible_characters(preset, &labels, before, after)
                 } else {
                     minimal_never_paints_trailing_whitespace(preset, &labels, before, after)
                 });
-                if preset == "Maximal" {
-                    violations.extend(maximal_paints_a_wholly_changed_line_whole(
+                if preset == "Extended" {
+                    violations.extend(extended_paints_a_wholly_changed_line_whole(
                         preset, &labels, before, after,
                     ));
                     violations.extend(no_unpainted_whitespace_between_painted_regions(

@@ -33,7 +33,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before row 10 -> after row 15 (1 line(s)) gains 4 byte(s) of
+    // Invariant 32, Extended: before row 10 -> after row 15 (1 line(s)) gains 4 byte(s) of
     // indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations("javascript-fix-promises", 1)
 }

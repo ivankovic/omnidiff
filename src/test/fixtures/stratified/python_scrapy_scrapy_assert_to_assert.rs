@@ -37,7 +37,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before 33-43 -> after 28-38 (11 line(s)) lose 4 byte(s) of
+    // Invariant 32, Extended: before 33-43 -> after 28-38 (11 line(s)) lose 4 byte(s) of
     // indentation, unpainted (want delete from column 0).
     assert_ground_truth_invariants_with_known_violations("python-scrapy-scrapy-assert-to-assert", 1)
 }

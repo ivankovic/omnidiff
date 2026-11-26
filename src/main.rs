@@ -177,23 +177,24 @@ struct Args {
 
     /// Paint only the ranges that carry meaning: every option of the TUI's `M` panel off (its
     /// Minimal preset), so standalone brackets and separators, leading whitespace, and moves that
-    /// only reindent or resize go unpainted. Without this or `--maximal`, the panel's last saved
+    /// only reindent or resize go unpainted. Without this or `--extended`, the panel's last saved
     /// setting applies; either one applies to this run only and is not saved.
     ///
-    /// `--minimal` and `--maximal` are two faithful readings of the same diff, not a right and a
+    /// `--minimal` and `--extended` are two faithful readings of the same diff, not a right and a
     /// wrong one.
-    #[arg(long, conflicts_with = "maximal")]
+    #[arg(long, conflicts_with = "extended")]
     minimal: bool,
 
     /// Paint the fullest reading: every option of the `M` panel on except whole-pair updates
-    /// (its Maximal preset). `--full`, its name up to v0.5, still works.
-    #[arg(long, alias = "full")]
-    maximal: bool,
+    /// (its Extended preset). `--maximal`, its name in v0.6, and `--full`, its name up to v0.5,
+    /// still work.
+    #[arg(long, aliases = ["maximal", "full"])]
+    extended: bool,
 
     /// Highlight an updated node's matched pair whole (e.g. both `argument` and
     /// `i_am_an_argument`), instead of only the part that differs.
     ///
-    /// Independent of `--minimal`/`--maximal`; combine freely.
+    /// Independent of `--minimal`/`--extended`; combine freely.
     #[arg(long)]
     whole_updates: bool,
 
@@ -315,8 +316,8 @@ fn render_option_flags(args: &Args) -> Option<omnidiff::diff::text::RenderOption
     use omnidiff::diff::text::RenderOptions;
     let preset = if args.minimal {
         Some(RenderOptions::MINIMAL)
-    } else if args.maximal {
-        Some(RenderOptions::MAXIMAL)
+    } else if args.extended {
+        Some(RenderOptions::EXTENDED)
     } else {
         None
     };
@@ -1068,7 +1069,7 @@ mod tests {
             mode: (mode != Mode::Tui).then_some(mode),
             headless,
             minimal: false,
-            maximal: false,
+            extended: false,
             whole_updates: false,
             paint_reindent_moves: false,
             color: ColorChoice::Auto,
@@ -1092,7 +1093,7 @@ mod tests {
         unsafe { std::env::set_var(omnidiff::tui::theme::CONFIG_ENV, config.path()) };
         omnidiff::tui::theme::save_render_options(omnidiff::diff::text::RenderOptions {
             whole_pair_updates: true,
-            ..omnidiff::diff::text::RenderOptions::MAXIMAL
+            ..omnidiff::diff::text::RenderOptions::EXTENDED
         });
         let options = render_options(&args_with(Mode::Headless, false));
         unsafe { std::env::remove_var(omnidiff::tui::theme::CONFIG_ENV) };
@@ -1115,34 +1116,43 @@ mod tests {
         assert!(Args::try_parse_from(["omnidiff", "--review"]).is_ok());
     }
 
+    /// The Extended preset's names from earlier releases still select it.
     #[test]
-    fn whole_updates_flag_layers_onto_minimal_and_maximal_alike() {
+    fn earlier_names_of_extended_still_select_it() {
+        for flag in ["--extended", "--maximal", "--full"] {
+            let args = Args::try_parse_from(["omnidiff", flag, "a.rs", "b.rs"]).unwrap();
+            assert!(args.extended, "{flag}");
+        }
+    }
+
+    #[test]
+    fn whole_updates_flag_layers_onto_minimal_and_extended_alike() {
         let mut minimal = args_with(Mode::Tui, false);
         minimal.minimal = true;
         minimal.whole_updates = true;
         assert!(render_options(&minimal).whole_pair_updates);
         assert!(!render_options(&minimal).leading_whitespace);
 
-        let mut maximal = args_with(Mode::Tui, false);
-        maximal.maximal = true;
-        maximal.whole_updates = true;
-        assert!(render_options(&maximal).whole_pair_updates);
-        assert!(render_options(&maximal).leading_whitespace);
+        let mut extended = args_with(Mode::Tui, false);
+        extended.extended = true;
+        extended.whole_updates = true;
+        assert!(render_options(&extended).whole_pair_updates);
+        assert!(render_options(&extended).leading_whitespace);
     }
 
     #[test]
-    fn paint_reindent_moves_flag_layers_onto_minimal_and_maximal_alike() {
+    fn paint_reindent_moves_flag_layers_onto_minimal_and_extended_alike() {
         let mut minimal = args_with(Mode::Tui, false);
         minimal.minimal = true;
         minimal.paint_reindent_moves = true;
         assert!(render_options(&minimal).paint_reindent_only_moves);
         assert!(!render_options(&minimal).leading_whitespace);
 
-        let mut maximal = args_with(Mode::Tui, false);
-        maximal.maximal = true;
-        maximal.paint_reindent_moves = true;
-        assert!(render_options(&maximal).paint_reindent_only_moves);
-        assert!(render_options(&maximal).leading_whitespace);
+        let mut extended = args_with(Mode::Tui, false);
+        extended.extended = true;
+        extended.paint_reindent_moves = true;
+        assert!(render_options(&extended).paint_reindent_only_moves);
+        assert!(render_options(&extended).leading_whitespace);
 
         let mut without_the_flag = args_with(Mode::Tui, false);
         without_the_flag.minimal = true;

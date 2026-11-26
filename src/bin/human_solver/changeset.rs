@@ -89,7 +89,7 @@
 //! * **A painting is the changeset's, not a pair's.** Branching one in the text view (`s`)
 //!   copies the pair's ranges as the code session does, and [`after_key`] then branches the
 //!   other files' ranges too ([`branch_elsewhere`]), or the new painting would say they did not
-//!   change. From `Minimal` to `Maximal` it also widens to column 0 a line that left for, or came
+//!   change. From `Minimal` to `Extended` it also widens to column 0 a line that left for, or came
 //!   from, an unrelated file ([`widen_departed_lines`]): such a line is a deleted or inserted
 //!   line to its own file's invariants, which the code session's branch cannot know.
 //! * **A non-code pair** (a picture, a binary) gets a verdict from a prompt on the board, in
@@ -155,8 +155,8 @@ use crate::render::{
 };
 use crate::state::{
     App, Focus, Modal, OpenTarget, PanelState, TextOverlay, TextPaintState,
-    expand_leading_whitespace_for_maximal, expand_updated_identifiers_for_maximal,
-    expand_whitespace_before_removals_for_maximal, omnidiff_text_entries, solution_entries_mut,
+    expand_leading_whitespace_for_extended, expand_updated_identifiers_for_extended,
+    expand_whitespace_before_removals_for_extended, omnidiff_text_entries, solution_entries_mut,
     starting_solution,
 };
 use crate::stubs::{LICENSE_HEADER, module_name, set_mod_declaration};
@@ -1289,7 +1289,7 @@ pub(crate) fn write_back(truth: &mut HumanChangeset, pair: &OpenPair, mapping: &
 
 /// Copies the ranges of painting `from` that are not the pair's own (those the pair view copied
 /// itself) into the new painting `to`, file pair by file pair, with the widening a branch from
-/// Minimal to Maximal does in the code session. Returns how many ranges it copied.
+/// Minimal to Extended does in the code session. Returns how many ranges it copied.
 fn branch_elsewhere(
     session: &mut Session,
     from: &str,
@@ -1333,7 +1333,7 @@ fn branch_elsewhere(
             _ => copied.push(entry.clone()),
         }
     }
-    let widen = invariants::designates_minimal(from) && invariants::designates_maximal(to);
+    let widen = invariants::designates_minimal(from) && invariants::designates_extended(to);
     for ((before_file, after_file), mut entries) in groups {
         let text = |side: usize, file: &Option<String>| {
             file.as_ref()
@@ -1343,9 +1343,9 @@ fn branch_elsewhere(
         };
         let (before_text, after_text) = (text(BEFORE, &before_file), text(AFTER, &after_file));
         if widen {
-            expand_leading_whitespace_for_maximal(&mut entries, before_text, after_text);
-            expand_whitespace_before_removals_for_maximal(&mut entries, before_text, after_text);
-            expand_updated_identifiers_for_maximal(&mut entries, before_text, after_text);
+            expand_leading_whitespace_for_extended(&mut entries, before_text, after_text);
+            expand_whitespace_before_removals_for_extended(&mut entries, before_text, after_text);
+            expand_updated_identifiers_for_extended(&mut entries, before_text, after_text);
         }
         let spans = |ranges: &[HumanTextSpan], file: &Option<String>| -> Vec<FileSpan> {
             ranges
@@ -1448,7 +1448,7 @@ fn widen_departed_lines(session: &mut Session, name: &str) {
             } else {
                 ("", text)
             };
-            expand_leading_whitespace_for_maximal(&mut local, before_text, after_text);
+            expand_leading_whitespace_for_extended(&mut local, before_text, after_text);
             for (entry, owner) in local.iter().zip(owners) {
                 let ranges = [&entry.before, &entry.after][side];
                 let spans = if side == BEFORE {
@@ -1577,7 +1577,7 @@ pub(crate) fn after_key(app: &mut App, edits_before: u64, before: &Code, after: 
         for name in &new_paintings {
             elsewhere += branch_elsewhere(session, &branched_from, name, &before_file, &after_file);
             if invariants::designates_minimal(&branched_from)
-                && invariants::designates_maximal(name)
+                && invariants::designates_extended(name)
             {
                 widen_departed_lines(session, name);
             }

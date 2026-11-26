@@ -33,7 +33,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `MAXIMAL` sets the limit. It paints the whole inserted `return new Promise((resolve) => {`
+    // `EXTENDED` sets the limit. It paints the whole inserted `return new Promise((resolve) => {`
     // line including indentation, which the ground truth leaves unpainted: defensible either way.
     assert_matches_human_painting_within_limit("typescript-async-await", 9.94)
 }

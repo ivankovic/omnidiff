@@ -145,14 +145,14 @@ Press `?` in the viewer for the full list of keybindings. The ones to know first
 | `v` | Cycle the panel layout: auto, dual, single |
 | `q` | Quit |
 
-### Highlighting: Minimal and Full
+### Highlighting: Minimal and Extended
 
 OmniDiff has two highlighting presets, and both are faithful readings of the same diff. Minimal
 paints only the ranges that carry meaning: standalone brackets and separators, leading whitespace,
-and moves that only reindent go unpainted. Full paints them. In the settings menu (`M`), `1` and
+and moves that only reindent go unpainted. Extended paints them. In the settings menu (`M`), `1` and
 `2` pick the presets and each option has its own checkbox; the choice is saved. `--minimal` and
-`--full` apply a preset to one run without saving it, and `--whole-updates` highlights both sides of
-an updated pair whole instead of only the part that differs.
+`--extended` apply a preset to one run without saving it, and `--whole-updates` highlights both
+sides of an updated pair whole instead of only the part that differs.
 
 ### Colors
 

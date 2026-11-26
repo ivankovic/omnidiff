@@ -27,7 +27,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // Recorded as found, not examined: Minimal 8.41%, Maximal 12.32%.
+    // Recorded as found, not examined: Minimal 8.41%, Extended 12.32%.
     assert_matches_human_painting_within_limit("rust-some-to-const-slice", 8.29)
 }
 

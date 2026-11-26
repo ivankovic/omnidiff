@@ -61,7 +61,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // Minimal is exact; Maximal has strictly more bytes to be wrong about (the punctuation and
+    // Minimal is exact; Extended has strictly more bytes to be wrong about (the punctuation and
     // whitespace Minimal drops), so it sets the clamp.
     assert_matches_human_painting_within_limit("rust-hello-world-added-message", 0.0)
 }

@@ -18,7 +18,7 @@
 //! painting, graded against what the tree diff renders now that both sides parse. The 0.21
 //! limit (measured 0.203%, 44 of 21,650 bytes) is the reading the painting cannot accept: the
 //! two `SETUP` -> `PLAN` renames. The raw-text one narrows to the word under both presets, but
-//! the attribute value on row 169 is an identifier-shaped leaf, so `MAXIMAL` paints it whole
+//! the attribute value on row 169 is an identifier-shaped leaf, so `EXTENDED` paints it whole
 //! (`whole_identifier_updates`, ground-truth invariant 16) while the lone painting says only
 //! the word changed.
 

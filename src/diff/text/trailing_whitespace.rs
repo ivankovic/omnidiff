@@ -22,14 +22,14 @@
 //! line diff over their contents with trailing whitespace cut off, so a row that differs from its
 //! partner only after its last visible character is one row, kept. A kept row whose trailing run
 //! differs from its partner's paints its own run whole, `Delete` on the before side and `Insert`
-//! on the after side, the way the `Maximal` paintings mark a commit stripping trailing spaces
+//! on the after side, the way the `Extended` paintings mark a commit stripping trailing spaces
 //! (`ruby-mikel-mail-whitespace-only-change`, `python-paddlepaddle-paddleocr-whitespace-only`).
 //! Whole runs rather than the bytes one run has and the other lacks: two spaces turned into a tab
 //! share no byte, and the paintings paint the spacing that changed, not its arithmetic
 //! (invariant 30 reads spacing the same way).
 //!
 //! Rows that have no partner are new or gone lines, and their trailing whitespace goes with the
-//! line: the `Maximal` paintings stop such a line at its last visible character (13 rows in 10
+//! line: the `Extended` paintings stop such a line at its last visible character (13 rows in 10
 //! fixtures, none the other way), and leave a blank line of indentation added or removed on its
 //! own unpainted (`rust-algorithm-change`, `java-defects4j-cli-23-helpformatter`), as invariant 29
 //! leaves line breaks out. The one painting that marks such a row is a whole file of whitespace
@@ -289,7 +289,7 @@ mod tests {
         );
     }
 
-    /// The `Maximal` paintings stop a new line at its last visible character.
+    /// The `Extended` paintings stop a new line at its last visible character.
     #[test]
     fn a_new_line_keeps_its_trailing_whitespace_unpainted() {
         let (before, after) = changed_trailing_whitespace("a\n", "a\nb  \n");

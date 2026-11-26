@@ -17,7 +17,7 @@ comes after them.
    content in pixels and members; RQ1.3 can a change be visualised within one second, answered
    for tree edit distance on code)
 5. Cost (RQ2.1 what reaches the reader, RQ2.2 expressibility, RQ2.3 cost, RQ2.4 mapping
-   uniqueness, RQ2.5 visualisation uniqueness: Minimal against Maximal)
+   uniqueness, RQ2.5 visualisation uniqueness: Minimal against Extended)
 6. State of the Art (RQ3.1 what tools show per content, RQ3.2 accuracy against the hand painting,
    RQ3.3 speed: eight established tools in eleven configurations)
 7. OmniDiff
@@ -89,7 +89,7 @@ is in British spelling ("visualisation", "generalises").
   `*PerfectPct`) stand beside it; quote the painting macros wherever the paper says "as the hand
   painting does".
 * **Three painting cases in the data, two in the text** (`human_mapping::graded_cases`):
-  `Minimal` and `Maximal`, a single painting naming no preset (one rendering, both presets must
+  `Minimal` and `Extended`, a single painting naming no preset (one rendering, both presets must
   produce it), or a single painting named for one preset. Section 3.4 describes the first two
   only, since the review of 2026-11-14; the measurements still grade all three.
   `preset_report.graded_case` mirrors the Rust rule; `PresetSingle*` is the second case and is not

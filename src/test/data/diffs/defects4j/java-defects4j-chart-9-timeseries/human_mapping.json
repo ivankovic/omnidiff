@@ -2288,7 +2288,7 @@
       ]
     },
     {
-      "name": "Maximal (inner parenthesis)",
+      "name": "Extended (inner parenthesis)",
       "entries": [
         {
           "operation": "Insert",
@@ -2356,7 +2356,7 @@
       ]
     },
     {
-      "name": "Maximal (outer parenthesis)",
+      "name": "Extended (outer parenthesis)",
       "entries": [
         {
           "operation": "Insert",

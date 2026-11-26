@@ -29,7 +29,7 @@
 //!
 //! **OmniDiff is timed as a whole process, like every other tool** (`omnidiff_ms`, since
 //! 2026-11-24). Each repeat writes the pair to files named as the fixture's are (`before.rs`),
-//! runs `omnidiff --headless --maximal --color never BEFORE AFTER` and reads its output back from
+//! runs `omnidiff --headless --extended --color never BEFORE AFTER` and reads its output back from
 //! a pipe (`omnidiff_process_command`): process start, both parses, the diff and the plain-text
 //! rendering a script, a pager or git's `diff.external` gets. Before, OmniDiff was timed in-process
 //! on pre-parsed code and paid no startup, which every external tool pays. The binary is built by
@@ -43,12 +43,12 @@
 //! reports changed against a byte the painting gives any label (`human_mapping::changed_bytes`).
 //! A line-only tool reports every byte of each touched line, a tool with sub-line output its own
 //! ranges, both without line breaks, which no painting labels. The cases are those OmniDiff's own
-//! painting is graded in (`human_mapping::graded_cases`): a fixture with `Minimal` and `Maximal`
+//! painting is graded in (`human_mapping::graded_cases`): a fixture with `Minimal` and `Extended`
 //! paintings is scored against both, from the same tool output, and one with a single painting
 //! that names no preset against that one (`single`). OmniDiff goes through the same projection, but
 //! from the rendering of each preset the case reads, since it has one per preset where the other
-//! tools have one output: `--minimal` against the `Minimal` painting, `--maximal` against the
-//! `Maximal` one, and both against a `single` painting, a byte mismatched when either disagrees.
+//! tools have one output: `--minimal` against the `Minimal` painting, `--extended` against the
+//! `Extended` one, and both against a `single` painting, a byte mismatched when either disagrees.
 //! These are not OmniDiff's own painting figures (`painting_attribution.csv`), which compare
 //! labels: a byte painted `update` where the painting says `move` agrees here.
 //!
@@ -57,7 +57,7 @@
 //! `*_line_mismatches`, OmniDiff's included, against the lines the painting touches, a line
 //! touched when any byte of it is painted (`human_mapping::compare_changed_lines_with_case`). Both
 //! raw cases are kept; the score is the fewest mismatches over them (`painting_line_score`), so a
-//! tool matches a fixture with a `Minimal` and a `Maximal` painting when it agrees with either -
+//! tool matches a fixture with a `Minimal` and an `Extended` painting when it agrees with either -
 //! both readings are correct, and a line tool has one output. Every painting column is blank on a
 //! fixture with no painting, so it is left out rather than scored as perfect, and which fixtures
 //! are painted is read from the fixtures each run. `cd research && make measure-tools-painting`
@@ -361,9 +361,9 @@ fn omnidiff_executable_from_cargo_messages(messages: &str) -> Result<std::path::
         .context("cargo built no omnidiff executable")
 }
 
-/// The command a timing repeat runs: `omnidiff --headless --maximal --color never BEFORE AFTER`,
+/// The command a timing repeat runs: `omnidiff --headless --extended --color never BEFORE AFTER`,
 /// which is how a script, a pager or git's `diff.external` gets OmniDiff's plain-text output. It
-/// parses both files, diffs them and renders the stacked text report. `--maximal` pins the preset,
+/// parses both files, diffs them and renders the stacked text report. `--extended` pins the preset,
 /// so a render setting saved on the machine cannot change what is timed, and it is the fuller of
 /// the two paintings. `--color never` keeps the output independent of `NO_COLOR`.
 fn omnidiff_process_command(
@@ -373,7 +373,7 @@ fn omnidiff_process_command(
 ) -> std::process::Command {
     let mut command = std::process::Command::new(omnidiff_bin);
     command
-        .args(["--headless", "--maximal", "--color", "never"])
+        .args(["--headless", "--extended", "--color", "never"])
         .arg(before)
         .arg(after)
         .stdin(std::process::Stdio::null());
@@ -1193,7 +1193,7 @@ struct ToolScore {
 /// The cases a hand painting can grade, in the CSV's column order; see `human_mapping::GradedCase`.
 const PAINTING_CASES: [human_mapping::GradedCase; 3] = [
     human_mapping::GradedCase::Minimal,
-    human_mapping::GradedCase::Maximal,
+    human_mapping::GradedCase::Extended,
     human_mapping::GradedCase::Single,
 ];
 
@@ -1234,7 +1234,7 @@ fn painting_mismatches(
 }
 
 /// A fixture's line-level painting score from its `painting_line_mismatches`: the fewest
-/// mismatched lines over the cases it grades. A fixture with a `Minimal` and a `Maximal` painting
+/// mismatched lines over the cases it grades. A fixture with a `Minimal` and an `Extended` painting
 /// is matched when the tool agrees with either, since both readings are correct and a line-level
 /// tool has one output; a single painting is the only one. `None` for an unpainted fixture, which
 /// is left out rather than scored as perfect. `benchmark_other_report.painting_line_score` is the
@@ -2170,7 +2170,7 @@ mod tests {
     }
 
     #[test]
-    fn omnidiff_process_command_is_the_headless_maximal_plain_text_invocation() {
+    fn omnidiff_process_command_is_the_headless_extended_plain_text_invocation() {
         let command = omnidiff_process_command(
             std::path::Path::new("/bin/omnidiff"),
             std::path::Path::new("/tmp/x/before.rs"),
@@ -2182,7 +2182,7 @@ mod tests {
             args,
             [
                 "--headless",
-                "--maximal",
+                "--extended",
                 "--color",
                 "never",
                 "/tmp/x/before.rs",
@@ -2229,7 +2229,7 @@ mod tests {
         assert!(ms > 0.0);
         assert_eq!(
             std::fs::read_to_string(&record).unwrap(),
-            "--headless\n--maximal\n--color\nnever\nbefore.rs\nafter.rs\nfn a() {}\nfn b() {}\n"
+            "--headless\n--extended\n--color\nnever\nbefore.rs\nafter.rs\nfn a() {}\nfn b() {}\n"
         );
     }
 
@@ -2261,7 +2261,7 @@ mod tests {
 
     #[test]
     fn painting_line_score_takes_either_preset_and_skips_an_unpainted_fixture() {
-        // Minimal and Maximal: agreeing with either one is a match.
+        // Minimal and Extended: agreeing with either one is a match.
         assert_eq!(painting_line_score(&[Some(4), Some(0), None]), Some(0));
         assert_eq!(painting_line_score(&[Some(2), Some(5), None]), Some(2));
         // A single painting is the only reference.

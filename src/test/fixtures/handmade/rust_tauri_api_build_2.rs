@@ -27,10 +27,10 @@ fn mapping() -> Result<()> {
 #[test]
 fn painting() -> Result<()> {
     // `shifted_by_an_edit_beside_it` (a single-row node slid sideways by an edit on its own row is
-    // not a Move) makes Minimal exact and costs Maximal 33 bytes: this fixture's Maximal painting
+    // not a Move) makes Minimal exact and costs Extended 33 bytes: this fixture's Extended painting
     // calls
     // `|v| v == "true")` a Move, while fixtures with one painting for both modes do not. Both
-    // readings cannot be honoured until those get Maximal paintings of their own.
+    // readings cannot be honoured until those get Extended paintings of their own.
     assert_matches_human_painting_within_limit("rust-tauri-api-build-2", 0.88)
 }
 

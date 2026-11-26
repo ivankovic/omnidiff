@@ -56,7 +56,7 @@ pub struct RenderOptionRow {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Presets {
     pub minimal: RenderOptions,
-    pub maximal: RenderOptions,
+    pub extended: RenderOptions,
 }
 
 /// Everything the page needs to draw its first frame. The field set is the viewer's contract
@@ -72,7 +72,7 @@ pub struct StatePayload {
     /// The syntax theme until the user picks one, which the settings menu's Colors tab opens on.
     pub default_syntax_theme: &'static str,
     pub render_option_rows: Vec<RenderOptionRow>,
-    /// `RenderOptions::MINIMAL`/`MAXIMAL`, for the `M` panel's `1`/`2` keys and the footer badge -
+    /// `RenderOptions::MINIMAL`/`EXTENDED`, for the `M` panel's `1`/`2` keys and the footer badge -
     /// sent rather than duplicated in JavaScript, so a preset can only mean one thing.
     pub presets: Presets,
     pub recent_pairs: Vec<[String; 2]>,
@@ -104,7 +104,7 @@ pub fn render_option_rows() -> Vec<RenderOptionRow> {
         "changed_trailing_whitespace",
     ];
     KEYS.iter()
-        .zip(RenderOptions::MAXIMAL.options())
+        .zip(RenderOptions::EXTENDED.options())
         .map(|(key, (label, _))| RenderOptionRow { key, label })
         .collect()
 }
@@ -139,7 +139,7 @@ pub fn default_state() -> StatePayload {
         render_option_rows: render_option_rows(),
         presets: Presets {
             minimal: RenderOptions::MINIMAL,
-            maximal: RenderOptions::MAXIMAL,
+            extended: RenderOptions::EXTENDED,
         },
         recent_pairs: Vec::new(),
         help_text: HELP_TEXT,
@@ -158,7 +158,7 @@ mod tests {
     fn render_option_rows_match_the_structs_own_serialization_order() {
         // The JSON *text*, not a `Value`: serde_json's object map is sorted, and what the page
         // toggles by index is the derive's declaration order, which only the text preserves.
-        let text = serde_json::to_string(&RenderOptions::MAXIMAL).unwrap();
+        let text = serde_json::to_string(&RenderOptions::EXTENDED).unwrap();
         let serialized: Vec<&str> = text.split('"').skip(1).step_by(2).collect();
         let rows: Vec<&str> = render_option_rows().iter().map(|row| row.key).collect();
         assert_eq!(rows, serialized);

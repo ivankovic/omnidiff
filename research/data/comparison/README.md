@@ -34,7 +34,7 @@ fixtures (n). Compare percentages across rows, not counts.
 
 For every line of both files: did the tool mark it changed, and does the hand painting agree? A
 line is changed in the painting when any of its bytes is painted. Where a fixture has a Minimal and
-a Maximal painting, a tool agrees when it agrees with either. A fixture is perfect when no line
+an Extended painting, a tool agrees when it agrees with either. A fixture is perfect when no line
 disagrees. Line level is the one granularity every tool can be scored at, including the ones whose
 output carries more detail. Only painted fixtures count: 1,478 of the 1,705.
 

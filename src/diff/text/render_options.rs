@@ -87,7 +87,7 @@ pub enum TextOperation {
     Delete,
 }
 
-/// Which parts of a diff to paint. [`RenderOptions::MINIMAL`] and [`RenderOptions::MAXIMAL`] are
+/// Which parts of a diff to paint. [`RenderOptions::MINIMAL`] and [`RenderOptions::EXTENDED`] are
 /// presets; each option can be toggled on its own. Turning an option on paints more, never less.
 ///
 /// Trailing whitespace is trimmed off every range, under every option. The one exception is
@@ -125,7 +125,7 @@ pub struct RenderOptions {
     pub whole_pair_updates: bool,
     /// Whether a node tagged as a pure reindent (`solve_nested_condition_collapse`'s `if let`-chain
     /// collapse, `WrapGrowth`) still paints `Move`. The presets disagree, matching
-    /// `rust-next-font-imports-generator`'s separate `Minimal` and `Maximal` paintings.
+    /// `rust-next-font-imports-generator`'s separate `Minimal` and `Extended` paintings.
     ///
     /// Only for tagged nodes, never any column shift: position alone cannot tell a reindent from a
     /// real relocation (`rust-add-if`).
@@ -140,9 +140,9 @@ pub struct RenderOptions {
     /// [`Self::paint_reindent_only_moves`]. Read by `shifted_by_an_edit_beside_it` (single-row
     /// nodes) and `displaced_beside_an_edit_on_its_first_row` (multi-row).
     ///
-    /// The presets disagree: `MINIMAL` paints as few bytes as it can, `MAXIMAL` keeps the displaced
-    /// span painted with the construct around it. Defaults to `true` when missing from a saved
-    /// config.
+    /// The presets disagree: `MINIMAL` paints as few bytes as it can, `EXTENDED` keeps the
+    /// displaced span painted with the construct around it. Defaults to `true` when missing from a
+    /// saved config.
     #[serde(default = "paint_displaced_moves_default")]
     pub paint_displaced_moves: bool,
     /// Whether a relocation the two walks describe over different extents paints on both sides.
@@ -150,11 +150,11 @@ pub struct RenderOptions {
     /// only the more economical account.
     ///
     /// The presets disagree: mirroring a relocation onto the second panel doubles the bytes
-    /// `MINIMAL` paints, while `MAXIMAL` wants a `Move` that leads to a highlighted node.
+    /// `MINIMAL` paints, while `EXTENDED` wants a `Move` that leads to a highlighted node.
     #[serde(default = "paint_resized_moves_default")]
     pub paint_resized_moves: bool,
     /// Whether a renamed identifier is highlighted whole on both sides instead of narrowed to the
-    /// differing characters. On in `MAXIMAL` only, per ground-truth invariant 16
+    /// differing characters. On in `EXTENDED` only, per ground-truth invariant 16
     /// (`identifier_updates_are_painted_by_preset`): `getOpt` -> `getKey` is a different name, not a
     /// kept `get`.
     ///
@@ -164,7 +164,7 @@ pub struct RenderOptions {
     pub whole_identifier_updates: bool,
     /// Whether the blanks between two painted ranges on one row are painted, so a
     /// highlight never breaks over whitespace (ground-truth invariant 5,
-    /// `no_unpainted_whitespace_between_painted_regions`). On in `MAXIMAL` only: `Minimal`
+    /// `no_unpainted_whitespace_between_painted_regions`). On in `EXTENDED` only: `Minimal`
     /// paintings leave such a blank alone. A display filter like [`Self::leading_whitespace`]; see
     /// [`fill_whitespace_between_painted`] for which operation the blank takes.
     #[serde(default)]
@@ -172,8 +172,8 @@ pub struct RenderOptions {
     /// Whether trailing whitespace that changed is painted: a row that kept its text but gained,
     /// lost or changed the whitespace after its last visible character, and a blank row of
     /// spaces added or removed (see `trailing_whitespace` for how rows are lined up). On in
-    /// `MAXIMAL` only, per ground-truth invariant 1: a `Minimal` painting never paints trailing
-    /// whitespace, changed or not, and a `Maximal` one paints it as a run of nothing else.
+    /// `EXTENDED` only, per ground-truth invariant 1: a `Minimal` painting never paints trailing
+    /// whitespace, changed or not, and an `Extended` one paints it as a run of nothing else.
     ///
     /// Construction-time: the ranges are built by `TextDiff::from_with_options` (and always by the
     /// line diff of a file without a grammar), and `ranges_for_options` keeps them only under this
@@ -292,7 +292,7 @@ impl RenderOptions {
     };
     /// The fullest reading of a diff: every option on except `whole_pair_updates`, which is
     /// outside the preset axis.
-    pub const MAXIMAL: Self = Self {
+    pub const EXTENDED: Self = Self {
         leading_whitespace: true,
         structural_punctuation: true,
         whole_pair_updates: false,
@@ -303,9 +303,12 @@ impl RenderOptions {
         interior_whitespace: true,
         changed_trailing_whitespace: true,
     };
-    /// The name [`Self::MAXIMAL`] had up to v0.5.
-    #[deprecated(since = "0.6.0", note = "renamed to `RenderOptions::MAXIMAL`")]
-    pub const FULL: Self = Self::MAXIMAL;
+    /// The name [`Self::EXTENDED`] had up to v0.5.
+    #[deprecated(since = "0.6.0", note = "renamed to `RenderOptions::EXTENDED`")]
+    pub const FULL: Self = Self::EXTENDED;
+    /// The name [`Self::EXTENDED`] had in v0.6.
+    #[deprecated(since = "0.7.0", note = "renamed to `RenderOptions::EXTENDED`")]
+    pub const MAXIMAL: Self = Self::EXTENDED;
 
     /// Every option with its name and value, in settings-UI order. Indexes match [`Self::toggle`]
     /// and [`OPTION_INFO`].
@@ -360,7 +363,7 @@ impl Default for RenderOptions {
     /// The fullest rendering, so a config or script that never mentions these options gets
     /// everything painted rather than nothing.
     fn default() -> Self {
-        Self::MAXIMAL
+        Self::EXTENDED
     }
 }
 
@@ -396,7 +399,7 @@ pub fn ranges_for_options(
 /// them. The walk already merges two ranges of one operation over the whitespace between them;
 /// what is left is mostly a blank between two operations, which no node owns.
 ///
-/// Which operation the blank takes follows the `Maximal` paintings, which split close to evenly
+/// Which operation the blank takes follows the `Extended` paintings, which split close to evenly
 /// between the two sides except in two shapes: beside an `Update` the blank goes to the other side
 /// (the rename is the token, not its spacing), and after a `,` it stays with the comma. Elsewhere
 /// an `Insert` or `Delete` takes it over a `Move`, the side the paintings favour.

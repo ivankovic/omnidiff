@@ -40,9 +40,9 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal, 2 time(s): before row 860 -> after row 868 (1 line(s)) gains 4 byte(s)
-    // of indentation, unpainted (want insert from column 0); before row 911 -> after row 921 (1
-    // line(s)) gains 4 byte(s) of indentation, unpainted (want insert from column 0).
+    // Invariant 32, Extended, 2 time(s): before row 860 -> after row 868 (1 line(s)) gains 4
+    // byte(s) of indentation, unpainted (want insert from column 0); before row 911 -> after row
+    // 921 (1 line(s)) gains 4 byte(s) of indentation, unpainted (want insert from column 0).
     assert_ground_truth_invariants_with_known_violations(
         "rust-zed-industries-zed-add-and-one-small-delete",
         2,

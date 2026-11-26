@@ -130,7 +130,7 @@
 //!       "before": { "file": "src/a.rs", "path": ["function_item:2"] },
 //!       "after": { "file": "src/b.rs", "path": ["function_item:1"] } },
 //!     { "operation": "delete", "before": { "file": "src/a.rs", "path": ["line_comment:1"] } } ],
-//!   "text_mappings": [ { "name": "Maximal", "entries": [
+//!   "text_mappings": [ { "name": "Extended", "entries": [
 //!     { "operation": "Match",
 //!       "before": [ { "file": "src/a.rs",
 //!                     "range": { "start_row": 4, "start_column": 0, "end_row": 7, "end_column": 1 } } ],
@@ -160,7 +160,7 @@
 //!
 //! **`text_mappings`** are paintings, as in `human_mapping.json`, each range naming its file:
 //! `Match` (both ends; `Move` when every range reads the same, `Update` otherwise), `Delete`,
-//! `Insert`. A `Minimal`/`Maximal` name ties a painting to a preset. Unpainted text is unchanged
+//! `Insert`. A `Minimal`/`Extended` name ties a painting to a preset. Unpainted text is unchanged
 //! and where it was, in the file a `same` or `renamed` relation gives its file.
 //!
 //! **Saving is deterministic** ([`HumanChangeset::to_json`]): relations sorted by their paths;

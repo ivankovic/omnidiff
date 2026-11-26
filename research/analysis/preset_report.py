@@ -16,19 +16,19 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 """
-Minimal against Maximal: what the generous hand painting adds to the sparse one.
+Minimal against Extended: what the generous hand painting adds to the sparse one.
 
 A painted fixture answers one of three cases (`human_mapping::graded_cases`): it carries a
-`Minimal` and a `Maximal` painting, the annotator's finding that the change has a sparse and a
+`Minimal` and an `Extended` painting, the annotator's finding that the change has a sparse and a
 generous correct rendering; it carries a lone painting naming no preset (`Only one solution`), the
 finding that it has one rendering and both presets must produce it; or it carries a lone painting
 named for one preset. The first half of this report counts the cases, from the mapping files.
 
 The second half reads `data/quality/preset_census.csv`, which the `preset_census` test writes for
-every fixture with both paintings: per combination of (`Minimal` label, `Maximal` label, text class),
+every fixture with both paintings: per combination of (`Minimal` label, `Extended` label, text class),
 the runs and bytes carrying it, over both files. From it: how many bytes each preset paints, how
-much `Maximal` adds and of what kind, how often the two paintings are byte-identical, and how the
-difference spreads over fixtures and languages. "Adds" is a byte `Maximal` paints and `Minimal`
+much `Extended` adds and of what kind, how often the two paintings are byte-identical, and how the
+difference spreads over fixtures and languages. "Adds" is a byte `Extended` paints and `Minimal`
 leaves unpainted; a byte both paint under different labels is counted apart as relabelled.
 
 Scoped to `_common.PAPER_DATASETS`, like every report here. Writes
@@ -81,8 +81,8 @@ def graded_case(names: list[str]) -> str | None:
         return None
     if len(names) > 1:
         return "both"
-    if designates_preset(names[0], "Maximal"):
-        return "maximal"
+    if designates_preset(names[0], "Extended"):
+        return "extended"
     if designates_preset(names[0], "Minimal"):
         return "minimal"
     return "single"
@@ -105,12 +105,12 @@ def language_of(fixture: str) -> str:
 
 def per_fixture(rows: list[dict]) -> dict[str, dict]:
     """The census rows folded per fixture: its size, the bytes each preset paints, and the bytes
-    `Maximal` adds by class and by label."""
+    `Extended` adds by class and by label."""
     out: dict[str, dict] = defaultdict(
         lambda: {
             "total": 0,
             "minimal": 0,
-            "maximal": 0,
+            "extended": 0,
             "both_same": 0,
             "relabelled": 0,
             "minimal_only": 0,
@@ -124,17 +124,17 @@ def per_fixture(rows: list[dict]) -> dict[str, dict]:
         if row["class"] == "total":
             fixture["total"] = size
             continue
-        minimal, maximal = row["minimal"], row["maximal"]
+        minimal, extended = row["minimal"], row["extended"]
         if minimal != UNPAINTED:
             fixture["minimal"] += size
-        if maximal != UNPAINTED:
-            fixture["maximal"] += size
+        if extended != UNPAINTED:
+            fixture["extended"] += size
         if minimal == UNPAINTED:
-            fixture["added"][(row["class"], maximal)] += size
-            fixture["added_runs"][(row["class"], maximal)] += runs
-        elif maximal == UNPAINTED:
+            fixture["added"][(row["class"], extended)] += size
+            fixture["added_runs"][(row["class"], extended)] += runs
+        elif extended == UNPAINTED:
             fixture["minimal_only"] += size
-        elif minimal == maximal:
+        elif minimal == extended:
             fixture["both_same"] += size
         else:
             fixture["relabelled"] += size
@@ -149,33 +149,33 @@ def summarize(fixtures: dict[str, dict]) -> dict:
         added.update(f["added"])
         added_runs.update(f["added_runs"])
     minimal = sum(f["minimal"] for f in fixtures.values())
-    maximal = sum(f["maximal"] for f in fixtures.values())
+    extended = sum(f["extended"] for f in fixtures.values())
     identical = [
         name
         for name, f in fixtures.items()
         if not f["added"] and not f["relabelled"] and not f["minimal_only"]
     ]
     extra = sorted(sum(f["added"].values()) for f in fixtures.values())
-    # Of what Maximal paints, the share Minimal paints as well; a fixture Maximal paints nothing in
-    # has no such share.
+    # Of what Extended paints, the share Minimal paints as well; a fixture Extended paints nothing
+    # in has no such share.
     kept = sorted(
-        pct(f["maximal"] - sum(f["added"].values()), f["maximal"])
+        pct(f["extended"] - sum(f["added"].values()), f["extended"])
         for f in fixtures.values()
-        if f["maximal"]
+        if f["extended"]
     )
     languages: dict[str, dict] = defaultdict(
-        lambda: {"fixtures": 0, "maximal": 0, "added": Counter()}
+        lambda: {"fixtures": 0, "extended": 0, "added": Counter()}
     )
     for name, f in fixtures.items():
         language = languages[language_of(name)]
         language["fixtures"] += 1
-        language["maximal"] += f["maximal"]
+        language["extended"] += f["extended"]
         for (text_class, _), size in f["added"].items():
             language["added"][text_class] += size
     return {
         "fixtures": len(fixtures),
         "minimal_bytes": minimal,
-        "full_bytes": maximal,
+        "full_bytes": extended,
         "added": added,
         "added_runs": added_runs,
         "added_bytes": sum(added.values()),
@@ -205,15 +205,15 @@ def macros(s: dict, cases: dict) -> dict:
         "PresetSingleFixtures": latex_number(cases["single"]),
         "PresetSinglePct": f"{pct(cases['single'], painted):.1f}",
         "PresetMinimalOnlyFixtures": latex_number(cases["minimal"]),
-        "PresetMaximalOnlyFixtures": latex_number(cases["maximal"]),
+        "PresetExtendedOnlyFixtures": latex_number(cases["extended"]),
         "PresetCensusFixtures": latex_number(s["fixtures"]),
         "PresetMinimalBytes": latex_number(s["minimal_bytes"]),
-        "PresetMaximalBytes": latex_number(s["full_bytes"]),
-        "PresetMaximalOverMinimal": f"{s['full_bytes'] / s['minimal_bytes']:.2f}"
+        "PresetExtendedBytes": latex_number(s["full_bytes"]),
+        "PresetExtendedOverMinimal": f"{s['full_bytes'] / s['minimal_bytes']:.2f}"
         if s["minimal_bytes"]
         else "0",
         "PresetAddedBytes": latex_number(s["added_bytes"]),
-        "PresetAddedPctOfMaximal": f"{pct(s['added_bytes'], s['full_bytes']):.1f}",
+        "PresetAddedPctOfExtended": f"{pct(s['added_bytes'], s['full_bytes']):.1f}",
         "PresetRelabelledBytes": latex_number(s["relabelled"]),
         "PresetMinimalOnlyBytes": latex_number(s["minimal_only"]),
         "PresetIdenticalFixtures": latex_number(s["identical"]),
@@ -235,13 +235,13 @@ def macros(s: dict, cases: dict) -> dict:
 
 
 def table_tex(s: dict) -> str:
-    """The paper's table of what `Maximal` adds: label by text class, in bytes."""
+    """The paper's table of what `Extended` adds: label by text class, in bytes."""
     lines = [
         "% Auto-generated by research/analysis/preset_report.py. Do not edit by hand -",
         "% regenerate: make preset-report (from research/).",
         r"\begin{table}",
-        r"  \caption{Bytes the \emph{Maximal} painting paints and the \emph{Minimal} painting of the",
-        r"  same change leaves unpainted, by the label \emph{Maximal} gives them and by what they",
+        r"  \caption{Bytes the \emph{Extended} painting paints and the \emph{Minimal} painting of the",
+        r"  same change leaves unpainted, by the label \emph{Extended} gives them and by what they",
         r"  hold, over the " + latex_number(s["fixtures"]) + r" changes painted both ways.}",
         r"  \label{tab:presets}",
         r"  \small",
@@ -296,7 +296,7 @@ def plot(s: dict, out: Path) -> None:
     left.set_xlim(0, 100)
     left.set_ylim(0, 100)
     left.set_xlabel(
-        "Painted by Minimal too (% of Maximal's painted bytes)",
+        "Painted by Minimal too (% of Extended's painted bytes)",
         fontsize=7.5,
         color=INK_SECONDARY,
     )
@@ -317,16 +317,16 @@ def plot(s: dict, out: Path) -> None:
         (
             (name, v)
             for name, v in s["languages"].items()
-            if v["fixtures"] >= MIN_FIXTURES_PER_LANGUAGE and v["maximal"]
+            if v["fixtures"] >= MIN_FIXTURES_PER_LANGUAGE and v["extended"]
         ),
-        key=lambda item: sum(item[1]["added"].values()) / item[1]["maximal"],
+        key=lambda item: sum(item[1]["added"].values()) / item[1]["extended"],
     )
     styles = {
         "whitespace": ("#c9a227", "///"),
         "punctuation": ("#1a9e96", "..."),
         "code": ("#4a3aa7", ""),
     }
-    # Each bar is everything Maximal paints, so it spans 100%: the bytes only Maximal paints, by
+    # Each bar is everything Extended paints, so it spans 100%: the bytes only Extended paints, by
     # kind, then a grey segment for the bytes Minimal paints too. (The author's review of
     # 2026-11-24 asked why the bars did not add up to 100%: the grey remainder was not drawn.)
     offsets = [0.0] * len(languages)
@@ -334,10 +334,15 @@ def plot(s: dict, out: Path) -> None:
         (styles[c][0], styles[c][1], c.capitalize(), lambda v, c=c: v["added"][c]) for c in CLASSES
     ]
     segments.append(
-        ("#d4d2cb", "", "Painted by Minimal too", lambda v: v["maximal"] - sum(v["added"].values()))
+        (
+            "#d4d2cb",
+            "",
+            "Painted by Minimal too",
+            lambda v: v["extended"] - sum(v["added"].values()),
+        )
     )
     for color, hatch, label, bytes_of in segments:
-        widths = [pct(bytes_of(v), v["maximal"]) for _, v in languages]
+        widths = [pct(bytes_of(v), v["extended"]) for _, v in languages]
         right.barh(
             range(len(languages)),
             widths,
@@ -356,7 +361,7 @@ def plot(s: dict, out: Path) -> None:
     right.grid(axis="x", color=GRIDLINE, zorder=0)
     right.set_xlim(0, 100)
     right.set_xlabel(
-        "Share of the bytes Maximal paints (%)",
+        "Share of the bytes Extended paints (%)",
         fontsize=7.5,
         color=INK_SECONDARY,
     )

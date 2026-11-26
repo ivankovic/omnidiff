@@ -23,7 +23,7 @@ use crate::diff::{ASTDiff, ASTMappingOperation, ASTMappingReason, NodeCache};
 /// (`try { EXISTING } catch ...`, an existing `if` becoming an `else if` branch). Never creates or
 /// moves a mapping; `ranges()` acts on the tag only under
 /// [`crate::diff::text::RenderOptions::paint_reindent_only_moves`], because rust-add-if's ground
-/// truth paints this shape `Move` under `Maximal` and not under `Minimal`.
+/// truth paints this shape `Move` under `Extended` and not under `Minimal`.
 ///
 /// The verification: climbing from the after-side node through only brand-new levels must land on
 /// the node matched to its real before-side parent. Every other child along the climb must be new

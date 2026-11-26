@@ -268,7 +268,7 @@ fn main() -> Result<()> {
         for (suffix, payload) in [
             ("omnidiff", &baked.omnidiff),
             ("minimal", &baked.minimal),
-            ("maximal", &baked.maximal),
+            ("extended", &baked.extended),
             ("diff", &baked.unix),
         ] {
             fs::write(
@@ -668,7 +668,7 @@ struct Baked {
     /// can switch to.
     omnidiff: DiffPayload,
     minimal: DiffPayload,
-    maximal: DiffPayload,
+    extended: DiffPayload,
     /// The same two files as GNU `diff` marks them.
     unix: DiffPayload,
     /// The two sides' highlighting under every syntax theme, by theme name: what `/api/highlight`
@@ -704,7 +704,7 @@ fn bake(
         compute_diff_with_options(&before_path, &after_path, RenderOptions::default())?;
     let omnidiff = diff_payload(&data, large_residual, RenderOptions::default(), None);
     let minimal = diff_payload(&data, large_residual, RenderOptions::MINIMAL, None);
-    let maximal = diff_payload(&data, large_residual, RenderOptions::MAXIMAL, None);
+    let extended = diff_payload(&data, large_residual, RenderOptions::EXTENDED, None);
     let syntax = syntax_theme_names()
         .into_iter()
         .map(|name| {
@@ -728,7 +728,7 @@ fn bake(
         plain_text_fallback: false,
         ..data.clone()
     };
-    let mut unix = diff_payload(&unix_data, false, RenderOptions::MAXIMAL, None);
+    let mut unix = diff_payload(&unix_data, false, RenderOptions::EXTENDED, None);
     unix.summary = None;
 
     let diff_marked = before_touched.iter().filter(|t| **t).count()
@@ -753,7 +753,7 @@ fn bake(
     Ok(Baked {
         omnidiff,
         minimal,
-        maximal,
+        extended,
         unix,
         syntax,
         index,

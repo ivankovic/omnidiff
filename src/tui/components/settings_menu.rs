@@ -365,7 +365,7 @@ mod tests {
     fn menu(tab: SettingsTab) -> SettingsMenu {
         SettingsMenu::new(
             tab,
-            RenderOptionsDialog::new(RenderOptions::MAXIMAL),
+            RenderOptionsDialog::new(RenderOptions::EXTENDED),
             LayoutSettings::new(
                 PanelLayout::Auto,
                 DEFAULT_WIDE_COLUMNS,

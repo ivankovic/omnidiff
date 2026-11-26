@@ -23,8 +23,8 @@
 //! `after.<ext>.example`: real files, so they read and edit as code, with a suffix that keeps
 //! every tool from taking them for sources of this crate. The tests hold every example to two
 //! promises: it parses without an error, and each option changes how it is highlighted - toggled
-//! from the `Minimal` preset or from the `Maximal` one - unless [`SettingsExample::no_effect`] says
-//! why the option cannot show in that language.
+//! from the `Minimal` preset or from the `Extended` one - unless [`SettingsExample::no_effect`]
+//! says why the option cannot show in that language.
 
 use crate::code::Language;
 use crate::diff::text::{RangeMatch, RenderOptions, TextOperation, ranges_for_options};

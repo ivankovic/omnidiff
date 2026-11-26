@@ -19,7 +19,7 @@
 //! (`super::side_by_side`).
 //!
 //! **Rows follow the engine's node mapping** ([`mapping::node_lines`]), not the painting and not
-//! git's patch. The painting depends on the `M` panel's render options (Maximal and Minimal paint
+//! git's patch. The painting depends on the `M` panel's render options (Extended and Minimal paint
 //! different ranges of the same diff), so rows read from it changed with them; the mapping does
 //! not. Without a tree on either side (plain text, a side over `MAX_AST_NODES`) the painting's
 //! ranges are all there is, and the older rule below applies.

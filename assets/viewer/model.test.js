@@ -442,19 +442,19 @@ function pairModel() {
     { key: "paint_displaced_moves", label: "Paint displaced moves" },
     { key: "paint_resized_moves", label: "Paint moves the two sides size differently" },
   ];
-  const maximal = { leading_whitespace: true, structural_punctuation: true, whole_pair_updates: false, paint_reindent_only_moves: true, paint_displaced_moves: true, paint_resized_moves: true };
+  const extended = { leading_whitespace: true, structural_punctuation: true, whole_pair_updates: false, paint_reindent_only_moves: true, paint_displaced_moves: true, paint_resized_moves: true };
   const minimal = { leading_whitespace: false, structural_punctuation: false, whole_pair_updates: false, paint_reindent_only_moves: false, paint_displaced_moves: false, paint_resized_moves: false };
-  const presets = { maximal, minimal };
-  assert.strictEqual(M.renderOptionsBadge(maximal, rows, presets), "");
+  const presets = { extended, minimal };
+  assert.strictEqual(M.renderOptionsBadge(extended, rows, presets), "");
   assert.strictEqual(M.renderOptionsBadge(minimal, rows, presets), "[minimal]");
-  // "Whole-pair updates" is off in MAXIMAL itself, so only a difference from MAXIMAL is named.
+  // "Whole-pair updates" is off in EXTENDED itself, so only a difference from EXTENDED is named.
   assert.strictEqual(
-    M.renderOptionsBadge({ ...maximal, leading_whitespace: false }, rows, presets),
+    M.renderOptionsBadge({ ...extended, leading_whitespace: false }, rows, presets),
     "[Leading whitespace off]"
   );
-  assert.strictEqual(M.renderOptionsBadge({ ...maximal, whole_pair_updates: true }, rows, presets), "[Whole-pair updates on]");
+  assert.strictEqual(M.renderOptionsBadge({ ...extended, whole_pair_updates: true }, rows, presets), "[Whole-pair updates on]");
   assert.strictEqual(
-    M.renderOptionsBadge({ ...maximal, leading_whitespace: false, whole_pair_updates: true }, rows, presets),
+    M.renderOptionsBadge({ ...extended, leading_whitespace: false, whole_pair_updates: true }, rows, presets),
     "[Leading whitespace off; Whole-pair updates on]"
   );
   assert.strictEqual(
@@ -462,7 +462,7 @@ function pairModel() {
     "Ln 5, Col 10   +1   change 2/5   [plain text]   [layout: single]   [minimal]"
   );
   assert.strictEqual(
-    M.footerLeft({ cursor: [0, 0], searchProgress: [1, 3], changeProgress: [2, 5], layout: "Auto", options: maximal, rows, presets }),
+    M.footerLeft({ cursor: [0, 0], searchProgress: [1, 3], changeProgress: [2, 5], layout: "Auto", options: extended, rows, presets }),
     "Ln 1, Col 1   match 1/3",
     "search progress replaces change progress"
   );

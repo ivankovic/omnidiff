@@ -37,7 +37,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal: before row 60 -> after row 70 (1 line(s)) loses 4 byte(s) of
+    // Invariant 32, Extended: before row 60 -> after row 70 (1 line(s)) loses 4 byte(s) of
     // indentation, unpainted (want delete from column 0).
     assert_ground_truth_invariants_with_known_violations("c-python-cpython-interesting-case", 1)
 }

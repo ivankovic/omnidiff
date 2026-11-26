@@ -37,7 +37,7 @@ fn painting() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 32, Maximal, 2 time(s): before 42-43 -> after 34-35 (2 line(s)) lose 8 byte(s) of
+    // Invariant 32, Extended, 2 time(s): before 42-43 -> after 34-35 (2 line(s)) lose 8 byte(s) of
     // indentation, unpainted (want delete from column 0); before 56-57 -> after 39-40 (2 line(s))
     // lose 8 byte(s) of indentation, unpainted (want delete from column 0).
     assert_ground_truth_invariants_with_known_violations(

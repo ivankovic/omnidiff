@@ -34,7 +34,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `MAXIMAL` sets the limit.
+    // `EXTENDED` sets the limit.
     assert_matches_human_painting_within_limit("rust-rust-lang-rust-change-use", 6.38)
 }
 

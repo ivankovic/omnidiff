@@ -29,7 +29,7 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn painting() -> Result<()> {
-    // `ours=Move, theirs=None` twice - the Move-vs-nothing family. Only `Maximal` disagrees.
+    // `ours=Move, theirs=None` twice - the Move-vs-nothing family. Only `Extended` disagrees.
     assert_matches_human_painting_within_limit("typescript-microsoft-typescript-add-target-3", 8.74)
 }
 

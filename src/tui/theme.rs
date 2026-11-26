@@ -406,7 +406,7 @@ struct ThemeConfig {
     /// The `H` key; off by default (see `load_node_highlight`).
     #[serde(default)]
     node_highlight: bool,
-    /// The `M` key; defaults to `RenderOptions::MAXIMAL`.
+    /// The `M` key; defaults to `RenderOptions::EXTENDED`.
     #[serde(default)]
     render_options: crate::diff::text::RenderOptions,
     /// The width from which the `Auto` layout shows two panels; unset means
@@ -741,7 +741,8 @@ pub fn save_custom_palette(palette: CustomPalette) {
     update_config(|config| config.custom_palette = palette);
 }
 
-/// The persisted render options (the `M` key), or `RenderOptions::MAXIMAL` if none was ever chosen.
+/// The persisted render options (the `M` key), or `RenderOptions::EXTENDED` if none was ever
+/// chosen.
 pub fn load_render_options() -> crate::diff::text::RenderOptions {
     load_from(config_path()).render_options
 }
