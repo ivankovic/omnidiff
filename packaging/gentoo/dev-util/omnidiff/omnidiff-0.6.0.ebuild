@@ -459,7 +459,6 @@ CRATES="
 	tree-sitter-vim@0.4.0
 	tree-sitter-vue-next@0.1.0
 	tree-sitter-xml@0.7.0
-	tree-sitter-yaml@0.7.2
 	tree-sitter@0.25.10
 	ts-parser-perl@2.0.5
 	two-face@0.5.2+bat-0.26.1

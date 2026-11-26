@@ -2803,6 +2803,7 @@ version = "0.6.0"
 dependencies = [
  "anyhow",
  "bzip2",
+ "cc",
  "clap",
  "clap_complete",
  "clap_mangen",
@@ -2852,6 +2853,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-json",
  "tree-sitter-kotlin-ng",
+ "tree-sitter-language",
  "tree-sitter-lua",
  "tree-sitter-php",
  "tree-sitter-python",
@@ -2865,7 +2867,6 @@ dependencies = [
  "tree-sitter-vim",
  "tree-sitter-vue-next",
  "tree-sitter-xml",
- "tree-sitter-yaml",
  "ts-parser-perl",
  "two-face",
  "unicode-width",
@@ -4740,16 +4741,6 @@ name = "tree-sitter-xml"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e670041f591d994f54d597ddcd8f4ebc930e282c4c76a42268743b71f0c8b6b3"
-dependencies = [
- "cc",
- "tree-sitter-language",
-]
-
-[[package]]
-name = "tree-sitter-yaml"
-version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53c223db85f05e34794f065454843b0668ebc15d240ada63e2b5939f43ce7c97"
 dependencies = [
  "cc",
  "tree-sitter-language",

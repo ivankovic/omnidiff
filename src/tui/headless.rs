@@ -368,13 +368,21 @@ pub(crate) fn nearest_reference_line(
 ) -> Option<usize> {
     let root = code.ast.as_ref()?.root_node();
     let point = tree_sitter::Point::new(row, 0);
-    let mut node = root.descendant_for_point_range(point, point)?;
-    loop {
-        if is_semantically_structural(&node, language, code).is_some() {
-            return Some(node.start_position().row);
-        }
-        node = node.parent()?;
+    let target = root.descendant_for_point_range(point, point)?;
+    // `Node::parent` descends from the root on every call, so walking up from a node `d` levels
+    // deep costs `d²`: 4,096 nested blocks took 4 s for the two hunks of a one-token change. The
+    // chain from the root down to `target` is built once instead, and read from the bottom.
+    let mut ancestors = vec![root];
+    let mut node = root;
+    while node.id() != target.id() {
+        node = node.child_with_descendant(target)?;
+        ancestors.push(node);
     }
+    ancestors
+        .into_iter()
+        .rev()
+        .find(|node| is_semantically_structural(node, language, code).is_some())
+        .map(|node| node.start_position().row)
 }
 
 /// One side's text parsed for its breadcrumbs, the enclosing declaration of a hunk.

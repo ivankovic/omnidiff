@@ -43,6 +43,7 @@ pub mod metadata;
 pub mod similarity;
 mod similarity_corpus_tests;
 pub mod tip; // `type` is a Rust keyword, so Croatian.
+pub mod yaml;
 
 use anyhow::{Result, anyhow};
 use std::fmt;

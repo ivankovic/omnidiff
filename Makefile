@@ -39,7 +39,7 @@ OUT_DIR ?= research/data/ablation
 # research/data/performance/content_speed/<machine>.csv. MACHINE=<name> times a run as that one.
 which-machine = python3 scripts/machine.py $(MACHINE)
 
-.PHONY: coverage test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python test-homebrew build install install-hooks \
+.PHONY: coverage size-limits test test-quick update-quick-fixtures test-rust test-mapping-site-js test-python test-homebrew build install install-hooks \
 	benchmark-quality benchmark-content diff-inventory human-solver lint-python ci benchmark-ablation check-quality \
 	update-quality-baseline update-timing-baseline check-painting-attribution update-painting-attribution \
 	readme-pictures tui-screenshot test-viewer-js test-showcase-js check-versions deploy-checks deploy-crates \
@@ -186,6 +186,15 @@ benchmark-content:
 	echo "Timing content on $$machine"; \
 	cargo run --release --features $(FEATURES) --bin benchmark_content -- \
 		--csv research/data/performance/content_speed/$$machine.csv
+
+# How large an input each language's diff handles - lines, nesting depth, line width, token
+# length - each pair grown until the diff crashes, times out (60 s), runs out of memory (4 GiB) or
+# misses its one change, then bisected. Every probe in target/size_limits.csv, a summary on stdout.
+# `cargo test --features test-fixtures --test size_limits` checks the fixed sizes every language
+# must pass. ARGS passes options through, e.g. ARGS="--language YAML --axis lines".
+size-limits:
+	cargo build --release --features $(FEATURES) --bin omnidiff --bin size_limits
+	target/release/size_limits search --csv target/size_limits.csv $(ARGS)
 
 # Regenerates the checked-in src/test/data/diffs.csv fixture inventory; re-run after changing
 # fixtures or their ground truths.

@@ -659,6 +659,8 @@ struct RangeWalk<'a> {
     /// Every node [`RangeWalk::identical_or_move`] painted `Move`, so a closing bracket can follow
     /// its opening one.
     moved: std::collections::HashSet<usize>,
+    /// The last row pair [`RangeWalk::row_pair`] built, which the next node usually shares.
+    row_pair: Option<std::rc::Rc<RowPair>>,
 }
 
 /// [`walk_ranges`] for a diff with no embedded layers.
@@ -710,6 +712,7 @@ fn walk_ranges(
         current_range: RangeMatch::zero(),
         embedded,
         moved: std::collections::HashSet::new(),
+        row_pair: None,
     };
 
     match (&source.ast, &destination.ast) {
@@ -1005,6 +1008,24 @@ impl RangeWalk<'_> {
 
     /// An `Identical`-mapped node paints `Identical` where the sequential flow puts it and `Move`
     /// where its position says it relocated. Only an `Identical` result advances the anchor.
+    /// The [`RowPair`] of `source_row` and `destination_row`, built only when the last one was of
+    /// other rows.
+    fn row_pair(&mut self, source_row: usize, destination_row: usize) -> std::rc::Rc<RowPair> {
+        if let Some(pair) = &self.row_pair
+            && pair.rows == (source_row, destination_row)
+        {
+            return pair.clone();
+        }
+        let pair = std::rc::Rc::new(RowPair::new(
+            &self.source_text,
+            &self.destination_text,
+            source_row,
+            destination_row,
+        ));
+        self.row_pair = Some(pair.clone());
+        pair
+    }
+
     fn identical_or_move(
         &mut self,
         node: Node,
@@ -1039,7 +1060,7 @@ impl RangeWalk<'_> {
         let displaced_beside_an_edit_on_its_first_row = !self.options.paint_displaced_moves
             && d.end_row as i64 - s.end_row as i64 == d.start_row as i64 - s.start_row as i64
             && s.end_column == d.end_column
-            && node_first_row_tail_untouched(&self.source_text, &self.destination_text, &s, &d);
+            && node_first_row_tail_untouched(&self.row_pair(s.start_row, d.start_row), &s, &d);
         let shifted_within_its_own_line = s.end_row > s.start_row
             && (s.start_row == d.start_row || displaced_beside_an_edit_on_its_first_row);
         // Likewise a single-row node slid sideways by an edit beside it on its row (`int x` in
@@ -1064,8 +1085,7 @@ impl RangeWalk<'_> {
                     self.destination_text.row(d.start_row).unwrap_or_default(),
                 ))
             && node_untouched_on_its_row(
-                &self.source_text,
-                &self.destination_text,
+                &self.row_pair(s.start_row, d.start_row),
                 s_on_its_row.as_ref().unwrap_or(&s),
                 d_on_its_row.as_ref().unwrap_or(&d),
                 !self.options.paint_displaced_moves,
@@ -1275,32 +1295,77 @@ impl RangeWalk<'_> {
 
 /// True if the single-row node at `s`/`d` lies wholly inside the common prefix or suffix of its two
 /// rows, so the row's one edit is beside it. Columns are characters; a missing row reads as empty.
+/// Two rows, one a side, as characters, with their common prefix and suffix: what
+/// [`node_untouched_on_its_row`] and [`node_first_row_tail_untouched`] read about the rows of a
+/// node and its counterpart.
+///
+/// Built once per row pair a walk meets ([`RangeWalk::row_pair`]), not once per node: every node
+/// on a row reads the same pair, and rebuilding it per node is quadratic in a row's length. A
+/// 16,384-element list on one line took 6.5 s under `MAXIMAL` and 18 s under `MINIMAL` that way,
+/// 0.1 s split one element a line.
+struct RowPair {
+    rows: (usize, usize),
+    source: Vec<char>,
+    destination: Vec<char>,
+    /// Whether each row exists; a missing one reads as empty, and has no tail.
+    present: (bool, bool),
+    prefix: usize,
+    /// The common suffix, not capped at the prefix.
+    suffix: usize,
+}
+
+impl RowPair {
+    fn new(
+        source: &SourceText,
+        destination: &SourceText,
+        source_row: usize,
+        destination_row: usize,
+    ) -> Self {
+        let chars = |text: &SourceText, row: usize| -> Option<Vec<char>> {
+            text.row(row).map(|line| line.chars().collect())
+        };
+        let (source_chars, destination_chars) = (
+            chars(source, source_row),
+            chars(destination, destination_row),
+        );
+        let present = (source_chars.is_some(), destination_chars.is_some());
+        let (source_chars, destination_chars) = (
+            source_chars.unwrap_or_default(),
+            destination_chars.unwrap_or_default(),
+        );
+        let prefix = source_chars
+            .iter()
+            .zip(destination_chars.iter())
+            .take_while(|(a, b)| a == b)
+            .count();
+        let suffix = source_chars
+            .iter()
+            .rev()
+            .zip(destination_chars.iter().rev())
+            .take_while(|(a, b)| a == b)
+            .count();
+        RowPair {
+            rows: (source_row, destination_row),
+            source: source_chars,
+            destination: destination_chars,
+            present,
+            prefix,
+            suffix,
+        }
+    }
+}
+
 fn node_untouched_on_its_row(
-    source: &SourceText,
-    destination: &SourceText,
+    rows: &RowPair,
     s: &TextRange,
     d: &TextRange,
     // `!paint_displaced_moves`.
     read_rows_carrying_several_edits: bool,
 ) -> bool {
-    let row = |text: &SourceText, row: usize| -> Vec<char> {
-        text.row(row)
-            .map(|line| line.chars().collect())
-            .unwrap_or_default()
-    };
-    let source_row = row(source, s.start_row);
-    let destination_row = row(destination, d.start_row);
-    let prefix = source_row
-        .iter()
-        .zip(destination_row.iter())
-        .take_while(|(a, b)| a == b)
-        .count();
-    let suffix = source_row
-        .iter()
-        .rev()
-        .zip(destination_row.iter().rev())
-        .take_while(|(a, b)| a == b)
-        .count()
+    let (source_row, destination_row) = (&rows.source, &rows.destination);
+    let prefix = rows.prefix;
+    let suffix = rows
+        .suffix
         .min(source_row.len() - prefix)
         .min(destination_row.len() - prefix);
     let in_prefix = s.end_column <= prefix && d.end_column <= prefix;
@@ -1310,8 +1375,7 @@ fn node_untouched_on_its_row(
     // `PhysicalSize` moved when `PhysicalRect, ` lands before it in the same import list.
     let in_suffix = (s.start_column + suffix >= source_row.len()
         && d.start_column + suffix >= destination_row.len())
-        || (read_rows_carrying_several_edits
-            && node_first_row_tail_untouched(source, destination, s, d));
+        || (read_rows_carrying_several_edits && node_first_row_tail_untouched(rows, s, d));
     in_prefix
         || in_suffix
         // Same row index required: uniqueness places the node within each row but cannot say the
@@ -1319,8 +1383,8 @@ fn node_untouched_on_its_row(
         // real `Move` (`java-defects4j-chart-25-statisticalbarrenderer`).
         || (read_rows_carrying_several_edits
             && s.start_row == d.start_row
-            && row_was_edited_rather_than_rewritten(&source_row, &destination_row, prefix, suffix)
-            && node_uniquely_placed_on_its_row(&source_row, &destination_row, s, d))
+            && row_was_edited_rather_than_rewritten(source_row, destination_row, prefix, suffix)
+            && node_uniquely_placed_on_its_row(source_row, destination_row, s, d))
 }
 
 /// `range` as a span of one row, its end written `(row, row_len)` rather than `(row + 1, 0)`, or
@@ -1419,23 +1483,18 @@ fn node_uniquely_placed_on_its_row(
 /// True if a multi-row node's first-row tail, from its start column to the end of the line, is
 /// identical on both sides, so the row's edit sits before it. The multi-row counterpart of
 /// [`node_untouched_on_its_row`]'s suffix case.
-fn node_first_row_tail_untouched(
-    source: &SourceText,
-    destination: &SourceText,
-    s: &TextRange,
-    d: &TextRange,
-) -> bool {
-    let tail = |text: &SourceText, row: usize, column: usize| -> Option<Vec<char>> {
-        let line: Vec<char> = text.row(row)?.chars().collect();
-        (column <= line.len()).then(|| line[column..].to_vec())
-    };
-    match (
-        tail(source, s.start_row, s.start_column),
-        tail(destination, d.start_row, d.start_column),
-    ) {
-        (Some(source_tail), Some(destination_tail)) => source_tail == destination_tail,
-        _ => false,
-    }
+///
+/// `rows` is the pair of the two nodes' start rows. Two tails are equal when they are as long and
+/// the rows' common suffix covers them, which needs no copy of either.
+fn node_first_row_tail_untouched(rows: &RowPair, s: &TextRange, d: &TextRange) -> bool {
+    debug_assert_eq!(rows.rows, (s.start_row, d.start_row));
+    let (source_len, destination_len) = (rows.source.len(), rows.destination.len());
+    rows.present.0
+        && rows.present.1
+        && s.start_column <= source_len
+        && d.start_column <= destination_len
+        && source_len - s.start_column == destination_len - d.start_column
+        && rows.suffix >= source_len - s.start_column
 }
 
 /// The range for a node with no destination counterpart (not `Identical`, not `Move`): advances
