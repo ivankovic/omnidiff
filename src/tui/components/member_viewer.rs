@@ -49,7 +49,7 @@ use ratatui::{
 use ratatui_image::picker::Picker;
 
 use super::content_viewer::ContentViewer;
-use super::picture_viewer::{PictureColors, PictureViewer};
+use super::picture_viewer::{PictureColors, PictureViewer, svg_text_view};
 use super::text_pair_view::TextPairView;
 use crate::diff::content::container::{
     self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberDetail,
@@ -530,6 +530,9 @@ impl MemberViewer {
                     decoded(after),
                     self.picker.clone(),
                     self.annotating,
+                    // A member's picture is kept decoded; its markup (if any) is gone with the
+                    // container's read, so there is no text view for it.
+                    None,
                 )))
             }
             (before, after) => {
@@ -548,12 +551,14 @@ impl MemberViewer {
                     Some(Engine::Picture) => match picture::decode_pair(&b, &a) {
                         Ok((before, after)) => {
                             MemberView::Picture(Box::new(PictureViewer::from_decoded(
-                                names.0,
+                                names.0.clone(),
                                 names.1,
                                 before,
                                 after,
                                 self.picker.clone(),
                                 self.annotating,
+                                // An SVG member's markup joins the picture view's `t` cycle.
+                                svg_text_view(&names.0, &b, &a),
                             )))
                         }
                         Err(err) => MemberView::Message(format!("{key} does not decode: {err:#}")),
@@ -658,6 +663,8 @@ impl MemberViewer {
             grid(|tile| &tile.1),
             self.picker.clone(),
             self.annotating,
+            // A grid is drawn from tiles the members were decoded to; no markup, no text view.
+            None,
         )))
     }
 

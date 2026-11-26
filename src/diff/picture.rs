@@ -53,9 +53,11 @@
 //!
 //! Pictures of different sizes are not compared pixel by pixel - nothing says which pixel became
 //! which. When they keep their aspect ratio they are compared at the smaller one's size, the
-//! larger scaled down to it by averaging, and tagged resized; otherwise they are tagged canvas (a crop or a
-//! padding, not found) and called edited, as nothing was compared. SVG is not a picture here: it is XML, and the XML grammar
-//! diffs it structurally (`code::language::XML_FORMAT_EXTENSIONS`).
+//! larger scaled down to it by averaging, and tagged resized; otherwise they are tagged canvas (a
+//! crop or a
+//! padding, not found) and called edited, as nothing was compared. An SVG joins them drawn
+//! (`content::svg`): what the file paints is what two of them compare, each at its own size, and
+//! one `usvg` will not open stays text.
 
 use std::borrow::Cow;
 use std::hash::Hasher;
@@ -527,6 +529,25 @@ fn pack(pixels: &RgbaImage, delay_ms: u32) -> Result<PackedFrame> {
 /// Decodes `bytes` as a picture: its description and its frames as 8-bit RGBA - one for a still
 /// picture, all of them for an animated GIF, PNG or WebP.
 pub fn decode(bytes: &[u8]) -> Result<(PictureInfo, Frames)> {
+    // An SVG is drawn, not parsed as markup (see `content::svg`): what the file draws is what
+    // two of them compare, at each side's own size. `sniff` has already opened it, so this
+    // redrawing is for the pixels; the size cap is `svg`'s own, not the canvas check below.
+    if super::content::svg::is_svg(bytes) {
+        let pixels = super::content::svg::render(bytes)?;
+        let (width, height) = pixels.dimensions();
+        return Ok((
+            PictureInfo {
+                format: "SVG".to_string(),
+                width,
+                height,
+                color: "RGBA8".to_string(),
+                bytes: bytes.len(),
+                frames: 1,
+                duration_ms: 0,
+            },
+            Frames::still(pixels),
+        ));
+    }
     use image::ImageFormat;
     // Cursors are pictures `image` does not know by their bytes (`content::cursor`).
     if super::content::cursor::is_cur(bytes) {
@@ -1635,6 +1656,66 @@ mod tests {
         let is = |name: &str| is_picture_path(std::path::Path::new(name));
         assert!(is("logo.PNG") && is("photo.jpeg") && is("before.png.test"));
         assert!(!is("logo.svg") && !is("main.rs") && !is("Makefile"));
+    }
+
+    /// Tests: a red 48x48 square, declared without the attribute spacing `after` carries.
+    fn svg(red: bool) -> Vec<u8> {
+        let red = if red { "red" } else { "#00ff00" };
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg"  width="48"  height="48"><rect width="48" height="48" fill="{red}"/></svg>"#
+        )
+        .into_bytes()
+    }
+
+    #[test]
+    fn an_svg_pair_is_compared_by_what_it_draws() {
+        let diff = diff(&svg(true), &svg(false)).expect("both sides draw");
+        assert_eq!(diff.verdict(), v("redrawn"));
+        let Comparison::Pixels {
+            changed_pixels,
+            total_pixels,
+            regions,
+            ..
+        } = &diff.comparison
+        else {
+            panic!("pixel-wise: {diff:?}");
+        };
+        assert_eq!((*changed_pixels, *total_pixels), (48 * 48, 48 * 48));
+        assert_eq!(regions.len(), 1);
+        let region = regions[0];
+        assert_eq!((region.width, region.height), (48, 48));
+    }
+
+    #[test]
+    fn an_svg_pair_that_draws_the_same_is_invisible() {
+        // The attribute spacing differs, the drawing does not.
+        let diff = diff(&svg(true), &svg(true)).expect("both sides draw");
+        assert_eq!(diff.verdict(), v("invisible"));
+    }
+
+    #[test]
+    fn an_svg_and_a_raster_picture_are_one_pair() {
+        // The same red square as the SVG's, as a PNG of the same size, nothing changed.
+        let png = {
+            let mut picture = RgbaImage::new(48, 48);
+            for pixel in picture.pixels_mut() {
+                *pixel = image::Rgba([255, 0, 0, 255]);
+            }
+            let mut bytes = Vec::new();
+            picture
+                .write_to(
+                    &mut std::io::Cursor::new(&mut bytes),
+                    image::ImageFormat::Png,
+                )
+                .expect("encodes");
+            bytes
+        };
+        let diff = diff(&svg(true), &png).expect("both sides decode");
+        assert_eq!(
+            diff.verdict(),
+            v("invisible"),
+            "the same drawing, whichever format its bytes are in"
+        );
     }
 
     /// A GIF whose screen is `width` x `height`, with one 1 x 1 frame.

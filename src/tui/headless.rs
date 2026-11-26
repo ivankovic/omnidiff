@@ -765,12 +765,22 @@ impl Pair {
         let (before_bytes, after_bytes) = (read(before)?, read(after)?);
         let differed = before_bytes != after_bytes;
         let decode = crate::code::decode_text;
-        let contents = match (decode(&before_bytes), decode(&after_bytes)) {
-            (Some(before), Some(after)) => PairContents::Text { before, after },
-            _ => PairContents::Binary {
+        // Content wins over text, even where the bytes would decode (an SVG is UTF-8 markup):
+        // a pair is diffed as one kind or not at all (see `diff::content`), and text - which
+        // would refuse nothing - takes only what no engine claims. Binary is the bytes side.
+        let contents = if crate::diff::content::pair_kind(&before_bytes, &after_bytes).is_some() {
+            PairContents::Binary {
                 before: before_bytes,
                 after: after_bytes,
-            },
+            }
+        } else {
+            match (decode(&before_bytes), decode(&after_bytes)) {
+                (Some(before), Some(after)) => PairContents::Text { before, after },
+                _ => PairContents::Binary {
+                    before: before_bytes,
+                    after: after_bytes,
+                },
+            }
         };
         Ok(Self {
             before: before.to_path_buf(),
