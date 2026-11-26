@@ -159,7 +159,7 @@ lzma-rust2 = { version = "0.21", default-features = false, features = ["std", "x
 bzip2 = "0.6"
 # SVG cursors (diff::content::cursor), drawn to pictures; without text, which would pull in a
 # second font stack.
-resvg = { version = "0.48", default-features = false }
+resvg = { version = "0.50", default-features = false }
 # Fonts (diff::content::font): glyphs read and drawn by skrifa, WOFF and WOFF2 unwrapped by wuff.
 skrifa = "0.48"
 wuff = "0.2"
