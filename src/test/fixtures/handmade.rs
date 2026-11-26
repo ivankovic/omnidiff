@@ -85,6 +85,8 @@ mod rust_adding_to_a_list_of_identical_attributes_should_favour_near_matches;
 #[cfg(test)]
 mod rust_algorithm_change;
 #[cfg(test)]
+mod rust_completely_unrelated_main_files;
+#[cfg(test)]
 mod rust_cost_optimization;
 #[cfg(test)]
 mod rust_data_structure;
