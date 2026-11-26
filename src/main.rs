@@ -1306,7 +1306,10 @@ mod tests {
         let content = content_of_text(&pair).expect("and it is a picture pair");
         assert!(content.as_picture().is_some());
 
-        let added = Pair::read(Path::new("/dev/null"), &after)?;
+        // git's `/dev/null` for an added file: an empty side, on every platform.
+        let absent = dir.path().join("absent");
+        std::fs::write(&absent, "")?;
+        let added = Pair::read(&absent, &after)?;
         assert!(content_of_text(&added).is_some(), "an added SVG");
 
         let text = dir.path().join("c.txt");

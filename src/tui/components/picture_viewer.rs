@@ -1753,9 +1753,11 @@ mod tests {
             viewer.handle_key(KeyCode::Char('t'));
         }
         assert_eq!(viewer.mode(), PictureMode::Text);
-        // The markup view lays itself out on draw, so draw once before reading its status.
+        // The markup view lays itself out on draw, so draw once before reading its status. Tall
+        // enough for the whole diff: its headers name the temporary files, whose paths (macOS's
+        // `/var/folders/...`) wrap onto more rows than on Linux.
         let mut terminal =
-            ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 10)).expect("terminal");
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 40)).expect("terminal");
         terminal
             .draw(|frame| viewer.draw(frame, frame.area(), COLORS))
             .expect("draws");
@@ -1788,7 +1790,10 @@ mod tests {
     fn an_added_svg_s_markup_is_named_by_the_side_that_is_there() {
         let dir = tempfile::tempdir().expect("dir");
         let (_, b) = svg_pair(&dir);
-        let mut viewer = viewer(Path::new("/dev/null"), &b);
+        // git's `/dev/null` for the side that is not there: an empty file, on every platform.
+        let absent = dir.path().join("absent");
+        std::fs::write(&absent, "").expect("writes");
+        let mut viewer = viewer(&absent, &b);
         assert_eq!(after_tats(&mut viewer, 5), PictureMode::Text);
         assert!(
             viewer.status().contains("diffed as XML"),
