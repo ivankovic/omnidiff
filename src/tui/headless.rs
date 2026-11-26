@@ -765,6 +765,9 @@ impl Pair {
         let (before_bytes, after_bytes) = (read(before)?, read(after)?);
         let differed = before_bytes != after_bytes;
         let decode = crate::code::decode_text;
+        // A pair that is text stays text even if it is content too (an SVG is UTF-8 markup):
+        // its text diff is what a pager or an editor reads, and `main.rs` prints the content's
+        // notice above it (see `content_of_text`).
         let contents = match (decode(&before_bytes), decode(&after_bytes)) {
             (Some(before), Some(after)) => PairContents::Text { before, after },
             _ => PairContents::Binary {

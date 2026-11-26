@@ -49,7 +49,7 @@ use ratatui::{
 use ratatui_image::picker::Picker;
 
 use super::content_viewer::ContentViewer;
-use super::picture_viewer::{PictureColors, PictureViewer};
+use super::picture_viewer::{PictureColors, PictureViewer, svg_text_view};
 use super::text_pair_view::TextPairView;
 use crate::diff::content::container::{
     self, Aligned, Container, ContainerDiff, ContainerInfo, MemberContent, MemberDetail,
@@ -530,6 +530,9 @@ impl MemberViewer {
                     decoded(after),
                     self.picker.clone(),
                     self.annotating,
+                    // A member's picture is kept decoded; its markup (if any) is gone with the
+                    // container's read, so there is no text view for it.
+                    None,
                 )))
             }
             (before, after) => {
@@ -548,12 +551,14 @@ impl MemberViewer {
                     Some(Engine::Picture) => match picture::decode_pair(&b, &a) {
                         Ok((before, after)) => {
                             MemberView::Picture(Box::new(PictureViewer::from_decoded(
-                                names.0,
-                                names.1,
+                                names.0.clone(),
+                                names.1.clone(),
                                 before,
                                 after,
                                 self.picker.clone(),
                                 self.annotating,
+                                // An SVG member's markup joins the picture view's `t` cycle.
+                                svg_text_view((&names.0, &names.1), &b, &a),
                             )))
                         }
                         Err(err) => MemberView::Message(format!("{key} does not decode: {err:#}")),
@@ -585,7 +590,11 @@ impl MemberViewer {
         let first_frame = |content: Option<MemberContent>| -> Option<RgbaImage> {
             match content? {
                 MemberContent::Picture(picture) => Some(picture.1.pixels(0).into_owned()),
-                MemberContent::Bytes(bytes) if picture::is_picture(&bytes) => {
+                // Any picture the engine draws, an SVG or a cursor among them.
+                MemberContent::Bytes(bytes)
+                    if content::sniff(&bytes).map(content::Format::engine)
+                        == Some(Engine::Picture) =>
+                {
                     Some(picture::decode(&bytes).ok()?.1.pixels(0).into_owned())
                 }
                 _ => None,
@@ -658,6 +667,8 @@ impl MemberViewer {
             grid(|tile| &tile.1),
             self.picker.clone(),
             self.annotating,
+            // A grid is drawn from tiles the members were decoded to; no markup, no text view.
+            None,
         )))
     }
 
@@ -1039,6 +1050,22 @@ mod tests {
             Some("redrawn"),
             "a flat black square turned flat red"
         );
+    }
+
+    #[test]
+    fn g_grids_a_changed_svg_member_with_the_raster_ones() {
+        let svg = |fill: &str| {
+            format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="{fill}"/></svg>"#
+            )
+            .into_bytes()
+        };
+        let (a, b) = (svg("red"), svg("blue"));
+        let mut viewer = viewer(&[("icon.svg", a.as_slice())], &[("icon.svg", b.as_slice())]);
+        viewer.handle_key(KeyCode::Char('g'));
+        screen(&mut viewer);
+        let status = viewer.status();
+        assert!(status.contains("GRID"), "the SVG is a tile: {status}");
     }
 
     #[test]

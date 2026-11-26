@@ -61,6 +61,7 @@ pub mod container;
 pub mod cursor;
 pub mod font;
 pub mod pdf;
+pub mod svg;
 
 use std::cell::{Cell, RefCell};
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -461,6 +462,9 @@ pub enum Format {
     /// A Qt catalog.
     Qm,
     Pdf,
+    /// SVG: marked-up vector graphics, drawn to pixels for the picture engine (`usvg`, `resvg`).
+    /// An SVG that `usvg` does not open is not content: it stays text, XML included.
+    Svg,
 }
 
 impl Format {
@@ -474,14 +478,15 @@ impl Format {
             Format::Sfnt | Format::Woff | Format::Woff2 | Format::Eot => Family::Fonts,
             Format::Mo | Format::Qm => Family::Catalogs,
             Format::Pdf => Family::Documents,
+            Format::Svg => Family::Pictures,
         }
     }
 
     /// The engine that diffs this format; two sides are one pair only if they share it.
     pub fn engine(self) -> Engine {
         match self {
-            // A single cursor is a picture, still or animated.
-            Format::Picture(_) | Format::Cur | Format::Ani => Engine::Picture,
+            // A single cursor is a picture, still or animated; so is an SVG, once drawn.
+            Format::Picture(_) | Format::Cur | Format::Ani | Format::Svg => Engine::Picture,
             other => Engine::Container(other.family()),
         }
     }
@@ -506,6 +511,7 @@ impl Format {
             Format::Mo => "MO".to_string(),
             Format::Qm => "QM".to_string(),
             Format::Pdf => "PDF".to_string(),
+            Format::Svg => "SVG".to_string(),
         }
     }
 }
@@ -527,6 +533,9 @@ pub fn sniff(bytes: &[u8]) -> Option<Format> {
     }
     if cursor::is_cur(bytes) {
         return Some(Format::Cur);
+    }
+    if svg::is_svg(bytes) {
+        return Some(Format::Svg);
     }
     if font::is_sfnt(bytes) {
         return Some(Format::Sfnt);
@@ -635,6 +644,15 @@ pub fn probe(bytes: &[u8]) -> Option<Probe> {
                 font::member_keys(bytes, format).ok()?.join("\n").as_bytes(),
             ),
         }),
+        // An SVG's size is its own, what it draws at, read from the tree's header.
+        Format::Svg => {
+            let (width, height) = svg::size(bytes).ok()?;
+            Some(Probe {
+                format,
+                size: u64::from(width) * u64::from(height),
+                shape: u64::from(width) << 32 | u64::from(height),
+            })
+        }
         // A container's size is how many members it has, its shape which ones.
         _ => {
             let container = decode_container(bytes).ok()?;
@@ -874,6 +892,40 @@ mod tests {
         );
         assert_eq!(sniff(b"fn main() {}\n"), None);
         assert_eq!(sniff(b""), None);
+    }
+
+    #[test]
+    fn an_svg_sniffs_by_its_bytes() {
+        let svg = super::svg::tests::svg(16, 16, "red");
+        assert_eq!(sniff(&svg), Some(Format::Svg));
+        // One that does not open is not content.
+        assert_eq!(
+            sniff(b"<svg xmlns=\"http://www.w3.org/2000/svg\"><rect fill=\""),
+            None
+        );
+        // An XML file that is not an SVG stays text.
+        assert_eq!(
+            sniff(b"<?xml version=\"1.0\"?><!DOCTYPE TS><TS></TS>"),
+            None
+        );
+        let probe = probe(&svg).expect("an SVG");
+        assert_eq!(probe.format.name(), "SVG");
+        assert_eq!(probe.size, 256);
+        assert_eq!(probe.shape, 16 << 32 | 16);
+    }
+
+    #[test]
+    fn an_svg_pair_is_a_picture() {
+        let svg = super::svg::tests::svg(16, 16, "red");
+        assert_eq!(pair_kind(&svg, &svg), Some(Engine::Picture));
+        assert_eq!(pair_kind(b"", &svg), Some(Engine::Picture), "an added SVG");
+        // A mascot crossed formats.
+        assert_eq!(pair_kind(&svg, &png()), Some(Engine::Picture));
+        assert_eq!(
+            pair_kind(&svg, b"<?xml version=\"1.0\"?><a/>"),
+            None,
+            "an SVG and a text side refuse each other"
+        );
     }
 
     #[test]

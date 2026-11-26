@@ -25,7 +25,7 @@ use ratatui::{Frame, layout::Rect};
 use ratatui_image::picker::Picker;
 
 use super::member_viewer::MemberViewer;
-use super::picture_viewer::{self, PictureColors, PictureViewer};
+use super::picture_viewer::{self, PictureColors, PictureViewer, svg_text_view};
 use crate::diff::content::{self, Engine, Verdict};
 use crate::diff::picture;
 
@@ -67,9 +67,16 @@ impl ContentViewer {
     ) -> Option<Self> {
         match content::pair_kind(before, after)? {
             Engine::Picture => {
-                let (before, after) = picture::decode_pair(before, after).ok()?;
+                let (decoded_before, decoded_after) = picture::decode_pair(before, after).ok()?;
                 Some(ContentViewer::Picture(PictureViewer::from_decoded(
-                    names.0, names.1, before, after, picker, annotating,
+                    names.0.clone(),
+                    names.1.clone(),
+                    decoded_before,
+                    decoded_after,
+                    picker,
+                    annotating,
+                    // An SVG pair's markup joins the picture view's `t` cycle.
+                    svg_text_view((&names.0, &names.1), before, after),
                 )))
             }
             Engine::Container(family) => {

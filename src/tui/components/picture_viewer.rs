@@ -47,7 +47,6 @@
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use crate::diff::picture::{self, Comparison, FrameCounts, FrameStep, Frames, PictureDiff, Region};
 use crossterm::event::KeyCode;
 use image::{DynamicImage, Rgba, RgbaImage};
 use ratatui::{
@@ -61,6 +60,50 @@ use ratatui_image::{
     picker::{Picker, ProtocolType, cap_parser::QueryStdioOptions},
     protocol::StatefulProtocol,
 };
+
+use super::text_pair_view::TextPairView;
+use crate::diff::content::{self, Engine};
+use crate::diff::picture::{self, Comparison, FrameCounts, FrameStep, Frames, PictureDiff, Region};
+
+/// The markup of a picture pair for its text view ([`PictureMode::Text`]), if it may diff: an SVG
+/// pair's, every side present an SVG that decodes as UTF-8 (a side that is absent the empty
+/// text). `names` pick the language, as a file name does - a present side's, since an absent one
+/// is git's `/dev/null`; a member key, for one in an archive.
+pub fn svg_text_view(names: (&str, &str), before: &[u8], after: &[u8]) -> Option<Markup> {
+    fn side(bytes: &[u8]) -> Option<&str> {
+        match bytes.is_empty() {
+            // git's `/dev/null`, for a side a file was added to or deleted from.
+            true => Some(""),
+            false => content::svg::is_svg(bytes).then(|| std::str::from_utf8(bytes).ok())?,
+        }
+    }
+    let (before_text, after_text) = (side(before)?, side(after)?);
+    let name = if before.is_empty() { names.1 } else { names.0 };
+    Some(Markup {
+        name: name.to_string(),
+        texts: Some((before_text.to_string(), after_text.to_string())),
+        view: None,
+    })
+}
+
+/// A picture pair's markup ([`svg_text_view`]): kept as text, and diffed the first time the text
+/// view is shown, so a pair only ever looked at as pictures never pays for the diff.
+pub struct Markup {
+    name: String,
+    texts: Option<(String, String)>,
+    view: Option<Box<TextPairView>>,
+}
+
+impl Markup {
+    /// The markup diffed, built on the first call.
+    fn view(&mut self) -> &mut TextPairView {
+        let (name, texts) = (&self.name, &mut self.texts);
+        self.view.get_or_insert_with(|| {
+            let (before, after) = texts.take().unwrap_or_default();
+            Box::new(TextPairView::new(Path::new(name), &before, &after))
+        })
+    }
+}
 
 /// What pictures are shown over: transparency is compared as over white (`diff::picture`), and
 /// half blocks would draw it black. Also what pads a scaled picture to whole cells.
@@ -271,7 +314,8 @@ pub fn record_placements<T>(draw: impl FnOnce() -> T) -> (T, Vec<Placement>) {
     (result, placements.unwrap_or_default())
 }
 
-/// The five ways a picture pair is shown, in the order `t` steps through them.
+/// The ways a picture pair is shown, in the order `t` steps through them; an SVG pair's text
+/// view joins the cycle last (see [`PictureMode::Text`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PictureMode {
     SideBySide,
@@ -280,6 +324,10 @@ pub enum PictureMode {
     Difference,
     Blend,
     Swipe,
+    /// The pair's markup, diffed as text: an SVG pair's other reading, what it is made of rather
+    /// than what it draws. Only a pair whose bytes are SVG and text has it, so a plain picture
+    /// pair's cycle never lands here.
+    Text,
 }
 
 impl PictureMode {
@@ -290,6 +338,7 @@ impl PictureMode {
             Self::Difference => Self::Blend,
             Self::Blend => Self::Swipe,
             Self::Swipe => Self::SideBySide,
+            Self::Text => Self::SideBySide,
         }
     }
 
@@ -298,9 +347,10 @@ impl PictureMode {
         matches!(self, Self::SideBySide | Self::ChangedAreas)
     }
 
-    /// Whether the view shows what the engine decided, which the annotation mode hides.
+    /// Whether the view shows what the engine decided, which the annotation mode hides - a text
+    /// view too, its painting being the engine's answer.
     fn is_engines(self) -> bool {
-        matches!(self, Self::ChangedAreas | Self::Difference)
+        matches!(self, Self::ChangedAreas | Self::Difference | Self::Text)
     }
 
     pub fn label(self) -> &'static str {
@@ -310,6 +360,7 @@ impl PictureMode {
             Self::Difference => "difference",
             Self::Blend => "blend",
             Self::Swipe => "swipe",
+            Self::Text => "text",
         }
     }
 }
@@ -503,6 +554,9 @@ pub struct PictureViewer {
     zoom: Zoom,
     picker: Picker,
     shown: Option<(Built, Panes)>,
+    /// The pair's markup diffed in a pane (see [`PictureMode::Text`]): an SVG pair's, and only an
+    /// SVG pair's.
+    text_view: Option<Markup>,
     /// For a human recording a verdict (`human_solver`): nothing the engine decided is shown - no
     /// outlined regions, no difference view, no "how much changed" - only the two pictures and
     /// what their files say they are.
@@ -524,7 +578,8 @@ impl PictureViewer {
     fn open_with(before: &Path, after: &Path, picker: Picker, annotating: bool) -> Option<Self> {
         let read = |path: &Path| std::fs::read(path).ok();
         let (before_bytes, after_bytes) = (read(before)?, read(after)?);
-        if !picture::is_picture_pair(&before_bytes, &after_bytes) {
+        // Content is one engine or not at all (`diff::content`): a picture pair - raster or SVG.
+        if content::pair_kind(&before_bytes, &after_bytes) != Some(Engine::Picture) {
             return None;
         }
         // Decoded once and kept: an animation's frames are the expensive part.
@@ -537,11 +592,17 @@ impl PictureViewer {
             after_decoded,
             picker,
             annotating,
+            svg_text_view(
+                (&before.display().to_string(), &after.display().to_string()),
+                &before_bytes,
+                &after_bytes,
+            ),
         ))
     }
 
     /// The view of two pictures already decoded (a glyph, a page, a picture in an archive), each
-    /// pane titled with its name; a side that is `None` is absent.
+    /// pane titled with its name; a side that is `None` is absent. `text` is the pair's markup
+    /// for the text view ([`PictureMode::Text`]): an SVG pair's, and `None` for any other pair.
     pub fn from_decoded(
         before_name: String,
         after_name: String,
@@ -549,6 +610,7 @@ impl PictureViewer {
         after: picture::Decoded,
         picker: Picker,
         annotating: bool,
+        text_view: Option<Markup>,
     ) -> Self {
         let diff = picture::compare_decoded(before.as_ref(), after.as_ref());
         let (before_frames, after_frames) = (
@@ -579,6 +641,7 @@ impl PictureViewer {
                 picker
             },
             shown: None,
+            text_view,
             annotating,
         }
     }
@@ -669,8 +732,20 @@ impl PictureViewer {
 
     /// Handles a picture view key: `t` cycles the view, `h`/`l` or the arrows move the swipe
     /// divider, and for an animation `,`/`.` step a frame back or on and space plays or pauses.
-    /// False for any other key, which the viewer leaves to the rest of the app.
+    /// In the text view ([`PictureMode::Text`]) the keys are its own (`J`/`K`, the pages), and
+    /// `t` leaves it; no picture key acts on the pictures it hides. False for any other key,
+    /// which the viewer leaves to the rest of the app.
     pub fn handle_key(&mut self, code: KeyCode) -> bool {
+        if self.mode == PictureMode::Text
+            && let Some(markup) = self.text_view.as_mut()
+        {
+            if markup.view().handle_key(code) {
+                return true;
+            }
+            if code != KeyCode::Char('t') {
+                return false;
+            }
+        }
         let animated = self.timeline.len() > 1;
         match code {
             KeyCode::Char('.') if animated => {
@@ -688,9 +763,15 @@ impl PictureViewer {
                 };
             }
             KeyCode::Char('t') => {
-                self.mode = self.mode.next();
+                self.mode = self.next_mode();
                 while self.annotating && self.mode.is_engines() {
-                    self.mode = self.mode.next();
+                    self.mode = self.next_mode();
+                }
+                // Diffed now, so its status is there before it is first drawn.
+                if self.mode == PictureMode::Text
+                    && let Some(markup) = self.text_view.as_mut()
+                {
+                    markup.view();
                 }
             }
             KeyCode::Char('h') | KeyCode::Left if self.mode == PictureMode::Swipe => {
@@ -714,9 +795,26 @@ impl PictureViewer {
         true
     }
 
+    /// The mode after the current one, the cycle's last: an SVG pair's text view follows the
+    /// swipe view.
+    fn next_mode(&self) -> PictureMode {
+        match self.mode {
+            PictureMode::Swipe if self.text_view.is_some() => PictureMode::Text,
+            mode => mode.next(),
+        }
+    }
+
     /// One line for the status bar: what each side is, how much changed, and the view. Without
     /// "how much changed" when annotating.
     pub fn status(&self) -> String {
+        if let (PictureMode::Text, Some(view)) = (
+            &self.mode,
+            self.text_view
+                .as_ref()
+                .and_then(|markup| markup.view.as_ref()),
+        ) {
+            return view.status();
+        }
         if self.annotating {
             let side = |info: &Option<picture::PictureInfo>| match info {
                 Some(info) => format!(
@@ -846,6 +944,16 @@ impl PictureViewer {
     /// Draws the current view into `area`.
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, colors: PictureColors) {
         self.advance_playback();
+        if self.mode == PictureMode::Text
+            && let Some(markup) = self.text_view.as_mut()
+        {
+            markup.view().draw(
+                frame,
+                area,
+                &format!("{} -> {}", self.before_name, self.after_name),
+            );
+            return;
+        }
         let panes: Vec<Rect> = if self.mode.has_two_panes() {
             // Two equal halves, an odd column left blank: each picture is scaled to fill its
             // pane, so a pane one column wider shows the same page bigger and resampled.
@@ -1060,6 +1168,8 @@ impl PictureViewer {
                     DIVIDER,
                 )),
             )],
+            // Without pixels: the text view draws before the composites do (see `draw`).
+            PictureMode::Text => vec![],
         }
     }
 }
@@ -1592,5 +1702,126 @@ mod tests {
         let text = dir.path().join("a.txt");
         std::fs::write(&text, "text").expect("writes");
         assert!(PictureViewer::open(&a, &text, Picker::halfblocks()).is_none());
+    }
+
+    /// An SVG pair: the same red square both sides, the markup churned between them (attribute
+    /// order and spacing), so the pair is byte-different but draws the same.
+    fn svg_pair(dir: &tempfile::TempDir) -> (std::path::PathBuf, std::path::PathBuf) {
+        let svg = |attrs: &str| {
+            format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" {attrs}><rect width="32" height="32" fill="#ff0000"/></svg>"##
+            )
+        };
+        let (a, b) = (dir.path().join("a.svg"), dir.path().join("b.svg"));
+        std::fs::write(&a, svg("  width=\"32\"  height=\"32\"")).expect("writes");
+        std::fs::write(&b, svg("height=\"32\" width=\"32\"")).expect("writes");
+        (a, b)
+    }
+
+    /// The mode after `steps` presses of `t`, applied from wherever the viewer is.
+    fn after_tats(viewer: &mut PictureViewer, steps: usize) -> PictureMode {
+        for _ in 0..steps {
+            assert!(viewer.handle_key(KeyCode::Char('t')));
+        }
+        viewer.mode()
+    }
+
+    #[test]
+    fn an_svg_pair_s_cycle_ends_in_its_markup_diffed() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        for expected in [
+            PictureMode::ChangedAreas,
+            PictureMode::Difference,
+            PictureMode::Blend,
+            PictureMode::Swipe,
+            PictureMode::Text,
+            PictureMode::SideBySide,
+        ] {
+            assert!(viewer.handle_key(KeyCode::Char('t')));
+            assert_eq!(viewer.mode(), expected);
+        }
+    }
+
+    #[test]
+    fn the_markup_view_diffs_the_markup_and_takes_its_scroll_keys() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        for _ in 0..5 {
+            viewer.handle_key(KeyCode::Char('t'));
+        }
+        assert_eq!(viewer.mode(), PictureMode::Text);
+        // The markup view lays itself out on draw, so draw once before reading its status. Tall
+        // enough for the whole diff: its headers name the temporary files, whose paths (macOS's
+        // `/var/folders/...`) wrap onto more rows than on Linux.
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(80, 40)).expect("terminal");
+        terminal
+            .draw(|frame| viewer.draw(frame, frame.area(), COLORS))
+            .expect("draws");
+        let status = viewer.status();
+        assert!(
+            status.contains("diffed as XML") && status.contains("change 2/2"),
+            "the markup view speaks for itself: {status}"
+        );
+        // Its scroll keys are its own here; in the picture views they are zoom's pans (at zoom,
+        // J and L) or unbound (this viewer is at zoom 0, so J is free - but only in text view).
+        assert!(viewer.handle_key(KeyCode::Char('J')));
+        viewer.handle_key(KeyCode::Char('t'));
+        assert!(!viewer.handle_key(KeyCode::Char('J')));
+    }
+
+    #[test]
+    fn in_the_markup_view_no_picture_key_acts_on_the_hidden_pictures() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        assert_eq!(after_tats(&mut viewer, 5), PictureMode::Text);
+        for key in ['+', '+', '-', 'h', 'l', ' '] {
+            assert!(!viewer.handle_key(KeyCode::Char(key)), "{key}");
+        }
+        assert_eq!(viewer.zoom.level, 0, "zoom unchanged");
+        assert_eq!(after_tats(&mut viewer, 1), PictureMode::SideBySide);
+    }
+
+    #[test]
+    fn an_added_svg_s_markup_is_named_by_the_side_that_is_there() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (_, b) = svg_pair(&dir);
+        // git's `/dev/null` for the side that is not there: an empty file, on every platform.
+        let absent = dir.path().join("absent");
+        std::fs::write(&absent, "").expect("writes");
+        let mut viewer = viewer(&absent, &b);
+        assert_eq!(after_tats(&mut viewer, 5), PictureMode::Text);
+        assert!(
+            viewer.status().contains("diffed as XML"),
+            "{}",
+            viewer.status()
+        );
+    }
+
+    #[test]
+    fn the_markup_is_diffed_only_when_its_view_is_first_shown() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer = viewer(&a, &b);
+        let built = |viewer: &PictureViewer| viewer.text_view.as_ref().unwrap().view.is_some();
+        assert!(!built(&viewer));
+        after_tats(&mut viewer, 4);
+        assert!(!built(&viewer));
+        after_tats(&mut viewer, 1);
+        assert!(built(&viewer));
+    }
+
+    #[test]
+    fn annotating_an_svg_pair_skips_the_markup_view() {
+        let dir = tempfile::tempdir().expect("dir");
+        let (a, b) = svg_pair(&dir);
+        let mut viewer =
+            PictureViewer::open_for_annotation(&a, &b, Picker::halfblocks()).expect("a pair");
+        assert_eq!(after_tats(&mut viewer, 1), PictureMode::Blend);
+        assert_eq!(after_tats(&mut viewer, 2), PictureMode::SideBySide);
     }
 }

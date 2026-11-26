@@ -262,6 +262,14 @@ mod png_x_yktoo_ymuse_29753654_com_yktoo_ymuse;
 #[cfg(test)]
 mod png_x_yktoo_ymuse_abd7f2e4_com_yktoo_ymuse;
 #[cfg(test)]
+mod svg_x_handmade_attribute_order;
+#[cfg(test)]
+mod svg_x_handmade_badge_circle_added;
+#[cfg(test)]
+mod svg_x_handmade_banner_recolored;
+#[cfg(test)]
+mod svg_x_handmade_to_png;
+#[cfg(test)]
 mod tiff_x_gnustep_apps_systempreferences_9b2be112_gnustep_preview_128;
 #[cfg(test)]
 mod tiff_x_gnustep_apps_systempreferences_9b2be112_no_preview;

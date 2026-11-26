@@ -79,9 +79,8 @@ pub const MAX_CURSOR_BYTES: u64 = 256 * 1024 * 1024;
 /// Real cursors play a few dozen.
 pub const MAX_ANI_STEPS: usize = 10_000;
 
-/// The largest square a Hyprland SVG is drawn on, whatever `define_size` says: cursors are drawn
-/// at 256 pixels at most.
-pub const MAX_SVG_SIZE: u32 = 1024;
+/// The largest square a Hyprland SVG is drawn on, whatever `define_size` says.
+pub use super::svg::MAX_SVG_SIZE;
 
 /// Adds a `width` x `height` picture's RGBA bytes to `total`, unless that passes
 /// [`MAX_CURSOR_BYTES`].
@@ -388,7 +387,7 @@ impl Container for Hyprcursor {
                 Some(&size) if size > 0 => size.min(MAX_SVG_SIZE),
                 _ => SVG_SIZE,
             };
-            let frames = Frames::from_frames(vec![(render_svg(&bytes, size)?, 0)])?;
+            let frames = Frames::from_frames(vec![(super::svg::render_fit(&bytes, size)?, 0)])?;
             return Ok(MemberContent::Picture(Box::new((
                 info("SVG", bytes.len(), &frames),
                 frames,
@@ -396,43 +395,6 @@ impl Container for Hyprcursor {
         }
         Ok(MemberContent::Bytes(bytes))
     }
-}
-
-/// `svg` drawn to fit a `size` x `size` square. An image it places is read only from a `data:`
-/// URL: usvg's default reads any path an `href` names, `/dev/zero` or a FIFO included.
-pub fn render_svg(svg: &[u8], size: u32) -> Result<RgbaImage> {
-    use resvg::{tiny_skia, usvg};
-    let options = usvg::Options {
-        resources_dir: None,
-        image_href_resolver: usvg::ImageHrefResolver {
-            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
-            resolve_string: Box::new(|_, _| None),
-        },
-        ..usvg::Options::default()
-    };
-    let tree = usvg::Tree::from_data(svg, &options).context("reading the SVG")?;
-    let (width, height) = (tree.size().width(), tree.size().height());
-    let size = size.min(MAX_SVG_SIZE);
-    let scale = size as f32 / width.max(height).max(1.0);
-    let (w, h) = (
-        ((width * scale).round() as u32).max(1),
-        ((height * scale).round() as u32).max(1),
-    );
-    let mut pixmap = tiny_skia::Pixmap::new(w, h).context("an SVG of no size")?;
-    resvg::render(
-        &tree,
-        tiny_skia::Transform::from_scale(scale, scale),
-        &mut pixmap.as_mut(),
-    );
-    let rgba = pixmap
-        .pixels()
-        .iter()
-        .flat_map(|pixel| {
-            let pixel = pixel.demultiply();
-            [pixel.red(), pixel.green(), pixel.blue(), pixel.alpha()]
-        })
-        .collect();
-    RgbaImage::from_raw(w, h, rgba).context("an SVG's pixels")
 }
 
 #[cfg(test)]
@@ -674,7 +636,7 @@ pub(crate) mod tests {
             by_default.root().has_children(),
             "usvg's default reads the file"
         );
-        let drawn = render_svg(svg.as_bytes(), 10)?;
+        let drawn = crate::diff::content::svg::render_fit(svg.as_bytes(), 10)?;
         assert!(
             drawn.pixels().all(|pixel| pixel.0[3] == 0),
             "nothing drawn from the file"

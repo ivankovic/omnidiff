@@ -26,8 +26,9 @@
 //!
 //! If either side is binary, `main.rs` answers with `binary_diff_json` instead: the same object
 //! with `"binary": true`, empty `hunks` and no `summary`, plus `content` when `diff::content`
-//! diffs the pair. A picture pair also carries `picture`, the same diff without its `kind`, for the
-//! consumers written before `content`.
+//! diffs the pair. A text pair `diff::content` diffs too (an SVG) is a text diff with `content`
+//! beside its hunks. A picture pair also carries `picture`, the same diff without its `kind`, for
+//! the consumers written before `content`.
 //!
 //! **Columns are byte offsets within their row**, as tree-sitter reports them. Neovim takes them
 //! directly; VS Code / LSP need UTF-16 code units and character-offset consumers must decode the
@@ -170,12 +171,12 @@ struct JsonDiff {
     /// look like identical files.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     binary: bool,
-    /// For a binary pair that is a picture pair: what each side is and what changed (see
-    /// `diff::picture`). Absent otherwise.
+    /// For a picture pair: what each side is and what changed (see `diff::picture`). Absent
+    /// otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     picture: Option<crate::diff::picture::PictureDiff>,
-    /// For any binary pair diffed by content, pictures included: the same, tagged with its `kind`
-    /// (see `diff::content`). Absent otherwise.
+    /// For any pair diffed by content, pictures included - a binary pair, or a text one such as
+    /// an SVG: the same, tagged with its `kind` (see `diff::content`). Absent otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     content: Option<crate::diff::content::ContentDiff>,
 }
@@ -215,7 +216,11 @@ fn build_side(contents: &str, path: &Path, ranges: &[RangeMatch]) -> JsonSide {
     }
 }
 
-fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
+fn build_diff(
+    data: &DiffSessionData,
+    large_residual: bool,
+    content: Option<&crate::diff::content::ContentDiff>,
+) -> JsonDiff {
     let summary = summarize_diff_with_comment_check(
         &data.before_contents,
         &data.after_contents,
@@ -243,8 +248,10 @@ fn build_diff(data: &DiffSessionData, large_residual: bool) -> JsonDiff {
         large_residual,
         summary,
         binary: false,
-        picture: None,
-        content: None,
+        picture: content
+            .and_then(crate::diff::content::ContentDiff::as_picture)
+            .cloned(),
+        content: content.cloned(),
     }
 }
 
@@ -276,9 +283,14 @@ pub fn binary_diff_json(
     Ok(serde_json::to_string_pretty(&diff)?)
 }
 
-/// Entry point for `--mode json`: computes the diff as `headless::run` does and prints it.
-/// Returns whether the files differ byte-wise, for `main.rs`'s exit code.
-pub fn run(pair: crate::tui::headless::Pair, render_options: RenderOptions) -> Result<bool> {
+/// Entry point for `--mode json`: computes the diff as `headless::run` does and prints it, with
+/// `content` if the text pair is content too (an SVG). Returns whether the files differ
+/// byte-wise, for `main.rs`'s exit code.
+pub fn run(
+    pair: crate::tui::headless::Pair,
+    render_options: RenderOptions,
+    content: Option<&crate::diff::content::ContentDiff>,
+) -> Result<bool> {
     let differed = pair.differed;
     let (mut data, large_residual) = pair.diff(render_options)?;
     // A presentation filter over the finished diff, not a different diff.
@@ -286,7 +298,7 @@ pub fn run(pair: crate::tui::headless::Pair, render_options: RenderOptions) -> R
         ranges_for_options(&data.before_ranges, &data.before_contents, render_options);
     data.after_ranges =
         ranges_for_options(&data.after_ranges, &data.after_contents, render_options);
-    let diff = build_diff(&data, large_residual);
+    let diff = build_diff(&data, large_residual, content);
     let mut json = serde_json::to_string_pretty(&diff)?;
     json.push('\n');
     crate::tui::headless::write_stdout(&json)?;
@@ -346,7 +358,7 @@ mod tests {
 
     #[test]
     fn build_diff_omits_identical_ranges_and_keeps_only_the_real_change() {
-        let diff = build_diff(&sample_data(), false);
+        let diff = build_diff(&sample_data(), false, None);
 
         assert_eq!(diff.before.hunks.len(), 1, "{:?}", diff.before.hunks);
         assert_eq!(diff.before.hunks[0].operation, JsonOperation::Delete);
@@ -366,7 +378,7 @@ mod tests {
 
     #[test]
     fn build_diff_never_sets_move_target_for_non_move_operations() {
-        let diff = build_diff(&sample_data(), false);
+        let diff = build_diff(&sample_data(), false, None);
         assert!(diff.before.hunks[0].move_target.is_none());
         assert!(diff.after.hunks[0].move_target.is_none());
     }
@@ -377,7 +389,7 @@ mod tests {
         data.before_ranges[1].operation = TextOperation::Move;
         data.before_ranges[1].destination = TextRange::new(5, 0, 6, 0);
 
-        let diff = build_diff(&data, false);
+        let diff = build_diff(&data, false, None);
         assert_eq!(diff.before.hunks[0].operation, JsonOperation::Move);
         assert_eq!(
             diff.before.hunks[0].move_target,
@@ -392,13 +404,13 @@ mod tests {
 
     #[test]
     fn build_diff_carries_the_large_residual_flag_through_as_a_field() {
-        assert!(build_diff(&sample_data(), true).large_residual);
-        assert!(!build_diff(&sample_data(), false).large_residual);
+        assert!(build_diff(&sample_data(), true, None).large_residual);
+        assert!(!build_diff(&sample_data(), false, None).large_residual);
     }
 
     #[test]
     fn build_diff_omits_summary_for_an_ordinary_mixed_edit() {
-        assert!(build_diff(&sample_data(), false).summary.is_none());
+        assert!(build_diff(&sample_data(), false, None).summary.is_none());
     }
 
     #[test]
@@ -413,7 +425,7 @@ mod tests {
         }];
         data.after_ranges = data.before_ranges.clone();
 
-        let diff = build_diff(&data, false);
+        let diff = build_diff(&data, false, None);
         assert_eq!(diff.summary, Some(JsonDiffSummary::NoChanges));
         let json = serde_json::to_value(&diff).unwrap();
         assert_eq!(json["summary"], "no_changes");
@@ -421,7 +433,7 @@ mod tests {
 
     #[test]
     fn build_diff_omits_the_summary_field_entirely_from_serialized_json_when_none() {
-        let json = serde_json::to_value(build_diff(&sample_data(), false)).unwrap();
+        let json = serde_json::to_value(build_diff(&sample_data(), false, None)).unwrap();
         assert!(
             json.get("summary").is_none(),
             "the summary field should be omitted, not null, for the ordinary case: {json}"
@@ -437,7 +449,7 @@ mod tests {
         std::fs::write(&after_path, "fn main() {\n    new();\n}\n").unwrap();
 
         let (data, large_residual) = compute_diff(&before_path, &after_path)?;
-        let diff = build_diff(&data, large_residual);
+        let diff = build_diff(&data, large_residual, None);
         let json = serde_json::to_value(&diff)?;
 
         assert!(json.get("before").is_some());
@@ -571,13 +583,25 @@ mod tests {
         same.before_ranges = vec![same.before_ranges[0].clone()];
         same.after_ranges = same.before_ranges.clone();
         for data in [sample_data(), moved, same] {
-            assert_matches_the_schema(&serde_json::to_string(&build_diff(&data, true))?);
+            assert_matches_the_schema(&serde_json::to_string(&build_diff(&data, true, None))?);
         }
         assert_matches_the_schema(&binary_diff_json(
             Path::new("a.rs"),
             Path::new("b.png"),
             None,
         )?);
+        // A text pair that is content too (an SVG): its hunks, and what it draws beside them.
+        let svg = |fill: &str| {
+            format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="{fill}"/></svg>"#
+            )
+        };
+        let drawn = crate::diff::content::diff(svg("red").as_bytes(), svg("blue").as_bytes())?
+            .expect("an SVG pair is content");
+        let with_content = serde_json::to_value(build_diff(&sample_data(), false, Some(&drawn)))?;
+        assert_eq!(with_content["content"]["kind"], "picture");
+        assert!(with_content.get("binary").is_none(), "a text diff");
+        assert_matches_the_schema(&with_content.to_string());
 
         let dir = tempfile::tempdir()?;
         let utf16 = dir.path().join("a.xml");
@@ -589,7 +613,7 @@ mod tests {
                 .collect::<Vec<u8>>(),
         )?;
         let side = serde_json::to_value(build_side("<a/>\n", &utf16, &[]))?;
-        let mut diff = serde_json::to_value(build_diff(&sample_data(), false))?;
+        let mut diff = serde_json::to_value(build_diff(&sample_data(), false, None))?;
         diff["before"] = side;
         assert_matches_the_schema(&diff.to_string());
         Ok(())
@@ -597,7 +621,7 @@ mod tests {
 
     #[test]
     fn text_diff_json_omits_the_binary_field() {
-        let json = serde_json::to_value(build_diff(&sample_data(), false)).unwrap();
+        let json = serde_json::to_value(build_diff(&sample_data(), false, None)).unwrap();
         assert!(json.get("binary").is_none(), "{json}");
     }
 }
