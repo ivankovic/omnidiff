@@ -449,5 +449,94 @@
         "]:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 78,
+              "end_row": 7,
+              "end_column": 82
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 98,
+              "end_row": 7,
+              "end_column": 101
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 116,
+              "end_row": 7,
+              "end_column": 121
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 116,
+              "end_row": 7,
+              "end_column": 119
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 192,
+              "end_row": 7,
+              "end_column": 196
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 209,
+              "end_row": 7,
+              "end_column": 213
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 7,
+              "start_column": 230,
+              "end_row": 7,
+              "end_column": 233
+            }
+          ],
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 228,
+              "end_row": 7,
+              "end_column": 233
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

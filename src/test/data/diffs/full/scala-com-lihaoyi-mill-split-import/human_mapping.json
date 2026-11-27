@@ -242,176 +242,6 @@
       ]
     },
     {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "import_declaration:2"
-      ],
-      "after_path": [
-        "import_declaration:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "import:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "import:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "identifier:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        ".:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "identifier:2"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        ".:2"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        ".:2"
-      ]
-    },
-    {
-      "operation": "match_but_not_identical",
-      "before_path": [
-        "import_declaration:2",
-        "namespace_selectors:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "namespace_selectors:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "{:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "{:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "identifier:2"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "identical",
-      "before_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "}:1"
-      ],
-      "after_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        "}:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        "import:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        "identifier:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        ".:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        "identifier:2"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        ".:2"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "import_declaration:2",
-        "namespace_selectors:1",
-        ",:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "import_declaration:3",
-        ".:3"
-      ]
-    },
-    {
       "operation": "identical_with_children",
       "before_path": [
         "import_declaration:3"
@@ -509,29 +339,375 @@
       "after_path": [
         "object_definition:1"
       ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "{:1"
+      ],
+      "after_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "{:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "identifier:2"
+      ],
+      "after_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "identifier:1"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "}:1"
+      ],
+      "after_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "}:1"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "import_declaration:3",
+        "identifier:3"
+      ]
+    },
+    {
+      "operation": "insert",
+      "after_path": [
+        "import_declaration:3",
+        ".:2"
+      ]
+    },
+    {
+      "operation": "identical",
+      "before_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        "identifier:1"
+      ],
+      "after_path": [
+        "import_declaration:3",
+        "identifier:4"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "import_declaration:2",
+        "namespace_selectors:1",
+        ",:1"
+      ]
     }
   ],
   "groups": [
     {
       "before_paths": [
         [
+          "import_declaration:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2"
+        ],
+        [
+          "import_declaration:3"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
           "import_declaration:2",
-          "namespace_selectors:1",
+          "import:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2",
+          "import:1"
+        ],
+        [
+          "import_declaration:3",
+          "import:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "import_declaration:2",
           "identifier:1"
         ]
       ],
       "after_paths": [
         [
-          "import_declaration:3",
-          "identifier:3"
+          "import_declaration:2",
+          "identifier:1"
         ],
         [
           "import_declaration:3",
-          "identifier:4"
+          "identifier:1"
         ]
       ],
       "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "import_declaration:2",
+          ".:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2",
+          ".:1"
+        ],
+        [
+          "import_declaration:3",
+          ".:1"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "import_declaration:2",
+          "identifier:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2",
+          "identifier:2"
+        ],
+        [
+          "import_declaration:3",
+          "identifier:2"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    },
+    {
+      "before_paths": [
+        [
+          "import_declaration:2",
+          "namespace_selectors:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2",
+          "namespace_selectors:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
       "with_children": false
+    },
+    {
+      "before_paths": [
+        [
+          "import_declaration:2",
+          ".:2"
+        ]
+      ],
+      "after_paths": [
+        [
+          "import_declaration:2",
+          ".:2"
+        ],
+        [
+          "import_declaration:3",
+          ".:3"
+        ]
+      ],
+      "operation": "identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 0,
+              "end_row": 3,
+              "end_column": 21
+            }
+          ],
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 0,
+              "end_row": 4,
+              "end_column": 21
+            },
+            {
+              "start_row": 3,
+              "start_column": 0,
+              "end_row": 3,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 21,
+              "end_row": 4,
+              "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 21,
+              "end_row": 3,
+              "end_column": 22
+            }
+          ],
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 30,
+              "end_row": 4,
+              "end_column": 31
+            },
+            {
+              "start_row": 3,
+              "start_column": 21,
+              "end_row": 3,
+              "end_column": 22
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 23,
+              "end_row": 3,
+              "end_column": 31
+            }
+          ],
+          "after": [
+            {
+              "start_row": 4,
+              "start_column": 31,
+              "end_row": 4,
+              "end_column": 39
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 33,
+              "end_row": 3,
+              "end_column": 46
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3,
+              "start_column": 23,
+              "end_row": 3,
+              "end_column": 36
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 46,
+              "end_row": 3,
+              "end_column": 47
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3,
+              "start_column": 36,
+              "end_row": 3,
+              "end_column": 37
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 22,
+              "end_row": 3,
+              "end_column": 23
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3,
+              "start_column": 22,
+              "end_row": 3,
+              "end_column": 23
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3,
+              "start_column": 31,
+              "end_row": 3,
+              "end_column": 33
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -9794,5 +9794,51 @@
         "at_rule:33"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3992,
+              "start_column": 0,
+              "end_row": 3992,
+              "end_column": 57
+            },
+            {
+              "start_row": 3993,
+              "start_column": 2,
+              "end_row": 3993,
+              "end_column": 51
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3992,
+              "start_column": 0,
+              "end_row": 3992,
+              "end_column": 57
+            },
+            {
+              "start_row": 3993,
+              "start_column": 0,
+              "end_row": 3993,
+              "end_column": 51
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

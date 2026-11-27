@@ -5840,5 +5840,34 @@
         "text_interpolation:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 278,
+              "start_column": 8,
+              "end_row": 278,
+              "end_column": 27
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 284,
+              "start_column": 79,
+              "end_row": 284,
+              "end_column": 92
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

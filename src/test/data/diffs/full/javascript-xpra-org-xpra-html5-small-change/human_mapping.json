@@ -4700,202 +4700,345 @@
         "class_body:1",
         "}:1"
       ]
+    },
+    {
+      "operation": "update",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "property_identifier:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "property_identifier:1"
+      ]
+    },
+    {
+      "operation": "identical_with_children",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "arguments:1"
+      ],
+      "after_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "call_expression:1",
+        "arguments:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "(:1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "):1"
+      ]
+    },
+    {
+      "operation": "delete",
+      "before_path": [
+        "class_declaration:1",
+        "class_body:1",
+        "method_definition:139",
+        "statement_block:1",
+        "if_statement:1",
+        "statement_block:1",
+        "lexical_declaration:1",
+        "variable_declarator:1",
+        "call_expression:1",
+        "member_expression:1",
+        "call_expression:1",
+        "arguments:1",
+        "member_expression:1",
+        "property_identifier:1"
+      ]
     }
   ],
-  "groups": [
+  "text_mappings": [
     {
-      "before_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "call_expression:1",
-          "arguments:1"
-        ],
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1"
-        ]
-      ],
-      "after_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1"
-        ]
-      ],
-      "operation": "match_but_not_identical",
-      "with_children": false
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3380,
+              "start_column": 14,
+              "end_row": 3380,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3380,
+              "start_column": 14,
+              "end_row": 3380,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3381,
+              "start_column": 14,
+              "end_row": 3381,
+              "end_column": 17
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3381,
+              "start_column": 14,
+              "end_row": 3381,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 18,
+              "end_row": 3379,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 32,
+              "end_row": 3379,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 28,
+              "end_row": 3379,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 34,
+              "end_row": 3379,
+              "end_column": 42
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3379,
+              "start_column": 22,
+              "end_row": 3379,
+              "end_column": 43
+            }
+          ]
+        }
+      ]
     },
     {
-      "before_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "call_expression:1",
-          "arguments:1",
-          "(:1"
-        ],
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1",
-          "(:1"
-        ]
-      ],
-      "after_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1",
-          "(:1"
-        ]
-      ],
-      "operation": "identical",
-      "with_children": false
-    },
-    {
-      "before_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "call_expression:1",
-          "arguments:1",
-          "):1"
-        ],
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1",
-          "):1"
-        ]
-      ],
-      "after_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "arguments:1",
-          "):1"
-        ]
-      ],
-      "operation": "identical",
-      "with_children": false
-    },
-    {
-      "before_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "call_expression:1",
-          "arguments:1",
-          "member_expression:1",
-          "property_identifier:1"
-        ],
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "property_identifier:1"
-        ]
-      ],
-      "after_paths": [
-        [
-          "class_declaration:1",
-          "class_body:1",
-          "method_definition:139",
-          "statement_block:1",
-          "if_statement:1",
-          "statement_block:1",
-          "lexical_declaration:1",
-          "variable_declarator:1",
-          "call_expression:1",
-          "member_expression:1",
-          "property_identifier:1"
-        ]
-      ],
-      "operation": "match_but_not_identical",
-      "with_children": false
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3381,
+              "start_column": 13,
+              "end_row": 3381,
+              "end_column": 17
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3381,
+              "start_column": 13,
+              "end_row": 3381,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 32,
+              "end_row": 3379,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 28,
+              "end_row": 3379,
+              "end_column": 32
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 33,
+              "end_row": 3379,
+              "end_column": 42
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3379,
+              "start_column": 21,
+              "end_row": 3379,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 25,
+              "end_row": 3379,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3379,
+              "start_column": 18,
+              "end_row": 3379,
+              "end_column": 21
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 3379,
+              "start_column": 18,
+              "end_row": 3379,
+              "end_column": 25
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 3380,
+              "start_column": 13,
+              "end_row": 3380,
+              "end_column": 18
+            }
+          ],
+          "after": [
+            {
+              "start_row": 3380,
+              "start_column": 13,
+              "end_row": 3380,
+              "end_column": 15
+            }
+          ]
+        }
+      ]
     }
   ]
 }
