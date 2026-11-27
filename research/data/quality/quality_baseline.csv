@@ -60,7 +60,7 @@ c-openssl-openssl-whitepsace-only,0,0
 c-openssl-openssl-whitespace-only,0,0
 c-openssl-openssl-whitespace-only-2,0,0
 c-pixaranimationstudios-opensubdiv-change-license-comment,2,2
-c-pocoproject-poco-replace-0-with-nullptr,0,0
+c-pocoproject-poco-replace-0-with-nullptr,9,6
 c-postgres-postgres-change-ctrl-c-behaviour,0,0
 c-postgres-postgres-copyright,0,0
 c-postgres-postgres-copyright-2,0,0
@@ -1335,6 +1335,7 @@ rust-adding-a-variable-and-test-with-comments,0,0
 rust-adding-many-identical-cfg-test-statements-to-a-signle-file-doesnt-prefer-the-local-insert-but-rather-goes-to-some-other-existing-cfg,0,0
 rust-adding-to-a-list-of-identical-attributes-should-favour-near-matches,0,0
 rust-algorithm-change,42,28
+rust-completely-unrelated-main-files,0,0
 rust-cost-optimization,0,0
 rust-data-structure,0,0
 rust-error-handling,4,3
@@ -1386,7 +1387,7 @@ rust-rustdesk-rustdesk-complex-change-with-a-lot-of-add,27,20
 rust-rustdesk-rustdesk-large-file-40k-normal-feature-work,4,2
 rust-rustdesk-rustdesk-move-list-item-with-insert,0,0
 rust-rustdesk-rustdesk-string-constant-change,0,0
-rust-skim-rs-skim-format-string,0,0
+rust-skim-rs-skim-format-string,1,1
 rust-small-addition-with-reuse-of-binary-expressions,10,5
 rust-sniffnet-protocol,0,0
 rust-some-to-const-slice,0,0
@@ -1448,7 +1449,7 @@ scala-com-lihaoyi-mill-expand-import-path,0,0
 scala-com-lihaoyi-mill-new-import-used-to-remove-a-lot-of-code,51,28
 scala-com-lihaoyi-mill-only-change-failure-strings,0,0
 scala-com-lihaoyi-mill-real-small-change,2,2
-scala-com-lihaoyi-mill-small-change,4,4
+scala-com-lihaoyi-mill-small-change,10,8
 scala-com-lihaoyi-mill-small-refactoring,2,2
 scala-com-lihaoyi-mill-split-import,1,1
 scala-com-lihaoyi-mill-split-import-2,8,7
@@ -1684,6 +1685,11 @@ vimscript-neovim-neovim-test-debian-package-parsing-awful-string-matching,0,0
 vimscript-preservim-tagbar-add-if-statements,0,0
 vimscript-protesilaos-tempus-themes-vim-add-terminal-color-scheme,0,0
 vimscript-protesilaos-tempus-themes-vim-change-two-values,0,0
+vue-louislam-uptime-kuma,0,0
+vue-louislam-uptime-kuma-remove-prefix-from-string,0,0
+vue-n8n-io-n8n-update-name,0,0
+vue-nextcloud-server-update,0,0
+vue-nextcloud-server-update-2,0,0
 xml-adoptopenjdk-icedtea-web-update-version-string,0,0
 xml-antlr-antlr3-comment-out-part-of-code-interesting-case,0,0
 xml-eclipse-ee4j-jaxb-istack-commons-update-version-string,0,0

@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -31,7 +31,9 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("rust-skim-rs-skim-format-string")
+    // Invariant 31, Extended: after row 75 inserts `matcher_engine` inside a sequence without the
+    // separator on its right.
+    assert_ground_truth_invariants_with_known_violations("rust-skim-rs-skim-format-string", 1)
 }
 
 #[test]

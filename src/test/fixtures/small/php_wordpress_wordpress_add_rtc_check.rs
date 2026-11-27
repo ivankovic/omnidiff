@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -28,7 +28,9 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("php-wordpress-wordpress-add-rtc-check")
+    // Invariant 32, Extended: before rows 1153-1156 and 1158-1160 gain one byte of indentation
+    // (after rows 1161-1164, 1166-1168), kept unpainted.
+    assert_ground_truth_invariants_with_known_violations("php-wordpress-wordpress-add-rtc-check", 2)
 }
 
 #[test]

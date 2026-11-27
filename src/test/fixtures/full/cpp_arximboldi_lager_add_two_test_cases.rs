@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -28,7 +28,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("cpp-arximboldi-lager-add-two-test-cases")
+    // Invariant 25, both paintings: after rows 256 and 275 paint an inserted `expression_statement`
+    // from its start but leave its `;` unpainted.
+    assert_ground_truth_invariants_with_known_violations(
+        "cpp-arximboldi-lager-add-two-test-cases",
+        4,
+    )
 }
 
 #[test]

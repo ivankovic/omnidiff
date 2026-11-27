@@ -16,7 +16,7 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
@@ -28,7 +28,12 @@ fn mapping() -> Result<()> {
 
 #[test]
 fn invariants() -> Result<()> {
-    assert_ground_truth_invariants("json-governikus-ausweisapp-whitespace-only")
+    // Invariants 16 and 31, Extended: row 2 paints only the differing letters of
+    // `SimulatorReaderManagerPlugIn` -> `SimulatorReaderManagerPlugin`, not the whole name.
+    assert_ground_truth_invariants_with_known_violations(
+        "json-governikus-ausweisapp-whitespace-only",
+        4,
+    )
 }
 
 #[test]

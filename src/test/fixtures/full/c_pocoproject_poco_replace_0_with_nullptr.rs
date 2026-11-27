@@ -16,28 +16,23 @@
  */
 use crate::test;
 use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
-use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
+use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    // Recorded as found, not examined.
+    // The human mapping now groups each `0` with its `nullptr`; omnidiff deletes and inserts them
+    // (`APTED("large_flat_subtree")`). Not examined further.
     test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "c-pocoproject-poco-replace-0-with-nullptr",
-        3,
-        2,
+        9,
+        6,
     )
 }
 
 #[test]
 fn invariants() -> Result<()> {
-    // Invariant 18, three times: `binary_expression.right` holds `0` on before rows 151, 164 and 165
-    // and `nullptr` on the same after rows. The parents are matched, yet the mapping deletes each `0`
-    // and inserts each `nullptr`.
-    assert_ground_truth_invariants_with_known_violations(
-        "c-pocoproject-poco-replace-0-with-nullptr",
-        3,
-    )
+    assert_ground_truth_invariants("c-pocoproject-poco-replace-0-with-nullptr")
 }
 
 #[test]
