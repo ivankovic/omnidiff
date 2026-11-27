@@ -12369,3 +12369,45 @@ fn f_off_a_painted_match_says_so_and_moves_nothing() {
         app.status
     );
 }
+
+#[test]
+fn wrap_words_wraps_at_spaces_and_splits_a_word_wider_than_the_row() {
+    assert_eq!(wrap_words("one two three", 7), vec!["one two", "three"]);
+    assert_eq!(wrap_words("abcdefghij x", 4), vec!["abcd", "efgh", "ij x"]);
+    assert_eq!(wrap_words("", 10), vec![""]);
+}
+
+#[test]
+fn first_row_shown_keeps_a_tall_selected_row_in_view() {
+    // Rows 3 high, 10 screen rows: row 5 must be inside the window that starts at the offset.
+    let offset = first_row_shown(8, 5, 10, |_| 3);
+    let shown: usize = (offset..=5).map(|_| 3).sum();
+    assert!(shown <= 10, "offset {offset} pushes row 5 off screen");
+    // Near the end the window fills up rather than leaving the bottom empty.
+    assert_eq!(first_row_shown(8, 7, 10, |_| 3), 5);
+    assert_eq!(first_row_shown(8, 0, 10, |_| 3), 0);
+}
+
+/// A message wider than the popup is shown whole, over several rows, not cut at the edge.
+#[test]
+fn the_invariant_popup_wraps_a_long_message() {
+    let tail = "THE-END-OF-THE-MESSAGE";
+    let message = format!("{} {tail}", "word ".repeat(60));
+    let entries = vec![InvariantEntry {
+        violation: human_mapping::invariants::GroundTruthViolation {
+            invariant: 31,
+            painting: Some("Extended".to_string()),
+            message,
+            sites: Vec::new(),
+        },
+        details: vec![format!("{} {tail}", "site ".repeat(40))],
+        review: None,
+    }];
+    let backend = ratatui::backend::TestBackend::new(100, 30);
+    let mut terminal = Terminal::new(backend).unwrap();
+    terminal
+        .draw(|f| render_invariant_list(f, Rect::new(0, 0, 100, 30), &entries, 0))
+        .unwrap();
+    let text = rendered_text(&terminal);
+    assert_eq!(text.matches(tail).count(), 2, "{text}");
+}

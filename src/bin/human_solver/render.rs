@@ -1420,16 +1420,34 @@ pub(crate) fn render_invariant_list(
     let inner = block.inner(popup_area);
     frame.render_widget(block, popup_area);
 
-    // Bounded, so one violation with many sites cannot push the list off screen.
-    let details = entries
-        .get(selected)
-        .map(|entry| entry.details.len())
-        .unwrap_or(0);
-    let detail_height = (details as u16 + 2).clamp(3, inner.height.saturating_sub(3).max(3));
+    // The details wrapped to the popup's width; bounded, so one violation with many sites cannot
+    // push the list off screen.
+    let detail: Vec<String> = match entries.get(selected) {
+        Some(entry) if entry.details.is_empty() => {
+            vec!["(this violation names no place to jump to)".to_string()]
+        }
+        Some(entry) => entry
+            .details
+            .iter()
+            .flat_map(|line| wrap_words(line, inner.width as usize))
+            .collect(),
+        None => Vec::new(),
+    };
+    let detail_height = (detail.len() as u16 + 2).clamp(3, inner.height.saturating_sub(3).max(3));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(3), Constraint::Length(detail_height)])
         .split(inner);
+
+    // The message column takes what the two fixed columns and their spacing leave, and each
+    // message wraps within it, so a row is as tall as its message.
+    let message_width = (chunks[0].width as usize)
+        .saturating_sub(3 + 18 + 2)
+        .max(20);
+    let messages: Vec<Vec<String>> = entries
+        .iter()
+        .map(|entry| wrap_words(&entry.violation.message, message_width))
+        .collect();
 
     let rows: Vec<Row> = entries
         .iter()
@@ -1454,17 +1472,23 @@ pub(crate) fn render_invariant_list(
                     // The rules that read only the tree mapping have no painting to name.
                     (None, None) => "(mapping)".to_string(),
                 }),
-                Cell::from(entry.violation.message.clone()),
+                Cell::from(ratatui::text::Text::from(
+                    messages[index]
+                        .iter()
+                        .map(|line| Line::from(line.clone()))
+                        .collect::<Vec<_>>(),
+                )),
             ])
+            .height(messages[index].len().max(1) as u16)
             .style(style)
         })
         .collect();
 
     // Scroll derives from `selected` each frame, as in the open pickers: nothing to keep in sync.
+    // Rows differ in height, so the first row shown is found by height, not by count.
     let height = chunks[0].height.saturating_sub(1).max(1) as usize;
-    let offset = selected
-        .saturating_sub(height / 2)
-        .min(entries.len().saturating_sub(height));
+    let row_height = |index: usize| messages[index].len().max(1);
+    let offset = first_row_shown(entries.len(), selected, height, row_height);
     let visible: Vec<Row> = rows.into_iter().skip(offset).collect();
 
     frame.render_widget(
@@ -1483,24 +1507,70 @@ pub(crate) fn render_invariant_list(
         chunks[0],
     );
 
-    let detail = entries
-        .get(selected)
-        .map(|entry| {
-            if entry.details.is_empty() {
-                "(this violation names no place to jump to)".to_string()
-            } else {
-                entry.details.join("\n")
-            }
-        })
-        .unwrap_or_default();
     frame.render_widget(
-        Paragraph::new(detail).block(
+        Paragraph::new(detail.join("\n")).block(
             Block::default()
                 .borders(Borders::TOP)
                 .title("Where — Enter puts both trees and both text panels here"),
         ),
         chunks[1],
     );
+}
+
+/// `text` word-wrapped to `width` columns; a word wider than `width` is split across rows, since a
+/// violation quotes long code that would otherwise run off the row.
+pub(crate) fn wrap_words(text: &str, width: usize) -> Vec<String> {
+    let width = width.max(1);
+    let mut lines = Vec::new();
+    let mut current = String::new();
+    let mut current_len = 0;
+    for word in text.split_whitespace() {
+        let mut word: Vec<char> = word.chars().collect();
+        if current_len > 0 && current_len + 1 + word.len() > width {
+            lines.push(std::mem::take(&mut current));
+            current_len = 0;
+        }
+        // Here the line is empty, or the word fits after it.
+        while word.len() > width {
+            lines.push(word.drain(..width).collect());
+        }
+        if current_len > 0 {
+            current.push(' ');
+            current_len += 1;
+        }
+        current_len += word.len();
+        current.extend(word);
+    }
+    if !current.is_empty() || lines.is_empty() {
+        lines.push(current);
+    }
+    lines
+}
+
+/// The first of `count` rows to draw in `height` screen rows so that row `selected` is shown,
+/// about halfway down when there is room above it, and no space is left empty at the bottom
+/// while rows above are hidden.
+pub(crate) fn first_row_shown(
+    count: usize,
+    selected: usize,
+    height: usize,
+    row_height: impl Fn(usize) -> usize,
+) -> usize {
+    if count == 0 {
+        return 0;
+    }
+    let mut offset = selected.min(count - 1);
+    let mut used = row_height(offset);
+    while offset > 0 && used + row_height(offset - 1) <= height / 2 {
+        offset -= 1;
+        used += row_height(offset);
+    }
+    let mut below: usize = (offset..count).map(&row_height).sum();
+    while offset > 0 && below + row_height(offset - 1) <= height {
+        offset -= 1;
+        below += row_height(offset);
+    }
+    offset
 }
 
 /// The `o` picker: one row per case and one column per `DiffColumn`. The header shows the cursor
