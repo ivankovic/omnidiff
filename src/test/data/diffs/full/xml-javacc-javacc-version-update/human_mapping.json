@@ -1131,5 +1131,50 @@
         "ETag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 142,
+              "start_column": 29,
+              "end_row": 142,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 142,
+              "start_column": 29,
+              "end_row": 142,
+              "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 143,
+              "start_column": 29,
+              "end_row": 143,
+              "end_column": 30
+            }
+          ],
+          "after": [
+            {
+              "start_row": 143,
+              "start_column": 29,
+              "end_row": 143,
+              "end_column": 30
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -2805,5 +2805,72 @@
         "}:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 138,
+              "start_column": 84,
+              "end_row": 138,
+              "end_column": 86
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 139,
+              "start_column": 12,
+              "end_row": 139,
+              "end_column": 58
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 138,
+              "start_column": 83,
+              "end_row": 138,
+              "end_column": 86
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 139,
+              "start_column": 12,
+              "end_row": 139,
+              "end_column": 58
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 139,
+              "start_column": 0,
+              "end_row": 139,
+              "end_column": 12
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
