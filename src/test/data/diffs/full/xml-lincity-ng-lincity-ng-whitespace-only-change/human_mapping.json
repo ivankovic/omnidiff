@@ -5,5 +5,11 @@
       "before_path": [],
       "after_path": []
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": []
+    }
   ]
 }

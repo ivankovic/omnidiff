@@ -3293,5 +3293,155 @@
         "comment:190"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 3836,
+              "start_column": 4,
+              "end_row": 3836,
+              "end_column": 23
+            },
+            {
+              "start_row": 3837,
+              "start_column": 8,
+              "end_row": 3837,
+              "end_column": 22
+            },
+            {
+              "start_row": 3838,
+              "start_column": 4,
+              "end_row": 3838,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4101,
+              "start_column": 4,
+              "end_row": 4101,
+              "end_column": 23
+            },
+            {
+              "start_row": 4102,
+              "start_column": 8,
+              "end_row": 4102,
+              "end_column": 28
+            },
+            {
+              "start_row": 4103,
+              "start_column": 4,
+              "end_row": 4103,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4118,
+              "start_column": 4,
+              "end_row": 4118,
+              "end_column": 23
+            },
+            {
+              "start_row": 4119,
+              "start_column": 8,
+              "end_row": 4119,
+              "end_column": 28
+            },
+            {
+              "start_row": 4120,
+              "start_column": 4,
+              "end_row": 4120,
+              "end_column": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 3836,
+              "start_column": 0,
+              "end_row": 3836,
+              "end_column": 23
+            },
+            {
+              "start_row": 3837,
+              "start_column": 0,
+              "end_row": 3837,
+              "end_column": 22
+            },
+            {
+              "start_row": 3838,
+              "start_column": 0,
+              "end_row": 3838,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4101,
+              "start_column": 0,
+              "end_row": 4101,
+              "end_column": 23
+            },
+            {
+              "start_row": 4102,
+              "start_column": 0,
+              "end_row": 4102,
+              "end_column": 28
+            },
+            {
+              "start_row": 4103,
+              "start_column": 0,
+              "end_row": 4103,
+              "end_column": 9
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 4118,
+              "start_column": 0,
+              "end_row": 4118,
+              "end_column": 23
+            },
+            {
+              "start_row": 4119,
+              "start_column": 0,
+              "end_row": 4119,
+              "end_column": 28
+            },
+            {
+              "start_row": 4120,
+              "start_column": 0,
+              "end_row": 4120,
+              "end_column": 9
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

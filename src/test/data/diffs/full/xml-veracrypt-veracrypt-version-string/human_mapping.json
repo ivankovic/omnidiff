@@ -333,5 +333,55 @@
         "ETag:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 37,
+              "end_row": 2,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 37,
+              "end_row": 2,
+              "end_column": 38
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 2,
+              "start_column": 36,
+              "end_row": 2,
+              "end_column": 38
+            }
+          ],
+          "after": [
+            {
+              "start_row": 2,
+              "start_column": 36,
+              "end_row": 2,
+              "end_column": 38
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

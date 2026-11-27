@@ -1130,5 +1130,31 @@
         "block_mapping_pair:8"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Only one solution",
+      "entries": [
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 26,
+              "start_column": 37,
+              "end_row": 27,
+              "end_column": 0
+            }
+          ],
+          "after": [
+            {
+              "start_row": 26,
+              "start_column": 37,
+              "end_row": 27,
+              "end_column": 0
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

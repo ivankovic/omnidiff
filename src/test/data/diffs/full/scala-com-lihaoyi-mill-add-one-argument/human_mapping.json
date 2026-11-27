@@ -319,5 +319,51 @@
         "object_definition:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 22,
+              "end_row": 7,
+              "end_column": 23
+            },
+            {
+              "start_row": 8,
+              "start_column": 6,
+              "end_row": 8,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 7,
+              "start_column": 22,
+              "end_row": 7,
+              "end_column": 23
+            },
+            {
+              "start_row": 8,
+              "start_column": 0,
+              "end_row": 8,
+              "end_column": 22
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

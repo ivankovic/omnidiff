@@ -2540,5 +2540,51 @@
         "preproc_call:1"
       ]
     }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 135,
+              "start_column": 13,
+              "end_row": 135,
+              "end_column": 14
+            },
+            {
+              "start_row": 136,
+              "start_column": 6,
+              "end_row": 136,
+              "end_column": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 135,
+              "start_column": 13,
+              "end_row": 135,
+              "end_column": 14
+            },
+            {
+              "start_row": 136,
+              "start_column": 0,
+              "end_row": 136,
+              "end_column": 14
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
