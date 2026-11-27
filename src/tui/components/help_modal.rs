@@ -103,12 +103,11 @@ Appearance
                    Colors tab (c). Tab / Shift-Tab switch tabs; every change is applied
                    and saved to the config the moment it is made, so Enter or Esc only
                    close it and nothing is undone on the way out.
-                   Highlighting: a checkbox per setting, an example diff in the open
+                   Highlighting: the Minimal and Extended presets (also 1/2), then a
+                   checkbox per setting in three groups, an example diff in the open
                    file's language (Rust when none is open) painted as you choose, and
-                   the selected setting's effect on it in bold and marked with a diamond
-                   in the gutter; 1/2 pick the Minimal/Extended presets, and the last row is
-                   the node highlight (H). Trailing whitespace is never painted,
-                   regardless of any setting.
+                   the selected row's effect on it in bold and marked with a diamond in
+                   the gutter; the last row is the node highlight (H).
                    Layout: the panel layout (v), and the width from which auto shows
                    two panels, 160 columns unless changed there or, for one run, by
                    OMNIDIFF_WIDE_COLUMNS.

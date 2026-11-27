@@ -196,69 +196,65 @@ pub struct OptionInfo {
 /// [`RenderOptions::options`]'s names and descriptions, in the same order.
 pub const OPTION_INFO: [OptionInfo; 9] = [
     OptionInfo {
-        name: "Highlight the indentation of added and removed lines",
+        name: "Indentation of added lines",
         short: "indentation",
-        description: "On, a line that was added or removed is highlighted from the left margin, its \
-            indentation included, so a new block reads as one bar, and a word added inside a line \
-            takes the space it brought along. Off, only the code is highlighted and the \
-            whitespace stays plain.",
+        description: "An added or removed line is colored from the left margin, its indentation \
+            included, so a new block reads as one bar, and a word added inside a line takes the \
+            space before it along. Off, only the code is colored.",
     },
     OptionInfo {
-        name: "Highlight brackets and separators that only shifted",
+        name: "Brackets and commas that shifted",
         short: "punctuation",
-        description: "On, a bracket, comma or semicolon that only shifted, or sits in a changed \
-            pair, is highlighted with the code around it. Off, it stays plain. Punctuation that \
-            was added or removed is highlighted either way: then it is the edit.",
+        description: "A bracket, comma or semicolon that only shifted along with the code around \
+            it is colored with that code. Punctuation that was added or removed is colored either \
+            way.",
     },
     OptionInfo {
-        name: "Highlight changed text whole, not only the part that differs",
+        name: "Changed text whole",
         short: "whole updates",
-        description: "On, a changed word, string or number is highlighted entirely. Off, only the \
-            part that differs is, so a version bump shows just the digits that changed. Off in \
-            both presets.",
+        description: "A changed word, string or number is colored entirely: \"1.2.3\" -> \
+            \"1.2.4\" colors 1.2.4, not only the 4. Neither preset uses this.",
     },
     OptionInfo {
-        name: "Show code that was only re-indented as moved",
+        name: "Re-indented code",
         short: "re-indented moves",
-        description: "On, code that kept its text but moved in or out by indentation - wrapped in a \
-            new block, or taken out of one - is highlighted as moved. Off, it stays plain and only \
-            the block around it is highlighted.",
+        description: "Code that kept its text and only gained or lost indentation, because a block \
+            was wrapped around it or taken from around it, is colored as moved: `return x` inside \
+            a new `if x:`.",
     },
     OptionInfo {
-        name: "Show code pushed along by an edit beside it as moved",
+        name: "Code shifted by an edit beside it",
         short: "displaced moves",
-        description: "On, code that kept its text and its place, and shifted only because \
-            something was added or removed before it, is highlighted as moved. Off, it stays \
-            plain and only the edit beside it is highlighted.",
+        description: "Code that stayed on its line but slid along because something was added or \
+            removed before it is colored as moved: `first, second` in `compute(first, second)` -> \
+            `compute(extra, first, second)`.",
     },
     OptionInfo {
-        name: "Show moves in reshaped code on both sides",
+        name: "Moves through rewritten code",
         short: "reshaped moves",
-        description: "When code is reshaped, the two sides can measure a piece that moved through \
-            it differently, such as `age` going from a multi-line call into `Person(name, age)`. \
-            On, that move is highlighted on both sides. Off, only the smaller account is kept, so \
-            it may show on one side or not at all.",
+        description: "When code is rewritten around a piece that moved, the two sides can measure \
+            that piece differently: `age` going from a multi-line call into `Person(name, age)`. \
+            On, it is colored as moved on both sides. Off, on one side or not at all.",
     },
     OptionInfo {
-        name: "Highlight a renamed name whole",
+        name: "Renamed names whole",
         short: "whole names",
-        description: "On, a renamed variable, function or type is highlighted entirely on both \
-            sides: it is a different name. Off, only the letters that differ are. Comments, \
-            strings and other text keep the narrow highlight either way.",
+        description: "A renamed variable, function or type is colored entirely on both sides: \
+            `count` -> `counter` colors all of `counter`, not only `er`. Comments and strings \
+            still color only the letters that differ.",
     },
     OptionInfo {
-        name: "Highlight the space between two highlighted pieces on a row",
+        name: "Spaces between colored pieces",
         short: "spaces between",
-        description: "On, the blank between two highlighted pieces on one row is highlighted too, \
-            so one edit does not read as two with a gap. Off, such blanks stay plain.",
+        description: "The blank between two colored pieces on one line is colored too, so one edit \
+            does not look like two with a gap: `var args x` -> `args := x`.",
     },
     OptionInfo {
-        name: "Highlight changed spaces at the end of a line",
+        name: "Spaces at line ends",
         short: "trailing spaces",
-        description: "On, spaces or tabs added, removed or changed after the last character of a \
-            line that otherwise stayed the same are highlighted, and so is a blank line of spaces \
-            that was added or removed. Off, whitespace at the end of a line is never highlighted. \
-            A new or removed line is highlighted up to its last character either way.",
+        description: "Spaces or tabs added or removed at the end of a line that otherwise stayed \
+            the same are colored, and so is an added or removed line of only spaces. Off, a line \
+            whose only change is trailing whitespace looks unchanged.",
     },
 ];
 

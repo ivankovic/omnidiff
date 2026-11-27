@@ -31,7 +31,60 @@ use crate::tui::settings_examples::{Painted, SettingsExample, example_for, paint
 use crate::tui::theme::OverlayTheme;
 
 const HINT: &str =
-    "↑/↓ move  Space toggle  1 Minimal  2 Extended  Tab next tab  Enter or Esc close";
+    "↑/↓ move  Space choose  1 Minimal  2 Extended  Tab next tab  Enter or Esc close";
+
+/// The settings column's width: the longest [`OPTION_INFO`] name, its checkbox and the border.
+const LIST_WIDTH: u16 = 40;
+
+/// The page's first line: what every row below it is about.
+const INTRO: &str = "These settings decide how much of each change is colored.";
+
+/// The presets the page lists first, with what each is for.
+const PRESETS: [(&str, RenderOptions, &str); 2] = [
+    (
+        "Minimal",
+        RenderOptions::MINIMAL,
+        "Color only the characters that changed, avoiding whitespace. Least to look at.",
+    ),
+    (
+        "Extended",
+        RenderOptions::EXTENDED,
+        "Color all changed characters, and color some moved or surrounding code as well. The \
+         shape of a change is easier to see, but more characters will be highlighted.",
+    ),
+];
+
+/// The settings under the presets, grouped by what they decide, as [`OPTION_INFO`] indexes. The
+/// grouping lives here rather than in [`RenderOptions::options`]'s order, which the examples'
+/// declared no-effect indexes and the saved badge order depend on.
+const GROUPS: [(&str, [usize; 3]); 3] = [
+    ("How much to color", [6, 2, 1]),
+    ("Whitespace", [0, 7, 8]),
+    ("Moves", [3, 4, 5]),
+];
+
+/// One selectable row of the page, top to bottom.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Row {
+    /// A [`PRESETS`] index.
+    Preset(usize),
+    /// An [`OPTION_INFO`] index.
+    Setting(usize),
+    NodeHighlight,
+}
+
+/// Every selectable row, in the order the page shows them.
+fn rows() -> Vec<Row> {
+    (0..PRESETS.len())
+        .map(Row::Preset)
+        .chain(
+            GROUPS
+                .iter()
+                .flat_map(|(_, members)| members.map(Row::Setting)),
+        )
+        .chain([Row::NodeHighlight])
+        .collect()
+}
 
 /// What the page is about: an example in the open diff's language, or non-code content, which
 /// these settings do not shape.
@@ -41,10 +94,13 @@ pub enum PageContent {
     NonCode,
 }
 
-/// The settings menu's Highlighting tab (the `M` key opens it): one checkbox row per [`RenderOptions`] field, an
-/// example diff in the open diff's language painted under the current settings, and what the
-/// selected setting does - with the bytes it changes in the example in bold and marked in the
-/// gutter, so a setting is seen rather than described.
+/// The settings menu's Highlighting tab (the `M` key opens it): the two presets first, then one
+/// checkbox row per [`RenderOptions`] field in [`GROUPS`], an example diff in the open diff's
+/// language painted under the current settings, and what the selected row does - with the bytes
+/// it would change in the example in bold and marked in the gutter, so a setting is seen rather
+/// than described. The presets lead because they are the choice that matters: against the
+/// hand-painted corpus, flipping any one setting away from a preset almost always agrees with
+/// fewer paintings.
 ///
 /// Every toggle applies and persists the moment it is pressed, like the whole menu: there is
 /// nothing to accept or cancel, so `Enter` and `Esc` both just close it. The presets are on
@@ -56,6 +112,7 @@ pub enum PageContent {
 /// explains itself instead.
 pub struct RenderOptionsDialog {
     options: RenderOptions,
+    /// A [`rows`] index.
     selected: usize,
     content: PageContent,
     theme: OverlayTheme,
@@ -68,11 +125,10 @@ pub struct RenderOptionsDialog {
 /// The example under one choice of settings, and what the selected setting changes in it.
 struct ExampleView {
     options: RenderOptions,
-    /// `None` on the width row, which marks nothing.
-    selected: Option<usize>,
+    selected: Row,
     painted: Painted,
     texts: [String; 2],
-    /// Per side, the bytes the selected setting repaints.
+    /// Per side, the bytes choosing the selected row repaints.
     marked: [Vec<bool>; 2],
     /// Said instead of an effect when the selected setting changes nothing here.
     note: Option<String>,
@@ -88,10 +144,14 @@ impl RenderOptionsDialog {
         )
     }
 
+    /// Opens on the preset the options are, else the first one.
     pub fn for_content(options: RenderOptions, content: PageContent, theme: OverlayTheme) -> Self {
         Self {
             options,
-            selected: 0,
+            selected: PRESETS
+                .iter()
+                .position(|&(_, preset, _)| preset == options)
+                .unwrap_or(0),
             content,
             theme,
             node_highlight: false,
@@ -109,18 +169,12 @@ impl RenderOptionsDialog {
         self
     }
 
-    /// The checkboxes, then the node-highlight row.
     fn row_count(&self) -> usize {
-        self.node_row() + 1
+        rows().len()
     }
 
-    fn node_row(&self) -> usize {
-        self.options.options().len()
-    }
-
-    /// The highlighting setting selected, or `None` on the node-highlight row.
-    fn selected_option(&self) -> Option<usize> {
-        (self.selected < self.node_row()).then_some(self.selected)
+    fn row(&self) -> Row {
+        rows()[self.selected]
     }
 
     fn node_row_text() -> Vec<Line<'static>> {
@@ -145,7 +199,7 @@ impl RenderOptionsDialog {
         let PageContent::Example(example) = self.content else {
             return None;
         };
-        let selected = self.selected_option();
+        let selected = self.row();
         let fresh = self
             .view
             .as_ref()
@@ -183,31 +237,25 @@ impl RenderOptionsDialog {
     }
 }
 
-/// `example` painted under `options`, the bytes `selected` repaints when flipped, and what to
-/// say when it repaints nothing: the example's own reason, or another setting it needs. With no
-/// setting selected (the width row), the example as it is, nothing marked.
+/// `example` painted under `options`, the bytes choosing `selected` repaints (a preset picked, a
+/// setting flipped), and what to say when it repaints nothing: the example's own reason, or
+/// another setting it needs. On the node-highlight row, the example as it is, nothing marked.
 fn build_view(
     example: &'static SettingsExample,
     options: RenderOptions,
-    selected: Option<usize>,
+    selected: Row,
 ) -> Option<ExampleView> {
     let (now, texts) = painted(example, options)?;
-    let Some(selected) = selected else {
-        let marked = [0, 1].map(|side| vec![false; now[side].len()]);
-        return Some(ExampleView {
-            options,
-            selected: None,
-            painted: now,
-            texts,
-            marked,
-            note: None,
-        });
-    };
     let flipped = |mut options: RenderOptions, index: usize| {
         options.toggle(index);
         options
     };
-    let (other, _) = painted(example, flipped(options, selected))?;
+    let chosen = match selected {
+        Row::Preset(index) => PRESETS[index].1,
+        Row::Setting(index) => flipped(options, index),
+        Row::NodeHighlight => options,
+    };
+    let (other, _) = painted(example, chosen)?;
     let marked: [Vec<bool>; 2] = [0, 1].map(|side| {
         now[side]
             .iter()
@@ -215,6 +263,23 @@ fn build_view(
             .map(|(a, b)| a != b)
             .collect()
     });
+    let Row::Setting(selected) = selected else {
+        let note = match selected {
+            Row::Preset(_) if chosen == options => Some("This is the current choice."),
+            Row::Preset(_) if marked.iter().flatten().all(|&m| !m) => {
+                Some("This example looks the same either way.")
+            }
+            _ => None,
+        };
+        return Some(ExampleView {
+            options,
+            selected,
+            painted: now,
+            texts,
+            marked,
+            note: note.map(str::to_string),
+        });
+    };
     let note = if marked.iter().flatten().any(|&m| m) {
         None
     } else if let Some((_, reason)) = example.no_effect.iter().find(|&&(i, _)| i == selected) {
@@ -244,7 +309,7 @@ fn build_view(
     };
     Some(ExampleView {
         options,
-        selected: Some(selected),
+        selected: Row::Setting(selected),
         painted: now,
         texts,
         marked,
@@ -350,12 +415,16 @@ impl Component for RenderOptionsDialog {
                 move_selection(&mut self.selected, 1, len);
                 Ok(Some(Action::Render))
             }
-            KeyCode::Char(' ') => match self.selected_option() {
-                Some(index) => {
+            KeyCode::Char(' ') => match self.row() {
+                Row::Preset(index) => {
+                    self.options = PRESETS[index].1;
+                    Ok(Some(Action::RenderOptionsChanged(self.options)))
+                }
+                Row::Setting(index) => {
                     self.options.toggle(index);
                     Ok(Some(Action::RenderOptionsChanged(self.options)))
                 }
-                None => {
+                Row::NodeHighlight => {
                     self.node_highlight = !self.node_highlight;
                     Ok(Some(Action::NodeHighlightChanged(self.node_highlight)))
                 }
@@ -379,7 +448,7 @@ impl Component for RenderOptionsDialog {
             return Ok(());
         };
         let theme = self.theme;
-        let (options, selected) = (self.options, self.selected);
+        let options = self.options;
         let title = format!(
             " Highlighting settings · {} · example in {} ",
             preset_name(options),
@@ -392,53 +461,67 @@ impl Component for RenderOptionsDialog {
         let block = Block::default().borders(Borders::ALL).title(title);
         let inner = block.inner(area);
         frame.render_widget(block, area);
-        let rows = Layout::default()
+        let bands = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(1),
                 Constraint::Min(6),
                 Constraint::Length(6),
                 Constraint::Length(1),
             ])
             .split(inner);
+        frame.render_widget(Paragraph::new(INTRO), bands[0]);
+        // Wide enough for the longest name on one row, so a list line is a screen line and the
+        // selection can be scrolled into view.
         let columns = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Length(46.min(inner.width / 3)),
+                Constraint::Length(LIST_WIDTH.min(inner.width / 2)),
                 Constraint::Min(20),
             ])
-            .split(rows[0]);
+            .split(bands[1]);
 
-        let list: Vec<Line> = options
-            .options()
-            .into_iter()
-            .enumerate()
-            .map(|(index, (name, on))| {
-                let text = format!("[{}] {name}", if on { 'x' } else { ' ' });
-                if index == selected {
-                    Line::from(text).reversed()
-                } else {
-                    Line::from(text)
-                }
-            })
-            .collect();
+        let row = self.row();
+        let mark = |line: Line<'static>, this: Row| {
+            if this == row { line.reversed() } else { line }
+        };
+        let values = options.options();
+        let mut list: Vec<Line> = vec!["Preset".bold().into()];
+        let mut selected_line = 0;
+        let mut push = |list: &mut Vec<Line>, text: String, this: Row| {
+            if this == row {
+                selected_line = list.len();
+            }
+            list.push(mark(text.into(), this));
+        };
+        for (index, &(name, preset, _)) in PRESETS.iter().enumerate() {
+            let dot = if preset == options { '•' } else { ' ' };
+            push(&mut list, format!("({dot}) {name}"), Row::Preset(index));
+        }
+        for (title, members) in GROUPS {
+            list.push(Line::default());
+            list.push(title.bold().into());
+            for index in members {
+                let check = if values[index].1 { 'x' } else { ' ' };
+                let text = format!("[{check}] {}", OPTION_INFO[index].name);
+                push(&mut list, text, Row::Setting(index));
+            }
+        }
         // The node-highlight row in a fixed area at the bottom of the column, not after the
-        // checkboxes: they wrap, and on a short terminal they would push it out of sight.
+        // checkboxes: on a short terminal they would push it out of sight.
         let node = format!(
             "[{}] Node highlight",
             if self.node_highlight { 'x' } else { ' ' }
         );
-        let node_line = if self.selected_option().is_none() {
-            Line::from(node).reversed()
-        } else {
-            Line::from(node)
-        };
+        let node_line = mark(node.into(), Row::NodeHighlight);
         let left = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(2)])
             .split(columns[0]);
+        let list_scroll = (selected_line + 1).saturating_sub(left[0].height as usize) as u16;
         frame.render_widget(
             Paragraph::new(list)
-                .wrap(Wrap { trim: false })
+                .scroll((list_scroll, 0))
                 .block(Block::default().borders(Borders::RIGHT)),
             left[0],
         );
@@ -451,7 +534,6 @@ impl Component for RenderOptionsDialog {
             left[1],
         );
 
-        let node_text = self.selected_option().is_none().then(Self::node_row_text);
         let view = self.view();
         let note = view.and_then(|view| view.note.clone());
         if let Some(view) = view {
@@ -484,26 +566,44 @@ impl Component for RenderOptionsDialog {
             }
         }
 
-        let text = match node_text {
-            Some(text) => text,
-            None => vec![
-                Line::from(OPTION_INFO[selected].name).bold(),
-                Line::from(OPTION_INFO[selected].description),
-                match note {
-                    Some(note) => Line::from(note).italic(),
-                    None => {
-                        Line::from("◆ marks the rows this setting changes in the example.").dim()
-                    }
-                },
-            ],
+        let (name, description, mark_note) = match row {
+            Row::NodeHighlight => {
+                let text = Self::node_row_text();
+                frame.render_widget(
+                    Paragraph::new(text)
+                        .wrap(Wrap { trim: true })
+                        .block(Block::default().borders(Borders::TOP)),
+                    bands[2],
+                );
+                frame.render_widget(Paragraph::new(HINT.dim()), bands[3]);
+                return Ok(());
+            }
+            Row::Preset(index) => (
+                PRESETS[index].0,
+                PRESETS[index].2,
+                "◆ marks the rows that change if you choose it.",
+            ),
+            Row::Setting(index) => (
+                OPTION_INFO[index].name,
+                OPTION_INFO[index].description,
+                "◆ marks the rows this setting changes in the example.",
+            ),
         };
+        let text = vec![
+            Line::from(name).bold(),
+            Line::from(description),
+            match note {
+                Some(note) => Line::from(note).italic(),
+                None => Line::from(mark_note).dim(),
+            },
+        ];
         frame.render_widget(
             Paragraph::new(text)
                 .wrap(Wrap { trim: true })
                 .block(Block::default().borders(Borders::TOP)),
-            rows[1],
+            bands[2],
         );
-        frame.render_widget(Paragraph::new(HINT.dim()), rows[2]);
+        frame.render_widget(Paragraph::new(HINT.dim()), bands[3]);
         Ok(())
     }
 }
@@ -522,9 +622,21 @@ mod tests {
         }
     }
 
+    /// Moves the selection down to `row`.
+    fn select(dialog: &mut RenderOptionsDialog, row: Row) {
+        while dialog.row() != row {
+            assert!(
+                dialog.selected + 1 < dialog.row_count(),
+                "{row:?} is below the cursor"
+            );
+            dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        }
+    }
+
     #[test]
     fn space_toggles_the_selected_option_and_reports_it() {
         let mut dialog = RenderOptionsDialog::new(RenderOptions::MINIMAL);
+        select(&mut dialog, Row::Setting(0));
 
         let action = dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap();
 
@@ -545,9 +657,9 @@ mod tests {
     }
 
     #[test]
-    fn down_then_space_toggles_the_second_option() {
+    fn space_toggles_a_setting_in_a_later_group() {
         let mut dialog = RenderOptionsDialog::new(RenderOptions::MINIMAL);
-        dialog.handle_key_event(key(KeyCode::Down)).unwrap();
+        select(&mut dialog, Row::Setting(1));
 
         let action = dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap();
 
@@ -590,6 +702,7 @@ mod tests {
     fn enter_and_esc_both_close_and_keep_every_toggle() {
         for close in [KeyCode::Enter, KeyCode::Esc] {
             let mut dialog = RenderOptionsDialog::new(RenderOptions::MINIMAL);
+            select(&mut dialog, Row::Setting(0));
             dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap();
             let toggled = dialog.options;
 
@@ -637,7 +750,7 @@ mod tests {
     #[test]
     fn selection_does_not_move_past_the_last_row() {
         let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
-        for _ in 0..10 {
+        for _ in 0..dialog.row_count() + 5 {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
         assert_eq!(dialog.selected, dialog.row_count() - 1);
@@ -648,7 +761,7 @@ mod tests {
         for _ in 0..dialog.row_count() {
             dialog.handle_key_event(key(KeyCode::Down)).unwrap();
         }
-        assert_eq!(dialog.selected_option(), None);
+        assert_eq!(dialog.row(), Row::NodeHighlight);
     }
 
     #[test]
@@ -711,6 +824,7 @@ mod tests {
     #[test]
     fn the_selected_settings_effect_is_marked_in_the_example() {
         let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
+        select(&mut dialog, Row::Setting(0));
         let text = screen(&mut dialog, 160, 40);
         assert!(text.contains("example in Rust"), "{text}");
         assert!(text.contains("◆"), "{text}");
@@ -723,11 +837,73 @@ mod tests {
     #[test]
     fn a_setting_with_nothing_to_show_names_the_one_it_needs() {
         let mut dialog = RenderOptionsDialog::new(RenderOptions::MINIMAL);
-        for _ in 0..3 {
-            dialog.handle_key_event(key(KeyCode::Down)).unwrap();
-        }
+        select(&mut dialog, Row::Setting(3));
         let text = screen(&mut dialog, 160, 40);
         assert!(text.contains("turn on"), "{text}");
+    }
+
+    /// The page opens on the preset in use, says what the page is for, and lists the presets
+    /// before any setting.
+    #[test]
+    fn the_presets_come_first_and_the_page_opens_on_the_one_in_use() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
+        assert_eq!(dialog.row(), Row::Preset(1));
+        let text = screen(&mut dialog, 160, 40);
+        assert!(text.contains(INTRO), "{text}");
+        assert!(text.contains("(•) Extended"), "{text}");
+        assert!(text.contains("This is the current choice."), "{text}");
+        let minimal = text.find("( ) Minimal").expect("the Minimal row");
+        assert!(minimal < text.find(OPTION_INFO[0].name).unwrap(), "{text}");
+
+        let mut custom = RenderOptions::EXTENDED;
+        custom.toggle(0);
+        let dialog = RenderOptionsDialog::new(custom);
+        assert_eq!(dialog.row(), Row::Preset(0), "no preset in use: the first");
+    }
+
+    /// Space on a preset row applies it, and the example marks what choosing it would change.
+    #[test]
+    fn space_on_a_preset_row_applies_it() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
+        dialog.handle_key_event(key(KeyCode::Up)).unwrap();
+        assert_eq!(dialog.row(), Row::Preset(0));
+        let text = screen(&mut dialog, 160, 40);
+        assert!(text.contains("◆"), "{text}");
+        assert_eq!(
+            dialog.handle_key_event(key(KeyCode::Char(' '))).unwrap(),
+            Some(Action::RenderOptionsChanged(RenderOptions::MINIMAL))
+        );
+    }
+
+    /// Every setting is listed once, under one group.
+    #[test]
+    fn the_groups_list_every_setting_once() {
+        let mut listed: Vec<usize> = GROUPS.iter().flat_map(|(_, members)| *members).collect();
+        listed.sort_unstable();
+        assert_eq!(listed, (0..OPTION_INFO.len()).collect::<Vec<_>>());
+    }
+
+    /// A name with its checkbox fits the column on one row, so the list can scroll by rows.
+    #[test]
+    fn every_name_fits_the_settings_column() {
+        for info in OPTION_INFO {
+            let row = format!("[x] {}", info.name);
+            // One column for the border.
+            assert!(row.chars().count() < LIST_WIDTH as usize, "{row}");
+        }
+    }
+
+    /// On a short terminal the list scrolls to keep the selected row in sight.
+    #[test]
+    fn the_selected_row_stays_in_sight_on_a_short_terminal() {
+        let mut dialog = RenderOptionsDialog::new(RenderOptions::EXTENDED);
+        select(&mut dialog, Row::Setting(5));
+        let text = screen(&mut dialog, 120, 24);
+        // Its checkbox row, not the description below, which names it too.
+        assert!(
+            text.contains(&format!("[x] {}", OPTION_INFO[5].name)),
+            "{text}"
+        );
     }
 
     #[test]

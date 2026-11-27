@@ -165,7 +165,7 @@ mod tests {
         assert!(
             render_option_rows()[1]
                 .label
-                .starts_with("Highlight brackets")
+                .starts_with("Brackets and commas")
         );
     }
 
