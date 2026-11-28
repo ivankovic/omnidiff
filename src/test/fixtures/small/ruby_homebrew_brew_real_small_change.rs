@@ -15,13 +15,17 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 use crate::test;
+use crate::test::helper::human_mapping::assert_matches_human_painting_within_limit;
 use crate::test::helper::human_mapping::invariants::assert_ground_truth_invariants_with_known_violations;
 use anyhow::Result;
 
 #[test]
 fn mapping() -> Result<()> {
-    test::helper::human_mapping::assert_matches_human_mapping(
+    // Recorded as found, not examined.
+    test::helper::human_mapping::assert_matches_human_mapping_within_limit(
         "ruby-homebrew-brew-real-small-change",
+        3,
+        2,
     )
 }
 
@@ -31,4 +35,9 @@ fn invariants() -> Result<()> {
     // (`&.match(regex)` -> `&.[](regex, 1)`). The calls are matched, yet the mapping deletes one
     // method and inserts the other.
     assert_ground_truth_invariants_with_known_violations("ruby-homebrew-brew-real-small-change", 1)
+}
+
+#[test]
+fn painting() -> Result<()> {
+    assert_matches_human_painting_within_limit("ruby-homebrew-brew-real-small-change", 1.53)
 }

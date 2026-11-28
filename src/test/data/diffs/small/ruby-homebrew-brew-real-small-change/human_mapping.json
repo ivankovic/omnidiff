@@ -23510,83 +23510,6 @@
       ]
     },
     {
-      "operation": "insert",
-      "after_path": [
-        "call:2",
-        "do_block:1",
-        "body_statement:1",
-        "call:11",
-        "do_block:1",
-        "body_statement:1",
-        "call:3",
-        "do_block:1",
-        "body_statement:1",
-        "call:2",
-        "call:1",
-        "argument_list:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "call:1",
-        "operator:1"
-      ]
-    },
-    {
-      "operation": "insert",
-      "after_path": [
-        "call:2",
-        "do_block:1",
-        "body_statement:1",
-        "call:11",
-        "do_block:1",
-        "body_statement:1",
-        "call:3",
-        "do_block:1",
-        "body_statement:1",
-        "call:2",
-        "call:1",
-        "argument_list:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "call:1",
-        "operator:1",
-        "[]:1"
-      ]
-    },
-    {
-      "operation": "delete",
-      "before_path": [
-        "call:2",
-        "do_block:1",
-        "body_statement:1",
-        "call:11",
-        "do_block:1",
-        "body_statement:1",
-        "call:3",
-        "do_block:1",
-        "body_statement:1",
-        "call:2",
-        "call:1",
-        "argument_list:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "call:1",
-        "do_block:1",
-        "body_statement:1",
-        "assignment:1",
-        "call:1",
-        "identifier:1"
-      ]
-    },
-    {
       "operation": "match_but_not_identical",
       "before_path": [
         "call:2",
@@ -26683,6 +26606,641 @@
         "call:2",
         "do_block:1",
         "end:1"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "before_paths": [
+        [
+          "call:2",
+          "do_block:1",
+          "body_statement:1",
+          "call:11",
+          "do_block:1",
+          "body_statement:1",
+          "call:3",
+          "do_block:1",
+          "body_statement:1",
+          "call:2",
+          "call:1",
+          "argument_list:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "assignment:1",
+          "call:1",
+          "identifier:1"
+        ]
+      ],
+      "after_paths": [
+        [
+          "call:2",
+          "do_block:1",
+          "body_statement:1",
+          "call:11",
+          "do_block:1",
+          "body_statement:1",
+          "call:3",
+          "do_block:1",
+          "body_statement:1",
+          "call:2",
+          "call:1",
+          "argument_list:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "call:1",
+          "operator:1",
+          "[]:1"
+        ],
+        [
+          "call:2",
+          "do_block:1",
+          "body_statement:1",
+          "call:11",
+          "do_block:1",
+          "body_statement:1",
+          "call:3",
+          "do_block:1",
+          "body_statement:1",
+          "call:2",
+          "call:1",
+          "argument_list:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "call:1",
+          "do_block:1",
+          "body_statement:1",
+          "call:1",
+          "operator:1"
+        ]
+      ],
+      "operation": "match_but_not_identical",
+      "with_children": false,
+      "pairing": "all_to_all"
+    }
+  ],
+  "text_mappings": [
+    {
+      "name": "Minimal",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 92,
+              "start_column": 35,
+              "end_row": 92,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 215,
+              "start_column": 32,
+              "end_row": 215,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 206,
+              "start_column": 32,
+              "end_row": 206,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 48,
+              "start_column": 8,
+              "end_row": 48,
+              "end_column": 9
+            },
+            {
+              "start_row": 49,
+              "start_column": 10,
+              "end_row": 49,
+              "end_column": 44
+            },
+            {
+              "start_row": 50,
+              "start_column": 10,
+              "end_row": 50,
+              "end_column": 26
+            },
+            {
+              "start_row": 51,
+              "start_column": 10,
+              "end_row": 51,
+              "end_column": 25
+            },
+            {
+              "start_row": 52,
+              "start_column": 10,
+              "end_row": 52,
+              "end_column": 29
+            },
+            {
+              "start_row": 53,
+              "start_column": 8,
+              "end_row": 53,
+              "end_column": 10
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 55,
+              "start_column": 27,
+              "end_row": 55,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 27,
+              "end_row": 49,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 156,
+              "start_column": 17,
+              "end_row": 156,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 147,
+              "start_column": 17,
+              "end_row": 147,
+              "end_column": 24
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 152,
+              "start_column": 10,
+              "end_row": 152,
+              "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 16,
+              "end_row": 151,
+              "end_column": 17
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 10,
+              "end_row": 151,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 39,
+              "end_row": 145,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 16,
+              "end_row": 154,
+              "end_column": 17
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 41,
+              "end_row": 145,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 17,
+              "end_row": 154,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 10,
+              "end_row": 154,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 15,
+              "end_row": 151,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 39,
+              "end_row": 151,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 31,
+              "end_row": 145,
+              "end_column": 33
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Extended",
+      "entries": [
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 92,
+              "start_column": 35,
+              "end_row": 92,
+              "end_column": 44
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 215,
+              "start_column": 32,
+              "end_row": 215,
+              "end_column": 33
+            }
+          ],
+          "after": [
+            {
+              "start_row": 206,
+              "start_column": 32,
+              "end_row": 206,
+              "end_column": 33
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 48,
+              "start_column": 0,
+              "end_row": 48,
+              "end_column": 9
+            },
+            {
+              "start_row": 49,
+              "start_column": 0,
+              "end_row": 49,
+              "end_column": 44
+            },
+            {
+              "start_row": 50,
+              "start_column": 0,
+              "end_row": 50,
+              "end_column": 26
+            },
+            {
+              "start_row": 51,
+              "start_column": 0,
+              "end_row": 51,
+              "end_column": 25
+            },
+            {
+              "start_row": 52,
+              "start_column": 0,
+              "end_row": 52,
+              "end_column": 29
+            },
+            {
+              "start_row": 53,
+              "start_column": 0,
+              "end_row": 53,
+              "end_column": 10
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 55,
+              "start_column": 27,
+              "end_row": 55,
+              "end_column": 28
+            }
+          ],
+          "after": [
+            {
+              "start_row": 49,
+              "start_column": 27,
+              "end_row": 49,
+              "end_column": 28
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 156,
+              "start_column": 17,
+              "end_row": 156,
+              "end_column": 35
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 147,
+              "start_column": 17,
+              "end_row": 147,
+              "end_column": 24
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 152,
+              "start_column": 0,
+              "end_row": 152,
+              "end_column": 30
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 16,
+              "end_row": 151,
+              "end_column": 17
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 10,
+              "end_row": 151,
+              "end_column": 15
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 39,
+              "end_row": 145,
+              "end_column": 40
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 16,
+              "end_row": 154,
+              "end_column": 17
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 41,
+              "end_row": 145,
+              "end_column": 42
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 17,
+              "end_row": 154,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 10,
+              "end_row": 154,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 15,
+              "end_row": 151,
+              "end_column": 16
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 17,
+              "end_row": 151,
+              "end_column": 18
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 18,
+              "end_row": 151,
+              "end_column": 39
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 10,
+              "end_row": 145,
+              "end_column": 31
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 44,
+              "end_row": 151,
+              "end_column": 50
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 33,
+              "end_row": 145,
+              "end_column": 39
+            }
+          ]
+        },
+        {
+          "operation": "Insert",
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 40,
+              "end_row": 145,
+              "end_column": 41
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 50,
+              "end_row": 151,
+              "end_column": 51
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 42,
+              "end_row": 145,
+              "end_column": 43
+            }
+          ]
+        },
+        {
+          "operation": "Delete",
+          "before": [
+            {
+              "start_row": 154,
+              "start_column": 0,
+              "end_row": 154,
+              "end_column": 10
+            }
+          ]
+        },
+        {
+          "operation": "Match",
+          "before": [
+            {
+              "start_row": 151,
+              "start_column": 39,
+              "end_row": 151,
+              "end_column": 44
+            }
+          ],
+          "after": [
+            {
+              "start_row": 145,
+              "start_column": 31,
+              "end_row": 145,
+              "end_column": 33
+            }
+          ]
+        }
       ]
     }
   ]
